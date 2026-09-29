@@ -1,21 +1,17 @@
 # Senemos Uke mainline kernel
 
-Develop senemos-uke-kernel-mainline for Xiaomi Pad 7 (SM7675), starting from Linux 7.2.8 and a separately reproduced Linux 6.12 donor.
+Mainline Linux development for POCO Pad X1 and Xiaomi Pad 7 (`uke`, SM7675). The kernel product is **`senemos-uke-kernel-mainline`**; the first fixed upstream baseline is Linux **7.2.8**. Hardware results remain scoped to the tested commercial model and SKU.
 
-**Status: preparation only.** No project image has been built or tested on a Pad 7. This repository is a component of [Uke Linux](https://github.com/MCC45TR/uke-linux); see its [100-step plan](https://github.com/MCC45TR/uke-linux/blob/main/PLAN.md) and [hardware ledger](https://github.com/MCC45TR/uke-linux/blob/main/DEVICE-STATUS.md).
+[Uke Linux](https://github.com/MCC45TR/uke-linux) · [Kernel architecture](docs/ARCHITECTURE.md) · [Hardware status](https://github.com/MCC45TR/uke-linux/blob/main/DEVICE-STATUS.md) · [Releases](https://github.com/MCC45TR/senemos-uke-kernel-mainline/releases)
 
-## Next implementation work
+## Development scope
 
-Archive the remaining source sets, compile the unchanged baseline and reproduce the donor before splitting and forward-porting its patches.
+The first platform path covers CPU and firmware interfaces, clocks and power, pin control, USB, storage and an early console. A standalone mainline device tree follows the stock-DT transition profile. Display, touch, GPU, wireless, audio, sensors, charging, suspend and camera work are tracked independently in the [device matrix](https://github.com/MCC45TR/uke-linux/blob/main/DEVICE-STATUS.md).
 
-## Layout
+The Uke Linux 6.12 community port and OEM/Android sources are evidence for a forward port, not a substitute for mainline validation. Kernel changes are split by subsystem with source attribution, build checks and focused error-path tests. Android 6.1 vendor modules are not reused as Linux 7.2 modules.
 
-- `src/`: project code; large active upstream checkouts use ignored `src/upstream/`.
-- `configs/`, `patches/`, `scripts/`, `tests/`: reviewed configuration, attributed patches, host helpers and test definitions.
-- `docs/`, `manifests/`, `reports/`: architecture, source identities and reviewed evidence.
-- `referances/`: local unmodified reference clones and Git bundles; see its README.
-- `build/`, `artifacts/`: local generated output, excluded from source publication.
+## Downloads
 
-New native tablet tools use C++. Host automation prefers Bash; Python must never ship to or run on the tablet. Upstream kernel/firmware languages remain unchanged. Read [AGENTS.md](AGENTS.md) before contributing.
+**There is no kernel image or RPM release yet.** Release candidates will identify the upstream base, patch series, config, compiler, device-tree profile, module ABI and compatible firmware. Fedora packages will first appear in the [uke-linux-test COPR channel](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) after source and package checks. Physical compatibility is recorded separately.
 
-The source plan lists component-relative reference paths. The workspace owns acquisition and archive verification through `scripts/sources.sh`; clone the workspace with submodules to use that orchestration. Reference history and licensing are preserved independently of this repository. The MIT license covers original preparation material, not imported upstream code.
+The active source checkout is created from a pinned upstream revision under `src/upstream/`; large unchanged reference repositories live locally in `referances/`. [The workspace plan](https://github.com/MCC45TR/uke-linux/blob/main/PLAN.md) defines the ordered bring-up. Kernel code follows Linux C/assembly conventions; native companion tools use C++. See [AGENTS.md](AGENTS.md) and the original source licenses before contributing.
