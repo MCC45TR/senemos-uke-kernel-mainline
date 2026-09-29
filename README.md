@@ -14,4 +14,6 @@ The Uke Linux 6.12 community port and OEM/Android sources are evidence for a for
 
 **There is no kernel image or RPM release yet.** Release candidates will identify the upstream base, patch series, config, compiler, device-tree profile, module ABI and compatible firmware. Fedora packages will first appear in the [uke-linux-test COPR channel](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) after source and package checks. Physical compatibility is recorded separately.
 
+The pinned upstream `arm64 defconfig` [compiled to `Image` and DTBs](reports/BASELINE-BUILDABILITY.md). This is only a generic Linux 7.2.8 buildability check: no Uke DTB or boot validation exists yet.
+
 The active source checkout is created from a pinned upstream revision under `src/upstream/`; large unchanged reference repositories live locally in `referances/`. [The workspace plan](https://github.com/MCC45TR/uke-linux/blob/main/PLAN.md) defines the ordered bring-up. Kernel code follows Linux C/assembly conventions; native companion tools use C++. See [AGENTS.md](AGENTS.md) and the original source licenses before contributing.
