@@ -1,6 +1,13 @@
 # Kernel development architecture
 
-Product name: `senemos-uke-kernel-mainline`. Initial upstream base: Linux v7.2.8 at `9a66fdc0d7fd55f54235524a73435af99051e46f`. Future development branch: `senemos7/uke-7.2.8-bringup` inside the active upstream checkout at `src/upstream/`.
+Product name: `senemos-uke-linux-kernel-mainline`. The historical generic base
+is Linux v7.2.8 at `9a66fdc0d7fd55f54235524a73435af99051e46f`. The reviewed
+Uke source port targets Linux v7.2.9 at
+`5fce161649b4d779d1b76d9fcd52dc77779774b8`, with seven subsystem patches and
+separate ARM64, Uke and Fedora config fragments. The workspace's single
+`senemeos.sh` entry builds the signed release source and records the resolved
+config, source/patch/toolchain identities and module ABI. Active development
+trees remain in `src/upstream/`; the earlier baseline is preserved.
 
 Keep pristine-baseline, donor-6.12 and forward-port builds separate. Record the final development commit, config hash, toolchain digest, source time and exported patch tree identity. Store reviewable patches under `patches/`; never develop in `referances/`.
 

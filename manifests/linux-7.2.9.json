@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "version": "7.2.9",
+  "upstream_commit": "5fce161649b4d779d1b76d9fcd52dc77779774b8",
+  "source_sha256": "b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba",
+  "source_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.9.tar.xz",
+  "signature_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.9.tar.sign",
+  "signer": "647F28654894E3BD457199BE38DBBDC86092693E",
+  "source_date_epoch": 1791024250,
+  "donor_commit": "32cad9ccd383ff4b37d8a5e7f88a8bfdcc07307e",
+  "patches": [
+    {
+      "path": "patches/7.2.9/0001-cliffs-clock-handoff.patch",
+      "sha256": "a5946597c24f89d9750ecc807d48a28215877d8f59100cbcde63f4717c3a51f9"
+    },
+    {
+      "path": "patches/7.2.9/0002-uke-rpmh-regulators.patch",
+      "sha256": "bc5b9634c6be79345545f86cdcb17bc6ce252f163034a66dbfd7dbd9fd1d0b47"
+    },
+    {
+      "path": "patches/7.2.9/0003-cliffs-tlmm.patch",
+      "sha256": "8040aecc97ad055d8dad9a6b0dc76a9087e4742f2d5003b846f2af97906b53e4"
+    },
+    {
+      "path": "patches/7.2.9/0004-cliffs-interconnect.patch",
+      "sha256": "ced8b8823875f77076638ecec583b1e2aac09d1a89d738a686b2e938f1a89dcd"
+    },
+    {
+      "path": "patches/7.2.9/0005-uke-smmu-handoff.patch",
+      "sha256": "4e2e00cbfe6bf28819553f110de4e1b11004516934b8e3b6a15b11a413a7729b"
+    },
+    {
+      "path": "patches/7.2.9/0006-uke-usb-v7-api.patch",
+      "sha256": "d744bd253d46ce6c96fdd3d0ed26f56ec5aa7f2dd7aabb6774dd08d2f6a0ecef"
+    },
+    {
+      "path": "patches/7.2.9/0007-uke-independent-dts.patch",
+      "sha256": "119a715ca253a32f1ef5d4e20eb88aa619c1f7443458d35cc708014ff3575690"
+    }
+  ],
+  "dtb": "qcom/sm7675-xiaomi-uke.dtb",
+  "hardware_tested": false,
+  "configs": [
+    {
+      "path": "configs/arm64-qcom.config",
+      "sha256": "ea08a26d2afe7d27411ca603c5e7690116f796a1c7956408156f24a09f8fdf06"
+    },
+    {
+      "path": "configs/uke.config",
+      "sha256": "aaf8b399027cb0388467fc520903f49f2a194478e38006adf1550b4acf87e5ed"
+    },
+    {
+      "path": "configs/fedora.config",
+      "sha256": "3d7ad09fbd77ecd803eb5d09be59114093d469260e0f6dc2b15fc0a849479744"
+    }
+  ]
+}
