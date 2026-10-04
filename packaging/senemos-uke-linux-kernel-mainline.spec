@@ -167,12 +167,12 @@ fi
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/
-/usr/lib/modules/%{krel}/modules.alias*
-/usr/lib/modules/%{krel}/modules.dep*
-/usr/lib/modules/%{krel}/modules.devname
-/usr/lib/modules/%{krel}/modules.softdep
-/usr/lib/modules/%{krel}/modules.symbols*
-/usr/lib/modules/%{krel}/modules.weakdep
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.alias*
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.dep*
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.devname
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.softdep
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.symbols*
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.weakdep
 
 %files dtbs
 /usr/lib/modules/%{krel}/dtb/
