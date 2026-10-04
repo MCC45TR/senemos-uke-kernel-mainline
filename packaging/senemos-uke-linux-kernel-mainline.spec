@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.1}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.2}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -161,7 +161,9 @@ fi
 /usr/lib/modules/%{krel}/vmlinuz
 /usr/lib/modules/%{krel}/config
 /usr/lib/modules/%{krel}/System.map
-/usr/lib/modules/%{krel}/modules.builtin*
+/usr/lib/modules/%{krel}/modules.builtin
+/usr/lib/modules/%{krel}/modules.builtin.modinfo
+%verify(not mtime) /usr/lib/modules/%{krel}/modules.builtin*.bin
 /usr/lib/modules/%{krel}/modules.order
 /usr/share/senemos/uke/%{krel}/source-lock.json
 
