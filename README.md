@@ -15,7 +15,18 @@ The Uke Linux 6.12 community port and OEM/Android sources are evidence for a for
 
 ## Downloads
 
-**There is no kernel image or RPM release yet.** Release candidates will identify the upstream base, patch series, config, compiler, device-tree profile, module ABI and compatible firmware. Fedora packages will first appear in the [uke-linux-test COPR channel](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) after source and package checks. Physical compatibility is recorded separately.
+Linux 7.2.9 Uke development RPMs and their SRPM are now in the
+[uke-linux-test COPR channel](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/).
+First native job [11074297](https://copr.fedorainfracloud.org/coprs/build/11074297)
+succeeded. Local signed-source compilation produced the Image, independent Uke
+DTB and 1,146 matching AArch64 modules; payload, ABI, offline SRPM preparation
+and actual package install/upgrade/removal checks passed. Same-version packaging
+corrections use an increasing RPM release. The
+[builder records](https://github.com/MCC45TR/uke-fedora-builder/tree/main/reports)
+separate local, remote, host-bootstrap and emulated userspace results.
+Physical boot and peripheral compatibility remain untested. See
+[automatic source builds](docs/AUTOMATION.md) and the
+[package hub](https://github.com/MCC45TR/uke-linux/blob/main/docs/PACKAGE-HUB.md).
 
 The pinned upstream `arm64 defconfig` [compiled to `Image` and DTBs](reports/BASELINE-BUILDABILITY.md).
 That historical generic Linux 7.2.8 baseline contains no Uke DTB and has no boot
