@@ -7,7 +7,7 @@ through reviewed upstream stable releases.
 
 **Current development profile:** Linux **7.2.9** · **AArch64** · **Fedora Rawhide**
 
-[Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json) · [Hardware status](https://github.com/MCC45TR/uke-linux/blob/main/DEVICE-STATUS.md) · [Build records](https://github.com/MCC45TR/uke-fedora-builder/tree/main/reports) · [Uke Linux project](https://github.com/MCC45TR/uke-linux)
+[Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json) · [Hardware status](https://github.com/MCC45TR/uke-linux-docs/blob/main/DEVICE-STATUS.md) · [Build records](https://github.com/MCC45TR/uke-fedora-builder/tree/main/reports) · [Uke Linux project](https://github.com/MCC45TR/uke-linux)
 
 ## Project status
 
@@ -20,7 +20,7 @@ Native AArch64 builds are published through the development COPR.
 development candidates. A complete Fedora system image and qualified UEFI boot
 integration remain later milestones. Compatibility is recorded separately for
 each model, SKU, installed firmware and hardware variant in the
-[device matrix](https://github.com/MCC45TR/uke-linux/blob/main/DEVICE-STATUS.md).
+[device matrix](https://github.com/MCC45TR/uke-linux-docs/blob/main/DEVICE-STATUS.md).
 
 | Area | Current scope |
 |---|---|
@@ -73,7 +73,7 @@ COPR signs distributed RPMs with the project repository key. Verify the
 configured repository key and package identities before evaluation. Package
 signatures and upstream source signatures have separate roles; neither is a
 tablet boot acceptance result. See the
-[package hub](https://github.com/MCC45TR/uke-linux/blob/main/docs/PACKAGE-HUB.md)
+[package hub](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/PACKAGE-HUB.md)
 for related Uke components and their readiness.
 
 ## Stable release maintenance
@@ -160,7 +160,7 @@ Linux 7.2.8 is retained as the
 [historical generic buildability baseline](reports/BASELINE-BUILDABILITY.md).
 That baseline predates the independent Uke DTB. Source/build, package,
 emulation and physical-device evidence are recorded separately; see the
-[engineering lessons](https://github.com/MCC45TR/uke-linux/blob/main/docs/lessons/PLATFORM-INDEX.md).
+[engineering lessons](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/lessons/PLATFORM-INDEX.md).
 
 ## Contributing and security
 
