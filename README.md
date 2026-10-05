@@ -108,20 +108,24 @@ and build environment boundaries.
 
 ## Building from source
 
-The [Uke Linux workspace](https://github.com/MCC45TR/uke-linux) contains the
-`senemeos.sh` host build entry. After preparing that workspace, run from its root:
+This repository owns the standalone `senemos.sh` host build entry, pinned
+container rules and target audits. Clone it directly or use the
+[Uke Linux workspace](https://github.com/MCC45TR/uke-linux):
 
 ```sh
-./senemeos.sh --build 7.2.9 --distro=fedora --test
-./senemeos.sh --build latest --distro=fedora
+git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
+cd senemos-uke-kernel-mainline
+./senemos.sh --build 7.2.9 --distro=fedora --test
+./senemos.sh --build latest --distro=fedora
 ```
 
 The builder verifies signed source, applies the exact Uke patch/config profile,
 uses a containerized toolchain and records the resulting Image, DTB, modules,
 RPMs and SRPM. Concurrency follows available host resources; cached source and
-build state are retained. `latest` resolves upstream stable and requires a
+build state are retained under this repository's ignored `build/` and
+`artifacts/` directories. `latest` resolves upstream stable and requires a
 reviewed Uke profile. Other distribution targets have separate readiness gates.
-See the [builder guide](https://github.com/MCC45TR/uke-fedora-builder/blob/main/docs/BUILDING.md)
+See the [builder guide](docs/BUILDING.md)
 for host prerequisites, offline operation and test scope.
 
 For source package work within this repository:

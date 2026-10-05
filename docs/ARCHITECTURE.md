@@ -4,8 +4,8 @@ Product name: `senemos-uke-linux-kernel-mainline`. The historical generic base
 is Linux v7.2.8 at `9a66fdc0d7fd55f54235524a73435af99051e46f`. The reviewed
 Uke source port targets Linux v7.2.9 at
 `5fce161649b4d779d1b76d9fcd52dc77779774b8`, with seven subsystem patches and
-separate ARM64, Uke and Fedora config fragments. The workspace's single
-`senemeos.sh` entry builds the signed release source and records the resolved
+separate ARM64, Uke and Fedora config fragments. This repository's standalone
+`senemos.sh` entry builds the signed release source and records the resolved
 config, source/patch/toolchain identities and module ABI. Active development
 trees remain in `src/upstream/`; the earlier baseline is preserved.
 

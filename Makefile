@@ -37,3 +37,7 @@ srpm: validate
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
+# A standalone source clone also owns its host build entry and pinned rules.
+.PHONY: test-entry
+test-entry:
+	./senemos.sh --self-test
