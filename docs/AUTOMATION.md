@@ -10,4 +10,13 @@ The host-only official COPR client used for publication is `copr-cli-2.7-1.fc46.
 
 The local container and COPR worker are separate environments. COPR's Fedora source-generation chroot and Rawhide repository packages can advance independently of the local pinned image. Each COPR job retains its source RPM, tool versions and build logs. Neither automation nor a successful package build proves Uke boot, firmware handoff or peripheral operation.
 
+Kernel subpackages retain Fedora's installonly policy across different upstream
+versions. Packaging revisions of the same version share a module directory and
+must replace each other. Version-equality `Obsoletes` entries omit the RPM release
+to replace only that upstream version's earlier revisions. Actual upgrade checks
+require one installed revision per subpackage; host fixtures separately check
+that a different upstream version remains installed. This follows RPM's
+[dependency version matching](https://ftp.rpm.org/api/4.4.2.2/dependencies.html)
+and does not select a boot entry.
+
 References: [COPR source methods and webhooks](https://docs.pagure.org/copr.copr/user_documentation.html), [Kernel.org stable feed](https://www.kernel.org/releases.json).
