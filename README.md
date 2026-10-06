@@ -65,6 +65,8 @@ candidate. Missing DT tools use the pinned dependency container automatically.
 All four alternatives remain unselected; these DTB/DTS files are not an Android
 DTBO partition image and contain no invented RAM or framebuffer map. The
 peripheral diagnostic does not admit the planned ESP32 host/VBUS path.
+The [ESP32 host prerequisites](docs/ESP32-HOST-BRINGUP.md) record the separate
+OEM host tuning, WCD role sequence and unresolved ADSP/Type-C power backend.
 
 ## Packages and installation
 
