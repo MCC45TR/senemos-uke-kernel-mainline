@@ -55,12 +55,14 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --offline           Require cached release metadata, source and toolchain
   --test              Validate RPMs, including isolated AArch64 package lifecycle
   --self-test         Run host-only contract and negative tests
+  --inspect-stock     Inspect a named vendor_boot/DTBO firmware package locally
   --help, -h          Show this help
 
 Examples:
   ./senemos.sh --build 7.2.9 --distro=fedora --test
   ./senemos.sh --build latest --distro=fedora
   ./senemos.sh --build lastest --distro=fedora
+  ./senemos.sh --inspect-stock --vendor-boot FILE --dtbo FILE --firmware-profile NAME
 
 Implemented target: Fedora Rawhide AArch64 RPM and SRPM.
 Planned: Fedora 45, openSUSE Tumbleweed, Debian, Ubuntu, Armbian, Kubuntu,
@@ -332,6 +334,9 @@ internal_build() {
     if [[ -d $top/kernel-out && $previous != "$identity" ]]; then
         mv "$top/kernel-out" "$top/kernel-out.saved-$(date +%s)"
     fi
+    if [[ -n $previous && $previous != "$identity" ]]; then
+        archive_rpm_sets "$top"
+    fi
     printf '%s\n' "$identity" > "$work/input-identity"
     mkdir -p "$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS} "$adaptation/patches" "$adaptation/configs"
     cp "$source/referances/releases/linux-$VERSION.tar.xz" "$top/SOURCES/"
@@ -377,11 +382,7 @@ internal_package() {
     [[ $(wc -l < "$top/kernel-out/modules.order") == $(find "$top/kernel-out" -name '*.ko' | wc -l) ]] || die 'Incomplete module link output'
     # A new release must form one coherent set. Preserve older packaging
     # results outside the live RPM directories instead of mixing NEVRAs.
-    local kind stamp
-    stamp=$(date +%s)-$$
-    for kind in RPMS SRPMS; do
-        [[ ! -d $top/$kind ]] || mv "$top/$kind" "$top/$kind.saved-$stamp"
-    done
+    archive_rpm_sets "$top"
     mkdir -p "$top/RPMS/aarch64" "$top/SRPMS"
     sed "s/^Version: .*/Version: $VERSION/" "$spec" > "$top/SPECS/kernel.spec"
     rpmbuild -ba --target aarch64 --define "_topdir $top" --define 'uke_package_only 1' "$top/SPECS/kernel.spec"
@@ -389,6 +390,13 @@ internal_package() {
     identity=$(build_identity "$work/source-profile.json" "$spec" "$toolchain")
     printf '%s\n' "$identity" > "$work/compiled-input-identity"
     record_completed "$work" "$identity"
+}
+archive_rpm_sets() {
+    local top=$1 kind stamp
+    stamp=$(date +%s%N)-$$
+    for kind in RPMS SRPMS; do
+        [[ ! -d $top/$kind ]] || mv -T "$top/$kind" "$top/$kind.saved-$stamp"
+    done
 }
 record_completed() {
     local work=$1 identity=$2
@@ -498,7 +506,7 @@ internal_srpm_check() {
     while IFS=$'\t' read -r path expected; do
         [[ $(sha256sum "$prepared/senemos-adaptation/${path%%/*}/${path##*/}" | cut -d ' ' -f1) == "$expected" ]] || die "SRPM input changed: $path"
     done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' "$work/source-profile.json")
-    printf '%s\n' 'Passed independent SRPM extraction, signed-source verification, seven-patch application and config closure; no second full compilation.' > "$work/srpm-closure.txt"
+    printf '%s\n' 'Passed independent SRPM extraction, signed-source verification, ordered patch application and config closure; no second full compilation.' > "$work/srpm-closure.txt"
     printf '%s\n' "$identity" > "$work/srpm-closure-identity"
     rm -rf -- "$top"
 }
@@ -584,6 +592,14 @@ self_test() {
     printf 'invalid patch\n' > "$temporary/bad.patch"
     if (cd "$temporary/patch-fixture"; git apply --check "$temporary/bad.patch") > "$temporary/patch.log" 2>&1; then die 'Bad patch accepted'; fi
     ok 'failed patch application is rejected'
+    mkdir -p "$temporary/rpm-fixture/RPMS/aarch64" "$temporary/rpm-fixture/SRPMS"
+    printf old-binary > "$temporary/rpm-fixture/RPMS/aarch64/kernel-1.3.rpm"
+    printf old-source > "$temporary/rpm-fixture/SRPMS/kernel-1.3.src.rpm"
+    archive_rpm_sets "$temporary/rpm-fixture"
+    [[ ! -e $temporary/rpm-fixture/RPMS && ! -e $temporary/rpm-fixture/SRPMS ]]
+    [[ $(cat "$temporary"/rpm-fixture/RPMS.saved-*/aarch64/kernel-1.3.rpm) == old-binary ]]
+    [[ $(cat "$temporary"/rpm-fixture/SRPMS.saved-*/kernel-1.3.src.rpm) == old-source ]]
+    ok 'source-changing rebuild preserves older RPMs outside the current package set'
     local profile=$KERNEL/manifests/linux-7.2.9.json archive=$KERNEL/referances/releases/linux-7.2.9.tar.xz
     if [[ -s $archive ]]; then
         printf broken > "$temporary/broken.tar.xz"
@@ -604,6 +620,13 @@ if [[ ${1:-} == --internal-lifecycle ]]; then shift; internal_lifecycle "$@"; ex
 if [[ ${1:-} == --internal-verify ]]; then shift; verify_source "$@"; exit; fi
 if [[ ${1:-} == --internal-host-prereqs ]]; then bootstrap 0; say 'Official host prerequisites installed and verified'; exit; fi
 if [[ ${1:-} == --self-test ]]; then self_test; exit; fi
+if [[ ${1:-} == --inspect-stock ]]; then
+    shift
+    # shellcheck source=src/boot/stock-dt.sh
+    # shellcheck disable=SC1091
+    source "$KERNEL/src/boot/stock-dt.sh"
+    stock_dt_main "$@"; exit
+fi
 while (($#)); do
     case $1 in
         --help|-h) help; exit 0;;

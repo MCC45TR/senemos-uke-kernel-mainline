@@ -5,7 +5,7 @@ SHELL := /bin/bash
 version := 7.2.9
 outdir ?= $(CURDIR)/build/srpm
 validate:
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 7) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 8) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)

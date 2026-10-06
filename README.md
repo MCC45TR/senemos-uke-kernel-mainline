@@ -17,15 +17,15 @@ compilation, module ABI and package lifecycle checks have separate records.
 Native AArch64 builds are published through the development COPR.
 
 **Physical boot and peripheral support are still untested.** Packages are
-development candidates. A complete Fedora system image and qualified UEFI boot
-integration remain later milestones. Compatibility is recorded separately for
+development candidates. A Core filesystem candidate exists; qualified Uke UEFI
+boot integration remains open. Compatibility is recorded separately for
 each model, SKU, installed firmware and hardware variant in the
 [device matrix](https://github.com/MCC45TR/uke-linux-docs/blob/main/DEVICE-STATUS.md).
 
 | Area | Current scope |
 |---|---|
 | Upstream source | Signed Linux 7.2.9 release with a pinned source identity |
-| Platform adaptation | Seven attributed patches covering clocks, RPMh regulators, pin control, USB interconnect, scoped SMMU handoff, USB integration and the Uke DTS |
+| Platform adaptation | Eight ordered patches, including the dedicated SM7675 UFS PHY; complete Image, modules and RPM/SRPM build passed |
 | Device tree | Independent compile-stage Uke description; firmware-specific RAM and dynamic reservations still require boot handoff validation |
 | Fedora packages | Kernel, modules and DTB packages for Rawhide AArch64, with source and build metadata |
 | Display, touch, GPU and storage | Further Uke driver and device-tree work; no own-device acceptance |
@@ -35,6 +35,20 @@ Compiled drivers and a compiled DTB establish buildability. Their runtime
 behavior needs firmware-matched boot and hardware tests. Unreviewed peripherals
 remain disabled in the independent DTS. Xiaomi Pad 7 Pro (`muyu`) and Pad 5
 (`nabu`) have separate platform requirements.
+
+The new UFS PHY profile preserves OEM Cliffs tuning rather than aliasing the
+SM8650 profile. Its 79 effective register addresses match the pinned OEM tables
+for Gear 4/5 and Rate A/B in a host comparison. This does not enable the UFS
+controller in the board DTS or qualify power, reset, DMA and storage operation.
+See [UFS bring-up](docs/UFS-BRINGUP.md).
+
+The [October 6 kernel build record](reports/FIRST-CONSOLE-KERNEL-BUILD-2026-10-06.json)
+identifies the new local release `7.2.9-1.4.fc46`, its Image/config hashes and
+1,146 rebuilt modules. Independent SRPM preparation and an isolated AArch64
+install, upgrade and removal test passed. Its EFI/simple framebuffer and fbcon
+configuration supports the first-console work; the board USB/UFS provider graph
+and exact firmware handoff remain open. Native COPR acceptance is recorded
+separately from these unsigned local candidates.
 
 ## Packages and installation
 

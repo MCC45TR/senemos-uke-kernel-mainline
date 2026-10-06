@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.3}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.4}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -186,5 +186,8 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Tue Oct 06 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.4
+- Add attributed SM7675 UFS PHY tuning and EFI framebuffer console configuration.
+- Keep board UFS and physical boot acceptance gated separately.
 * Sun Oct 04 2026 Senemos Maintainers <MCC45TR@users.noreply.github.com> - 7.2.9-1
 - Build the Uke platform adaptations with Fedora Rawhide packaging.

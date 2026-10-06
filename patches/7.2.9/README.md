@@ -1,12 +1,22 @@
 # Linux 7.2.9 Uke adaptation
 
-The ordered seven-patch series is derived from the public Uke Linux 6.12
+The first seven patches are derived from the public Uke Linux 6.12
 port at `32cad9ccd383ff4b37d8a5e7f88a8bfdcc07307e` by
 [ztsubaki](https://github.com/ztsubaki/uke-linux), specifically
 `patches/uke/0001-uke-platform-and-usb-port.patch`. Preserve each source file's
 Qualcomm/Linux copyright and SPDX license. The original OEM source identity is
 recorded in the workspace source catalog. Reference clones are never modified
 or executed by the build entry point.
+
+The eighth patch adds the dedicated `qcom,sm7675-qmp-ufs-phy` profile from
+Xiaomi's `5712080a4b0c0b1a879e6d145c601c649ddaddfd` OEM Cliffs-compatible
+PHY driver. It uses the current upstream QMP implementation, preserving the
+OEM effective tuning for both lanes, Gear 4/5 and Rate A/B. The UFS board node
+remains disabled until its GCC/GDSC, NoC, supplies, reset and SMMU chain has been
+ported and validated. The complete eight-patch Linux 7.2.9 build passed Image,
+DTB, 1,146 module, RPM/SRPM and AArch64 package lifecycle checks on October 6.
+See the [build record](../../reports/FIRST-CONSOLE-KERNEL-BUILD-2026-10-06.json).
+This establishes buildability, not a working board UFS link.
 
 The target base is Linux `v7.2.9`, commit
 `5fce161649b4d779d1b76d9fcd52dc77779774b8`. Reviewable differences from the

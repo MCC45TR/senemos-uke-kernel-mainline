@@ -36,6 +36,10 @@
     {
       "path": "patches/7.2.9/0007-uke-independent-dts.patch",
       "sha256": "119a715ca253a32f1ef5d4e20eb88aa619c1f7443458d35cc708014ff3575690"
+    },
+    {
+      "path": "patches/7.2.9/0008-sm7675-ufs-phy.patch",
+      "sha256": "80aefafd680136bf187dc20c632e7d71b19644528055fe41c262b97e0826a968"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -47,7 +51,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "aaf8b399027cb0388467fc520903f49f2a194478e38006adf1550b4acf87e5ed"
+      "sha256": "f84cf917915682a1214cbb06c0caee1956b1d27711ee196212fea6ec67d563fa"
     },
     {
       "path": "configs/fedora.config",
