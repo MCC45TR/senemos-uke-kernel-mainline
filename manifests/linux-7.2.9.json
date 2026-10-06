@@ -40,6 +40,26 @@
     {
       "path": "patches/7.2.9/0008-sm7675-ufs-phy.patch",
       "sha256": "80aefafd680136bf187dc20c632e7d71b19644528055fe41c262b97e0826a968"
+    },
+    {
+      "path": "patches/7.2.9/0009-cliffs-ufs-interconnect.patch",
+      "sha256": "fa1d9a1743fba4de7d163f48c8127b752f560d94bfecfde9590659c48b37debe"
+    },
+    {
+      "path": "patches/7.2.9/0010-uke-ufs-dma-power-admission.patch",
+      "sha256": "e20d25186ab0fa1d1b62eae0d61b972ef2c8f812a5212c1e03acfbff09cd8e5e"
+    },
+    {
+      "path": "patches/7.2.9/0011-cliffs-rpmh-snapshot-size.patch",
+      "sha256": "a65984bf0b3a5a021446508d58befc26d471ac62fbb5a7a5f784730643b50727"
+    },
+    {
+      "path": "patches/7.2.9/0012-uke-gdsc-shared-gcc-regmap.patch",
+      "sha256": "04a04966bde864af9fd744af76af4faf0168fe579b81059aa451de82ab61c9c7"
+    },
+    {
+      "path": "patches/7.2.9/0013-uke-usb-role-and-phy-error-gates.patch",
+      "sha256": "2610daab7f7b4ed8fcf53ecee8077df1c49abd4c58ebd40ffc2117b013672dbc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

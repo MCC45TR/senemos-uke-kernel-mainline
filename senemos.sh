@@ -56,6 +56,7 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --test              Validate RPMs, including isolated AArch64 package lifecycle
   --self-test         Run host-only contract and negative tests
   --inspect-stock     Inspect a named vendor_boot/DTBO firmware package locally
+  --prepare-boot-dt    Generate bounded stock-derived UFS/optional USB2 candidates
   --help, -h          Show this help
 
 Examples:
@@ -63,6 +64,7 @@ Examples:
   ./senemos.sh --build latest --distro=fedora
   ./senemos.sh --build lastest --distro=fedora
   ./senemos.sh --inspect-stock --vendor-boot FILE --dtbo FILE --firmware-profile NAME
+  ./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT [--usb2-peripheral]
 
 Implemented target: Fedora Rawhide AArch64 RPM and SRPM.
 Planned: Fedora 45, openSUSE Tumbleweed, Debian, Ubuntu, Armbian, Kubuntu,
@@ -620,6 +622,39 @@ if [[ ${1:-} == --internal-lifecycle ]]; then shift; internal_lifecycle "$@"; ex
 if [[ ${1:-} == --internal-verify ]]; then shift; verify_source "$@"; exit; fi
 if [[ ${1:-} == --internal-host-prereqs ]]; then bootstrap 0; say 'Official host prerequisites installed and verified'; exit; fi
 if [[ ${1:-} == --self-test ]]; then self_test; exit; fi
+if [[ ${1:-} == --prepare-boot-dt ]]; then
+    shift
+    [[ $# == 3 || ( $# == 4 && $4 == --usb2-peripheral ) ]] || die 'Use --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT [--usb2-peripheral]'
+    ready=1
+    for tool in jq sha256sum cpp dtc fdtoverlay fdtget fdtput; do
+        command -v "$tool" >/dev/null 2>&1 || ready=0
+    done
+    if ((ready)); then exec bash "$KERNEL/src/boot/prepare-ufs-dt.sh" "$@"; fi
+    bootstrap
+    architecture=$(uname -m)
+    [[ $architecture == x86_64 || $architecture == aarch64 ]] || die 'Unsupported DT preparation host architecture'
+    recipe=$(cat "$KERNEL/configs/host/Containerfile.rawhide" "$RULES" | sha256sum | cut -d ' ' -f1)
+    image=localhost/senemos-uke-build:rawhide-${architecture/x86_64/amd64}-${recipe:0:16}
+    if ! "$ENGINE" image inspect "$image" >/dev/null 2>&1; then
+        wait_idle
+        base=$(jq -er --arg a "$architecture" '.fedora_rawhide_images[$a]' "$RULES")
+        "$ENGINE" build --cpu-period=100000 --cpu-quota=100000 --memory=2g \
+            --build-arg "BASE_IMAGE=$base" --build-arg "RECIPE_SHA=$recipe" \
+            -t "$image" -f "$KERNEL/configs/host/Containerfile.rawhide" "$KERNEL/configs/host"
+    fi
+    receipt=$(realpath "$1") source_tree=$(realpath "$2") output=$(realpath -m "$3")
+    [[ -d $receipt && -d $source_tree && ! -e $output ]] || die 'Receipt/source must exist and output must be new'
+    mkdir -p "$(dirname "$output")"
+    opts=(--rm --network=none --security-opt label=disable --cpus=1 --memory=1g \
+        -v "$KERNEL:/work/kernel:ro" -v "$receipt:/receipt:ro" -v "$source_tree:/source:ro" \
+        -v "$(dirname "$output"):/output")
+    if [[ $ENGINE == podman ]]; then opts+=(--userns=keep-id);
+    else opts+=(--user "$(id -u):$(id -g)"); fi
+    options=(); [[ $# == 3 ]] || options+=(--usb2-peripheral)
+    "$ENGINE" run "${opts[@]}" "$image" bash /work/kernel/src/boot/prepare-ufs-dt.sh \
+        /receipt /source "/output/$(basename "$output")" "${options[@]}"
+    exit
+fi
 if [[ ${1:-} == --inspect-stock ]]; then
     shift
     # shellcheck source=src/boot/stock-dt.sh

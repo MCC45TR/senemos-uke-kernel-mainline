@@ -1,0 +1,81 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * Stock-graph USB2 peripheral diagnostic candidate for the v7 glue driver.
+ * OEM DT 94c84aeb9e517dbde546fc732033c184094c8e57; no RAM/framebuffer fixups.
+ * This is not the ESP32 host profile. Host PHY/repeater/VBUS remain gated.
+ * Unlike the old child-driver layout, v7 DWC3 uses the glue device's fwnode.
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/clock/qcom,tcsrcc-pineapple.h>
+
+&gcc_usb30_prim_gdsc {
+	compatible = "qcom,sm7675-usb-gdsc";
+	reg = <0x00139004 8>;
+	qcom,clock-controller = <&gcc>;
+	regulator-always-on;
+	status = "okay";
+};
+
+&eusb2_phy0 {
+	/* The reviewed legacy provider's match and exact OEM tuning are retained. */
+	compatible = "qcom,usb-snps-eusb2-phy";
+	clocks = <&rpmhcc RPMH_CXO_PAD_CLK>, <&tcsrcc TCSR_USB2_CLKREF_EN>;
+	clock-names = "ref_clk_src", "ref_clk";
+	status = "okay";
+};
+
+&usb0 {
+	compatible = "qcom,sm7675-dwc3";
+	gdsc-supply = <&gcc_usb30_prim_gdsc>;
+	usb-phy = <&eusb2_phy0>;
+	iommus = <&apps_smmu 0x40 0>;
+	dma-coherent;
+	/* OEM child core IRQ 133; wake/role controllers are outside this fixture. */
+	interrupts = <0 133 4>;
+	interrupt-names = "dwc_usb3";
+	dr_mode = "peripheral";
+	maximum-speed = "high-speed";
+	qcom,select-utmi-as-pipe-clk;
+	interconnects = <&aggre1_noc 49 &mc_virt 512>,
+			<&gem_noc 2 &cnoc_cfg 547>;
+	interconnect-names = "usb-ddr", "apps-usb";
+	snps,disable-clk-gating;
+	snps,dis-u1-entry-quirk;
+	snps,dis-u2-entry-quirk;
+	snps,dis_u2_susphy_quirk;
+	snps,usb2-lpm-disable;
+	snps,usb2-gadget-lpm-disable;
+	status = "okay";
+
+	dwc3@a600000 { status = "disabled"; };
+};
+
+&gpi_dma0 {
+	compatible = "qcom,sm8450-gpi-dma";
+	#dma-cells = <3>;
+	dma-channels = <12>;
+	dma-channel-mask = <0x1e>;
+	status = "okay";
+};
+
+&qupv3_se0_i2c {
+	compatible = "qcom,geni-i2c";
+	clock-names = "se";
+	dmas = <&gpi_dma0 0 0 3>, <&gpi_dma0 1 0 3>;
+	status = "okay";
+};
+
+&wcd_usbss {
+	compatible = "qcom,sm7675-wcd939x-usb2";
+	/* GPIOD assertion/release now expresses the OEM low/high reset sequence. */
+	reset-gpios = <&tlmm 119 1>;
+	status = "okay";
+};
+
+&tlmm {
+	gpio-reserved-ranges = <8 4>, <56 5>;
+	status = "okay";
+};

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "device": "uke",
+  "soc": "SM7675",
+  "scope": "Source, targeted AArch64 compilation and static DT candidate fixtures",
+  "source_profile_sha256": "e3f222a0562001257686a25a99e639fb8c659d9b43f76877a15257f62f513736",
+  "ordered_patch_count": 13,
+  "new_patches": [
+    {
+      "path": "patches/7.2.9/0009-cliffs-ufs-interconnect.patch",
+      "sha256": "fa1d9a1743fba4de7d163f48c8127b752f560d94bfecfde9590659c48b37debe"
+    },
+    {
+      "path": "patches/7.2.9/0010-uke-ufs-dma-power-admission.patch",
+      "sha256": "e20d25186ab0fa1d1b62eae0d61b972ef2c8f812a5212c1e03acfbff09cd8e5e"
+    },
+    {
+      "path": "patches/7.2.9/0011-cliffs-rpmh-snapshot-size.patch",
+      "sha256": "a65984bf0b3a5a021446508d58befc26d471ac62fbb5a7a5f784730643b50727"
+    },
+    {
+      "path": "patches/7.2.9/0012-uke-gdsc-shared-gcc-regmap.patch",
+      "sha256": "04a04966bde864af9fd744af76af4faf0168fe579b81059aa451de82ab61c9c7"
+    },
+    {
+      "path": "patches/7.2.9/0013-uke-usb-role-and-phy-error-gates.patch",
+      "sha256": "2610daab7f7b4ed8fcf53ecee8077df1c49abd4c58ebd40ffc2117b013672dbc"
+    }
+  ],
+  "source_patch_application": "passed without fuzz",
+  "target_objects": {
+    "architecture": "AArch64",
+    "toolchain_image": "a6fb262f41c060702100f704f5c63ac48957682e84befb0812f08e248f2bec7e",
+    "clang": "23.1.2",
+    "results": {
+      "ufs_noc": "passed",
+      "scoped_smmu": "passed",
+      "shared_gcc_gdsc": "passed",
+      "rpmh_rollback_arrays": "passed",
+      "existing_oem_tcsr": "passed",
+      "usb_core_and_glue": "passed"
+    }
+  },
+  "dt_candidates": {
+    "stock_profile": "Global OS3.0.303.0.WOZMIXM",
+    "base_count": 4,
+    "all_merges": "passed",
+    "raw_and_merged_source_hashes": "verified",
+    "clock_and_gdsc_supplier_phandles": "verified",
+    "ram_and_ufs_reset_sid": "unchanged",
+    "board_identity": "Applied through a root-target fragment backed by the inspected Uke board metadata",
+    "smmu_primary_and_register_handoff_fallback": "verified",
+    "usb2_role": "peripheral only",
+    "foreign_receipt_corrupted_input_existing_output_unadmitted_host_and_wrong_version": "rejected",
+    "host_entry_with_automatic_pinned_container": "passed",
+    "selected_dtb_index": null,
+    "android_dtbo_image": false,
+    "launchable": false,
+    "esp32_host_qualified": false
+  },
+  "host_self_test_groups": 9,
+  "shellcheck": "passed",
+  "full_kernel_build": {
+    "requested_release": "7.2.9-1.5.fc46",
+    "jobs": 2,
+    "state": "running",
+    "old_accepted_outputs_preserved": true,
+    "complete_image_modules_rpm_srpm_and_lifecycle": "pending"
+  },
+  "firmware": {
+    "stock_early_and_security_firmware": "retained",
+    "public_binary_redistribution": false,
+    "uefi_firmware_port_complete": false,
+    "live_owner_fdt_and_ram_verified": false
+  },
+  "independent_packaged_board_usb_ufs_enabled": false,
+  "own_device_boot_tested": false,
+  "hardware_tested": false,
+  "flash_performed": false
+}
