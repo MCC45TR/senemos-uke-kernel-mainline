@@ -40,17 +40,48 @@ profile; merely supplying the compatible does not close its dependencies.
 |---|---|
 | UFS PHY/controller MMIO | OEM `0x01d80000` / `0x01d84000`; device registers, never GPT offsets |
 | Clocks and resets | Cliffs GCC has UFS clocks and BCR; DT parent links, reference clocks and power domains still need an admitted provider graph |
-| Power domains | Existing GCC port does not register the UFS GDSCs; copying a GDSC ID cannot supply one |
-| NoC | Existing Cliffs provider is a USB subset; UFS master and configuration paths, QoS and BCM votes must be ported |
+| Power domains | Scoped regulator facade now uses the GCC supplier's existing regmap for the reviewed USB/UFS offsets; runtime votes still need physical checks |
+| NoC | Added OEM UFS master 48 and configuration slave 546, original graph links and BCM votes; OEM has no per-master UFS QoS box |
 | Supplies | OEM PHY uses L1D/L4B/L2B; controller uses L12B/L3D and additional reference/parent votes; use Uke PMIC declarations and sequencing |
 | Reset GPIO | OEM Uke path describes TLMM GPIO 178, active low; TLMM and its voltage rail are still disabled in the independent tree |
-| DMA/SMMU | OEM controller uses SID `0x60`; existing scoped USB handoff does not validate this client |
-| Host controller | Add an attributed SM7675 host binding/profile only after inspecting hardware version and required quirks; do not relabel another SoC |
+| DMA/SMMU | Primary boot compatible admits translated SID `0x60`; original USB core-compatible fallback retains firmware display handoff protection |
+| Host controller | Source candidate uses the generic Qualcomm host's actual version read; ICE/MCQ omitted; physical quirks and link enumeration remain open |
 
 The extracted Global OS3 package corroborates these register and reset
 declarations. It has four base DTBs and one board overlay, and lacks bootloader
 RAM fixups. It is not the dated installed Global OS2 profile. None of these
 source findings proves runtime enumeration, LUN geometry or write safety.
+
+## Stock-derived source candidates
+
+The [source catalog](../manifests/first-console-sources.json) pins OEM,
+community, Palawan and static firmware evidence separately. The source profile
+adds patches 0009–0013 for UFS paths, scoped DMA/power admission, RPMh rollback
+array sizing, shared GCC MMIO ownership and explicit USB role/PHY error gates.
+Targeted AArch64 objects and four DT graph/rejection fixtures passed. The full
+release `1.5` Image/modules/package build is recorded separately.
+
+After `--inspect-stock` creates a bounded, hashed receipt, use the same host
+entry to generate development DTB/DTS files:
+
+```sh
+./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT
+./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT --usb2-peripheral
+```
+
+Input hashes include the original vendor_boot/DTBO and each merged DTB from
+the receipt inventory. Existing output and foreign/corrupted receipts are
+rejected. All four base alternatives are retained. The output is an ordinary
+source overlay plus DTB/DTS candidates, not an Android DTBO image; selected
+index is null and launchable/boot/hardware flags are false. RAM, UFS reset and
+SID are checked against the input. No framebuffer or partition offsets are
+invented. The independent packaged DTB is not silently replaced.
+
+The USB2 option adapts the stock child layout to the v7 glue fwnode and is
+explicitly **peripheral-only**. It cannot qualify the Core ESP32 host profile:
+host PHY/repeater/WCD sequencing, VBUS control and real cable/firmware tests
+remain required. Matching stock early/security firmware is retained; no Nabu
+firmware binary or memory map is admitted.
 
 ## First console and storage gates
 

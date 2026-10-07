@@ -6,3 +6,8 @@
 0006-uke-usb-v7-api.patch
 0007-uke-independent-dts.patch
 0008-sm7675-ufs-phy.patch
+0009-cliffs-ufs-interconnect.patch
+0010-uke-ufs-dma-power-admission.patch
+0011-cliffs-rpmh-snapshot-size.patch
+0012-uke-gdsc-shared-gcc-regmap.patch
+0013-uke-usb-role-and-phy-error-gates.patch

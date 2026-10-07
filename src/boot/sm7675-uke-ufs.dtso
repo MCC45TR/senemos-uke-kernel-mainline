@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * Development overlay for an inspected, matching Uke stock DT graph.
+ * OEM DT 94c84aeb9e517dbde546fc732033c184094c8e57 (Cliffs/Uke).
+ * This is not an Android DTBO image and never supplies RAM or selects a DTB.
+ * Requires the UFS PHY, NoC, scoped SMMU/GDSC and RPMh snapshot fixes.
+ * PHY clocks use mainline IDs; GCC parents must use this PHY's clock provider.
+ * ICE/MCQ are left out of this first read-only storage candidate.
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/qcom,gcc-cliffs.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/clock/qcom,tcsrcc-pineapple.h>
+
+/* Stock overlay root metadata does not itself overlay the runtime root.
+ * Express the inspected Uke board identity as a real root-target fragment.
+ * Keep OEM selectors, RAM, reservations and unit-specific data untouched.
+ */
+&{/} {
+	model = "Uke SM7675 Linux development";
+	compatible = "xiaomi,uke", "qcom,sm7675", "qcom,cliffs";
+};
+
+&ufsphy_mem {
+	compatible = "qcom,sm7675-qmp-ufs-phy";
+	clocks = <&rpmhcc RPMH_CXO_PAD_CLK>,
+		 <&gcc GCC_UFS_PHY_PHY_AUX_CLK>,
+		 <&tcsrcc TCSR_UFS_CLKREF_EN>;
+	clock-names = "ref", "ref_aux", "qref";
+	resets = <&ufshc_mem 0>;
+	reset-names = "ufsphy";
+	#clock-cells = <1>;
+	#phy-cells = <0>;
+	status = "okay";
+};
+
+&gcc {
+	clocks = <&rpmhcc RPMH_CXO_CLK>, <&pcie_0_pipe_clk>, <&sleep_clk>,
+		 <&ufsphy_mem 0>, <&ufsphy_mem 1>, <&ufsphy_mem 2>,
+		 <&usb3_phy_wrapper_gcc_usb30_pipe_clk>;
+};
+
+&tcsrcc {
+	status = "okay";
+};
+
+&ufshc_mem {
+	/* Generic upstream host reads the actual controller version. */
+	compatible = "qcom,ufshc";
+	reg = <0x01d84000 0x3000>;
+	reg-names = "std";
+	clocks = <&gcc GCC_UFS_PHY_AXI_CLK>,
+		 <&gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
+		 <&gcc GCC_UFS_PHY_AHB_CLK>,
+		 <&gcc GCC_UFS_PHY_UNIPRO_CORE_CLK>,
+		 <&rpmhcc RPMH_LN_BB_CLK3>,
+		 <&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
+		 <&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
+		 <&gcc GCC_UFS_PHY_RX_SYMBOL_1_CLK>;
+	clock-names = "core_clk", "bus_aggr_clk", "iface_clk",
+		      "core_clk_unipro", "ref_clk", "tx_lane0_sync_clk",
+		      "rx_lane0_sync_clk", "rx_lane1_sync_clk";
+	freq-table-hz = <100000000 403000000>, <0 0>, <0 0>,
+			<100000000 403000000>, <0 0>, <0 0>, <0 0>, <0 0>;
+	status = "okay";
+};
+
+&gcc_ufs_mem_phy_gdsc {
+	compatible = "qcom,sm7675-ufs-gdsc";
+	qcom,clock-controller = <&gcc>;
+	reg = <0x0019e000 8>;
+	regulator-always-on;
+	status = "okay";
+};
+
+&gcc_ufs_phy_gdsc {
+	compatible = "qcom,sm7675-ufs-gdsc";
+	qcom,clock-controller = <&gcc>;
+	reg = <0x00177004 8>;
+	regulator-always-on;
+	status = "okay";
+};
+
+&apps_smmu {
+	/* Extended DMA admission uses the primary match. The register/handoff
+	 * protocol retains the original core driver's USB-compatible fallback.
+	 */
+	compatible = "qcom,sm7675-boot-smmu", "qcom,sm7675-usb-smmu";
+};
+
+&aggre1_noc { status = "okay"; };
+&cnoc_cfg { status = "okay"; };
+&cnoc_main { status = "okay"; };
+&gem_noc { status = "okay"; };
+&system_noc { status = "okay"; };

@@ -56,6 +56,7 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --test              Validate RPMs, including isolated AArch64 package lifecycle
   --self-test         Run host-only contract and negative tests
   --inspect-stock     Inspect a named vendor_boot/DTBO firmware package locally
+  --prepare-boot-dt    Generate bounded stock-derived UFS/optional USB2 candidates
   --help, -h          Show this help
 
 Examples:
@@ -63,6 +64,7 @@ Examples:
   ./senemos.sh --build latest --distro=fedora
   ./senemos.sh --build lastest --distro=fedora
   ./senemos.sh --inspect-stock --vendor-boot FILE --dtbo FILE --firmware-profile NAME
+  ./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT [--usb2-peripheral]
 
 Implemented target: Fedora Rawhide AArch64 RPM and SRPM.
 Planned: Fedora 45, openSUSE Tumbleweed, Debian, Ubuntu, Armbian, Kubuntu,
@@ -233,6 +235,11 @@ fetch_source() {
         [[ $path =~ ^[a-zA-Z0-9._/-]+$ && $path != *..* ]] || die 'Unsafe profile path'
         [[ -f $KERNEL/$path && $(sha256sum "$KERNEL/$path" | cut -d ' ' -f1) == "$hash" ]] || die "Reviewed input changed: $path"
     done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' "$PROFILE")
+    verify_patch_series "$PROFILE" "$KERNEL/patches/$VERSION/series"
+}
+verify_patch_series() {
+    local manifest=$1 series=$2
+    cmp -s <(jq -r '.patches[].path | split("/") | last' "$manifest") "$series" || die 'Patch series differs from the ordered reviewed manifest'
 }
 # Other native/recovery builds take precedence. Only process identity is read;
 # their commands and private paths never enter public logs or manifests.
@@ -306,6 +313,7 @@ internal_build() {
     local source=/work/kernel
     local manifest=$work/source-profile.json
     local identity previous
+    verify_patch_series "$manifest" "$source/patches/$VERSION/series"
     identity=$(build_identity "$manifest" /work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec "$toolchain")
     if [[ $(cat "$work/completed-input-identity" 2>/dev/null || true) == "$identity" ]] && \
        (cd "$work"; sha256sum -c completed-artifacts.sha256 >/dev/null 2>&1); then
@@ -365,7 +373,7 @@ internal_build() {
 build_identity() {
     local manifest=$1 spec=$2 toolchain=$3
     { cat "$manifest"; printf '%s\n' "$toolchain"; \
-        awk '/^%global krel/ {print} /^%build/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
+        awk '/^%global krel/ {print} /^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
     } | sha256sum | cut -d ' ' -f1
 }
 internal_package() {
@@ -377,8 +385,8 @@ internal_package() {
     cmp "$work/source-profile.json" "$work/adaptation/senemos-adaptation/source-lock.json" || die 'Compiled source profile changed'
     [[ $(cat "$top/kernel-out/include/config/kernel.release") == "$VERSION-senemos-uke" ]] || die 'Compiled kernel release changed'
     [[ $(cat "$work/completed-toolchain-id") == "$toolchain" ]] || die 'Compiled toolchain changed'
-    cmp <(awk '/^%build/ {capture=1} /^%install/ {capture=0} capture' "$spec") \
-        <(awk '/^%build/ {capture=1} /^%install/ {capture=0} capture' "$top/SPECS/kernel.spec") || die 'Compilation rules changed'
+    cmp <(awk '/^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec") \
+        <(awk '/^%prep/ {capture=1} /^%install/ {capture=0} capture' "$top/SPECS/kernel.spec") || die 'Source preparation or compilation rules changed'
     [[ $(wc -l < "$top/kernel-out/modules.order") == $(find "$top/kernel-out" -name '*.ko' | wc -l) ]] || die 'Incomplete module link output'
     # A new release must form one coherent set. Preserve older packaging
     # results outside the live RPM directories instead of mixing NEVRAs.
@@ -429,6 +437,9 @@ internal_audit() {
     cmp "$output/System.map" "$work/extracted/usr/lib/modules/$krel/System.map" || die 'Packaged System.map differs from the compiled map'
     cmp "$work/output/sm7675-xiaomi-uke.dtb" "$work/extracted/usr/lib/modules/$krel/dtb/qcom/sm7675-xiaomi-uke.dtb" || die 'Packaged Uke DTB differs from the compiled DTB'
     cmp "$work/source-profile.json" "$work/extracted/usr/share/senemos/uke/$krel/source-lock.json" || die 'Packaged source/config identity differs from the compiled profile'
+    verify_patch_series "$work/source-profile.json" "$output/senemos-applied-patches.txt"
+    cmp "$output/senemos-applied-patches.txt" "$work/extracted/usr/share/senemos/uke/$krel/applied-patches.txt" || die 'Packaged applied-patch receipt differs from the compiled source'
+    cp "$output/senemos-applied-patches.txt" "$work/output/applied-patches.txt"
     bash /work/kernel/src/audit/check-target-payload.sh "$work/extracted"
     bash /work/kernel/src/audit/check-target-privacy.sh "$work/extracted"
     local count=0
@@ -592,6 +603,14 @@ self_test() {
     printf 'invalid patch\n' > "$temporary/bad.patch"
     if (cd "$temporary/patch-fixture"; git apply --check "$temporary/bad.patch") > "$temporary/patch.log" 2>&1; then die 'Bad patch accepted'; fi
     ok 'failed patch application is rejected'
+    jq -n '{patches:[{path:"patches/fixture/first.patch"},{path:"patches/fixture/second.patch"}]}' > "$temporary/ordered-profile.json"
+    printf 'first.patch\nsecond.patch\n' > "$temporary/series"
+    verify_patch_series "$temporary/ordered-profile.json" "$temporary/series"
+    printf 'first.patch\n' > "$temporary/series"
+    if (verify_patch_series "$temporary/ordered-profile.json" "$temporary/series") > "$temporary/series.log" 2>&1; then die 'Truncated patch series accepted'; fi
+    printf 'second.patch\nfirst.patch\n' > "$temporary/series"
+    if (verify_patch_series "$temporary/ordered-profile.json" "$temporary/series") > "$temporary/series.log" 2>&1; then die 'Reordered patch series accepted'; fi
+    ok 'ordered patch series must exactly match the source manifest'
     mkdir -p "$temporary/rpm-fixture/RPMS/aarch64" "$temporary/rpm-fixture/SRPMS"
     printf old-binary > "$temporary/rpm-fixture/RPMS/aarch64/kernel-1.3.rpm"
     printf old-source > "$temporary/rpm-fixture/SRPMS/kernel-1.3.src.rpm"
@@ -620,6 +639,39 @@ if [[ ${1:-} == --internal-lifecycle ]]; then shift; internal_lifecycle "$@"; ex
 if [[ ${1:-} == --internal-verify ]]; then shift; verify_source "$@"; exit; fi
 if [[ ${1:-} == --internal-host-prereqs ]]; then bootstrap 0; say 'Official host prerequisites installed and verified'; exit; fi
 if [[ ${1:-} == --self-test ]]; then self_test; exit; fi
+if [[ ${1:-} == --prepare-boot-dt ]]; then
+    shift
+    [[ $# == 3 || ( $# == 4 && $4 == --usb2-peripheral ) ]] || die 'Use --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT [--usb2-peripheral]'
+    ready=1
+    for tool in jq sha256sum cpp dtc fdtoverlay fdtget fdtput; do
+        command -v "$tool" >/dev/null 2>&1 || ready=0
+    done
+    if ((ready)); then exec bash "$KERNEL/src/boot/prepare-ufs-dt.sh" "$@"; fi
+    bootstrap
+    architecture=$(uname -m)
+    [[ $architecture == x86_64 || $architecture == aarch64 ]] || die 'Unsupported DT preparation host architecture'
+    recipe=$(cat "$KERNEL/configs/host/Containerfile.rawhide" "$RULES" | sha256sum | cut -d ' ' -f1)
+    image=localhost/senemos-uke-build:rawhide-${architecture/x86_64/amd64}-${recipe:0:16}
+    if ! "$ENGINE" image inspect "$image" >/dev/null 2>&1; then
+        wait_idle
+        base=$(jq -er --arg a "$architecture" '.fedora_rawhide_images[$a]' "$RULES")
+        "$ENGINE" build --cpu-period=100000 --cpu-quota=100000 --memory=2g \
+            --build-arg "BASE_IMAGE=$base" --build-arg "RECIPE_SHA=$recipe" \
+            -t "$image" -f "$KERNEL/configs/host/Containerfile.rawhide" "$KERNEL/configs/host"
+    fi
+    receipt=$(realpath "$1") source_tree=$(realpath "$2") output=$(realpath -m "$3")
+    [[ -d $receipt && -d $source_tree && ! -e $output ]] || die 'Receipt/source must exist and output must be new'
+    mkdir -p "$(dirname "$output")"
+    opts=(--rm --network=none --security-opt label=disable --cpus=1 --memory=1g \
+        -v "$KERNEL:/work/kernel:ro" -v "$receipt:/receipt:ro" -v "$source_tree:/source:ro" \
+        -v "$(dirname "$output"):/output")
+    if [[ $ENGINE == podman ]]; then opts+=(--userns=keep-id);
+    else opts+=(--user "$(id -u):$(id -g)"); fi
+    options=(); [[ $# == 3 ]] || options+=(--usb2-peripheral)
+    "$ENGINE" run "${opts[@]}" "$image" bash /work/kernel/src/boot/prepare-ufs-dt.sh \
+        /receipt /source "/output/$(basename "$output")" "${options[@]}"
+    exit
+fi
 if [[ ${1:-} == --inspect-stock ]]; then
     shift
     # shellcheck source=src/boot/stock-dt.sh

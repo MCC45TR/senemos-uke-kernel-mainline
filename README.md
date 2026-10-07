@@ -25,7 +25,7 @@ each model, SKU, installed firmware and hardware variant in the
 | Area | Current scope |
 |---|---|
 | Upstream source | Signed Linux 7.2.9 release with a pinned source identity |
-| Platform adaptation | Eight ordered patches, including the dedicated SM7675 UFS PHY; complete Image, modules and RPM/SRPM build passed |
+| Platform adaptation | Native COPR eight-patch release 1.4; thirteen-patch release 1.5 passed local Image/DTB/module and RPM/SRPM qualification |
 | Device tree | Independent compile-stage Uke description; firmware-specific RAM and dynamic reservations still require boot handoff validation |
 | Fedora packages | Kernel, modules and DTB packages for Rawhide AArch64, with source and build metadata |
 | Display, touch, GPU and storage | Further Uke driver and device-tree work; no own-device acceptance |
@@ -49,6 +49,27 @@ install, upgrade and removal test passed. Its EFI/simple framebuffer and fbcon
 configuration supports the first-console work; the board USB/UFS provider graph
 and exact firmware handoff remain open. Native COPR acceptance is recorded
 separately from these unsigned local candidates.
+
+The [provider source record](reports/FIRST-CONSOLE-PROVIDERS-2026-10-06.json)
+adds UFS NoC/DMA/power paths, repairs RPMh rollback sizing and shared GCC MMIO
+ownership, and preserves explicit USB role/PHY error gates. Targeted AArch64
+objects, four hashed stock-derived DT candidates and negative fixtures passed.
+The corrected complete release `1.5` Image, DTB, 1,146 modules and RPM/SRPM build
+passed on October 7, including independent signed-source preparation and
+isolated AArch64 install, upgrade and removal. The earlier eight-of-thirteen
+patch trial remains rejected and unpublished. Native COPR qualification and
+own-device boot remain separate. The pinned
+[source catalog](manifests/first-console-sources.json) keeps OEM and community
+reports separate from project tests.
+
+Use `./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT` after stock
+inspection, optionally adding `--usb2-peripheral` for the diagnostic USB2
+candidate. Missing DT tools use the pinned dependency container automatically.
+All four alternatives remain unselected; these DTB/DTS files are not an Android
+DTBO partition image and contain no invented RAM or framebuffer map. The
+peripheral diagnostic does not admit the planned ESP32 host/VBUS path.
+The [ESP32 host prerequisites](docs/ESP32-HOST-BRINGUP.md) record the separate
+OEM host tuning, WCD role sequence and unresolved ADSP/Type-C power backend.
 
 ## Packages and installation
 
