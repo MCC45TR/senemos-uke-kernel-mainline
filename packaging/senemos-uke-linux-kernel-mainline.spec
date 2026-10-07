@@ -75,14 +75,29 @@ xz -cd %{SOURCE0} | gpg --homedir %{_topdir}/gnupg --batch --status-fd=1 \
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
 %setup -q -n linux-%{version}
 tar -xJf %{SOURCE1}
+jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
+cmp senemos-expected-patches.txt senemos-adaptation/patches/series
+while IFS="$(printf '\t')" read -r path expected; do
+    case "$path" in
+        patches/*) staged="senemos-adaptation/patches/${path##*/}" ;;
+        configs/*) staged="senemos-adaptation/configs/${path##*/}" ;;
+        *) exit 1 ;;
+    esac
+    test "$(sha256sum "$staged" | cut -d ' ' -f1)" = "$expected" || exit 1
+done <<EOF
+$(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' senemos-adaptation/source-lock.json)
+EOF
 # Keep git apply rooted here even when the RPM development tree is nested
 # inside a workspace repository. Otherwise Git silently skips those paths.
 git -c init.defaultBranch=senemos init -q
+: > senemos-applied-patches.txt
 while IFS= read -r patch_name; do
     test -n "$patch_name" || continue
     git apply --check "senemos-adaptation/patches/$patch_name" || exit 1
     git apply "senemos-adaptation/patches/$patch_name" || exit 1
+    printf '%s\n' "$patch_name" >> senemos-applied-patches.txt
 done < senemos-adaptation/patches/series
+cmp senemos-expected-patches.txt senemos-applied-patches.txt
 
 %build
 %if !0%{?uke_package_only}
@@ -119,12 +134,14 @@ for item in CONFIG_PINCTRL_CLIFFS=y CONFIG_SM_GCC_CLIFFS=y \
     grep -Fx "$item" %{_uke_out}/.config || exit 1
 done
 make O=%{_uke_out} LOCALVERSION=-senemos-uke -j%{_uke_jobs} Image dtbs modules
+install -m644 senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos-uke kernelrelease)" = '%{krel}'
 %else
 # A lifecycle-test release repackages the already verified build, without
 # short-circuit RPM dependencies or a second kernel compilation.
 test -s %{_uke_out}/arch/arm64/boot/Image
 test -s %{_uke_out}/Module.symvers
+cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
 %install
@@ -147,6 +164,8 @@ depmod -b %{buildroot} -m /usr/lib/modules -a %{krel}
 mkdir -p %{buildroot}%{_datadir}/senemos/uke/%{krel}
 install -m644 senemos-adaptation/source-lock.json \
     %{buildroot}%{_datadir}/senemos/uke/%{krel}/source-lock.json
+install -m644 %{_uke_out}/senemos-applied-patches.txt \
+    %{buildroot}%{_datadir}/senemos/uke/%{krel}/applied-patches.txt
 
 %post modules -p /bin/sh
 if command -v depmod >/dev/null 2>&1; then depmod -a %{krel}; fi
@@ -172,6 +191,7 @@ fi
 %verify(not mtime) /usr/lib/modules/%{krel}/modules.builtin*.bin
 /usr/lib/modules/%{krel}/modules.order
 /usr/share/senemos/uke/%{krel}/source-lock.json
+/usr/share/senemos/uke/%{krel}/applied-patches.txt
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/

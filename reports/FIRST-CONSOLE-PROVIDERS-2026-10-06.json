@@ -59,14 +59,25 @@
     "launchable": false,
     "esp32_host_qualified": false
   },
-  "host_self_test_groups": 9,
+  "host_self_test_groups": 10,
   "shellcheck": "passed",
   "full_kernel_build": {
     "requested_release": "7.2.9-1.5.fc46",
     "jobs": 2,
-    "state": "running",
+    "state": "rebuilding after rejected incomplete-series trial",
     "old_accepted_outputs_preserved": true,
-    "complete_image_modules_rpm_srpm_and_lifecycle": "pending"
+    "complete_image_modules_rpm_srpm_and_lifecycle": "pending corrected full build",
+    "rejected_trial": {
+      "reason": "RPM series applied eight patches despite a thirteen-patch manifest",
+      "original_image_sha256": "fe62e9fc7bce684081be719b2baa5d12ae392fbd8f9390153409cecdb6b5ff57",
+      "published": false
+    },
+    "corrections": [
+      "Exact manifest/series comparison before staging and in RPM prep",
+      "Patch/config hashes checked by independent RPM prep",
+      "Applied-patch receipt checked against compiled output and packaged payload",
+      "Source prep included in cache and repackaging identity"
+    ]
   },
   "firmware": {
     "stock_early_and_security_firmware": "retained",
