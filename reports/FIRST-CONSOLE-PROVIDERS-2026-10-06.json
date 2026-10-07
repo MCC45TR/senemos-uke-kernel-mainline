@@ -64,9 +64,9 @@
   "full_kernel_build": {
     "requested_release": "7.2.9-1.5.fc46",
     "jobs": 2,
-    "state": "rebuilding after rejected incomplete-series trial",
+    "state": "passed corrected full-series build",
     "old_accepted_outputs_preserved": true,
-    "complete_image_modules_rpm_srpm_and_lifecycle": "pending corrected full build",
+    "complete_image_modules_rpm_srpm_and_lifecycle": "passed",
     "rejected_trial": {
       "reason": "RPM series applied eight patches despite a thirteen-patch manifest",
       "original_image_sha256": "fe62e9fc7bce684081be719b2baa5d12ae392fbd8f9390153409cecdb6b5ff57",
@@ -77,7 +77,55 @@
       "Patch/config hashes checked by independent RPM prep",
       "Applied-patch receipt checked against compiled output and packaged payload",
       "Source prep included in cache and repackaging identity"
-    ]
+    ],
+    "corrected_result": {
+      "date": "2026-10-07",
+      "source_revision": "56138d5b78fbec5c7cb99378a7628247be1107cb",
+      "manifest_sha256": "a545fe2f6029346bbf1cb34b115b07a29f0933064151116328e1f8364f9fae54",
+      "image_sha256": "5eacec7505f85df39df868c5a9e81274cf55bbaf6ee8d91e71fd827eba80c56c",
+      "config_sha256": "e2995d52f963778ba13e48329dad9fb8fbcd784b6c7a43e97ec1a2940ab020ac",
+      "module_count": 1146,
+      "module_abi_sha256": "4f89bf2bddd98dda770ac20640fe5fc2faae11bc5f10df66b35264e89a62b5a7",
+      "compile_validation": "passed",
+      "payload_validation": "passed",
+      "source_rpm_preparation": "passed",
+      "package_lifecycle_tested": true,
+      "applied_patch_count": 13,
+      "packages": [
+        {
+          "file": "senemos-uke-linux-kernel-mainline-7.2.9-1.5.fc46.aarch64.rpm",
+          "kind": "binary",
+          "nevra": "senemos-uke-linux-kernel-mainline-0:7.2.9-1.5.fc46.aarch64",
+          "sha256": "51dc24c8840963c0ce00f867f84ec28f17ab298acfb9653777a36a89e860859d"
+        },
+        {
+          "file": "senemos-uke-linux-kernel-mainline-core-7.2.9-1.5.fc46.aarch64.rpm",
+          "kind": "binary",
+          "nevra": "senemos-uke-linux-kernel-mainline-core-0:7.2.9-1.5.fc46.aarch64",
+          "sha256": "a523a3e27aea0667bec7c67dbe89ae1c0cdd64e4b70d7ce54a381e469a93dffa"
+        },
+        {
+          "file": "senemos-uke-linux-kernel-mainline-dtbs-7.2.9-1.5.fc46.aarch64.rpm",
+          "kind": "binary",
+          "nevra": "senemos-uke-linux-kernel-mainline-dtbs-0:7.2.9-1.5.fc46.aarch64",
+          "sha256": "2b47b7e7f853e2c3cdb90e43fd29506074f98b417514f39e32bc410eb18c6a74"
+        },
+        {
+          "file": "senemos-uke-linux-kernel-mainline-modules-7.2.9-1.5.fc46.aarch64.rpm",
+          "kind": "binary",
+          "nevra": "senemos-uke-linux-kernel-mainline-modules-0:7.2.9-1.5.fc46.aarch64",
+          "sha256": "566699ea5f95a1bedc6c37359f59dd2b9214f05e805a346bae0b31cdad0c7caf"
+        },
+        {
+          "file": "senemos-uke-linux-kernel-mainline-7.2.9-1.5.fc46.src.rpm",
+          "kind": "source",
+          "nevra": "senemos-uke-linux-kernel-mainline-0:7.2.9-1.5.fc46.aarch64",
+          "sha256": "ff5b6e12916aa8ab76e9bc71c1362068b0d76e4c682a99ec01b31b6c19b6616b"
+        }
+      ],
+      "boot_tested": false,
+      "hardware_tested": false
+    }
   },
   "firmware": {
     "stock_early_and_security_firmware": "retained",

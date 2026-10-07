@@ -25,7 +25,7 @@ each model, SKU, installed firmware and hardware variant in the
 | Area | Current scope |
 |---|---|
 | Upstream source | Signed Linux 7.2.9 release with a pinned source identity |
-| Platform adaptation | Qualified eight-patch release 1.4; thirteen-patch provider successor under full validation |
+| Platform adaptation | Native COPR eight-patch release 1.4; thirteen-patch release 1.5 passed local Image/DTB/module and RPM/SRPM qualification |
 | Device tree | Independent compile-stage Uke description; firmware-specific RAM and dynamic reservations still require boot handoff validation |
 | Fedora packages | Kernel, modules and DTB packages for Rawhide AArch64, with source and build metadata |
 | Display, touch, GPU and storage | Further Uke driver and device-tree work; no own-device acceptance |
@@ -54,8 +54,11 @@ The [provider source record](reports/FIRST-CONSOLE-PROVIDERS-2026-10-06.json)
 adds UFS NoC/DMA/power paths, repairs RPMh rollback sizing and shared GCC MMIO
 ownership, and preserves explicit USB role/PHY error gates. Targeted AArch64
 objects, four hashed stock-derived DT candidates and negative fixtures passed.
-The complete release `1.5` kernel/package build is still running; it is not an
-accepted package or own-device result. The pinned
+The corrected complete release `1.5` Image, DTB, 1,146 modules and RPM/SRPM build
+passed on October 7, including independent signed-source preparation and
+isolated AArch64 install, upgrade and removal. The earlier eight-of-thirteen
+patch trial remains rejected and unpublished. Native COPR qualification and
+own-device boot remain separate. The pinned
 [source catalog](manifests/first-console-sources.json) keeps OEM and community
 reports separate from project tests.
 
