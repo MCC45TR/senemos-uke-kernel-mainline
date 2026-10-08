@@ -1,0 +1,82 @@
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index d2acfac..ca4d77d 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -465,4 +465,15 @@ config ARCH_ZYNQMP
+ 	help
+ 	  This enables support for Xilinx ZynqMP Family
+ 
++config QCOM_UKE_ABL_DT
++	bool "Uke stock ABL development DT adaptation"
++	depends on ARCH_QCOM && OF_EARLY_FLATTREE
++	select LIBFDT
++	help
++	  Adapt an admitted Uke bootloader-selected stock graph for the reviewed
++	  7.2.9 UFS and USB peripheral drivers and simplefb console. Requires the
++	  source-pinned provider overlays prepared by the Uke host builder.
++	  RAM, reservations, board selectors and unit data come from this boot.
++	  This option does not port the DRM panel or USB host power control.
++
+ endmenu # "Platform selection"
+diff --git a/arch/arm64/kernel/Makefile b/arch/arm64/kernel/Makefile
+index d2690c3..87e15c9 100644
+--- a/arch/arm64/kernel/Makefile
++++ b/arch/arm64/kernel/Makefile
+@@ -36,6 +36,8 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
+ 			   syscall.o proton-pack.o idle.o patching.o pi/	\
+ 			   rsi.o jump_label.o
+ 
++obj-$(CONFIG_QCOM_UKE_ABL_DT)		+= uke-abl.o
++
+ obj-$(CONFIG_COMPAT)			+= sys32.o signal32.o			\
+ 					   sys_compat.o
+ obj-$(CONFIG_COMPAT)			+= sigreturn32.o
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index 23c05dc..c29a0e2 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -167,20 +167,29 @@ static void __init smp_build_mpidr_hash(void)
+ 		pr_warn("Large number of MPIDR hash buckets detected\n");
+ }
+ 
++#ifdef CONFIG_QCOM_UKE_ABL_DT
++void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
++#endif
++
+ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+ {
+ 	int size = 0;
+ 	void *dt_virt = fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL);
+ 	const char *name;
++	phys_addr_t scan_phys = dt_phys;
+ 
+ 	if (dt_virt)
+ 		memblock_reserve(dt_phys, size);
+ 
++#ifdef CONFIG_QCOM_UKE_ABL_DT
++	dt_virt = uke_abl_prepare_fdt(dt_virt, size, &scan_phys);
++#endif
++
+ 	/*
+ 	 * dt_virt is a fixmap address, hence __pa(dt_virt) can't be used.
+ 	 * Pass dt_phys directly.
+ 	 */
+-	if (!early_init_dt_scan(dt_virt, dt_phys)) {
++	if (!early_init_dt_scan(dt_virt, scan_phys)) {
+ 		pr_crit("\n"
+ 			"Error: invalid device tree blob: PA=%pa, VA=%px, size=%d bytes\n"
+ 			"The dtb must be 8-byte aligned and must not exceed 2 MB in size.\n"
+diff --git a/lib/Makefile b/lib/Makefile
+index 7f75cc6..ad9d3b8 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -259,6 +259,9 @@ obj-$(CONFIG_REF_TRACKER) += ref_tracker.o
+ 
+ libfdt_files = fdt.o fdt_ro.o fdt_wip.o fdt_rw.o fdt_sw.o fdt_strerror.o \
+ 	       fdt_empty_tree.o fdt_addresses.o
++ifeq ($(CONFIG_QCOM_UKE_ABL_DT),y)
++libfdt_files += fdt_overlay.o fdt_check.o
++endif
+ $(foreach file, $(libfdt_files), \
+ 	$(eval CFLAGS_$(file) = -I $(srctree)/scripts/dtc/libfdt))
+ lib-$(CONFIG_LIBFDT) += $(libfdt_files)
