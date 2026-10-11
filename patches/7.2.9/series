@@ -16,3 +16,4 @@
 0016-uke-wlan-ordered-rails.patch
 0017-cliffs-gpio-function-flag.patch
 0018-rpmsg-channel-modalias-fallback.patch
+0019-spmi-sdam-nvmem-aperture.patch
