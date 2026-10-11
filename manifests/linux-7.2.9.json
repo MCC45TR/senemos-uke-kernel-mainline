@@ -104,6 +104,10 @@
     {
       "path": "patches/7.2.9/0024-uke-adsp-gpu-arc-suppliers.patch",
       "sha256": "52272d96a6e364cee9d2665f24ba52cb9dac72444b9095e2c980692c6c523490"
+    },
+    {
+      "path": "patches/7.2.9/0025-uke-paired-normal-backlight.patch",
+      "sha256": "f7fbe96d9eddcfc39a1f7dc99ae81640fab9a6b8fe92ef2f7e3fca018ddd679c"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -115,7 +119,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "1b0c0865f43cc2f707030f8727474d94a34c3ee558d1ad30b4ceb28180586cf3"
+      "sha256": "1efb301e1403885f9411082b05620c236951e42c1c383f6ea95128ea77cc9bfe"
     },
     {
       "path": "configs/fedora.config",

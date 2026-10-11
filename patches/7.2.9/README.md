@@ -100,6 +100,12 @@ no neighboring rail or guessed voltage is substituted. The actual supply
 fixture admits sixteen exact names and rejects unrelated/extended names.
 Physical provider binding and DSP/graphics operation remain separate gates.
 
+`0025` adopts the exact Uke paired KTZ8866 normal-brightness path.
+Probe preserves firmware setup without writes; one class controls both
+endpoints using the GPL OEM normal curve, checked readback and verified
+rollback. Managed peer ownership, malformed graph and I/O fault fixtures
+remain mandatory. HBM, suspend policy and physical brightness are unqualified.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

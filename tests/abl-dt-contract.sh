@@ -51,6 +51,18 @@ gpi=$(fdtget -t x "$input" /soc/qcom,gpi-dma@800000 phandle)
 [[ $(fdtget -t s "$out/admitted.dtb" "$bus" clock-names) == se ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$bus" clock-frequency) == 400000 ]]
 [[ $(fdtget -t x "$out/admitted.dtb" "$bus" dmas) == "$gpi 0 4 3 $gpi 1 4 3" ]]
+primary=/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11
+secondary=$bus/ktz8866@11
+[[ $(fdtget -t s "$out/admitted.dtb" "$primary" compatible) == xiaomi,uke-ktz8866-primary ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$secondary" compatible) == xiaomi,uke-ktz8866-secondary ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$primary" xiaomi,secondary) == "$(fdtget -t x "$out/admitted.dtb" "$secondary" phandle)" ]]
+for node in "$primary" "$secondary"; do
+    [[ $(fdtget -t x "$out/admitted.dtb" "$node" reg) == 11 ]]
+done
+cp "$input" "$out/existing-backlight-phandle.dtb"
+fdtput -t x "$out/existing-backlight-phandle.dtb" "$secondary" phandle "$(fdtget -t x "$out/admitted.dtb" "$secondary" phandle)"
+"$binary" "$out/existing-backlight-phandle.dtb" "$ufs" "$usb" "$out/existing-backlight-admitted.dtb"
+[[ $(fdtget -t x "$out/existing-backlight-admitted.dtb" "$primary" xiaomi,secondary) == "$(fdtget -t x "$out/existing-backlight-phandle.dtb" "$secondary" phandle)" ]]
 for parent in "$second" "$bus"; do
     for child in $(fdtget -l "$out/admitted.dtb" "$parent"); do
         case "$parent/$child" in "$bus"|"$bus/ktz8866@11") continue;; esac
@@ -69,7 +81,7 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
         board) fdtput -t x "$out/$scenario.dtb" / qcom,board-id 9 0;;
@@ -94,6 +106,9 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
         second-bus-frequency) fdtput -t u "$out/$scenario.dtb" "$bus" qcom,clk-freq-out 100000;;
         second-backlight-reg) fdtput -t x "$out/$scenario.dtb" "$bus/ktz8866@11" reg 10;;
         second-backlight-compatible) fdtput -t s "$out/$scenario.dtb" "$bus/ktz8866@11" compatible kinetic,ktz8866;;
+        primary-backlight-reg) fdtput -t x "$out/$scenario.dtb" "$primary" reg 10;;
+        primary-backlight-compatible) fdtput -t s "$out/$scenario.dtb" "$primary" compatible kinetic,ktz8866;;
+        phandle-exhaustion) fdtput -t x "$out/$scenario.dtb" "$primary" phandle fffffffe;;
         reboot-cell) fdtput -t x "$out/$scenario.dtb" /soc/reboot_reason nvmem-cells deadbeef;;
         reboot-offset) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 reg 49 1;;
         reboot-bits) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 bits 0 8;;

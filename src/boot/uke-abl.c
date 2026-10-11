@@ -226,6 +226,12 @@ static int UKE_INIT uke_backlight_bus(const void *fdt)
 	value = fdt_getprop(fdt, ktz, "reg", &size);
 	if (!value || size != 4 || fdt32_to_cpu(*value) != 0x11)
 		return -FDT_ERR_BADVALUE;
+	ktz = fdt_path_offset(fdt, "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11");
+	if (ktz < 0 || fdt_node_check_compatible(fdt, ktz, "ktz,ktz8866"))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, ktz, "reg", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 0x11)
+		return -FDT_ERR_BADVALUE;
 	for (i = 0; i < 4; i++) {
 		value = fdt_getprop(fdt, dma, dma_props[i], &size);
 		if (!value || size != 4 || fdt32_to_cpu(*value) != dma_values[i])
@@ -272,6 +278,36 @@ static int UKE_INIT uke_scope_second_qup(void *fdt)
 			return child;
 	}
 	return 0;
+}
+
+static int UKE_INIT uke_pair_backlights(void *fdt)
+{
+	const char *secondary = "/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000/ktz8866@11";
+	const char *primary = "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11";
+	int node = fdt_path_offset(fdt, secondary), ret;
+	unsigned int phandle;
+
+	if (node < 0)
+		return node;
+	phandle = fdt_get_phandle(fdt, node);
+	if (!phandle) {
+		ret = fdt_generate_phandle(fdt, &phandle);
+		if (ret)
+			return ret;
+		ret = fdt_setprop_u32(fdt, node, "phandle", phandle);
+		if (ret)
+			return ret;
+	}
+	ret = fdt_setprop_string(fdt, node, "compatible", "xiaomi,uke-ktz8866-secondary");
+	if (ret)
+		return ret;
+	node = fdt_path_offset(fdt, primary);
+	if (node < 0)
+		return node;
+	ret = fdt_setprop_string(fdt, node, "compatible", "xiaomi,uke-ktz8866-primary");
+	if (ret)
+		return ret;
+	return fdt_setprop_u32(fdt, node, "xiaomi,secondary", phandle);
 }
 
 static int UKE_INIT uke_wifi_graph(const void *fdt)
@@ -457,6 +493,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_scope_second_qup(output);
+	if (ret)
+		return ret;
+	ret = uke_pair_backlights(output);
 	if (ret)
 		return ret;
 	ret = uke_scope_smmu_clients(output);
