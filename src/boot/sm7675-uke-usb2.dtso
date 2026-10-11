@@ -11,6 +11,21 @@
 #include <dt-bindings/clock/qcom,rpmh.h>
 #include <dt-bindings/clock/qcom,tcsrcc-pineapple.h>
 
+/* OEM GLINK children do not implement the upstream connector binding.
+ * The fixed peripheral route does not need UCSI or its legacy log endpoint.
+ */
+&{/soc/qcom,pmic_glink} {
+	status = "disabled";
+};
+
+&{/soc/qcom,pmic_glink_log} {
+	status = "disabled";
+};
+
+&{/soc/qcom,pmic_glink/qcom,ucsi/connector} {
+	status = "disabled";
+};
+
 &gcc_usb30_prim_gdsc {
 	compatible = "qcom,sm7675-usb-gdsc";
 	reg = <0x00139004 8>;

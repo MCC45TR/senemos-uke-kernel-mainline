@@ -58,6 +58,103 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
 }
 
+static int UKE_INIT uke_reboot_cell(const void *fdt)
+{
+	int node = fdt_path_offset(fdt, "/soc/reboot_reason"), size, parent;
+	int cell = fdt_path_offset(fdt, "/soc/qcom,spmi@c42d000/"
+				  "qcom,pmk8550@0/sdam@7100/restart@48");
+	const fdt32_t *value;
+
+	if (node < 0 || cell < 0 ||
+	    fdt_node_check_compatible(fdt, node, "qcom,reboot-reason"))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, node, "nvmem-cells", &size);
+	if (!value || size != 4 ||
+	    fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*value)) != cell ||
+	    uke_path_reg(fdt, "/soc/qcom,spmi@c42d000/"
+			 "qcom,pmk8550@0/sdam@7100/restart@48", 0x48, 1))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, cell, "bits", &size);
+	if (!value || size != 8 || fdt32_to_cpu(value[0]) != 1 ||
+	    fdt32_to_cpu(value[1]) != 7)
+		return -FDT_ERR_BADVALUE;
+	parent = fdt_parent_offset(fdt, cell);
+	value = fdt_getprop(fdt, parent, "reg", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 0x7100 ||
+	    fdt_node_check_compatible(fdt, parent, "qcom,spmi-sdam"))
+		return -FDT_ERR_BADVALUE;
+	return 0;
+}
+
+static int UKE_INIT uke_scope_smmu_clients(void *fdt)
+{
+	static const char * const paths[] = {
+		"/soc/ufshc@1d84000", "/soc/ssusb@a600000",
+		"/soc/qcom,gpi-dma@a00000",
+		"/soc/qcom,qupv3_0_geni_se@ac0000",
+	};
+	static const unsigned int sids[] = { 0x60, 0x40, 0xb6, 0xa3 };
+	int smmu = fdt_path_offset(fdt, "/soc/apps-smmu@15000000");
+	unsigned int phandle;
+	int node, i, size, ret;
+
+	if (smmu < 0 || !(phandle = fdt_get_phandle(fdt, smmu)))
+		return -FDT_ERR_BADPHANDLE;
+	for (i = 0; i < 4; i++) {
+		const fdt32_t *spec;
+
+		node = fdt_path_offset(fdt, paths[i]);
+		if (node < 0)
+			return node;
+		spec = fdt_getprop(fdt, node, "iommus", &size);
+		if (!spec || size != 12 || fdt32_to_cpu(spec[0]) != phandle ||
+		    fdt32_to_cpu(spec[1]) != sids[i] || fdt32_to_cpu(spec[2]))
+			return -FDT_ERR_BADVALUE;
+	}
+	for (node = fdt_next_node(fdt, -1, NULL); node >= 0;
+	     node = fdt_next_node(fdt, node, NULL)) {
+		const fdt32_t *spec = fdt_getprop(fdt, node, "iommus", &size);
+		int pos = 0, total, scoped = 0, admitted = 0;
+
+		if (!spec)
+			continue;
+		if (size <= 0 || size % sizeof(*spec))
+			return -FDT_ERR_BADVALUE;
+		total = size / (int)sizeof(*spec);
+		while (pos < total) {
+			const fdt32_t *cells;
+			unsigned int count, provider = fdt32_to_cpu(spec[pos++]);
+			int length, offset = fdt_node_offset_by_phandle(fdt, provider);
+
+			if (offset < 0)
+				return offset;
+			cells = fdt_getprop(fdt, offset, "#iommu-cells", &length);
+			if (!cells || length != 4)
+				return -FDT_ERR_BADVALUE;
+			count = fdt32_to_cpu(*cells);
+			if (count > (unsigned int)(total - pos))
+				return -FDT_ERR_BADVALUE;
+			if (provider == phandle)
+				scoped = 1;
+			pos += count;
+		}
+		if (!scoped)
+			continue;
+		for (i = 0; i < 4; i++)
+			if (node == fdt_path_offset(fdt, paths[i]))
+				admitted = 1;
+		/* Disabled clients cannot reclaim firmware display streams or DMA
+		 * through this provider outside its four reviewed boot consumers.
+		 */
+		if (!admitted) {
+			ret = fdt_setprop_string(fdt, node, "status", "disabled");
+			if (ret)
+				return ret;
+		}
+	}
+	return node == -FDT_ERR_NOTFOUND ? 0 : node;
+}
+
 static int UKE_INIT uke_framebuffer(void *fdt)
 {
 	const fdt32_t *reg;
@@ -147,6 +244,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    capacity > UKE_FDT_CAPACITY || capacity <= input_bytes ||
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
+	    uke_reboot_cell(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
@@ -174,6 +272,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_delete_optional(output, "/soc/ssusb@a600000", "usb-role-switch");
+	if (ret)
+		return ret;
+	ret = uke_scope_smmu_clients(output);
 	if (ret)
 		return ret;
 	ret = uke_framebuffer(output);

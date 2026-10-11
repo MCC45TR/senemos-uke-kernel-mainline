@@ -19,8 +19,19 @@
  * Keep OEM selectors, RAM, reservations and unit-specific data untouched.
  */
 &{/} {
-	model = "Uke SM7675 Linux development";
+	model = "Xiaomi Pad 7";
 	compatible = "xiaomi,uke", "qcom,sm7675", "qcom,cliffs";
+};
+
+/* OEM qcom-reboot-reason uses this PMK8550 cell and these exact mode values.
+ * Use the upstream backend without copying the vendor panic notifier.
+ */
+&{/soc/reboot_reason} {
+	compatible = "nvmem-reboot-mode";
+	nvmem-cell-names = "reboot-mode";
+	mode-normal = <0x20>;
+	mode-recovery = <0x01>;
+	mode-bootloader = <0x02>;
 };
 
 &ufsphy_mem {

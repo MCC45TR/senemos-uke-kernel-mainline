@@ -80,3 +80,72 @@ index 7f75cc6..ad9d3b8 100644
  $(foreach file, $(libfdt_files), \
  	$(eval CFLAGS_$(file) = -I $(srctree)/scripts/dtc/libfdt))
  lib-$(CONFIG_LIBFDT) += $(libfdt_files)
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -1991,13 +1991,18 @@
+ 		return rc;
+ 	}
+ 
+-	/* Limit this data-only experiment to the six required supply resources. */
++	/* OEM Uke supplies required by CPU, USB and the UFS host/PHY. */
+ 	if (strcmp(aggr_vreg->resource_name, "cx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "mx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob2") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob4") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob7") &&
+-	    strcmp(aggr_vreg->resource_name, "ldob17"))
++	    strcmp(aggr_vreg->resource_name, "ldob17") &&
++	    strcmp(aggr_vreg->resource_name, "smpb2") &&
++	    strcmp(aggr_vreg->resource_name, "ldod1") &&
++	    strcmp(aggr_vreg->resource_name, "ldob5") &&
++	    strcmp(aggr_vreg->resource_name, "ldob12") &&
++	    strcmp(aggr_vreg->resource_name, "ldod3"))
+ 		return -ENODEV;
+ 
+ 	aggr_vreg->addr = cmd_db_read_addr(aggr_vreg->resource_name);
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -757,7 +757,10 @@
+ 	u32 reg;
+ 
+ 	if (!smmu->smrs || (smmu->features & ARM_SMMU_FEAT_EXIDS))
+-		return -EOPNOTSUPP;
++		return dev_err_probe(smmu->dev, -EOPNOTSUPP,
++			"Uke handoff cannot preserve SMRs: smrs=%d EXIDS=%d ID0=%#x\n",
++			!!smmu->smrs, !!(smmu->features & ARM_SMMU_FEAT_EXIDS),
++			arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_ID0));
+ 	handoff = of_get_property(smmu->dev->of_node, "qcom,handoff-smrs", &len);
+ 	if (!handoff || len != 2 * sizeof(u32) ||
+ 	    be32_to_cpu(handoff[0]) != 0x1c00 || be32_to_cpu(handoff[1]) != 2)
+@@ -781,7 +784,9 @@
+ 			cb = FIELD_GET(ARM_SMMU_S2CR_CBNDX, s2cr);
+ 			if (FIELD_GET(ARM_SMMU_S2CR_TYPE, s2cr) == S2CR_TYPE_TRANS) {
+ 				if (cb >= smmu->num_context_banks)
+-					return -EINVAL;
++					return dev_err_probe(smmu->dev, -EINVAL,
++						"Uke handoff context bank %u outside %u banks\n",
++						cb, smmu->num_context_banks);
+ 				set_bit(cb, smmu->context_map);
+ 				set_bit(cb, smmu->boot_context_map);
+ 			}
+@@ -815,7 +820,7 @@
+ 	const __be32 *actlr;
+ 	int len, i, j;
+ 
+-	/* OEM Cliffs streams: DWC3/GPI0, plus UFS only in the boot profile. */
++	/* OEM Cliffs streams: DWC3/GPI0, plus UFS/GENI0 in the boot profile. */
+ 	if (!fwspec || !fwspec->num_ids)
+ 		return -EINVAL;
+ 	actlr = of_get_property(smmu->dev->of_node, "qcom,actlr", &len);
+@@ -825,9 +830,9 @@
+ 		u32 sid = fwspec->ids[i];
+ 
+ 		if (sid != 0x40 && sid != 0xb6 &&
+-		    !(sid == 0x60 && of_device_is_compatible(smmu->dev->of_node,
+-						"qcom,sm7675-boot-smmu")))
++		    !((sid == 0x60 || sid == 0xa3) &&
++		      of_device_is_compatible(smmu->dev->of_node, "qcom,sm7675-boot-smmu")))
+ 			return dev_err_probe(dev, -EOPNOTSUPP, "outside Uke boot SMMU scope\n");
+ 		/* None of these streams has an ACTLR override in OEM Cliffs DT. */
+ 		for (j = 0; actlr && j < len / sizeof(u32); j += 3)
+ 			if (!((sid ^ be32_to_cpu(actlr[j])) & ~be32_to_cpu(actlr[j + 1])))
