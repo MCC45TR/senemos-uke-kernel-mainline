@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.16%{?dist}
+Release:        1.17%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -206,6 +206,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Sun Oct 11 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.17
+- Use built-in simpledrm and DRM fbdev for the early firmware console.
+- Respect upstream exclusion of simpledrm and the legacy simplefb driver.
 * Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.8
 - Preserve OEM Uke WLAN forward rail order and reverse shutdown.
 - Keep partial enable ownership after failed cleanup for balanced retry.
