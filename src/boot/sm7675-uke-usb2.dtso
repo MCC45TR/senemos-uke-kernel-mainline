@@ -83,6 +83,31 @@
 	status = "okay";
 };
 
+/* Exact Uke second KTZ8866 bus; the transform gates all other QUP1 children. */
+&{/soc/qcom,qupv3_1_geni_se@8c0000} {
+	status = "okay";
+};
+
+&gpi_dma1 {
+	compatible = "qcom,sm8450-gpi-dma";
+	#dma-cells = <3>;
+	dma-channels = <12>;
+	dma-channel-mask = <0x1e>;
+	status = "okay";
+};
+
+&{/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000} {
+	compatible = "qcom,geni-i2c";
+	clock-names = "se";
+	clock-frequency = <400000>;
+	dmas = <&gpi_dma1 0 4 3>, <&gpi_dma1 1 4 3>;
+	status = "okay";
+};
+
+&aggre2_noc {
+	status = "okay";
+};
+
 &wcd_usbss {
 	compatible = "qcom,sm7675-wcd939x-usb2";
 	/* GPIOD assertion/release now expresses the OEM low/high reset sequence. */

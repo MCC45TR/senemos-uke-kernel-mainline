@@ -96,6 +96,10 @@
     {
       "path": "patches/7.2.9/0022-ktz8866-write-errors.patch",
       "sha256": "191e7b7d2d45547254f62679247e0826ab516a6c2c9364d46bb2dad947f999cd"
+    },
+    {
+      "path": "patches/7.2.9/0023-uke-qup1-backlight-bus.patch",
+      "sha256": "6ce2231e5a2ed8857e739778c3fdd8db1bfc20232c8ef8ea7f46b279b1aced9c"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

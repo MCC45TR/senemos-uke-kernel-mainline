@@ -59,11 +59,11 @@ int main() {
         assert(admit_sid(sid, false) == 0);
         assert(admit_sid(sid, true) == 0);
     }
-    for (unsigned int sid : {0x60, 0xa3, 0x11400}) {
+    for (unsigned int sid : {0x60, 0xa3, 0x423, 0x436, 0x11400}) {
         assert(admit_sid(sid, false) == -EOPNOTSUPP);
         assert(admit_sid(sid, true) == 0);
     }
-    for (unsigned int sid : {0x1400, 0x1401, 0x21400, 0x11401, 0x1c00, 0x1c01, 0xa2, 0xa4, 0xffff}) {
+    for (unsigned int sid : {0x1400, 0x1401, 0x21400, 0x11401, 0x1c00, 0x1c01, 0xa2, 0xa4, 0x422, 0x424, 0x435, 0x437, 0xffff}) {
         assert(admit_sid(sid, false) == -EOPNOTSUPP);
         assert(admit_sid(sid, true) == -EOPNOTSUPP);
     }
@@ -73,4 +73,4 @@ CPP
 grep -F 'sid == 0xa3' "$work/smmu.cpp" >/dev/null
 g++ -std=c++20 -O2 -Wall -Wextra -Werror "$work/smmu.cpp" -o "$work/smmu"
 "$work/smmu"
-echo 'Boot SMMU admission: five reviewed specs accepted; incorrect WLAN masks and reserved streams rejected'
+echo 'Boot SMMU admission: seven reviewed specs accepted; adjacent IDs, incorrect WLAN masks and reserved streams rejected'
