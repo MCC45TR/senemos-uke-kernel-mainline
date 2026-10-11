@@ -14,12 +14,17 @@ for mode in 'normal 20' 'recovery 1' 'bootloader 2'; do
     read -r name value <<< "$mode"
     [[ $(fdtget -t x "$out/admitted.dtb" /soc/reboot_reason "mode-$name") == "$value" ]]
 done
+apps=$(fdtget -t x "$out/admitted.dtb" /soc/apps-smmu@15000000 phandle)
+[[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,wcn6750 compatible) == 'xiaomi,uke-wcn6750-wifi qcom,wcn6750-wifi' ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,wcn6750 status) == okay ]]
+[[ $(fdtget -t x "$out/admitted.dtb" /soc/qcom,wcn6750 iommus) == "$apps 1400 1" ]]
+[[ $(fdtget -t x "$out/admitted.dtb" /soc/qcom,wcn6750 qcom,rproc) == "$(fdtget -t x "$input" /soc/remoteproc-wpss@9bb00000 phandle)" ]]
+[[ $(fdtget -t x "$out/admitted.dtb" /soc/qcom,wcn6750 memory-region) == "$(fdtget -t x "$input" /reserved-memory/wlan_msa_region@a6400000 phandle)" ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/ufshc@1d84000 compatible) == qcom,ufshc ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/ssusb@a600000 dr_mode) == peripheral ]]
 for path in /soc/qcom,pmic_glink /soc/qcom,pmic_glink_log /soc/qcom,pmic_glink/qcom,ucsi/connector; do
     [[ $(fdtget -t s "$out/admitted.dtb" "$path" status) == disabled ]]
 done
-apps=$(fdtget -t x "$out/admitted.dtb" /soc/apps-smmu@15000000 phandle)
 for target in 'ufshc@1d84000 60' 'ssusb@a600000 40' 'qcom,gpi-dma@a00000 b6' 'qcom,qupv3_0_geni_se@ac0000 a3'; do
     read -r node sid <<< "$target"
     status=$(fdtget -t s "$out/admitted.dtb" "/soc/$node" status)
@@ -38,7 +43,7 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id reboot-cell reboot-offset reboot-bits; do
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
         board) fdtput -t x "$out/$scenario.dtb" / qcom,board-id 9 0;;
@@ -54,6 +59,14 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
         reboot-cell) fdtput -t x "$out/$scenario.dtb" /soc/reboot_reason nvmem-cells deadbeef;;
         reboot-offset) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 reg 49 1;;
         reboot-bits) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 bits 0 8;;
+        wlan-sid) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 iommus "$apps" 1c00 1;;
+        wlan-mask) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 iommus "$apps" 1400 0;;
+        wlan-reg) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 reg 17110000 0 c0000000 10000;;
+        wlan-irq) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 interrupts 0 301 1;;
+        wlan-rproc) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 qcom,rproc-handle deadbeef;;
+        wlan-msa) fdtput -t x "$out/$scenario.dtb" /reserved-memory/wlan_msa_region@a6400000 reg 0 a6400000 0 1000;;
+        wlan-supply) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 vdd-1.3-rfa-supply deadbeef;;
+        wlan-voltage) fdtput -t x "$out/$scenario.dtb" /soc/rsc@17a00000/drv@2/rpmh-regulator-smpb3/regulator-pmxr2230-s3 qcom,init-voltage ffffff;;
     esac
     usb_input=$usb
     [[ $scenario != overlay ]] || usb_input=$out/bad.dtbo

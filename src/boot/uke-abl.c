@@ -92,15 +92,17 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		"/soc/ufshc@1d84000", "/soc/ssusb@a600000",
 		"/soc/qcom,gpi-dma@a00000",
 		"/soc/qcom,qupv3_0_geni_se@ac0000",
+		"/soc/qcom,wcn6750",
 	};
-	static const unsigned int sids[] = { 0x60, 0x40, 0xb6, 0xa3 };
+	static const unsigned int sids[] = { 0x60, 0x40, 0xb6, 0xa3, 0x1400 };
+	static const unsigned int masks[] = { 0, 0, 0, 0, 1 };
 	int smmu = fdt_path_offset(fdt, "/soc/apps-smmu@15000000");
 	unsigned int phandle;
 	int node, i, size, ret;
 
 	if (smmu < 0 || !(phandle = fdt_get_phandle(fdt, smmu)))
 		return -FDT_ERR_BADPHANDLE;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 5; i++) {
 		const fdt32_t *spec;
 
 		node = fdt_path_offset(fdt, paths[i]);
@@ -108,7 +110,7 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 			return node;
 		spec = fdt_getprop(fdt, node, "iommus", &size);
 		if (!spec || size != 12 || fdt32_to_cpu(spec[0]) != phandle ||
-		    fdt32_to_cpu(spec[1]) != sids[i] || fdt32_to_cpu(spec[2]))
+		    fdt32_to_cpu(spec[1]) != sids[i] || fdt32_to_cpu(spec[2]) != masks[i])
 			return -FDT_ERR_BADVALUE;
 	}
 	for (node = fdt_next_node(fdt, -1, NULL); node >= 0;
@@ -140,11 +142,11 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		}
 		if (!scoped)
 			continue;
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < 5; i++)
 			if (node == fdt_path_offset(fdt, paths[i]))
 				admitted = 1;
 		/* Disabled clients cannot reclaim firmware display streams or DMA
-		 * through this provider outside its four reviewed boot consumers.
+		 * through this provider outside its five reviewed consumers.
 		 */
 		if (!admitted) {
 			ret = fdt_setprop_string(fdt, node, "status", "disabled");
@@ -153,6 +155,64 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		}
 	}
 	return node == -FDT_ERR_NOTFOUND ? 0 : node;
+}
+
+static int UKE_INIT uke_wifi_graph(const void *fdt)
+{
+	static const char * const supplies[] = { "vdd-cx-mx-supply", "vdd-1.8-xo-supply", "vdd-1.3-rfa-supply" };
+	static const char * const resources[] = { "smpb3", "smpb1", "smpb2" };
+	static const unsigned int initial_uv[] = { 984000, 1856000, 1256000 };
+	int wifi = fdt_path_offset(fdt, "/soc/qcom,wcn6750");
+	int wpss = fdt_path_offset(fdt, "/soc/remoteproc-wpss@9bb00000");
+	int msa = fdt_path_offset(fdt, "/reserved-memory/wlan_msa_region@a6400000");
+	const fdt32_t *cells;
+	int size, i, target, parent;
+
+	if (wifi < 0 || wpss < 0 || msa < 0 ||
+	    fdt_node_check_compatible(fdt, wifi, "qcom,wcn6750") ||
+	    fdt_node_check_compatible(fdt, wpss, "qcom,cliffs-wpss-pas") ||
+	    uke_path_reg(fdt, "/soc/remoteproc-wpss@9bb00000", 0x9bb00000, 0x10000))
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, wifi, "qcom,rproc-handle", &size);
+	if (!cells || size != 4 || fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*cells)) != wpss)
+		return -FDT_ERR_BADPHANDLE;
+	cells = fdt_getprop(fdt, wifi, "qcom,wlan-msa-fixed-region", &size);
+	if (!cells || size != 4 || fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*cells)) != msa)
+		return -FDT_ERR_BADPHANDLE;
+	cells = fdt_getprop(fdt, msa, "reg", &size);
+	if (!cells || size != 16 || fdt32_to_cpu(cells[0]) ||
+	    fdt32_to_cpu(cells[1]) != 0xa6400000 || fdt32_to_cpu(cells[2]) ||
+	    fdt32_to_cpu(cells[3]) != 0xc00000 || !fdt_getprop(fdt, msa, "no-map", NULL))
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, wifi, "reg", &size);
+	if (!cells || size != 16 || fdt32_to_cpu(cells[0]) != 0x17110040 ||
+	    fdt32_to_cpu(cells[1]) || fdt32_to_cpu(cells[2]) != 0xc0000000 ||
+	    fdt32_to_cpu(cells[3]) != 0x10000)
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, wifi, "interrupts", &size);
+	if (!cells || size != 32 * 3 * 4)
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 32; i++)
+		if (fdt32_to_cpu(cells[i * 3]) || fdt32_to_cpu(cells[i * 3 + 1]) != 768U + (unsigned int)i ||
+		    fdt32_to_cpu(cells[i * 3 + 2]) != 1)
+			return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 3; i++) {
+		const char *resource;
+
+		cells = fdt_getprop(fdt, wifi, supplies[i], &size);
+		if (!cells || size != 4)
+			return -FDT_ERR_BADPHANDLE;
+		target = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*cells));
+		parent = fdt_parent_offset(fdt, target);
+		resource = fdt_getprop(fdt, parent, "qcom,resource-name", &size);
+		if (!resource || size != (int)strlen(resources[i]) + 1 ||
+		    strcmp(resource, resources[i]))
+			return -FDT_ERR_BADVALUE;
+		cells = fdt_getprop(fdt, target, "qcom,init-voltage", &size);
+		if (!cells || size != 4 || fdt32_to_cpu(*cells) != initial_uv[i])
+			return -FDT_ERR_BADVALUE;
+	}
+	return 0;
 }
 
 static int UKE_INIT uke_framebuffer(void *fdt)
@@ -244,7 +304,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    capacity > UKE_FDT_CAPACITY || capacity <= input_bytes ||
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
-	    uke_reboot_cell(input) ||
+	    uke_reboot_cell(input) || uke_wifi_graph(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||

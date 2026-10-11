@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.6}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.7}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -206,6 +206,10 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.7
+- Require exact Uke WCN6750 RF supplies and unwind failed firmware starts.
+- Admit only the OEM WLAN SMMU stream/mask while retaining translated DMA.
+
 * Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.6
 - Add exact Cliffs WPSS PAS and required CX/MX ARC proxy regulators.
 - Keep firmware startup manual and require AOP QMP; WLAN admission remains gated.

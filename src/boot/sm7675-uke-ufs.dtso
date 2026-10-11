@@ -101,6 +101,13 @@
 	compatible = "qcom,sm7675-boot-smmu", "qcom,sm7675-usb-smmu";
 };
 
+&{/soc/qcom,wcn6750} {
+	compatible = "xiaomi,uke-wcn6750-wifi", "qcom,wcn6750-wifi";
+	qcom,rproc = <&wpss_pas>;
+	memory-region = <&wlan_msa_mem>;
+	status = "okay";
+};
+
 &aggre1_noc { status = "okay"; };
 &cnoc_cfg { status = "okay"; };
 &cnoc_main { status = "okay"; };

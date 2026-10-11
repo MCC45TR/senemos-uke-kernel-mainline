@@ -33,6 +33,13 @@ upstream generic eUSB2 PHY/repeater and DWC3 core stay at their current
 implementations. The Uke legacy PHY/repeater and fixed WCD939x route remain
 separate, rebuilt drivers; Android vendor modules are never included.
 
+`0015` carries the reviewed UFS/GENI supply and SMMU admission into the
+package source, adds only the OEM Uke WLAN SMR ID/mask and RF resources,
+and requires all three RF supplies before ath11k starts WPSS. Failed
+starts unwind the supplies; failed release retains the enable state for
+retry. Other AHB boards retain their existing power path. Host fault
+fixtures and source compilation do not establish radio operation.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

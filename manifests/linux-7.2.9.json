@@ -64,6 +64,10 @@
     {
       "path": "patches/7.2.9/0014-cliffs-wpss-proxy-regulators.patch",
       "sha256": "702bcafd924ea245eb4d9b7b4874ab4a0484301ca46a03dc35f1e72220cbd3a5"
+    },
+    {
+      "path": "patches/7.2.9/0015-uke-wlan-supplies-and-dma.patch",
+      "sha256": "07194f96f8c4dda1e8cc7d503451561aee58118f72ad0ccd53aacdb0a21a822b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
