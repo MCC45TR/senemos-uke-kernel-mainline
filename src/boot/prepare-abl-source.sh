@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Host-only preparation on an isolated, already qualified 13-patch source tree.
+# Host-only preparation on an isolated, already qualified ordered source tree.
 set -Eeuo pipefail
 [[ $# == 2 && -d $1 && -d $2 ]] || exit 2
 kernel=$(realpath "$1") output=$(realpath "$2")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == 7.2.9 ]]
-[[ $(wc -l < "$kernel/senemos-applied-patches.txt") == 13 ]]
+cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 patch --batch --fuzz=0 -p1 -d "$kernel" < "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]

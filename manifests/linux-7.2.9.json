@@ -60,6 +60,10 @@
     {
       "path": "patches/7.2.9/0013-uke-usb-role-and-phy-error-gates.patch",
       "sha256": "2610daab7f7b4ed8fcf53ecee8077df1c49abd4c58ebd40ffc2117b013672dbc"
+    },
+    {
+      "path": "patches/7.2.9/0014-cliffs-wpss-proxy-regulators.patch",
+      "sha256": "702bcafd924ea245eb4d9b7b4874ab4a0484301ca46a03dc35f1e72220cbd3a5"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

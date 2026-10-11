@@ -1,5 +1,12 @@
 # Linux 7.2.9 Uke adaptation
 
+Patch 14 adapts Cliffs WPSS PAS metadata and mandatory CX/MX ARC proxy
+regulators from the pinned Uke OEM kernel/DT sources. Startup remains manual;
+the driver requires AOP load-state QMP. It does not admit WLAN DMA, firmware
+redistribution or Wi-Fi hardware acceptance. Run the host fault fixture against
+the prepared source with `bash tests/wpss-proxy-contract.sh PATH/TO/qcom_q6v5_pas.c`.
+Existing 13-patch boot pairs retain their own pinned package/module tuple.
+
 The first seven patches are derived from the public Uke Linux 6.12
 port at `32cad9ccd383ff4b37d8a5e7f88a8bfdcc07307e` by
 [ztsubaki](https://github.com/ztsubaki/uke-linux), specifically
