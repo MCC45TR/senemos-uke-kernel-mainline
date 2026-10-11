@@ -16,6 +16,13 @@ matching modules and Fedora RPM/SRPM packages. Local source verification,
 compilation, module ABI and package lifecycle checks have separate records.
 Native AArch64 builds are published through the development COPR.
 
+The next display candidate enables upstream `simpledrm` as a module for the
+existing firmware framebuffer. It provides a possible software-rendered
+Wayland scanout path while the Adreno 732 native GPU/GMU/SMMU port remains open.
+The paired normal-backlight candidate preserves firmware initialization and
+requires independent physical brightness and recovery tests. Neither change
+establishes accelerated graphics, panel ownership or sensor-driven rotation.
+
 **Physical boot and peripheral support are still untested.** Packages are
 development candidates. A Core filesystem candidate exists; qualified Uke UEFI
 boot integration remains open. Compatibility is recorded separately for
