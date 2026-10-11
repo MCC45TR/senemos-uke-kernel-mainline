@@ -84,6 +84,10 @@
     {
       "path": "patches/7.2.9/0019-spmi-sdam-nvmem-aperture.patch",
       "sha256": "6ac3d7aea7418820bd681892b976ae4970f38f9417b336588cbe6a77a8c99591"
+    },
+    {
+      "path": "patches/7.2.9/0020-cliffs-adsp-pas.patch",
+      "sha256": "2326508be6c6c31c1a261b731988d855d9b08c99461ae95685184e1471c9b276"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

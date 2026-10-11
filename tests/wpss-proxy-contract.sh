@@ -103,12 +103,17 @@ int main() {
 }
 CPP
 } > "$work/check.cpp"
-grep -F 'WPSS requires AOP load-state QMP' "$source_file" >/dev/null
+grep -F 'Cliffs PAS requires AOP load-state QMP' "$source_file" >/dev/null
 grep -F '"qcom,cliffs-wpss-pas", .data = &cliffs_wpss_resource' "$source_file" >/dev/null
 awk '/^static const struct qcom_pas_data cliffs_wpss_resource/ { emit=1 } emit { print } emit && /^};/ { exit }' "$source_file" > "$work/match"
 for value in '.crash_reason_smem = 626' '.pas_id = 6' '.minidump_id = 4' '.auto_boot = false' '.ssctl_id = 0x19' '.proxy_regulator_level = RPMH_REGULATOR_LEVEL_TURBO'; do
     grep -F "$value" "$work/match" >/dev/null
 done
+grep -F '"qcom,cliffs-adsp-pas", .data = &cliffs_adsp_resource' "$source_file" >/dev/null
+awk '/^static const struct qcom_pas_data cliffs_adsp_resource/ { emit=1 } emit { print } emit && /^};/ { exit }' "$source_file" > "$work/adsp-match"
+for value in '.crash_reason_smem = 423' '.firmware_name = "adsp.mdt"' '.dtb_firmware_name = "adsp_dtb.mdt"' '.pas_id = 1,' '.dtb_pas_id = 0x24' '.minidump_id = 5' '.auto_boot = false' '.load_state = "adsp"' '.ssr_name = "lpass"' '.ssctl_id = 0x14' '.smem_host_id = 2' '.proxy_regulator_level = RPMH_REGULATOR_LEVEL_TURBO'; do
+    grep -F "$value" "$work/adsp-match" >/dev/null
+done
 g++ -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'WPSS proxy faults, required supplies, deferred provider, vote cleanup and legacy genpd path: passed\n'
+printf 'Cliffs WPSS/ADSP descriptors, proxy faults, required supplies, deferred provider, vote cleanup and legacy genpd path: passed\n'

@@ -17,3 +17,4 @@
 0017-cliffs-gpio-function-flag.patch
 0018-rpmsg-channel-modalias-fallback.patch
 0019-spmi-sdam-nvmem-aperture.patch
+0020-cliffs-adsp-pas.patch
