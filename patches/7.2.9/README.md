@@ -56,6 +56,11 @@ intents without an OF compatible. Both sysfs and uevents now permit normal
 QRTR module autoloading; compatible-bearing OF aliases and errors remain
 unchanged. `tests/rpmsg-alias-contract.sh` checks the actual functions.
 
+`0019` includes SDAM's data start in its NVMEM provider aperture. Cell
+offsets remain register-relative; the existing hardware bounds and write
+protections remain intact. `tests/sdam-aperture-contract.sh` checks the
+actual size assignment and bounds predicate, including the final byte.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

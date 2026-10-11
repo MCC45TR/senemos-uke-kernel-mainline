@@ -80,6 +80,10 @@
     {
       "path": "patches/7.2.9/0018-rpmsg-channel-modalias-fallback.patch",
       "sha256": "95ddc361e9d213d72e5c097d202530f658d99e1b78b22353e4f68490fcc537c9"
+    },
+    {
+      "path": "patches/7.2.9/0019-spmi-sdam-nvmem-aperture.patch",
+      "sha256": "6ac3d7aea7418820bd681892b976ae4970f38f9417b336588cbe6a77a8c99591"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
