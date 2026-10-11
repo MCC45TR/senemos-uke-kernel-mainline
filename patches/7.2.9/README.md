@@ -78,6 +78,14 @@ with the prepared driver and pinned OEM driver to check table identity,
 probe failures, deferred providers and retained votes. Native compilation
 and these host checks do not establish DRM or accelerated graphics.
 
+`0022` propagates KTZ8866 enable, brightness and initialization I2C errors
+instead of reporting success. Failed enable/disable operations retain the
+recorded LED state; a failed low-byte write cannot continue to latch the
+high byte. Probe also returns initialization and initial-level failures.
+`tests/backlight-write-contract.sh` injects faults into the actual functions
+and checks boundary levels. This preserves existing upstream setup and does
+not bind the OEM dual-controller graph or qualify Uke brightness control.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
