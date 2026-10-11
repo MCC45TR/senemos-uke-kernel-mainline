@@ -51,6 +51,11 @@ initializer. The upstream generic predicate requires its GPIO flag to
 permit GPIO pinctrl and consumer ownership together. This addresses the
 observed GPIO 119 conflict without weakening strict pin ownership.
 
+`0018` keeps the RPMSG service alias when a GLINK channel node supplies
+intents without an OF compatible. Both sysfs and uevents now permit normal
+QRTR module autoloading; compatible-bearing OF aliases and errors remain
+unchanged. `tests/rpmsg-alias-contract.sh` checks the actual functions.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

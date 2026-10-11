@@ -76,6 +76,10 @@
     {
       "path": "patches/7.2.9/0017-cliffs-gpio-function-flag.patch",
       "sha256": "7b87ac3a643c166f768485128b8b1e693a8fc4d6d91fba931493c6c33ebca514"
+    },
+    {
+      "path": "patches/7.2.9/0018-rpmsg-channel-modalias-fallback.patch",
+      "sha256": "95ddc361e9d213d72e5c097d202530f658d99e1b78b22353e4f68490fcc537c9"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
