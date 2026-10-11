@@ -61,6 +61,13 @@ offsets remain register-relative; the existing hardware bounds and write
 protections remain intact. `tests/sdam-aperture-contract.sh` checks the
 actual size assignment and bounds predicate, including the final byte.
 
+`0020` adds the exact Uke Cliffs ADSP PAS/DTB identity with manual startup,
+reusing the fault-checked CX/MX proxy votes and mandatory AOP QMP path.
+The pinned OEM PAS descriptor and Uke DT establish its IDs, names and
+levels. The shared proxy fixture checks both ADSP and WPSS descriptors.
+This does not port CDSP/NSP memory assignment, FastRPC context banks or
+sensor services, and firmware delivery remains private and separate.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
