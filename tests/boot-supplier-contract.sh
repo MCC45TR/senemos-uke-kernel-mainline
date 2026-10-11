@@ -21,9 +21,9 @@ CPP
     return 0;
 }
 int main() {
-    for (const char *name : {"cx.lvl", "mx.lvl", "ldob2", "ldob4", "ldob7", "ldob17", "smpb1", "smpb2", "smpb3", "ldod1", "ldob5", "ldob12", "ldod3"})
+    for (const char *name : {"cx.lvl", "mx.lvl", "lcx.lvl", "lmx.lvl", "mxc.lvl", "ldob2", "ldob4", "ldob7", "ldob17", "smpb1", "smpb2", "smpb3", "ldod1", "ldob5", "ldob12", "ldod3"})
         assert(admit(name) == 0);
-    for (const char *name : {"", "ldob1", "smpb4", "ldod2", "smpb2-extra", "other"})
+    for (const char *name : {"", "ldob1", "smpb4", "ldod2", "smpb2-extra", "lcx.lvl-extra", "lmx.lvl-extra", "mxc.lvl-extra", "other"})
         assert(admit(name) == -ENODEV);
 }
 CPP
@@ -31,7 +31,7 @@ CPP
 grep -F 'strcmp(aggr_vreg->resource_name, "smpb2")' "$work/check.cpp" >/dev/null
 g++ -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
 "$work/check"
-echo 'Boot supply admission: thirteen OEM resources accepted; unrelated resources rejected'
+echo 'Boot supply admission: sixteen OEM resources accepted; unrelated resources rejected'
 {
     cat <<'CPP'
 #include <cassert>

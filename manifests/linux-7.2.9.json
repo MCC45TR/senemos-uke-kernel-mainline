@@ -100,6 +100,10 @@
     {
       "path": "patches/7.2.9/0023-uke-qup1-backlight-bus.patch",
       "sha256": "6ce2231e5a2ed8857e739778c3fdd8db1bfc20232c8ef8ea7f46b279b1aced9c"
+    },
+    {
+      "path": "patches/7.2.9/0024-uke-adsp-gpu-arc-suppliers.patch",
+      "sha256": "52272d96a6e364cee9d2665f24ba52cb9dac72444b9095e2c980692c6c523490"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
