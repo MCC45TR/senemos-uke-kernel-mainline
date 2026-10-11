@@ -88,6 +88,22 @@
     {
       "path": "patches/7.2.9/0020-cliffs-adsp-pas.patch",
       "sha256": "2326508be6c6c31c1a261b731988d855d9b08c99461ae95685184e1471c9b276"
+    },
+    {
+      "path": "patches/7.2.9/0021-cliffs-gpu-clock-handoff.patch",
+      "sha256": "949196481b277ee72db76418a29a563bd2faad03eac83aec976fde3d69ea2638"
+    },
+    {
+      "path": "patches/7.2.9/0022-ktz8866-write-errors.patch",
+      "sha256": "191e7b7d2d45547254f62679247e0826ab516a6c2c9364d46bb2dad947f999cd"
+    },
+    {
+      "path": "patches/7.2.9/0023-uke-qup1-backlight-bus.patch",
+      "sha256": "6ce2231e5a2ed8857e739778c3fdd8db1bfc20232c8ef8ea7f46b279b1aced9c"
+    },
+    {
+      "path": "patches/7.2.9/0024-uke-adsp-gpu-arc-suppliers.patch",
+      "sha256": "52272d96a6e364cee9d2665f24ba52cb9dac72444b9095e2c980692c6c523490"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -99,7 +115,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "f84cf917915682a1214cbb06c0caee1956b1d27711ee196212fea6ec67d563fa"
+      "sha256": "1b0c0865f43cc2f707030f8727474d94a34c3ee558d1ad30b4ceb28180586cf3"
     },
     {
       "path": "configs/fedora.config",

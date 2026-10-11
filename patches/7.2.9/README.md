@@ -68,6 +68,38 @@ levels. The shared proxy fixture checks both ADSP and WPSS descriptors.
 This does not port CDSP/NSP memory assignment, FastRPC context banks or
 sensor services, and firmware delivery remains private and separate.
 
+`0021` ports the Cliffs GPU clock provider from the pinned Uke OEM kernel
+`5712080a4b0c0b1a879e6d145c601c649ddaddfd`. Clock IDs, parents, frequency
+tables and reset registers remain OEM-derived. Probe preserves firmware
+PLLs, gates and voltage references; provider synchronization releases the
+proxy vote only after boot-clock handoff succeeds. The existing clock/VDD
+helpers handle error cleanup. Run `tests/gpu-clock-handoff-contract.sh`
+with the prepared driver and pinned OEM driver to check table identity,
+probe failures, deferred providers and retained votes. Native compilation
+and these host checks do not establish DRM or accelerated graphics.
+
+`0022` propagates KTZ8866 enable, brightness and initialization I2C errors
+instead of reporting success. Failed enable/disable operations retain the
+recorded LED state; a failed low-byte write cannot continue to latch the
+high byte. Probe also returns initialization and initial-level failures.
+`tests/backlight-write-contract.sh` injects faults into the actual functions
+and checks boundary levels. This preserves existing upstream setup and does
+not bind the OEM dual-controller graph or qualify Uke brightness control.
+
+`0023` supplies exact OEM QUP1 core/configuration/memory NoC paths and
+admits only its wrapper/GPI1 streams (0x423/0x436) in the existing translated
+DMA profile. The ABL transform validates the second KTZ8866 bus and OEM DMA
+route before converting its binding, and disables all other QUP1 serial
+engines and I2C children. Adjacent stream IDs remain rejected. Native
+objects, the actual NoC graph fixture and malformed-DT tests are host/build
+evidence; both backlight drivers and physical level control remain separate.
+
+`0024` admits the exact live Uke ADSP LCX/LMX and GPUCC MXC ARC resources.
+The existing command-database ARC path retains OEM levels and error handling;
+no neighboring rail or guessed voltage is substituted. The actual supply
+fixture admits sixteen exact names and rejects unrelated/extended names.
+Physical provider binding and DSP/graphics operation remain separate gates.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

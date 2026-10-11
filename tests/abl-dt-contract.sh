@@ -38,11 +38,24 @@ apps=$(fdtget -t x "$out/admitted.dtb" /soc/apps-smmu@15000000 phandle)
 for path in /soc/qcom,pmic_glink /soc/qcom,pmic_glink_log /soc/qcom,pmic_glink/qcom,ucsi/connector; do
     [[ $(fdtget -t s "$out/admitted.dtb" "$path" status) == disabled ]]
 done
-for target in 'ufshc@1d84000 60' 'ssusb@a600000 40' 'qcom,gpi-dma@a00000 b6' 'qcom,qupv3_0_geni_se@ac0000 a3'; do
+for target in 'ufshc@1d84000 60' 'ssusb@a600000 40' 'qcom,gpi-dma@a00000 b6' 'qcom,qupv3_0_geni_se@ac0000 a3' 'qcom,gpi-dma@800000 436' 'qcom,qupv3_1_geni_se@8c0000 423'; do
     read -r node sid <<< "$target"
     status=$(fdtget -t s "$out/admitted.dtb" "/soc/$node" status)
     [[ $status == okay || $status == ok ]]
     [[ $(fdtget -t x "$out/admitted.dtb" "/soc/$node" iommus) == "$apps $sid 0" ]]
+done
+second=/soc/qcom,qupv3_1_geni_se@8c0000
+bus=$second/i2c@890000
+gpi=$(fdtget -t x "$input" /soc/qcom,gpi-dma@800000 phandle)
+[[ $(fdtget -t s "$out/admitted.dtb" "$bus" compatible) == qcom,geni-i2c ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$bus" clock-names) == se ]]
+[[ $(fdtget -t u "$out/admitted.dtb" "$bus" clock-frequency) == 400000 ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$bus" dmas) == "$gpi 0 4 3 $gpi 1 4 3" ]]
+for parent in "$second" "$bus"; do
+    for child in $(fdtget -l "$out/admitted.dtb" "$parent"); do
+        case "$parent/$child" in "$bus"|"$bus/ktz8866@11") continue;; esac
+        [[ $(fdtget -t s "$out/admitted.dtb" "$parent/$child" status) == disabled ]]
+    done
 done
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000 status) == okay ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/wcd939x_i2c@e status) == okay ]]
@@ -56,7 +69,7 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
         board) fdtput -t x "$out/$scenario.dtb" / qcom,board-id 9 0;;
@@ -69,6 +82,18 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
         iommu-length) fdtput -t x "$out/$scenario.dtb" /soc/ufshc@1d84000 iommus "$apps" 60;;
         iommu-id) fdtput -t x "$out/$scenario.dtb" /soc/ufshc@1d84000 iommus "$apps" 1c00 2;;
         geni-id) fdtput -t x "$out/$scenario.dtb" /soc/qcom,qupv3_0_geni_se@ac0000 iommus "$apps" a4 0;;
+        second-geni-id) fdtput -t x "$out/$scenario.dtb" "$second" iommus "$apps" 422 0;;
+        second-gpi-id) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gpi-dma@800000 iommus "$apps" 435 0;;
+        second-bus-reg) fdtput -t x "$out/$scenario.dtb" "$bus" reg 8a0000 4000;;
+        second-dma-length) fdtput -t x "$out/$scenario.dtb" "$bus" dmas "$gpi" 0 4 3;;
+        second-dma-route) fdtput -t x "$out/$scenario.dtb" "$bus" dmas "$gpi" 0 3 3 40 0 "$gpi" 1 3 3 40 0;;
+        second-dma-cells) fdtput -t u "$out/$scenario.dtb" /soc/qcom,gpi-dma@800000 '#dma-cells' 3;;
+        second-dma-count) fdtput -t u "$out/$scenario.dtb" /soc/qcom,gpi-dma@800000 qcom,max-num-gpii 16;;
+        second-dma-mask) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gpi-dma@800000 qcom,gpii-mask 1f;;
+        second-dma-offset) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gpi-dma@800000 qcom,gpi-ee-offset 0;;
+        second-bus-frequency) fdtput -t u "$out/$scenario.dtb" "$bus" qcom,clk-freq-out 100000;;
+        second-backlight-reg) fdtput -t x "$out/$scenario.dtb" "$bus/ktz8866@11" reg 10;;
+        second-backlight-compatible) fdtput -t s "$out/$scenario.dtb" "$bus/ktz8866@11" compatible kinetic,ktz8866;;
         reboot-cell) fdtput -t x "$out/$scenario.dtb" /soc/reboot_reason nvmem-cells deadbeef;;
         reboot-offset) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 reg 49 1;;
         reboot-bits) fdtput -t x "$out/$scenario.dtb" /soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7100/restart@48 bits 0 8;;

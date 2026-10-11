@@ -133,17 +133,20 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		"/soc/ufshc@1d84000", "/soc/ssusb@a600000",
 		"/soc/qcom,gpi-dma@a00000",
 		"/soc/qcom,qupv3_0_geni_se@ac0000",
+		"/soc/qcom,qupv3_1_geni_se@8c0000",
+		"/soc/qcom,gpi-dma@800000",
 		"/soc/qcom,wcn6750",
 	};
-	static const unsigned int sids[] = { 0x60, 0x40, 0xb6, 0xa3, 0x1400 };
-	static const unsigned int masks[] = { 0, 0, 0, 0, 1 };
+	static const unsigned int sids[] = { 0x60, 0x40, 0xb6, 0xa3, 0x423, 0x436, 0x1400 };
+	static const unsigned int masks[] = { 0, 0, 0, 0, 0, 0, 1 };
 	int smmu = fdt_path_offset(fdt, "/soc/apps-smmu@15000000");
 	unsigned int phandle;
-	int node, i, size, ret;
+	int node, size, ret;
+	unsigned int i;
 
 	if (smmu < 0 || !(phandle = fdt_get_phandle(fdt, smmu)))
 		return -FDT_ERR_BADPHANDLE;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
 		const fdt32_t *spec;
 
 		node = fdt_path_offset(fdt, paths[i]);
@@ -183,11 +186,11 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		}
 		if (!scoped)
 			continue;
-		for (i = 0; i < 5; i++)
+		for (i = 0; i < sizeof(paths) / sizeof(paths[0]); i++)
 			if (node == fdt_path_offset(fdt, paths[i]))
 				admitted = 1;
 		/* Disabled clients cannot reclaim firmware display streams or DMA
-		 * through this provider outside its five reviewed consumers.
+		 * through this provider outside its seven reviewed consumers.
 		 */
 		if (!admitted) {
 			ret = fdt_setprop_string(fdt, node, "status", "disabled");
@@ -196,6 +199,79 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 		}
 	}
 	return node == -FDT_ERR_NOTFOUND ? 0 : node;
+}
+
+static int UKE_INIT uke_backlight_bus(const void *fdt)
+{
+	const char *bus = "/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000";
+	int node = fdt_path_offset(fdt, bus), size, i;
+	int dma = fdt_path_offset(fdt, "/soc/qcom,gpi-dma@800000");
+	int ktz = fdt_path_offset(fdt, "/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000/ktz8866@11");
+	const fdt32_t *value;
+	unsigned int phandle;
+	static const unsigned int route[] = { 0, 4, 3, 64, 0, 1, 4, 3, 64, 0 };
+	static const char * const dma_props[] = {
+		"#dma-cells", "qcom,max-num-gpii", "qcom,gpii-mask", "qcom,gpi-ee-offset",
+	};
+	static const unsigned int dma_values[] = { 5, 12, 0x1e, 0x10000 };
+
+	if (node < 0 || dma < 0 || ktz < 0 || !(phandle = fdt_get_phandle(fdt, dma)) ||
+	    fdt_node_check_compatible(fdt, node, "qcom,i2c-geni") ||
+	    fdt_node_check_compatible(fdt, dma, "qcom,gpi-dma") ||
+	    fdt_node_check_compatible(fdt, ktz, "ktz,ktz8866") ||
+	    uke_path_reg(fdt, bus, 0x890000, 0x4000) ||
+	    uke_path_reg(fdt, "/soc/qcom,qupv3_1_geni_se@8c0000", 0x8c0000, 0x2000) ||
+	    uke_path_reg(fdt, "/soc/qcom,gpi-dma@800000", 0x800000, 0x60000))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, ktz, "reg", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 0x11)
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 4; i++) {
+		value = fdt_getprop(fdt, dma, dma_props[i], &size);
+		if (!value || size != 4 || fdt32_to_cpu(*value) != dma_values[i])
+			return -FDT_ERR_BADVALUE;
+	}
+	value = fdt_getprop(fdt, node, "dmas", &size);
+	if (!value || size != (int)(12 * sizeof(*value)))
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 2; i++) {
+		int j;
+		if (fdt32_to_cpu(value[i * 6]) != phandle)
+			return -FDT_ERR_BADVALUE;
+		for (j = 0; j < 5; j++)
+			if (fdt32_to_cpu(value[i * 6 + j + 1]) != route[i * 5 + j])
+				return -FDT_ERR_BADVALUE;
+	}
+	value = fdt_getprop(fdt, node, "qcom,clk-freq-out", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 400000)
+		return -FDT_ERR_BADVALUE;
+	return 0;
+}
+
+static int UKE_INIT uke_scope_second_qup(void *fdt)
+{
+	static const char * const parents[] = {
+		"/soc/qcom,qupv3_1_geni_se@8c0000",
+		"/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000",
+	};
+	static const char * const admitted[] = { "i2c@890000", "ktz8866@11" };
+	int i, parent, child, ret;
+
+	for (i = 0; i < 2; i++) {
+		parent = fdt_path_offset(fdt, parents[i]);
+		if (parent < 0)
+			return parent;
+		fdt_for_each_subnode(child, fdt, parent) {
+			if (!strcmp(fdt_get_name(fdt, child, NULL), admitted[i]))
+				continue;
+			ret = fdt_setprop_string(fdt, child, "status", "disabled");
+			if (ret)
+				return ret;
+		}
+		if (child != -FDT_ERR_NOTFOUND)
+			return child;
+	}
+	return 0;
 }
 
 static int UKE_INIT uke_wifi_graph(const void *fdt)
@@ -346,6 +422,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
 	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) ||
+	    uke_backlight_bus(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
@@ -377,6 +454,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_delete_optional(output, "/soc/ssusb@a600000", "usb-role-switch");
+	if (ret)
+		return ret;
+	ret = uke_scope_second_qup(output);
 	if (ret)
 		return ret;
 	ret = uke_scope_smmu_clients(output);
