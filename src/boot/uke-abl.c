@@ -86,6 +86,47 @@ static int UKE_INIT uke_reboot_cell(const void *fdt)
 	return 0;
 }
 
+static int UKE_INIT uke_legacy_layout(const void *fdt)
+{
+	static const struct {
+		const char *path, *property;
+		unsigned int count, values[6];
+	} expected[] = {
+		{ "/soc", "#address-cells", 1, { 1 } },
+		{ "/soc", "#size-cells", 1, { 1 } },
+		{ "/soc/mmio-sram@17D09400", "#address-cells", 1, { 2 } },
+		{ "/soc/mmio-sram@17D09400", "#size-cells", 1, { 2 } },
+		{ "/soc/mmio-sram@17D09400", "reg", 4, { 0, 0x17d09400, 0, 0x400 } },
+		{ "/soc/mmio-sram@17D09400", "ranges", 6, { 0, 0, 0, 0x17d09400, 0, 0x400 } },
+		{ "/soc/mmio-sram@17D09400/scmi-shmem@0", "reg", 4, { 0, 0x17d09400, 0, 0x400 } },
+		{ "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000", "reg", 1, { 0x7000 } },
+		{ "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/smb1510_present@5d", "reg", 2, { 0x5d, 1 } },
+		{ "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/smb1510_present@5d", "bits", 2, { 5, 5 } },
+		{ "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/ufs_dev@ad", "reg", 2, { 0xaf, 1 } },
+		{ "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/ufs_dev@ad", "bits", 2, { 0, 0 } },
+	};
+	unsigned int i, j;
+	int node, size;
+	const fdt32_t *value;
+
+	for (i = 0; i < sizeof(expected) / sizeof(expected[0]); i++) {
+		node = fdt_path_offset(fdt, expected[i].path);
+		if (node < 0)
+			return node;
+		value = fdt_getprop(fdt, node, expected[i].property, &size);
+		if (!value || size != (int)(expected[i].count * sizeof(*value)))
+			return -FDT_ERR_BADVALUE;
+		for (j = 0; j < expected[i].count; j++)
+			if (fdt32_to_cpu(value[j]) != expected[i].values[j])
+				return -FDT_ERR_BADVALUE;
+	}
+	if (fdt_node_check_compatible(fdt, fdt_path_offset(fdt, "/soc/mmio-sram@17D09400"), "mmio-sram") ||
+	    fdt_node_check_compatible(fdt, fdt_path_offset(fdt, "/soc/mmio-sram@17D09400/scmi-shmem@0"), "arm,scmi-shmem") ||
+	    fdt_node_check_compatible(fdt, fdt_path_offset(fdt, "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000"), "qcom,spmi-sdam"))
+		return -FDT_ERR_BADVALUE;
+	return 0;
+}
+
 static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 {
 	static const char * const paths[] = {
@@ -304,7 +345,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    capacity > UKE_FDT_CAPACITY || capacity <= input_bytes ||
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
-	    uke_reboot_cell(input) || uke_wifi_graph(input) ||
+	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
@@ -317,6 +358,10 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = fdt_overlay_apply(output, usb_overlay);
+	if (ret)
+		return ret;
+	/* OEM zero-width bits means the whole byte; upstream rejects bits=<0 0>. */
+	ret = uke_delete_optional(output, "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/ufs_dev@ad", "bits");
 	if (ret)
 		return ret;
 	ret = uke_delete_optional(output, "/soc/ufshc@1d84000", "msi-parent");

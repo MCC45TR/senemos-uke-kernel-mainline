@@ -14,6 +14,19 @@ for mode in 'normal 20' 'recovery 1' 'bootloader 2'; do
     read -r name value <<< "$mode"
     [[ $(fdtget -t x "$out/admitted.dtb" /soc/reboot_reason "mode-$name") == "$value" ]]
 done
+sram=/soc/mmio-sram@17D09400
+sdam=/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000
+[[ $(fdtget -t x "$out/admitted.dtb" "$sram" reg) == '17d09400 400' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$sram" ranges) == '0 0 17d09400 0 400' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$sram/scmi-shmem@0" reg) == '0 0 0 400' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$sdam/smb1510_present@5d" reg) == '5d 2' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$sdam/smb1510_present@5d" bits) == '5 5' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$sdam/ufs_dev@ad" reg) == 'af 1' ]]
+if fdtget "$out/admitted.dtb" "$sdam/ufs_dev@ad" bits 2>/dev/null; then exit 1; fi
+for node in "$sram" "$sram/scmi-shmem@0" "$sdam" "$sdam/smb1510_present@5d" "$sdam/ufs_dev@ad"; do
+    [[ $(fdtget -t x "$out/admitted.dtb" "$node" phandle) == "$(fdtget -t x "$input" "$node" phandle)" ]]
+done
+[[ $(fdtget -t x "$out/admitted.dtb" "$sdam/ocp-log@76" reg) == "$(fdtget -t x "$input" "$sdam/ocp-log@76" reg)" ]]
 apps=$(fdtget -t x "$out/admitted.dtb" /soc/apps-smmu@15000000 phandle)
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,wcn6750 compatible) == 'xiaomi,uke-wcn6750-wifi qcom,wcn6750-wifi' ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,wcn6750 status) == okay ]]
@@ -43,7 +56,7 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage; do
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
         board) fdtput -t x "$out/$scenario.dtb" / qcom,board-id 9 0;;
@@ -67,6 +80,16 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
         wlan-msa) fdtput -t x "$out/$scenario.dtb" /reserved-memory/wlan_msa_region@a6400000 reg 0 a6400000 0 1000;;
         wlan-supply) fdtput -t x "$out/$scenario.dtb" /soc/qcom,wcn6750 vdd-1.3-rfa-supply deadbeef;;
         wlan-voltage) fdtput -t x "$out/$scenario.dtb" /soc/rsc@17a00000/drv@2/rpmh-regulator-smpb3/regulator-pmxr2230-s3 qcom,init-voltage ffffff;;
+        soc-cells) fdtput -t x "$out/$scenario.dtb" /soc '#address-cells' 2;;
+        sram-cells) fdtput -t x "$out/$scenario.dtb" "$sram" '#size-cells' 1;;
+        sram-reg) fdtput -t x "$out/$scenario.dtb" "$sram" reg 0 17d09400 0 800;;
+        sram-range) fdtput -t x "$out/$scenario.dtb" "$sram" ranges 0 0 0 17d09500 0 400;;
+        sram-child) fdtput -t x "$out/$scenario.dtb" "$sram/scmi-shmem@0" reg 0 17d09400 0 800;;
+        sram-compatible) fdtput -t s "$out/$scenario.dtb" "$sram" compatible simple-bus;;
+        sdam-reg) fdtput -t x "$out/$scenario.dtb" "$sdam" reg 7100;;
+        sdam-bits) fdtput -t x "$out/$scenario.dtb" "$sdam/smb1510_present@5d" bits 5 1;;
+        sdam-size) fdtput -t x "$out/$scenario.dtb" "$sdam/smb1510_present@5d" reg 5d 2;;
+        ufs-cell) fdtput -t x "$out/$scenario.dtb" "$sdam/ufs_dev@ad" reg ad 1;;
     esac
     usb_input=$usb
     [[ $scenario != overlay ]] || usb_input=$out/bad.dtbo

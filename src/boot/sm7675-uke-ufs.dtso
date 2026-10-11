@@ -34,6 +34,21 @@
 	mode-bootloader = <0x02>;
 };
 
+/* Parent /soc uses one address and size cell; child SRAM offsets use two. */
+&{/soc/mmio-sram@17D09400} {
+	reg = <0x17d09400 0x400>;
+	ranges = <0 0 0x17d09400 0 0x400>;
+};
+
+&{/soc/mmio-sram@17D09400/scmi-shmem@0} {
+	reg = <0 0 0 0x400>;
+};
+
+/* OEM NVMEM expands this five-bit field at bit five into two bytes. */
+&{/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/smb1510_present@5d} {
+	reg = <0x5d 2>;
+};
+
 &ufsphy_mem {
 	compatible = "qcom,sm7675-qmp-ufs-phy";
 	clocks = <&rpmhcc RPMH_CXO_PAD_CLK>,
