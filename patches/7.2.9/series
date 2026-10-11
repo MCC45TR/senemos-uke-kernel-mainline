@@ -18,3 +18,4 @@
 0018-rpmsg-channel-modalias-fallback.patch
 0019-spmi-sdam-nvmem-aperture.patch
 0020-cliffs-adsp-pas.patch
+0021-cliffs-gpu-clock-handoff.patch

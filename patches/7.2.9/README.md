@@ -68,6 +68,16 @@ levels. The shared proxy fixture checks both ADSP and WPSS descriptors.
 This does not port CDSP/NSP memory assignment, FastRPC context banks or
 sensor services, and firmware delivery remains private and separate.
 
+`0021` ports the Cliffs GPU clock provider from the pinned Uke OEM kernel
+`5712080a4b0c0b1a879e6d145c601c649ddaddfd`. Clock IDs, parents, frequency
+tables and reset registers remain OEM-derived. Probe preserves firmware
+PLLs, gates and voltage references; provider synchronization releases the
+proxy vote only after boot-clock handoff succeeds. The existing clock/VDD
+helpers handle error cleanup. Run `tests/gpu-clock-handoff-contract.sh`
+with the prepared driver and pinned OEM driver to check table identity,
+probe failures, deferred providers and retained votes. Native compilation
+and these host checks do not establish DRM or accelerated graphics.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
