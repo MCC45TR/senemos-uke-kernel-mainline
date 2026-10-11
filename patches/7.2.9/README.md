@@ -40,6 +40,17 @@ starts unwind the supplies; failed release retains the enable state for
 retry. Other AHB boards retain their existing power path. Host fault
 fixtures and source compilation do not establish radio operation.
 
+`0016` corrects the bulk RF enable path to preserve the OEM ICNSS forward
+rail order. Reverse shutdown stops on failure and retains the enabled
+prefix, allowing a later retry without duplicate votes. Fault fixtures
+cover each enable/disable position and failed partial cleanup. The 1.7
+package is superseded for WLAN startup; it was not physically radio-tested.
+
+`0017` marks the Cliffs GPIO function using the standard Qualcomm GPIO
+initializer. The upstream generic predicate requires its GPIO flag to
+permit GPIO pinctrl and consumer ownership together. This addresses the
+observed GPIO 119 conflict without weakening strict pin ownership.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending

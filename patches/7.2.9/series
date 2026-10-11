@@ -13,3 +13,5 @@
 0013-uke-usb-role-and-phy-error-gates.patch
 0014-cliffs-wpss-proxy-regulators.patch
 0015-uke-wlan-supplies-and-dma.patch
+0016-uke-wlan-ordered-rails.patch
+0017-cliffs-gpio-function-flag.patch

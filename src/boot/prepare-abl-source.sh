@@ -8,6 +8,7 @@ here=$(cd -- "$(dirname -- "$0")" && pwd)
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 # Wi-Fi requires the package-owned RF/GENI/SMMU contract; older pairs keep their frozen recipe.
 grep -Fxq 0015-uke-wlan-supplies-and-dma.patch "$kernel/senemos-applied-patches.txt"
+grep -Fxq 0016-uke-wlan-ordered-rails.patch "$kernel/senemos-applied-patches.txt"
 hook_args=(--exclude=drivers/regulator/qcom-rpmh-regulator-uke.c --exclude=drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c)
 git -C "$kernel" apply --check "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
 git -C "$kernel" apply "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"

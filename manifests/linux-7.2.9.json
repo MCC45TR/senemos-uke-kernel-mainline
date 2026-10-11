@@ -68,6 +68,14 @@
     {
       "path": "patches/7.2.9/0015-uke-wlan-supplies-and-dma.patch",
       "sha256": "07194f96f8c4dda1e8cc7d503451561aee58118f72ad0ccd53aacdb0a21a822b"
+    },
+    {
+      "path": "patches/7.2.9/0016-uke-wlan-ordered-rails.patch",
+      "sha256": "40c611b9e280c46b31f7bc4cf2d3fd9f9edeb035f35f4c3d8cb7cc0d808a2b7c"
+    },
+    {
+      "path": "patches/7.2.9/0017-cliffs-gpio-function-flag.patch",
+      "sha256": "7b87ac3a643c166f768485128b8b1e693a8fc4d6d91fba931493c6c33ebca514"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
