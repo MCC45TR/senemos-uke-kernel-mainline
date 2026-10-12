@@ -190,3 +190,10 @@ The exact Uke ADSP starts through remoteproc with recovery held off; the stock
 boot overlay contains SLIMbus until its DMA/restart path is qualified. Matched
 charger firmware must be available before automatic boot. PD/higher currents,
 charging voltage, thermal-policy changes and physical acceptance remain gated.
+
+Patch 0034 connects an optional firmware-framebuffer backlight DT link to
+standard DRM CRTC enable/disable. The Uke paired driver already handles zero
+brightness and rollback; suspend/resume notification is now enabled. The boot
+DT binds only the exact Uke primary backlight, and probe waits for its provider.
+It preserves the selected brightness and does not change panel bias, LED current
+or DSI timings. Physical screen-off and restore acceptance remains separate.

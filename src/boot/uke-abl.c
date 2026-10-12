@@ -374,7 +374,21 @@ static int UKE_INIT uke_framebuffer(void *fdt)
 	fdt32_t framebuffer_reg[4];
 	uint64_t address, length;
 	char name[48], path[64];
-	int splash, chosen, node, size, ret;
+	int splash, chosen, node, size, ret, backlight;
+	unsigned int phandle;
+
+	backlight = fdt_path_offset(fdt, "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11");
+	if (backlight < 0)
+		return backlight;
+	phandle = fdt_get_phandle(fdt, backlight);
+	if (!phandle) {
+		ret = fdt_generate_phandle(fdt, &phandle);
+		if (ret)
+			return ret;
+		ret = fdt_setprop_u32(fdt, backlight, "phandle", phandle);
+		if (ret)
+			return ret;
+	}
 
 	splash = fdt_path_offset(fdt, "/reserved-memory/splash_region");
 	if (splash < 0)
@@ -414,6 +428,7 @@ static int UKE_INIT uke_framebuffer(void *fdt)
 		return node;
 #define UKE_FB_SET(call) do { ret = (call); if (ret) return ret; } while (0)
 	UKE_FB_SET(fdt_setprop_string(fdt, node, "compatible", "simple-framebuffer"));
+	UKE_FB_SET(fdt_setprop_u32(fdt, node, "backlight", phandle));
 	UKE_FB_SET(fdt_setprop(fdt, node, "reg", framebuffer_reg, sizeof(framebuffer_reg)));
 	UKE_FB_SET(fdt_setprop_u32(fdt, node, "width", UKE_FB_WIDTH));
 	UKE_FB_SET(fdt_setprop_u32(fdt, node, "height", UKE_FB_HEIGHT));
