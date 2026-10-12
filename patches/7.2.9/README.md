@@ -130,6 +130,14 @@ and the existing mapper supplies `tms/servreg` for each domain. These match
 existing mainline entries exactly. No firmware bytes are published and no
 FastRPC memory permission, DSP autostart or sensor result follows from this map.
 
+Patch 29 adds only Uke's exact OEM two-channel CPUCP mailbox transport from
+kernel source `5712080a4b0c0b1a879e6d145c601c649ddaddfd`. Its shared transmit
+doorbell and two receive domains differ from modern X1E/Nord register layouts.
+Machine and resource identity are checked before any register access. Host
+fault controls use the actual resource/I/O/ownership functions and run from
+the source RPM's native check phase. No vendor SCMI protocol, CPU power/DVFS
+or physical mailbox success follows from this source adaptation.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
@@ -144,3 +152,8 @@ Host exceptions: Fedora's upstream RPM/package-management stack can pull in
 Python during toolchain construction. It is recorded in the build environment
 package inventory and never copied into target RPMs. Kernel compilation and
 project automation use Kbuild/C/Bash; no project-owned Python is introduced.
+
+The Uke callback runs outside the mailbox channel lock because SCMI notification
+acknowledgment can re-enter transmit. Shutdown synchronizes the IRQ before the
+client is released, and legacy IRQ enable follows channel-lock initialization.
+The host contract exercises callback lock reentry and shutdown synchronization.

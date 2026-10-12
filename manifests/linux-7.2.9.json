@@ -120,6 +120,10 @@
     {
       "path": "patches/7.2.9/0028-uke-protection-domain-map.patch",
       "sha256": "560f280372567217ad98731e8302e2d0d57de78dda5ebf03b17bae69f13749be"
+    },
+    {
+      "path": "patches/7.2.9/0029-uke-legacy-cpucp-mailbox.patch",
+      "sha256": "954b2c615cf87592afdb845e5f78b407d29e991af5302736dc3102c945fecdfc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
