@@ -112,6 +112,10 @@
     {
       "path": "patches/7.2.9/0026-cliffs-lpass-adsp-interconnect.patch",
       "sha256": "f956f107cd2fc565641b24703ffce23178916ef6815d6323ca4237db4d50c25a"
+    },
+    {
+      "path": "patches/7.2.9/0027-uke-oem-gpr-domain.patch",
+      "sha256": "edb49a144ba7fec877df52712ceac82efc4796c7deb68b68625de65ee92304b2"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

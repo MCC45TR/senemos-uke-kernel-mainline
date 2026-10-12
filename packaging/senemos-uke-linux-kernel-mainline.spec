@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.18%{?dist}
+Release:        1.19%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -17,6 +17,7 @@ Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
 Source2: linux-%{version}.tar.sign
 Source3: linux-stable.asc
+Source4: gpr-domain-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -144,6 +145,9 @@ test -s %{_uke_out}/Module.symvers
 cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
+%check
+CXX=clang++ bash %{SOURCE4} "$PWD"
+
 %install
 export ARCH=arm64 LLVM=1
 make O=%{_uke_out} LOCALVERSION=-senemos-uke modules_install \
@@ -206,6 +210,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.19
+- Read the exact OEM Uke GPR ADSP domain while preserving mainline properties.
+- Test accepted and refused domain paths from the actual prepared APR code.
 * Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.18
 - Register the exact Cliffs LPASS interconnect route required by Uke ADSP.
 - Preserve OEM LP0 membership and existing QUP, USB and UFS paths.
