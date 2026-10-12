@@ -108,6 +108,10 @@
     {
       "path": "patches/7.2.9/0025-uke-paired-normal-backlight.patch",
       "sha256": "f7fbe96d9eddcfc39a1f7dc99ae81640fab9a6b8fe92ef2f7e3fca018ddd679c"
+    },
+    {
+      "path": "patches/7.2.9/0026-cliffs-lpass-adsp-interconnect.patch",
+      "sha256": "f956f107cd2fc565641b24703ffce23178916ef6815d6323ca4237db4d50c25a"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
