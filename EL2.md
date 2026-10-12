@@ -55,3 +55,16 @@ arguments. A missing or inaccessible node is never treated as an EL2 success.
 
 Generic ARM64 emulation can validate the probe and distinguish EL1 from EL2
 fixtures. It cannot establish Uke firmware ownership or physical support.
+
+## Separate COPR experimental package, 12 October
+
+The owner requested `uke-senemos-kernel-mainline-kvm` in the development COPR.
+This branch now produces a separate kernel/module namespace,
+`7.2.9-senemos-uke-kvm`, plus the bounded native probe. It can coexist with the
+accepted mainline kernel; RPM installation never writes a boot partition or
+selects a slot. Stable fixes are merged into this branch, not the reverse.
+
+The experiment includes the reviewed charger/backlight source candidate but
+has no established Uke EL2 transfer. A timed trial can report EL1/no-KVM; it
+must never be described as EL2 because a package was built or installed.
+Firmware takeover and physical virtualization remain open acceptance gates.

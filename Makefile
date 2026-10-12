@@ -35,6 +35,7 @@ srpm: validate
 	tar --sort=name --mtime=@1791024250 --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh "$$top/SOURCES/"
+	cp src/kvm/probe.cpp tests/kvm-probe-contract.sh EL2.md "$$top/SOURCES/"
 	cp packaging/senemos-uke-linux-kernel-mainline.spec "$$top/SPECS/"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"

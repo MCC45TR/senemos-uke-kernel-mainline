@@ -3,15 +3,15 @@
 %global __os_install_post %{nil}
 %global _source_filedigest_algorithm 8
 %global _binary_filedigest_algorithm 8
-%global krel %{version}-senemos-uke
+%global krel %{version}-senemos-uke-kvm
 %global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 %global _uke_out %{_topdir}/kernel-out
 
-Name: senemos-uke-linux-kernel-mainline
+Name: uke-senemos-kernel-mainline-kvm
 Version: 7.2.9
 Release:        1.27%{?dist}
-Summary: Senemos mainline kernel build candidate for Xiaomi Uke
-License: GPL-2.0-only
+Summary: Experimental Uke kernel and bounded KVM acceptance probe
+License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -22,8 +22,12 @@ Source5: cpucp-mailbox-contract.sh
 Source6: slim-startup-contract.sh
 Source7: battery-protocol-contract.sh
 Source8: firmware-backlight-contract.sh
+Source9: probe.cpp
+Source10: kvm-probe-contract.sh
+Source11: EL2.md
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
+BuildRequires: gcc-c++
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2
 Requires: %{name}-core = %{version}-%{release}
@@ -31,6 +35,11 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 
 %description
+Experimental channel: firmware still supplies EL1 on the tested Uke. KVM
+configuration and this package do not perform an EL2 takeover or change ABL,
+HYP, TrustZone, slot selection or any boot partition. Only a matching native
+KVM guest result establishes virtualization. Keep the accepted kernel installed.
+
 Uke/SM7675 source-build candidate. Package and compile validation do not
 establish tablet boot or hardware support. Firmware and boot routing are
 managed separately. No Android partition or boot selection is changed.
@@ -125,7 +134,7 @@ make O=%{_uke_out} defconfig
 scripts/kconfig/merge_config.sh -m -O %{_uke_out} %{_uke_out}/.config \
     senemos-adaptation/configs/arm64-qcom.config \
     senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config
-make O=%{_uke_out} LOCALVERSION=-senemos-uke olddefconfig
+make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm olddefconfig
 # Kconfig can silently drop a requested symbol when its dependencies are absent.
 # Check every enabled/value requirement after dependency resolution.
 for fragment in senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config; do
@@ -138,9 +147,9 @@ for item in CONFIG_PINCTRL_CLIFFS=y CONFIG_SM_GCC_CLIFFS=y \
     CONFIG_EFI=y CONFIG_EFI_STUB=y CONFIG_MODULES=y; do
     grep -Fx "$item" %{_uke_out}/.config || exit 1
 done
-make O=%{_uke_out} LOCALVERSION=-senemos-uke -j%{_uke_jobs} Image dtbs modules
+make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm -j%{_uke_jobs} Image dtbs modules
 install -m644 senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos-uke kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm kernelrelease)" = '%{krel}'
 %else
 # A lifecycle-test release repackages the already verified build, without
 # short-circuit RPM dependencies or a second kernel compilation.
@@ -149,7 +158,10 @@ test -s %{_uke_out}/Module.symvers
 cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Wl,--as-needed %{SOURCE9} -o %{_uke_out}/uke-kvm-probe
+
 %check
+bash %{SOURCE10} %{_uke_out}/uke-kvm-probe
 CXX=clang++ bash %{SOURCE4} "$PWD"
 CC=clang bash %{SOURCE5} "$PWD"
 CC=clang bash %{SOURCE6} "$PWD"
@@ -157,8 +169,10 @@ CC=clang bash %{SOURCE7} "$PWD"
 bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/backlight.h"
 
 %install
+install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
+install -Dm644 %{SOURCE11} %{buildroot}%{_datadir}/doc/%{name}/EL2.md
 export ARCH=arm64 LLVM=1
-make O=%{_uke_out} LOCALVERSION=-senemos-uke modules_install \
+make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm modules_install \
     INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
 module_dir=%{buildroot}/lib/modules/%{krel}
 rm -f "$module_dir/build" "$module_dir/source"
@@ -190,6 +204,8 @@ if test "$1" -gt 0 && command -v depmod >/dev/null 2>&1 && test -d /usr/lib/modu
 fi
 
 %files
+%{_bindir}/uke-kvm-probe
+%{_datadir}/doc/%{name}/EL2.md
 %doc senemos-adaptation/README.md
 %license COPYING
 
@@ -218,6 +234,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.27
+- Separate experimental module namespace and native bounded KVM probe; firmware handoff remains EL1.
+
 * Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.27
 - Link Uke firmware DRM blanking to its paired backlight without changing panel power.
 
