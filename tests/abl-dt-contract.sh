@@ -81,9 +81,18 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell; do
+spi=/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000
+[[ $(fdtget -t s "$out/admitted.dtb" "$spi" compatible) == qcom,geni-spi ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$spi" clock-names) == se ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$spi" dmas) == "$(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 0 4 1 $(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 1 4 1" ]]
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
+        spi-reg) fdtput -t x "$out/$scenario.dtb" "$spi" reg aa0000 4000;;
+        spi-clock) fdtput -t x "$out/$scenario.dtb" "$spi" clocks 16e 48;;
+        spi-irq) fdtput -t x "$out/$scenario.dtb" "$spi" interrupts 0 164 4;;
+        spi-dma-length) fdtput -t x "$out/$scenario.dtb" "$spi" dmas 1df 0 4 1 40 2;;
+        spi-dma-route) fdtput -t x "$out/$scenario.dtb" "$spi" dmas 1df 0 5 1 40 2 1df 1 5 1 40 2;;
         board) fdtput -t x "$out/$scenario.dtb" / qcom,board-id 9 0;;
         graph) fdtput -t x "$out/$scenario.dtb" /soc/ufshc@1d84000 reg 1d85000 3000;;
         symbols) fdtput -r "$out/$scenario.dtb" /__symbols__;;

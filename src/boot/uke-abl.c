@@ -368,6 +368,37 @@ static int UKE_INIT uke_wifi_graph(const void *fdt)
 	return 0;
 }
 
+static int UKE_INIT uke_spi_graph(const void *fdt)
+{
+	const char *path = "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000";
+	int node = fdt_path_offset(fdt, path), size, i;
+	int gcc = fdt_path_offset(fdt, "/soc/clock-controller@100000");
+	int gpi = fdt_path_offset(fdt, "/soc/qcom,gpi-dma@a00000");
+	const fdt32_t *cells;
+	static const unsigned int dma[] = { 0, 4, 1, 64, 2, 1, 4, 1, 64, 2 };
+
+	if (node < 0 || gcc < 0 || gpi < 0 ||
+	    uke_path_reg(fdt, path, 0xa90000, 0x4000) ||
+	    fdt_node_check_compatible(fdt, node, "qcom,spi-geni"))
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, node, "clocks", &size);
+	if (!cells || size != 8 || fdt32_to_cpu(cells[0]) != fdt_get_phandle(fdt, gcc) ||
+	    fdt32_to_cpu(cells[1]) != 73)
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, node, "interrupts", &size);
+	if (!cells || size != 12 || fdt32_to_cpu(cells[0]) ||
+	    fdt32_to_cpu(cells[1]) != 357 || fdt32_to_cpu(cells[2]) != 4)
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, node, "dmas", &size);
+	if (!cells || size != 48 || fdt32_to_cpu(cells[0]) != fdt_get_phandle(fdt, gpi) ||
+	    fdt32_to_cpu(cells[6]) != fdt_get_phandle(fdt, gpi))
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 10; i++)
+		if (fdt32_to_cpu(cells[i < 5 ? i + 1 : i + 2]) != dma[i])
+			return -FDT_ERR_BADVALUE;
+	return 0;
+}
+
 static int UKE_INIT uke_framebuffer(void *fdt)
 {
 	const fdt32_t *reg;
@@ -473,7 +504,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
 	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) ||
-	    uke_backlight_bus(input) ||
+	    uke_backlight_bus(input) || uke_spi_graph(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
