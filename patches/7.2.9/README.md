@@ -164,3 +164,13 @@ The Uke callback runs outside the mailbox channel lock because SCMI notification
 acknowledgment can re-enter transmit. Shutdown synchronizes the IRQ before the
 client is released, and legacy IRQ enable follows channel-lock initialization.
 The host contract exercises callback lock reentry and shutdown synchronization.
+
+`0031` translates the exact Uke OEM battery GET and reply IDs: the OEM enum
+inserts `BATT_CONSTANT_CURRENT` at wire ID 12, shifting temperature through
+charge thresholds by one. The exact `xiaomi,uke` root selects this variant;
+other platforms and USB properties keep their original protocol. Signed OEM
+temperature conversion is retained, and the existing read-only battery
+descriptor remains in use. Unsupported battery SET requests are refused.
+The host fixture runs the actual request, reply and selection code against
+independent OEM IDs, malformed replies and error paths. This patch does not
+start ADSP, change firmware charging policy or establish physical charging.

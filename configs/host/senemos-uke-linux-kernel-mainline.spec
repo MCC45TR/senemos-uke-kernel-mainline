@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.23}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.24}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -20,6 +20,7 @@ Source3: linux-stable.asc
 Source4: gpr-domain-contract.sh
 Source5: cpucp-mailbox-contract.sh
 Source6: slim-startup-contract.sh
+Source7: battery-protocol-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -151,6 +152,7 @@ cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 CXX=clang++ bash %{SOURCE4} "$PWD"
 CC=clang bash %{SOURCE5} "$PWD"
 CC=clang bash %{SOURCE6} "$PWD"
+CC=clang bash %{SOURCE7} "$PWD"
 
 %install
 export ARCH=arm64 LLVM=1
@@ -214,6 +216,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.24
+- Translate exact Uke OEM battery telemetry IDs and signed temperature; retain manual ADSP and charging qualification gates
+
 * Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.23
 - Propagate SLIMbus DMA, power and QMI startup errors before registration.
 - Run the production-function startup fault controls in native RPM checks.
