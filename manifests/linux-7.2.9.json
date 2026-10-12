@@ -136,6 +136,10 @@
     {
       "path": "patches/7.2.9/0032-uke-battery-only-glink.patch",
       "sha256": "30cbefb8c2e0129abf14e161d4339b8fb86109171fdbca24ec3436c40c049ef3"
+    },
+    {
+      "path": "patches/7.2.9/0033-uke-charger-budget-and-startup.patch",
+      "sha256": "a698d174500dbb77f337f5db0a753a99e6c7a48748b2bb13bbb0d62ab91b3855"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -151,7 +155,7 @@
     },
     {
       "path": "configs/fedora.config",
-      "sha256": "3d7ad09fbd77ecd803eb5d09be59114093d469260e0f6dc2b15fc0a849479744"
+      "sha256": "6ff76b78c4a47b5b328e6dba07ffd0015b009656d833c58605f8a1cbb83fc78c"
     }
   ]
 }

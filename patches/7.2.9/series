@@ -30,3 +30,4 @@
 0030-slim-startup-error-propagation.patch
 0031-uke-battery-property-ids.patch
 0032-uke-battery-only-glink.patch
+0033-uke-charger-budget-and-startup.patch
