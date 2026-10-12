@@ -128,6 +128,10 @@
     {
       "path": "patches/7.2.9/0030-slim-startup-error-propagation.patch",
       "sha256": "da894b89074ae57e1ba68f71716b7fa0233b1711b4670563013d66961aa20347"
+    },
+    {
+      "path": "patches/7.2.9/0031-uke-battery-property-ids.patch",
+      "sha256": "5aff69a246e0be62bc635e5acdfd0a6a39acd04daf67535a4460dcd0b4f8957d"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
