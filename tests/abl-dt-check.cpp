@@ -62,6 +62,12 @@ int main(int argc, char **argv) {
         if (!result) { std::cout << "Foreign DT unchanged\n"; return 3; }
         if (result != 1) throw std::runtime_error("DT admission rejected: " + std::to_string(result));
         if (fdt_check_full(output.data(), output.size())) throw std::runtime_error("Invalid result FDT");
+        const int usb_node = fdt_path_offset(output.data(), "/soc/ssusb@a600000");
+        const char *psy = static_cast<const char *>(fdt_getprop(output.data(), usb_node, "usb-psy-name", nullptr));
+        const int slim = fdt_path_offset(output.data(), "/soc/slim@6C40000");
+        const char *slim_status = static_cast<const char *>(fdt_getprop(output.data(), slim, "status", nullptr));
+        if (!psy || std::strcmp(psy, "qcom-battmgr-usb") || !slim_status || std::strcmp(slim_status, "disabled"))
+            throw std::runtime_error("USB supply link or unqualified SLIM containment missing");
         const int battery = fdt_path_offset(output.data(), "/pmic-glink");
         if (battery < 0 || fdt_node_check_compatible(output.data(), battery, "xiaomi,uke-pmic-glink") ||
             fdt_first_subnode(output.data(), battery) != -FDT_ERR_NOTFOUND)

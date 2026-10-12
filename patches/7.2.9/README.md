@@ -181,3 +181,12 @@ ABL overlay retains the disabled OEM GLINK/UCSI/log graph and fixed peripheral
 USB route. The actual data-table fixture and transformed-FDT checks enforce
 this boundary. ADSP startup, physical charge/current/temperature trends and
 Plasma battery reporting need their own device validation.
+
+Patch 0033 sets exact-Uke charge units, rejects unqualified OEM power telemetry
+and keeps unsolicited vendor messages from completing requests. The USB input
+write is limited to an online SDP source, its advertised current and 500 mA;
+DWC3 supplies the configured USB2 budget through the existing kernel worker.
+The exact Uke ADSP starts through remoteproc with recovery held off; the stock
+boot overlay contains SLIMbus until its DMA/restart path is qualified. Matched
+charger firmware must be available before automatic boot. PD/higher currents,
+charging voltage, thermal-policy changes and physical acceptance remain gated.
