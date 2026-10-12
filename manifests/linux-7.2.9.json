@@ -116,6 +116,10 @@
     {
       "path": "patches/7.2.9/0027-uke-oem-gpr-domain.patch",
       "sha256": "993b4fb901bd0a2a3d8639e4ee40e3d4ba81ec41c942d8eec95de52b0837914d"
+    },
+    {
+      "path": "patches/7.2.9/0028-uke-protection-domain-map.patch",
+      "sha256": "560f280372567217ad98731e8302e2d0d57de78dda5ebf03b17bae69f13749be"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
