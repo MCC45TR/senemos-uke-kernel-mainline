@@ -98,6 +98,14 @@
 };
 
 /* Exact Uke second KTZ8866 bus; the transform gates all other QUP1 children. */
+/* Exact selected Uke S4 SPI provider; no touch firmware/reset writes here. */
+&{/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000} {
+	compatible = "qcom,geni-spi";
+	clock-names = "se";
+	dmas = <&gpi_dma0 0 4 1>, <&gpi_dma0 1 4 1>;
+	status = "okay";
+};
+
 &{/soc/qcom,qupv3_1_geni_se@8c0000} {
 	status = "okay";
 };
