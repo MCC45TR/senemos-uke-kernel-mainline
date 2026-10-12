@@ -27,3 +27,4 @@
 0027-uke-oem-gpr-domain.patch
 0028-uke-protection-domain-map.patch
 0029-uke-legacy-cpucp-mailbox.patch
+0030-slim-startup-error-propagation.patch

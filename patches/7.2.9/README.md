@@ -138,6 +138,13 @@ fault controls use the actual resource/I/O/ownership functions and run from
 the source RPM's native check phase. No vendor SCMI protocol, CPU power/DVFS
 or physical mailbox success follows from this source adaptation.
 
+Patch 30 propagates failed NGD DMA setup through both power-up paths and
+runtime resume before controller registration. Failed startup keeps its PM
+reference, interrupted QMI waits stop startup, and positive PM resume results
+remain successful. The source RPM runs fault injection into the actual startup
+functions. Duplicate SSR/PDR ownership, DMA teardown and DSP hardware acceptance
+remain open; ADSP stays manual and this does not enable audio or sensors.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
