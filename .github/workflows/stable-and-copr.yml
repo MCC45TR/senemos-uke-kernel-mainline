@@ -2,6 +2,16 @@ name: Stable source and COPR tracking
 on:
   push:
     branches: [main]
+    paths:
+      - 'patches/**'
+      - 'configs/**'
+      - 'manifests/**'
+      - 'packaging/**'
+      - 'tests/**'
+      - 'Makefile'
+      - 'senemos.sh'
+      - '.copr/**'
+      - '.github/workflows/stable-and-copr.yml'
   pull_request:
   workflow_dispatch:
   schedule:
@@ -20,6 +30,15 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils
       - name: Validate reviewed Uke inputs and standalone entry
         run: make validate && ./senemos.sh --self-test && ./senemos.sh --build 7.2.9 --distro=fedora --dry-run
+      - name: Request one validated main-branch native build
+        if: github.event_name == 'push'
+        env:
+          COPR_BUILD_HOOK: ${{ secrets.COPR_KERNEL_BUILD_HOOK }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$COPR_BUILD_HOOK"
+          # A lost POST response must be investigated, never retried blindly.
+          curl -fsS -X POST "$COPR_BUILD_HOOK" >/dev/null
       - name: Track latest stable without generic fallback
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         env:
