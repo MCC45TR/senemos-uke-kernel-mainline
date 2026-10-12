@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.19}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.20}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -210,6 +210,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.20
+- Use the actual mainline GPR domain header and constant in the Uke fallback.
+- Require that production header in the native regression instead of a mock value.
 * Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.19
 - Read the exact OEM Uke GPR ADSP domain while preserving mainline properties.
 - Test accepted and refused domain paths from the actual prepared APR code.

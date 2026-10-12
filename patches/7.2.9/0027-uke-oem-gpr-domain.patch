@@ -9,7 +9,12 @@ No FastRPC DMA, audio service, PDM or automatic DSP startup is admitted.
 
 --- a/drivers/soc/qcom/apr.c
 +++ b/drivers/soc/qcom/apr.c
-@@ -601,6 +601,16 @@
+@@ -15,2 +15,4 @@
+ #include <linux/rpmsg.h>
++#include <dt-bindings/soc/qcom,gpr.h>
++
+ #include <linux/of.h>
+@@ -601,6 +603,16 @@
  	ret = of_property_read_u32(dev->of_node, "qcom,domain", &apr->dest_domain_id);
  
  	if (of_device_is_compatible(dev->of_node, "qcom,gpr")) {
@@ -19,7 +24,7 @@ No FastRPC DMA, audio service, PDM or automatic DSP startup is admitted.
 +		    of_property_count_u32_elems(dev->of_node, "reg") == 1) {
 +			ret = of_property_read_u32(dev->of_node, "reg",
 +						   &apr->dest_domain_id);
-+			if (!ret && apr->dest_domain_id != GPR_DOMAIN_ADSP)
++			if (!ret && apr->dest_domain_id != GPR_DOMAIN_ID_ADSP)
 +				ret = -EINVAL;
 +		}
 +

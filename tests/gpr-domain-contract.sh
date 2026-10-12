@@ -5,12 +5,12 @@ kernel=${1:?Pass the prepared kernel source directory}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 {
+awk '/^#include <dt-bindings\/soc\/qcom,gpr.h>/ {print; found=1} END {if(!found) exit 1}' "$kernel/drivers/soc/qcom/apr.c"
 cat <<'CPP'
 #include <cassert>
 #include <cstring>
 #include <initializer_list>
 #define EINVAL 22
-#define GPR_DOMAIN_ADSP 2
 #define PR_TYPE_GPR 1
 #define PR_TYPE_APR 0
 struct device_node { bool gpr, mainline; int mainline_ret, domain, cells, reg, legacy; };
@@ -56,6 +56,6 @@ int main() {
 }
 CPP
 } > "$work/check.cpp"
-"${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
+"${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror -I"$kernel/include" "$work/check.cpp" -o "$work/check"
 "$work/check"
 echo 'GPR domain: exact Uke OEM ADSP accepted; explicit properties preserved; malformed/foreign/APR/wrong-domain refused'
