@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.21%{?dist}
+Release:        1.22%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -18,6 +18,7 @@ Source1: senemos-uke-adaptation-%{version}.tar.xz
 Source2: linux-%{version}.tar.sign
 Source3: linux-stable.asc
 Source4: gpr-domain-contract.sh
+Source5: cpucp-mailbox-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -147,6 +148,7 @@ cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 
 %check
 CXX=clang++ bash %{SOURCE4} "$PWD"
+CC=clang bash %{SOURCE5} "$PWD"
 
 %install
 export ARCH=arm64 LLVM=1
@@ -210,6 +212,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.22
+- Add the exact OEM Uke two-channel CPUCP mailbox with fail-closed resources.
+- Test real resource and I/O paths without changing modern mailbox operations.
 * Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.21
 - Add only the five protection domains measured in Uke's pinned OEM registry.
 - Reuse matching mainline services without donor domains or DMA permission changes.

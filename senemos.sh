@@ -349,7 +349,7 @@ internal_build() {
     mkdir -p "$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS} "$adaptation/patches" "$adaptation/configs"
     cp "$source/referances/releases/linux-$VERSION.tar.xz" "$top/SOURCES/"
     cp "$source/referances/releases/linux-$VERSION.tar.sign" "$source/configs/keys/linux-stable.asc" "$top/SOURCES/"
-    cp "$source/tests/gpr-domain-contract.sh" "$top/SOURCES/"
+    cp "$source/tests/gpr-domain-contract.sh" "$source/tests/cpucp-mailbox-contract.sh" "$top/SOURCES/"
     cp "$source/patches/$VERSION/"* "$adaptation/patches/"
     cp "$source/configs/arm64-qcom.config" "$source/configs/uke.config" "$source/configs/fedora.config" "$adaptation/configs/"
     cp "$manifest" "$adaptation/source-lock.json"
@@ -374,7 +374,7 @@ internal_build() {
 build_identity() {
     local manifest=$1 spec=$2 toolchain=$3
     { cat "$manifest"; printf '%s\n' "$toolchain"; \
-        cat "$KERNEL/tests/gpr-domain-contract.sh"; \
+        cat "$KERNEL/tests/gpr-domain-contract.sh" "$KERNEL/tests/cpucp-mailbox-contract.sh"; \
         awk '/^%global krel/ {print} /^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
     } | sha256sum | cut -d ' ' -f1
 }
@@ -576,15 +576,20 @@ self_test() {
         local KERNEL=$temporary/guard-fixture before after
         mkdir -p "$KERNEL/tests"
         printf 'original check\n' > "$KERNEL/tests/gpr-domain-contract.sh"
+        printf 'original mailbox check\n' > "$KERNEL/tests/cpucp-mailbox-contract.sh"
         printf '{}\n' > "$KERNEL/manifest"
         printf '%%prep\n%%install\n' > "$KERNEL/spec"
         before=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
         printf 'changed check\n' > "$KERNEL/tests/gpr-domain-contract.sh"
         after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
         [[ $before != "$after" ]] || die 'Changed native check retained build identity'
+        before=$after
+        printf 'changed mailbox check\n' > "$KERNEL/tests/cpucp-mailbox-contract.sh"
+        after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
+        [[ $before != "$after" ]] || die 'Changed mailbox check retained build identity'
     }
     fixture_identity
-    ok 'native GPR check changes invalidate completed-build admission'
+    ok 'native GPR and mailbox check changes invalidate completed-build admission'
     reject bash "$ROOT/senemos.sh" --build '../escape' --dry-run
     reject bash "$ROOT/senemos.sh" --jobs 0 --dry-run
     reject bash "$ROOT/senemos.sh" --distro=debian --build 7.2.9 --dry-run
