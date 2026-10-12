@@ -26,6 +26,19 @@
 	status = "disabled";
 };
 
+/* The upstream battery-only endpoint has no OEM UCSI/altmode children. */
+&{/} {
+	pmic-glink {
+		compatible = "xiaomi,uke-pmic-glink";
+		status = "okay";
+	};
+};
+
+/* The unqualified SLIM DMA/restart path must not start with charger firmware. */
+&{/soc/slim@6C40000} {
+	status = "disabled";
+};
+
 &gcc_usb30_prim_gdsc {
 	compatible = "qcom,sm7675-usb-gdsc";
 	reg = <0x00139004 8>;
@@ -44,6 +57,7 @@
 
 &usb0 {
 	compatible = "qcom,sm7675-dwc3";
+	usb-psy-name = "qcom-battmgr-usb";
 	gdsc-supply = <&gcc_usb30_prim_gdsc>;
 	usb-phy = <&eusb2_phy0>;
 	iommus = <&apps_smmu 0x40 0>;

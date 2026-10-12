@@ -138,6 +138,13 @@ fault controls use the actual resource/I/O/ownership functions and run from
 the source RPM's native check phase. No vendor SCMI protocol, CPU power/DVFS
 or physical mailbox success follows from this source adaptation.
 
+Patch 30 propagates failed NGD DMA setup through both power-up paths and
+runtime resume before controller registration. Failed startup keeps its PM
+reference, interrupted QMI waits stop startup, and positive PM resume results
+remain successful. The source RPM runs fault injection into the actual startup
+functions. Duplicate SSR/PDR ownership, DMA teardown and DSP hardware acceptance
+remain open; ADSP stays manual and this does not enable audio or sensors.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
@@ -157,3 +164,36 @@ The Uke callback runs outside the mailbox channel lock because SCMI notification
 acknowledgment can re-enter transmit. Shutdown synchronizes the IRQ before the
 client is released, and legacy IRQ enable follows channel-lock initialization.
 The host contract exercises callback lock reentry and shutdown synchronization.
+
+`0031` translates the exact Uke OEM battery GET and reply IDs: the OEM enum
+inserts `BATT_CONSTANT_CURRENT` at wire ID 12, shifting temperature through
+charge thresholds by one. The exact `xiaomi,uke` root selects this variant;
+other platforms and USB properties keep their original protocol. Signed OEM
+temperature conversion is retained, and the existing read-only battery
+descriptor remains in use. Unsupported battery SET requests are refused.
+The host fixture runs the actual request, reply and selection code against
+independent OEM IDs, malformed replies and error paths. This patch does not
+start ADSP, change firmware charging policy or establish physical charging.
+
+`0032` admits a separate `xiaomi,uke-pmic-glink` endpoint with only the
+upstream battery auxiliary client and the OEM ADSP charger service. The stock
+ABL overlay retains the disabled OEM GLINK/UCSI/log graph and fixed peripheral
+USB route. The actual data-table fixture and transformed-FDT checks enforce
+this boundary. ADSP startup, physical charge/current/temperature trends and
+Plasma battery reporting need their own device validation.
+
+Patch 0033 sets exact-Uke charge units, rejects unqualified OEM power telemetry
+and keeps unsolicited vendor messages from completing requests. The USB input
+write is limited to an online SDP source, its advertised current and 500 mA;
+DWC3 supplies the configured USB2 budget through the existing kernel worker.
+The exact Uke ADSP starts through remoteproc with recovery held off; the stock
+boot overlay contains SLIMbus until its DMA/restart path is qualified. Matched
+charger firmware must be available before automatic boot. PD/higher currents,
+charging voltage, thermal-policy changes and physical acceptance remain gated.
+
+Patch 0034 connects an optional firmware-framebuffer backlight DT link to
+standard DRM CRTC enable/disable. The Uke paired driver already handles zero
+brightness and rollback; suspend/resume notification is now enabled. The boot
+DT binds only the exact Uke primary backlight, and probe waits for its provider.
+It preserves the selected brightness and does not change panel bias, LED current
+or DSI timings. Physical screen-off and restore acceptance remains separate.

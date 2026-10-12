@@ -27,3 +27,8 @@
 0027-uke-oem-gpr-domain.patch
 0028-uke-protection-domain-map.patch
 0029-uke-legacy-cpucp-mailbox.patch
+0030-slim-startup-error-propagation.patch
+0031-uke-battery-property-ids.patch
+0032-uke-battery-only-glink.patch
+0033-uke-charger-budget-and-startup.patch
+0034-uke-firmware-backlight-blanking.patch

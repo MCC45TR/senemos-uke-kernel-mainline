@@ -230,3 +230,7 @@ for ordinary bugs with public reproduction details. Follow the
 Project-authored repository tooling and documentation use [MIT](LICENSE).
 Linux sources and derived kernel patches retain their original SPDX and
 GPL-compatible licenses; consult each file and the source package's notices.
+
+Firmware display blanking uses a DT link to the paired Uke backlight in the
+1.27 candidate. Host contracts preserve brightness through blank/unblank and
+report I/O faults; physical DPMS and wake acceptance is still pending.

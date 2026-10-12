@@ -62,6 +62,30 @@ int main(int argc, char **argv) {
         if (!result) { std::cout << "Foreign DT unchanged\n"; return 3; }
         if (result != 1) throw std::runtime_error("DT admission rejected: " + std::to_string(result));
         if (fdt_check_full(output.data(), output.size())) throw std::runtime_error("Invalid result FDT");
+        const int chosen = fdt_path_offset(output.data(), "/chosen");
+        const char *stdout_path = static_cast<const char *>(fdt_getprop(output.data(), chosen, "stdout-path", nullptr));
+        const int framebuffer = stdout_path ? fdt_path_offset(output.data(), stdout_path) : -1;
+        int bl_length;
+        const auto *bl = static_cast<const fdt32_t *>(fdt_getprop(output.data(), framebuffer, "backlight", &bl_length));
+        const int primary = fdt_path_offset(output.data(), "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11");
+        if (!bl || bl_length != 4 || fdt_node_offset_by_phandle(output.data(), fdt32_to_cpu(*bl)) != primary)
+            throw std::runtime_error("Firmware framebuffer backlight link is not the Uke primary");
+        const int usb_node = fdt_path_offset(output.data(), "/soc/ssusb@a600000");
+        const char *psy = static_cast<const char *>(fdt_getprop(output.data(), usb_node, "usb-psy-name", nullptr));
+        const int slim = fdt_path_offset(output.data(), "/soc/slim@6C40000");
+        const char *slim_status = static_cast<const char *>(fdt_getprop(output.data(), slim, "status", nullptr));
+        if (!psy || std::strcmp(psy, "qcom-battmgr-usb") || !slim_status || std::strcmp(slim_status, "disabled"))
+            throw std::runtime_error("USB supply link or unqualified SLIM containment missing");
+        const int battery = fdt_path_offset(output.data(), "/pmic-glink");
+        if (battery < 0 || fdt_node_check_compatible(output.data(), battery, "xiaomi,uke-pmic-glink") ||
+            fdt_first_subnode(output.data(), battery) != -FDT_ERR_NOTFOUND)
+            throw std::runtime_error("Battery-only upstream GLINK endpoint missing or has legacy children");
+        for (const char *path : {"/soc/qcom,pmic_glink", "/soc/qcom,pmic_glink_log"}) {
+            const int legacy = fdt_path_offset(output.data(), path);
+            const char *status = static_cast<const char *>(fdt_getprop(output.data(), legacy, "status", nullptr));
+            if (!status || std::strcmp(status, "disabled"))
+                throw std::runtime_error("Legacy GLINK containment changed");
+        }
         int node;
         fdt_for_each_subnode(node, input.data(), 0) {
             const std::string name = fdt_get_name(input.data(), node, nullptr);

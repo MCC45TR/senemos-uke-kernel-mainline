@@ -124,6 +124,26 @@
     {
       "path": "patches/7.2.9/0029-uke-legacy-cpucp-mailbox.patch",
       "sha256": "954b2c615cf87592afdb845e5f78b407d29e991af5302736dc3102c945fecdfc"
+    },
+    {
+      "path": "patches/7.2.9/0030-slim-startup-error-propagation.patch",
+      "sha256": "da894b89074ae57e1ba68f71716b7fa0233b1711b4670563013d66961aa20347"
+    },
+    {
+      "path": "patches/7.2.9/0031-uke-battery-property-ids.patch",
+      "sha256": "5aff69a246e0be62bc635e5acdfd0a6a39acd04daf67535a4460dcd0b4f8957d"
+    },
+    {
+      "path": "patches/7.2.9/0032-uke-battery-only-glink.patch",
+      "sha256": "30cbefb8c2e0129abf14e161d4339b8fb86109171fdbca24ec3436c40c049ef3"
+    },
+    {
+      "path": "patches/7.2.9/0033-uke-charger-budget-and-startup.patch",
+      "sha256": "a698d174500dbb77f337f5db0a753a99e6c7a48748b2bb13bbb0d62ab91b3855"
+    },
+    {
+      "path": "patches/7.2.9/0034-uke-firmware-backlight-blanking.patch",
+      "sha256": "edcb295cf96928f0f27f3da34d797be154f884e4d1f3963370fd17ad5e343e77"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -135,11 +155,11 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "553cdcdde89e96f1e74800679e19ebc7de9766bc9d46a5a520bd826cefbca094"
+      "sha256": "f18377d088d1db2e315ba217bcb2975a96dd3d898a22577efee7a56c35731eac"
     },
     {
       "path": "configs/fedora.config",
-      "sha256": "3d7ad09fbd77ecd803eb5d09be59114093d469260e0f6dc2b15fc0a849479744"
+      "sha256": "6ff76b78c4a47b5b328e6dba07ffd0015b009656d833c58605f8a1cbb83fc78c"
     }
   ]
 }
