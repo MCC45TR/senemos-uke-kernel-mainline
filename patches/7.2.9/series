@@ -29,3 +29,4 @@
 0029-uke-legacy-cpucp-mailbox.patch
 0030-slim-startup-error-propagation.patch
 0031-uke-battery-property-ids.patch
+0032-uke-battery-only-glink.patch

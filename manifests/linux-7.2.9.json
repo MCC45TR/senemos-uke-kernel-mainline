@@ -132,6 +132,10 @@
     {
       "path": "patches/7.2.9/0031-uke-battery-property-ids.patch",
       "sha256": "5aff69a246e0be62bc635e5acdfd0a6a39acd04daf67535a4460dcd0b4f8957d"
+    },
+    {
+      "path": "patches/7.2.9/0032-uke-battery-only-glink.patch",
+      "sha256": "30cbefb8c2e0129abf14e161d4339b8fb86109171fdbca24ec3436c40c049ef3"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -26,6 +26,14 @@
 	status = "disabled";
 };
 
+/* The upstream battery-only endpoint has no OEM UCSI/altmode children. */
+&{/} {
+	pmic-glink {
+		compatible = "xiaomi,uke-pmic-glink";
+		status = "okay";
+	};
+};
+
 &gcc_usb30_prim_gdsc {
 	compatible = "qcom,sm7675-usb-gdsc";
 	reg = <0x00139004 8>;
