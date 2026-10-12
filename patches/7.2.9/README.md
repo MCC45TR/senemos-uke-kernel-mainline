@@ -152,3 +152,8 @@ Host exceptions: Fedora's upstream RPM/package-management stack can pull in
 Python during toolchain construction. It is recorded in the build environment
 package inventory and never copied into target RPMs. Kernel compilation and
 project automation use Kbuild/C/Bash; no project-owned Python is introduced.
+
+The Uke callback runs outside the mailbox channel lock because SCMI notification
+acknowledgment can re-enter transmit. Shutdown synchronizes the IRQ before the
+client is released, and legacy IRQ enable follows channel-lock initialization.
+The host contract exercises callback lock reentry and shutdown synchronization.

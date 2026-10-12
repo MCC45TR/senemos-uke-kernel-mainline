@@ -25,7 +25,7 @@ struct resource { unsigned long start, end; };
 struct platform_device { struct resource *resources[2]; };
 static bool uke;
 static unsigned char tx[0x10], rx[0x2000];
-static unsigned notices[2], barriers, writes;
+static unsigned notices[2], barriers, writes, synchronized;
 static struct mbox_chan chans[2];
 static bool of_machine_is_compatible(const char *name) { assert(!strcmp(name,"xiaomi,uke")); return uke; }
 static struct resource *platform_get_resource(struct platform_device *p,int type,int i) { assert(type==0 && i>=0 && i<2); return p->resources[i]; }
@@ -47,7 +47,14 @@ static void writel(uint32_t v,void *p) {
 #define spin_lock_irqsave(p,f) do { (f)=0; assert(!*(p)); *(p)=1; } while(0)
 #define spin_unlock_irqrestore(p,f) do { (void)(f); assert(*(p)==1); *(p)=0; } while(0)
 static void mbox_chan_received_data(struct mbox_chan *c,void *data) {
- assert(!data && c->lock && c->con_priv); notices[c-chans]++;
+ assert(!data && !c->lock && c->con_priv);
+ unsigned long flags;
+ spin_lock_irqsave(&c->lock,flags);
+ notices[c-chans]++;
+ spin_unlock_irqrestore(&c->lock,flags);
+}
+static void synchronize_irq(int irq) {
+ assert(irq==5 && !chans[0].lock && !chans[1].lock); synchronized++;
 }
 C
 awk '/^#define UKE_CPUCP_/ {print}' "$source"
@@ -68,7 +75,7 @@ int main(void) {
   r->end--; assert(!qcom_cpucp_uke_resources(&p)); r->end=end+1;
   assert(!qcom_cpucp_uke_resources(&p)); r->end=end;
  }
- struct qcom_cpucp_mbox cp={.chans=chans,.tx_base=tx,.rx_base=rx};
+ struct qcom_cpucp_mbox cp={.chans=chans,.tx_base=tx,.rx_base=rx,.irq=5};
  for(unsigned i=0;i<2;i++) chans[i].mbox=&cp.mbox;
  assert(UKE_CPUCP_CHANNELS==2 && qcom_cpucp_uke_startup(&chans[0])==0);
  uint32_t bit=BIT(3); memcpy(rx+0x30c,&bit,4); memcpy(rx+0x130c,&bit,4);
@@ -84,10 +91,11 @@ int main(void) {
  memcpy(rx+0x30c,&bit,4); memcpy(rx+0x130c,&bit,4);
  qcom_cpucp_uke_irq_fn(0,&cp); assert(notices[0]==1 && notices[1]==1);
  qcom_cpucp_uke_shutdown(&chans[1]); assert(!chans[1].con_priv);
+ assert(synchronized==2);
  return 0;
 }
 C
 } > "$work/check.c"
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter "$work/check.c" -o "$work/check"
 "$work/check"
-echo 'CPUCP: exact Uke resources and two-channel I/O accepted; foreign/missing/shifted/truncated/oversized resources and unclaimed notifications refused'
+echo 'CPUCP: exact Uke resources, two-channel I/O, unlocked callback reentry and synchronized shutdown accepted; foreign/missing/shifted/truncated/oversized resources and unclaimed notifications refused'

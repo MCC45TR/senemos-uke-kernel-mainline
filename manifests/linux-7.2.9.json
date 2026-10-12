@@ -123,7 +123,7 @@
     },
     {
       "path": "patches/7.2.9/0029-uke-legacy-cpucp-mailbox.patch",
-      "sha256": "44cc1f3149a6754eb9826f48230179338755fb9dc29a82644b789cfbcbfd330d"
+      "sha256": "954b2c615cf87592afdb845e5f78b407d29e991af5302736dc3102c945fecdfc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
