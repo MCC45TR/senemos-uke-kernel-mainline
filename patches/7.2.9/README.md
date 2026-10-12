@@ -1,5 +1,13 @@
 # Linux 7.2.9 Uke adaptation
 
+`0026` supplies the retained LPASS DDR route needed by the actual Uke ADSP
+interconnect: LPICX to LPIAON to LPASS aggregate to GEM/LLCC/EBI. Node IDs,
+widths, QoS and HLOS LP0 membership come from the pinned Xiaomi Cliffs OEM
+source. The unported PCIe edge remains outside this partial provider; LPASS
+GEM is not added to SH1. The actual-C graph fixture checks all registered
+edges, the DSP DDR path and unchanged QUP/USB/UFS routes. ADSP startup stays
+manual; source/build success does not establish DSP, FastRPC or sensor operation.
+
 Patch 14 adapts Cliffs WPSS PAS metadata and mandatory CX/MX ARC proxy
 regulators from the pinned Uke OEM kernel/DT sources. Startup remains manual;
 the driver requires AOP load-state QMP. It does not admit WLAN DMA, firmware

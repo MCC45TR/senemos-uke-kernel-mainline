@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile the actual kernel C graph and verify both QUP routes on the host.
+# Compile the actual kernel C graph and verify QUP/LPASS routes on the host.
 set -Eeuo pipefail
 source_file=${1:?Pass the prepared qnoc-cliffs-usb.c}
 work=$(mktemp -d)
@@ -41,6 +41,7 @@ static const struct qcom_icc_desc *providers[] = {
     &cliffs_aggre1_noc, &cliffs_aggre2_noc, &cliffs_clk_virt,
     &cliffs_cnoc_cfg, &cliffs_cnoc_main, &cliffs_gem_noc,
     &cliffs_mc_virt, &cliffs_system_noc,
+    &cliffs_lpass_ag_noc, &cliffs_lpass_lpiaon_noc, &cliffs_lpass_lpicx_noc,
 };
 static bool registered(const struct qcom_icc_node *node) {
     for (size_t p = 0; p < ARRAY_SIZE(providers); ++p)
@@ -81,9 +82,29 @@ int main(void) {
     assert(cliffs_aggre2_noc.qos_required && cliffs_aggre2_noc.qos_requires_clocks);
     assert(qhm_qup1_qos.port_offsets[0] == 0x13000 && qhm_qup1_qos.prio == 2);
     assert(bcm_qup1.keepalive && bcm_qup1.vote_scale == 1);
+    assert(lpass_lpicx_noc_nodes[40] == &qxm_lpinoc_dsp_axim);
+    assert(lpass_lpicx_noc_nodes[558] == &qns_lpi_aon_noc);
+    assert(lpass_lpiaon_noc_nodes[19] == &qnm_lpass_lpinoc);
+    assert(lpass_lpiaon_noc_nodes[557] == &qns_lpass_aggnoc);
+    assert(lpass_ag_noc_nodes[20] == &qnm_lpiaon_noc);
+    assert(lpass_ag_noc_nodes[556] == &qns_lpass_ag_noc_gemnoc);
+    assert(gem_noc_nodes[18] == &qnm_lpass_gemnoc);
+    assert(reaches(&qxm_lpinoc_dsp_axim, &ebi, 0));
+    assert(!reaches(&qxm_lpinoc_dsp_axim, &xm_ufs_mem, 0));
+    assert(qnm_lpass_gemnoc_qos.port_offsets[0] == 0xb5000);
+    assert(qnm_lpass_gemnoc_qos.prio == 0 && qnm_lpass_gemnoc_qos.urg_fwd == 1);
+    assert(qnm_lpass_gemnoc_qos.prio_fwd_disable == 0);
+    assert(!cliffs_lpass_ag_noc.num_bcms && !cliffs_lpass_lpicx_noc.num_bcms);
+    assert(cliffs_lpass_lpiaon_noc.num_bcms == 1);
+    assert(cliffs_lpass_lpiaon_noc.bcms[0] == &bcm_lp0);
+    assert(!bcm_lp0.keepalive && !bcm_lp0.enable_mask && bcm_lp0.num_nodes == 2);
+    assert(bcm_lp0.nodes[0] == &qnm_lpass_lpinoc);
+    assert(bcm_lp0.nodes[1] == &qns_lpass_aggnoc);
+    for (unsigned int i = 0; i < bcm_sh1.num_nodes; ++i)
+        assert(bcm_sh1.nodes[i] != &qnm_lpass_gemnoc);
 }
 C
 } > "$work/check.c"
 cc -std=gnu11 -O2 -Wall -Wextra -Werror "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Registered QUP0/QUP1 core, configuration and memory paths; USB/UFS regression: passed\n'
+printf 'Registered QUP0/QUP1 and OEM LPASS DDR paths, LP0/QoS and USB/UFS regression: passed\n'

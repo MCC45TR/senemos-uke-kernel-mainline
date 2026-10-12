@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.17%{?dist}
+Release:        1.18%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -206,6 +206,9 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.18
+- Register the exact Cliffs LPASS interconnect route required by Uke ADSP.
+- Preserve OEM LP0 membership and existing QUP, USB and UFS paths.
 * Sun Oct 11 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.17
 - Use built-in simpledrm and DRM fbdev for the early firmware console.
 - Respect upstream exclusion of simpledrm and the legacy simplefb driver.
