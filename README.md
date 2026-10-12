@@ -11,6 +11,10 @@ through reviewed upstream stable releases.
 
 ## Project status
 
+The separate [EL2/KVM experiment](EL2.md) measures actual KVM guest execution.
+Stock Uke EL1 boot remains the recorded baseline; an EL2 firmware handoff is not
+yet established. The experiment does not publish production COPR packages.
+
 The Uke adaptation has produced an ARM64 kernel Image, an independent Uke DTB,
 matching modules and Fedora RPM/SRPM packages. Local source verification,
 compilation, module ABI and package lifecycle checks have separate records.

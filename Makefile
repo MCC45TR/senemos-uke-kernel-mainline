@@ -43,3 +43,8 @@ srpm: validate
 .PHONY: test-entry
 test-entry:
 	./senemos.sh --self-test
+
+.PHONY: kvm-probe
+kvm-probe:
+	mkdir -p build/kvm
+	$(CXX) -std=c++17 -O2 -Wall -Wextra -Werror -Wl,--as-needed src/kvm/probe.cpp -o build/kvm/uke-kvm-probe
