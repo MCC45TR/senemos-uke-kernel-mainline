@@ -174,3 +174,10 @@ descriptor remains in use. Unsupported battery SET requests are refused.
 The host fixture runs the actual request, reply and selection code against
 independent OEM IDs, malformed replies and error paths. This patch does not
 start ADSP, change firmware charging policy or establish physical charging.
+
+`0032` admits a separate `xiaomi,uke-pmic-glink` endpoint with only the
+upstream battery auxiliary client and the OEM ADSP charger service. The stock
+ABL overlay retains the disabled OEM GLINK/UCSI/log graph and fixed peripheral
+USB route. The actual data-table fixture and transformed-FDT checks enforce
+this boundary. ADSP startup, physical charge/current/temperature trends and
+Plasma battery reporting need their own device validation.

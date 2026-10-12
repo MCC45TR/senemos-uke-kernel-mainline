@@ -21,7 +21,8 @@ struct work_struct { int unused; };
 struct completion { int done; };
 struct mutex { int unused; };
 struct device { struct device *parent; };
-struct of_device_id { const void *data; };
+struct of_device_id { const char *compatible; const void *data; };
+#define BIT(n) (1UL << (n))
 #define cpu_to_le32(v) ((uint32_t)(v))
 #define le32_to_cpu(v) ((uint32_t)(v))
 #define dev_warn(...) ((void)0)
@@ -36,6 +37,11 @@ awk '/^#define PMIC_GLINK_/ {print}
     "$kernel/include/linux/soc/qcom/pmic_glink.h"
 awk '/^#define BATTMGR_CHEMISTRY_LEN/ {emit=1}
      /^static int qcom_battmgr_request\(/ {emit=0} emit {print}' "$source"
+awk '/^enum \{/ {emit=1} /^struct pmic_glink_data \{/ {emit=1}
+     emit {print} emit && /^};/ {emit=0}' "$kernel/drivers/soc/qcom/pmic_glink.c"
+awk '/^static const struct pmic_glink_data pmic_glink_uke_data/ {emit=1}
+     emit {print} emit && /^MODULE_DEVICE_TABLE/ {exit}' \
+    "$kernel/drivers/soc/qcom/pmic_glink.c" | sed '/^MODULE_DEVICE_TABLE/d'
 cat <<'C'
 static struct qcom_battmgr_property_request sent;
 static int requests, request_result;
@@ -75,6 +81,12 @@ static void reply(struct qcom_battmgr *b, unsigned int opcode,
  assert(b->ack.done==1);
 }
 int main(void) {
+ assert(pmic_glink_uke_data.client_mask==BIT(PMIC_GLINK_CLIENT_BATT));
+ assert(!strcmp(pmic_glink_uke_data.charger_pdr_service_name,"tms/servreg"));
+ assert(!strcmp(pmic_glink_uke_data.charger_pdr_service_path,"msm/adsp/charger_pd"));
+ assert(!strcmp(pmic_glink_of_match[0].compatible,"xiaomi,uke-pmic-glink"));
+ assert(pmic_glink_of_match[0].data==&pmic_glink_uke_data);
+ assert(pmic_glink_adsp_data.client_mask==(BIT(PMIC_GLINK_CLIENT_BATT)|BIT(PMIC_GLINK_CLIENT_ALTMODE)|BIT(PMIC_GLINK_CLIENT_UCSI)));
  struct qcom_battmgr b={.variant=QCOM_BATTMGR_UKE};
  /* Independent wire IDs from the pinned Uke OEM enum, including its inserted ID 12. */
  const int wire[]={0,1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
