@@ -10,8 +10,7 @@ automatic remote-processor startup.
 
 --- a/drivers/soc/qcom/qcom_pd_mapper.c
 +++ b/drivers/soc/qcom/qcom_pd_mapper.c
-@@ -582,2 +582,13 @@
--static const struct of_device_id qcom_pdm_domains[] __maybe_unused = {
+@@ -582,1 +582,11 @@
 +/* Exact domains from Uke's OEM service registries. */
 +static const struct qcom_pdm_domain_data *uke_domains[] = {
 +	&adsp_audio_pd,
@@ -22,6 +21,9 @@ automatic remote-processor startup.
 +	NULL,
 +};
 +
-+static const struct of_device_id qcom_pdm_domains[] __maybe_unused = {
+ static const struct of_device_id qcom_pdm_domains[] __maybe_unused = {
+@@ -630,2 +640,3 @@
+-	{},
 +	{ .compatible = "xiaomi,uke", .data = uke_domains, },
- 	{ .compatible = "qcom,apq8016", .data = NULL, },
++	{},
+ };

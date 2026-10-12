@@ -119,7 +119,7 @@
     },
     {
       "path": "patches/7.2.9/0028-uke-protection-domain-map.patch",
-      "sha256": "0c09ffe042eedbb52219eafb31f86416defe2d20a793aa8f7613073ca095c603"
+      "sha256": "560f280372567217ad98731e8302e2d0d57de78dda5ebf03b17bae69f13749be"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
