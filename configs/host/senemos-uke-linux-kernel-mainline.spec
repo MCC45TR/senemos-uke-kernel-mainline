@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.5}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.19}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -17,6 +17,7 @@ Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
 Source2: linux-%{version}.tar.sign
 Source3: linux-stable.asc
+Source4: gpr-domain-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -144,6 +145,9 @@ test -s %{_uke_out}/Module.symvers
 cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
+%check
+CXX=clang++ bash %{SOURCE4} "$PWD"
+
 %install
 export ARCH=arm64 LLVM=1
 make O=%{_uke_out} LOCALVERSION=-senemos-uke modules_install \
@@ -206,6 +210,27 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.19
+- Read the exact OEM Uke GPR ADSP domain while preserving mainline properties.
+- Test accepted and refused domain paths from the actual prepared APR code.
+* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.18
+- Register the exact Cliffs LPASS interconnect route required by Uke ADSP.
+- Preserve OEM LP0 membership and existing QUP, USB and UFS paths.
+* Sun Oct 11 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.17
+- Use built-in simpledrm and DRM fbdev for the early firmware console.
+- Respect upstream exclusion of simpledrm and the legacy simplefb driver.
+* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.8
+- Preserve OEM Uke WLAN forward rail order and reverse shutdown.
+- Keep partial enable ownership after failed cleanup for balanced retry.
+- Mark Cliffs GPIO functions for strict pinmux and GPIO coexistence.
+
+* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.7
+- Require exact Uke WCN6750 RF supplies and unwind failed firmware starts.
+- Admit only the OEM WLAN SMMU stream/mask while retaining translated DMA.
+
+* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.6
+- Add exact Cliffs WPSS PAS and required CX/MX ARC proxy regulators.
+- Keep firmware startup manual and require AOP QMP; WLAN admission remains gated.
 * Tue Oct 06 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.4
 - Add attributed SM7675 UFS PHY tuning and EFI framebuffer console configuration.
 - Keep board UFS and physical boot acceptance gated separately.

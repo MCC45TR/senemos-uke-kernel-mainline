@@ -114,6 +114,15 @@ endpoints using the GPL OEM normal curve, checked readback and verified
 rollback. Managed peer ownership, malformed graph and I/O fault fixtures
 remain mandatory. HBM, suspend policy and physical brightness are unqualified.
 
+`0027` reads the actual Uke OEM GPR domain from its single `reg` cell only
+when `qcom,domain` is absent. The original Xiaomi Uke `gpr-lite.c` at
+`8eb0eccbc4027ae4a4987e4bced03a4381039714` reads this field; the actual
+ADSP node and GPL domain header both identify domain 2. Preserve explicit
+mainline properties and the deprecated APR path; reject foreign machines,
+malformed cells and any other legacy domain. The actual-function fixture runs
+in native RPM `%check`. ADSP stays manual; FastRPC DMA, PDM maps, audio and
+sensor operation remain separately gated.
+
 This is a **source-build candidate**. It is not a complete hardware port or a
 physically accepted UEFI boot image. The independent DTS contains Uke MPIDRs,
 GIC and firmware static reservations. TLMM is described but disabled pending
