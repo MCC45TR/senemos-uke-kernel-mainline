@@ -124,6 +124,10 @@
     {
       "path": "patches/7.2.9/0029-uke-legacy-cpucp-mailbox.patch",
       "sha256": "954b2c615cf87592afdb845e5f78b407d29e991af5302736dc3102c945fecdfc"
+    },
+    {
+      "path": "patches/7.2.9/0030-slim-startup-error-propagation.patch",
+      "sha256": "da894b89074ae57e1ba68f71716b7fa0233b1711b4670563013d66961aa20347"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
