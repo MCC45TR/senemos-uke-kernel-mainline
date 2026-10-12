@@ -140,6 +140,10 @@
     {
       "path": "patches/7.2.9/0033-uke-charger-budget-and-startup.patch",
       "sha256": "a698d174500dbb77f337f5db0a753a99e6c7a48748b2bb13bbb0d62ab91b3855"
+    },
+    {
+      "path": "patches/7.2.9/0034-uke-firmware-backlight-blanking.patch",
+      "sha256": "edcb295cf96928f0f27f3da34d797be154f884e4d1f3963370fd17ad5e343e77"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -151,7 +155,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "553cdcdde89e96f1e74800679e19ebc7de9766bc9d46a5a520bd826cefbca094"
+      "sha256": "f18377d088d1db2e315ba217bcb2975a96dd3d898a22577efee7a56c35731eac"
     },
     {
       "path": "configs/fedora.config",

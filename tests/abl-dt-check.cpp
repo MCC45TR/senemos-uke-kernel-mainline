@@ -62,6 +62,14 @@ int main(int argc, char **argv) {
         if (!result) { std::cout << "Foreign DT unchanged\n"; return 3; }
         if (result != 1) throw std::runtime_error("DT admission rejected: " + std::to_string(result));
         if (fdt_check_full(output.data(), output.size())) throw std::runtime_error("Invalid result FDT");
+        const int chosen = fdt_path_offset(output.data(), "/chosen");
+        const char *stdout_path = static_cast<const char *>(fdt_getprop(output.data(), chosen, "stdout-path", nullptr));
+        const int framebuffer = stdout_path ? fdt_path_offset(output.data(), stdout_path) : -1;
+        int bl_length;
+        const auto *bl = static_cast<const fdt32_t *>(fdt_getprop(output.data(), framebuffer, "backlight", &bl_length));
+        const int primary = fdt_path_offset(output.data(), "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11");
+        if (!bl || bl_length != 4 || fdt_node_offset_by_phandle(output.data(), fdt32_to_cpu(*bl)) != primary)
+            throw std::runtime_error("Firmware framebuffer backlight link is not the Uke primary");
         const int usb_node = fdt_path_offset(output.data(), "/soc/ssusb@a600000");
         const char *psy = static_cast<const char *>(fdt_getprop(output.data(), usb_node, "usb-psy-name", nullptr));
         const int slim = fdt_path_offset(output.data(), "/soc/slim@6C40000");

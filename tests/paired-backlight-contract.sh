@@ -24,7 +24,7 @@ struct mutex { bool locked = false; };
 struct backlight_device;
 struct ktz8866 { i2c_client *client; struct regmap *regmap; ktz8866 *peer; mutex lock;
                  bool secondary=false; backlight_device *backlight=nullptr; };
-struct backlight_device { ktz8866 *data; unsigned int brightness; };
+struct backlight_device { ktz8866 *data; unsigned int brightness; bool blank=false; };
 int operations, writes, failure=-1, second_failure=-1, mismatch=-1, errors;
 bool persistent_failure;
 int bus() {
@@ -44,7 +44,7 @@ int ktz8866_update_bits(ktz8866 *ktz, unsigned int reg, unsigned int mask, unsig
     return ktz8866_write(ktz,reg,(ktz->regmap->regs[reg]&~mask)|value);
 }
 ktz8866 *bl_get_data(backlight_device *bl) { return bl->data; }
-unsigned int backlight_get_brightness(backlight_device *bl) { return bl->brightness; }
+unsigned int backlight_get_brightness(backlight_device *bl) { return bl->blank ? 0 : bl->brightness; }
 void mutex_lock(mutex *m) { assert(!m->locked); m->locked=true; }
 void mutex_unlock(mutex *m) { assert(m->locked); m->locked=false; }
 void dev_err(device *, const char *, int) { errors++; }
@@ -129,6 +129,11 @@ int main() {
             assert(!std::memcmp(maps,original,sizeof(maps)));
         }
     }
+    reset(maps); bl.brightness=102; bl.blank=true;
+    assert(ktz8866_uke_update_status(&bl)==0 && ktz8866_uke_get_brightness(&bl)==0);
+    assert(!(maps[0].regs[BL_EN]&BL_EN_BIT) && !(maps[1].regs[BL_EN]&BL_EN_BIT) && bl.brightness==102);
+    bl.blank=false;
+    assert(ktz8866_uke_update_status(&bl)==0 && ktz8866_uke_get_brightness(&bl)==102);
     reset(maps); bl.brightness=2048; assert(ktz8866_uke_update_status(&bl)==-EINVAL && operations==0);
     reset(maps); maps[0].regs[BL_EN]|=BIT(7); bl.brightness=100;
     assert(ktz8866_uke_update_status(&bl)==-EBUSY && writes==0);
