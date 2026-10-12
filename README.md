@@ -16,6 +16,14 @@ matching modules and Fedora RPM/SRPM packages. Local source verification,
 compilation, module ABI and package lifecycle checks have separate records.
 Native AArch64 builds are published through the development COPR.
 
+Release **1.28** enables upstream power-management diagnostics (`PM_DEBUG` and
+`PM_SLEEP_DEBUG`) for staged suspend tests. It does not enable automatic sleep.
+The last observed session had sleep targets masked, `s2idle [deep]` available,
+and no recorded suspend entry. Power-key wake and USB wake remain unqualified;
+the current USB2 peripheral DT omits the OEM wake IRQs. A brief black screen is
+not evidence of suspend or resume. Screen blanking, s2idle and deep suspend are
+tracked separately in the [sleep work order](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/testing/FEDORA-SLEEP-WAKE-2026-10-13.md).
+
 The next display candidate enables built-in upstream `simpledrm` for the
 existing firmware framebuffer. It provides a possible software-rendered
 Wayland scanout path while the Adreno 732 native GPU/GMU/SMMU port remains open.

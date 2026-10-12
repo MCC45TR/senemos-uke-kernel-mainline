@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.27%{?dist}
+Release:        1.28%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -150,6 +150,9 @@ cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
 %check
+for option in SUSPEND PM_DEBUG PM_SLEEP_DEBUG; do
+    grep -Fx "CONFIG_${option}=y" %{_uke_out}/.config
+done
 CXX=clang++ bash %{SOURCE4} "$PWD"
 CC=clang bash %{SOURCE5} "$PWD"
 CC=clang bash %{SOURCE6} "$PWD"
@@ -218,6 +221,10 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.28
+- Expose standard suspend diagnostics for staged s2idle and wake-source qualification
+- Retain automatic sleep containment until device suspend and resume pass
+
 * Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.27
 - Link Uke firmware DRM blanking to its paired backlight without changing panel power.
 
