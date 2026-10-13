@@ -60,7 +60,7 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --help, -h          Show this help
 
 Examples:
-  ./senemos.sh --build 7.2.9 --distro=fedora --test
+  ./senemos.sh --build 7.2.10 --distro=fedora --test
   ./senemos.sh --build latest --distro=fedora
   ./senemos.sh --build lastest --distro=fedora
   ./senemos.sh --inspect-stock --vendor-boot FILE --dtbo FILE --firmware-profile NAME
@@ -361,7 +361,7 @@ internal_build() {
         [[ $path != configs/* ]] || staged=$adaptation/configs/${path##*/}
         [[ $(sha256sum "$staged" | cut -d ' ' -f1) == "$expected" ]] || die "Input changed while staging: $path"
     done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' "$manifest")
-    tar --sort=name --mtime=@1791024250 --owner=0 --group=0 --numeric-owner -cJf \
+    tar --sort=name --mtime="@$(jq -er .source_date_epoch "$manifest")" --owner=0 --group=0 --numeric-owner -cJf \
         "$top/SOURCES/senemos-uke-adaptation-$VERSION.tar.xz" -C "$work/adaptation" senemos-adaptation
     sed "s/^Version: .*/Version: $VERSION/" /work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec > "$top/SPECS/kernel.spec"
     rpm -qa --qf '%{NAME}-%{EPOCHNUM}:%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > "$work/toolchain-packages.txt"
@@ -664,15 +664,19 @@ self_test() {
     [[ $(cat "$temporary"/rpm-fixture/RPMS.saved-*/aarch64/kernel-1.3.rpm) == old-binary ]]
     [[ $(cat "$temporary"/rpm-fixture/SRPMS.saved-*/kernel-1.3.src.rpm) == old-source ]]
     ok 'source-changing rebuild preserves older RPMs outside the current package set'
-    local profile=$KERNEL/manifests/linux-7.2.9.json archive=$KERNEL/referances/releases/linux-7.2.9.tar.xz
-    if [[ -s $archive ]]; then
+    local profile archive profile_version signature
+    for profile in "$KERNEL"/manifests/linux-*.json; do
+        profile_version=$(jq -er '.version | select(test("^[0-9]+[.][0-9]+[.][0-9]+$"))' "$profile")
+        archive=$KERNEL/referances/releases/linux-$profile_version.tar.xz
+        signature=$KERNEL/referances/releases/linux-$profile_version.tar.sign
+        [[ -s $archive ]] || continue
         printf broken > "$temporary/broken.tar.xz"
-        reject bash "$ROOT/senemos.sh" --internal-verify "$temporary/broken.tar.xz" "$KERNEL/referances/releases/linux-7.2.9.tar.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/gpg"
-        verify_source "$archive" "$KERNEL/referances/releases/linux-7.2.9.tar.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/good-gpg"
+        reject bash "$ROOT/senemos.sh" --internal-verify "$temporary/broken.tar.xz" "$signature" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/gpg"
+        verify_source "$archive" "$signature" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/good-gpg"
         printf invalid > "$temporary/invalid.sign"
         reject bash "$ROOT/senemos.sh" --internal-verify "$archive" "$temporary/invalid.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/bad-gpg"
-        ok 'real signed source accepted; corrupt archive and signature rejected'
-    fi
+        ok "real signed $profile_version source accepted; corrupt archive and signature rejected"
+    done
     say "$passed self-test groups passed; no hardware tests performed"
     rm -rf -- "$temporary"; trap - RETURN
 }

@@ -8,8 +8,8 @@
 %global _uke_out %{_topdir}/kernel-out
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.9
-Release:        1.31%{?dist}
+Version: 7.2.10
+Release:        1.32%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -110,8 +110,8 @@ cmp senemos-expected-patches.txt senemos-applied-patches.txt
 %if !0%{?uke_package_only}
 export ARCH=arm64 LLVM=1
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=uke-builder
-export KBUILD_BUILD_TIMESTAMP='2026-10-03 10:44:10 UTC' KBUILD_BUILD_VERSION=1
-export SOURCE_DATE_EPOCH=1791024250
+export SOURCE_DATE_EPOCH=$(jq -er '.source_date_epoch | numbers' senemos-adaptation/source-lock.json)
+export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')" KBUILD_BUILD_VERSION=1
 # A killed fixdep can leave a partially written .cmd file. Preserve completed
 # objects and discard only dependency records that no longer parse as Make.
 if test -d %{_uke_out}; then
@@ -225,6 +225,10 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.32
+- Carry the Uke adaptation and experimental Adreno 732 support to Linux 7.2.10.
+- Derive the reproducible build timestamp from the signed-source profile.
+
 * Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.29
 - Order charger prerequisites and retry bounded early SDP requests
 - Correct exact-Uke current direction and charge-counter units

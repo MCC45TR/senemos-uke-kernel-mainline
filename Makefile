@@ -2,7 +2,7 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm
-version := 7.2.9
+version := 7.2.10
 outdir ?= $(CURDIR)/build/srpm
 validate:
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 37) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
@@ -32,10 +32,10 @@ srpm: validate
 	cp configs/{arm64-qcom,uke,fedora}.config "$$top/adaptation/senemos-adaptation/configs/"
 	cp manifests/linux-$(version).json "$$top/adaptation/senemos-adaptation/source-lock.json"
 	cp patches/$(version)/README.md "$$top/adaptation/senemos-adaptation/README.md"
-	tar --sort=name --mtime=@1791024250 --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
+	tar --sort=name --mtime=@$$(jq -er .source_date_epoch manifests/linux-$(version).json) --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh tests/qup-interconnect-contract.sh "$$top/SOURCES/"
-	cp packaging/senemos-uke-linux-kernel-mainline.spec "$$top/SPECS/"
+	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"

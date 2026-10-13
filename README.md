@@ -3,9 +3,9 @@
 Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 (`uke`, Qualcomm SM7675).
 
-**Development target:** Linux 7.2.9 · AArch64 · Fedora Rawhide
+**Development target:** Linux 7.2.10 · AArch64 · Fedora Rawhide
 
-[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json)
+[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.10.json)
 
 ## Status — 13 October 2026
 
@@ -14,13 +14,16 @@ desktop and Wi-Fi SSH. Battery readings and manual backlight control are
 available. Touch, Bluetooth, audio and USB host mode remain
 incomplete. Detailed results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
 
-The experimental Adreno 732 port passes native shader and pixel-readback tests
+The experimental Adreno 732 port on Linux 7.2.9 passes native shader and pixel-readback tests
 at 255 MHz. The original Fedora KWin also reports hardware OpenGL ES rendering.
 Mesa currently labels this exact chip `FD735`; the kernel reports `0x43030b00`.
 A fresh graphical session also reports accelerated Xwayland/OpenGL 4.6, and a
 120-frame Turnip Wayland cube completes. Higher frequencies, sustained workloads
 and suspend remain incomplete. Early initramfs GPU loading failed and is rejected;
 automatic GPU startup still requires correction.
+Signed upstream 7.2.10 accepts all 37 adaptation patches after preserving its
+new DWC3 reset-recovery logic. Its source and build checks are separate from
+the 7.2.9 tablet results. Revision 1.32 is the first 7.2.10 migration candidate.
 These results use a RAM candidate with matched local GPU modules and firmware;
 they do not qualify a signed COPR package or normal slot-B startup.
 
@@ -70,7 +73,7 @@ published yet.
 ```sh
 git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
 cd senemos-uke-kernel-mainline
-./senemos.sh --build 7.2.9 --distro=fedora --test
+./senemos.sh --build 7.2.10 --distro=fedora --test
 ./senemos.sh --build latest --distro=fedora
 ```
 

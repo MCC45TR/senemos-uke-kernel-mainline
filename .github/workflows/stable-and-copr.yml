@@ -29,7 +29,7 @@ jobs:
       - name: Install host source-verification tools
         run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils
       - name: Validate reviewed Uke inputs and standalone entry
-        run: make validate && ./senemos.sh --self-test && ./senemos.sh --build 7.2.9 --distro=fedora --dry-run
+        run: make validate && ./senemos.sh --self-test && ./senemos.sh --build 7.2.10 --distro=fedora --dry-run
       - name: Request one validated main-branch native build
         if: github.event_name == 'push'
         env:
