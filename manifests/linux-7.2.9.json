@@ -144,6 +144,10 @@
     {
       "path": "patches/7.2.9/0034-uke-firmware-backlight-blanking.patch",
       "sha256": "edcb295cf96928f0f27f3da34d797be154f884e4d1f3963370fd17ad5e343e77"
+    },
+    {
+      "path": "patches/7.2.9/0035-uke-charger-readiness-and-abi.patch",
+      "sha256": "62f89e69edd6138a8e8b288f7bd3187dfb3f8beb2b3d60b1e678fdaa8386c19e"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

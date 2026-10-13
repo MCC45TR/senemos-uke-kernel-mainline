@@ -235,6 +235,13 @@ Project-authored repository tooling and documentation use [MIT](LICENSE).
 Linux sources and derived kernel patches retain their original SPDX and
 GPL-compatible licenses; consult each file and the source package's notices.
 
-Firmware display blanking uses a DT link to the paired Uke backlight in the
-1.27 candidate. Host contracts preserve brightness through blank/unblank and
-report I/O faults; physical DPMS and wake acceptance is still pending.
+Firmware display blanking uses a DT link to the paired Uke backlight. A matched
+1.27 device trial observed illumination off through DRM DPMS and restored the
+requested brightness on unblank. This does not establish system suspend.
+
+Release **1.29** is a charger-readiness candidate: preload the domain mapper,
+retry a still-current USB budget briefly when the remote charger is not ready,
+and link the USB consumer to its battery supplier for safe driver removal.
+Exact Uke battery current and charge counters are translated to the Linux ABI.
+The initramfs must load QRTR transport before ADSP coldplug. Host checks do not
+establish automatic charging, high-power negotiation or repeated boot acceptance.

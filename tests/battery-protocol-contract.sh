@@ -13,11 +13,13 @@ cat <<'C'
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 typedef uint32_t u32;
 typedef uint32_t __le32;
 typedef uint16_t __le16;
 typedef uint8_t u8;
 struct work_struct { int unused; };
+struct delayed_work { struct work_struct work; };
 struct completion { int done; };
 struct mutex { int unused; };
 struct device_node { bool uke; };
@@ -70,11 +72,13 @@ static bool of_device_is_compatible(const struct device_node *node, const char *
  assert(!strcmp(name,"qcom,usb-snps-eusb2-phy") || !strcmp(name,"qcom,cliffs-adsp-pas")); return node->uke;
 }
 struct usb_phy { struct device *dev; int (*set_power)(struct usb_phy *, unsigned int); };
-struct dwc3 { struct usb_phy *usb2_phy; struct power_supply *usb_psy; unsigned int current_limit; struct work_struct vbus_draw_work; };
+struct dwc3 { struct usb_phy *usb2_phy; struct power_supply *usb_psy; unsigned int current_limit, vbus_draw_retries; struct delayed_work vbus_draw_work; };
 struct usb_gadget { struct dwc3 *dwc; };
 static int scheduled, legacy;
 static struct dwc3 *gadget_to_dwc(struct usb_gadget *g) { return g->dwc; }
-static void schedule_work(struct work_struct *w) { (void)w; scheduled++; }
+#define WRITE_ONCE(x, v) ((x)=(v))
+static void *system_wq;
+static void mod_delayed_work(void *q, struct delayed_work *w, unsigned int delay) { (void)q; (void)w; assert(delay==0); scheduled++; }
 static int usb_phy_set_power(struct usb_phy *p, unsigned int mA) { (void)p; (void)mA; legacy++; return 42; }
 static const struct of_device_id qcom_battmgr_of_variants[]={{0}};
 C
@@ -144,8 +148,15 @@ int main(void) {
  assert(qcom_battmgr_request_property(&b,BATTMGR_USB_PROPERTY_GET,12,0)==0 && sent.property==12);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,2550,0); assert((int)b.status.temperature==255);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,(uint32_t)-500,0); assert((int)b.status.temperature==-50);
- reply(&b,BATTMGR_BAT_PROPERTY_GET,15,123456,0); assert(b.info.charge_count==123456);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,15,8850,0); assert(b.info.charge_count==8850000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,15,2147484,0); assert(b.error==-ERANGE && b.info.charge_count==8850000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)-500000,0); assert(b.status.current_now==500000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,9,500000,0); assert(b.status.current_now==-500000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)INT_MIN,0); assert(b.error==-ERANGE && b.status.current_now==-500000);
+ b.variant=QCOM_BATTMGR_SM8350;
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,14,8850,0); assert(b.info.charge_count==8850);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)-500000,0); assert(b.status.current_now==-500000);
+ b.variant=QCOM_BATTMGR_UKE;
  reply(&b,BATTMGR_BAT_PROPERTY_GET,4,1250,0); assert(b.status.percent==12);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,12,1000000,0); assert(b.error==-ENODATA && (int)b.status.temperature==-50);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,28,9,0); assert(b.error==-ENODATA);

@@ -1,5 +1,15 @@
 # Linux 7.2.9 Uke adaptation
 
+`0035` follows the upstream remoteproc PD-mapper preload proposal and addresses
+the exact Uke charger readiness, USB supplier lifetime and power-supply ABI.
+The host fixture executes bounded transient retries, terminal failures,
+superseding budgets and missing/failed supplier admission through the actual
+functions. Battery fixtures cover signed current, mAh-to-uAh conversion,
+overflow rejection and unchanged non-Uke variants. Each retry still passes
+the existing online/SDP/source-ceiling checks. Neither a late startup service
+nor a higher charging voltage/current is added. Repeated physical boot and
+charger readiness remain separate acceptance gates.
+
 `0026` supplies the retained LPASS DDR route needed by the actual Uke ADSP
 interconnect: LPICX to LPIAON to LPASS aggregate to GEM/LLCC/EBI. Node IDs,
 widths, QoS and HLOS LP0 membership come from the pinned Xiaomi Cliffs OEM
