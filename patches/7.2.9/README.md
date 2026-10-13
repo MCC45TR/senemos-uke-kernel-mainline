@@ -134,7 +134,7 @@ in native RPM `%check`. ADSP stays manual; FastRPC DMA, PDM maps, audio and
 sensor operation remain separately gated.
 
 `0028` adds a Uke-only protection-domain map derived from the five service
-registries in the owner's pinned Global OS3.0.304.0 modem image. All four ADSP
+registries in the pinned Global OS3.0.304.0 modem image. All four ADSP
 domains use instance 74; CDSP root uses 76. Only audio advertises `avs/audio`,
 and the existing mapper supplies `tms/servreg` for each domain. These match
 existing mainline entries exactly. No firmware bytes are published and no

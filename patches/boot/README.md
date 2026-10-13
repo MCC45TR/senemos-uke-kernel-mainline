@@ -60,7 +60,7 @@ Input admission checks the complete PMK8550 SDAM provider path, referenced
 one-byte cell at offset `0x48` and bit range `<1 7>` before preserving that cell
 reference. OEM mode values are normal `0x20`, recovery `0x01` and bootloader
 `0x02`. No custom reboot wrapper, raw PMIC write or OEM panic notifier is added.
-The adapted model displays the owner-requested `Xiaomi Pad 7`; the original
+The adapted model displays the configured `Xiaomi Pad 7`; the original
 factory model/board admission remains unchanged. Host fixtures reject a wrong
 cell, offset or bit range. A physical `reboot bootloader` transition requires a
 matching built candidate and its own acceptance record.
