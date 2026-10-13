@@ -148,6 +148,14 @@
     {
       "path": "patches/7.2.9/0035-uke-charger-readiness-and-abi.patch",
       "sha256": "62f89e69edd6138a8e8b288f7bd3187dfb3f8beb2b3d60b1e678fdaa8386c19e"
+    },
+    {
+      "path": "patches/7.2.9/0036-uke-adreno732-render.patch",
+      "sha256": "a72d087065ef63d8953b296c64e22e5d79c6bcf6d29c66ec76529a52ccafd691"
+    },
+    {
+      "path": "patches/7.2.9/0037-uke-gpu-interconnect.patch",
+      "sha256": "134ab7cafe6c1754ad9850f51197d401fa7470dcd04ee7f205dfed8dd30e16cc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

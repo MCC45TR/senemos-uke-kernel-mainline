@@ -13,6 +13,7 @@
 #include <dt-bindings/clock/qcom,gcc-cliffs.h>
 #include <dt-bindings/clock/qcom,rpmh.h>
 #include <dt-bindings/clock/qcom,tcsrcc-pineapple.h>
+#include "sm7675-uke-adreno732.dtsi"
 
 /* Stock overlay root metadata does not itself overlay the runtime root.
  * Express the inspected Uke board identity as a real root-target fragment.

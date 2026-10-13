@@ -50,6 +50,45 @@ static void preserve_node(const Bytes &before, const Bytes &after, const std::st
         }
     }
 }
+static void check_adreno732(const Bytes &dt) {
+    const auto node = [&](const char *path) {
+        const int n = fdt_path_offset(dt.data(), path);
+        if (n < 0) throw std::runtime_error("GPU resource node missing");
+        return n;
+    };
+    const auto cells = [&](int n, const char *name, std::initializer_list<uint32_t> expected) {
+        int length = 0;
+        const auto *p = static_cast<const fdt32_t *>(fdt_getprop(dt.data(), n, name, &length));
+        if (!p || length != static_cast<int>(expected.size() * sizeof(*p)))
+            throw std::runtime_error("GPU resource length differs");
+        for (const auto value : expected)
+            if (fdt32_to_cpu(*p++) != value) throw std::runtime_error("GPU resource value differs");
+    };
+    const int gpu = node("/soc/qcom,kgsl-3d0@3d00000");
+    const int gmu = node("/soc/qcom,gmu@3d69000");
+    const int cc = node("/soc/clock-controller@3d90000");
+    const int smmu = node("/soc/kgsl-smmu@3da0000");
+    const uint32_t gccp = fdt_get_phandle(dt.data(), node("/soc/clock-controller@100000"));
+    const uint32_t ccp = fdt_get_phandle(dt.data(), cc), sp = fdt_get_phandle(dt.data(), smmu);
+    if (!ccp || !sp || fdt_node_check_compatible(dt.data(), gpu, "qcom,adreno-43030b00") ||
+        fdt_node_check_compatible(dt.data(), gmu, "qcom,adreno-gmu-732"))
+        throw std::runtime_error("Exact Adreno 732 identity missing");
+    cells(cc, "#power-domain-cells", {1});
+    cells(gpu, "reg", {0x3d00000, 0x40000, 0x3d9e000, 0x1000, 0x3d61000, 0x800});
+    cells(gmu, "reg", {0x3d68000, 0x37000, 0x3d50000, 0x10000, 0xb280000, 0x10000});
+    cells(gpu, "iommus", {sp, 0, 0});
+    cells(gpu, "clocks", {gccp, 32, gccp, 33, ccp, 2});
+    cells(gmu, "iommus", {sp, 5, 0});
+    cells(gmu, "power-domains", {ccp, 0, ccp, 1});
+    cells(smmu, "reg", {0x3da0000, 0x40000});
+    cells(smmu, "power-domains", {ccp, 0});
+    const int opp = node("/soc/qcom,kgsl-3d0@3d00000/opp-table/opp-255000000");
+    cells(opp, "opp-hz", {0, 255000000});
+    cells(opp, "opp-level", {56});
+    cells(opp, "opp-peak-kBps", {2136718});
+    if (fdt_next_subnode(dt.data(), opp) != -FDT_ERR_NOTFOUND)
+        throw std::runtime_error("Unqualified GPU operating point present");
+}
 int main(int argc, char **argv) {
     try {
         if (argc != 5) throw std::runtime_error("Usage: abl-dt-check INPUT UFS USB NEW_OUTPUT");
@@ -62,6 +101,7 @@ int main(int argc, char **argv) {
         if (!result) { std::cout << "Foreign DT unchanged\n"; return 3; }
         if (result != 1) throw std::runtime_error("DT admission rejected: " + std::to_string(result));
         if (fdt_check_full(output.data(), output.size())) throw std::runtime_error("Invalid result FDT");
+        check_adreno732(output);
         const int chosen = fdt_path_offset(output.data(), "/chosen");
         const char *stdout_path = static_cast<const char *>(fdt_getprop(output.data(), chosen, "stdout-path", nullptr));
         const int framebuffer = stdout_path ? fdt_path_offset(output.data(), stdout_path) : -1;

@@ -90,10 +90,20 @@ static int UKE_INIT uke_legacy_layout(const void *fdt)
 {
 	static const struct {
 		const char *path, *property;
-		unsigned int count, values[6];
+		unsigned int count, values[14];
 	} expected[] = {
 		{ "/soc", "#address-cells", 1, { 1 } },
 		{ "/soc", "#size-cells", 1, { 1 } },
+		{ "/soc/qcom,kgsl-3d0@3d00000", "qcom,chipid", 1, { 0x43030b00 } },
+		{ "/soc/qcom,kgsl-3d0@3d00000", "reg", 14, { 0x3d00000, 0x40000, 0x3d50000, 0x10000, 0x3d61000, 0x800, 0x3d9e000, 0x1000, 0x10048000, 0x8000, 0x10900000, 0x80000, 0x10b05000, 0x1000 } },
+		{ "/soc/qcom,kgsl-3d0@3d00000", "interrupts", 3, { 0, 300, 4 } },
+		{ "/soc/qcom,gmu@3d69000", "reg", 6, { 0x3d68000, 0x37000, 0xb280000, 0x10000, 0x3d40000, 0x10000 } },
+		{ "/soc/qcom,gmu@3d69000", "interrupts", 6, { 0, 304, 4, 0, 305, 4 } },
+		{ "/soc/clock-controller@3d90000", "reg", 2, { 0x3d90000, 0xa000 } },
+		{ "/soc/kgsl-smmu@3da0000", "reg", 4, { 0x3da0000, 0x40000, 0x3de6000, 0x40 } },
+		{ "/soc/qcom,gdsc@3d99108", "reg", 2, { 0x3d9908c, 4 } },
+		{ "/soc/qcom,gdsc@3d9905c", "reg", 2, { 0x3d99034, 4 } },
+		{ "/soc/syscon@3d99504", "reg", 2, { 0x3d99504, 4 } },
 		{ "/soc/mmio-sram@17D09400", "#address-cells", 1, { 2 } },
 		{ "/soc/mmio-sram@17D09400", "#size-cells", 1, { 2 } },
 		{ "/soc/mmio-sram@17D09400", "reg", 4, { 0, 0x17d09400, 0, 0x400 } },

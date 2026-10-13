@@ -92,9 +92,13 @@ if fdtget "$out/admitted.dtb" "$touch" panel 2>/dev/null; then exit 1; fi
 for property in compatible reg spi-max-frequency novatek,irq-gpio novatek,lcd_id-gpio pinctrl-0 pinctrl-1; do
     [[ $(fdtget -t x "$out/admitted.dtb" "$touch" "$property") == "$(fdtget -t x "$input" "$touch" "$property")" ]]
 done
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route touch-compatible touch-reg touch-frequency touch-panel-length touch-panel-target touch-panel-order touch-pinctrl-names touch-pinctrl-target touch-pinctrl-length touch-cs-pin touch-cs-function touch-cs-drive goodix-compatible goodix-reg; do
+for scenario in gpu-chip gpu-irq gmu-base gpu-gx board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route touch-compatible touch-reg touch-frequency touch-panel-length touch-panel-target touch-panel-order touch-pinctrl-names touch-pinctrl-target touch-pinctrl-length touch-cs-pin touch-cs-function touch-cs-drive goodix-compatible goodix-reg; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
+        gpu-chip) fdtput -t x "$out/$scenario.dtb" /soc/qcom,kgsl-3d0@3d00000 qcom,chipid 43030c00;;
+        gpu-irq) fdtput -t x "$out/$scenario.dtb" /soc/qcom,kgsl-3d0@3d00000 interrupts 0 12d 4;;
+        gmu-base) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gmu@3d69000 reg 3d6a000 35000 b280000 10000 3d40000 10000;;
+        gpu-gx) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gdsc@3d9905c reg 3d9905c 4;;
         touch-compatible) fdtput -t s "$out/$scenario.dtb" "$touch" compatible novatek,nt36523;;
         touch-pinctrl-names) fdtput -t s "$out/$scenario.dtb" "$touch" pinctrl-names wrong pmx_ts_suspend;;
         touch-cs-pin) fdtput -t s "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/mux pins gpio20;;

@@ -13,6 +13,8 @@ grep -Fxq 0016-uke-wlan-ordered-rails.patch "$kernel/senemos-applied-patches.txt
 grep -Fxq 0023-uke-qup1-backlight-bus.patch "$kernel/senemos-applied-patches.txt"
 grep -Fxq 0025-uke-paired-normal-backlight.patch "$kernel/senemos-applied-patches.txt"
 grep -Fxq 0026-cliffs-lpass-adsp-interconnect.patch "$kernel/senemos-applied-patches.txt"
+grep -Fxq 0036-uke-adreno732-render.patch "$kernel/senemos-applied-patches.txt"
+grep -Fxq 0037-uke-gpu-interconnect.patch "$kernel/senemos-applied-patches.txt"
 hook_args=(--exclude=drivers/regulator/qcom-rpmh-regulator-uke.c --exclude=drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c)
 git -C "$kernel" apply --check "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
 git -C "$kernel" apply "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
@@ -46,4 +48,7 @@ for name in ufs usb; do
 done
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
-    "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" "$header" > "$output/abl-source-SHA256SUMS"
+    "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
+    "$here/../../patches/7.2.9/0036-uke-adreno732-render.patch" \
+    "$here/../../patches/7.2.9/0037-uke-gpu-interconnect.patch" \
+    "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
