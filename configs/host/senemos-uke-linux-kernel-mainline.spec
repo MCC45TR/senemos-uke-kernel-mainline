@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release: %{?senemos_package_release}%{!?senemos_package_release:1.28}%{?dist}
+Release: %{?senemos_package_release}%{!?senemos_package_release:1.29}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -22,6 +22,7 @@ Source5: cpucp-mailbox-contract.sh
 Source6: slim-startup-contract.sh
 Source7: battery-protocol-contract.sh
 Source8: firmware-backlight-contract.sh
+Source9: usb-charger-readiness-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -158,6 +159,7 @@ CC=clang bash %{SOURCE5} "$PWD"
 CC=clang bash %{SOURCE6} "$PWD"
 CC=clang bash %{SOURCE7} "$PWD"
 bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/backlight.h"
+bash %{SOURCE9} "$PWD"
 
 %install
 export ARCH=arm64 LLVM=1
@@ -221,6 +223,11 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.29
+- Order charger prerequisites and retry bounded early SDP requests
+- Correct exact-Uke current direction and charge-counter units
+- Link the USB consumer to its power supplier before provider teardown
+
 * Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.28
 - Expose standard suspend diagnostics for staged s2idle and wake-source qualification
 - Retain automatic sleep containment until device suspend and resume pass
