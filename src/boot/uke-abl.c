@@ -396,6 +396,64 @@ static int UKE_INIT uke_spi_graph(const void *fdt)
 	for (i = 0; i < 10; i++)
 		if (fdt32_to_cpu(cells[i < 5 ? i + 1 : i + 2]) != dma[i])
 			return -FDT_ERR_BADVALUE;
+	node = fdt_path_offset(fdt, "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0");
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "novatek,NVT-ts-spi"))
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, node, "reg", &size);
+	if (!cells || size != 4 || fdt32_to_cpu(*cells))
+		return -FDT_ERR_BADVALUE;
+	cells = fdt_getprop(fdt, node, "spi-max-frequency", &size);
+	if (!cells || size != 4 || fdt32_to_cpu(*cells) != 19200000)
+		return -FDT_ERR_BADVALUE;
+	if (fdt_stringlist_count(fdt, node, "pinctrl-names") != 2 ||
+	    strcmp(fdt_stringlist_get(fdt, node, "pinctrl-names", 0, NULL), "pmx_ts_active") ||
+	    strcmp(fdt_stringlist_get(fdt, node, "pinctrl-names", 1, NULL), "pmx_ts_suspend"))
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 2; i++) {
+		const char *name = i ? "mi_ts_spi_cs_suspend" : "mi_ts_spi_cs_active";
+		const char *value;
+		int state, mux, config;
+
+		cells = fdt_getprop(fdt, node, i ? "pinctrl-1" : "pinctrl-0", &size);
+		if (!cells || size != 4 ||
+		    (state = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*cells))) < 0 ||
+		    strcmp(fdt_get_name(fdt, state, NULL), name))
+			return -FDT_ERR_BADPHANDLE;
+		mux = fdt_subnode_offset(fdt, state, "mux");
+		config = fdt_subnode_offset(fdt, state, "config");
+		value = fdt_getprop(fdt, mux, "pins", &size);
+		if (!value || size != (int)sizeof("gpio19") || strcmp(value, "gpio19"))
+			return -FDT_ERR_BADVALUE;
+		value = fdt_getprop(fdt, mux, "function", &size);
+		name = i ? "gpio" : "qup0_se4_l3";
+		if (!value || size != (int)strlen(name) + 1 || strcmp(value, name))
+			return -FDT_ERR_BADVALUE;
+		value = fdt_getprop(fdt, config, "pins", &size);
+		if (!value || size != (int)sizeof("gpio19") || strcmp(value, "gpio19"))
+			return -FDT_ERR_BADVALUE;
+		cells = fdt_getprop(fdt, config, "drive-strength", &size);
+		if (!cells || size != 4 || fdt32_to_cpu(*cells) != (i ? 2U : 6U) ||
+		    !fdt_getprop(fdt, config, i ? "bias-pull-down" : "bias-disable", NULL) ||
+		    (i && !fdt_getprop(fdt, config, "output-low", NULL)))
+			return -FDT_ERR_BADVALUE;
+	}
+	cells = fdt_getprop(fdt, node, "panel", &size);
+	if (!cells || size != 8)
+		return -FDT_ERR_BADPHANDLE;
+	for (i = 0; i < 2; i++) {
+		static const char * const names[] = {
+			"qcom,mdss_dsi_o82_42_02_0b_dualdsi_dsc_vid",
+			"qcom,mdss_dsi_o82_36_02_0a_dualdsi_dsc_vid",
+		};
+		int panel = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(cells[i]));
+
+		if (panel < 0 || strcmp(fdt_get_name(fdt, panel, NULL), names[i]))
+			return -FDT_ERR_BADPHANDLE;
+	}
+	node = fdt_path_offset(fdt, "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/goodix-berlin@0");
+	if (node < 0 || fdt_getprop(fdt, node, "compatible", NULL) ||
+	    fdt_getprop(fdt, node, "reg", NULL))
+		return -FDT_ERR_BADVALUE;
 	return 0;
 }
 
@@ -542,6 +600,23 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_pair_backlights(output);
+	if (ret)
+		return ret;
+	/* shortcut: firmware display has no native panel driver; restore the
+	 * touch-panel lifecycle link when the O82 DRM panel port is admitted.
+	 */
+	ret = uke_delete_optional(output, "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0", "panel");
+	if (ret)
+		return ret;
+	/* OEM selects these CS states in its driver; the Linux core uses these names. */
+	ret = fdt_setprop(output,
+		fdt_path_offset(output, "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0"),
+		"pinctrl-names", "default\0sleep", sizeof("default\0sleep"));
+	if (ret)
+		return ret;
+	ret = fdt_setprop_string(output,
+		fdt_path_offset(output, "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/goodix-berlin@0"),
+		"status", "disabled");
 	if (ret)
 		return ret;
 	ret = uke_scope_smmu_clients(output);

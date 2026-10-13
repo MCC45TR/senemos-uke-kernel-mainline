@@ -85,9 +85,30 @@ spi=/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" compatible) == qcom,geni-spi ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" clock-names) == se ]]
 [[ $(fdtget -t x "$out/admitted.dtb" "$spi" dmas) == "$(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 0 4 1 $(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 1 4 1" ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route; do
+touch=$spi/novatek@0
+[[ $(fdtget -t s "$out/admitted.dtb" "$touch" pinctrl-names) == 'default sleep' ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$spi/goodix-berlin@0" status) == disabled ]]
+if fdtget "$out/admitted.dtb" "$touch" panel 2>/dev/null; then exit 1; fi
+for property in compatible reg spi-max-frequency novatek,irq-gpio novatek,lcd_id-gpio pinctrl-0 pinctrl-1; do
+    [[ $(fdtget -t x "$out/admitted.dtb" "$touch" "$property") == "$(fdtget -t x "$input" "$touch" "$property")" ]]
+done
+for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route touch-compatible touch-reg touch-frequency touch-panel-length touch-panel-target touch-panel-order touch-pinctrl-names touch-pinctrl-target touch-pinctrl-length touch-cs-pin touch-cs-function touch-cs-drive goodix-compatible goodix-reg; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
+        touch-compatible) fdtput -t s "$out/$scenario.dtb" "$touch" compatible novatek,nt36523;;
+        touch-pinctrl-names) fdtput -t s "$out/$scenario.dtb" "$touch" pinctrl-names wrong pmx_ts_suspend;;
+        touch-cs-pin) fdtput -t s "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/mux pins gpio20;;
+        touch-cs-function) fdtput -t s "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/mux function gpio;;
+        touch-cs-drive) fdtput -t u "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/config drive-strength 16;;
+        touch-pinctrl-target) fdtput -t x "$out/$scenario.dtb" "$touch" pinctrl-0 deadbeef;;
+        touch-pinctrl-length) fdtput -t x "$out/$scenario.dtb" "$touch" pinctrl-1 566 565;;
+        touch-reg) fdtput -t x "$out/$scenario.dtb" "$touch" reg 1;;
+        touch-frequency) fdtput -t u "$out/$scenario.dtb" "$touch" spi-max-frequency 20000000;;
+        touch-panel-length) fdtput -t x "$out/$scenario.dtb" "$touch" panel 602;;
+        touch-panel-target) fdtput -t x "$out/$scenario.dtb" "$touch" panel deadbeef 603;;
+        touch-panel-order) read -r panel_a panel_b <<< "$(fdtget -t x "$input" "$touch" panel)"; fdtput -t x "$out/$scenario.dtb" "$touch" panel "$panel_b" "$panel_a";;
+        goodix-compatible) fdtput -t s "$out/$scenario.dtb" "$spi/goodix-berlin@0" compatible goodix,berlin;;
+        goodix-reg) fdtput -t x "$out/$scenario.dtb" "$spi/goodix-berlin@0" reg 0;;
         spi-reg) fdtput -t x "$out/$scenario.dtb" "$spi" reg aa0000 4000;;
         spi-clock) fdtput -t x "$out/$scenario.dtb" "$spi" clocks 16e 48;;
         spi-irq) fdtput -t x "$out/$scenario.dtb" "$spi" interrupts 0 164 4;;
