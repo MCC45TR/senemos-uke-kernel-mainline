@@ -45,6 +45,21 @@ for target in 'ufshc@1d84000 60' 'ssusb@a600000 40' 'qcom,gpi-dma@a00000 b6' 'qc
     [[ $(fdtget -t x "$out/admitted.dtb" "/soc/$node" iommus) == "$apps $sid 0" ]]
 done
 second=/soc/qcom,qupv3_1_geni_se@8c0000
+rpc=/soc/remoteproc-adsp@03000000/glink-edge/qcom,msm_fastrpc_rpmsg
+[[ $(fdtget -t s "$out/admitted.dtb" "$rpc" compatible) == qcom,fastrpc ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$rpc" label) == adsp ]]
+[[ $(fdtget -l "$out/admitted.dtb" "$rpc" | sort) == $'compute-cb@3\ncompute-cb@5' ]]
+if fdtget "$out/admitted.dtb" "$rpc" qcom,vmids 2>/dev/null; then exit 1; fi
+if fdtget "$out/admitted.dtb" "$rpc" memory-region 2>/dev/null; then exit 1; fi
+for mapping in '3 10' '5 12'; do
+    read -r id original <<< "$mapping"
+    cb=/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb$original
+    [[ $(fdtget -t u "$out/admitted.dtb" "$rpc/compute-cb@$id" reg) == "$id" ]]
+    [[ $(fdtget -t x "$out/admitted.dtb" "$rpc/compute-cb@$id" iommus) == "$(fdtget -t x "$input" "$cb" iommus)" ]]
+done
+for child in $(fdtget -l "$input" /soc/qcom,msm_fastrpc); do
+    [[ $(fdtget -t s "$out/admitted.dtb" "/soc/qcom,msm_fastrpc/$child" status) == disabled ]]
+done
 bus=$second/i2c@890000
 gpi=$(fdtget -t x "$input" /soc/qcom,gpi-dma@800000 phandle)
 [[ $(fdtget -t s "$out/admitted.dtb" "$bus" compatible) == qcom,geni-i2c ]]
@@ -165,6 +180,22 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
     [[ $scenario != overlay ]] || usb_input=$out/bad.dtbo
     if "$binary" "$out/$scenario.dtb" "$ufs" "$usb_input" "$out/rejected-$scenario.dtb"; then
         echo "Invalid DT was admitted: $scenario" >&2; exit 1
+    fi
+    [[ ! -e $out/rejected-$scenario.dtb ]]
+done
+for scenario in rpc-channel rpc-compatible rpc-label rpc-pd rpc-map rpc-secure; do
+    cp "$input" "$out/$scenario.dtb"
+    cb=/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb12
+    case $scenario in
+        rpc-channel) fdtput -t s "$out/$scenario.dtb" "$rpc" qcom,glink-channels other-channel;;
+        rpc-compatible) fdtput -t s "$out/$scenario.dtb" "$rpc" compatible qcom,other;;
+        rpc-label) fdtput -t s "$out/$scenario.dtb" "$cb" label cdsprpc-smd;;
+        rpc-pd) fdtput -t u "$out/$scenario.dtb" "$cb" pd-type 7;;
+        rpc-map) fdtput -t x "$out/$scenario.dtb" "$cb" iommus "$apps" 1005 80 "$apps" 1045 40;;
+        rpc-secure) fdtput "$out/$scenario.dtb" "$cb" qcom,secure-context-bank;;
+    esac
+    if "$binary" "$out/$scenario.dtb" "$ufs" "$usb" "$out/rejected-$scenario.dtb"; then
+        echo "Invalid FastRPC map was admitted: $scenario" >&2; exit 1
     fi
     [[ ! -e $out/rejected-$scenario.dtb ]]
 done
