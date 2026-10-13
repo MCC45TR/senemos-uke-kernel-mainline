@@ -1,5 +1,14 @@
 # Linux 7.2.9 Uke adaptation
 
+`0036` adds bounded brightness transitions to the existing paired normal path.
+It preserves the exact OEM target curve and inherited current/bias/ramp settings.
+Each intermediate code is monotonic and checked on both banks; any failed step
+restores both original snapshots. Only already lit, consistent banks fade,
+with at most 32 steps and 31 four-to-five millisecond pauses. Blanking and
+restoring an unlit display remain immediate. The source contract exercises
+every intermediate bus failure, readback mismatch and rollback; smoothness on
+the tablet still requires a matched package/boot trial. No polling service is added.
+
 `0035` follows the upstream remoteproc PD-mapper preload proposal and addresses
 the exact Uke charger readiness, USB supplier lifetime and power-supply ABI.
 The host fixture executes bounded transient retries, terminal failures,

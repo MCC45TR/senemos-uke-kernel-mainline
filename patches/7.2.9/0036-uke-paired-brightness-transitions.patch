@@ -1,0 +1,77 @@
+From: Uke platform maintainers
+Subject: [PATCH] backlight: fade the already lit Uke pair with bounded verified steps
+
+Keep the OEM normal target curve and power setup. Verify both banks at every
+intermediate code and restore the original pair after any failure. Blanking
+and initial enable stay immediate; no asynchronous worker survives teardown.
+
+diff --git a/drivers/video/backlight/ktz8866.c b/drivers/video/backlight/ktz8866.c
+index 849b61f..9ce309d 100644
+--- a/drivers/video/backlight/ktz8866.c
++++ b/drivers/video/backlight/ktz8866.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include <linux/backlight.h>
++#include <linux/delay.h>
+ #include <linux/err.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/i2c.h>
+@@ -174,7 +175,8 @@ static int ktz8866_uke_update_status(struct backlight_device *backlight_dev)
+ 	struct ktz8866 *devices[] = { ktz, ktz->peer };
+ 	struct ktz8866_state old[2], next;
+ 	unsigned int level = backlight_get_brightness(backlight_dev), code;
+-	int ret, rollback = 0, i;
++	unsigned int start, distance, steps = 1, step;
++	int delta, ret, rollback = 0, i;
+ 
+ 	if (level > MAX_BRIGHTNESS)
+ 		return -EINVAL;
+@@ -185,16 +187,37 @@ static int ktz8866_uke_update_status(struct backlight_device *backlight_dev)
+ 		if (ret)
+ 			goto unlock;
+ 	}
+-	for (i = 0; i < 2; i++) {
+-		next = old[i];
+-		next.enable = (next.enable & ~BL_EN_BIT) | (code ? BL_EN_BIT : 0);
+-		next.lsb = (next.lsb & ~7) | (code & 7);
+-		next.msb = code >> 3;
+-		ret = ktz8866_write_state(devices[i], &next);
+-		if (!ret)
+-			ret = ktz8866_check_state(devices[i], &next);
+-		if (ret)
+-			goto restore;
++	start = (old[0].msb << 3) | (old[0].lsb & 7);
++	if (code && ((old[0].enable & BL_EN_BIT) != (old[1].enable & BL_EN_BIT) ||
++	    (old[0].lsb & 7) != (old[1].lsb & 7) || old[0].msb != old[1].msb)) {
++		ret = -EIO;
++		goto unlock;
++	}
++	if (code && start > ktz8866_uke_code(MAX_BRIGHTNESS)) {
++		ret = -ERANGE;
++		goto unlock;
++	}
++	distance = start > code ? start - code : code - start;
++	/* Fade only an already lit pair; blanking remains immediate. */
++	if (code && (old[0].enable & BL_EN_BIT) && distance)
++		steps = min(distance, 32U);
++	delta = (int)code - (int)start;
++	for (step = 1; step <= steps; step++) {
++		unsigned int value = (int)start + delta * (int)step / (int)steps;
++
++		for (i = 0; i < 2; i++) {
++			next = old[i];
++			next.enable = (next.enable & ~BL_EN_BIT) | (value ? BL_EN_BIT : 0);
++			next.lsb = (next.lsb & ~7) | (value & 7);
++			next.msb = value >> 3;
++			ret = ktz8866_write_state(devices[i], &next);
++			if (!ret)
++				ret = ktz8866_check_state(devices[i], &next);
++			if (ret)
++				goto restore;
++		}
++		if (step < steps)
++			usleep_range(4000, 5000);
+ 	}
+ 	goto unlock;
+ restore:

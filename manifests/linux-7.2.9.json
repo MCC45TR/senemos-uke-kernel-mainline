@@ -148,6 +148,10 @@
     {
       "path": "patches/7.2.9/0035-uke-charger-readiness-and-abi.patch",
       "sha256": "62f89e69edd6138a8e8b288f7bd3187dfb3f8beb2b3d60b1e678fdaa8386c19e"
+    },
+    {
+      "path": "patches/7.2.9/0036-uke-paired-brightness-transitions.patch",
+      "sha256": "413771af13e7af87623132f4f56c7f398047cd19c59fe82fbfd0f5bea03e459b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

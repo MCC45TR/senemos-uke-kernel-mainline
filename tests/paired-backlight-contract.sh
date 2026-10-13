@@ -2,7 +2,7 @@
 # Host-only faults in the actual paired driver, including rollback and readback.
 set -Eeuo pipefail
 source_file=${1:?Pass the prepared ktz8866.c}
-oem_header=${2:?Pass the pinned OEM mi_backlight_ktz8866.h}
+oem_header=${2:-}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 {
@@ -11,6 +11,9 @@ trap 'rm -r -- "$work"' EXIT
 #include <cerrno>
 #include <cstring>
 #include <initializer_list>
+#include <algorithm>
+#include <vector>
+using std::min;
 #define BIT(n) (1U << (n))
 #define MAX_BRIGHTNESS 2047U
 #define BL_LEVEL_MAX 2047U
@@ -26,6 +29,8 @@ struct ktz8866 { i2c_client *client; struct regmap *regmap; ktz8866 *peer; mutex
                  bool secondary=false; backlight_device *backlight=nullptr; };
 struct backlight_device { ktz8866 *data; unsigned int brightness; bool blank=false; };
 int operations, writes, failure=-1, second_failure=-1, mismatch=-1, errors;
+unsigned int sleeps;
+std::vector<unsigned int> primary_codes, secondary_codes;
 bool persistent_failure;
 int bus() {
     int position=operations++;
@@ -38,7 +43,15 @@ int regmap_read(regmap *map, unsigned int reg, unsigned int *value) {
 int ktz8866_write(ktz8866 *ktz, unsigned int reg, unsigned int value) {
     assert(reg==BL_EN || reg==BL_BRT_LSB || reg==BL_BRT_MSB);
     int ret=bus(); if (ret) return ret;
-    writes++; ktz->regmap->regs[reg]=value; return 0;
+    writes++; ktz->regmap->regs[reg]=value;
+    if (reg==BL_BRT_MSB) {
+        auto &codes = ktz->secondary ? secondary_codes : primary_codes;
+        codes.push_back((value<<3) | (ktz->regmap->regs[BL_BRT_LSB]&7));
+    }
+    return 0;
+}
+void usleep_range(unsigned int low, unsigned int high) {
+    assert(low==4000 && high==5000); sleeps++;
 }
 int ktz8866_update_bits(ktz8866 *ktz, unsigned int reg, unsigned int mask, unsigned int value) {
     return ktz8866_write(ktz,reg,(ktz->regmap->regs[reg]&~mask)|value);
@@ -77,12 +90,16 @@ backlight_device *devm_backlight_device_register(device *, const char *, device 
 int PTR_ERR_OR_ZERO(backlight_device *ptr) { auto value=reinterpret_cast<long>(ptr); return value<0 ? value : 0; }
 CPP
     cat "$(dirname "$source_file")/ktz8866-uke-levels.h"
-    awk '/^static const int mi_bl_level_remap/ {emit=1} emit {print} emit && /};/ {exit}' "$oem_header"
+    if [[ -n $oem_header ]]; then
+        printf '#define UKE_COMPARE_OEM\n'
+        awk '/^static const int mi_bl_level_remap/ {emit=1} emit {print} emit && /};/ {exit}' "$oem_header"
+    fi
     awk '/^struct ktz8866_state/ {emit=1} /^static const struct backlight_ops ktz8866_uke_backlight_ops/ {emit=0} emit {print}' "$source_file"
     awk '/^static void ktz8866_put_peer/ {emit=1} /^static int ktz8866_backlight_update_status/ {emit=0} emit {print}' "$source_file"
     cat <<'CPP'
 void reset(regmap (&maps)[2]) {
     operations=writes=errors=0; failure=second_failure=mismatch=-1; persistent_failure=false;
+    sleeps=0; primary_codes.clear(); secondary_codes.clear();
     for (int i=0;i<2;i++) {
         for (unsigned int r=0;r<22;r++) maps[i].regs[r]=0xa0+r;
         maps[i].regs[BL_EN]=i ? 0x5f : 0x7f;
@@ -91,16 +108,20 @@ void reset(regmap (&maps)[2]) {
     }
 }
 int main() {
+#ifdef UKE_COMPARE_OEM
     for (unsigned int i=0;i<1536;i++) assert(uke_normal_bl_remap[i]==mi_bl_level_remap[i]);
+#endif
     unsigned int previous=0;
     for (unsigned int level=0;level<=MAX_BRIGHTNESS;level++) {
         unsigned int code=ktz8866_uke_code(level);
+#ifdef UKE_COMPARE_OEM
         assert(code==static_cast<unsigned int>(mi_bl_level_remap[level*1535/2047]));
+#endif
         assert(code>=previous && code<=1952); previous=code;
     }
     assert(ktz8866_uke_level(0)==0 && ktz8866_uke_level(1953)==-ERANGE);
     i2c_client clients[2]; regmap maps[2];
-    ktz8866 secondary{&clients[1],&maps[1],nullptr,{}};
+    ktz8866 secondary{&clients[1],&maps[1],nullptr,{}}; secondary.secondary=true;
     ktz8866 primary{&clients[0],&maps[0],&secondary,{}};
     backlight_device bl{&primary,0};
     for (unsigned int level : {0U,1U,2U,7U,8U,128U,512U,1024U,1535U,2047U}) {
@@ -108,6 +129,16 @@ int main() {
         regmap original[2]; std::memcpy(original,maps,sizeof(maps));
         assert(ktz8866_uke_update_status(&bl)==0 && !primary.lock.locked && !errors);
         const int complete=operations;
+        const unsigned int target=ktz8866_uke_code(level);
+        assert(primary_codes==secondary_codes && primary_codes.size()<=32);
+        assert(sleeps==primary_codes.size()-1 && sleeps<=31);
+        unsigned int last=807;
+        for(auto code : primary_codes) {
+            assert(target>=807 ? code>=last && code<=target : code<=last && code>=target);
+            last=code;
+        }
+        assert(last==target);
+        if(!target) assert(sleeps==0 && primary_codes.size()==1);
         for (int i=0;i<2;i++) {
             assert((maps[i].regs[BL_EN]&~BL_EN_BIT)==(original[i].regs[BL_EN]&~BL_EN_BIT));
             assert((maps[i].regs[BL_BRT_LSB]&~7)==(original[i].regs[BL_BRT_LSB]&~7));
@@ -123,7 +154,7 @@ int main() {
             assert(!std::memcmp(maps,original,sizeof(maps)));
             if (fault<6) assert(writes==0);
         }
-        for (int wrong : {9,10,11,15,16,17}) {
+        for (int wrong : {9,10,11,15,16,17,complete-3,complete-2,complete-1}) {
             reset(maps); mismatch=wrong;
             assert(ktz8866_uke_update_status(&bl)==-EIO && !errors);
             assert(!std::memcmp(maps,original,sizeof(maps)));
@@ -139,6 +170,14 @@ int main() {
     assert(ktz8866_uke_update_status(&bl)==-EBUSY && writes==0);
     reset(maps); maps[1].regs[BL_BRT_MSB]++; assert(ktz8866_uke_get_brightness(&bl)==-EIO);
     reset(maps); maps[1].regs[BL_EN]&=~BL_EN_BIT; assert(ktz8866_uke_get_brightness(&bl)==-EIO);
+    reset(maps); bl.brightness=100; maps[1].regs[BL_BRT_MSB]++;
+    assert(ktz8866_uke_update_status(&bl)==-EIO && writes==0 && sleeps==0);
+    reset(maps); maps[0].regs[BL_BRT_MSB]=maps[1].regs[BL_BRT_MSB]=255;
+    assert(ktz8866_uke_update_status(&bl)==-ERANGE && writes==0);
+    bl.brightness=0;
+    assert(ktz8866_uke_update_status(&bl)==0 && sleeps==0);
+    reset(maps); maps[0].regs[BL_EN]&=~BL_EN_BIT; maps[1].regs[BL_EN]&=~BL_EN_BIT;
+    bl.brightness=100; assert(ktz8866_uke_update_status(&bl)==0 && sleeps==0);
     reset(maps); failure=13; persistent_failure=true;
     assert(ktz8866_uke_update_status(&bl)==-EIO && errors==1 && !primary.lock.locked);
     reset(maps); failure=13; second_failure=14;
@@ -175,6 +214,6 @@ int main() {
 }
 CPP
 } > "$work/check.cpp"
-g++ -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
+"${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Exact OEM normal mapping, paired I/O/readback/rollback and read-only probe dependency faults: passed\n'
+printf 'OEM mapping, bounded monotonic paired fades, immediate blanking, I/O rollback and probe faults: passed\n'

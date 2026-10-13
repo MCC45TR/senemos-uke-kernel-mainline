@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.29%{?dist}
+Release:        1.30%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -23,6 +23,7 @@ Source6: slim-startup-contract.sh
 Source7: battery-protocol-contract.sh
 Source8: firmware-backlight-contract.sh
 Source9: usb-charger-readiness-contract.sh
+Source10: paired-backlight-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -160,6 +161,7 @@ CC=clang bash %{SOURCE6} "$PWD"
 CC=clang bash %{SOURCE7} "$PWD"
 bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/backlight.h"
 bash %{SOURCE9} "$PWD"
+CXX=clang++ bash %{SOURCE10} "$PWD/drivers/video/backlight/ktz8866.c"
 
 %install
 export ARCH=arm64 LLVM=1

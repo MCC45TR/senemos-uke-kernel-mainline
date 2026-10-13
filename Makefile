@@ -5,7 +5,7 @@ SHELL := /bin/bash
 version := 7.2.9
 outdir ?= $(CURDIR)/build/srpm
 validate:
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 35) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 36) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
@@ -34,7 +34,7 @@ srpm: validate
 	cp patches/$(version)/README.md "$$top/adaptation/senemos-adaptation/README.md"
 	tar --sort=name --mtime=@1791024250 --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
-	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh "$$top/SOURCES/"
+	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh tests/paired-backlight-contract.sh "$$top/SOURCES/"
 	cp packaging/senemos-uke-linux-kernel-mainline.spec "$$top/SPECS/"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
