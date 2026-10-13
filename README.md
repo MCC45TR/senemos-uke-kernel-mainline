@@ -17,7 +17,10 @@ incomplete. Detailed results are in the [project hardware table](https://github.
 The experimental Adreno 732 port passes native shader and pixel-readback tests
 at 255 MHz. The original Fedora KWin also reports hardware OpenGL ES rendering.
 Mesa currently labels this exact chip `FD735`; the kernel reports `0x43030b00`.
-Xwayland acceleration, Vulkan, higher frequencies and suspend remain incomplete.
+A fresh graphical session also reports accelerated Xwayland/OpenGL 4.6, and a
+120-frame Turnip Wayland cube completes. Higher frequencies, sustained workloads
+and suspend remain incomplete. Early initramfs GPU loading failed and is rejected;
+automatic GPU startup still requires correction.
 These results use a RAM candidate with matched local GPU modules and firmware;
 they do not qualify a signed COPR package or normal slot-B startup.
 
