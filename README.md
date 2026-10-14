@@ -7,18 +7,20 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json)
 
-## Status — 13 October 2026
+## Status — 14 October 2026
 
 Matched RAM boots reach the tablet console, internal Fedora root, software KDE
 desktop and Wi-Fi SSH. Battery readings and manual backlight control are
-available. Touch, GPU acceleration, Bluetooth, audio and USB host mode remain
-incomplete. Detailed results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
+available. Finger input and ten simultaneous touch contacts worked in the
+14 October tablet test. GPU acceleration, Bluetooth, audio and USB host mode
+remain incomplete. Detailed results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
 
-Tablet testing currently uses package revision **1.27**. The **1.29** charger and
-battery corrections are on `main`. The **1.30** brightness candidate has passed
-native COPR, signed package and module checks, but has not been tested on the
-tablet. Suspend remains disabled. Normal slot-B startup and repeated cold boots
-still need work; successful compilation does not establish hardware support.
+The boot and package trials below use kernel revision **1.27**. The **1.29**
+charger and battery corrections are on `main`. The **1.30** brightness
+candidate has passed native COPR, signed package and module checks, but has not
+been tested on the tablet. Suspend remains disabled. Normal slot-B startup and
+repeated cold boots still need work; successful compilation does not establish
+hardware support.
 
 The current firmware handoff is **EL1**. EL2/KVM is a separate experimental
 branch. Uke UEFI integration is not ready. Pad 7 Pro (`muyu`) and Pad 5 (`nabu`)
