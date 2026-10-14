@@ -96,6 +96,15 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /panel-uke-handoff compatible) == xiaomi,uke-panel-handoff ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /panel-uke-handoff status) == disabled ]]
+[[ $(fdtget -t u "$out/admitted.dtb" /panel-uke-handoff width-mm) == 237 ]]
+[[ $(fdtget -t u "$out/admitted.dtb" /panel-uke-handoff height-mm) == 158 ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$framebuffer" panel) == "$(fdtget -t x "$out/admitted.dtb" /panel-uke-handoff phandle)" ]]
+cp "$input" "$out/panel-metadata-collision.dtb"
+fdtput -c "$out/panel-metadata-collision.dtb" /panel-uke-handoff
+if "$binary" "$out/panel-metadata-collision.dtb" "$ufs" "$usb" "$out/panel-metadata-collision-output.dtb"; then exit 1; fi
+[[ ! -e "$out/panel-metadata-collision-output.dtb" ]]
 spi=/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" compatible) == qcom,geni-spi ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" clock-names) == se ]]

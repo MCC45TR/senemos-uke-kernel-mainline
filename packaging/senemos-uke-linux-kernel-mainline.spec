@@ -24,6 +24,7 @@ Source7: battery-protocol-contract.sh
 Source8: firmware-backlight-contract.sh
 Source9: usb-charger-readiness-contract.sh
 Source10: qup-interconnect-contract.sh
+Source11: adreno-lifecycle-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -74,10 +75,11 @@ device tree is not physically accepted and unreviewed peripherals are disabled.
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
 test "$(sha256sum %{SOURCE0} | cut -d ' ' -f1)" = "$expected"
 signer=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .signer)
-mkdir -p %{_topdir}/gnupg
-chmod 700 %{_topdir}/gnupg
-gpg --homedir %{_topdir}/gnupg --batch --import %{SOURCE3}
-xz -cd %{SOURCE0} | gpg --homedir %{_topdir}/gnupg --batch --status-fd=1 \
+# GnuPG agent sockets cannot use arbitrarily long RPM build paths.
+keyring=$(mktemp -d)
+trap 'gpgconf --homedir "$keyring" --kill gpg-agent; rm -rf "$keyring"' EXIT
+gpg --homedir "$keyring" --batch --import %{SOURCE3}
+xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
 %setup -q -n linux-%{version}
@@ -162,6 +164,7 @@ CC=clang bash %{SOURCE7} "$PWD"
 bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/backlight.h"
 bash %{SOURCE9} "$PWD"
 bash %{SOURCE10} "$PWD/drivers/interconnect/qcom/qnoc-cliffs-usb.c"
+CC=clang bash %{SOURCE11} "$PWD/drivers/gpu/drm/msm/adreno/adreno_device.c"
 
 %install
 export ARCH=arm64 LLVM=1

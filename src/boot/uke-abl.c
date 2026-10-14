@@ -31,6 +31,9 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
 #define UKE_FB_HEIGHT 2136
 #define UKE_FB_STRIDE (UKE_FB_WIDTH * 4)
 #define UKE_FB_BYTES (UKE_FB_STRIDE * UKE_FB_HEIGHT)
+/* Nominal active dimensions from the 11.2-inch, 3200x2136 panel specification. */
+#define UKE_PANEL_WIDTH_MM 237U
+#define UKE_PANEL_HEIGHT_MM 158U
 
 static int UKE_INIT uke_path_reg(const void *fdt, const char *path,
 				unsigned int address, unsigned int bytes)
@@ -577,8 +580,8 @@ static int UKE_INIT uke_framebuffer(void *fdt)
 	fdt32_t framebuffer_reg[4];
 	uint64_t address, length;
 	char name[48], path[64];
-	int splash, chosen, node, size, ret, backlight;
-	unsigned int phandle;
+	int splash, chosen, node, size, ret, backlight, panel;
+	unsigned int phandle, panel_phandle;
 
 	backlight = fdt_path_offset(fdt, "/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11");
 	if (backlight < 0)
@@ -592,6 +595,20 @@ static int UKE_INIT uke_framebuffer(void *fdt)
 		if (ret)
 			return ret;
 	}
+
+	panel = fdt_add_subnode(fdt, 0, "panel-uke-handoff");
+	if (panel < 0)
+		return panel;
+	ret = fdt_generate_phandle(fdt, &panel_phandle);
+	if (ret)
+		return ret;
+#define UKE_FB_SET(call) do { ret = (call); if (ret) return ret; } while (0)
+	/* Metadata only: do not power or reset the firmware-lit panel. */
+	UKE_FB_SET(fdt_setprop_string(fdt, panel, "compatible", "xiaomi,uke-panel-handoff"));
+	UKE_FB_SET(fdt_setprop_string(fdt, panel, "status", "disabled"));
+	UKE_FB_SET(fdt_setprop_u32(fdt, panel, "phandle", panel_phandle));
+	UKE_FB_SET(fdt_setprop_u32(fdt, panel, "width-mm", UKE_PANEL_WIDTH_MM));
+	UKE_FB_SET(fdt_setprop_u32(fdt, panel, "height-mm", UKE_PANEL_HEIGHT_MM));
 
 	splash = fdt_path_offset(fdt, "/reserved-memory/splash_region");
 	if (splash < 0)
@@ -629,8 +646,8 @@ static int UKE_INIT uke_framebuffer(void *fdt)
 		node = fdt_add_subnode(fdt, chosen, name);
 	if (node < 0)
 		return node;
-#define UKE_FB_SET(call) do { ret = (call); if (ret) return ret; } while (0)
 	UKE_FB_SET(fdt_setprop_string(fdt, node, "compatible", "simple-framebuffer"));
+	UKE_FB_SET(fdt_setprop_u32(fdt, node, "panel", panel_phandle));
 	UKE_FB_SET(fdt_setprop_u32(fdt, node, "backlight", phandle));
 	UKE_FB_SET(fdt_setprop(fdt, node, "reg", framebuffer_reg, sizeof(framebuffer_reg)));
 	UKE_FB_SET(fdt_setprop_u32(fdt, node, "width", UKE_FB_WIDTH));
