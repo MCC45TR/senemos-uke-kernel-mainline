@@ -9,7 +9,7 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
-Release:        1.32%{?dist}
+Release:        1.33%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -25,6 +25,7 @@ Source8: firmware-backlight-contract.sh
 Source9: usb-charger-readiness-contract.sh
 Source10: qup-interconnect-contract.sh
 Source11: adreno-lifecycle-contract.sh
+Source12: cpu-epss-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -165,6 +166,7 @@ bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/bac
 bash %{SOURCE9} "$PWD"
 bash %{SOURCE10} "$PWD/drivers/interconnect/qcom/qnoc-cliffs-usb.c"
 CC=clang bash %{SOURCE11} "$PWD/drivers/gpu/drm/msm/adreno/adreno_device.c"
+CXX=clang++ bash %{SOURCE12} "$PWD/drivers/cpufreq/qcom-cpufreq-hw.c"
 
 %install
 export ARCH=arm64 LLVM=1
@@ -228,6 +230,10 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.33
+- Preserve SM7675 EPSS core-count operating points, including the Prime domain.
+- Test the actual LUT parser while retaining other platforms' turbo behavior.
+
 * Tue Oct 13 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.32
 - Carry the Uke adaptation and experimental Adreno 732 support to Linux 7.2.10.
 - Derive the reproducible build timestamp from the signed-source profile.

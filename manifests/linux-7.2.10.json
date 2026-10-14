@@ -164,6 +164,10 @@
     {
       "path": "patches/7.2.10/0039-adreno-unbound-component-removal.patch",
       "sha256": "70b48281c140464076776d81440f0aef54f01ef0cdcb932c9c6358d36a66eadc"
+    },
+    {
+      "path": "patches/7.2.10/0040-sm7675-epss-core-count.patch",
+      "sha256": "d18f2f2942427522ff479baebc078841d0f6463d649dfcc813967bbddd1f266e"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

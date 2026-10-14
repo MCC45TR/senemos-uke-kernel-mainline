@@ -21,9 +21,16 @@ A fresh graphical session also reports accelerated Xwayland/OpenGL 4.6, and a
 120-frame Turnip Wayland cube completes. Higher frequencies, sustained workloads
 and suspend remain incomplete. Early initramfs GPU loading failed and is rejected;
 automatic GPU startup still requires correction.
-Signed upstream 7.2.10 accepts all 37 adaptation patches after preserving its
-new DWC3 reset-recovery logic. Its source and build checks are separate from
-the 7.2.9 tablet results. Revision 1.32 is the first 7.2.10 migration candidate.
+The 7.2.10 source profile now contains 40 adaptation patches, including firmware
+display metadata, Adreno removal and SM7675 EPSS core-count corrections. The
+stock-ABL overlay defines nine Adreno 732 operating points from 255 to 950 MHz.
+The first integrated RAM trial on 14 October produced no display or USB
+connection; its cause remains under investigation. Revision 1.33 is a source
+candidate and is not a qualified tablet update. Native DPU/DSI and seven panel
+mode definitions are tracked separately in [the display candidate](src/display/README.md).
+Normal B-slot testing exposed an independent AVB mismatch; correcting B metadata
+allows the preserved 7.2.9 image to enumerate Linux CDC. The 7.2.10 image still
+stalls at the splash screen. Neither observation qualifies 7.2.10 device support.
 These results use a RAM candidate with matched local GPU modules and firmware;
 they do not qualify a signed COPR package or normal slot-B startup.
 
@@ -59,11 +66,11 @@ sudo dnf install senemos-uke-linux-kernel-mainline
 sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-COPR signs the RPMs. Kernel files are installed under
-`/usr/lib/modules/7.2.9-senemos-uke/`. DNF updates files and module dependencies;
+COPR signs published RPMs. For the 7.2.10 candidate, kernel files install under
+`/usr/lib/modules/7.2.10-senemos-uke/`. DNF updates files and module dependencies;
 it does not flash `boot_b`, create a UEFI entry or select a boot slot.
 
-Revisions of Linux 7.2.9 share the same module directory. A tablet update needs
+Revisions of Linux 7.2.10 share the same module directory. A tablet update needs
 a matching Image, initramfs, device tree and module set. Preserve the working
 boot image and rollback before replacing that set. Development headers are not
 published yet.

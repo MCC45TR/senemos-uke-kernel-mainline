@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 /* Experimental render-only translation of the inspected Uke GPU graph.
- * Addresses, clocks, IRQs and the lowest OPP come from Uke OEM evidence.
+ * Addresses, clocks and IRQs come from Uke OEM evidence. The nine SM7675
+ * OPPs agree with the pinned Lamma table and Uke frequency/corner/bus data.
  * Keep the firmware display and its reserved mappings intact.
  */
 #include <dt-bindings/clock/qcom,gpucc-cliffs.h>
@@ -41,11 +42,51 @@
 
 	uke_gpu_lab_opp: opp-table {
 		compatible = "operating-points-v2";
-		/* shortcut: lowest OEM OPP only, qualify higher levels separately. */
+		/* The common Cliffs 1000/1100 MHz bins belong outside this 732 table. */
 		opp-255000000 {
 			opp-hz = /bits/ 64 <255000000>;
 			opp-level = <56>;
 			opp-peak-kBps = <2136718>;
+		};
+		opp-353000000 {
+			opp-hz = /bits/ 64 <353000000>;
+			opp-level = <64>;
+			opp-peak-kBps = <6074218>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-level = <128>;
+			opp-peak-kBps = <6671875>;
+		};
+		opp-633000000 {
+			opp-hz = /bits/ 64 <633000000>;
+			opp-level = <192>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-684000000 {
+			opp-hz = /bits/ 64 <684000000>;
+			opp-level = <224>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-736000000 {
+			opp-hz = /bits/ 64 <736000000>;
+			opp-level = <256>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-835000000 {
+			opp-hz = /bits/ 64 <835000000>;
+			opp-level = <320>;
+			opp-peak-kBps = <14398437>;
+		};
+		opp-900000000 {
+			opp-hz = /bits/ 64 <900000000>;
+			opp-level = <384>;
+			opp-peak-kBps = <16500000>;
+		};
+		opp-950000000 {
+			opp-hz = /bits/ 64 <950000000>;
+			opp-level = <400>;
+			opp-peak-kBps = <16500000>;
 		};
 	};
 };

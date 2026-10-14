@@ -103,12 +103,23 @@ static void check_adreno732(const Bytes &dt) {
     cells(gmu, "power-domains", {ccp, 0, ccp, 1});
     cells(smmu, "reg", {0x3da0000, 0x40000});
     cells(smmu, "power-domains", {ccp, 0});
-    const int opp = node("/soc/qcom,kgsl-3d0@3d00000/opp-table/opp-255000000");
-    cells(opp, "opp-hz", {0, 255000000});
-    cells(opp, "opp-level", {56});
-    cells(opp, "opp-peak-kBps", {2136718});
-    if (fdt_next_subnode(dt.data(), opp) != -FDT_ERR_NOTFOUND)
-        throw std::runtime_error("Unqualified GPU operating point present");
+    const uint32_t points[][3] = {
+        {255000000,56,2136718}, {353000000,64,6074218},
+        {500000000,128,6671875}, {633000000,192,12449218},
+        {684000000,224,12449218}, {736000000,256,12449218},
+        {835000000,320,14398437}, {900000000,384,16500000},
+        {950000000,400,16500000},
+    };
+    for (const auto &point : points) {
+        const std::string path = "/soc/qcom,kgsl-3d0@3d00000/opp-table/opp-" + std::to_string(point[0]);
+        const int opp = node(path.c_str());
+        cells(opp, "opp-hz", {0, point[0]});
+        cells(opp, "opp-level", {point[1]});
+        cells(opp, "opp-peak-kBps", {point[2]});
+    }
+    int count = 0, opp;
+    fdt_for_each_subnode(opp, dt.data(), node("/soc/qcom,kgsl-3d0@3d00000/opp-table")) ++count;
+    if (count != 9) throw std::runtime_error("SM7675 GPU operating point missing");
 }
 int main(int argc, char **argv) {
     try {

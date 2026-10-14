@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/dts-v1/;
+/plugin/;
+#include <dt-bindings/clock/qcom,gcc-cliffs.h>
+#include <dt-bindings/clock/qcom,sm8550-dispcc.h>
+/* Linux 7.2.10 dsi_phy.h clock-provider indices. */
+#define DSI_BYTE_PLL_CLK 0
+#define DSI_PIXEL_PLL_CLK 1
+#if O82_PANEL_VARIANT == 36
+#define O82_PANEL_COMPATIBLE "xiaomi,o82-36-02-0a"
+#elif O82_PANEL_VARIANT == 42
+#define O82_PANEL_COMPATIBLE "xiaomi,o82-42-02-0b"
+#else
+#error Select the observed O82 panel variant: 36 or 42
+#endif
+
+/* Isolated offline graph; not applied by the normal ABL boot recipe.
+ * Based on linuxgamer/uke-fedora cf4f9317a7fef3e9bdddc36bedcb257fa51b0994.
+ * Reuse the already translated paired backlight via uke_primary_backlight.
+ * The transform must remove the actual chosen framebuffer, not a fixed address.
+ * No direct RPMh power-domain driver: voltage votes share the working stock
+ * regulator aggregator through the isolated DISPCC clock callbacks.
+ */
+/ {
+	fragment@200 {
+		target = <&dispcc>;
+		__overlay__ {
+			compatible = "qcom,sm7675-dispcc", "syscon";
+			clocks = <&rpmhcc 0>, <&rpmhcc 1>, <&gcc GCC_DISP_AHB_CLK>, <&sleep_clk>,
+				 <&uke_phy0 DSI_BYTE_PLL_CLK>, <&uke_phy0 DSI_PIXEL_PLL_CLK>,
+				 <&uke_phy1 DSI_BYTE_PLL_CLK>, <&uke_phy1 DSI_PIXEL_PLL_CLK>,
+				 <0>, <0>, <0>, <0>, <0>, <0>, <0>, <0>;
+			clock-names = "bi_tcxo", "bi_tcxo_ao", "iface", "sleep_clk",
+				      "dsi0_byte", "dsi0_pixel", "dsi1_byte", "dsi1_pixel",
+				      "dp0_link", "dp0_vco", "dp1_link", "dp1_vco",
+				      "dp2_link", "dp2_vco", "dp3_link", "dp3_vco";
+			#power-domain-cells = <1>;
+			status = "okay";
+		};
+	};
+	fragment@201 {
+		target = <&mdss_mdp>;
+		__overlay__ { status = "disabled"; };
+	};
+	fragment@202 { target = <&mdss_dsi0>; __overlay__ { status = "disabled"; }; };
+	fragment@203 { target = <&mdss_dsi1>; __overlay__ { status = "disabled"; }; };
+	fragment@204 { target = <&mdss_dsi_phy0>; __overlay__ { status = "disabled"; }; };
+	fragment@205 { target = <&mdss_dsi_phy1>; __overlay__ { status = "disabled"; }; };
+	fragment@206 { target = <&sde_dp>; __overlay__ { status = "disabled"; }; };
+	fragment@208 {
+		target = <&soc>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			uke_mdss: display-subsystem@ae00000 {
+				compatible = "qcom,sm7675-mdss";
+				reg = <0xae00000 0x1000>, <0xaeb0000 0x1074>;
+				reg-names = "mdss", "handoff-vbif";
+				interrupt-parent = <&intc>;
+				interrupts = <0 83 4>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+				clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>, <&gcc GCC_DISP_AHB_CLK>,
+					 <&gcc GCC_DISP_HF_AXI_CLK>, <&dispcc DISP_CC_MDSS_MDP_CLK>;
+				clock-names = "iface", "bus", "nrt_bus", "core";
+				resets = <&dispcc DISP_CC_MDSS_CORE_BCR>;
+				power-domains = <&dispcc MDSS_GDSC>;
+				interconnects = <&mmss_noc 21 &mc_virt 512>,
+						<&gem_noc 2 &cnoc_cfg 524>;
+				interconnect-names = "mdp0-mem", "cpu-cfg";
+				qcom,display-smmu = <&apps_smmu>;
+				qcom,display-dispcc = <&dispcc>;
+				status = "okay";
+				uke_dpu: display-controller@ae01000 {
+					compatible = "qcom,sm7675-dpu";
+					reg = <0xae01000 0x8f000>, <0xaeb0000 0x1074>;
+					reg-names = "mdp", "vbif";
+					interrupt-parent = <&uke_mdss>;
+					interrupts = <0>;
+					iommus = <&apps_smmu 0x1c00 0x2>;
+					clocks = <&gcc GCC_DISP_AHB_CLK>, <&gcc GCC_DISP_HF_AXI_CLK>,
+						 <&dispcc DISP_CC_MDSS_AHB_CLK>, <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,
+						 <&dispcc DISP_CC_MDSS_MDP_CLK>, <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
+					clock-names = "bus", "nrt_bus", "iface", "lut", "core", "vsync";
+					assigned-clocks = <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
+					assigned-clock-rates = <19200000>;
+					operating-points-v2 = <&uke_mdp_opps>;
+					uke_mdp_opps: opp-table {
+						compatible = "operating-points-v2";
+						opp-200000000 { opp-hz = /bits/ 64 <200000000>; };
+						opp-342000000 { opp-hz = /bits/ 64 <342000000>; };
+						opp-402000000 { opp-hz = /bits/ 64 <402000000>; };
+						opp-514000000 { opp-hz = /bits/ 64 <514000000>; };
+					};
+					ports {
+						#address-cells = <1>; #size-cells = <0>;
+						port@0 { reg = <0>; uke_dpu0: endpoint { remote-endpoint = <&uke_dsi0_in>; }; };
+						port@1 { reg = <1>; uke_dpu1: endpoint { remote-endpoint = <&uke_dsi1_in>; }; };
+					};
+				};
+				uke_dsi0: dsi@ae94000 {
+					compatible = "qcom,mdss-dsi-ctrl";
+					reg = <0xae94000 0x400>; reg-names = "dsi_ctrl";
+					interrupt-parent = <&uke_mdss>; interrupts = <4>;
+					clocks = <&dispcc DISP_CC_MDSS_BYTE0_CLK>, <&dispcc DISP_CC_MDSS_BYTE0_INTF_CLK>,
+						 <&dispcc DISP_CC_MDSS_PCLK0_CLK>, <&dispcc DISP_CC_MDSS_ESC0_CLK>,
+						 <&dispcc DISP_CC_MDSS_AHB_CLK>, <&gcc GCC_DISP_HF_AXI_CLK>;
+					clock-names = "byte", "byte_intf", "pixel", "core", "iface", "bus";
+					phys = <&uke_phy0>; phy-names = "dsi";
+					vdda-supply = <&L3B>;
+					qcom,dual-dsi-mode; qcom,master-dsi; qcom,sync-dual-dsi;
+					assigned-clocks = <&dispcc DISP_CC_MDSS_BYTE0_CLK_SRC>, <&dispcc DISP_CC_MDSS_PCLK0_CLK_SRC>;
+					assigned-clock-parents = <&uke_phy0 DSI_BYTE_PLL_CLK>, <&uke_phy0 DSI_PIXEL_PLL_CLK>;
+					#address-cells = <1>; #size-cells = <0>;
+					ports {
+						#address-cells = <1>; #size-cells = <0>;
+						port@0 { reg = <0>; uke_dsi0_in: endpoint { remote-endpoint = <&uke_dpu0>; }; };
+						port@1 { reg = <1>; uke_dsi0_out: endpoint { remote-endpoint = <&uke_panel0>; data-lanes = <0 1 2 3>; }; };
+					};
+					uke_panel: panel@0 {
+						compatible = O82_PANEL_COMPATIBLE; reg = <0>;
+						vddio-supply = <&L8B>;
+						vsp-supply = <&display_panel_vsp>; vsn-supply = <&display_panel_vsn>;
+						reset-gpios = <&tlmm 2 0>;
+						backlight = <&uke_primary_backlight>;
+						ports {
+							#address-cells = <1>; #size-cells = <0>;
+							port@0 { reg = <0>; uke_panel0: endpoint { remote-endpoint = <&uke_dsi0_out>; }; };
+							port@1 { reg = <1>; uke_panel1: endpoint { remote-endpoint = <&uke_dsi1_out>; }; };
+						};
+					};
+				};
+				uke_dsi1: dsi@ae96000 {
+					compatible = "qcom,mdss-dsi-ctrl";
+					reg = <0xae96000 0x400>; reg-names = "dsi_ctrl";
+					interrupt-parent = <&uke_mdss>; interrupts = <5>;
+					clocks = <&dispcc DISP_CC_MDSS_BYTE1_CLK>, <&dispcc DISP_CC_MDSS_BYTE1_INTF_CLK>,
+						 <&dispcc DISP_CC_MDSS_PCLK1_CLK>, <&dispcc DISP_CC_MDSS_ESC1_CLK>,
+						 <&dispcc DISP_CC_MDSS_AHB_CLK>, <&gcc GCC_DISP_HF_AXI_CLK>;
+					clock-names = "byte", "byte_intf", "pixel", "core", "iface", "bus";
+					phys = <&uke_phy1>; phy-names = "dsi"; vdda-supply = <&L3B>;
+					qcom,dual-dsi-mode;
+					assigned-clocks = <&dispcc DISP_CC_MDSS_BYTE1_CLK_SRC>, <&dispcc DISP_CC_MDSS_PCLK1_CLK_SRC>;
+					assigned-clock-parents = <&uke_phy1 DSI_BYTE_PLL_CLK>, <&uke_phy1 DSI_PIXEL_PLL_CLK>;
+					#address-cells = <1>; #size-cells = <0>;
+					ports {
+						#address-cells = <1>; #size-cells = <0>;
+						port@0 { reg = <0>; uke_dsi1_in: endpoint { remote-endpoint = <&uke_dpu1>; }; };
+						port@1 { reg = <1>; uke_dsi1_out: endpoint { remote-endpoint = <&uke_panel1>; data-lanes = <0 1 2 3>; }; };
+					};
+				};
+				uke_phy0: phy@ae95000 {
+					compatible = "qcom,sm7675-dsi-phy-4nm";
+					reg = <0xae95000 0x200>, <0xae95200 0x280>, <0xae95500 0x400>;
+					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
+					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
+					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L1B>;
+				};
+				uke_phy1: phy@ae97000 {
+					compatible = "qcom,sm7675-dsi-phy-4nm";
+					reg = <0xae97000 0x200>, <0xae97200 0x280>, <0xae97500 0x400>;
+					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
+					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
+					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L1B>;
+				};
+			};
+		};
+	};
+};

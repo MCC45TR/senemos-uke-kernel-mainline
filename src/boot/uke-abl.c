@@ -89,6 +89,50 @@ static int UKE_INIT uke_reboot_cell(const void *fdt)
 	return 0;
 }
 
+static int UKE_INIT uke_gpu_opps(const void *fdt)
+{
+	static const unsigned int points[][3] = {
+		{255000000, 56, 2136718}, {353000000, 64, 6074218},
+		{500000000, 128, 6671875}, {633000000, 192, 12449218},
+		{684000000, 224, 12449218}, {736000000, 256, 12449218},
+		{835000000, 320, 14398437}, {900000000, 384, 16500000},
+		{950000000, 400, 16500000},
+	};
+	int gpu = fdt_path_offset(fdt, "/soc/qcom,kgsl-3d0@3d00000");
+	int table = fdt_subnode_offset(fdt, gpu, "qcom,gpu-pwrlevels");
+	int bytes, child;
+	unsigned int i, found = 0;
+	const fdt32_t *bandwidth = fdt_getprop(fdt, gpu, "qcom,bus-table-ddr", &bytes);
+
+	if (table < 0 || !bandwidth || bytes <= 0 || bytes % 4)
+		return -FDT_ERR_BADVALUE;
+	fdt_for_each_subnode(child, fdt, table) {
+		int size;
+		const fdt32_t *frequency = fdt_getprop(fdt, child, "qcom,gpu-freq", &size);
+		if (!frequency || size != 4)
+			return -FDT_ERR_BADVALUE;
+		for (i = 0; i < sizeof(points) / sizeof(points[0]); i++) {
+			const fdt32_t *level, *bus;
+			unsigned int index;
+			if (fdt32_to_cpu(*frequency) != points[i][0])
+				continue;
+			if (found & (1U << i))
+				return -FDT_ERR_BADVALUE;
+			level = fdt_getprop(fdt, child, "qcom,level", &size);
+			if (!level || size != 4 || fdt32_to_cpu(*level) != points[i][1])
+				return -FDT_ERR_BADVALUE;
+			bus = fdt_getprop(fdt, child, "qcom,bus-freq", &size);
+			if (!bus || size != 4)
+				return -FDT_ERR_BADVALUE;
+			index = fdt32_to_cpu(*bus);
+			if (index >= (unsigned int)bytes / 4 || fdt32_to_cpu(bandwidth[index]) != points[i][2])
+				return -FDT_ERR_BADVALUE;
+			found |= 1U << i;
+		}
+	}
+	return found == 0x1ff ? 0 : -FDT_ERR_BADVALUE;
+}
+
 static int UKE_INIT uke_legacy_layout(const void *fdt)
 {
 	static const struct {
@@ -692,7 +736,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    capacity > UKE_FDT_CAPACITY || capacity <= input_bytes ||
 	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
-	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) ||
+	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) || uke_gpu_opps(input) ||
 	    uke_backlight_bus(input) || uke_spi_graph(input) || uke_board_pins(input) ||
 	    !ufs_overlay || !usb_overlay ||
 	    ufs_bytes < sizeof(struct fdt_header) || usb_bytes < sizeof(struct fdt_header) ||
