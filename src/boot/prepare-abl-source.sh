@@ -54,3 +54,4 @@ sha256sum "$here/uke-abl.c" "$here/vendor/fdt_check.c" "$here/vendor/source.json
     "$here/../../patches/$version/0036-uke-adreno732-render.patch" \
     "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
+sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"

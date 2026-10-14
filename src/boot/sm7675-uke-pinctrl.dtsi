@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/* Uke OEM DT 94c84aeb9e517dbde546fc732033c184094c8e57 contains
+ * invalid function names in these unselected states. Keep the OEM pins,
+ * electrical configuration and disabled consumers; correct only the mux name.
+ */
+&{/soc/pinctrl@f000000/qupv3_se3_spi_pins/qupv3_se3_spi_clk_active/mux} {
+	function = "qup0_se3_l2";
+};
+
+&{/soc/pinctrl@f000000/fs19xx_irq_active_top_left/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_sleep_top_left/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_active_top_right/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_sleep_top_right/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_active_bottom_left/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_left/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_active_bottom_right/mux} { function = "gpio"; };
+&{/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_right/mux} { function = "gpio"; };

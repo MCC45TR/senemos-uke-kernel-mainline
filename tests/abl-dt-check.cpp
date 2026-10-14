@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -40,8 +41,28 @@ static void preserve_node(const Bytes &before, const Bytes &after, const std::st
         const char *name = nullptr;
         const void *value = fdt_getprop_by_offset(before.data(), offset, &name, &length);
         const void *other = fdt_getprop(after.data(), b, name, &other_length);
+        if (!std::strcmp(name, "function")) {
+            static const std::map<std::string, std::string> corrected = {
+                {"/soc/pinctrl@f000000/qupv3_se3_spi_pins/qupv3_se3_spi_clk_active/mux", "qup0_se3_l2"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_top_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_top_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_top_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_top_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_bottom_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_bottom_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_right/mux", "gpio"},
+            };
+            const auto expected = corrected.find(path);
+            if (expected != corrected.end()) {
+                if (!other || other_length != static_cast<int>(expected->second.size()+1) ||
+                    std::memcmp(other, expected->second.c_str(), other_length))
+                    throw std::runtime_error("OEM mux-name correction missing");
+                continue;
+            }
+        }
         if (!value || !other || length != other_length || std::memcmp(value, other, length))
-            throw std::runtime_error("Bootloader memory or reservation changed");
+            throw std::runtime_error("Preserved DT property changed: " + path + "/" + name);
     }
     if (recursive) {
         int child;
@@ -133,6 +154,14 @@ int main(int argc, char **argv) {
                 preserve_node(input, output, "/" + name, true);
         }
         preserve_node(input, output, "/reserved-memory", true);
+        for (node = fdt_next_node(input.data(), -1, nullptr); node >= 0;
+             node = fdt_next_node(input.data(), node, nullptr)) {
+            if (!fdt_getprop(input.data(), node, "gpio-controller", nullptr)) continue;
+            char path[4096];
+            if (fdt_get_path(input.data(), node, path, sizeof(path)))
+                throw std::runtime_error("GPIO controller path is too long");
+            preserve_node(input, output, path, true);
+        }
         for (int i=0; i<fdt_num_mem_rsv(input.data()); ++i) {
             uint64_t aa, as, ba, bs;
             if (fdt_get_mem_rsv(input.data(), i, &aa, &as) || fdt_get_mem_rsv(output.data(), i, &ba, &bs) ||
@@ -151,7 +180,7 @@ int main(int argc, char **argv) {
             done += count;
         }
         if (fsync(fd) || close(fd)) throw std::runtime_error("Output flush failed");
-        std::cout << "Uke DT admitted; original input, RAM, reserved nodes and reserve map preserved\n";
+        std::cout << "Uke DT admitted; input, RAM, reservations and GPIO-controller properties preserved; nine mux names corrected\n";
         return 0;
     } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }
