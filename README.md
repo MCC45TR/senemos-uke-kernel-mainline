@@ -10,10 +10,12 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 ## Status — 14 October 2026
 
 Matched RAM boots reach the tablet console, internal Fedora root, software KDE
-desktop and Wi-Fi SSH. Battery readings and manual backlight control are
-available. Finger input and ten simultaneous touch contacts worked in the
-14 October tablet test. GPU acceleration, Bluetooth, audio and USB host mode
-remain incomplete. Detailed results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
+desktop and Wi-Fi SSH. Battery readings are available. Manual backlight control
+works, but its current linear adjustment is difficult to use comfortably; a
+logarithmic curve is planned. Power and volume buttons, finger input and ten
+simultaneous touch contacts worked in the 14 October tablet test. GPU
+acceleration, Bluetooth, audio and USB host mode remain incomplete. Detailed
+results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
 
 The boot and package trials below use kernel revision **1.27**. The **1.29**
 charger and battery corrections are on `main`. The **1.30** brightness
