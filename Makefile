@@ -43,3 +43,7 @@ srpm: validate
 .PHONY: test-entry
 test-entry:
 	./senemos.sh --self-test
+
+.PHONY: test-led-overlay
+test-led-overlay:
+	bash tests/led-overlay-contract.sh
