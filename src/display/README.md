@@ -276,6 +276,13 @@ profiles, prepare rejection and the existing lifecycle/fault paths. A matched
 120 Hz build and Uke register/optical tests remain required; this does not
 qualify dynamic refresh, live mode switching or other rates.
 
+SM7675 snapshots separately include DSC_CTL offsets 0x10/0x14 for the two active
+encoders, whose earlier dump span omitted them. This extends read-only telemetry;
+it does not enable 4HS or assert a mismatch with the working OEM capture's zeros.
+`tests/dsc-ctl-snapshot-contract.sh` checks the actual catalog and snapshot
+reader/printer bounds, including no access to padded words. Native values still
+require a matched physical snapshot.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

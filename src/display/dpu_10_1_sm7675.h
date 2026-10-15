@@ -102,14 +102,25 @@ static const struct dpu_merge_3d_cfg sm7675_merge_3d[] = {
 	{ .name = "merge_3d_1", .id = MERGE_3D_1, .base = 0x4f000, .len = 0x8 },
 };
 
+/* Include the two OEM 4HS diagnostic words in these snapshot ranges. */
+static const struct dpu_dsc_sub_blks sm7675_dsc_sblk_0 = {
+	.enc = {.name = "enc", .base = 0x100, .len = 0x9c},
+	.ctl = {.name = "ctl", .base = 0xF00, .len = 0x18},
+};
+
+static const struct dpu_dsc_sub_blks sm7675_dsc_sblk_1 = {
+	.enc = {.name = "enc", .base = 0x200, .len = 0x9c},
+	.ctl = {.name = "ctl", .base = 0xF80, .len = 0x18},
+};
+
 /* Uke OEM MDSS >= 10 supports full ICH precision for > 8-bpc DSC. */
 static const struct dpu_dsc_cfg sm7675_dsc[] = {
 	{ .name = "dce_0_0", .id = DSC_0, .base = 0x80000, .len = 0x6,
 	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
-	  .sblk = &dsc_sblk_0 },
+	  .sblk = &sm7675_dsc_sblk_0 },
 	{ .name = "dce_0_1", .id = DSC_1, .base = 0x80000, .len = 0x6,
 	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
-	  .sblk = &dsc_sblk_1 },
+	  .sblk = &sm7675_dsc_sblk_1 },
 	{ .name = "dce_1_0", .id = DSC_2, .base = 0x81000, .len = 0x6,
 	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
 	  .sblk = &dsc_sblk_0 },
