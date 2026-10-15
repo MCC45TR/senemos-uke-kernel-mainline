@@ -306,6 +306,7 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	if (ret)
 		goto unregister_secondary;
 	mipi_dsi_set_drvdata(dsi, ctx);
+	ctx->panel.prepare_prev_first = true;
 	drm_panel_add(&ctx->panel);
 	for (i = 0; i < ARRAY_SIZE(ctx->dsi); i++) {
 		ctx->dsi[i]->lanes = 4;

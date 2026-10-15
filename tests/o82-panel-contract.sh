@@ -2,6 +2,7 @@
 # Execute the candidate panel's real lifecycle functions with bounded host I/O.
 set -Eeuo pipefail
 source_file=${1:?Pass panel-xiaomi-o82.c} header=${2:?Pass generated o82-data.h}
+[[ $(awk '/ctx->panel.prepare_prev_first = true;/ {ready=1} /drm_panel_add\(&ctx->panel\)/ {print ready+0; exit}' "$source_file") == 1 ]]
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 cat > "$work/check.c" <<'C'
