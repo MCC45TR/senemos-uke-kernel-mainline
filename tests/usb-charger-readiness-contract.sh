@@ -27,6 +27,7 @@ union power_supply_propval { int intval; };
 #define EPROBE_DEFER 517
 #define ERR_PTR(n) ((void *)(intptr_t)(n))
 #define dev_dbg(...) ((void)0)
+#define dev_info(...) ((void)0)
 #define INIT_DELAYED_WORK(w,f) ((void)(w), (void)(f))
 static bool uke=true, link_ok=true, replace_request, property_present=true, supply_present=true;
 static int response, requests, queued, last_value, puts, links;

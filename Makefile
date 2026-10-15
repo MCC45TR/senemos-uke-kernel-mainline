@@ -2,10 +2,10 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm
-version := 7.2.10
+version := 7.2.9
 outdir ?= $(CURDIR)/build/srpm
 validate:
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 40) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 44) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
@@ -34,8 +34,9 @@ srpm: validate
 	cp patches/$(version)/README.md "$$top/adaptation/senemos-adaptation/README.md"
 	tar --sort=name --mtime=@$$(jq -er .source_date_epoch manifests/linux-$(version).json) --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
-	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh tests/qup-interconnect-contract.sh tests/adreno-lifecycle-contract.sh tests/cpu-epss-contract.sh "$$top/SOURCES/"
+	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh tests/qup-interconnect-contract.sh tests/adreno-lifecycle-contract.sh tests/cpu-epss-contract.sh tests/sysfb-damage-contract.sh "$$top/SOURCES/"
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
+	cp tests/serial-power-budget-contract.sh "$$top/SOURCES/"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"

@@ -8,8 +8,8 @@
 %global _uke_out %{_topdir}/kernel-out
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.10
-Release:        1.33%{?dist}
+Version: 7.2.9
+Release:        1.39%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -26,6 +26,8 @@ Source9: usb-charger-readiness-contract.sh
 Source10: qup-interconnect-contract.sh
 Source11: adreno-lifecycle-contract.sh
 Source12: cpu-epss-contract.sh
+Source13: sysfb-damage-contract.sh
+Source14: serial-power-budget-contract.sh
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
@@ -167,6 +169,8 @@ bash %{SOURCE9} "$PWD"
 bash %{SOURCE10} "$PWD/drivers/interconnect/qcom/qnoc-cliffs-usb.c"
 CC=clang bash %{SOURCE11} "$PWD/drivers/gpu/drm/msm/adreno/adreno_device.c"
 CXX=clang++ bash %{SOURCE12} "$PWD/drivers/cpufreq/qcom-cpufreq-hw.c"
+CXX=clang++ bash %{SOURCE13} "$PWD/drivers/gpu/drm/sysfb/drm_sysfb_modeset.c"
+CC=clang bash %{SOURCE14} "$PWD"
 
 %install
 export ARCH=arm64 LLVM=1
@@ -230,6 +234,28 @@ fi
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.39
+- Revalidate a USB2 source that has not finished charger-service startup.
+- Record bounded budget results while retaining refusals for unsuitable sources.
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.38
+- Advertise the enumerated USB2 sink budget on the Uke serial gadget.
+- Retain source limits and firmware charging controls; net charging needs measurement.
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.37
+- Keep an active panel at a visible one-percent brightness minimum.
+- Preserve true backlight blanking, suspend and paired transaction rollback.
+
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.36
+- Bound firmware-framebuffer copies after fractional damage clipping.
+- Retain source panning and test the actual update loop against the observed overrun.
+
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.35
+- Package the matched kernel and the initramfs that reached the Fedora root.
+- Retain the explicit CDC development console through the root transition.
+
+* Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.34
+- Retain the display metadata, uinput and GPU removal fixes on the working base.
+- Preserve SM7675 CPU core-count operating points and reviewed GPU frequencies.
+
 * Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.33
 - Preserve SM7675 EPSS core-count operating points, including the Prime domain.
 - Test the actual LUT parser while retaining other platforms' turbo behavior.
