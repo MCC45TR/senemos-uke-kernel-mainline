@@ -326,6 +326,14 @@ static void o82_first_frame(struct kthread_work *work)
 		ret = -EINVAL;
 		goto failed;
 	}
+	/* OEM starts DPU timing before its four HS TP-FPS updates. */
+	stage = "timing-switch";
+	for (i = 0; i < ctx->active->switch_count; i++) {
+		ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
+		if (ret)
+			goto failed;
+	}
+	i = -1;
 	stage = "backlight";
 	ret = backlight_enable(ctx->backlight);
 	if (ret)
@@ -357,7 +365,7 @@ static int o82_enable_locked(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
 	struct drm_crtc *crtc;
-	int i, ret;
+	int ret;
 
 	if (ctx->removing)
 		return -ESHUTDOWN;
@@ -367,15 +375,6 @@ static int o82_enable_locked(struct drm_panel *panel)
 	if (ctx->first_frame_initialized)
 		return -EBUSY;
 	crtc = ctx->connector->state->crtc;
-	/* Exact OEM post-enable updates TP FPS after PPS and video start. */
-	for (i = 0; i < ctx->active->switch_count; i++) {
-		ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
-		if (ret) {
-			dev_err(&ctx->dsi[0]->dev,
-				"O82 post-enable command[%d] failed: %d\n", i, ret);
-			return ret;
-		}
-	}
 	/* MSM kicks off after panel enable, so the first-frame gate must not block. */
 	ctx->first_frame_crtc = crtc;
 	ctx->first_frame_target = drm_crtc_vblank_count(crtc) + 1;

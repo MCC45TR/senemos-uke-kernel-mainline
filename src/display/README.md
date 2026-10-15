@@ -284,9 +284,13 @@ reader/printer bounds, including no access to padded words. Native24 on Uke on
 16 October confirmed the exact 120 Hz mode and both control-word pairs at zero,
 matching the active OEM capture. The desktop and held XR24 test remained blank.
 
-The next isolated panel candidate retains the four HS timing commands and
-defers the existing positive KTZ update and two LP normal-pixel commands until
-a standard DRM vblank work item runs. Panel enable returns before MSM kickoff;
+Native25 on 16 October logged the vblank boundary, checked positive KTZ update
+and LP completion, but desktop and held XR24 output remained invisible. The
+selected OEM atomic path also starts DPU timing before its four HS commands;
+native25 still sent them before kickoff. The same standard DRM vblank work
+item now sends those unchanged HS commands before the existing KTZ and LP
+operations. This corrects the earlier assumption that DSI VIDEO_ON alone meant
+DPU timing was already running. Panel enable returns before MSM kickoff;
 disable and unprepare join pending or running work before host or rail teardown.
 Schedule refusal, backlight and packet failures are reported and request blanking.
 Core enable admission is separate from asynchronous completion. A vblank is not

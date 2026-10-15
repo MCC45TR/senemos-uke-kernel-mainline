@@ -123,7 +123,7 @@ static void drm_vblank_work_init(struct drm_vblank_work *work,struct drm_crtc *c
 static u64 drm_crtc_vblank_count(struct drm_crtc *crtc) {return crtc->count;}
 static int drm_vblank_work_schedule(struct drm_vblank_work *work,u64 count,bool nextonmiss) {
     assert(nextonmiss && count==work->crtc->count+1 && !work->pending);
-    assert(!backlight_calls && !normal_transfers); ++scheduled;
+    assert(!backlight_calls && !normal_transfers && !hs_transfers); ++scheduled;
     if(schedule_result>0) {work->pending=true; work->count=count;}
     return schedule_result;
 }
@@ -215,7 +215,7 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
         }
     }
     else {
-        assert(video_started && pps_transfers==2 && hs_transfers<8);
+        assert(video_started && boundary_seen && pps_transfers==2 && hs_transfers<8);
         assert(m->type==0x39 && m->tx_len==2);
         memcpy(hs_payloads[hs_transfers++],m->tx_buf,2);
     }
@@ -420,8 +420,8 @@ int main(void) {
         const int before_enable_wait=settle_ms;
         video_started=true; drm_panel_enable(&c.panel);
         assert(c.panel.enabled && !backlight_calls && enables==3 && scheduled==1);
-        assert(hs_transfers==2*(int)c.active->switch_count && settle_ms==before_enable_wait);
-        assert(!normal_transfers && transfers==full+8 && c.first_frame_work.pending);
+        assert(!hs_transfers && settle_ms==before_enable_wait);
+        assert(!normal_transfers && transfers==full && c.first_frame_work.pending);
         assert(!c.backlight->on && c.first_frame_initialized);
         /* Event-less startup remains nonblocking, blank and cancellable. */
         const int pending_full=transfers;
@@ -445,7 +445,7 @@ int main(void) {
         /* A fresh core enable after disable repeats the panel protocol. */
         hs_transfers=normal_transfers=0; backlight_calls=0; boundary_seen=false;
         drm_panel_enable(&c.panel);
-        assert(c.panel.enabled && !backlight_calls && !normal_transfers && hs_transfers==8);
+        assert(c.panel.enabled && !backlight_calls && !normal_transfers && !hs_transfers);
         first_boundary(&c.first_frame_work);
         assert(backlight_calls==1 && normal_transfers==4);
         drm_panel_disable(&c.panel);
@@ -459,7 +459,7 @@ int main(void) {
         assert(o82_prepare(&c.panel)==0 && c.prepared && pps_transfers==2);
         assert(!normal_transfers && !hs_transfers);
         video_started=true; drm_panel_enable(&c.panel);
-        assert(c.panel.enabled && !backlight_calls && !normal_transfers && hs_transfers==8);
+        assert(c.panel.enabled && !backlight_calls && !normal_transfers && !hs_transfers);
         first_boundary(&c.first_frame_work);
         assert(backlight_calls==1 && normal_transfers==4);
         drm_panel_disable(&c.panel); video_started=false;
@@ -485,16 +485,13 @@ int main(void) {
             const int before=transfers;
             if(short_reply) transfer_short=before+fault; else transfer_failure=before+fault;
             video_started=true; drm_panel_enable(&c.panel);
-            if(fault<8) {
-                assert(!c.panel.enabled && !backlight_calls && !scheduled);
-                assert(!c.first_frame_initialized);
-            } else {
-                assert(c.panel.enabled && !backlight_calls && c.first_frame_work.pending);
-                first_boundary(&c.first_frame_work);
-                assert(backlight_calls==1 && strstr(last_error,"result=-5 blank_result=0"));
-                assert(!c.backlight->on && c.first_frame_initialized);
-                drm_panel_disable(&c.panel);
-            }
+            assert(c.panel.enabled && !backlight_calls && !hs_transfers && c.first_frame_work.pending);
+            assert(transfers==before);
+            first_boundary(&c.first_frame_work);
+            assert(backlight_calls==(fault<8 ? 0:1) && strstr(last_error,"result=-5 blank_result=0"));
+            assert(strstr(last_error,fault<8 ? "stage=timing-switch":"stage=normal-pixels"));
+            assert(!c.backlight->on && c.first_frame_initialized);
+            drm_panel_disable(&c.panel);
             assert(c.prepared && c.enabled_supplies==7);
             assert(disables==0 && transfers==before+fault+1);
             assert(hs_transfers==(fault<8 ? fault+1:8));
@@ -502,7 +499,7 @@ int main(void) {
             transfer_failure=transfer_short=-1; hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
             if(fault&1) {
                 drm_panel_enable(&c.panel);
-                assert(c.panel.enabled && !backlight_calls && hs_transfers==8 && !normal_transfers && enables==3);
+                assert(c.panel.enabled && !backlight_calls && !hs_transfers && !normal_transfers && enables==3);
                 first_boundary(&c.first_frame_work);
                 assert(backlight_calls==1 && normal_transfers==4);
             }
@@ -536,7 +533,7 @@ int main(void) {
             schedule_result=refusal==0 ? 0:refusal==1 ? -EIO:-EINVAL;
             video_started=true; drm_panel_enable(&c.panel);
             assert(!c.panel.enabled && !c.backlight->on && !backlight_calls && !normal_transfers);
-            assert(transfers==before+8 && scheduled==1 && cancelled==1);
+            assert(transfers==before && !hs_transfers && scheduled==1 && cancelled==1);
             assert(!c.first_frame_initialized && strstr(last_error,refusal==2 ? "refused: -22":"refused: -5"));
             video_started=false; assert(o82_unprepare(&c.panel)==0 && !c.prepared);
         }
@@ -582,7 +579,7 @@ int main(void) {
         /* No IRQ is required to cancel a pending event before direct teardown. */
         video_started=false; assert(o82_unprepare(&c.panel)==0 && cancelled==1);
         assert(!c.first_frame_initialized && !c.first_frame_work.pending && !c.prepared);
-        assert(!normal_transfers && !backlight_calls);
+        assert(!hs_transfers && !normal_transfers && !backlight_calls);
         const int after_unprepare=transfers;
         assert(o82_unprepare(&c.panel)==0 && cancelled==1 && transfers==after_unprepare);
         drm_panel_disable(&c.panel);
@@ -615,4 +612,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes: unchanged ON/PPS/HS; nonblocking boundary then checked positive backlight then LP normal pixels; async faults, schedule refusal, duplicate/re-enable, missing IRQ cancellation and remove/shutdown rearm exclusion passed\n'
+printf 'Two O82 variants, seven modes: unchanged ON/PPS; no HS before boundary; boundary then unchanged four HS then checked positive backlight then LP normal pixels; async HS/LP faults, refusal, re-enable and cancellation passed\n'
