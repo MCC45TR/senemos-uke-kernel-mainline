@@ -1,0 +1,47 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: use the SM7675 video timing master
+
+The working Uke OEM route selects INTF1 as master, keeps both interfaces
+active and starts only its non-slave timing engine. Native uses the same
+modern CTL master routing but independently starts both timing engines.
+
+For the dedicated SM7675 catalog, suppress only the slave timing-enable1
+write. Retain both interface setup and flush paths, software ENABLED states,
+IRQ policy and existing native disable/cleanup. SOLO and MASTER retain
+their writes; other catalogs retain the existing behavior. The current
+SM7675 catalog admits DSI interfaces only.
+
+This does not clear a timing engine inherited as enabled. A physical trial
+must observe INTF1/2 enable1/0 before judging master-only scanout. It changes
+no panel, DSI host, PHY, DSC, fetch or clock setting and is not an optical fix
+claim.
+
+Source: MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/sde/sde_encoder_phys_vid.c:sde_encoder_phys_vid_handle_post_kickoff;
+msm/sde/sde_encoder.c:sde_encoder_helper_update_intf_cfg;
+msm/sde/sde_hw_ctl.c:sde_hw_ctl_intf_cfg_v1.
+GPL-2.0-only notices and Linux Foundation/Qualcomm attribution retained.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
+@@ -661,9 +661,15 @@
+ 	if (phys_enc->enable_state == DPU_ENC_ENABLING) {
+ 		trace_dpu_enc_phys_vid_post_kickoff(DRMID(phys_enc->parent),
+ 				    phys_enc->hw_intf->idx - INTF_0);
+-		spin_lock_irqsave(phys_enc->enc_spinlock, lock_flags);
+-		phys_enc->hw_intf->ops.enable_timing(phys_enc->hw_intf, 1);
+-		spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
++		/* SM7675 CTL_INTF_MASTER synchronizes the bonded slave.
++		 * Match its OEM video path without changing older catalogs.
++		 */
++		if (phys_enc->dpu_kms->catalog != &dpu_sm7675_cfg ||
++		    dpu_encoder_phys_vid_is_master(phys_enc)) {
++			spin_lock_irqsave(phys_enc->enc_spinlock, lock_flags);
++			phys_enc->hw_intf->ops.enable_timing(phys_enc->hw_intf, 1);
++			spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
++		}
+ 		phys_enc->enable_state = DPU_ENC_ENABLED;
+ 	}
+ }

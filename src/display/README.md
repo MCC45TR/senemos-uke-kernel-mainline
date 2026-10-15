@@ -1,6 +1,6 @@
 # SM7675 native display candidate
 
-Recorded on 15 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
+Recorded on 16 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
 candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
 **Native display reaches Fedora, SSH and active scanout, but visible output remains unavailable.**
@@ -223,6 +223,25 @@ runtime zero-brightness hook. Existing HS transfers do not guarantee a completed
 frame. The actual panel fixture checks both variants, seven source modes and
 transfer/lifecycle failures; matched build and optical validation remain required.
 
+Native21 completed ordinary B-slot startup on Uke on 16 October, returned valid
+primary reads and logged no normal-pixel transfer error. The desktop and an
+independent XR24 image remained invisible. The next isolated timing candidate,
+`0015-native-dpu-video-timing-master.patch`, follows exact OEM display revision
+`44275c404a677d9d9e5230fedd1af2ef02fc7b9a`: only the non-slave video encoder
+starts its timing engine, while both physical encoders become ENABLED. It is
+scoped to the dedicated SM7675 catalog. Both interface setup and modern CTL
+flush paths, slave underrun reporting, master-only vblank policy and existing
+native disable/cleanup remain intact. Other catalogs and SOLO/MASTER writes
+retain their behavior. This changes no panel, DSI, PHY, DSC, fetch or clock data.
+
+The timing patch suppresses an enable write; it does not clear a slave engine
+inherited as enabled. The physical test must observe INTF1/INTF2 enable1/0,
+with CTL interface-active6, master2 and DSC-active3, before assessing output.
+The actual-function host fixture covers those software paths, all initial
+states, two lifecycle cycles, frame/commit waits and the inherited-enable
+limit. Visible output, idle collapse, suspend and mode-change behavior still
+require separate Uke tests.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and
@@ -261,6 +280,7 @@ After preparing the isolated source, run the actual-function host checks:
 ```sh
 bash tests/dsc-precision-contract.sh PREPARED_KERNEL
 bash tests/dsi-panel-sequence-contract.sh PREPARED_KERNEL/drivers/gpu/drm/msm/dsi/dsi_manager.c
+bash tests/dpu-video-timing-contract.sh PREPARED_KERNEL
 ```
 
 They test capability/depth refusal, unchanged unrelated register writes,
