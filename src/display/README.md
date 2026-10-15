@@ -3,7 +3,7 @@
 Recorded on 15 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
 candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
-**Native display trials reached Fedora and SSH but have not produced scanout.**
+**Native display reaches Fedora, SSH and active scanout, but visible output remains unavailable.**
 
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
@@ -133,6 +133,27 @@ failed transport unwinds through the existing host restore path. Run
 `tests/dsi-read-transaction-contract.sh` and `tests/o82-readback-contract.sh`
 against the prepared source before building this diagnostic. The existing
 RGB24 DSI test-pattern generator is not used as evidence for a DSC stream.
+
+Native15 completed all four per-link reads without a DMA timeout, but rejected
+each response header. It returned no panel byte; local DMA completion is not
+panel acceptance. The next isolated candidate adds `MIPI_DSI_CLOCK_NON_CONTINUOUS`
+to both O82 links. Both exact OEM variants omit forced HS clock, and the reviewed
+upstream NT36532 driver also requests non-continuous clock. Timings, DSC,
+packet geometry, EOT, initialization commands and PLL state remain unchanged.
+`0012-native-dsi-invalid-rx-diagnostics.patch` records the selected link,
+decoded four-byte header, raw RDBK words, revision-qualified RDBK control and
+timeout status on the existing invalid-response path. It adds rate-limited
+logging with existing host accessors; it changes no return value or timeout.
+The extended panel/read fixtures test both links, attachment unwind, invalid
+headers, old-revision refusal of the control read and transport cleanup.
+
+Host software-reset and bonded PHY-reset precede enable, but the non-continuous
+branch does not explicitly clear inherited force-HS bits. Physical acceptance
+must therefore verify controller LANE_CTRL bit28 and PHY LANE_CTRL1 bits5/6 are
+clear on both links, then check raw readback and visible output. A flag change
+alone cannot establish that the live clock policy changed. The active Pad 2
+queue's PLL patch `93c97bc8d85d` was reverted upstream by `44784327815b`; it is
+not included in this candidate.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short

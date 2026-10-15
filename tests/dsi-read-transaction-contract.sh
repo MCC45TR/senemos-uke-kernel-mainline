@@ -28,6 +28,7 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define DBG(...) ((void)0)
 #define pr_err(...) ((void)0)
 #define pr_warn(...) ((void)0)
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define wmb() ((void)0)
 #define DSI_0 0
 #define MIPI_DSI_MODE_VIDEO 1
@@ -52,6 +53,31 @@ static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
 }
 static int committed[8],commit_count,wait_count,fail_wait,base_error,add_count,fail_add,rx_count;
 static int prepared[2],restored[2],fail_prepare,packets[8];
+static int invalid_logs,register_reads,last_log_link,last_log_cmd,last_ctrl_valid;
+static u32 last_ctrl,last_raw[4],last_timeout;
+static u8 response[4]={MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_1BYTE,0xab,0,0};
+static u8 last_header[4];
+static int rx_result=4;
+static u32 dsi_read(struct msm_dsi_host *host,u32 address) {
+    ++register_reads;
+    if(address==REG_DSI_RDBK_DATA_CTRL) return 0x00040000U+(u32)host->id;
+    if(address==REG_DSI_TIMEOUT_STATUS) return 1U+(u32)host->id;
+    for(int i=0;i<4;i++) if(address==REG_DSI_RDBK_DATA(i))
+        return 0xa0000000U+((u32)host->id<<16)+(u32)i;
+    assert(false); return 0;
+}
+static void invalid_log(const char *format,const char *function,int id,unsigned int cmd,
+                        int width,const void *header,int valid,u32 ctrl,
+                        u32 raw0,u32 raw1,u32 raw2,u32 raw3,u32 timeout) {
+    assert(strstr(format,"Invalid response link=") && strstr(format,"header=%*ph"));
+    assert(strstr(format,"rdbk_ctrl_valid=") && strstr(format,"raw=%08x"));
+    assert(!strcmp(function,"msm_dsi_host_cmd_rx") && width==4);
+    ++invalid_logs; last_log_link=id; last_log_cmd=(int)cmd; last_ctrl_valid=valid; last_ctrl=ctrl;
+    memcpy(last_header,header,4);
+    last_raw[0]=raw0; last_raw[1]=raw1; last_raw[2]=raw2; last_raw[3]=raw3;
+    last_timeout=timeout;
+}
+#define pr_warn_ratelimited(...) invalid_log(__VA_ARGS__)
 static int dma_base_get(struct msm_dsi_host *host,uint64_t *address) {
     *address=0x1000+host->id*0x100; return base_error;
 }
@@ -72,7 +98,7 @@ static int dsi_cmd_dma_add(struct msm_dsi_host *host,const struct mipi_dsi_msg *
 }
 static int dsi_cmd_dma_rx(struct msm_dsi_host *host,u8 *buf,int bytes,int size) {
     (void)host; assert(bytes==4 && size==1); ++rx_count;
-    buf[0]=MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_1BYTE; buf[1]=0xab; return 4;
+    memcpy(buf,response,4); return rx_result;
 }
 static int dsi_short_read2_resp(u8 *buf,const struct mipi_dsi_msg *msg) {(void)buf;(void)msg;return 0;}
 static int dsi_long_read_resp(u8 *buf,const struct mipi_dsi_msg *msg) {(void)buf;(void)msg;return 0;}
@@ -99,6 +125,9 @@ static void reset(void) {
     commit_count=wait_count=base_error=add_count=rx_count=0;
     fail_wait=fail_add=fail_prepare=-1;
     memset(prepared,0,sizeof(prepared)); memset(restored,0,sizeof(restored));
+    invalid_logs=register_reads=0; rx_result=4;
+    response[0]=MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_1BYTE;
+    response[1]=0xab; response[2]=response[3]=0;
 }
 int main(void) {
     struct test_ops ops={dma_base_get};
@@ -119,6 +148,7 @@ int main(void) {
         assert(packets[0]==MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE && packets[1]==MIPI_DSI_DCS_READ);
         assert(prepared[id]==1 && restored[id]==1);
         assert(prepared[1-id]==0 && restored[1-id]==0);
+        assert(invalid_logs==0 && register_reads==0);
         reset(); assert(msm_dsi_manager_cmd_xfer(id,&write)>=1);
         if(sync && id==0) assert(commit_count==0 && wait_count==0 && add_count==0);
         else if(sync) {
@@ -126,6 +156,30 @@ int main(void) {
             assert(prepared[0]==1 && restored[0]==1 && prepared[1]==1 && restored[1]==1);
         } else assert(commit_count==1 && committed[0]==id && wait_count==1);
     }
+    /* Execute the actual invalid-response branch without changing its result.
+     * Both hardware revisions and both links retain bounded selected-host reads.
+     */
+    for(int sync=0;sync<2;sync++) for(int id=0;id<2;id++) for(int modern=0;modern<2;modern++) {
+        sync_needed=sync; cfg.minor=modern;
+        reset(); response[0]=0x7f; response[1]=0x12; response[2]=0x34; response[3]=0x56;
+        value=0xee;
+        assert(msm_dsi_manager_cmd_xfer(id,&read)==0 && value==0xee);
+        assert(invalid_logs==1 && register_reads==(modern ? 6:5));
+        assert(last_log_link==id && last_log_cmd==0x7f && last_ctrl_valid==modern);
+        assert(last_ctrl==(modern ? 0x00040000U+(u32)id:0));
+        assert(!memcmp(last_header,response,4));
+        assert(last_timeout==1U+(u32)id);
+        for(int word=0;word<4;word++) assert(last_raw[word]==0xa0000000U+((u32)id<<16)+(u32)word);
+        assert(prepared[id]==1 && restored[id]==1 && !prepared[1-id] && !restored[1-id]);
+        assert(commit_count==2 && committed[0]==id && committed[1]==id);
+        reset(); rx_result=0;
+        assert(msm_dsi_manager_cmd_xfer(id,&read)==0 && invalid_logs==0 && register_reads==0);
+        assert(prepared[id]==1 && restored[id]==1);
+        reset(); response[0]=MIPI_DSI_RX_ACKNOWLEDGE_AND_ERROR_REPORT;
+        assert(msm_dsi_manager_cmd_xfer(id,&read)==0 && invalid_logs==0 && register_reads==0);
+        assert(prepared[id]==1 && restored[id]==1);
+    }
+    cfg.minor=1;
     sync_needed=true;
     for(int id=0;id<2;id++) {
         for(int stage=1;stage<=2;stage++) {
@@ -150,4 +204,4 @@ C
     -Wno-missing-field-initializers -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$kernel/include" -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual DSI manager/host/DMA: independent bonded reads on both links including max-return-size; write broadcast retained; timeout/error cleanup passed\n'
+printf 'Actual DSI manager/host/DMA: independent reads and broadcast writes; invalid RX raw/header diagnostics and revision bounds; timeout/error cleanup passed\n'

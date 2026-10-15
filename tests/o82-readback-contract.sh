@@ -27,6 +27,7 @@ cat > "$work/check.c" <<'C'
 typedef uint8_t u8;
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define MIPI_DSI_MODE_LPM 0x800UL
+#define MIPI_DSI_CLOCK_NON_CONTINUOUS 0x400UL
 #define MIPI_DSI_MSG_USE_LPM 2
 struct device {int link;};
 struct mipi_dsi_msg {u8 channel,type; unsigned int flags; const void *tx_buf; size_t tx_len; void *rx_buf; size_t rx_len;};
@@ -65,7 +66,8 @@ C
 int main(void) {
     struct mipi_dsi_host_ops ops={transfer};
     struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
-    struct mipi_dsi_device dsis[2]={{{0},&hosts[0],0x941UL|MIPI_DSI_MODE_LPM,0},{{1},&hosts[1],0x51UL,0}};
+    struct mipi_dsi_device dsis[2]={{{0},&hosts[0],0x941UL|MIPI_DSI_MODE_LPM|MIPI_DSI_CLOCK_NON_CONTINUOUS,0},
+                                  {{1},&hosts[1],0x51UL|MIPI_DSI_CLOCK_NON_CONTINUOUS,0}};
     struct o82_panel panel={{&dsis[0],&dsis[1]}}; context=&panel;
     for(int scenario=0;scenario<3;scenario++) {
         calls=logs=warnings=0; memset(messages,0,sizeof(messages));

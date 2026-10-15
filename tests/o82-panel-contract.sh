@@ -30,9 +30,12 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t
 #define dev_warn(...) ((void)0)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
 enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
-       MIPI_DSI_MODE_LPM=0x800, MIPI_DCS_GET_POWER_MODE=0x0a,
+       MIPI_DCS_GET_POWER_MODE=0x0a, MIPI_DSI_FMT_RGB101010=10,
        DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 C
+# Use the selected kernel's public flag definitions.
+awk '/^#define MIPI_DSI_MODE_VIDEO[ \t]|^#define MIPI_DSI_CLOCK_NON_CONTINUOUS[ \t]|^#define MIPI_DSI_MODE_LPM[ \t]/' \
+    "$kernel/include/drm/drm_mipi_dsi.h" >> "$work/check.c"
 # Compile the selected upstream structs, RC calculation and wire packer, not a second serializer.
 {
 sed -n '/^#define DSC_NUM_BUF_RANGES/,/^} __packed;/p' "$kernel/include/drm/display/drm_dsc.h"
@@ -90,7 +93,8 @@ struct mipi_dsi_msg { unsigned int channel,type,flags; size_t tx_len; const void
 struct mipi_dsi_host;
 struct host_ops { ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_dsi_msg *); };
 struct mipi_dsi_host { struct host_ops *ops; };
-struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags; };
+struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
+    unsigned int lanes,format; struct drm_dsc_config *dsc; };
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
     assert(!(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1 && (reg==0xda || reg==0x0a));
     *(u8 *)value=0; return 1;
@@ -144,6 +148,37 @@ sed -n '/^static int o82_send(/,/^static int o82_get_modes(/p' "$source_file" | 
 sed -n '/^static int o82_get_modes(/,/^static const struct drm_panel_funcs/p' "$source_file" | sed '$d'
 } >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
+static struct o82_panel *attach_ctx;
+static int attach_failure,attached,detached,panel_removed,secondary_removed;
+static int mipi_dsi_attach(struct mipi_dsi_device *dsi) {
+    int id=attached++;
+    assert(id<2 && dsi==attach_ctx->dsi[id]);
+    assert(dsi->mode_flags==(MIPI_DSI_MODE_VIDEO|MIPI_DSI_CLOCK_NON_CONTINUOUS|MIPI_DSI_MODE_LPM));
+    assert(dsi->lanes==4 && dsi->format==MIPI_DSI_FMT_RGB101010 && dsi->dsc==&attach_ctx->dsc);
+    return id==attach_failure ? -EIO:0;
+}
+static void mipi_dsi_detach(struct mipi_dsi_device *dsi) {
+    assert(dsi==attach_ctx->dsi[0]); ++detached;
+}
+static void drm_panel_remove(struct drm_panel *panel) {
+    assert(panel==&attach_ctx->panel); ++panel_removed;
+}
+static void mipi_dsi_device_unregister(struct mipi_dsi_device *dsi) {
+    assert(dsi==attach_ctx->dsi[1]); ++secondary_removed;
+}
+/* Execute the actual probe's attachment loop and its failure unwind. Resource
+ * discovery before this block is outside the clock-policy change's scope.
+ */
+static int o82_probe_links(struct o82_panel *ctx) {
+    int i,ret;
+C
+awk '
+    /^static int o82_probe\(/ { probe=1 }
+    probe && /^\tfor \(i = 0; i < ARRAY_SIZE\(ctx->dsi\); i\+\+\)/ { emit=1 }
+    emit && /^static void o82_remove/ { exit }
+    emit && !/^unregister_secondary:/ { print }
+' "$source_file" >> "$work/check.c"
+cat >> "$work/check.c" <<'C'
 static struct o82_panel context(int variant,int mode) {
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops},{&ops}};
@@ -176,6 +211,14 @@ static struct o82_panel context(int variant,int mode) {
     return ctx;
 }
 int main(void) {
+    for(int variant=0;variant<2;variant++) for(int fail=-1;fail<2;fail++) {
+        struct o82_panel ctx=context(variant,3); attach_ctx=&ctx;
+        attach_failure=fail; attached=detached=panel_removed=secondary_removed=0;
+        assert(o82_probe_links(&ctx)==(fail<0 ? 0:-EIO));
+        assert(attached==(fail==0 ? 1:2));
+        assert(detached==(fail==1 ? 1:0));
+        assert(panel_removed==(fail>=0) && secondary_removed==(fail>=0));
+    }
     const unsigned int rates[]={30,48,50,60,90,120,144};
     assert(ARRAY_SIZE(o82_modes)==7);
     struct o82_panel selection=context(0,3);

@@ -1,0 +1,45 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: record invalid RX headers in native diagnostics
+
+Native15 completes independent reads but rejects their response header.
+Record the selected link, decoded first four bytes and raw RDBK words only
+on the existing invalid-response path. Read RDBK control only on hardware
+revisions where the existing RX path already clears that register.
+Keep the return value, transfer sequence, byte order and timeouts unchanged.
+Use the existing host accessor and rate-limited kernel logging; no new ABI.
+
+The Uke OEM get_cmd_read_data() reads RDBK_DATA_CTRL bits31:16 as
+the received byte count. Retain the entire control word for diagnosis.
+MiCode display source44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl_hw_cmn.c, GPL-2.0-only.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -2389,9 +2389,23 @@
+ 	case MIPI_DSI_RX_DCS_LONG_READ_RESPONSE:
+ 		ret = dsi_long_read_resp(buf, msg);
+ 		break;
+-	default:
+-		pr_warn("%s:Invalid response cmd\n", __func__);
++	default: {
++		bool has_rdbk_ctrl = cfg_hnd->major == MSM_DSI_VER_MAJOR_6G &&
++			cfg_hnd->minor >= MSM_DSI_6G_VER_MINOR_V1_1;
++		u32 rdbk_ctrl = has_rdbk_ctrl ?
++			dsi_read(msm_host, REG_DSI_RDBK_DATA_CTRL) : 0;
++		u32 raw[4];
++		int i;
++
++		for (i = 0; i < ARRAY_SIZE(raw); i++)
++			raw[i] = dsi_read(msm_host, REG_DSI_RDBK_DATA(i));
++		pr_warn_ratelimited("%s:Invalid response link=%d cmd=%#x header=%*ph rdbk_ctrl_valid=%d rdbk_ctrl=%#x raw=%08x,%08x,%08x,%08x timeout=%#x\n",
++			__func__, msm_host->id, (u8)cmd, 4, buf,
++			has_rdbk_ctrl, rdbk_ctrl, raw[0], raw[1], raw[2], raw[3],
++			dsi_read(msm_host, REG_DSI_TIMEOUT_STATUS));
+ 		ret = 0;
++		break;
++	}
+ 	}
+ 
+ 	return ret;

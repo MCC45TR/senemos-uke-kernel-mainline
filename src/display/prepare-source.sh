@@ -33,7 +33,8 @@ git -C "$kernel" apply --check "$dsc"
 git -C "$kernel" apply "$dsc"
 for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-sequence.patch \
                  0009-native-dsc-initial-lines.patch 0010-native-o82-phy-timing.patch \
-                 0011-native-dsi-read-transaction.patch; do
+                 0011-native-dsi-read-transaction.patch \
+                 0012-native-dsi-invalid-rx-diagnostics.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

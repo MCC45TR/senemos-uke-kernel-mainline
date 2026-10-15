@@ -366,7 +366,9 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 		ctx->dsi[i]->lanes = 4;
 		/* OEM 30-bpp input retains RGB101010 on the DSC-capable wide bus. */
 		ctx->dsi[i]->format = MIPI_DSI_FMT_RGB101010;
-		ctx->dsi[i]->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
+		/* O82 OEM does not force the clock lane to remain in HS. */
+		ctx->dsi[i]->mode_flags = MIPI_DSI_MODE_VIDEO |
+			MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;
 		ctx->dsi[i]->dsc = &ctx->dsc;
 		ret = mipi_dsi_attach(ctx->dsi[i]);
 		if (ret)
