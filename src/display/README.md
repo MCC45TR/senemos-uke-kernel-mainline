@@ -208,6 +208,21 @@ and refusal cleanup. A matched build, live register capture and visible image
 remain required. No host timing, DSC, EOT, frequency or panel-command change is
 combined with this correction.
 
+On 16 October 2026, native20 on Uke matched the working OEM PHY clock-select
+values 0x20/0x24 and returned primary DA=0xc3/power=0x9e, but the desktop and
+an independent XR24 test image remained invisible. The next isolated change
+sends the OEM LP normal-pixel packets after the four HS timing commands:
+type0x15 `FF 10`, then type0x39 `13 00`, with zero explicit waits. They come
+from `dsi-panel-o81-o82-dualdsi-dsc-lcd-video-micommon.dtsi` at DT revision
+`4a3e1c391130237c5e8c2b250d1c94f3e25b9b11`; display revision
+`44275c404a677d9d9e5230fedd1af2ef02fc7b9a` sends them on O82's first positive
+backlight update. This candidate sends them before DRM-core backlight admission
+and rejects failed or short transfers. It does not reproduce OEM's
+first-completed-frame wait or its backlight-before-DCS order, and adds no
+runtime zero-brightness hook. Existing HS transfers do not guarantee a completed
+frame. The actual panel fixture checks both variants, seven source modes and
+transfer/lifecycle failures; matched build and optical validation remain required.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

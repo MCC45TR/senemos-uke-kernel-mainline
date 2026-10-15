@@ -258,6 +258,10 @@ rollback_supplies:
 static int o82_enable(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	const struct o82_command normal_pixels[] = {
+		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
+		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0x13, 0x00 } },
+	};
 	int i, ret;
 
 	if (!ctx->prepared)
@@ -268,6 +272,18 @@ static int o82_enable(struct drm_panel *panel)
 		if (ret) {
 			dev_err(&ctx->dsi[0]->dev,
 				"O82 post-enable command[%d] failed: %d\n", i, ret);
+			return ret;
+		}
+	}
+	/* OEM O81/O82 restores normal pixels on the first positive backlight
+	 * update. Preserve its LP packet types and zero waits before DRM core
+	 * admits the backlight; runtime brightness-zero handling is separate.
+	 */
+	for (i = 0; i < ARRAY_SIZE(normal_pixels); i++) {
+		ret = o82_send(ctx, &normal_pixels[i], true);
+		if (ret) {
+			dev_err(&ctx->dsi[0]->dev,
+				"O82 normal-pixels command[%d] failed: %d\n", i, ret);
 			return ret;
 		}
 	}
