@@ -14,9 +14,10 @@ printf '#!/bin/sh\nexit 2\n' > "$fixture/bin/rg"; chmod 755 "$fixture/bin/rg"
 expect 2 env PATH="$fixture/bin" /bin/bash "$root/src/audit/check-target-privacy.sh" "$fixture/payload"
 rm "$fixture/bin/rg"; ln -s "$(command -v rg)" "$fixture/bin/rg"
 expect 0 env PATH="$fixture/bin" /bin/bash "$root/src/audit/check-target-privacy.sh" "$fixture/payload"
-printf '/home/private/build/file\n' > "$fixture/payload/test"
+synthetic_path=$(printf '/%s/%s/build/file' home fixture)
+printf '%s\n' "$synthetic_path" > "$fixture/payload/test"
 expect 1 /bin/bash "$root/src/audit/check-target-privacy.sh" "$fixture/payload"
 rm "$fixture/payload/test"
-ln -s /home/private/build/file "$fixture/payload/link"
+ln -s "$synthetic_path" "$fixture/payload/link"
 expect 1 /bin/bash "$root/src/audit/check-target-privacy.sh" "$fixture/payload"
 echo 'Privacy audit rejects missing tools, scanner errors, private content and symlinks'

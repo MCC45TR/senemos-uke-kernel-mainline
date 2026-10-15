@@ -139,7 +139,7 @@
     },
     {
       "path": "tests/target-privacy-contract.sh",
-      "sha256": "ecf15e4b5b63a9e14b465b18a81e77ba612cf3c538ff5e7b6756f8a7889cde77"
+      "sha256": "c44de51c157afc233915075d31d5458707cdb0b2edb75ae9f90c580c7ff1b637"
     }
   ]
 }
