@@ -14,6 +14,7 @@ cat > "$work/check.c" <<'C'
 typedef uint8_t u8; typedef uint16_t u16; typedef long ssize_t;
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define BIT(n) (1U<<(n))
+#define dev_err(...) ((void)0)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
 enum { MIPI_DSI_MSG_USE_LPM=2, DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 struct drm_display_mode { unsigned int clock,hdisplay,hsync_start,hsync_end,htotal,

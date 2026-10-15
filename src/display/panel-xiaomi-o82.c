@@ -74,10 +74,12 @@ static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool l
 		struct mipi_dsi_host *host = ctx->dsi[i]->host;
 
 		ret = host->ops->transfer(host, &msg);
-		if (ret < 0)
-			break;
 		if (ret != cmd->len) {
-			ret = -EIO;
+			dev_err(&ctx->dsi[i]->dev,
+				"O82 transfer failed: link=%d type=%#x opcode=%#x len=%u lpm=%d result=%zd\n",
+				i, cmd->type, cmd->data[0], cmd->len, lpm, ret);
+			if (ret >= 0)
+				ret = -EIO;
 			break;
 		}
 	}
@@ -133,16 +135,21 @@ static int o82_prepare(struct drm_panel *panel)
 	const struct o82_profile *profile = NULL;
 
 	if (!ctx->connector || !ctx->connector->state ||
-	    !ctx->connector->state->crtc || !ctx->connector->state->crtc->state)
+	    !ctx->connector->state->crtc || !ctx->connector->state->crtc->state) {
+		dev_err(&ctx->dsi[0]->dev, "O82 prepare has no active connector state\n");
 		return -EINVAL;
+	}
 	mode = &ctx->connector->state->crtc->state->adjusted_mode;
 	for (i = 0; i < ARRAY_SIZE(o82_modes); i++)
 		if (drm_mode_equal(mode, &o82_modes[i].mode)) {
 			profile = &ctx->profiles[o82_modes[i].group];
 			break;
 		}
-	if (!profile)
+	if (!profile) {
+		dev_err(&ctx->dsi[0]->dev, "O82 prepare mode rejected: %dx%d clock=%d htotal=%d vtotal=%d\n",
+			mode->hdisplay, mode->vdisplay, mode->clock, mode->htotal, mode->vtotal);
 		return -EINVAL;
+	}
 
 	if (ctx->prepared)
 		return ctx->active == profile ? 0 : -EBUSY;
@@ -152,19 +159,25 @@ static int o82_prepare(struct drm_panel *panel)
 	ctx->active = profile;
 	for (i = 0; i < ARRAY_SIZE(ctx->supplies); i++) {
 		ret = regulator_set_load(ctx->supplies[i], 300000);
-		if (ret < 0)
+		if (ret < 0) {
+			dev_err(&ctx->dsi[0]->dev, "O82 supply[%d] load failed: %d\n", i, ret);
 			goto rollback_supplies;
+		}
 		ctx->loaded_supplies |= BIT(i);
 		ret = regulator_enable(ctx->supplies[i]);
-		if (ret)
+		if (ret) {
+			dev_err(&ctx->dsi[0]->dev, "O82 supply[%d] enable failed: %d\n", i, ret);
 			goto rollback_supplies;
+		}
 		ctx->enabled_supplies |= BIT(i);
 		msleep(2);
 	}
 	/* ASIS at probe preserves splash; establish direction before first toggle. */
 	ret = gpiod_direction_output(ctx->reset, 0);
-	if (ret)
+	if (ret) {
+		dev_err(&ctx->dsi[0]->dev, "O82 reset direction failed: %d\n", ret);
 		goto rollback_supplies;
+	}
 	ctx->reset_output = true;
 	msleep(10);
 	gpiod_set_value_cansleep(ctx->reset, 1);
@@ -179,6 +192,7 @@ static int o82_prepare(struct drm_panel *panel)
 		/* OEM on/off sequences use LP; timing-switch video commands use HS. */
 		ret = o82_send(ctx, cmd, i < profile->on_count);
 		if (ret) {
+			dev_err(&ctx->dsi[0]->dev, "O82 prepare command[%d] failed: %d\n", i, ret);
 			o82_off(ctx);
 			o82_power_off(ctx);
 			return ret;

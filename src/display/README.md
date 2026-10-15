@@ -81,6 +81,13 @@ retains refusal diagnostics, secure-stream isolation and context reservations.
 Host fixtures cover ownership changes and rejected writes; physical acceptance
 remains open.
 
+With the conditional SMMU power handling, the fifth trial registered both DSI
+controllers, the SM7675 DPU, a connected DRM DSI connector and `msm-kmsdrmfb`.
+It still produced no visible image: panel rails/reset were off and repeated
+FIFO-class DSI interrupts occurred. The next diagnostic candidate records the
+exact panel preparation failure and raw controller error registers. Connector
+registration alone does not establish panel power, scanout or a working mode.
+
 `prepare-native-abl-source.sh` applies this entry only to a separate tree that
 already contains the normal ABL adaptation and native providers. Its initial
 bring-up graph sets `xiaomi,initial-60hz-only`, so a saved desktop setting cannot
