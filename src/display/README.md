@@ -9,8 +9,8 @@ The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
 extend vertical front porch using the downstream calculation. This does not
-advertise continuous VRR or seamless rate switching. The first native test
-must use the 60 Hz mode from the reviewed 120 Hz timing group.
+advertise continuous VRR or seamless rate switching. The normal native overlay
+retains the 60 Hz mode from the reviewed 120 Hz timing group.
 
 `o82-data.cpp` is a host-only C++ decoder. `o82-oem.dts` compiles the four pinned
 OEM panel files into a minimal source DT; `o82-data.h` contains only the two
@@ -256,6 +256,25 @@ checks both links, repeated enable, the unchanged divider flags and existing
 paired-retime sequence. This changes no PLL, DSC, master timing, panel packet,
 EOT or timeout policy. A matched build and live register/optical checks remain
 required; the prior first-frame/backlight ordering limits still apply.
+
+Native23 ordinary B startup on 16 October confirmed host pre/post0/0, unchanged
+PHY timing cells and interface enable1/0. Primary panel reads were valid; the
+desktop and an independent XR24 image remained invisible. The separate
+`sm7675-uke-native-display-120hz.dtso` now permits an isolated comparison with
+the working OEM capture's 120 Hz timing. It includes the normal graph and
+replaces only its initial-mode property, requires O82-42 at preprocessing and
+probe, and publishes one preferred 120 Hz mode. Conflicting profile properties
+are rejected before regulator acquisition; any nonmatching prepare mode is
+rejected before power or commands. The normal 60 Hz overlay is unchanged.
+
+The exact generated 60/120 timings share timing group0, ON/switch/OFF commands,
+128-byte PPS, supplies and pixel clock. Vertical total changes from 4620 to 2310;
+the existing compressed clock calculation retains the 1,189,188,000 Hz lane
+rate and current PHY admission. No generated panel data, clock parent or DSC
+parameter is changed. Host tests cover single-mode enumeration, invalid
+profiles, prepare rejection and the existing lifecycle/fault paths. A matched
+120 Hz build and Uke register/optical tests remain required; this does not
+qualify dynamic refresh, live mode switching or other rates.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short

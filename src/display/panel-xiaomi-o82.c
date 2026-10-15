@@ -53,6 +53,7 @@ struct o82_panel {
 	bool reset_output;
 	bool prepared;
 	bool initial_60hz_only;
+	bool initial_120hz_only;
 };
 
 static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
@@ -156,6 +157,17 @@ static void o82_readback(struct o82_panel *ctx)
 	}
 }
 
+static int o82_read_initial_mode(struct o82_panel *ctx, struct device_node *node)
+{
+	ctx->initial_60hz_only = of_property_read_bool(node, "xiaomi,initial-60hz-only");
+	ctx->initial_120hz_only = of_property_read_bool(node, "xiaomi,initial-120hz-only");
+	if ((ctx->initial_60hz_only && ctx->initial_120hz_only) ||
+	    (ctx->initial_120hz_only &&
+	     !of_device_is_compatible(node, "xiaomi,o82-42-02-0b")))
+		return -EINVAL;
+	return 0;
+}
+
 static int o82_prepare(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
@@ -175,11 +187,15 @@ static int o82_prepare(struct drm_panel *panel)
 		return -EINVAL;
 	}
 	mode = &ctx->connector->state->crtc->state->adjusted_mode;
-	for (i = 0; i < ARRAY_SIZE(o82_modes); i++)
+	for (i = 0; i < ARRAY_SIZE(o82_modes); i++) {
+		/* The isolated OEM 120 Hz comparison must not power another mode. */
+		if (ctx->initial_120hz_only && drm_mode_vrefresh(&o82_modes[i].mode) != 120)
+			continue;
 		if (drm_mode_equal(mode, &o82_modes[i].mode)) {
 			profile = &ctx->profiles[o82_modes[i].group];
 			break;
 		}
+	}
 	if (!profile) {
 		dev_err(&ctx->dsi[0]->dev, "O82 prepare mode rejected: %dx%d clock=%d htotal=%d vtotal=%d\n",
 			mode->hdisplay, mode->vdisplay, mode->clock, mode->htotal, mode->vtotal);
@@ -313,12 +329,14 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 		struct drm_display_mode *mode;
 		if (ctx->initial_60hz_only && drm_mode_vrefresh(&o82_modes[i].mode) != 60)
 			continue;
+		if (ctx->initial_120hz_only && drm_mode_vrefresh(&o82_modes[i].mode) != 120)
+			continue;
 		mode = drm_mode_duplicate(connector->dev, &o82_modes[i].mode);
 		if (!mode)
 			return -ENOMEM;
 		drm_mode_set_name(mode);
 		mode->type = DRM_MODE_TYPE_DRIVER;
-		if (drm_mode_vrefresh(mode) == 60)
+		if (drm_mode_vrefresh(mode) == (ctx->initial_120hz_only ? 120 : 60))
 			mode->type |= DRM_MODE_TYPE_PREFERRED;
 		drm_mode_probed_add(connector, mode);
 		count++;
@@ -356,8 +374,9 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	if (!ctx->profiles)
 		return -EINVAL;
 	ctx->active = &ctx->profiles[0];
-	/* shortcut: keep first native bring-up at 60 Hz until other modes are measured. */
-	ctx->initial_60hz_only = of_property_read_bool(dev->of_node, "xiaomi,initial-60hz-only");
+	ret = o82_read_initial_mode(ctx, dev->of_node);
+	if (ret)
+		return dev_err_probe(dev, ret, "Invalid initial panel mode profile\n");
 	for (i = 0; i < ARRAY_SIZE(supply_names); i++) {
 		ctx->supplies[i] = devm_regulator_get(dev, supply_names[i]);
 		if (IS_ERR(ctx->supplies[i]))

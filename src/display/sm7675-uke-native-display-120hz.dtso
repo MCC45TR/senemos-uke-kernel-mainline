@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* Isolated O82-42 OEM 120 Hz comparison; the normal overlay remains 60 Hz. */
+#if O82_PANEL_VARIANT != 42
+#error The isolated 120 Hz profile requires the observed O82-42 panel
+#endif
+#include "sm7675-uke-native-display.dtso"
+
+&uke_panel {
+	/delete-property/ xiaomi,initial-60hz-only;
+	xiaomi,initial-120hz-only;
+};

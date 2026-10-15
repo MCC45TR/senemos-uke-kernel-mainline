@@ -29,6 +29,7 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t
 #define dev_err(...) ((void)0)
 #define dev_info(...) ((void)0)
 #define dev_warn(...) ((void)0)
+#define dev_err_probe(dev,err,...) (err)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
 enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
        MIPI_DCS_GET_POWER_MODE=0x0a, MIPI_DSI_FMT_RGB101010=10,
@@ -48,6 +49,12 @@ awk '/^u8 drm_dsc_initial_scale_value\(/ {p=1} p && /^EXPORT_SYMBOL/ {exit} p' \
 } >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 struct device_node { const char *compatible; };
+static bool requested_initial60,requested_initial120;
+static bool of_property_read_bool(struct device_node *node,const char *property) {
+    assert(node);
+    if(!strcmp(property,"xiaomi,initial-60hz-only")) return requested_initial60;
+    assert(!strcmp(property,"xiaomi,initial-120hz-only")); return requested_initial120;
+}
 struct device { struct device_node *of_node; };
 struct platform_device { struct device dev; };
 struct msm_dsi_host { struct platform_device *pdev; };
@@ -87,7 +94,7 @@ struct drm_crtc { struct drm_crtc_state *state; };
 struct drm_connector_state { struct drm_crtc *crtc; };
 struct drm_connector { struct drm_connector_state *state; void *dev;
     struct { int bpc,width_mm,height_mm; } display_info; };
-static unsigned int published, preferred, duplication_failure;
+static unsigned int published, preferred, preferred_rate, duplication_failure;
 static struct drm_display_mode copies[7];
 static int drm_mode_vrefresh(const struct drm_display_mode *m) {
     uint64_t total=(uint64_t)m->htotal*m->vtotal;
@@ -101,7 +108,7 @@ static struct drm_display_mode *drm_mode_duplicate(void *dev,const struct drm_di
 static void drm_mode_set_name(struct drm_display_mode *mode) { (void)mode; }
 static void drm_mode_probed_add(struct drm_connector *c,struct drm_display_mode *mode) {
     (void)c; assert(mode->type&DRM_MODE_TYPE_DRIVER);
-    if(mode->type&DRM_MODE_TYPE_PREFERRED) { assert(drm_mode_vrefresh(mode)==60); preferred++; }
+    if(mode->type&DRM_MODE_TYPE_PREFERRED) { preferred_rate=drm_mode_vrefresh(mode); preferred++; }
     published++;
 }
 struct regulator { int id; }; struct gpio_desc {};
@@ -217,6 +224,20 @@ awk '
     emit && !/^unregister_secondary:/ { print }
 ' "$source_file" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
+/* Execute the probe's profile admission before any regulator acquisition. */
+static int o82_probe_initial_mode(struct o82_panel *ctx,struct device_node *node) {
+    struct device device={node},*dev=&device;
+    int ret;
+C
+awk '
+    /^static int o82_probe\(/ { probe=1 }
+    probe && /^\tret = o82_read_initial_mode\(/ { emit=1 }
+    emit && /^\tfor \(i = 0; i < ARRAY_SIZE\(supply_names\)/ { exit }
+    emit { print }
+' "$source_file" >> "$work/check.c"
+cat >> "$work/check.c" <<'C'
+    return 0;
+}
 static struct o82_panel context(int variant,int mode) {
     static const struct drm_panel_funcs funcs={.enable=o82_enable};
     static struct host_ops ops={transfer};
@@ -236,7 +257,7 @@ static struct o82_panel context(int variant,int mode) {
     cs.adjusted_mode=o82_modes[mode].mode;
     const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
     struct o82_panel ctx={.panel={.funcs=&funcs},.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
-        .connector=&connector,.profiles=p,.active=p};
+        .connector=&connector,.profiles=p,.active=p,.initial_120hz_only=variant && mode==5};
     pps_start=2*p[o82_modes[mode].group].on_count;
     struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
     struct platform_device platform={.dev={&node}};
@@ -251,6 +272,15 @@ static struct o82_panel context(int variant,int mode) {
     return ctx;
 }
 int main(void) {
+    for(int variant=0;variant<2;variant++) for(int flags=0;flags<4;flags++) {
+        struct o82_panel ctx=context(variant,3);
+        struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
+        requested_initial60=flags&1; requested_initial120=flags&2;
+        const bool invalid=flags==3 || (requested_initial120 && !variant);
+        assert(o82_probe_initial_mode(&ctx,&node)==(invalid ? -EINVAL:0));
+        assert(!enables && !transfers && !operation && !ctx.prepared);
+        assert(ctx.initial_60hz_only==requested_initial60 && ctx.initial_120hz_only==requested_initial120);
+    }
     for(int variant=0;variant<2;variant++) for(int fail=-1;fail<2;fail++) {
         struct o82_panel ctx=context(variant,3); attach_ctx=&ctx;
         attach_failure=fail; attached=detached=panel_removed=secondary_removed=0;
@@ -263,13 +293,26 @@ int main(void) {
     assert(ARRAY_SIZE(o82_modes)==7);
     struct o82_panel selection=context(0,3);
     published=preferred=0;
-    assert(o82_get_modes(&selection.panel,selection.connector)==7 && published==7 && preferred==1);
+    assert(o82_get_modes(&selection.panel,selection.connector)==7 && published==7 && preferred==1 && preferred_rate==60);
     selection.initial_60hz_only=true; published=preferred=0;
     assert(o82_get_modes(&selection.panel,selection.connector)==1 && published==1 && preferred==1);
-    assert(drm_mode_vrefresh(&copies[0])==60);
+    assert(drm_mode_vrefresh(&copies[0])==60 && preferred_rate==60);
     duplication_failure=1; published=0;
     assert(o82_get_modes(&selection.panel,selection.connector)==-ENOMEM && !published);
     duplication_failure=0;
+    selection=context(1,5); published=preferred=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==1 && published==1 && preferred==1);
+    assert(drm_mode_vrefresh(&copies[0])==120 && preferred_rate==120);
+    duplication_failure=1; published=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==-ENOMEM && !published);
+    duplication_failure=0;
+    for(int mode=0;mode<7;mode++) {
+        if(mode==5) continue;
+        struct o82_panel ctx=context(1,mode); ctx.initial_120hz_only=true;
+        assert(o82_prepare(&ctx.panel)==-EINVAL && !enables && !transfers && !operation && !ctx.prepared);
+    }
+    selection=context(1,5); selection.connector->state->crtc->state->adjusted_mode.clock++;
+    assert(o82_prepare(&selection.panel)==-EINVAL && !enables && !transfers && !operation);
     for(unsigned int v=0;v<2;v++) for(unsigned int m=0;m<7;m++) {
         const struct drm_display_mode *mode=&o82_modes[m].mode;
         const uint64_t divisor=(uint64_t)mode->htotal*mode->vtotal;
@@ -385,4 +428,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes: ON/PPS before video, HS post-enable, exact LP normal-pixels before backlight; actual DRM core duplicate/disable/re-enable, transfer/short faults and cleanup passed\n'
+printf 'Two O82 variants, seven modes: exclusive O82-42 initial120 admission and pre-power mode rejection; unchanged ON/PPS, HS post-enable, LP normal-pixels and DRM core lifecycle/fault cleanup passed\n'

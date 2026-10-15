@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Offline graph only: no kernel configuration, boot image or device is changed.
 set -Eeuo pipefail
-[[ $# == 3 && -s $1 && -s $2 && ! -e $3 ]] || exit 2
-input=$1 overlay=$2 out=$3
+[[ $# -ge 3 && $# -le 4 && -s $1 && -s $2 && ! -e $3 ]] || exit 2
+input=$1 overlay=$2 out=$3 initial_rate=${4:-60}
+[[ $initial_rate == 60 || $initial_rate == 120 ]] || exit 2
 mkdir -p "$out"
 cp "$input" "$out/input.dtb"
 framebuffer=$(fdtget -t s "$input" /chosen stdout-path)
@@ -66,4 +67,14 @@ for node in $(fdtget -l "$input" /reserved-memory); do
     done
 done
 [[ $(fdtget -t s "$out/native.dtb" "$panel" compatible) == xiaomi,o82-* ]]
-printf 'Offline native DPU/dual-DSI graph, exact resources, paired backlight and preserved SMMU handoff rules: passed\n'
+fdtget "$out/native.dtb" "$panel" "xiaomi,initial-${initial_rate}hz-only" >/dev/null
+other_rate=120
+[[ $initial_rate == 120 ]] && other_rate=60
+if fdtget "$out/native.dtb" "$panel" "xiaomi,initial-${other_rate}hz-only" >/dev/null 2>&1; then
+    printf 'Conflicting initial panel mode profiles\n' >&2
+    exit 1
+fi
+if [[ $initial_rate == 120 ]]; then
+    [[ $(fdtget -t s "$out/native.dtb" "$panel" compatible) == xiaomi,o82-42-02-0b ]]
+fi
+printf 'Offline native DPU/dual-DSI graph, %s Hz initial profile, exact resources, paired backlight and preserved SMMU handoff rules: passed\n' "$initial_rate"
