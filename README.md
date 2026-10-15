@@ -19,7 +19,8 @@ incomplete. Detailed results are in the
 Finger input, ten simultaneous contacts, and power and volume buttons worked in
 the 14 October tablet test. Revision 1.39 reaches touch input on its first startup
 attempt. Manual backlight control and display blanking work, with a minimum
-visible level while the display is on. The brightness curve is still linear.
+visible level while the display is on. The paired backlight uses the OEM mapping;
+smooth adjustment across the full range remains unqualified.
 Battery readings and USB charging status are available; the tested computer USB
 connection admits a 500 mA budget. Sustained net charging under desktop load is
 not established. Bluetooth, audio, USB host mode and suspend remain incomplete.
