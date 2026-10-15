@@ -94,9 +94,9 @@ struct mipi_dsi_host;
 struct host_ops { ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_dsi_msg *); };
 struct mipi_dsi_host { struct host_ops *ops; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
-    unsigned int lanes,format; struct drm_dsc_config *dsc; };
+    unsigned int lanes,format; struct drm_dsc_config *dsc; int id; };
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
-    assert(!(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1 && (reg==0xda || reg==0x0a));
+    assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1 && (reg==0xda || reg==0x0a));
     *(u8 *)value=0; return 1;
 }
 static const u8 golden_pps[128]={
@@ -183,7 +183,7 @@ static struct o82_panel context(int variant,int mode) {
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops},{&ops}};
     static struct mipi_dsi_device dsis[2]={{.host=&hosts[0],.mode_flags=MIPI_DSI_MODE_LPM},
-                                         {.host=&hosts[1],.mode_flags=MIPI_DSI_MODE_LPM}};
+                                         {.host=&hosts[1],.mode_flags=MIPI_DSI_MODE_LPM,.id=1}};
     static struct regulator supplies[3]={{0},{1},{2}};
     static struct drm_crtc_state cs;
     static struct drm_crtc crtc={&cs};

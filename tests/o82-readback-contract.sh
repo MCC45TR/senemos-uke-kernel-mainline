@@ -37,11 +37,11 @@ struct mipi_dsi_host {const struct mipi_dsi_host_ops *ops; int id;};
 struct mipi_dsi_device {struct device dev; struct mipi_dsi_host *host; unsigned long mode_flags; u8 channel;};
 struct o82_panel {struct mipi_dsi_device *dsi[2];};
 static int calls,logs,warnings;
-static ssize_t results[4];
-static char messages[4][160];
+static ssize_t results[2];
+static char messages[2][160];
 static struct o82_panel *context;
 static void record(struct device *dev,bool warning,const char *format,...) {
-    assert(logs<4 && dev->link==logs/2);
+    assert(logs<2 && dev->link==0);
     va_list args; va_start(args,format);
     assert(vsnprintf(messages[logs],sizeof(messages[logs]),format,args)>0);
     va_end(args); ++logs; warnings+=warning;
@@ -49,7 +49,7 @@ static void record(struct device *dev,bool warning,const char *format,...) {
 #define dev_info(dev,...) record(dev,false,__VA_ARGS__)
 #define dev_warn(dev,...) record(dev,true,__VA_ARGS__)
 static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *msg) {
-    assert(calls<4 && host->id==calls/2);
+    assert(calls<2 && host->id==0);
     assert(msg->type==MIPI_DSI_DCS_READ && msg->tx_len==1 && msg->rx_len==1);
     assert(msg->channel==0 && !(msg->flags&MIPI_DSI_MSG_USE_LPM));
     assert(!(context->dsi[host->id]->mode_flags&MIPI_DSI_MODE_LPM));
@@ -69,16 +69,18 @@ int main(void) {
     struct mipi_dsi_device dsis[2]={{{0},&hosts[0],0x941UL|MIPI_DSI_MODE_LPM|MIPI_DSI_CLOCK_NON_CONTINUOUS,0},
                                   {{1},&hosts[1],0x51UL|MIPI_DSI_CLOCK_NON_CONTINUOUS,0}};
     struct o82_panel panel={{&dsis[0],&dsis[1]}}; context=&panel;
-    for(int scenario=0;scenario<3;scenario++) {
+    for(int scenario=0;scenario<4;scenario++) {
         calls=logs=warnings=0; memset(messages,0,sizeof(messages));
-        for(int i=0;i<4;i++) results[i]=scenario==2 ? -EIO:1;
-        if(scenario==1) {results[0]=0;results[1]=-ETIMEDOUT;results[2]=2;}
+        for(int i=0;i<2;i++) results[i]=scenario==2 ? -EIO:1;
+        if(scenario==1) {results[0]=0;results[1]=-ETIMEDOUT;}
+        if(scenario==3) results[0]=2;
         unsigned long flags[2]={dsis[0].mode_flags,dsis[1].mode_flags};
         o82_readback(&panel);
-        assert(calls==4 && logs==4);
+        assert(calls==2 && logs==2);
         assert(dsis[0].mode_flags==flags[0] && dsis[1].mode_flags==flags[1]);
-        assert(warnings==(scenario==0 ? 0:scenario==1 ? 3:4));
-        for(int i=0;i<4;i++) {
+        assert(warnings==(scenario==0 ? 0:scenario==3 ? 1:2));
+        for(int i=0;i<2;i++) {
+            assert(strstr(messages[i],"link=0 "));
             assert(strstr(messages[i]," hs result="));
             assert(strstr(messages[i],i%2 ? "cmd=0xa ":"cmd=0xda "));
             if(results[i]==1) assert(!strstr(messages[i],"unavailable"));
@@ -93,4 +95,4 @@ C
     -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'O82 actual MIPI/helper: per-link HS DA/0A reads, advisory success/short/error logs and all mode flags restored\n'
+printf 'O82 actual MIPI/helper: command-master-only HS DA/0A; secondary untouched; success/short/error logs and mode flags restored\n'

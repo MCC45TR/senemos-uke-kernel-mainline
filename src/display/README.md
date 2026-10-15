@@ -121,10 +121,10 @@ Run `bash tests/o82-phy-timing-contract.sh PREPARED_KERNEL KERNEL_OBJECTS` to
 exercise the actual calculator, scoped helper, PHY writer and copied host
 timings. This is a source candidate; visible native output remains unqualified.
 
-The next isolated diagnostic reads the OEM-supported one-byte build ID at
+The native15 diagnostic reads the OEM-supported one-byte build ID at
 0xDA and standard DCS power mode at0x0A after ON/PPS and before video. Each
-physical link is read independently in HS; the device's original mode flags
-are restored after every read. Results are advisory raw values, short replies
+physical link was read independently in HS; the device's original mode flags
+were restored after every read. Results are advisory raw values, short replies
 or errors, with no invented expected power byte and no new boot rejection.
 MSM's bonded DMA trigger now retains read-transaction context for both the
 maximum-return-size packet and actual read. Ordinary write broadcast is
@@ -136,7 +136,7 @@ RGB24 DSI test-pattern generator is not used as evidence for a DSC stream.
 
 Native15 completed all four per-link reads without a DMA timeout, but rejected
 each response header. It returned no panel byte; local DMA completion is not
-panel acceptance. The next isolated candidate adds `MIPI_DSI_CLOCK_NON_CONTINUOUS`
+panel acceptance. Native16 added `MIPI_DSI_CLOCK_NON_CONTINUOUS`
 to both O82 links. Both exact OEM variants omit forced HS clock, and the reviewed
 upstream NT36532 driver also requests non-continuous clock. Timings, DSC,
 packet geometry, EOT, initialization commands and PLL state remain unchanged.
@@ -154,6 +154,16 @@ clear on both links, then check raw readback and visible output. A flag change
 alone cannot establish that the live clock policy changed. The active Pad 2
 queue's PLL patch `93c97bc8d85d` was reverted upstream by `44784327815b`; it is
 not included in this candidate.
+
+Native16 confirmed non-continuous clock on both links and returned primary
+DA=0xc3 and power mode=0x9e. Secondary reads produced ACK errors and zero
+headers; visible output remained blank. The exact Uke OEM read path addresses
+only command-master DSI0. The next candidate therefore retains the two advisory
+HS reads only on DSI0 and leaves the secondary untouched. It preserves generic
+per-link read support and all write broadcasts. Captured error-worker status4
+does not invoke the MDP-underflow reset path, which tests bit0x8; no secondary
+reset is claimed. PHY strength and every native16 video/protocol setting remain
+unchanged so that this is a separate lifecycle test.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short

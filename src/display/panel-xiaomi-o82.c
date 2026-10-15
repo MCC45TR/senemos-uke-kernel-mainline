@@ -132,29 +132,27 @@ static int o82_power_off(struct o82_panel *ctx)
 static void o82_readback(struct o82_panel *ctx)
 {
 	static const u8 registers[] = { 0xda, MIPI_DCS_GET_POWER_MODE };
-	int i, j;
+	/* Exact Uke OEM reads use command-master DSI0, not the secondary link. */
+	struct mipi_dsi_device *dsi = ctx->dsi[0];
+	int i;
 
-	for (i = 0; i < ARRAY_SIZE(ctx->dsi); i++) {
-		struct mipi_dsi_device *dsi = ctx->dsi[i];
+	for (i = 0; i < ARRAY_SIZE(registers); i++) {
+		unsigned long mode_flags = dsi->mode_flags;
+		u8 value = 0;
+		ssize_t ret;
 
-		for (j = 0; j < ARRAY_SIZE(registers); j++) {
-			unsigned long mode_flags = dsi->mode_flags;
-			u8 value = 0;
-			ssize_t ret;
-
-			/* OEM build-ID reads use HS; keep each link's flags afterward. */
-			dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-			ret = mipi_dsi_dcs_read(dsi, registers[j], &value, sizeof(value));
-			dsi->mode_flags = mode_flags;
-			if (ret == 1)
-				dev_info(&dsi->dev,
-					 "O82 readback: link=%d cmd=%#x hs result=%zd value=%#x\n",
-					 i, registers[j], ret, value);
-			else
-				dev_warn(&dsi->dev,
-					 "O82 readback: link=%d cmd=%#x hs result=%zd value=unavailable\n",
-					 i, registers[j], ret);
-		}
+		/* OEM build-ID reads use HS; restore the original flags afterward. */
+		dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+		ret = mipi_dsi_dcs_read(dsi, registers[i], &value, sizeof(value));
+		dsi->mode_flags = mode_flags;
+		if (ret == 1)
+			dev_info(&dsi->dev,
+				 "O82 readback: link=0 cmd=%#x hs result=%zd value=%#x\n",
+				 registers[i], ret, value);
+		else
+			dev_warn(&dsi->dev,
+				 "O82 readback: link=0 cmd=%#x hs result=%zd value=unavailable\n",
+				 registers[i], ret);
 	}
 }
 
