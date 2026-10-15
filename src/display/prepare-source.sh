@@ -28,5 +28,8 @@ git -C "$kernel" apply "$supplies"
 diagnostics=$here/../../patches/display/0004-native-dsi-diagnostics.patch
 git -C "$kernel" apply --check "$diagnostics"
 git -C "$kernel" apply "$diagnostics"
+dsc=$here/../../patches/display/0006-native-o82-dsc-rate-control.patch
+git -C "$kernel" apply --check "$dsc"
+git -C "$kernel" apply "$dsc"
 for path in "${paths[@]}"; do install -m644 "$here/${path##*/}" "$kernel/$path"; done
 printf 'Native display providers staged; kernel config and DT activation unchanged\n'

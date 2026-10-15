@@ -109,6 +109,17 @@ inputs without emitting a partial header. These are host results.
 On/off commands retain the OEM LP state; timing-switch video commands use HS.
 The lifecycle test checks both states separately for each timing group.
 
+The O82 rate-control parameters follow Xiaomi display revision
+`44275c404a677d9d9e5230fedd1af2ef02fc7b9a`: first-line BPG offset 13 and
+range-zero maximum QP 8 are applied before upstream RC calculation. The panel
+then sends the standard 128-byte PPS over both LP links after initialization.
+Each PPS describes 1600 pixels; the shared DPU frame remains 3200 pixels.
+Host fixtures execute the selected upstream RC calculator and PPS packer,
+compare all payload bytes with the OEM-derived fixture, and reject failed or
+short transfers on either link. An isolated DPU correction rounds compressed
+active width up like the DSI host and OEM timing conversion. These source and
+host checks do not establish visible scanout.
+
 Recovery on the connected tablet selects O82 42_02_0b. This identifies the
 observed unit; it does not remove variant selection for other tablets.
 Before native activation, finish binding checks, review display SMMU/VBIF

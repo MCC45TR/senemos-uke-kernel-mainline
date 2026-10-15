@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Experimental Xiaomi Pad 7 O82 dual-DSI panel candidate for Linux 7.2.10.
+ * Experimental Xiaomi Pad 7 O82 dual-DSI panel candidate for Linux 7.2.9/7.2.10.
  * Not activated by the supported build or DTBO. Hardware unvalidated.
  * Lifecycle based on the archived O82 draft and upstream nt35950 pattern.
  * Based on linuxgamer/uke-fedora cf4f9317a7fef3e9bdddc36bedcb257fa51b0994.
@@ -12,12 +12,13 @@
 #include <linux/of.h>
 #include <linux/of_graph.h>
 #include <linux/regulator/consumer.h>
-#include <drm/display/drm_dsc.h>
+#include <drm/display/drm_dsc_helper.h>
 #include <drm/drm_connector.h>
 #include <drm/drm_crtc.h>
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
+#include <video/mipi_display.h>
 
 struct o82_command {
 	u8 type, last, channel, downstream_flags, delay_ms;
@@ -131,6 +132,12 @@ static int o82_power_off(struct o82_panel *ctx)
 static int o82_prepare(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	struct drm_dsc_config pps_config;
+	struct drm_dsc_picture_parameter_set pps;
+	const struct o82_command pps_cmd = {
+		.type = MIPI_DSI_PICTURE_PARAMETER_SET,
+		.len = sizeof(pps), .data = (const u8 *)&pps,
+	};
 	int i, ret;
 	const struct drm_display_mode *mode;
 	const struct o82_profile *profile = NULL;
@@ -154,6 +161,12 @@ static int o82_prepare(struct drm_panel *panel)
 
 	if (ctx->prepared)
 		return ctx->active == profile ? 0 : -EBUSY;
+	if (ctx->dsc.pic_width != 3200 || ctx->dsc.pic_height != 2136 ||
+	    ctx->dsc.slice_width != 800 || ctx->dsc.slice_height != 24 ||
+	    ctx->dsc.rc_model_size != 8192 || ctx->dsc.initial_dec_delay != 690 ||
+	    ctx->dsc.first_line_bpg_offset != 13 ||
+	    ctx->dsc.rc_range_params[0].range_max_qp != 8)
+		return -EINVAL;
 	/* Do not accumulate enable references after a failed power-down. */
 	if (ctx->enabled_supplies || ctx->loaded_supplies)
 		return -EBUSY;
@@ -198,6 +211,16 @@ static int o82_prepare(struct drm_panel *panel)
 			o82_power_off(ctx);
 			return ret;
 		}
+	}
+	/* OEM PPS describes each link; DPU keeps the shared 3200-pixel frame. */
+	pps_config = ctx->dsc;
+	pps_config.pic_width /= ARRAY_SIZE(ctx->dsi);
+	drm_dsc_pps_payload_pack(&pps, &pps_config);
+	ret = o82_send(ctx, &pps_cmd, true);
+	if (ret) {
+		o82_off(ctx);
+		o82_power_off(ctx);
+		return ret;
 	}
 	ctx->prepared = true;
 	return 0;

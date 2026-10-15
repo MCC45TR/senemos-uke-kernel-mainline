@@ -8,6 +8,8 @@ here=$(cd -- "$(dirname -- "$0")" && pwd)
 cmp "$here/../boot/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 patch=$here/../../patches/display/0002-arm64-uke-native-abl-entry.patch
 git -C "$kernel" apply --check "$patch"
+timing_patch=$here/../../patches/display/0005-native-dpu-dsc-active-width.patch
+git -C "$kernel" apply --check "$timing_patch"
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT="$variant" -x assembler-with-cpp \
     -I "$kernel/include" "$here/sm7675-uke-native-display.dtso" > "$output/display.dts"
 dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
@@ -21,6 +23,7 @@ if [[ $variant == 36 ]]; then suffix=36_02_0a; else suffix=42_02_0b; fi
 install -m644 "$output/uke-native-display.h" "$kernel/arch/arm64/kernel/uke-native-display.h"
 install -m644 "$here/uke-abl-native.h" "$kernel/arch/arm64/kernel/uke-abl-native.h"
 git -C "$kernel" apply "$patch"
+git -C "$kernel" apply "$timing_patch"
 sha256sum "$here/uke-abl-native.h" "$patch" "$output/display.dtbo" \
-    "$kernel/arch/arm64/kernel/uke-abl.c" > "$output/native-entry-SHA256SUMS"
+    "$timing_patch" "$kernel/arch/arm64/kernel/uke-abl.c" > "$output/native-entry-SHA256SUMS"
 printf 'Isolated native entry prepared for O82 %s; only the initial 60 Hz mode is exposed\n' "$suffix"
