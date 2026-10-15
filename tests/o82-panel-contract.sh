@@ -51,7 +51,7 @@ struct mipi_dsi_host { struct host_ops *ops; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; };
 struct drm_dsc_config {};
 int balance[3], loads[3], enables, disables, transfers, failure=-1, operation, gpio_failure,
-    short_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3],
+    short_write, wire_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3],
     lpm_transfers, hs_transfers;
 static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
     return !memcmp(a,b,offsetof(struct drm_display_mode,width_mm));
@@ -75,7 +75,7 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
     (void)host; assert((m->flags==MIPI_DSI_MSG_USE_LPM || m->flags==0) && m->channel==0 && m->tx_len>0);
     if (m->flags==MIPI_DSI_MSG_USE_LPM) lpm_transfers++; else hs_transfers++;
     const int n=transfers++; if(n==transfer_failure) return -EIO;
-    return short_write ? 0 : (ssize_t)m->tx_len;
+    return short_write ? 0 : (ssize_t)(wire_write ? (m->tx_len+7)&~3UL : m->tx_len);
 }
 C
 {
@@ -96,7 +96,7 @@ static struct o82_panel context(int variant,int mode) {
     static struct drm_connector_state state={&crtc};
     static struct drm_connector connector={.state=&state};
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
-    enables=disables=transfers=operation=gpio_failure=short_write=settle_ms=0;
+    enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=0;
     failure=transfer_failure=disable_failure=-1;
     cs.adjusted_mode=o82_modes[mode].mode;
@@ -147,6 +147,9 @@ int main(void) {
         assert(o82_prepare(&c.panel)==-EIO && !c.enabled_supplies);
         c=context(v,m); short_write=1;
         assert(o82_prepare(&c.panel)==-EIO && !c.enabled_supplies);
+        c=context(v,m); wire_write=1;
+        assert(o82_prepare(&c.panel)==0 && c.prepared);
+        assert(o82_unprepare(&c.panel)==0 && !c.enabled_supplies);
         c=context(v,m); assert(o82_prepare(&c.panel)==0); disable_failure=1;
         assert(o82_unprepare(&c.panel)==-EIO && c.enabled_supplies==2);
         assert(o82_prepare(&c.panel)==-EBUSY);

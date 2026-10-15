@@ -74,7 +74,8 @@ static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool l
 		struct mipi_dsi_host *host = ctx->dsi[i]->host;
 
 		ret = host->ops->transfer(host, &msg);
-		if (ret != cmd->len) {
+		/* MSM returns padded DMA packet bytes; other hosts return payload bytes. */
+		if (ret < cmd->len) {
 			dev_err(&ctx->dsi[i]->dev,
 				"O82 transfer failed: link=%d type=%#x opcode=%#x len=%u lpm=%d result=%zd\n",
 				i, cmd->type, cmd->data[0], cmd->len, lpm, ret);
