@@ -70,9 +70,12 @@ also needed admission. The isolated supply patch adds these exact resources
 and retains command-DB address/type/level validation and the OEM CX parent
 dependency. It does not substitute a dummy regulator or fixed voltage.
 
-The second physical trial passed the supply dependency and reached display SMR
-retirement, which returned `-EACCES`. The core stayed reset and the screen was
-black. The next candidate preserves SID/mask when clearing SMR validity, as in
+The second physical trial passed the supply dependency, but display handoff
+returned `-EACCES`. The core stayed reset and the screen was black. A diagnostic
+trial established that the failure occurred before register access: Apps SMMU
+has no runtime power domain and stays on, while the draft called runtime resume
+unconditionally. The corrected candidate follows upstream SMMU's conditional
+get/put and autosuspend handling. It also preserves SID/mask when clearing SMR validity, as in
 the exact Uke OEM SID-release path. It checks identity before each write and
 retains refusal diagnostics, secure-stream isolation and context reservations.
 Host fixtures cover ownership changes and rejected writes; physical acceptance

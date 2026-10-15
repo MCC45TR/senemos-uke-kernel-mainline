@@ -6,6 +6,7 @@
 int qcom_uke_display_release(struct device *supplier, struct device *display)
 {
 	struct arm_smmu_device *smmu = dev_get_drvdata(supplier);
+	bool use_runtime_pm;
 	int i, ret;
 
 	if (!of_device_is_compatible(supplier->of_node, "qcom,sm7675-boot-smmu") ||
@@ -13,9 +14,12 @@ int qcom_uke_display_release(struct device *supplier, struct device *display)
 		return -EINVAL;
 	if (!smmu)
 		return -EPROBE_DEFER;
-	ret = pm_runtime_resume_and_get(supplier);
-	if (ret < 0)
-		return ret;
+	use_runtime_pm = pm_runtime_enabled(supplier);
+	if (use_runtime_pm) {
+		ret = pm_runtime_resume_and_get(supplier);
+		if (ret < 0)
+			return dev_err_probe(display, ret, "display SMMU runtime resume failed\n");
+	}
 	mutex_lock(&smmu->stream_map_mutex);
 	/* Caller has verified VBIF halt acknowledgements and asserted core reset.
 	 * Only unsecure 1c00/mask-2 SMRs may retire; secure 1c01 stays untouched.
@@ -72,7 +76,10 @@ int qcom_uke_display_release(struct device *supplier, struct device *display)
 	ret = 0;
 out:
 	mutex_unlock(&smmu->stream_map_mutex);
-	pm_runtime_put(supplier);
+	if (use_runtime_pm) {
+		pm_runtime_mark_last_busy(supplier);
+		__pm_runtime_put_autosuspend(supplier);
+	}
 	return ret;
 }
 EXPORT_SYMBOL_GPL(qcom_uke_display_release);

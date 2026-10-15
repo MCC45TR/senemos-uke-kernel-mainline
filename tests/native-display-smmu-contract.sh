@@ -20,6 +20,7 @@ typedef uint32_t u32;
 #define FIELD_PREP(mask, value) (((u32)(value) << __builtin_ctz(mask)) & (mask))
 #define S2CR_TYPE_FAULT 2
 #define dev_err(...) ((void)0)
+#define dev_err_probe(dev, error, ...) (error)
 struct arm_smmu_smr { bool valid; u32 id, mask; };
 struct arm_smmu_s2cr { bool boot_reserved; int count, type, cbndx; };
 struct arm_smmu_device {
@@ -31,11 +32,13 @@ struct arm_smmu_device {
 struct device { const char *of_node; struct arm_smmu_device *data; };
 static u32 regs[32];
 static int writes, resume_result, refs, locks, reads;
-static bool refuse, change_owner;
+static bool refuse, change_owner, runtime_enabled;
 static void *dev_get_drvdata(struct device *d) { return d->data; }
 static int of_device_is_compatible(const char *node, const char *name) { return !strcmp(node, name); }
+static bool pm_runtime_enabled(struct device *d) { (void)d; return runtime_enabled; }
 static int pm_runtime_resume_and_get(struct device *d) { (void)d; if (resume_result < 0) return resume_result; ++refs; return 0; }
-static void pm_runtime_put(struct device *d) { (void)d; --refs; }
+static void pm_runtime_mark_last_busy(struct device *d) { (void)d; }
+static void __pm_runtime_put_autosuspend(struct device *d) { (void)d; --refs; }
 static void mutex_lock(int *m) { (void)m; ++locks; }
 static void mutex_unlock(int *m) { (void)m; --locks; }
 static u32 arm_smmu_gr0_read(struct arm_smmu_device *s, int reg) {
@@ -60,6 +63,7 @@ static struct device display = { "qcom,sm7675-mdss", 0 };
 static void setup(void) {
     memset(&smmu, 0, sizeof(smmu)); memset(regs, 0, sizeof(regs));
     writes=refs=locks=resume_result=reads=0; refuse=change_owner=false;
+    runtime_enabled=true;
     smmu.num_mapping_groups=4;
     smmu.smrs[0]=(struct arm_smmu_smr){true,0x1c00,2};
     smmu.smrs[1]=(struct arm_smmu_smr){true,0x1c01,0};
@@ -85,6 +89,8 @@ int main(void) {
     setup(); smmu.s2crs[0].count=1; assert(release()==-EBUSY && writes==0);
     setup(); smmu.s2crs[0].boot_reserved=false; assert(release()==-EBUSY && writes==0);
     setup(); resume_result=-EAGAIN; assert(release()==-EAGAIN && writes==0);
+    setup(); resume_result=-EACCES; assert(release()==-EACCES && writes==0);
+    setup(); runtime_enabled=false; resume_result=-EACCES; assert(release()==0 && writes==1);
     setup(); display.of_node="foreign"; assert(release()==-EINVAL && writes==0);
     display.of_node="qcom,sm7675-mdss";
     setup(); supplier.data=0; assert(release()==-EPROBE_DEFER && writes==0);
