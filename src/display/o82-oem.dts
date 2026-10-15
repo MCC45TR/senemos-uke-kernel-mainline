@@ -1,0 +1,9 @@
+/dts-v1/;
+/ {
+    soc {
+        tlmm: pinctrl { gpio-controller; #gpio-cells = <2>; };
+        mdss_mdp: qcom,mdss_mdp@ae00000 {};
+    };
+};
+#include "dsi-panel-o82-36-02-0a-dualdsi-dsc-lcd-video.dtsi"
+#include "dsi-panel-o82-42-02-0b-dualdsi-dsc-lcd-video.dtsi"

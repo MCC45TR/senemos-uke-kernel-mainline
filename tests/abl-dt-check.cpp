@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -40,8 +41,28 @@ static void preserve_node(const Bytes &before, const Bytes &after, const std::st
         const char *name = nullptr;
         const void *value = fdt_getprop_by_offset(before.data(), offset, &name, &length);
         const void *other = fdt_getprop(after.data(), b, name, &other_length);
+        if (!std::strcmp(name, "function")) {
+            static const std::map<std::string, std::string> corrected = {
+                {"/soc/pinctrl@f000000/qupv3_se3_spi_pins/qupv3_se3_spi_clk_active/mux", "qup0_se3_l2"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_top_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_top_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_top_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_top_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_bottom_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_left/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_active_bottom_right/mux", "gpio"},
+                {"/soc/pinctrl@f000000/fs19xx_irq_sleep_bottom_right/mux", "gpio"},
+            };
+            const auto expected = corrected.find(path);
+            if (expected != corrected.end()) {
+                if (!other || other_length != static_cast<int>(expected->second.size()+1) ||
+                    std::memcmp(other, expected->second.c_str(), other_length))
+                    throw std::runtime_error("OEM mux-name correction missing");
+                continue;
+            }
+        }
         if (!value || !other || length != other_length || std::memcmp(value, other, length))
-            throw std::runtime_error("Bootloader memory or reservation changed");
+            throw std::runtime_error("Preserved DT property changed: " + path + "/" + name);
     }
     if (recursive) {
         int child;
@@ -49,6 +70,56 @@ static void preserve_node(const Bytes &before, const Bytes &after, const std::st
             preserve_node(before, after, path + "/" + fdt_get_name(before.data(), child, nullptr), true);
         }
     }
+}
+static void check_adreno732(const Bytes &dt) {
+    const auto node = [&](const char *path) {
+        const int n = fdt_path_offset(dt.data(), path);
+        if (n < 0) throw std::runtime_error("GPU resource node missing");
+        return n;
+    };
+    const auto cells = [&](int n, const char *name, std::initializer_list<uint32_t> expected) {
+        int length = 0;
+        const auto *p = static_cast<const fdt32_t *>(fdt_getprop(dt.data(), n, name, &length));
+        if (!p || length != static_cast<int>(expected.size() * sizeof(*p)))
+            throw std::runtime_error("GPU resource length differs");
+        for (const auto value : expected)
+            if (fdt32_to_cpu(*p++) != value) throw std::runtime_error("GPU resource value differs");
+    };
+    const int gpu = node("/soc/qcom,kgsl-3d0@3d00000");
+    const int gmu = node("/soc/qcom,gmu@3d69000");
+    const int cc = node("/soc/clock-controller@3d90000");
+    const int smmu = node("/soc/kgsl-smmu@3da0000");
+    const uint32_t gccp = fdt_get_phandle(dt.data(), node("/soc/clock-controller@100000"));
+    const uint32_t ccp = fdt_get_phandle(dt.data(), cc), sp = fdt_get_phandle(dt.data(), smmu);
+    if (!ccp || !sp || fdt_node_check_compatible(dt.data(), gpu, "qcom,adreno-43030b00") ||
+        fdt_node_check_compatible(dt.data(), gmu, "qcom,adreno-gmu-732"))
+        throw std::runtime_error("Exact Adreno 732 identity missing");
+    cells(cc, "#power-domain-cells", {1});
+    cells(gpu, "reg", {0x3d00000, 0x40000, 0x3d9e000, 0x1000, 0x3d61000, 0x800});
+    cells(gmu, "reg", {0x3d68000, 0x37000, 0x3d50000, 0x10000, 0xb280000, 0x10000});
+    cells(gpu, "iommus", {sp, 0, 0});
+    cells(gpu, "clocks", {gccp, 32, gccp, 33, ccp, 2});
+    cells(gmu, "iommus", {sp, 5, 0});
+    cells(gmu, "power-domains", {ccp, 0, ccp, 1});
+    cells(smmu, "reg", {0x3da0000, 0x40000});
+    cells(smmu, "power-domains", {ccp, 0});
+    const uint32_t points[][3] = {
+        {255000000,56,2136718}, {353000000,64,6074218},
+        {500000000,128,6671875}, {633000000,192,12449218},
+        {684000000,224,12449218}, {736000000,256,12449218},
+        {835000000,320,14398437}, {900000000,384,16500000},
+        {950000000,400,16500000},
+    };
+    for (const auto &point : points) {
+        const std::string path = "/soc/qcom,kgsl-3d0@3d00000/opp-table/opp-" + std::to_string(point[0]);
+        const int opp = node(path.c_str());
+        cells(opp, "opp-hz", {0, point[0]});
+        cells(opp, "opp-level", {point[1]});
+        cells(opp, "opp-peak-kBps", {point[2]});
+    }
+    int count = 0, opp;
+    fdt_for_each_subnode(opp, dt.data(), node("/soc/qcom,kgsl-3d0@3d00000/opp-table")) ++count;
+    if (count != 9) throw std::runtime_error("SM7675 GPU operating point missing");
 }
 int main(int argc, char **argv) {
     try {
@@ -62,6 +133,7 @@ int main(int argc, char **argv) {
         if (!result) { std::cout << "Foreign DT unchanged\n"; return 3; }
         if (result != 1) throw std::runtime_error("DT admission rejected: " + std::to_string(result));
         if (fdt_check_full(output.data(), output.size())) throw std::runtime_error("Invalid result FDT");
+        check_adreno732(output);
         const int chosen = fdt_path_offset(output.data(), "/chosen");
         const char *stdout_path = static_cast<const char *>(fdt_getprop(output.data(), chosen, "stdout-path", nullptr));
         const int framebuffer = stdout_path ? fdt_path_offset(output.data(), stdout_path) : -1;
@@ -93,6 +165,14 @@ int main(int argc, char **argv) {
                 preserve_node(input, output, "/" + name, true);
         }
         preserve_node(input, output, "/reserved-memory", true);
+        for (node = fdt_next_node(input.data(), -1, nullptr); node >= 0;
+             node = fdt_next_node(input.data(), node, nullptr)) {
+            if (!fdt_getprop(input.data(), node, "gpio-controller", nullptr)) continue;
+            char path[4096];
+            if (fdt_get_path(input.data(), node, path, sizeof(path)))
+                throw std::runtime_error("GPIO controller path is too long");
+            preserve_node(input, output, path, true);
+        }
         for (int i=0; i<fdt_num_mem_rsv(input.data()); ++i) {
             uint64_t aa, as, ba, bs;
             if (fdt_get_mem_rsv(input.data(), i, &aa, &as) || fdt_get_mem_rsv(output.data(), i, &ba, &bs) ||
@@ -111,7 +191,7 @@ int main(int argc, char **argv) {
             done += count;
         }
         if (fsync(fd) || close(fd)) throw std::runtime_error("Output flush failed");
-        std::cout << "Uke DT admitted; original input, RAM, reserved nodes and reserve map preserved\n";
+        std::cout << "Uke DT admitted; input, RAM, reservations and GPIO-controller properties preserved; nine mux names corrected\n";
         return 0;
     } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

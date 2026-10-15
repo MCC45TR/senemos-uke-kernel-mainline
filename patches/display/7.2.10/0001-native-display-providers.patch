@@ -1,0 +1,370 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] Register isolated SM7675 native display providers on Linux 7.2.10
+
+OEM Cliffs resources, linuxgamer O82 handoff and Palawan catalog are
+adapted to the 7.2.10 DRM, pointer-link ICC and clock interfaces.
+This experimental patch does not enable a native DT graph.
+
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.c
+@@ -793,6 +793,7 @@
+ #include "catalog/dpu_9_2_x1e80100.h"
+ 
+ #include "catalog/dpu_10_0_sm8650.h"
++#include "catalog/dpu_10_1_sm7675.h"
+ #include "catalog/dpu_10_2_milos.h"
+ 
+ #include "catalog/dpu_12_0_sm8750.h"
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
+@@ -795,6 +795,7 @@
+ extern const struct dpu_mdss_cfg dpu_sa8775p_cfg;
+ extern const struct dpu_mdss_cfg dpu_sm8550_cfg;
+ extern const struct dpu_mdss_cfg dpu_sm8650_cfg;
++extern const struct dpu_mdss_cfg dpu_sm7675_cfg;
+ extern const struct dpu_mdss_cfg dpu_sm8750_cfg;
+ extern const struct dpu_mdss_cfg dpu_x1e80100_cfg;
+ 
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+@@ -1480,6 +1480,7 @@
+ };
+ 
+ static const struct of_device_id dpu_dt_match[] = {
++	{ .compatible = "qcom,sm7675-dpu", .data = &dpu_sm7675_cfg },
+ 	{ .compatible = "qcom,eliza-dpu", .data = &dpu_eliza_cfg, },
+ 	{ .compatible = "qcom,glymur-dpu", .data = &dpu_glymur_cfg, },
+ 	{ .compatible = "qcom,kaanapali-dpu", .data = &dpu_kaanapali_cfg, },
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -131,3 +131,5 @@
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
+ obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
++
++obj-$(CONFIG_DRM_PANEL_XIAOMI_O82) += panel-xiaomi-o82.o
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -1348,4 +1348,9 @@
+ 	  Say Y here if you want to enable support for the Xinpeng
+ 	  XPP055C272 controller for 720x1280 LCD panels with MIPI/RGB/SPI
+ 	  system interfaces.
++
++config DRM_PANEL_XIAOMI_O82
++	tristate "Xiaomi O82 dual-DSI panel (experimental)"
++	depends on OF && DRM_MIPI_DSI && BACKLIGHT_CLASS_DEVICE
++
+ endmenu
+--- a/drivers/clk/qcom/dispcc-sm8550.c
++++ b/drivers/clk/qcom/dispcc-sm8550.c
+@@ -599,6 +599,19 @@
+ 	{ }
+ };
+ 
++static const struct freq_tbl ftbl_disp_cc_mdss_mdp_clk_src_sm7675[] = {
++	F(19200000, P_BI_TCXO, 1, 0, 0),
++	F(85714286, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(100000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(155000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(200000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(342000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(402000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(514000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	F(600000000, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
++	{ }
++};
++
+ static const struct freq_tbl ftbl_disp_cc_mdss_mdp_clk_src_sm8650[] = {
+ 	F(19200000, P_BI_TCXO, 1, 0, 0),
+ 	F(85714286, P_DISP_CC_PLL0_OUT_MAIN, 3, 0, 0),
+@@ -1744,7 +1757,7 @@
+ 	.fast_io = true,
+ };
+ 
+-static const struct qcom_cc_desc disp_cc_sm8550_desc = {
++static struct qcom_cc_desc disp_cc_sm8550_desc = {
+ 	.config = &disp_cc_sm8550_regmap_config,
+ 	.clks = disp_cc_sm8550_clocks,
+ 	.num_clks = ARRAY_SIZE(disp_cc_sm8550_clocks),
+@@ -1755,6 +1768,7 @@
+ };
+ 
+ static const struct of_device_id disp_cc_sm8550_match_table[] = {
++	{ .compatible = "qcom,sm7675-dispcc" },
+ 	{ .compatible = "qcom,sar2130p-dispcc" },
+ 	{ .compatible = "qcom,sm8550-dispcc" },
+ 	{ .compatible = "qcom,sm8650-dispcc" },
+@@ -1762,11 +1776,18 @@
+ };
+ MODULE_DEVICE_TABLE(of, disp_cc_sm8550_match_table);
+ 
++#include "uke-dispcc-votes.c"
++
+ static int disp_cc_sm8550_probe(struct platform_device *pdev)
+ {
+ 	struct regmap *regmap;
+ 	int ret;
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-dispcc")) {
++		ret = uke_dispcc_voltage_init(&pdev->dev);
++		if (ret)
++			return ret;
++	}
+ 	ret = devm_pm_runtime_enable(&pdev->dev);
+ 	if (ret)
+ 		return ret;
+@@ -1781,7 +1802,9 @@
+ 		goto err_put_rpm;
+ 	}
+ 
+-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm8650-dispcc")) {
++	if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-dispcc")) {
++		disp_cc_mdss_mdp_clk_src.freq_tbl = ftbl_disp_cc_mdss_mdp_clk_src_sm7675;
++	} else if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm8650-dispcc")) {
+ 		lucid_ole_vco[0].max_freq = 2100000000;
+ 		disp_cc_mdss_mdp_clk_src.freq_tbl = ftbl_disp_cc_mdss_mdp_clk_src_sm8650;
+ 		disp_cc_mdss_dptx1_usb_router_link_intf_clk.clkr.hw.init->parent_hws[0] =
+@@ -1794,8 +1817,11 @@
+ 		disp_cc_mdss_mdp_clk_src.freq_tbl = ftbl_disp_cc_mdss_mdp_clk_src_sar2130p;
+ 	}
+ 
+-	clk_lucid_ole_pll_configure(&disp_cc_pll0, regmap, &disp_cc_pll0_config);
+-	clk_lucid_ole_pll_configure(&disp_cc_pll1, regmap, &disp_cc_pll1_config);
++	/* Firmware still scans out until the MDSS handoff drains display DMA. */
++	if (!of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-dispcc")) {
++		clk_lucid_ole_pll_configure(&disp_cc_pll0, regmap, &disp_cc_pll0_config);
++		clk_lucid_ole_pll_configure(&disp_cc_pll1, regmap, &disp_cc_pll1_config);
++	}
+ 
+ 	/* Enable clock gating for MDP clocks */
+ 	regmap_update_bits(regmap, DISP_CC_MISC_CMD, 0x10, 0x10);
+@@ -1821,6 +1847,7 @@
+ 	.probe = disp_cc_sm8550_probe,
+ 	.driver = {
+ 		.name = "disp_cc-sm8550",
++		.sync_state = uke_dispcc_sync_state,
+ 		.of_match_table = disp_cc_sm8550_match_table,
+ 	},
+ };
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy.c
+@@ -577,6 +577,9 @@
+ 	  .data = &dsi_phy_4nm_8550_cfgs },
+ 	{ .compatible = "qcom,sm8650-dsi-phy-4nm",
+ 	  .data = &dsi_phy_4nm_8650_cfgs },
++	/* Uke OEM: v5.2, two PHY windows and 98 mA vdds load. */
++	{ .compatible = "qcom,sm7675-dsi-phy-4nm",
++	  .data = &dsi_phy_4nm_8650_cfgs },
+ 	{ .compatible = "qcom,sm8750-dsi-phy-3nm",
+ 	  .data = &dsi_phy_3nm_8750_cfgs },
+ 	{ .compatible = "qcom,kaanapali-dsi-phy-3nm",
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -90,6 +90,8 @@
+ static struct qcom_icc_node qns_lpass_ag_noc_gemnoc;
+ static struct qcom_icc_node qnm_lpass_gemnoc;
+ 
++#include "cliffs-display-icc.h"
++
+ static const struct qcom_icc_qosbox qhm_qup0_qos = {
+ 	.num_ports = 1,
+ 	.port_offsets = { 0xd000 },
+@@ -170,8 +172,8 @@
+ 	.name = "qsm_cfg",
+ 	.channels = 1,
+ 	.buswidth = 4,
+-	.num_links = 4,
+-	.link_nodes = { &qhs_qup0, &qhs_qup1, &qhs_usb3_0, &qhs_ufs_mem_cfg },
++	.num_links = 5,
++	.link_nodes = { &qhs_qup0, &qhs_qup1, &qhs_usb3_0, &qhs_ufs_mem_cfg, &qhs_display_cfg },
+ };
+ 
+ static struct qcom_icc_node qnm_gemnoc_cnoc = {
+@@ -430,8 +432,8 @@
+ 
+ static struct qcom_icc_bcm bcm_cn1 = {
+ 	.name = "CN1",
+-	.num_nodes = 1,
+-	.nodes = { &qhs_qup0 },
++	.num_nodes = 2,
++	.nodes = { &qhs_qup0, &qhs_display_cfg },
+ };
+ 
+ static struct qcom_icc_bcm bcm_lp0 = {
+@@ -465,8 +467,8 @@
+ static struct qcom_icc_bcm bcm_sh1 = {
+ 	.name = "SH1",
+ 	.enable_mask = 0x1,
+-	.num_nodes = 4,
+-	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc },
++	.num_nodes = 5,
++	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc, &qnm_mnoc_hf },
+ };
+ 
+ static struct qcom_icc_bcm bcm_sn0 = {
+@@ -544,6 +546,7 @@
+ };
+ 
+ static struct qcom_icc_node * const cnoc_cfg_nodes[] = {
++	[SLAVE_DISPLAY_CFG] = &qhs_display_cfg,
+ 	[MASTER_CNOC_CFG] = &qsm_cfg,
+ 	[SLAVE_QUP_0] = &qhs_qup0,
+ 	[SLAVE_QUP_1] = &qhs_qup1,
+@@ -581,6 +584,7 @@
+ };
+ 
+ static struct qcom_icc_node * const gem_noc_nodes[] = {
++	[MASTER_MNOC_HF_MEM_NOC] = &qnm_mnoc_hf,
+ 	[MASTER_APPSS_PROC] = &chm_apps,
+ 	[MASTER_GFX3D] = &qnm_gpu,
+ 	[MASTER_LPASS_GEM_NOC] = &qnm_lpass_gemnoc,
+@@ -679,6 +683,7 @@
+ };
+ 
+ static const struct of_device_id cliffs_usb_of_match[] = {
++	{ .compatible = "qcom,cliffs-mmss_noc", .data = &cliffs_mmss_noc },
+ 	{ .compatible = "qcom,cliffs-aggre1_noc", .data = &cliffs_aggre1_noc },
+ 	{ .compatible = "qcom,cliffs-aggre2_noc", .data = &cliffs_aggre2_noc },
+ 	{ .compatible = "qcom,cliffs-clk_virt", .data = &cliffs_clk_virt },
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu.h
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu.h
+@@ -318,6 +318,7 @@
+ 	u32				num_s2_context_banks;
+ 	DECLARE_BITMAP(context_map, ARM_SMMU_MAX_CBS);
+ 	DECLARE_BITMAP(boot_context_map, ARM_SMMU_MAX_CBS);
++	bool uke_display_quiesced;
+ 	struct arm_smmu_cb		*cbs;
+ 	atomic_t			irptndx;
+ 
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -811,6 +811,8 @@
+ 	return 0;
+ }
+ 
++#include "uke-display-smmu.c"
++
+ static int qcom_uke_smmu_alloc_context_bank(struct arm_smmu_domain *domain,
+ 		struct arm_smmu_device *smmu, struct device *dev, int start)
+ {
+@@ -818,6 +820,11 @@
+ 	const __be32 *actlr;
+ 	int len, i, j;
+ 
++	if (qcom_uke_display_domain(smmu, dev)) {
++		if (!qcom_uke_display_actlr_matches(smmu))
++			return -EINVAL;
++		return __arm_smmu_alloc_bitmap(smmu->context_map, start, smmu->num_context_banks);
++	}
+ 	/* OEM Cliffs streams, including WLAN SID 0x1400 with SMR mask 1. */
+ 	if (!fwspec || !fwspec->num_ids)
+ 		return -EINVAL;
+@@ -849,6 +856,7 @@
+ }
+ 
+ static const struct arm_smmu_impl qcom_uke_smmu_impl = {
++	.init_context = qcom_uke_display_init_context,
+ 	.def_domain_type = qcom_uke_smmu_def_domain_type,
+ 	.cfg_probe = qcom_uke_smmu_cfg_probe,
+ 	.alloc_context_bank = qcom_uke_smmu_alloc_context_bank,
+--- a/drivers/gpu/drm/msm/msm_mdss.c
++++ b/drivers/gpu/drm/msm/msm_mdss.c
+@@ -44,8 +44,11 @@
+ 	struct icc_path *mdp_path[2];
+ 	u32 num_mdp_paths;
+ 	struct icc_path *reg_bus_path;
++	bool uke_handoff_complete;
+ };
+ 
++#include "uke-mdss-handoff.c"
++
+ static int msm_mdss_parse_data_bus_icc_path(struct device *dev,
+ 					    struct msm_mdss *msm_mdss)
+ {
+@@ -238,11 +241,16 @@
+ 	 * the interconnect is enabled (non-zero bandwidth). Let's make sure
+ 	 * that the interconnects are at least at a minimum amount.
+ 	 */
+-	for (i = 0; i < msm_mdss->num_mdp_paths; i++)
+-		icc_set_bw(msm_mdss->mdp_path[i], 0, Bps_to_icc(MIN_IB_BW));
+-
+-	icc_set_bw(msm_mdss->reg_bus_path, 0,
+-		   msm_mdss->reg_bus_bw);
++	for (i = 0; i < msm_mdss->num_mdp_paths; i++) {
++		bool uke = of_device_is_compatible(msm_mdss->dev->of_node, "qcom,sm7675-mdss");
++		ret = icc_set_bw(msm_mdss->mdp_path[i], 0,
++			Bps_to_icc(uke && !msm_mdss->uke_handoff_complete ? 8000000000ULL : MIN_IB_BW));
++		if (uke && ret)
++			return ret;
++	}
++	ret = icc_set_bw(msm_mdss->reg_bus_path, 0, msm_mdss->reg_bus_bw);
++	if (of_device_is_compatible(msm_mdss->dev->of_node, "qcom,sm7675-mdss") && ret)
++		return ret;
+ 
+ 	/*
+ 	 * TODO:
+@@ -252,6 +260,9 @@
+ 	 * correct OPP has been set in one of the MDPn or DPU drivers, or during initial probe,
+ 	 * before the RPM(H)PD sync_state is done.
+ 	 */
++	if (of_device_is_compatible(msm_mdss->dev->of_node, "qcom,sm7675-mdss") &&
++	    (!msm_mdss->num_mdp_paths || !msm_mdss->reg_bus_path))
++		return -ENODEV;
+ 	ret = clk_bulk_prepare_enable(msm_mdss->num_clocks, msm_mdss->clocks);
+ 	if (ret) {
+ 		dev_err(msm_mdss->dev, "clock enable failed, ret:%d\n", ret);
+@@ -262,7 +273,8 @@
+ 	 * Register access requires MDSS_MDP_CLK, which is not enabled by the
+ 	 * mdss on mdp5 hardware. Skip it for now.
+ 	 */
+-	if (msm_mdss->is_mdp5 || !msm_mdss->mdss_data)
++	if ((of_device_is_compatible(msm_mdss->dev->of_node, "qcom,sm7675-mdss") &&
++	     !msm_mdss->uke_handoff_complete) || msm_mdss->is_mdp5 || !msm_mdss->mdss_data)
+ 		return 0;
+ 
+ 	hw_rev = readl_relaxed(msm_mdss->mmio + REG_MDSS_HW_VERSION);
+@@ -369,7 +381,8 @@
+ 	int ret;
+ 	int irq;
+ 
+-	ret = msm_mdss_reset(&pdev->dev);
++	ret = of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-mdss") ?
++		0 : msm_mdss_reset(&pdev->dev);
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+@@ -478,6 +491,13 @@
+ 		return PTR_ERR(mdss);
+ 
+ 	platform_set_drvdata(pdev, mdss);
++	if (of_device_is_compatible(dev->of_node, "qcom,sm7675-mdss")) {
++		ret = uke_mdss_handoff(mdss);
++		if (ret) {
++			msm_mdss_destroy(mdss);
++			return ret;
++		}
++	}
+ 
+ 	/*
+ 	 * MDP5/DPU based devices don't have a flat hierarchy. There is a top
+@@ -525,6 +545,7 @@
+ };
+ 
+ static const struct of_device_id mdss_dt_match[] = {
++	{ .compatible = "qcom,sm7675-mdss", .data = &data_57k },
+ 	{ .compatible = "qcom,mdss", .data = &data_153k6 },
+ 	{ .compatible = "qcom,eliza-mdss", .data = &data_57k },
+ 	{ .compatible = "qcom,glymur-mdss", .data = &data_57k },
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -658,6 +658,10 @@
+ 	unsigned long pclk_rate = dsi_get_pclk_rate(mode, msm_host->dsc, is_bonded_dsi);
+ 	unsigned long pclk_bpp;
+ 
++	/* Compression adjusted the pixel clock using DSC input component depth. */
++	if (msm_host->dsc)
++		bpp = msm_host->dsc->bits_per_component * 3;
++
+ 	if (lanes == 0) {
+ 		pr_err("%s: forcing mdss_dsi lanes to 1\n", __func__);
+ 		lanes = 1;

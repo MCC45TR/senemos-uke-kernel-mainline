@@ -69,6 +69,21 @@ for parent in "$second" "$bus"; do
         [[ $(fdtget -t s "$out/admitted.dtb" "$parent/$child" status) == disabled ]]
     done
 done
+first=/soc/qcom,qupv3_0_geni_se@ac0000
+tlmm=/soc/pinctrl@f000000
+touch=$first/spi@a90000/novatek@0
+usb_mux=$first/i2c@a80000/wcd939x_i2c@e
+tlmm_phandle=$(fdtget -t x "$input" "$tlmm" phandle)
+for child in $(fdtget -l "$out/admitted.dtb" "$first"); do
+    case "$child" in i2c@a80000|spi@a90000) continue;; esac
+    [[ $(fdtget -t s "$out/admitted.dtb" "$first/$child" status) == disabled ]]
+done
+[[ $(fdtget -t s "$out/admitted.dtb" "$tlmm/qupv3_se3_spi_pins/qupv3_se3_spi_clk_active/mux" function) == qup0_se3_l2 ]]
+for corner in top_left top_right bottom_left bottom_right; do
+    for mode in active sleep; do
+        [[ $(fdtget -t s "$out/admitted.dtb" "$tlmm/fs19xx_irq_${mode}_$corner/mux" function) == gpio ]]
+    done
+done
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000 status) == okay ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/wcd939x_i2c@e status) == okay ]]
 for node in qcom,smmu_sde_unsec_cb qcom,smmu_sde_sec_cb; do
@@ -81,13 +96,47 @@ framebuffer=$(fdtget -t s "$out/admitted.dtb" /chosen stdout-path)
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" height) == 2136 ]]
 [[ $(fdtget -t u "$out/admitted.dtb" "$framebuffer" stride) == 12800 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$framebuffer" format) == a8r8g8b8 ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /panel-uke-handoff compatible) == xiaomi,uke-panel-handoff ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /panel-uke-handoff status) == disabled ]]
+[[ $(fdtget -t u "$out/admitted.dtb" /panel-uke-handoff width-mm) == 237 ]]
+[[ $(fdtget -t u "$out/admitted.dtb" /panel-uke-handoff height-mm) == 158 ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$framebuffer" panel) == "$(fdtget -t x "$out/admitted.dtb" /panel-uke-handoff phandle)" ]]
+cp "$input" "$out/panel-metadata-collision.dtb"
+fdtput -c "$out/panel-metadata-collision.dtb" /panel-uke-handoff
+if "$binary" "$out/panel-metadata-collision.dtb" "$ufs" "$usb" "$out/panel-metadata-collision-output.dtb"; then exit 1; fi
+[[ ! -e "$out/panel-metadata-collision-output.dtb" ]]
 spi=/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" compatible) == qcom,geni-spi ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$spi" clock-names) == se ]]
 [[ $(fdtget -t x "$out/admitted.dtb" "$spi" dmas) == "$(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 0 4 1 $(fdtget -t x "$input" /soc/qcom,gpi-dma@a00000 phandle) 1 4 1" ]]
-for scenario in board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route; do
+touch=$spi/novatek@0
+[[ $(fdtget -t s "$out/admitted.dtb" "$touch" pinctrl-names) == 'default sleep' ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$spi/goodix-berlin@0" status) == disabled ]]
+if fdtget "$out/admitted.dtb" "$touch" panel 2>/dev/null; then exit 1; fi
+for property in compatible reg spi-max-frequency novatek,irq-gpio novatek,lcd_id-gpio pinctrl-0 pinctrl-1; do
+    [[ $(fdtget -t x "$out/admitted.dtb" "$touch" "$property") == "$(fdtget -t x "$input" "$touch" "$property")" ]]
+done
+for scenario in gpu-chip gpu-irq gmu-base gpu-gx board graph symbols splash truncated overlay iommu-provider iommu-length iommu-id geni-id second-geni-id second-gpi-id second-bus-reg second-dma-length second-dma-route second-dma-cells second-dma-count second-dma-mask second-dma-offset second-bus-frequency second-backlight-reg second-backlight-compatible primary-backlight-reg primary-backlight-compatible phandle-exhaustion reboot-cell reboot-offset reboot-bits wlan-sid wlan-mask wlan-reg wlan-irq wlan-rproc wlan-msa wlan-supply wlan-voltage soc-cells sram-cells sram-reg sram-range sram-child sram-compatible sdam-reg sdam-bits sdam-size ufs-cell spi-reg spi-clock spi-irq spi-dma-length spi-dma-route touch-compatible touch-reg touch-frequency touch-panel-length touch-panel-target touch-panel-order touch-pinctrl-names touch-pinctrl-target touch-pinctrl-length touch-cs-pin touch-cs-function touch-cs-drive goodix-compatible goodix-reg ufs-reset touch-irq touch-irq-flags touch-lcd-id gpio-provider gpio-cells usb-reset usb-reset-flags first-pin second-pin first-mux second-drive touch-bus-pins touch-cs-count; do
     cp "$input" "$out/$scenario.dtb"
     case $scenario in
+        gpu-chip) fdtput -t x "$out/$scenario.dtb" /soc/qcom,kgsl-3d0@3d00000 qcom,chipid 43030c00;;
+        gpu-irq) fdtput -t x "$out/$scenario.dtb" /soc/qcom,kgsl-3d0@3d00000 interrupts 0 12d 4;;
+        gmu-base) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gmu@3d69000 reg 3d6a000 35000 b280000 10000 3d40000 10000;;
+        gpu-gx) fdtput -t x "$out/$scenario.dtb" /soc/qcom,gdsc@3d9905c reg 3d9905c 4;;
+        touch-compatible) fdtput -t s "$out/$scenario.dtb" "$touch" compatible novatek,nt36523;;
+        touch-pinctrl-names) fdtput -t s "$out/$scenario.dtb" "$touch" pinctrl-names wrong pmx_ts_suspend;;
+        touch-cs-pin) fdtput -t s "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/mux pins gpio20;;
+        touch-cs-function) fdtput -t s "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/mux function gpio;;
+        touch-cs-drive) fdtput -t u "$out/$scenario.dtb" /soc/pinctrl@f000000/mi_ts_spi_cs_active/config drive-strength 16;;
+        touch-pinctrl-target) fdtput -t x "$out/$scenario.dtb" "$touch" pinctrl-0 deadbeef;;
+        touch-pinctrl-length) fdtput -t x "$out/$scenario.dtb" "$touch" pinctrl-1 566 565;;
+        touch-reg) fdtput -t x "$out/$scenario.dtb" "$touch" reg 1;;
+        touch-frequency) fdtput -t u "$out/$scenario.dtb" "$touch" spi-max-frequency 20000000;;
+        touch-panel-length) fdtput -t x "$out/$scenario.dtb" "$touch" panel 602;;
+        touch-panel-target) fdtput -t x "$out/$scenario.dtb" "$touch" panel deadbeef 603;;
+        touch-panel-order) read -r panel_a panel_b <<< "$(fdtget -t x "$input" "$touch" panel)"; fdtput -t x "$out/$scenario.dtb" "$touch" panel "$panel_b" "$panel_a";;
+        goodix-compatible) fdtput -t s "$out/$scenario.dtb" "$spi/goodix-berlin@0" compatible goodix,berlin;;
+        goodix-reg) fdtput -t x "$out/$scenario.dtb" "$spi/goodix-berlin@0" reg 0;;
         spi-reg) fdtput -t x "$out/$scenario.dtb" "$spi" reg aa0000 4000;;
         spi-clock) fdtput -t x "$out/$scenario.dtb" "$spi" clocks 16e 48;;
         spi-irq) fdtput -t x "$out/$scenario.dtb" "$spi" interrupts 0 164 4;;
@@ -139,6 +188,20 @@ for scenario in board graph symbols splash truncated overlay iommu-provider iomm
         sdam-bits) fdtput -t x "$out/$scenario.dtb" "$sdam/smb1510_present@5d" bits 5 1;;
         sdam-size) fdtput -t x "$out/$scenario.dtb" "$sdam/smb1510_present@5d" reg 5d 2;;
         ufs-cell) fdtput -t x "$out/$scenario.dtb" "$sdam/ufs_dev@ad" reg ad 1;;
+        ufs-reset) fdtput -t x "$out/$scenario.dtb" /soc/ufshc@1d84000 reset-gpios "$tlmm_phandle" b1 1;;
+        touch-irq) fdtput -t x "$out/$scenario.dtb" "$touch" novatek,irq-gpio "$tlmm_phandle" 35 2001;;
+        touch-irq-flags) fdtput -t x "$out/$scenario.dtb" "$touch" novatek,irq-gpio "$tlmm_phandle" 36 1;;
+        touch-lcd-id) fdtput -t x "$out/$scenario.dtb" "$touch" novatek,lcd_id-gpio "$tlmm_phandle" 1b 0;;
+        gpio-provider) fdtput -t x "$out/$scenario.dtb" "$touch" novatek,irq-gpio deadbeef 36 2001;;
+        gpio-cells) fdtput -t x "$out/$scenario.dtb" "$tlmm" '#gpio-cells' 3;;
+        usb-reset) fdtput -t x "$out/$scenario.dtb" "$usb_mux" reset-gpios "$tlmm_phandle" 76 0;;
+        usb-reset-flags) fdtput -t x "$out/$scenario.dtb" "$usb_mux" reset-gpios "$tlmm_phandle" 77 1;;
+        first-pin) fdtput -t s "$out/$scenario.dtb" "$tlmm/qupv3_se0_i2c_pins/qupv3_se0_i2c_sda_active/mux" pins gpio51;;
+        second-pin) fdtput -t s "$out/$scenario.dtb" "$tlmm/qupv3_se12_i2c_pins/qupv3_se12_i2c_sda_active/config" pins gpio175;;
+        first-mux) fdtput -t s "$out/$scenario.dtb" "$tlmm/qupv3_se0_i2c_pins/qupv3_se0_i2c_sda_active/mux" function gpio;;
+        second-drive) fdtput -t x "$out/$scenario.dtb" "$tlmm/qupv3_se12_i2c_pins/qupv3_se12_i2c_sda_active/config" drive-strength 10;;
+        touch-bus-pins) fdtput -t x "$out/$scenario.dtb" "$first/spi@a90000" pinctrl-0 deadbeef deadbeef deadbeef;;
+        touch-cs-count) fdtput -t x "$out/$scenario.dtb" "$touch" pinctrl-0 deadbeef deadbeef;;
     esac
     usb_input=$usb
     [[ $scenario != overlay ]] || usb_input=$out/bad.dtbo

@@ -74,6 +74,14 @@ int main(void) {
     assert(reaches(&qup1_core_master, &qup1_core_slave, 0));
     assert(reaches(&chm_apps, &qhs_qup0, 0));
     assert(reaches(&chm_apps, &qhs_qup1, 0));
+    assert(gem_noc_nodes[MASTER_GFX3D] == &qnm_gpu);
+    assert(reaches(&qnm_gpu, &ebi, 0));
+    assert(reaches(&qnm_gpu, &qss_cfg, 0));
+    assert(qnm_gpu.channels == 2 && qnm_gpu.buswidth == 32);
+    assert(qnm_gpu.qosbox == &qnm_gpu_qos && qnm_gpu_qos.num_ports == 2);
+    assert(qnm_gpu_qos.port_offsets[0] == 0x31000 && qnm_gpu_qos.port_offsets[1] == 0x71000);
+    assert(!qnm_gpu_qos.prio && !qnm_gpu_qos.urg_fwd && qnm_gpu_qos.prio_fwd_disable);
+    assert(bcm_sh1.num_nodes == 4 && bcm_sh1.nodes[1] == &qnm_gpu);
     assert(reaches(&qhm_qup0, &ebi, 0));
     assert(reaches(&qhm_qup1, &ebi, 0));
     assert(reaches(&xm_usb3_0, &ebi, 0));

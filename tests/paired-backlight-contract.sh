@@ -14,6 +14,7 @@ trap 'rm -r -- "$work"' EXIT
 #define BIT(n) (1U << (n))
 #define MAX_BRIGHTNESS 2047U
 #define BL_LEVEL_MAX 2047U
+#define DIV_ROUND_UP(value, divisor) (((value)+(divisor)-1)/(divisor))
 enum { DEVICE_ID=1, BL_CFG1=2, BL_BRT_LSB=4, BL_BRT_MSB=5, BL_EN=8, BL_EN_BIT=BIT(6),
        BACKLIGHT_RAW=1, BACKLIGHT_SCALE_NON_LINEAR=2, DL_FLAG_AUTOREMOVE_CONSUMER=4, EPROBE_DEFER=517 };
 struct device { bool bound=true, locked=false; int refs=1; void *of_node=nullptr; };
@@ -24,7 +25,7 @@ struct mutex { bool locked = false; };
 struct backlight_device;
 struct ktz8866 { i2c_client *client; struct regmap *regmap; ktz8866 *peer; mutex lock;
                  bool secondary=false; backlight_device *backlight=nullptr; };
-struct backlight_device { ktz8866 *data; unsigned int brightness; bool blank=false; };
+struct backlight_device { ktz8866 *data; struct { unsigned int brightness; } props; bool blank=false; };
 int operations, writes, failure=-1, second_failure=-1, mismatch=-1, errors;
 bool persistent_failure;
 int bus() {
@@ -44,7 +45,8 @@ int ktz8866_update_bits(ktz8866 *ktz, unsigned int reg, unsigned int mask, unsig
     return ktz8866_write(ktz,reg,(ktz->regmap->regs[reg]&~mask)|value);
 }
 ktz8866 *bl_get_data(backlight_device *bl) { return bl->data; }
-unsigned int backlight_get_brightness(backlight_device *bl) { return bl->blank ? 0 : bl->brightness; }
+unsigned int backlight_get_brightness(backlight_device *bl) { return bl->blank ? 0 : bl->props.brightness; }
+bool backlight_is_blank(backlight_device *bl) { return bl->blank; }
 void mutex_lock(mutex *m) { assert(!m->locked); m->locked=true; }
 void mutex_unlock(mutex *m) { assert(m->locked); m->locked=false; }
 void dev_err(device *, const char *, int) { errors++; }
@@ -71,7 +73,7 @@ struct backlight_ops { int (*update_status)(backlight_device *); int (*get_brigh
 const backlight_ops ktz8866_uke_backlight_ops{};
 backlight_device *devm_backlight_device_register(device *, const char *, device *, ktz8866 *data,
                                                const backlight_ops *, const backlight_properties *props) {
-    registered={data,static_cast<unsigned int>(props->brightness)};
+    registered={data,{static_cast<unsigned int>(props->brightness)}};
     return registration_failure ? reinterpret_cast<backlight_device *>(-ENOMEM) : &registered;
 }
 int PTR_ERR_OR_ZERO(backlight_device *ptr) { auto value=reinterpret_cast<long>(ptr); return value<0 ? value : 0; }
@@ -102,17 +104,19 @@ int main() {
     i2c_client clients[2]; regmap maps[2];
     ktz8866 secondary{&clients[1],&maps[1],nullptr,{}};
     ktz8866 primary{&clients[0],&maps[0],&secondary,{}};
-    backlight_device bl{&primary,0};
+    backlight_device bl{&primary,{0}};
     for (unsigned int level : {0U,1U,2U,7U,8U,128U,512U,1024U,1535U,2047U}) {
-        reset(maps); bl.brightness=level;
+        reset(maps); bl.props.brightness=level;
         regmap original[2]; std::memcpy(original,maps,sizeof(maps));
         assert(ktz8866_uke_update_status(&bl)==0 && !primary.lock.locked && !errors);
+        const auto effective=level<21 ? 21 : level;
+        assert(bl.props.brightness==effective);
         const int complete=operations;
         for (int i=0;i<2;i++) {
             assert((maps[i].regs[BL_EN]&~BL_EN_BIT)==(original[i].regs[BL_EN]&~BL_EN_BIT));
             assert((maps[i].regs[BL_BRT_LSB]&~7)==(original[i].regs[BL_BRT_LSB]&~7));
-            assert((maps[i].regs[BL_EN]&BL_EN_BIT)==(ktz8866_uke_code(level)?BL_EN_BIT:0));
-            assert((maps[i].regs[BL_BRT_MSB]<<3 | (maps[i].regs[BL_BRT_LSB]&7))==ktz8866_uke_code(level));
+            assert((maps[i].regs[BL_EN]&BL_EN_BIT)==BL_EN_BIT);
+            assert((maps[i].regs[BL_BRT_MSB]<<3 | (maps[i].regs[BL_BRT_LSB]&7))==ktz8866_uke_code(effective));
             for (unsigned int r=0;r<22;r++)
                 if (r!=BL_EN && r!=BL_BRT_LSB && r!=BL_BRT_MSB) assert(maps[i].regs[r]==original[i].regs[r]);
         }
@@ -129,13 +133,13 @@ int main() {
             assert(!std::memcmp(maps,original,sizeof(maps)));
         }
     }
-    reset(maps); bl.brightness=102; bl.blank=true;
+    reset(maps); bl.props.brightness=102; bl.blank=true;
     assert(ktz8866_uke_update_status(&bl)==0 && ktz8866_uke_get_brightness(&bl)==0);
-    assert(!(maps[0].regs[BL_EN]&BL_EN_BIT) && !(maps[1].regs[BL_EN]&BL_EN_BIT) && bl.brightness==102);
+    assert(!(maps[0].regs[BL_EN]&BL_EN_BIT) && !(maps[1].regs[BL_EN]&BL_EN_BIT) && bl.props.brightness==102);
     bl.blank=false;
     assert(ktz8866_uke_update_status(&bl)==0 && ktz8866_uke_get_brightness(&bl)==102);
-    reset(maps); bl.brightness=2048; assert(ktz8866_uke_update_status(&bl)==-EINVAL && operations==0);
-    reset(maps); maps[0].regs[BL_EN]|=BIT(7); bl.brightness=100;
+    reset(maps); bl.props.brightness=2048; assert(ktz8866_uke_update_status(&bl)==-EINVAL && operations==0);
+    reset(maps); maps[0].regs[BL_EN]|=BIT(7); bl.props.brightness=100;
     assert(ktz8866_uke_update_status(&bl)==-EBUSY && writes==0);
     reset(maps); maps[1].regs[BL_BRT_MSB]++; assert(ktz8866_uke_get_brightness(&bl)==-EIO);
     reset(maps); maps[1].regs[BL_EN]&=~BL_EN_BIT; assert(ktz8866_uke_get_brightness(&bl)==-EIO);

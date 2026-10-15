@@ -60,7 +60,7 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --help, -h          Show this help
 
 Examples:
-  ./senemos.sh --build 7.2.9 --distro=fedora --test
+  ./senemos.sh --build 7.2.10 --distro=fedora --test
   ./senemos.sh --build latest --distro=fedora
   ./senemos.sh --build lastest --distro=fedora
   ./senemos.sh --inspect-stock --vendor-boot FILE --dtbo FILE --firmware-profile NAME
@@ -349,7 +349,7 @@ internal_build() {
     mkdir -p "$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS} "$adaptation/patches" "$adaptation/configs"
     cp "$source/referances/releases/linux-$VERSION.tar.xz" "$top/SOURCES/"
     cp "$source/referances/releases/linux-$VERSION.tar.sign" "$source/configs/keys/linux-stable.asc" "$top/SOURCES/"
-    cp "$source/tests/gpr-domain-contract.sh" "$source/tests/cpucp-mailbox-contract.sh" "$source/tests/slim-startup-contract.sh" "$source/tests/battery-protocol-contract.sh" "$source/tests/firmware-backlight-contract.sh" "$source/tests/usb-charger-readiness-contract.sh" "$top/SOURCES/"
+    cp "$source/tests/gpr-domain-contract.sh" "$source/tests/cpucp-mailbox-contract.sh" "$source/tests/slim-startup-contract.sh" "$source/tests/battery-protocol-contract.sh" "$source/tests/firmware-backlight-contract.sh" "$source/tests/usb-charger-readiness-contract.sh" "$source/tests/qup-interconnect-contract.sh" "$source/tests/adreno-lifecycle-contract.sh" "$source/tests/cpu-epss-contract.sh" "$source/tests/sysfb-damage-contract.sh" "$source/tests/serial-power-budget-contract.sh" "$top/SOURCES/"
     cp "$source/patches/$VERSION/"* "$adaptation/patches/"
     cp "$source/configs/arm64-qcom.config" "$source/configs/uke.config" "$source/configs/fedora.config" "$adaptation/configs/"
     cp "$manifest" "$adaptation/source-lock.json"
@@ -361,7 +361,7 @@ internal_build() {
         [[ $path != configs/* ]] || staged=$adaptation/configs/${path##*/}
         [[ $(sha256sum "$staged" | cut -d ' ' -f1) == "$expected" ]] || die "Input changed while staging: $path"
     done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' "$manifest")
-    tar --sort=name --mtime=@1791024250 --owner=0 --group=0 --numeric-owner -cJf \
+    tar --sort=name --mtime="@$(jq -er .source_date_epoch "$manifest")" --owner=0 --group=0 --numeric-owner -cJf \
         "$top/SOURCES/senemos-uke-adaptation-$VERSION.tar.xz" -C "$work/adaptation" senemos-adaptation
     sed "s/^Version: .*/Version: $VERSION/" /work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec > "$top/SPECS/kernel.spec"
     rpm -qa --qf '%{NAME}-%{EPOCHNUM}:%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > "$work/toolchain-packages.txt"
@@ -374,7 +374,7 @@ internal_build() {
 build_identity() {
     local manifest=$1 spec=$2 toolchain=$3
     { cat "$manifest"; printf '%s\n' "$toolchain"; \
-        cat "$KERNEL/tests/gpr-domain-contract.sh" "$KERNEL/tests/cpucp-mailbox-contract.sh" "$KERNEL/tests/slim-startup-contract.sh" "$KERNEL/tests/battery-protocol-contract.sh" "$KERNEL/tests/firmware-backlight-contract.sh" "$KERNEL/tests/usb-charger-readiness-contract.sh"; \
+        cat "$KERNEL/tests/gpr-domain-contract.sh" "$KERNEL/tests/cpucp-mailbox-contract.sh" "$KERNEL/tests/slim-startup-contract.sh" "$KERNEL/tests/battery-protocol-contract.sh" "$KERNEL/tests/firmware-backlight-contract.sh" "$KERNEL/tests/usb-charger-readiness-contract.sh" "$KERNEL/tests/qup-interconnect-contract.sh" "$KERNEL/tests/adreno-lifecycle-contract.sh" "$KERNEL/tests/cpu-epss-contract.sh" "$KERNEL/tests/sysfb-damage-contract.sh" "$KERNEL/tests/serial-power-budget-contract.sh"; \
         awk '/^%global krel/ {print} /^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
     } | sha256sum | cut -d ' ' -f1
 }
@@ -572,6 +572,8 @@ self_test() {
     bash -n "$ROOT/senemos.sh"
     if command -v shellcheck >/dev/null; then shellcheck -s bash "$ROOT/senemos.sh"; fi
     ok 'shell syntax and available ShellCheck'
+    cmp "$KERNEL/packaging/senemos-uke-linux-kernel-mainline.spec" "$KERNEL/configs/host/senemos-uke-linux-kernel-mainline.spec"
+    ok 'host and COPR specs share the same source and package checks'
     fixture_identity() {
         local KERNEL=$temporary/guard-fixture before after
         mkdir -p "$KERNEL/tests"
@@ -581,6 +583,11 @@ self_test() {
         printf 'original battery check\n' > "$KERNEL/tests/battery-protocol-contract.sh"
         printf 'original display check\n' > "$KERNEL/tests/firmware-backlight-contract.sh"
         printf 'original USB readiness check\n' > "$KERNEL/tests/usb-charger-readiness-contract.sh"
+        printf 'original interconnect check\n' > "$KERNEL/tests/qup-interconnect-contract.sh"
+        local contract
+        for contract in adreno-lifecycle cpu-epss sysfb-damage serial-power-budget; do
+            printf 'original check\n' > "$KERNEL/tests/$contract-contract.sh"
+        done
         printf '{}\n' > "$KERNEL/manifest"
         printf '%%prep\n%%install\n' > "$KERNEL/spec"
         before=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
@@ -607,9 +614,19 @@ self_test() {
         printf 'changed USB readiness check\n' > "$KERNEL/tests/usb-charger-readiness-contract.sh"
         after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
         [[ $before != "$after" ]] || die 'Changed USB readiness check retained build identity'
+        before=$after
+        printf 'changed interconnect check\n' > "$KERNEL/tests/qup-interconnect-contract.sh"
+        after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
+        [[ $before != "$after" ]] || die 'Changed interconnect check retained build identity'
+        for contract in adreno-lifecycle cpu-epss sysfb-damage serial-power-budget; do
+            before=$after
+            printf 'changed check\n' > "$KERNEL/tests/$contract-contract.sh"
+            after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
+            [[ $before != "$after" ]] || die "Changed $contract check retained build identity"
+        done
     }
     fixture_identity
-    ok 'native GPR, mailbox, SLIM, battery, display and USB readiness checks invalidate completed-build admission'
+    ok 'all native source checks invalidate completed-build admission'
     reject bash "$ROOT/senemos.sh" --build '../escape' --dry-run
     reject bash "$ROOT/senemos.sh" --jobs 0 --dry-run
     reject bash "$ROOT/senemos.sh" --distro=debian --build 7.2.9 --dry-run
@@ -659,15 +676,19 @@ self_test() {
     [[ $(cat "$temporary"/rpm-fixture/RPMS.saved-*/aarch64/kernel-1.3.rpm) == old-binary ]]
     [[ $(cat "$temporary"/rpm-fixture/SRPMS.saved-*/kernel-1.3.src.rpm) == old-source ]]
     ok 'source-changing rebuild preserves older RPMs outside the current package set'
-    local profile=$KERNEL/manifests/linux-7.2.9.json archive=$KERNEL/referances/releases/linux-7.2.9.tar.xz
-    if [[ -s $archive ]]; then
+    local profile archive profile_version signature
+    for profile in "$KERNEL"/manifests/linux-*.json; do
+        profile_version=$(jq -er '.version | select(test("^[0-9]+[.][0-9]+[.][0-9]+$"))' "$profile")
+        archive=$KERNEL/referances/releases/linux-$profile_version.tar.xz
+        signature=$KERNEL/referances/releases/linux-$profile_version.tar.sign
+        [[ -s $archive ]] || continue
         printf broken > "$temporary/broken.tar.xz"
-        reject bash "$ROOT/senemos.sh" --internal-verify "$temporary/broken.tar.xz" "$KERNEL/referances/releases/linux-7.2.9.tar.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/gpg"
-        verify_source "$archive" "$KERNEL/referances/releases/linux-7.2.9.tar.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/good-gpg"
+        reject bash "$ROOT/senemos.sh" --internal-verify "$temporary/broken.tar.xz" "$signature" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/gpg"
+        verify_source "$archive" "$signature" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/good-gpg"
         printf invalid > "$temporary/invalid.sign"
         reject bash "$ROOT/senemos.sh" --internal-verify "$archive" "$temporary/invalid.sign" "$profile" "$KERNEL/configs/keys/linux-stable.asc" "$temporary/bad-gpg"
-        ok 'real signed source accepted; corrupt archive and signature rejected'
-    fi
+        ok "real signed $profile_version source accepted; corrupt archive and signature rejected"
+    done
     say "$passed self-test groups passed; no hardware tests performed"
     rm -rf -- "$temporary"; trap - RETURN
 }

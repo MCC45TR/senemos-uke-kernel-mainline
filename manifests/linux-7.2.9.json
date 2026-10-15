@@ -148,6 +148,42 @@
     {
       "path": "patches/7.2.9/0035-uke-charger-readiness-and-abi.patch",
       "sha256": "62f89e69edd6138a8e8b288f7bd3187dfb3f8beb2b3d60b1e678fdaa8386c19e"
+    },
+    {
+      "path": "patches/7.2.9/0036-uke-adreno732-render.patch",
+      "sha256": "a72d087065ef63d8953b296c64e22e5d79c6bcf6d29c66ec76529a52ccafd691"
+    },
+    {
+      "path": "patches/7.2.9/0037-uke-gpu-interconnect.patch",
+      "sha256": "134ab7cafe6c1754ad9850f51197d401fa7470dcd04ee7f205dfed8dd30e16cc"
+    },
+    {
+      "path": "patches/7.2.9/0038-uke-handoff-panel-metadata.patch",
+      "sha256": "922d01580fb3d0bcdaf7f78297e1f2fca8dedc7120526fc89e99c6dabaac8acc"
+    },
+    {
+      "path": "patches/7.2.9/0039-adreno-unbound-component-removal.patch",
+      "sha256": "70b48281c140464076776d81440f0aef54f01ef0cdcb932c9c6358d36a66eadc"
+    },
+    {
+      "path": "patches/7.2.9/0040-sm7675-epss-core-count.patch",
+      "sha256": "d18f2f2942427522ff479baebc078841d0f6463d649dfcc813967bbddd1f266e"
+    },
+    {
+      "path": "patches/7.2.9/0041-sysfb-bounded-damage-copy.patch",
+      "sha256": "91232e80e7fabb4c27820ad8bb10f817e3dfe9fcae360342df7b13a82ee409ff"
+    },
+    {
+      "path": "patches/7.2.9/0042-uke-backlight-visible-minimum.patch",
+      "sha256": "01d64d28d9cdb749bf8df3acc6fba187430b1b831e935271b6046fb0588b86c4"
+    },
+    {
+      "path": "patches/7.2.9/0043-uke-cdc-usb2-power-budget.patch",
+      "sha256": "363cf1f068338c6a68ee31e49b5ee86f55a944a6d891c1d0a16eedfb5cd404c7"
+    },
+    {
+      "path": "patches/7.2.9/0044-uke-usb-charger-readiness-diagnostics.patch",
+      "sha256": "e6921ea8d40ae66bd04b4de9408bbfa447cabad67c57d38333d88a3c721c0973"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -159,7 +195,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "c544e448926e257310c86e07a4e5adb7ca50f851956942e7870bf1e5810daccb"
+      "sha256": "acb505205a7815c1bd8e698fbcf14609176f3461ec2e462441fa0a8b048d38be"
     },
     {
       "path": "configs/fedora.config",

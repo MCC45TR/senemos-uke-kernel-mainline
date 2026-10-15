@@ -10,6 +10,7 @@
 
 #include <dt-bindings/clock/qcom,rpmh.h>
 #include <dt-bindings/clock/qcom,tcsrcc-pineapple.h>
+#include "sm7675-uke-pinctrl.dtsi"
 
 /* OEM GLINK children do not implement the upstream connector binding.
  * The fixed peripheral route does not need UCSI or its legacy log endpoint.
