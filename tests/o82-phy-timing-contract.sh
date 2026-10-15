@@ -133,10 +133,18 @@ int main() {
         for(unsigned i=0;i<expected.size();++i) assert(registers.at(0xb4+4*i)==expected[i]);
         msm_dsi_phy_shared_timings shared{};
         copy_shared(&phy,&shared); write_host(&shared);
-        assert(shared.clk_pre==0x20 && shared.clk_post==0x0f);
+        assert(shared.clk_pre==0 && shared.clk_post==0);
         assert(shared.byte_intf_clk_div_2==divider && divider);
         assert(!shared.clk_pre_inc_by_2);
-        assert(registers.at(0x2000+REG_DSI_CLKOUT_TIMING_CTRL)==0x0f20);
+        assert(registers.at(0x2000+REG_DSI_CLKOUT_TIMING_CTRL)==0);
+        /* Re-enable must recalculate and restore the PHY cells before
+         * exporting host0/0 again; do not leak cleared host fields.
+         */
+        assert(calculate(&phy,&request)==0);
+        registers.clear(); write_timing(&phy,0);
+        for(unsigned i=0;i<expected.size();++i) assert(registers.at(0xb4+4*i)==expected[i]);
+        copy_shared(&phy,&shared); write_host(&shared);
+        assert(registers.at(0x2000+REG_DSI_CLKOUT_TIMING_CTRL)==0);
         registers.clear(); assert(write_strength(&phy,&request)==0);
         assert(registers.at(0x10c)==1 && registers.at(0xec)==0xff);
         assert(registers.at(0x104)==0 && registers.at(0x2c)==0x40);
@@ -160,6 +168,10 @@ int main() {
     assert(msm_dsi_dphy_timing_calc_v4(&phy.timing,&request)==0);
     unchanged(0); registers.clear(); write_timing(&phy,0);
     for(unsigned i=0;i<original.size();++i) assert(registers.at(0xb4+4*i)==original[i]);
+    msm_dsi_phy_shared_timings generic_shared{};
+    copy_shared(&phy,&generic_shared); write_host(&generic_shared);
+    assert(generic_shared.clk_pre==0x23 && generic_shared.clk_post==0x1a);
+    assert(registers.at(0x2000+REG_DSI_CLKOUT_TIMING_CTRL)==0x1a23);
     for(u32 quirks:{DSI_PHY_7NM_QUIRK_V4_0,DSI_PHY_7NM_QUIRK_V4_3,DSI_PHY_7NM_QUIRK_V5_2}) {
         cfg.quirks=quirks;
         registers.clear(); assert(write_strength(&phy,&request)==0);

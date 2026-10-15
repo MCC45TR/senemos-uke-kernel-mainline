@@ -242,6 +242,21 @@ states, two lifecycle cycles, frame/commit waits and the inherited-enable
 limit. Visible output, idle collapse, suspend and mode-change behavior still
 require separate Uke tests.
 
+Native22 ordinary B startup on 16 October confirmed interface enable1/0,
+CTL interface-active6, master2 and DSC-active3 on Uke, including independent
+XR24 scanout. Both desktop and test image remained invisible. The next isolated
+change, `0016-native-o82-host-clock-timing.patch`, separates the OEM host
+pre/post counters from the PHY timing cells. The exact OEM panel parser and
+controller writer use separate host properties, absent from both selected O82
+DTs and zero in the working capture. After all14 PHY bytes are written, the
+admitted O82 path exports host pre/post0/0 while retaining PHY cells12/13 at
+0x20/0x0f. Its existing board, D-PHY, link and lane-clock admission remains;
+generic PHYs retain their calculated host values. The actual-function fixture
+checks both links, repeated enable, the unchanged divider flags and existing
+paired-retime sequence. This changes no PLL, DSC, master timing, panel packet,
+EOT or timeout policy. A matched build and live register/optical checks remain
+required; the prior first-frame/backlight ordering limits still apply.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and
