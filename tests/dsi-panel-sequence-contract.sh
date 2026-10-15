@@ -14,6 +14,7 @@ extract() {
 }
 cat > "$work/check.cpp" <<'CPP'
 #include <cassert>
+#include <cerrno>
 #include <cstddef>
 #include <cstring>
 #include <string>
@@ -32,8 +33,10 @@ struct device { device_node *of_node; };
 struct platform_device { device dev; } platform;
 struct mipi_dsi_host { int id; unsigned long flags; } hosts[2]{{0,1},{1,1}};
 struct msm_dsi_phy_shared_timings {};
+struct msm_dsi_phy_clk_request {unsigned long bitclk_rate,escclk_rate;};
 struct msm_dsi { platform_device *pdev; mipi_dsi_host *host; int phy; } devices[2]{{&platform,&hosts[0],0},{&platform,&hosts[1],1}};
-static bool bonded=true,uke=true,sm7675=true,missing_node=false;
+static bool bonded=true,uke=true,sm7675=true,missing_node=false,missing_secondary=false;
+static bool clocks_ready[2];
 static int master=0,node_puts=0;
 static drm_panel *found_panel=&panel;
 static std::string fault;
@@ -42,11 +45,24 @@ static int event(const std::string &name) { events.push_back(name); return fault
 static std::string link(const char *name, mipi_dsi_host *host) { return std::string(name)+std::to_string(host->id); }
 #define IS_BONDED_DSI() bonded
 #define IS_MASTER_DSI_LINK(id) (master==(id))
-static msm_dsi *dsi_mgr_get_dsi(int id) { return &devices[id]; }
+static msm_dsi *dsi_mgr_get_dsi(int id) { return id==1 && missing_secondary ? nullptr:&devices[id]; }
 static int dsi_mgr_phy_enable(int,msm_dsi_phy_shared_timings *) { return event("phy_on"); }
 static void dsi_mgr_phy_disable(int) { event("phy_off"); }
-static int msm_dsi_host_power_on(mipi_dsi_host *host,msm_dsi_phy_shared_timings *,bool,int) { return event(link("power",host)); }
-static int msm_dsi_host_power_off(mipi_dsi_host *host) { return event(link("off",host)); }
+static int msm_dsi_host_power_on(mipi_dsi_host *host,msm_dsi_phy_shared_timings *,bool,int) {
+    int ret=event(link("power",host)); if(!ret) clocks_ready[host->id]=true; return ret;
+}
+static int msm_dsi_host_power_off(mipi_dsi_host *host) {
+    clocks_ready[host->id]=false; return event(link("off",host));
+}
+static void msm_dsi_host_get_phy_clk_req(mipi_dsi_host *host,msm_dsi_phy_clk_request *request,bool is_bonded) {
+    assert(host->id==0 && is_bonded && clocks_ready[0] && clocks_ready[1]);
+    if(!event("clk_req")) {request->bitclk_rate=1189188000UL; request->escclk_rate=19200000UL;}
+}
+static int msm_dsi_phy_sync_retime(int phy,int peer,const msm_dsi_phy_clk_request *request) {
+    assert(phy==0 && peer==1 && clocks_ready[0] && clocks_ready[1]);
+    int ret=event("retime");
+    return ret ? ret:request->bitclk_rate==1189188000UL ? 0:-EINVAL;
+}
 static void msm_dsi_host_enable_irq(mipi_dsi_host *host) { event(link("irq",host)); }
 static void msm_dsi_host_disable_irq(mipi_dsi_host *host) { event(link("noirq",host)); }
 static int msm_dsi_host_enable(mipi_dsi_host *host) { return event(link("video",host)); }
@@ -103,7 +119,7 @@ int main() {
     dsi_bridge bridge{{},0,&panel,false,false};
     dsi_mgr_bridge_enable(&bridge.base); expect({});
     dsi_mgr_bridge_pre_enable(&bridge.base);
-    expect({"phy_on","power0","power1","irq0","irq1"});
+    expect({"phy_on","power0","power1","clk_req","retime","irq0","irq1"});
     dsi_mgr_bridge_enable(&bridge.base); expect({});
     prepare(); dsi_mgr_bridge_enable(&bridge.base);
     expect({"reset","panel_on","pps","video0","video1"});
@@ -126,6 +142,21 @@ int main() {
         dsi_mgr_bridge_post_disable(&bridge.base); expect({});
         panel.prepared=false;
     }
+    // Refused post-link synchronization must unwind BOTH hosts before the PHY.
+    for(const char *failure:{"retime","clk_req"}) {
+        fault=failure; dsi_mgr_bridge_pre_enable(&bridge.base);
+        assert(!bridge.powered && !bridge.video_enabled && !clocks_ready[0] && !clocks_ready[1]);
+        expect({"phy_on","power0","power1","clk_req","retime","off1","off0","phy_off"});
+        panel.prepared=true; dsi_mgr_bridge_enable(&bridge.base); expect({});
+        dsi_mgr_bridge_post_disable(&bridge.base); expect({}); panel.prepared=false;
+    }
+    fault.clear(); missing_secondary=true;
+    dsi_mgr_bridge_pre_enable(&bridge.base);
+    assert(!bridge.powered && !clocks_ready[0]);
+    expect({"phy_on","power0","off0","phy_off"}); missing_secondary=false;
+    bonded=false; dsi_mgr_bridge_pre_enable(&bridge.base);
+    assert(!bridge.powered && !clocks_ready[0]);
+    expect({"phy_on","power0","off0","phy_off"}); bonded=true;
     fault.clear(); dsi_mgr_bridge_pre_enable(&bridge.base); events.clear();
     prepare(false); dsi_mgr_bridge_enable(&bridge.base);
     expect({"reset","panel_on","pps"});
@@ -171,4 +202,4 @@ CPP
     -Wno-missing-field-initializers -fsanitize=undefined \
     -fsanitize-undefined-trap-on-error "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Real DSI callbacks: O82 ON/PPS before video, power/prepare failure refusal, reverse stop and unchanged other-panel paths passed\n'
+printf 'Real DSI callbacks: pair retime after both host clocks, before IRQ/panel; refusal unwinds both hosts, ON/PPS precede video and generic paths stay unchanged\n'

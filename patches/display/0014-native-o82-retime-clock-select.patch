@@ -1,0 +1,153 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: synchronize O82 retime FIFOs after both link clocks
+
+The active Uke OEM recovery pipeline clears CLK_EN_SEL after explicit FIFO
+synchronization on both PHYs. Place this operation after both host power-on
+calls have enabled byte, pixel and byte-interface clocks, before panel prepare.
+Use one optional pair operation, scoped to both exact O82 D-PHY links on
+Uke/SM7675 and the currently admitted 60 Hz lane-clock window. Use the actual
+recalculated lane-clock request, not a VCO/divider assumption. Refused O82
+pairs write no PHY registers and unwind both powered hosts before PHY disable.
+Missing operations also refuse the O82 route; other panels bypass this call.
+
+Source: MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_display.c:dsi_display_toggle_resync_fifo and dsi_post_clkon_cb;
+msm/dsi/dsi_phy_hw_v5_0.c:toggle_resync_fifo and reset_clk_en_sel.
+GPL-2.0-only notices and Qualcomm/Linux Foundation attribution retained.
+No PLL refcount, host timing, DSC, EOT, frequency or panel-command change.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/dsi/dsi.h
++++ b/drivers/gpu/drm/msm/dsi/dsi.h
+@@ -151,6 +151,8 @@
+ int msm_dsi_phy_pll_restore_state(struct msm_dsi_phy *phy);
+ void msm_dsi_phy_snapshot(struct msm_disp_state *disp_state, struct msm_dsi_phy *phy);
+ bool msm_dsi_phy_set_continuous_clock(struct msm_dsi_phy *phy, bool enable);
++int msm_dsi_phy_sync_retime(struct msm_dsi_phy *phy, struct msm_dsi_phy *peer,
++			    const struct msm_dsi_phy_clk_request *clk_req);
+ 
+ #endif /* __DSI_CONNECTOR_H__ */
+ 
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -245,6 +245,22 @@
+ 		}
+ 	}
+ 
++	if (to_dsi_bridge(bridge)->o82_panel) {
++		struct msm_dsi_phy_clk_request clk_req = { 0 };
++
++		if (!is_bonded_dsi || !msm_dsi1) {
++			ret = -EINVAL;
++			goto host1_on_fail;
++		}
++		/* Both hosts have enabled byte, pixel and byte-interface clocks. */
++		msm_dsi_host_get_phy_clk_req(host, &clk_req, true);
++		ret = msm_dsi_phy_sync_retime(msm_dsi->phy, msm_dsi1->phy, &clk_req);
++		if (ret) {
++			pr_err("%s: O82 post-link retime failed: %d\n", __func__, ret);
++			goto retime_sync_fail;
++		}
++	}
++
+ 	/*
+ 	 * Enable before preparing the panel, disable after unpreparing, so
+ 	 * that the panel can communicate over the DSI link.
+@@ -255,6 +271,8 @@
+ 
+ 	return 0;
+ 
++retime_sync_fail:
++	msm_dsi_host_power_off(msm_dsi1->host);
+ host1_on_fail:
+ 	msm_dsi_host_power_off(host);
+ host_on_fail:
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy.h
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy.h
+@@ -22,6 +22,8 @@
+ 	int (*restore_pll_state)(struct msm_dsi_phy *phy);
+ 	bool (*set_continuous_clock)(struct msm_dsi_phy *phy, bool enable);
+ 	int (*parse_dt_properties)(struct msm_dsi_phy *phy);
++	int (*sync_retime)(struct msm_dsi_phy *phy, struct msm_dsi_phy *peer,
++			   const struct msm_dsi_phy_clk_request *clk_req);
+ };
+ 
+ struct msm_dsi_phy_cfg {
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy.c
+@@ -800,6 +800,18 @@
+ 	return ret;
+ }
+ 
++int msm_dsi_phy_sync_retime(struct msm_dsi_phy *phy, struct msm_dsi_phy *peer,
++			    const struct msm_dsi_phy_clk_request *clk_req)
++{
++	if (!phy || !peer || !clk_req)
++		return -EINVAL;
++	if (phy->cfg->ops.sync_retime)
++		return phy->cfg->ops.sync_retime(phy, peer, clk_req);
++	if (peer->cfg->ops.sync_retime)
++		return peer->cfg->ops.sync_retime(phy, peer, clk_req);
++	return -EOPNOTSUPP;
++}
++
+ void msm_dsi_phy_disable(struct msm_dsi_phy *phy)
+ {
+ 	if (!phy || !phy->cfg->ops.disable)
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
+@@ -492,6 +492,45 @@
+ 	wmb(); /* Ensure that the reset is deasserted */
+ }
+ 
++static int dsi_7nm_uke_o82_sync_retime(struct msm_dsi_phy *phy,
++		struct msm_dsi_phy *peer, const struct msm_dsi_phy_clk_request *clk_req)
++{
++	struct dsi_pll_7nm *pll = phy->pll_data;
++	struct dsi_pll_7nm *peer_pll = peer->pll_data;
++	bool first = of_device_is_compatible(phy->pdev->dev.of_node,
++					    "xiaomi,uke-o82-dsi-phy-4nm");
++	bool second = of_device_is_compatible(peer->pdev->dev.of_node,
++					     "xiaomi,uke-o82-dsi-phy-4nm");
++
++	/* shortcut: current O82 60 Hz lane clock; widen after qualification. */
++	if (!first || !second || phy->id != 0 || peer->id != 1 ||
++	    phy->cphy_mode || peer->cphy_mode ||
++	    phy->usecase != MSM_DSI_PHY_MASTER || peer->usecase != MSM_DSI_PHY_SLAVE ||
++	    !(phy->cfg->quirks & DSI_PHY_7NM_QUIRK_V5_2) ||
++	    !(peer->cfg->quirks & DSI_PHY_7NM_QUIRK_V5_2) ||
++	    phy->cfg->ops.sync_retime != dsi_7nm_uke_o82_sync_retime ||
++	    peer->cfg->ops.sync_retime != dsi_7nm_uke_o82_sync_retime ||
++	    !of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    !pll || !peer_pll || pll->slave != peer_pll ||
++	    clk_req->bitclk_rate < 1189187000UL || clk_req->bitclk_rate > 1189191000UL)
++		return -EINVAL;
++
++	/* OEM post-link order: synchronize both retime FIFOs, then clear select. */
++	writel(0, phy->base + REG_DSI_7nm_PHY_CMN_RBUF_CTRL);
++	wmb();
++	writel(1, phy->base + REG_DSI_7nm_PHY_CMN_RBUF_CTRL);
++	wmb();
++	writel(0, peer->base + REG_DSI_7nm_PHY_CMN_RBUF_CTRL);
++	wmb();
++	writel(1, peer->base + REG_DSI_7nm_PHY_CMN_RBUF_CTRL);
++	wmb();
++	dsi_pll_cmn_clk_cfg1_update(pll, DSI_7nm_PHY_CMN_CLK_CFG1_CLK_EN_SEL, 0);
++	dsi_pll_cmn_clk_cfg1_update(peer_pll, DSI_7nm_PHY_CMN_CLK_CFG1_CLK_EN_SEL, 0);
++	wmb();
++	return 0;
++}
++
+ static int dsi_pll_7nm_vco_prepare(struct clk_hw *hw)
+ {
+ 	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+@@ -1550,6 +1589,7 @@
+ 		.save_pll_state = dsi_7nm_pll_save_state,
+ 		.restore_pll_state = dsi_7nm_pll_restore_state,
+ 		.set_continuous_clock = dsi_7nm_set_continuous_clock,
++		.sync_retime = dsi_7nm_uke_o82_sync_retime,
+ 	},
+ 	.min_pll_rate = 600000000UL,
+ #ifdef CONFIG_64BIT

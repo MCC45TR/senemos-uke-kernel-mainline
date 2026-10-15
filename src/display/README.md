@@ -192,6 +192,22 @@ variants, all seven modes, every failed/short HS transfer and retry.
 This corrects an observed source ordering mismatch; visible output and physical
 display lifecycle remain unqualified.
 
+Native19 completed the post-video commands and returned valid primary reads,
+but neither the desktop nor an independent test image was visible. The next
+isolated correction follows the OEM post-link retime sequence: after both
+hosts enable their byte, pixel and byte-interface clocks, toggle each PHY's
+retime FIFO off/on, then clear CLK_EN_SEL bit4 on both PHYs. The optional PHY
+pair operation runs before IRQ enable and panel prepare. It requires both O82
+compatibles, Uke/SM7675, D-PHY master0/slave1 topology and the current 60 Hz
+lane-clock window above, recalculated from the active host. Rejected pairs
+write no PHY registers and unwind both powered hosts. Missing operations or
+mismatched PHYs also refuse this O82 route; unrelated panels bypass the call
+and retain their previous behavior. The actual manager and PHY fixtures check
+ordering, preserved register bits, unsupported-pair refusal
+and refusal cleanup. A matched build, live register capture and visible image
+remain required. No host timing, DSC, EOT, frequency or panel-command change is
+combined with this correction.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

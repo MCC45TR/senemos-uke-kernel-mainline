@@ -26,6 +26,8 @@ cat > "$work/check.cpp" <<'CPP'
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <string>
+#include <vector>
 #define FD_NO_DEPRECATED_PACK
 #include "dsi_phy_7nm.xml.h"
 #include "dsi.xml.h"
@@ -37,6 +39,7 @@ using u8=uint8_t; using u32=uint32_t; using s32=int32_t;
 #define max_t(type,a,b) std::max(static_cast<type>(a),static_cast<type>(b))
 #define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define mult_frac(x,n,d) ((x)*(n)/(d))
+namespace retime { static void check(); }
 CPP
 {
     sed -n '/^#define DSI_PHY_7NM_QUIRK_/p' "$source_file"
@@ -178,6 +181,106 @@ int main() {
         request.bitclk_rate=rate; unchanged(-EINVAL);
     }
     phy.pdev->dev.of_node=nullptr; unchanged(0);
+    retime::check();
+}
+CPP
+    cat <<'CPP'
+namespace retime {
+#define spin_lock_irqsave(lock,flags) ((void)(lock),(flags)=0)
+#define spin_unlock_irqrestore(lock,flags) ((void)(lock),(void)(flags))
+struct device_node {const char *compatible;};
+struct device {device_node *of_node;};
+struct platform_device {device dev;};
+struct msm_dsi_phy;
+struct phy_ops {int (*sync_retime)(msm_dsi_phy *,msm_dsi_phy *,const msm_dsi_phy_clk_request *);};
+struct phy_cfg {u32 quirks; phy_ops ops;};
+struct msm_dsi_phy {platform_device *pdev; int id; bool cphy_mode;
+    uintptr_t base; int usecase; phy_cfg *cfg; void *pll_data;};
+struct dsi_pll_7nm {msm_dsi_phy *phy; dsi_pll_7nm *slave; int pclk_mux_lock;};
+static std::map<uintptr_t,u32> registers;
+static std::vector<std::string> events;
+static bool uke=true,sm7675=true;
+static int reads;
+static bool of_machine_is_compatible(const char *name) {
+    return !std::strcmp(name,"xiaomi,uke") ? uke:sm7675;
+}
+static bool of_device_is_compatible(device_node *node,const char *name) {
+    return node && !std::strcmp(node->compatible,name);
+}
+static u32 readl(uintptr_t address) {++reads; return registers[address];}
+static void writel(u32 value,uintptr_t address) {
+    registers[address]=value;
+    events.push_back(std::to_string(address)+"="+std::to_string(value));
+}
+static void barrier() {events.emplace_back("wmb");}
+#define wmb() barrier()
+CPP
+    extract 'enum msm_dsi_phy_usecase {' "$base/dsi.h"
+    extract 'static void dsi_pll_cmn_clk_cfg1_update(struct dsi_pll_7nm *pll, u32 mask,' "$source_file"
+    extract 'static int dsi_7nm_uke_o82_sync_retime(struct msm_dsi_phy *phy,' "$source_file" |
+        sed 's/struct dsi_pll_7nm \*pll = phy->pll_data;/struct dsi_pll_7nm *pll = static_cast<dsi_pll_7nm *>(phy->pll_data);/; s/struct dsi_pll_7nm \*peer_pll = peer->pll_data;/struct dsi_pll_7nm *peer_pll = static_cast<dsi_pll_7nm *>(peer->pll_data);/'
+    extract 'int msm_dsi_phy_sync_retime(struct msm_dsi_phy *phy, struct msm_dsi_phy *peer,' "$base/phy/dsi_phy.c"
+    cat <<'CPP'
+static void check() {
+    device_node nodes[2]{{"xiaomi,uke-o82-dsi-phy-4nm"},{"xiaomi,uke-o82-dsi-phy-4nm"}};
+    platform_device platforms[2]{{{&nodes[0]}},{{&nodes[1]}}};
+    phy_cfg cfgs[2]{{DSI_PHY_7NM_QUIRK_V5_2,{dsi_7nm_uke_o82_sync_retime}},
+                    {DSI_PHY_7NM_QUIRK_V5_2,{dsi_7nm_uke_o82_sync_retime}}};
+    msm_dsi_phy phys[2]{{&platforms[0],0,false,0x1000,MSM_DSI_PHY_MASTER,&cfgs[0],nullptr},
+                        {&platforms[1],1,false,0x2000,MSM_DSI_PHY_SLAVE,&cfgs[1],nullptr}};
+    dsi_pll_7nm slave{&phys[1],nullptr,0},pll{&phys[0],&slave,0};
+    phys[0].pll_data=&pll; phys[1].pll_data=&slave;
+    msm_dsi_phy_clk_request request{1189188000UL,19200000UL};
+    const uintptr_t cfg0=phys[0].base+REG_DSI_7nm_PHY_CMN_CLK_CFG1;
+    const uintptr_t cfg1=phys[1].base+REG_DSI_7nm_PHY_CMN_CLK_CFG1;
+    const uintptr_t rbuf0=phys[0].base+REG_DSI_7nm_PHY_CMN_RBUF_CTRL;
+    const uintptr_t rbuf1=phys[1].base+REG_DSI_7nm_PHY_CMN_RBUF_CTRL;
+    auto write=[](uintptr_t address,u32 value) {return std::to_string(address)+"="+std::to_string(value);};
+    auto run=[&](int result,bool changed,u32 initial0=0x30,u32 initial1=0x34) {
+        registers={{cfg0,initial0},{cfg1,initial1},{rbuf0,1},{rbuf1,1}};
+        const auto before=registers; events.clear(); reads=0;
+        assert(msm_dsi_phy_sync_retime(&phys[0],&phys[1],&request)==result);
+        if(!changed) {assert(registers==before && events.empty() && !reads); return;}
+        assert(registers.size()==before.size() && reads==2);
+        for(const auto &[address,value]:before)
+            assert(registers.at(address)==((address==cfg0 || address==cfg1) ? value&~0x10U:value));
+        const std::vector<std::string> expected{write(rbuf0,0),"wmb",write(rbuf0,1),"wmb",
+            write(rbuf1,0),"wmb",write(rbuf1,1),"wmb",write(cfg0,initial0&~0x10U),
+            write(cfg1,initial1&~0x10U),"wmb"};
+        assert(events==expected);
+    };
+    for(unsigned long rate:{1189187000UL,1189188000UL,1189190000UL,1189191000UL}) {
+        request.bitclk_rate=rate; run(0,true); run(0,true,0xb2,0xf4);
+    }
+    request.bitclk_rate=1189188000UL;
+    uke=false; run(-EINVAL,false); uke=true;
+    sm7675=false; run(-EINVAL,false); sm7675=true;
+    for(int id:{0,1}) {
+        nodes[id].compatible="qcom,sm7675-dsi-phy-4nm"; run(-EINVAL,false);
+        nodes[id].compatible="xiaomi,uke-o82-dsi-phy-4nm";
+        phys[id].cphy_mode=true; run(-EINVAL,false); phys[id].cphy_mode=false;
+        platforms[id].dev.of_node=nullptr; run(-EINVAL,false); platforms[id].dev.of_node=&nodes[id];
+        cfgs[id].quirks=0; run(-EINVAL,false); cfgs[id].quirks=DSI_PHY_7NM_QUIRK_V5_2;
+        cfgs[id].ops.sync_retime=nullptr; run(-EINVAL,false);
+        cfgs[id].ops.sync_retime=dsi_7nm_uke_o82_sync_retime;
+        const int usecase=phys[id].usecase;
+        phys[id].usecase=MSM_DSI_PHY_STANDALONE; run(-EINVAL,false); phys[id].usecase=usecase;
+        void *saved=phys[id].pll_data;
+        phys[id].pll_data=nullptr; run(-EINVAL,false); phys[id].pll_data=saved;
+    }
+    phys[0].id=1; run(-EINVAL,false); phys[0].id=0;
+    phys[1].id=0; run(-EINVAL,false); phys[1].id=1;
+    pll.slave=nullptr; run(-EINVAL,false); pll.slave=&slave;
+    for(unsigned long rate:{0UL,1189186999UL,1189191001UL,2500000000UL,~0UL}) {
+        request.bitclk_rate=rate; run(-EINVAL,false);
+    }
+    nodes[0].compatible=nodes[1].compatible="qcom,sm7675-dsi-phy-4nm";
+    run(-EINVAL,false);
+    cfgs[0].ops.sync_retime=cfgs[1].ops.sync_retime=nullptr; run(-EOPNOTSUPP,false);
+    assert(msm_dsi_phy_sync_retime(nullptr,&phys[1],&request)==-EINVAL);
+    assert(msm_dsi_phy_sync_retime(&phys[0],nullptr,&request)==-EINVAL);
+    assert(msm_dsi_phy_sync_retime(&phys[0],&phys[1],nullptr)==-EINVAL);
+}
 }
 CPP
 } >> "$work/check.cpp"
@@ -185,4 +288,4 @@ CPP
     -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'O82 PHY: actual OEM strength writers, generic strength paths, exact 14 timing cells, both links, host shared timings and refusal boundaries passed\n'
+printf 'O82 PHY: exact timing/strength and post-link pair FIFO/clock-select order; unsupported or mismatched pairs refuse with no register access\n'
