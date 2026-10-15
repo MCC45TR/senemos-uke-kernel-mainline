@@ -4,6 +4,7 @@ set -Eeuo pipefail
 dpu=${1:?Pass prepared dpu_encoder_phys_vid.c}
 dsi=${2:?Pass prepared dsi_host.c}
 modes=${3:?Pass generated o82-data.h}
+panel=${4:?Pass panel-xiaomi-o82.c}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 cat > "$work/check.cpp" <<'CPP'
@@ -17,6 +18,14 @@ cat > "$work/check.cpp" <<'CPP'
 #define DRM_MODE_FLAG_NVSYNC 2
 using u32=uint32_t;
 enum { INTF_DSI, INTF_DP };
+enum mipi_dsi_pixel_format {
+    MIPI_DSI_FMT_RGB101010, MIPI_DSI_FMT_RGB888, MIPI_DSI_FMT_RGB666,
+    MIPI_DSI_FMT_RGB666_PACKED, MIPI_DSI_FMT_RGB565
+};
+enum dsi_vid_dst_format {
+    VID_DST_FORMAT_RGB101010, VID_DST_FORMAT_RGB888, VID_DST_FORMAT_RGB666_LOOSE,
+    VID_DST_FORMAT_RGB666, VID_DST_FORMAT_RGB565
+};
 struct drm_display_mode {
     int clock,hdisplay,hsync_start,hsync_end,htotal,vdisplay,vsync_start,vsync_end,vtotal;
     unsigned int width_mm,height_mm,flags,hskew;
@@ -45,6 +54,9 @@ struct o82_timing { unsigned int group; drm_display_mode mode; };
 CPP
 {
 sed -n '/^static const struct o82_timing o82_modes\[\] = {/,/^};/p' "$modes"
+printf 'static inline enum dsi_vid_dst_format\n'
+sed -n '/^dsi_get_vid_fmt(/,/^static inline enum dsi_cmd_dst_format/p' "$dsi" | sed '$d'
+sed -n 's/^[[:space:]]*ctx->dsi\[i\]->format = /static const auto panel_format = /p' "$panel"
 sed -n '/^static void drm_mode_to_intf_timing_params(/,/^static u32 get_horizontal_total(/p' "$dpu" |
     sed '$d'
 printf 'static unsigned long\n'
@@ -61,6 +73,7 @@ cat <<'CPP'
     return hdisplay;
 }
 int main() {
+    assert(dsi_get_vid_fmt(panel_format)==VID_DST_FORMAT_RGB101010);
     static_assert(sizeof(o82_modes)/sizeof(o82_modes[0])==7);
     drm_encoder encoder{true,true,{8<<4,10,2,800}};
     dpu_intf_caps caps{INTF_DSI}; dpu_hw_intf intf{&caps};
@@ -100,4 +113,4 @@ CPP
 "${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror -Wno-missing-field-initializers \
     -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Real DPU and DSI functions: seven O82 timings share rounded active width and line periods; 8-bpc, uncompressed and DP paths checked\n'
+printf 'Real DPU/DSI functions: O82 RGB101010 format and seven matched line periods; 8-bpc, uncompressed and DP paths checked\n'

@@ -334,11 +334,8 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	drm_panel_add(&ctx->panel);
 	for (i = 0; i < ARRAY_SIZE(ctx->dsi); i++) {
 		ctx->dsi[i]->lanes = 4;
-		/* DSC carries the compressed stream. The isolated host patch uses
-		 * DSC input depth for byte clocks, not this RGB888 container depth.
-		 * Physical transport and PPS still need validation before activation.
-		 */
-		ctx->dsi[i]->format = MIPI_DSI_FMT_RGB888;
+		/* OEM 30-bpp input retains RGB101010 on the DSC-capable wide bus. */
+		ctx->dsi[i]->format = MIPI_DSI_FMT_RGB101010;
 		ctx->dsi[i]->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
 		ctx->dsi[i]->dsc = &ctx->dsc;
 		ret = mipi_dsi_attach(ctx->dsi[i]);

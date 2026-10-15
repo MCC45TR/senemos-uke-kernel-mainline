@@ -120,6 +120,11 @@ short transfers on either link. An isolated DPU correction rounds compressed
 active width up like the DSI host and OEM timing conversion. These source and
 host checks do not establish visible scanout.
 
+The native panel uses the OEM 30-bit RGB101010 input format. Both the exact
+OEM controller and upstream MSM retain that format when the DSC wide bus is
+available; using RGB888 would select a different DSI destination format even
+with identical DSC clock arithmetic. Physical transport remains under test.
+
 Recovery on the connected tablet selects O82 42_02_0b. This identifies the
 observed unit; it does not remove variant selection for other tablets.
 Before native activation, finish binding checks, review display SMMU/VBIF
