@@ -39,10 +39,11 @@ are different targets; their firmware and device settings are not reused.
 
 | Package | Contents |
 |---|---|
-| `senemos-uke-linux-kernel-mainline` | Matching core, modules and DTB package set |
+| `senemos-uke-linux-kernel-mainline` | Matching core, modules, DTB and boot package set |
 | `senemos-uke-linux-kernel-mainline-core` | ARM64 Image, config, System.map and source identity |
 | `senemos-uke-linux-kernel-mainline-modules` | Modules for the same kernel and configuration |
 | `senemos-uke-linux-kernel-mainline-dtbs` | Independent Uke device tree |
+| `senemos-uke-linux-kernel-mainline-boot` | Stock-ABL boot B image, matched module inventory and build provenance |
 
 For Fedora Rawhide AArch64 development systems:
 
@@ -52,21 +53,25 @@ sudo dnf install senemos-uke-linux-kernel-mainline
 sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-COPR signs the RPMs. Kernel files are installed under
-`/usr/lib/modules/7.2.9-senemos-uke/`. DNF updates files and module dependencies;
-it does not flash `boot_b`, create a UEFI entry or select a boot slot.
+Revision 1.40 introduces separate module directories such as
+`/usr/lib/modules/7.2.9-senemos.1.40/`, preserving older kernel modules for
+rollback. The boot package is built from source with its matching modules and
+an AArch64 dracut initramfs; it contains no OEM firmware. With the native
+`uke-kernel-update` tool installed and locally configured for automatic updates,
+the RPM transaction validates the image and module tuple, saves the previous
+boot bytes, writes `boot_b` and verifies readback. It does not reboot, change
+the active slot or write Android A, ESP or the root partition.
 
-Revisions of Linux 7.2.9 share the same module directory. A tablet update needs
-a matching Image, initramfs, device tree and module set. Preserve the working
-boot image and rollback before replacing that set. Development headers are not
-published yet.
+The new source recipe and update path still require a successful matched
+package installation and physical reboot test before being considered usable.
+Development headers and the userdata root layout are not provided.
 
 ## Build from source
 
 ```sh
 git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
 cd senemos-uke-kernel-mainline
-./senemos.sh --build 7.2.9 --distro=fedora --test
+./senemos.sh --build 7.2.9 --distro=fedora
 ./senemos.sh --build latest --distro=fedora
 ```
 
@@ -75,6 +80,14 @@ and configuration, then builds Image, DTBs, modules, RPMs and an SRPM in the
 pinned container. Source and build caches are retained. `latest` requires a
 reviewed Uke version profile and stops if one is missing. Other distributions
 are planned targets.
+
+The source-only boot recipe currently builds natively on Fedora Rawhide
+AArch64, including COPR. Cross-host compilation needs an AArch64 dracut base;
+its automatic preparation is not integrated in `senemos.sh` yet, so other
+architectures stop with an explicit error. `make srpm` remains available on
+x86_64 for COPR submission. The `--test` lifecycle option requires a separately
+compiled previous kernel release; it does not repackage identical objects as
+an upgrade test.
 
 ```sh
 make validate

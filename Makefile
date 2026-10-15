@@ -10,6 +10,11 @@ validate:
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
+	jq -e '.schema_version == 1 and .root_selector == "PARTLABEL=linux" and .hardware_tested == false and (.source_assets | length > 0)' manifests/boot-payload.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		[[ $$path != /* && $$path != *..* ]]
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+	done < <(jq -er '.source_assets[] | [.path,.sha256] | @tsv' manifests/boot-payload.json)
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"
@@ -37,6 +42,7 @@ srpm: validate
 	cp tests/gpr-domain-contract.sh tests/cpucp-mailbox-contract.sh tests/slim-startup-contract.sh tests/battery-protocol-contract.sh tests/firmware-backlight-contract.sh tests/usb-charger-readiness-contract.sh tests/qup-interconnect-contract.sh tests/adreno-lifecycle-contract.sh tests/cpu-epss-contract.sh tests/sysfb-damage-contract.sh "$$top/SOURCES/"
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp tests/serial-power-budget-contract.sh "$$top/SOURCES/"
+	bash scripts/stage-boot-sources.sh "$$top/SOURCES"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"

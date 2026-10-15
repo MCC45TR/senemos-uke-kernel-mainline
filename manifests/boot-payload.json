@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "profile": "uke-stock-abl-linux-partition",
+  "source_date_epoch": 1791024250,
+  "root_selector": "PARTLABEL=linux",
+  "kernel_release_policy": "upstream version plus senemos numeric build release",
+  "boot_partition_bytes": 100663296,
+  "os_version_encoded": 570425768,
+  "base_policy": "Native AArch64 dracut build from official BuildRequires; no prebuilt userland, modules or OEM firmware",
+  "hardware_tested": false,
+  "source_assets": [
+    {
+      "path": "configs/stock-abl.config",
+      "sha256": "9431cf98f53875715654c12e89a3a92f48ae6dcb0df7781eb6cc09ea420d2b76"
+    },
+    {
+      "path": "patches/7.2.9/0036-uke-adreno732-render.patch",
+      "sha256": "a72d087065ef63d8953b296c64e22e5d79c6bcf6d29c66ec76529a52ccafd691"
+    },
+    {
+      "path": "patches/7.2.9/0037-uke-gpu-interconnect.patch",
+      "sha256": "134ab7cafe6c1754ad9850f51197d401fa7470dcd04ee7f205dfed8dd30e16cc"
+    },
+    {
+      "path": "patches/boot/0001-arm64-uke-abl-dt-hook.patch",
+      "sha256": "9833ee954a77212175968f6d838efac321b665eff5c158f602fbb97008e8bd8f"
+    },
+    {
+      "path": "src/audit/check-target-payload.sh",
+      "sha256": "e1f249804a3bbd35f33cc6941f7d41feeccfb3fed87b4733ac49eb7390a1c2f0"
+    },
+    {
+      "path": "src/audit/check-target-privacy.sh",
+      "sha256": "4ee7d26cd1fe8896c4ec2304f16a12de3d016be220ce17ffa295fbfce3d9f3ab"
+    },
+    {
+      "path": "src/boot/boot-image.cpp",
+      "sha256": "72b9f4962707b1338cdc99bc5cb9041802aac3919e56805eb57ba14baed69330"
+    },
+    {
+      "path": "src/boot/boot-status.cpp",
+      "sha256": "43e7fad5bfcf7e780d96d781d30b9943163e24aae97db17df97babdf10c9553e"
+    },
+    {
+      "path": "src/boot/build-payload.sh",
+      "sha256": "cddeba69671cfb9c8af96a964b17397028756843acbca2459ac572b1a141e814"
+    },
+    {
+      "path": "src/boot/check-ufs-tables.sh",
+      "sha256": "160cb5b335c5079aae1089020597067a79813f5d7307f6ac73374276f7195e9e"
+    },
+    {
+      "path": "src/boot/dracut/module-setup.sh",
+      "sha256": "e2b086e8fa828c1c657f1e3bb283e0a1965c2c351235bdb82be9b76d3799cca7"
+    },
+    {
+      "path": "src/boot/dracut/root-guard.sh",
+      "sha256": "548ddc31cfb7f3d5862ee29b13bd3910b0e723aa8dad915ddcf158c556fe82db"
+    },
+    {
+      "path": "src/boot/dracut/uke-cdc-acm.service",
+      "sha256": "e103da66d87e423b3bc46c27dd2b6dffee031c237efbf6e075d1edd571639df8"
+    },
+    {
+      "path": "src/boot/dracut/uke-cdc-shell.service",
+      "sha256": "b013b3a9aecf7df0fcf6df835bb1e6058a66ca8a11a30f680b1c058359c16243"
+    },
+    {
+      "path": "src/boot/dracut/uke-coresight-bringup.conf",
+      "sha256": "2277a5a61ce7b330d7e0d9d03f9b2de190561efa5dad7966d1225dd8881db058"
+    },
+    {
+      "path": "src/boot/dracut/uke-initrd-screen.service",
+      "sha256": "f7afe389be42b8213c49fe06983a216a43aac86e6e93ed77175c82b8290608cc"
+    },
+    {
+      "path": "src/boot/dracut/uke-root-guard.service",
+      "sha256": "212c5a8be087e6a8f798b83838267cd8cf130a4468b9086aa5422c75c919f83c"
+    },
+    {
+      "path": "src/boot/early-modules.list",
+      "sha256": "e091790449e50679060edd55f4f089296fa5fa5fbf6d8d43d59d7641370361cf"
+    },
+    {
+      "path": "src/boot/licenses/builder-MIT",
+      "sha256": "3261559b7f050f1691b0001544b8497469dea818a3b03136fc5cca0478b595ee"
+    },
+    {
+      "path": "src/boot/licenses/hardware-MIT",
+      "sha256": "6d5638a97949e3de3b964b6f71bf0f27645500275bb202d91eaa93ff5b98a704"
+    },
+    {
+      "path": "src/boot/make-initramfs-base.sh",
+      "sha256": "a021d45c5df5dfb1619af419941a9103691247732d031297c1187bbf58506409"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "0a85da4f5a2dd6c7377536e10d9e0d80ca8456619c501547c4eed6e17dc3d424"
+    },
+    {
+      "path": "src/boot/prepare-ufs-dt.sh",
+      "sha256": "6664438ebbce72863218ebbba3ac05ef67bccf70a56e04a4665adb588bb57cf7"
+    },
+    {
+      "path": "src/boot/sm7675-uke-adreno732.dtsi",
+      "sha256": "46c03aff087e180955f8252d68f93f128a6d73e1ea652e1f78a18a96c03be33d"
+    },
+    {
+      "path": "src/boot/sm7675-uke-pinctrl.dtsi",
+      "sha256": "313b44b7afb388ce3753bf9c128c8e5f8175afc5a8cfd6428ec55bf3b48c1ae4"
+    },
+    {
+      "path": "src/boot/sm7675-uke-ufs.dtso",
+      "sha256": "ecac410ad99c0be60d2d63e83bdd1ab294061c2d8ed2603b49976991bf6fb84b"
+    },
+    {
+      "path": "src/boot/sm7675-uke-usb2.dtso",
+      "sha256": "bbb640a01768a36dca98951a4e3d85ee386951a9082cb0ab269b958c24a1d4af"
+    },
+    {
+      "path": "src/boot/stock-dt.sh",
+      "sha256": "b0d63dfa08971fe9d116a4bfd32edfd3621db90a45789f3c7fc4fbc08b4151f5"
+    },
+    {
+      "path": "src/boot/uke-abl.c",
+      "sha256": "b99d602970f3c689df3837a842f9c99dccaaf92b2c09e3a9c4863b3ae60f9ef8"
+    },
+    {
+      "path": "src/boot/vendor/fdt_check.c",
+      "sha256": "24ec23316a1c79c3a741e9dc724c44e340f6a8cce8a5b4eed4569cc6533a20ac"
+    },
+    {
+      "path": "src/boot/vendor/source.json",
+      "sha256": "6d197e0230ae16a066e57a7396af7a513c7239b7c0097bbc4f62fd5a09d43c3f"
+    },
+    {
+      "path": "tests/boot-image-contract.sh",
+      "sha256": "06cd230930a348dc17b1088409b8fed187971ea59d9f9b3b1809a89049dbf541"
+    },
+    {
+      "path": "tests/target-privacy-contract.sh",
+      "sha256": "ecf15e4b5b63a9e14b465b18a81e77ba612cf3c538ff5e7b6756f8a7889cde77"
+    }
+  ]
+}

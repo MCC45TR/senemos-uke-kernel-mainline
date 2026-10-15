@@ -318,7 +318,7 @@ internal_build() {
     if [[ $(cat "$work/completed-input-identity" 2>/dev/null || true) == "$identity" ]] && \
        (cd "$work"; sha256sum -c completed-artifacts.sha256 >/dev/null 2>&1); then
         if cmp -s "$top/SPECS/kernel.spec" <(sed "s/^Version: .*/Version: $VERSION/" /work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec) && \
-           [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*.rpm' | wc -l) == 4 ]] && \
+           [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*.rpm' | wc -l) == 5 ]] && \
            [[ $(find "$top/SRPMS" -maxdepth 1 -name '*.src.rpm' | wc -l) == 1 ]]; then
             say 'Reusing the verified completed build with identical source/config/toolchain and packaging rules'
             internal_audit "$VERSION"
@@ -331,7 +331,7 @@ internal_build() {
     fi
     if [[ $(cat "$work/compiled-input-identity" 2>/dev/null || true) == "$identity" ]] && \
        cmp -s "$top/SPECS/kernel.spec" <(sed "s/^Version: .*/Version: $VERSION/" /work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec) && \
-       [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*-1.*.rpm' | wc -l) == 4 ]] && \
+       [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*-1.*.rpm' | wc -l) == 5 ]] && \
        compgen -G "$top/SRPMS/*-1.*.src.rpm" >/dev/null; then
         say 'Resuming validation of the completed kernel and RPM build'
         internal_audit "$VERSION"
@@ -354,6 +354,7 @@ internal_build() {
     cp "$source/configs/arm64-qcom.config" "$source/configs/uke.config" "$source/configs/fedora.config" "$adaptation/configs/"
     cp "$manifest" "$adaptation/source-lock.json"
     cp "$source/patches/$VERSION/README.md" "$adaptation/README.md"
+    bash "$source/scripts/stage-boot-sources.sh" "$top/SOURCES"
     local path expected staged
     while IFS=$'\t' read -r path expected; do
         staged=$adaptation/${path#*/}
@@ -374,8 +375,13 @@ internal_build() {
 build_identity() {
     local manifest=$1 spec=$2 toolchain=$3
     { cat "$manifest"; printf '%s\n' "$toolchain"; \
+        cat "$KERNEL/manifests/boot-payload.json"; \
+        while IFS= read -r path; do
+            [[ $path != /* && $path != *..* && -f $KERNEL/$path ]] || exit 1
+            sha256sum "$KERNEL/$path"
+        done < <(jq -er '.source_assets[].path' "$KERNEL/manifests/boot-payload.json"); \
         cat "$KERNEL/tests/gpr-domain-contract.sh" "$KERNEL/tests/cpucp-mailbox-contract.sh" "$KERNEL/tests/slim-startup-contract.sh" "$KERNEL/tests/battery-protocol-contract.sh" "$KERNEL/tests/firmware-backlight-contract.sh" "$KERNEL/tests/usb-charger-readiness-contract.sh" "$KERNEL/tests/qup-interconnect-contract.sh" "$KERNEL/tests/adreno-lifecycle-contract.sh" "$KERNEL/tests/cpu-epss-contract.sh" "$KERNEL/tests/sysfb-damage-contract.sh" "$KERNEL/tests/serial-power-budget-contract.sh"; \
-        awk '/^%global krel/ {print} /^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
+        awk '/^%global (krel|senemos_build_release)/ {print} /^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec"; \
     } | sha256sum | cut -d ' ' -f1
 }
 internal_package() {
@@ -385,7 +391,7 @@ internal_package() {
     local top=$work/rpmbuild identity
     local spec=/work/kernel/configs/host/senemos-uke-linux-kernel-mainline.spec
     cmp "$work/source-profile.json" "$work/adaptation/senemos-adaptation/source-lock.json" || die 'Compiled source profile changed'
-    [[ $(cat "$top/kernel-out/include/config/kernel.release") == "$VERSION-senemos-uke" ]] || die 'Compiled kernel release changed'
+    [[ $(cat "$top/kernel-out/include/config/kernel.release") == "$(rpmspec -q --qf '%{VERSION}-senemos.%{RELEASE}\n' "$spec" | head -1 | sed 's/\.fc[0-9]*$//')" ]] || die 'Compiled kernel release changed'
     [[ $(cat "$work/completed-toolchain-id") == "$toolchain" ]] || die 'Compiled toolchain changed'
     cmp <(awk '/^%prep/ {capture=1} /^%install/ {capture=0} capture' "$spec") \
         <(awk '/^%prep/ {capture=1} /^%install/ {capture=0} capture' "$top/SPECS/kernel.spec") || die 'Source preparation or compilation rules changed'
@@ -410,7 +416,7 @@ archive_rpm_sets() {
 }
 record_completed() {
     local work=$1 identity=$2
-    (cd "$work"; find rpmbuild/RPMS rpmbuild/SRPMS output upgrade -type f \
+    (cd "$work"; find rpmbuild/RPMS rpmbuild/SRPMS output -type f \
         \( -name '*.rpm' -o -path 'output/*' \) -print0 | sort -z | \
         xargs -0 sha256sum > completed-artifacts.sha256)
     printf '%s\n' "$identity" > "$work/completed-input-identity"
@@ -421,7 +427,7 @@ internal_audit() {
     local top=$work/rpmbuild
     local output=$top/kernel-out
     [[ -d $output ]] || die 'Kernel output directory is missing'
-    [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*.rpm' | wc -l) == 4 ]] || die 'Expected exactly four matching binary RPMs'
+    [[ $(find "$top/RPMS/aarch64" -maxdepth 1 -name '*.rpm' | wc -l) == 5 ]] || die 'Expected exactly five matching binary RPMs'
     [[ $(find "$top/SRPMS" -maxdepth 1 -name '*.src.rpm' | wc -l) == 1 ]] || die 'Expected exactly one matching source RPM'
     rm -rf -- "$work/extracted"
     mkdir -p "$work/extracted" "$work/output"
@@ -433,7 +439,8 @@ internal_audit() {
         rpm -qp --qf '%{ARCH}\n' "$package" | grep -Fx aarch64
         (cd "$work/extracted"; rpm2cpio "$package" | cpio -idm --quiet)
     done
-    local krel=$VERSION-senemos-uke module
+    local krel module
+    krel=$(cat "$output/include/config/kernel.release")
     cmp "$work/output/Image" "$work/extracted/usr/lib/modules/$krel/vmlinuz" || die 'Packaged Image differs from the compiled Image'
     cmp "$work/output/.config" "$work/extracted/usr/lib/modules/$krel/config" || die 'Packaged config differs from the compiled config'
     cmp "$output/System.map" "$work/extracted/usr/lib/modules/$krel/System.map" || die 'Packaged System.map differs from the compiled map'
@@ -479,19 +486,8 @@ internal_audit() {
             '. + [{file:$file,kind:$kind,nevra:$nevra,sha256:$sha}]' "$work/package-list.json" > "$work/package-list.json.part"
         mv "$work/package-list.json.part" "$work/package-list.json"
     done
-    local upgrade_identity
-    upgrade_identity=$({ cat "$work/source-profile.json" "$top/SPECS/kernel.spec"; \
-        sha256sum "$work/output/Image" "$work/output/Module.symvers"; } | sha256sum | cut -d ' ' -f1)
-    if [[ $(cat "$work/upgrade-input-identity" 2>/dev/null || true) != "$upgrade_identity" ]] || \
-       [[ $(find "$work/upgrade" -maxdepth 1 -name '*.rpm' 2>/dev/null | wc -l) != 4 ]]; then
-        mkdir -p "$work/upgrade"
-        # Same Image/config/modules, increased RPM release: a real package upgrade.
-        rpmbuild -bb --target aarch64 --define "_topdir $top" \
-            --define 'senemos_package_release 2' --define 'uke_package_only 1' "$top/SPECS/kernel.spec"
-        cp "$top/RPMS/aarch64/"*-2.*.rpm "$work/upgrade/"
-        rm "$top/RPMS/aarch64/"*-2.*.rpm
-        printf '%s\n' "$upgrade_identity" > "$work/upgrade-input-identity"
-    fi
+    # Distinct build releases need separately compiled module ABI tuples.
+    # Never label a repackage of identical objects as an upgrade boot test.
     internal_srpm_check "$VERSION"
     say 'Image, DTB, modules, RPM payload, privacy and ABI checks passed'
 }
@@ -524,31 +520,7 @@ internal_srpm_check() {
     rm -rf -- "$top"
 }
 internal_lifecycle() {
-    local location=$1 krel=${1##*/}-senemos-uke
-    cd "$location"
-    rpm -q kmod
-    dnf -y --disablerepo='*' --setopt=install_weak_deps=False install ./rpmbuild/RPMS/aarch64/*.rpm
-    # Fresh-install scriptlet ordering also regenerates the core's builtin
-    # binary indexes; check this state separately from the later upgrade.
-    rpm -V senemos-uke-linux-kernel-mainline-core senemos-uke-linux-kernel-mainline-modules \
-        senemos-uke-linux-kernel-mainline-dtbs
-    rpm -qa | grep '^senemos-uke-linux-kernel-mainline' | sort
-    dnf -y --disablerepo='*' --setopt=install_weak_deps=False upgrade ./upgrade/*.rpm
-    rpm -q --qf '%{RELEASE}\n' senemos-uke-linux-kernel-mainline | grep -E '^2\.'
-    rpm -qa --qf '%{NAME}\n' | sort > dependency-closure.txt
-    rpm -qa --qf '%{NAME}-%{EPOCHNUM}:%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > dependency-closure-nevra.txt
-    if grep -Ei 'python|pypy|libpython' dependency-closure.txt; then die 'Python present in target dependency closure'; fi
-    rpm -V senemos-uke-linux-kernel-mainline-core senemos-uke-linux-kernel-mainline-modules \
-        senemos-uke-linux-kernel-mainline-dtbs
-    dnf -y --disablerepo='*' remove senemos-uke-linux-kernel-mainline senemos-uke-linux-kernel-mainline-core \
-        senemos-uke-linux-kernel-mainline-modules senemos-uke-linux-kernel-mainline-dtbs
-    if rpm -qa | grep -q '^senemos-uke-linux-kernel-mainline'; then die 'RPM removal left an installed Senemos package'; fi
-    if [[ -d /usr/lib/modules/$krel ]] && \
-       [[ -n $(find "/usr/lib/modules/$krel" -mindepth 1 \( -type f -o -type l \) -print -quit) ]]; then
-        die 'RPM removal left kernel files or generated module indexes'
-    fi
-    [[ ! -e /usr/share/senemos/uke/$krel/source-lock.json ]] || die 'RPM removal left the source identity file'
-    printf '%s\n' 'AArch64 RPM install, upgrade, dependency closure and removal passed; no tablet boot performed.'
+    die 'Versioned kernel lifecycle testing requires a separately compiled previous release; use the matched RPM fixture test'
 }
 self_test() {
     local temporary passed=0
@@ -574,9 +546,14 @@ self_test() {
     ok 'shell syntax and available ShellCheck'
     cmp "$KERNEL/packaging/senemos-uke-linux-kernel-mainline.spec" "$KERNEL/configs/host/senemos-uke-linux-kernel-mainline.spec"
     ok 'host and COPR specs share the same source and package checks'
+    bash "$KERNEL/tests/boot-payload-package-contract.sh"
+    bash "$KERNEL/tests/target-privacy-contract.sh"
+    ok 'versioned boot package and fail-closed privacy checks'
     fixture_identity() {
         local KERNEL=$temporary/guard-fixture before after
-        mkdir -p "$KERNEL/tests"
+        mkdir -p "$KERNEL/tests" "$KERNEL/manifests"
+        printf 'boot source\n' > "$KERNEL/boot-fixture"
+        printf '{"source_assets":[{"path":"boot-fixture","sha256":"fixture"}]}\n' > "$KERNEL/manifests/boot-payload.json"
         printf 'original check\n' > "$KERNEL/tests/gpr-domain-contract.sh"
         printf 'original mailbox check\n' > "$KERNEL/tests/cpucp-mailbox-contract.sh"
         printf 'original SLIM check\n' > "$KERNEL/tests/slim-startup-contract.sh"
@@ -624,6 +601,14 @@ self_test() {
             after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
             [[ $before != "$after" ]] || die "Changed $contract check retained build identity"
         done
+        before=$after
+        printf 'changed boot source\n' > "$KERNEL/boot-fixture"
+        after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
+        [[ $before != "$after" ]] || die 'Changed boot source retained build identity'
+        before=$after
+        printf '%%global senemos_build_release 1.40\n' >> "$KERNEL/spec"
+        after=$(build_identity "$KERNEL/manifest" "$KERNEL/spec" toolchain)
+        [[ $before != "$after" ]] || die 'Changed kernel build release retained build identity'
     }
     fixture_identity
     ok 'all native source checks invalidate completed-build admission'
@@ -696,7 +681,7 @@ self_test() {
 if [[ ${1:-} == --internal-build ]]; then shift; internal_build "$@"; exit; fi
 if [[ ${1:-} == --internal-audit ]]; then shift; internal_audit "$@"; exit; fi
 if [[ ${1:-} == --internal-package ]]; then shift; internal_package "$@"; exit; fi
-if [[ ${1:-} == --internal-lifecycle ]]; then shift; internal_lifecycle "$@"; exit; fi
+if [[ ${1:-} == --internal-lifecycle ]]; then shift; internal_lifecycle "$@"; fi
 if [[ ${1:-} == --internal-verify ]]; then shift; verify_source "$@"; exit; fi
 if [[ ${1:-} == --internal-host-prereqs ]]; then bootstrap 0; say 'Official host prerequisites installed and verified'; exit; fi
 if [[ ${1:-} == --self-test ]]; then self_test; exit; fi
@@ -775,6 +760,9 @@ supported_target
 resolve_version
 architecture=$(uname -m)
 [[ $architecture == x86_64 || $architecture == aarch64 ]] || die "Unsupported host architecture: $architecture"
+if ((DRY_RUN == 0)) && [[ $architecture != aarch64 ]]; then
+    die 'The source-only stock-ABL payload currently requires a native AArch64 builder. Use make srpm for COPR; cross-host dracut preparation is not yet integrated.'
+fi
 BASE_IMAGE=$(jq -er --arg a "$architecture" '.fedora_rawhide_images[$a]' "$RULES")
 WORK=$BUILDER/build/fedora-rawhide/$VERSION
 ARTIFACTS=$BUILDER/artifacts/fedora-rawhide/$VERSION
@@ -842,8 +830,8 @@ jq -n --slurpfile source "$PROFILE" --slurpfile packages "$package_list" --arg i
     --arg test_image "$TEST_RUNTIME_ID" --arg host "$architecture" \
     --arg abi "$(sha256sum "$WORK/module-abi.txt" | cut -d ' ' -f1)" \
     --argjson modules "$(wc -l < "$WORK/module-abi.txt")" \
-    --arg version "$VERSION" --argjson lifecycle "$TEST" \
-    '{schema_version:1,product:"senemos-uke-linux-kernel-mainline",source:$source[0],packages:$packages[0],toolchain_image:$image,toolchain_recipe_sha256:$recipe,base_image:$base,config_sha256:$config,kernel_release:($version+"-senemos-uke"),target:"fedora-rawhide-aarch64",compile_validation:"passed",payload_validation:"passed",source_rpm_preparation:"passed",module_count:$modules,module_abi_sha256:$abi,package_lifecycle_tested:($lifecycle==1),package_test_image:$test_image,build_host_architecture:$host,hardware_tested:false,boot_tested:false,signature_state:"unsigned-development-RPM"}' > "$ARTIFACTS/build-manifest.json"
+    --arg krel "$(cat "$WORK/rpmbuild/kernel-out/include/config/kernel.release")" --argjson lifecycle "$TEST" \
+    '{schema_version:1,product:"senemos-uke-linux-kernel-mainline",source:$source[0],packages:$packages[0],toolchain_image:$image,toolchain_recipe_sha256:$recipe,base_image:$base,config_sha256:$config,kernel_release:$krel,target:"fedora-rawhide-aarch64",compile_validation:"passed",payload_validation:"passed",source_rpm_preparation:"passed",module_count:$modules,module_abi_sha256:$abi,package_lifecycle_tested:($lifecycle==1),package_test_image:$test_image,build_host_architecture:$host,hardware_tested:false,boot_tested:false,signature_state:"unsigned-development-RPM"}' > "$ARTIFACTS/build-manifest.json"
 (cd "$ARTIFACTS"; find . -type f ! -name SHA256SUMS ! -name '*.part' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.part; mv SHA256SUMS.part SHA256SUMS)
 if [[ -d $ARTIFACT_DESTINATION ]]; then
     mv "$ARTIFACT_DESTINATION" "$ARTIFACT_DESTINATION.saved-$(date +%s)-$$"

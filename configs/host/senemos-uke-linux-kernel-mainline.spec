@@ -3,13 +3,15 @@
 %global __os_install_post %{nil}
 %global _source_filedigest_algorithm 8
 %global _binary_filedigest_algorithm 8
-%global krel %{version}-senemos-uke
+%global senemos_build_release 1.40
+%global krel %{version}-senemos.%{senemos_build_release}
 %global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 %global _uke_out %{_topdir}/kernel-out
+%{!?uke_boot_userspace:%global uke_boot_userspace %{_topdir}/boot-userspace}
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.9
-Release:        1.39%{?dist}
+Release:        %{senemos_build_release}%{?dist}
 Summary: Senemos mainline kernel build candidate for Xiaomi Uke
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -28,27 +30,28 @@ Source11: adreno-lifecycle-contract.sh
 Source12: cpu-epss-contract.sh
 Source13: sysfb-damage-contract.sh
 Source14: serial-power-budget-contract.sh
+Source15: senemos-uke-boot-recipe.tar.xz
+Source16: boot-payload.json
 ExclusiveArch: aarch64
-BuildRequires: bash bc bison flex clang llvm lld make gcc perl
+BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
-BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2
+BuildRequires: rsync tar xz zstd gzip cpio kmod git-core jq gnupg2 dtc
+BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
+Requires: %{name}-boot = %{version}-%{release}
 
 %description
 Uke/SM7675 source-build candidate. Package and compile validation do not
 establish tablet boot or hardware support. Firmware and boot routing are
-managed separately. No Android partition or boot selection is changed.
+provided by the matched boot package. Automatic writes require explicit local
+configuration and preserve Android A and the Linux partition layout.
 
 %package core
 Summary: Senemos Uke ARM64 kernel Image and build identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
-# Revisions of one upstream version share krel and cannot coexist. Omit the
-# release in the equality so all revisions of this version are replaced;
-# other upstream versions keep their separate installonly fallback paths.
-Obsoletes: %{name}-core = %{version}
 
 %description core
 The EFI-enabled ARM64 Image, configuration and System.map for Senemos Uke.
@@ -58,7 +61,6 @@ Summary: Modules matching the Senemos Uke kernel
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
 Provides: installonlypkg(kernel)
-Obsoletes: %{name}-modules = %{version}
 
 %description modules
 Rebuilt AArch64 modules from the same source and configuration as Image.
@@ -67,12 +69,25 @@ Rebuilt AArch64 modules from the same source and configuration as Image.
 Summary: Independent Uke compile-stage device tree
 Requires: %{name}-core = %{version}-%{release}
 Provides: installonlypkg(kernel)
-Obsoletes: %{name}-dtbs = %{version}
 
 %description dtbs
 Uke-specific CPU, interrupt and static reservation description. The future
 UEFI handoff must supply exact-profile RAM and dynamic reservations. This
 device tree is not physically accepted and unreviewed peripherals are disabled.
+
+%package boot
+Summary: Matched stock-ABL boot image and module inventory for Xiaomi Uke
+Requires: %{name}-core = %{version}-%{release}
+Requires: %{name}-modules = %{version}-%{release}
+Requires: %{name}-dtbs = %{version}-%{release}
+Requires: uke-kernel-update >= 0.1.0-12
+Provides: installonlypkg(kernel)
+
+%description boot
+Kernel-only Android boot v4 image for boot_b and PARTLABEL=linux. It embeds the
+same rebuilt modules as the matching RPM tuple. The native updater validates
+the bundle and preserves rollback bytes before writing. It does not reboot.
+The userdata layout is not supported by this package.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
@@ -110,6 +125,16 @@ while IFS= read -r patch_name; do
     printf '%s\n' "$patch_name" >> senemos-applied-patches.txt
 done < senemos-adaptation/patches/series
 cmp senemos-expected-patches.txt senemos-applied-patches.txt
+tar -xJf %{SOURCE15}
+cmp boot-recipe/lock.json %{SOURCE16}
+while IFS="$(printf '\t')" read -r path expected; do
+    case "$path" in /*|*..*) exit 1;; esac
+    test "$(sha256sum "boot-recipe/$path" | cut -d ' ' -f1)" = "$expected"
+done <<EOF
+$(jq -er '.source_assets[] | [.path,.sha256] | @tsv' %{SOURCE16})
+EOF
+mkdir -p %{_topdir}/abl-dt
+bash boot-recipe/src/boot/prepare-abl-source.sh "$PWD" %{_topdir}/abl-dt
 
 %build
 %if !0%{?uke_package_only}
@@ -128,35 +153,35 @@ if test -d %{_uke_out}; then
         fi
     done
 fi
-make O=%{_uke_out} defconfig
-scripts/kconfig/merge_config.sh -m -O %{_uke_out} %{_uke_out}/.config \
-    senemos-adaptation/configs/arm64-qcom.config \
-    senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config
-make O=%{_uke_out} LOCALVERSION=-senemos-uke olddefconfig
-# Kconfig can silently drop a requested symbol when its dependencies are absent.
-# Check every enabled/value requirement after dependency resolution.
-for fragment in senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config; do
-    while IFS= read -r item; do
-        case "$item" in CONFIG_*=*) grep -Fx "$item" %{_uke_out}/.config || exit 1;; esac
-    done < "$fragment"
-done
+if test ! -e %{uke_boot_userspace}; then
+    bash boot-recipe/src/boot/make-initramfs-base.sh %{uke_boot_userspace} '%{krel}'
+fi
+test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
+(cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
+(cd boot-recipe/src/boot; sha256sum -c %{uke_boot_userspace}/recipe-files.sha256)
+find %{uke_boot_userspace}/base -type l -printf '%%P\t%%l\n' | LC_ALL=C sort > %{_topdir}/base-links.tsv
+cmp %{_topdir}/base-links.tsv %{uke_boot_userspace}/base-links.tsv
+bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' '%{_uke_jobs}'
 for item in CONFIG_PINCTRL_CLIFFS=y CONFIG_SM_GCC_CLIFFS=y \
     CONFIG_QCOM_RPMH_UKE=y CONFIG_INTERCONNECT_QCOM_CLIFFS_USB=y \
     CONFIG_EFI=y CONFIG_EFI_STUB=y CONFIG_MODULES=y; do
     grep -Fx "$item" %{_uke_out}/.config || exit 1
 done
-make O=%{_uke_out} LOCALVERSION=-senemos-uke -j%{_uke_jobs} Image dtbs modules
 install -m644 senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos-uke kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos.%{senemos_build_release} kernelrelease)" = '%{krel}'
 %else
 # A lifecycle-test release repackages the already verified build, without
 # short-circuit RPM dependencies or a second kernel compilation.
 test -s %{_uke_out}/arch/arm64/boot/Image
 test -s %{_uke_out}/Module.symvers
+test -s %{_uke_out}/linux.img
+grep -Fx 'kernel_release=%{krel}' %{_uke_out}/boot-manifest
 cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
 %endif
 
 %check
+bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
+bash boot-recipe/tests/target-privacy-contract.sh
 for option in SUSPEND PM_DEBUG PM_SLEEP_DEBUG; do
     grep -Fx "CONFIG_${option}=y" %{_uke_out}/.config
 done
@@ -173,16 +198,9 @@ CXX=clang++ bash %{SOURCE13} "$PWD/drivers/gpu/drm/sysfb/drm_sysfb_modeset.c"
 CC=clang bash %{SOURCE14} "$PWD"
 
 %install
-export ARCH=arm64 LLVM=1
-make O=%{_uke_out} LOCALVERSION=-senemos-uke modules_install \
-    INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
-module_dir=%{buildroot}/lib/modules/%{krel}
-rm -f "$module_dir/build" "$module_dir/source"
 mkdir -p %{buildroot}%{_prefix}/lib/modules
-mv "$module_dir" %{buildroot}%{_prefix}/lib/modules/
-rm -rf %{buildroot}/lib
+cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}%{_prefix}/lib/modules/
 module_dir=%{buildroot}%{_prefix}/lib/modules/%{krel}
-find "$module_dir" -name '*.ko' -type f -exec zstd -q -T1 --rm {} \;
 install -m644 %{_uke_out}/arch/arm64/boot/Image "$module_dir/vmlinuz"
 install -m644 %{_uke_out}/.config "$module_dir/config"
 install -m644 %{_uke_out}/System.map "$module_dir/System.map"
@@ -194,6 +212,21 @@ install -m644 senemos-adaptation/source-lock.json \
     %{buildroot}%{_datadir}/senemos/uke/%{krel}/source-lock.json
 install -m644 %{_uke_out}/senemos-applied-patches.txt \
     %{buildroot}%{_datadir}/senemos/uke/%{krel}/applied-patches.txt
+bundle=%{buildroot}%{_prefix}/lib/senemos/kernel-updates/%{krel}
+mkdir -p "$bundle"
+install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
+install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
+install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
+install -m644 %{SOURCE16} "$bundle/source-lock.json"
+install -m644 %{uke_boot_userspace}/build-rpms.tsv "$bundle/build-rpms.tsv"
+mkdir -p %{buildroot}%{_datadir}/licenses/%{name}-boot-%{version}-%{release}
+cp -a %{uke_boot_userspace}/licenses/. %{buildroot}%{_datadir}/licenses/%{name}-boot-%{version}-%{release}/
+cp -a boot-recipe/src/boot/licenses/. %{buildroot}%{_datadir}/licenses/%{name}-boot-%{version}-%{release}/
+
+%posttrans boot -p /bin/sh
+if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
+    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
+fi
 
 %post modules -p /bin/sh
 if command -v depmod >/dev/null 2>&1; then depmod -a %{krel}; fi
@@ -233,7 +266,14 @@ fi
 %files dtbs
 /usr/lib/modules/%{krel}/dtb/
 
+%files boot
+/usr/lib/senemos/kernel-updates/%{krel}/
+%license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
+
 %changelog
+* Thu Oct 15 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.40
+- Build a source-only stock-ABL boot payload with its matching versioned modules.
+- Invoke the locally configured native boot updater after the RPM transaction.
 * Wed Oct 14 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.39
 - Revalidate a USB2 source that has not finished charger-service startup.
 - Record bounded budget results while retaining refusals for unsuitable sources.
