@@ -179,6 +179,19 @@ PHY fixture checks both links, generic values and rejected writes. A matched
 build and physical register, primary-read and visible-output checks remain
 required; the blank native17 trial does not establish strength as its cause.
 
+Native18 confirmed the OEM strength pair on both PHYs and valid primary reads,
+but the independent test image remained invisible. The next lifecycle change
+moves the existing four HS timing-video commands from prepare into panel enable.
+Exact OEM O82 post-enable sends them after PPS and video-engine start; the
+current DRM chain starts both DSI video hosts before panel enable. ON, PPS,
+readback, packet bytes, waits and power handling stay unchanged. The DRM panel
+core enables the external backlight only after a successful enable callback;
+an error leaves the prepared supplies for ordinary teardown. Host fixtures
+execute the actual panel callback and DRM core enable guard, covering both
+variants, all seven modes, every failed/short HS transfer and retry.
+This corrects an observed source ordering mismatch; visible output and physical
+display lifecycle remain unqualified.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

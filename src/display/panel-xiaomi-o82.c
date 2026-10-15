@@ -227,11 +227,8 @@ static int o82_prepare(struct drm_panel *panel)
 	msleep(3);
 	gpiod_set_value_cansleep(ctx->reset, 1);
 	msleep(15);
-	for (i = 0; i < profile->on_count + profile->switch_count; i++) {
-		const struct o82_command *cmd = i < profile->on_count ?
-			&profile->on[i] : &profile->switch_commands[i - profile->on_count];
-		/* OEM on/off sequences use LP; timing-switch video commands use HS. */
-		ret = o82_send(ctx, cmd, i < profile->on_count);
+	for (i = 0; i < profile->on_count; i++) {
+		ret = o82_send(ctx, &profile->on[i], true);
 		if (ret) {
 			dev_err(&ctx->dsi[0]->dev, "O82 prepare command[%d] failed: %d\n", i, ret);
 			o82_off(ctx);
@@ -256,6 +253,25 @@ static int o82_prepare(struct drm_panel *panel)
 rollback_supplies:
 	o82_power_off(ctx);
 	return ret;
+}
+
+static int o82_enable(struct drm_panel *panel)
+{
+	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	int i, ret;
+
+	if (!ctx->prepared)
+		return -EINVAL;
+	/* Exact OEM post-enable updates TP FPS after PPS and video start. */
+	for (i = 0; i < ctx->active->switch_count; i++) {
+		ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
+		if (ret) {
+			dev_err(&ctx->dsi[0]->dev,
+				"O82 post-enable command[%d] failed: %d\n", i, ret);
+			return ret;
+		}
+	}
+	return 0;
 }
 
 static int o82_unprepare(struct drm_panel *panel)
@@ -299,6 +315,7 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 
 static const struct drm_panel_funcs o82_funcs = {
 	.prepare = o82_prepare,
+	.enable = o82_enable,
 	.unprepare = o82_unprepare,
 	.get_modes = o82_get_modes,
 };

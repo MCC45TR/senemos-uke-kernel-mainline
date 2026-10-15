@@ -21,6 +21,7 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t
 #define WARN_ON_ONCE(c) (c)
 #define DRM_DEBUG_KMS(...) ((void)0)
 #define DRM_DEV_ERROR(...) ((void)0)
+#define DRM_DEV_INFO(...) ((void)0)
 #define DP_SDP_PPS_HEADER_PAYLOAD_BYTES_MINUS_1 127
 #define cpu_to_be16(v) ((uint16_t)__builtin_bswap16((uint16_t)(v)))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
@@ -65,7 +66,18 @@ awk '/^static int dsi_populate_dsc_params\(.*$/ && !/;$/ {p=1}
 cat >> "$work/check.c" <<'C'
 struct drm_display_mode { unsigned int clock,hdisplay,hsync_start,hsync_end,htotal,
     vdisplay,vsync_start,vsync_end,vtotal,width_mm,height_mm,type; };
-struct drm_panel {};
+struct drm_panel;
+struct drm_panel_funcs {int (*enable)(struct drm_panel *);};
+struct drm_panel {bool enabled; const struct drm_panel_funcs *funcs;
+    int follower_lock,followers; void *backlight;};
+struct drm_panel_follower;
+struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);};
+struct drm_panel_follower {const struct follower_ops *funcs;};
+static int backlight_calls;
+static void mutex_lock(int *lock) {(void)lock;}
+static void mutex_unlock(int *lock) {(void)lock;}
+static int backlight_enable(void *backlight) {(void)backlight; ++backlight_calls; return 0;}
+#define list_for_each_entry(entry,head,member) for(entry=NULL;entry;entry=NULL)
 struct drm_crtc_state { struct drm_display_mode adjusted_mode; };
 struct drm_crtc { struct drm_crtc_state *state; };
 struct drm_connector_state { struct drm_crtc *crtc; };
@@ -110,6 +122,8 @@ static const u8 golden_pps[128]={
 int balance[3], loads[3], enables, disables, transfers, failure=-1, operation, gpio_failure,
     short_write, wire_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3],
     lpm_transfers, hs_transfers, pps_transfers, pps_start, transfer_short=-1;
+static bool video_started;
+static u8 hs_payloads[8][2];
 static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
     return !memcmp(a,b,offsetof(struct drm_display_mode,width_mm));
 }
@@ -130,7 +144,12 @@ static void gpiod_set_value_cansleep(struct gpio_desc *g,int value) { (void)g; (
 static void msleep(unsigned int ms) { assert(ms<=200); settle_ms+=ms; }
 static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m) {
     (void)host; assert((m->flags==MIPI_DSI_MSG_USE_LPM || m->flags==0) && m->channel==0 && m->tx_len>0);
-    if (m->flags==MIPI_DSI_MSG_USE_LPM) lpm_transfers++; else hs_transfers++;
+    if (m->flags==MIPI_DSI_MSG_USE_LPM) lpm_transfers++;
+    else {
+        assert(video_started && pps_transfers==2 && hs_transfers<8);
+        assert(m->type==0x39 && m->tx_len==2);
+        memcpy(hs_payloads[hs_transfers++],m->tx_buf,2);
+    }
     const int n=transfers++; if(n==transfer_failure) return -EIO;
     if(m->type==MIPI_DSI_PICTURE_PARAMETER_SET) {
         assert(n==pps_start+pps_transfers);
@@ -147,6 +166,9 @@ sed -n '/^struct o82_panel {/,/^};/p' "$source_file"
 sed -n '/^static int o82_send(/,/^static int o82_get_modes(/p' "$source_file" | sed '$d'
 sed -n '/^static int o82_get_modes(/,/^static const struct drm_panel_funcs/p' "$source_file" | sed '$d'
 } >> "$work/check.c"
+# Execute the selected DRM core's duplicate-enable guard and backlight admission.
+sed -n '/^void drm_panel_enable(/,/^EXPORT_SYMBOL(drm_panel_enable)/p' \
+    "$kernel/drivers/gpu/drm/drm_panel.c" | sed '$d' >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct o82_panel *attach_ctx;
 static int attach_failure,attached,detached,panel_removed,secondary_removed;
@@ -180,6 +202,7 @@ awk '
 ' "$source_file" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct o82_panel context(int variant,int mode) {
+    static const struct drm_panel_funcs funcs={o82_enable};
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops},{&ops}};
     static struct mipi_dsi_device dsis[2]={{.host=&hosts[0],.mode_flags=MIPI_DSI_MODE_LPM},
@@ -192,12 +215,13 @@ static struct o82_panel context(int variant,int mode) {
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=0;
+    backlight_calls=0; video_started=false;
     failure=transfer_failure=disable_failure=transfer_short=-1;
     cs.adjusted_mode=o82_modes[mode].mode;
     const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
-    struct o82_panel ctx={.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
+    struct o82_panel ctx={.panel={.funcs=&funcs},.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
         .connector=&connector,.profiles=p,.active=p};
-    pps_start=2*(p[o82_modes[mode].group].on_count+p[o82_modes[mode].group].switch_count);
+    pps_start=2*p[o82_modes[mode].group].on_count;
     struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
     struct platform_device platform={.dev={&node}};
     struct msm_dsi_host h={&platform};
@@ -237,13 +261,27 @@ int main(void) {
         assert(mode->width_mm==237 && mode->height_mm==158 && mode->vtotal<=8191);
         struct o82_panel c=context(v,m);
         const struct drm_dsc_config encoder=c.dsc;
+        drm_panel_enable(&c.panel);
+        assert(!c.panel.enabled && !transfers && !backlight_calls);
         assert(o82_prepare(&c.panel)==0 && c.prepared && c.enabled_supplies==7);
         assert(!memcmp(&c.dsc,&encoder,sizeof(encoder)) && pps_transfers==2);
         const int full=transfers;
-        assert(full==2*(int)(c.active->on_count+c.active->switch_count+1));
+        assert(full==2*(int)(c.active->on_count+1));
         assert(lpm_transfers==2*(int)(c.active->on_count+1));
-        assert(hs_transfers==2*(int)c.active->switch_count);
+        assert(!hs_transfers && !c.panel.enabled && !backlight_calls);
+        assert(c.active->switch_count==4);
         assert(o82_prepare(&c.panel)==0 && transfers==full && enables==3);
+        const int before_enable_wait=settle_ms;
+        video_started=true; drm_panel_enable(&c.panel);
+        assert(c.panel.enabled && backlight_calls==1 && enables==3);
+        assert(hs_transfers==2*(int)c.active->switch_count && settle_ms==before_enable_wait);
+        for(unsigned int command=0;command<c.active->switch_count;command++)
+            for(int link=0;link<2;link++)
+                assert(!memcmp(hs_payloads[2*command+link],c.active->switch_commands[command].data,2));
+        const int enabled_full=transfers;
+        drm_panel_enable(&c.panel);
+        assert(transfers==enabled_full && backlight_calls==1);
+        video_started=false;
         assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
         assert(off_order[0]==2 && off_order[1]==1 && off_order[2]==0);
         assert(o82_unprepare(&c.panel)==0 && disables==3);
@@ -262,6 +300,21 @@ int main(void) {
             c=context(v,m); transfer_short=pps_start+link;
             assert(o82_prepare(&c.panel)==-EIO && !c.prepared && !c.enabled_supplies);
             for(int i=0;i<3;i++) assert(!balance[i] && !loads[i]);
+        }
+        for(int short_reply=0;short_reply<2;short_reply++) for(int fault=0;fault<8;fault++) {
+            c=context(v,m); assert(o82_prepare(&c.panel)==0);
+            const int before=transfers;
+            if(short_reply) transfer_short=before+fault; else transfer_failure=before+fault;
+            video_started=true; drm_panel_enable(&c.panel);
+            assert(!c.panel.enabled && !backlight_calls && c.prepared && c.enabled_supplies==7);
+            assert(disables==0 && transfers==before+fault+1 && hs_transfers==fault+1);
+            transfer_failure=transfer_short=-1; hs_transfers=0;
+            if(fault&1) {
+                drm_panel_enable(&c.panel);
+                assert(c.panel.enabled && backlight_calls==1 && hs_transfers==8 && enables==3);
+            }
+            video_started=false;
+            assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
         }
         c=context(v,m); gpio_failure=1;
         assert(o82_prepare(&c.panel)==-EIO && !c.enabled_supplies);
@@ -295,4 +348,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes, actual upstream RC/PPS packing, both-link framing and lifecycle faults: passed\n'
+printf 'Two O82 variants, seven modes: ON/PPS before video and HS post-enable; actual DRM backlight/duplicate guard, transfer faults and lifecycle cleanup passed\n'
