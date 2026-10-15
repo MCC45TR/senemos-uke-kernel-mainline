@@ -30,6 +30,7 @@ cat > "$work/check.cpp" <<'CPP'
 #include "dsi_phy_7nm.xml.h"
 #include "dsi.xml.h"
 using u8=uint8_t; using u32=uint32_t; using s32=int32_t;
+#define BIT(n) (1U<<(n))
 #define DBG(...) ((void)0)
 #define DRM_DEV_ERROR(dev,...) ((void)(dev))
 #define NSEC_PER_MSEC 1000000UL
@@ -38,6 +39,7 @@ using u8=uint8_t; using u32=uint32_t; using s32=int32_t;
 #define mult_frac(x,n,d) ((x)*(n)/(d))
 CPP
 {
+    sed -n '/^#define DSI_PHY_7NM_QUIRK_/p' "$source_file"
     sed -n '/^#define S_DIV_ROUND_UP/,/^static void dsi_dphy_timing_calc_clk_zero/p' \
         "$base/phy/dsi_phy.c" | sed '$d'
     extract 'struct msm_dsi_phy_shared_timings {' "$base/dsi.h"
@@ -47,7 +49,9 @@ CPP
 struct device_node {const char *compatible;};
 struct device {device_node *of_node;};
 struct platform_device {device dev;};
-struct msm_dsi_phy {platform_device *pdev; msm_dsi_dphy_timing timing; int id; bool cphy_mode;};
+struct msm_dsi_phy_cfg {u32 quirks;};
+struct msm_dsi_phy {platform_device *pdev; msm_dsi_dphy_timing timing; int id; bool cphy_mode;
+    const msm_dsi_phy_cfg *cfg;};
 static bool uke=true,sm7675=true;
 static bool of_device_is_compatible(device_node *node,const char *name) {
     return node && !std::strcmp(node->compatible,name);
@@ -66,11 +70,25 @@ static int calculate(msm_dsi_phy *phy,msm_dsi_phy_clk_request *clk_req) {
     auto *timing=&phy->timing;
     int ret;
 CPP
-    extract 'static int dsi_7nm_phy_enable(struct msm_dsi_phy *phy,' "$source_file" | \
-        awk '/^\tif \(dsi_phy_hw_v4_0_is_pll_on/ {exit}
-             /^\tif \(phy->cphy_mode\)/ {p=1} p {print}'
+    awk '/^static int dsi_7nm_phy_enable\(struct msm_dsi_phy \*phy,/ {in_phy=1}
+         in_phy && /^\tif \(dsi_phy_hw_v4_0_is_pll_on/ {exit}
+         in_phy && /^\tif \(phy->cphy_mode\)/ {p=1} p {print}' "$source_file"
     cat <<'CPP'
     return ret;
+}
+static int write_strength(msm_dsi_phy *phy,msm_dsi_phy_clk_request *clk_req) {
+    int ret=calculate(phy,clk_req);
+    if(ret) return ret;
+    uintptr_t base=0;
+    bool less_than_1500_mhz;
+    u32 vreg_ctrl_0,vreg_ctrl_1,lane_ctrl0,glbl_pemph_ctrl_0;
+    u32 glbl_str_swi_cal_sel_ctrl,glbl_hstx_str_ctrl_0;
+    u32 glbl_rescode_top_ctrl,glbl_rescode_bot_ctrl;
+CPP
+    sed -n '/^\t\/\* Alter PHY configurations if data rate/,/^\tspin_lock_irqsave(&pll->pll_enable_lock, flags);/p' "$source_file" | sed '$d'
+    sed -n '/^\t\/\* Enable LDO \*\//,/^\tret = dsi_7nm_set_usecase(phy);/p' "$source_file" | sed '$d'
+    cat <<'CPP'
+    return 0;
 }
 static void write_timing(msm_dsi_phy *phy,uintptr_t base) {
     auto *timing=&phy->timing;
@@ -94,7 +112,8 @@ CPP
 int main() {
     device_node node{"xiaomi,uke-o82-dsi-phy-4nm"};
     platform_device platform{{&node}};
-    msm_dsi_phy phy{&platform,{},0,false};
+    msm_dsi_phy_cfg cfg{DSI_PHY_7NM_QUIRK_V5_2};
+    msm_dsi_phy phy{&platform,{},0,false,&cfg};
     msm_dsi_phy_clk_request request{1189188000UL,19200000UL};
     const std::array<u32,14> original{0,0x27,0x0a,0x0c,0x27,0x25,0x0a,0x0b,0x07,2,4,0,0x23,0x1a};
     const std::array<u32,14> expected{0,0x27,0x0a,0x0a,0x1b,0x19,0x0a,0x0b,0x0a,2,4,0,0x20,0x0f};
@@ -115,18 +134,38 @@ int main() {
         assert(shared.byte_intf_clk_div_2==divider && divider);
         assert(!shared.clk_pre_inc_by_2);
         assert(registers.at(0x2000+REG_DSI_CLKOUT_TIMING_CTRL)==0x0f20);
+        registers.clear(); assert(write_strength(&phy,&request)==0);
+        assert(registers.at(0x10c)==1 && registers.at(0xec)==0xff);
+        assert(registers.at(0x104)==0 && registers.at(0x2c)==0x40);
     }
     auto unchanged=[&](int expected_result) {
         std::array<unsigned char,sizeof(phy.timing)> before{};
         std::memcpy(before.data(),&phy.timing,sizeof(phy.timing));
         assert(dsi_7nm_uke_o82_timing(&phy,&request)==expected_result);
         assert(!std::memcmp(before.data(),&phy.timing,sizeof(phy.timing)));
+        /* Keep the ~0UL admission fault outside the generic calculator's
+         * hardware-clock domain; real boundary rates exercise the writer.
+         */
+        if(expected_result && request.bitclk_rate!=~0UL) {
+            registers.clear();
+            assert(write_strength(&phy,&request)==expected_result);
+            assert(registers.empty());
+        }
     };
     node.compatible="qcom,sm7675-dsi-phy-4nm";
     request.bitclk_rate=1189188000UL;
     assert(msm_dsi_dphy_timing_calc_v4(&phy.timing,&request)==0);
     unchanged(0); registers.clear(); write_timing(&phy,0);
     for(unsigned i=0;i<original.size();++i) assert(registers.at(0xb4+4*i)==original[i]);
+    for(u32 quirks:{DSI_PHY_7NM_QUIRK_V4_0,DSI_PHY_7NM_QUIRK_V4_3,DSI_PHY_7NM_QUIRK_V5_2}) {
+        cfg.quirks=quirks;
+        registers.clear(); assert(write_strength(&phy,&request)==0);
+        const bool v4_0=quirks==DSI_PHY_7NM_QUIRK_V4_0;
+        assert(registers.at(0x10c)==(v4_0 ? 3U:0));
+        assert(registers.at(0xec)==(v4_0 ? 0x66U:0x88U));
+        assert(registers.at(0x104)==0 && registers.at(0x2c)==0x40);
+    }
+    cfg.quirks=DSI_PHY_7NM_QUIRK_V5_2;
     node.compatible="xiaomi,uke-o82-dsi-phy-4nm";
     request.bitclk_rate=0; assert(calculate(&phy,&request)==-EINVAL);
     request.bitclk_rate=1189188000UL;
@@ -146,4 +185,4 @@ CPP
     -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'O82 PHY: real v4 calculation, exact 14 OEM cells, both links, host shared timings, unchanged generic path and refusal boundaries passed\n'
+printf 'O82 PHY: actual OEM strength writers, generic strength paths, exact 14 timing cells, both links, host shared timings and refusal boundaries passed\n'

@@ -1,0 +1,36 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: retain exact O82 OEM PHY strength selection
+
+Both exact O82 variants specify clk-strength=0xff with no deemphasis.
+At the current admitted lane clock, OEM v5.2 DPHY selects SWI_CAL=1 and
+HSTX_STR0=0xff. Preserve generic selection and override only these two
+locals after the existing O82 board/D-PHY/link/rate admission succeeds.
+Reuse the existing common writer. Other PHYs, timing bytes, voltages,
+PLL, EOT, packet geometry and per-lane settings remain unchanged.
+
+Sources: MiCode display44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_phy_hw_v5_0.c and dsi_phy.c; display-DT
+4a3e1c391130237c5e8c2b250d1c94f3e25b9b11, both O82 variants.
+GPL-2.0-only notices and Qualcomm/Linux Foundation attribution retained.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
+@@ -1123,6 +1123,16 @@
+ 		glbl_rescode_bot_ctrl = 0x3c;
+ 	}
+ 
++	/* The earlier O82 timing admission validates board, D-PHY, id and rate.
++	 * Exact Uke v5.2 OEM selects this pair with clk-strength=ff and no
++	 * deemphasis; keep the existing common writer and other PHYs unchanged.
++	 */
++	if (of_device_is_compatible(phy->pdev->dev.of_node,
++				    "xiaomi,uke-o82-dsi-phy-4nm")) {
++		glbl_str_swi_cal_sel_ctrl = 0x01;
++		glbl_hstx_str_ctrl_0 = 0xff;
++	}
++
+ 	spin_lock_irqsave(&pll->pll_enable_lock, flags);
+ 	pll->pll_enable_cnt = 1;
+ 	/* de-assert digital and pll power down */

@@ -158,12 +158,26 @@ not included in this candidate.
 Native16 confirmed non-continuous clock on both links and returned primary
 DA=0xc3 and power mode=0x9e. Secondary reads produced ACK errors and zero
 headers; visible output remained blank. The exact Uke OEM read path addresses
-only command-master DSI0. The next candidate therefore retains the two advisory
-HS reads only on DSI0 and leaves the secondary untouched. It preserves generic
+only command-master DSI0. Native17 therefore retained the two advisory
+HS reads only on DSI0 and left the secondary untouched. It preserved generic
 per-link read support and all write broadcasts. Captured error-worker status4
 does not invoke the MDP-underflow reset path, which tests bit0x8; no secondary
 reset is claimed. PHY strength and every native16 video/protocol setting remain
-unchanged so that this is a separate lifecycle test.
+unchanged for this separate lifecycle test. The physical native17
+trial again returned DA=0xc3 and power mode=0x9e, with no secondary reads or
+their ACK errors; the panel remained blank.
+
+The next isolated candidate applies the exact O82 OEM strength pair through
+the existing common PHY writer: calibration selection 1 and HSTX strength 0xff.
+Both O82 variants specify strength 0xff without deemphasis. Their Uke v5.2
+writer selects this pair below 1.5 GHz; the admitted current lane clock is
+1,189,188,000 Hz. `0013-native-o82-phy-strength.patch` overrides only these two
+locals after generic selection and the existing board, D-PHY, link and clock
+admission. Generic PHYs retain their previous values. It changes no voltage,
+PLL, timing, lane map, preemphasis, EOT or video setting. The actual-function
+PHY fixture checks both links, generic values and rejected writes. A matched
+build and physical register, primary-read and visible-output checks remain
+required; the blank native17 trial does not establish strength as its cause.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
