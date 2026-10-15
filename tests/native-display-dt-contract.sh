@@ -41,6 +41,7 @@ for id in 0 1; do
     old_phy=/soc/qcom,mdss_dsi_phy$id@$(printf '%x' "$((0xae95500 + id*0x2000))")
     new_dsi=$mdss/dsi@$(printf '%x' "$((0xae94000 + id*0x2000))")
     new_phy=$mdss/phy@$(printf '%x' "$((0xae95000 + id*0x2000))")
+    [[ $(fdtget -t s "$out/native.dtb" "$new_phy" compatible) == 'xiaomi,uke-o82-dsi-phy-4nm qcom,sm7675-dsi-phy-4nm' ]]
     [[ $(fdtget -t x "$out/native.dtb" "$new_dsi" vdda-supply) == "$(fdtget -t x "$input" "$old_dsi" vdda-1p2-supply)" ]]
     [[ $(fdtget -t x "$out/native.dtb" "$new_phy" vdds-supply) == "$(fdtget -t x "$input" "$old_phy" vdda-0p9-supply)" ]]
 done

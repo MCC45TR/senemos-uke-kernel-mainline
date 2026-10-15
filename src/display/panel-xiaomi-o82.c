@@ -129,6 +129,35 @@ static int o82_power_off(struct o82_panel *ctx)
 	return first_error;
 }
 
+static void o82_readback(struct o82_panel *ctx)
+{
+	static const u8 registers[] = { 0xda, MIPI_DCS_GET_POWER_MODE };
+	int i, j;
+
+	for (i = 0; i < ARRAY_SIZE(ctx->dsi); i++) {
+		struct mipi_dsi_device *dsi = ctx->dsi[i];
+
+		for (j = 0; j < ARRAY_SIZE(registers); j++) {
+			unsigned long mode_flags = dsi->mode_flags;
+			u8 value = 0;
+			ssize_t ret;
+
+			/* OEM build-ID reads use HS; keep each link's flags afterward. */
+			dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+			ret = mipi_dsi_dcs_read(dsi, registers[j], &value, sizeof(value));
+			dsi->mode_flags = mode_flags;
+			if (ret == 1)
+				dev_info(&dsi->dev,
+					 "O82 readback: link=%d cmd=%#x hs result=%zd value=%#x\n",
+					 i, registers[j], ret, value);
+			else
+				dev_warn(&dsi->dev,
+					 "O82 readback: link=%d cmd=%#x hs result=%zd value=unavailable\n",
+					 i, registers[j], ret);
+		}
+	}
+}
+
 static int o82_prepare(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
@@ -222,6 +251,7 @@ static int o82_prepare(struct drm_panel *panel)
 		o82_power_off(ctx);
 		return ret;
 	}
+	o82_readback(ctx);
 	ctx->prepared = true;
 	return 0;
 

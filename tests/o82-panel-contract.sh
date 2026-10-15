@@ -26,8 +26,11 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define BIT(n) (1U<<(n))
 #define dev_err(...) ((void)0)
+#define dev_info(...) ((void)0)
+#define dev_warn(...) ((void)0)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
 enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
+       MIPI_DSI_MODE_LPM=0x800, MIPI_DCS_GET_POWER_MODE=0x0a,
        DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 C
 # Compile the selected upstream structs, RC calculation and wire packer, not a second serializer.
@@ -87,7 +90,11 @@ struct mipi_dsi_msg { unsigned int channel,type,flags; size_t tx_len; const void
 struct mipi_dsi_host;
 struct host_ops { ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_dsi_msg *); };
 struct mipi_dsi_host { struct host_ops *ops; };
-struct mipi_dsi_device { struct mipi_dsi_host *host; };
+struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags; };
+static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
+    assert(!(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1 && (reg==0xda || reg==0x0a));
+    *(u8 *)value=0; return 1;
+}
 static const u8 golden_pps[128]={
     0x11,0,0,0xab,0x30,0x80,0x08,0x58,0x06,0x40,0,0x18,0x03,0x20,0x03,0x20,
     0x02,0,0x02,0xb2,0,0x20,0x02,0x9f,0,0x0b,0,0x0d,0x04,0x86,0x02,0xdc,
@@ -140,7 +147,8 @@ cat >> "$work/check.c" <<'C'
 static struct o82_panel context(int variant,int mode) {
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops},{&ops}};
-    static struct mipi_dsi_device dsis[2]={{&hosts[0]},{&hosts[1]}};
+    static struct mipi_dsi_device dsis[2]={{.host=&hosts[0],.mode_flags=MIPI_DSI_MODE_LPM},
+                                         {.host=&hosts[1],.mode_flags=MIPI_DSI_MODE_LPM}};
     static struct regulator supplies[3]={{0},{1},{2}};
     static struct drm_crtc_state cs;
     static struct drm_crtc crtc={&cs};

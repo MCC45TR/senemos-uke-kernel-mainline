@@ -100,6 +100,40 @@ path; no `vrr_capable` property is fabricated.
 
 ## Validation and remaining work
 
+The isolated O82 PHY binding uses the compatible pair
+`"xiaomi,uke-o82-dsi-phy-4nm", "qcom,sm7675-dsi-phy-4nm"` on both links.
+It has the existing SM7675 resources and supplies; it adds no raw register or
+userspace timing interface. Both exact OEM O82 variants have the same 14-byte
+PHY timing override in `uke-sde-display.dtsi` at revision
+`4a3e1c391130237c5e8c2b250d1c94f3e25b9b11`. The candidate applies those named
+timing fields through the existing PHY writer only on Uke/SM7675, D-PHY id0/1,
+and lane clocks 1,189,187,000 through 1,189,191,000 Hz. This narrow window
+contains the current 60 Hz arithmetic result 1,189,188,000 Hz and the OEM
+override 1,189,190,000 Hz with 1 kHz boundary margin. Other groups remain
+refused until their clock and physical mode checks pass.
+
+The active native12 capture differed from that OEM array in six fields. The
+generic calculator remains in place for validation and clock-division state;
+other PHY compatibles keep its original timings. Existing shared pre/post
+propagation to the host is retained. Android parses host pre/post separately,
+so matching the PHY array does not imply every host register matches Android.
+Run `bash tests/o82-phy-timing-contract.sh PREPARED_KERNEL KERNEL_OBJECTS` to
+exercise the actual calculator, scoped helper, PHY writer and copied host
+timings. This is a source candidate; visible native output remains unqualified.
+
+The next isolated diagnostic reads the OEM-supported one-byte build ID at
+0xDA and standard DCS power mode at0x0A after ON/PPS and before video. Each
+physical link is read independently in HS; the device's original mode flags
+are restored after every read. Results are advisory raw values, short replies
+or errors, with no invented expected power byte and no new boot rejection.
+MSM's bonded DMA trigger now retains read-transaction context for both the
+maximum-return-size packet and actual read. Ordinary write broadcast is
+unchanged. Each one-byte read uses at most two existing 200ms DMA waits;
+failed transport unwinds through the existing host restore path. Run
+`tests/dsi-read-transaction-contract.sh` and `tests/o82-readback-contract.sh`
+against the prepared source before building this diagnostic. The existing
+RGB24 DSI test-pattern generator is not used as evidence for a DSC stream.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and
@@ -124,6 +158,26 @@ The native panel uses the OEM 30-bit RGB101010 input format. Both the exact
 OEM controller and upstream MSM retain that format when the DSC wide bus is
 available; using RGB888 would select a different DSI destination format even
 with identical DSC clock arithmetic. Physical transport remains under test.
+
+The RGB101010 trial removed the previously observed DSI interrupt storm, but
+neither KDE nor an independent DRM test framebuffer produced a visible image.
+The native-only source also carries the OEM DSC full-ICH precision capability
+for more than 8 bpc. Its register change was observed on Uke without restoring
+the image. A separate O82-only bridge candidate preserves host power before
+panel preparation and defers video until reset, ON commands and PPS complete.
+These changes do not qualify native output or any additional refresh mode.
+
+After preparing the isolated source, run the actual-function host checks:
+
+```sh
+bash tests/dsc-precision-contract.sh PREPARED_KERNEL
+bash tests/dsi-panel-sequence-contract.sh PREPARED_KERNEL/drivers/gpu/drm/msm/dsi/dsi_manager.c
+```
+
+They test capability/depth refusal, unchanged unrelated register writes,
+power/prepare failures, link cleanup and the existing other-panel ordering.
+Compile the complete matched Image/modules afterward; host mocks are separate
+from the required optical test and reboot/recovery checks.
 
 Recovery on the connected tablet selects O82 42_02_0b. This identifies the
 observed unit; it does not remove variant selection for other tablets.

@@ -1,0 +1,54 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: support full DSC ICH error precision
+
+Xiaomi's Uke display source enables full ICH error precision on DSC 1.2
+blocks from MDSS major version 10 onward. Its encoder sets ENC_DF_CTRL
+bit 12 only when that feature is present and bits per component exceeds 8.
+Add the corresponding capability and guard; the isolated SM7675 catalog
+admits it separately. Other catalogs retain their existing programming.
+
+Source: Xiaomi display-drivers, commit
+44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/sde/sde_hw_catalog.c and msm/sde/sde_hw_dsc_1_2.c.
+Both files are GPL-2.0-only, copyright The Linux Foundation and Qualcomm
+Innovation Center, Inc. This candidate does not change initial_lines or
+qualify panel output.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h | 2 ++
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
+@@ -143,10 +143,12 @@ enum {
+ /**
+  * DSC sub-blocks/features
+  * @DPU_DSC_NATIVE_42x_EN     Supports NATIVE_422_EN and NATIVE_420_EN encoding
++ * @DPU_DSC_FULL_ICH_PREC     Supports full ICH error precision above 8 bpc
+  * @DPU_DSC_MAX
+  */
+ enum {
+ 	DPU_DSC_NATIVE_42x_EN = 0x1,
++	DPU_DSC_FULL_ICH_PREC,
+ 	DPU_DSC_MAX
+ };
+ 
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+@@ -124,6 +124,10 @@ static void dpu_hw_dsc_config_1_2(struct dpu_hw_dsc *hw_dsc,
+ 
+ 	data |= (_dsc_calc_output_buf_max_addr(hw_dsc, num_active_slice_per_enc) << 18);
+ 
++	if ((hw_dsc->caps->features & BIT(DPU_DSC_FULL_ICH_PREC)) &&
++	    dsc->bits_per_component > 8)
++		data |= BIT(12);
++
+ 	DPU_REG_WRITE(hw, sblk->enc.base + ENC_DF_CTRL, data);
+ 
+ 	data = (dsc->dsc_version_minor & 0xf) << 28;
+--
+2.53.0

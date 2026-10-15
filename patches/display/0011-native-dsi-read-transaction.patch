@@ -1,0 +1,130 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: retain per-link DMA context for read transactions
+
+The bonded manager excludes reads from write broadcast at cmd_xfer(), but
+its DMA trigger still uses the global sync flag. Consequently link0 reads
+skip the actual trigger while link1 reads trigger both links. Readback is
+not trustworthy under that contract.
+
+Pass the read transaction context through the internal host DMA helpers.
+Both SET_MAXIMUM_RETURN_PACKET_SIZE and the following read belong to the
+same unicast transaction. Keep ordinary write broadcasts unchanged and use
+no global mutable transfer state. All callers are internal to these files.
+This enables an isolated O82 ON/PPS diagnostic to read each link separately;
+it does not establish panel output or alter video/PHY/EOT parameters.
+
+Uke OEM supports an HS one-byte build-ID read at0xDA in both O82 panel
+variants (MiCode display-DT4a3e1c391130237c5e8c2b250d1c94f3e25b9b11).
+Its display-driver44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/mi_disp/mi_dsi_display.c:mi_dsi_display_cmd_read_locked(), marks the
+transaction UNICAST and READ. GPL-2.0-only source; preserve upstream notices.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/gpu/drm/msm/dsi/dsi.h b/drivers/gpu/drm/msm/dsi/dsi.h
+index 93c028a..32cea76 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi.h
++++ b/drivers/gpu/drm/msm/dsi/dsi.h
+@@ -51,7 +51,8 @@ struct msm_dsi {
+ int msm_dsi_manager_connector_init(struct msm_dsi *msm_dsi,
+ 				   struct drm_encoder *encoder);
+ int msm_dsi_manager_cmd_xfer(int id, const struct mipi_dsi_msg *msg);
+-bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len);
++bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len,
++				    bool is_read);
+ int msm_dsi_manager_register(struct msm_dsi *msm_dsi);
+ void msm_dsi_manager_unregister(struct msm_dsi *msm_dsi);
+ void msm_dsi_manager_tpg_enable(void);
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+index 950146b..2f97208 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -1453,7 +1453,7 @@ int dsi_dma_base_get_v2(struct msm_dsi_host *msm_host, uint64_t *dma_base)
+ 	return 0;
+ }
+ 
+-static int dsi_cmd_dma_tx(struct msm_dsi_host *msm_host, int len)
++static int dsi_cmd_dma_tx(struct msm_dsi_host *msm_host, int len, bool is_read)
+ {
+ 	const struct msm_dsi_cfg_handler *cfg_hnd = msm_host->cfg_hnd;
+ 	int ret;
+@@ -1471,7 +1471,7 @@ static int dsi_cmd_dma_tx(struct msm_dsi_host *msm_host, int len)
+ 	dsi_wait4video_eng_busy(msm_host);
+ 
+ 	triggered = msm_dsi_manager_cmd_xfer_trigger(
+-						msm_host->id, dma_base, len);
++						msm_host->id, dma_base, len, is_read);
+ 	if (triggered) {
+ 		ret = wait_for_completion_timeout(&msm_host->dma_comp,
+ 					msecs_to_jiffies(200));
+@@ -1537,7 +1537,7 @@ static int dsi_cmd_dma_rx(struct msm_dsi_host *msm_host,
+ }
+ 
+ static int dsi_cmds2buf_tx(struct msm_dsi_host *msm_host,
+-				const struct mipi_dsi_msg *msg)
++				const struct mipi_dsi_msg *msg, bool is_read)
+ {
+ 	int len, ret;
+ 	int bllp_len = msm_host->mode->hdisplay *
+@@ -1566,7 +1566,7 @@ static int dsi_cmds2buf_tx(struct msm_dsi_host *msm_host,
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = dsi_cmd_dma_tx(msm_host, len);
++	ret = dsi_cmd_dma_tx(msm_host, len, is_read);
+ 	if (ret < 0) {
+ 		pr_err("%s: cmd dma tx failed, type=0x%x, data0=0x%x, len=%d, ret=%d\n",
+ 			__func__, msg->type, (*(u8 *)(msg->tx_buf)), len, ret);
+@@ -2256,7 +2256,7 @@ int msm_dsi_host_cmd_tx(struct mipi_dsi_host *host,
+ {
+ 	struct msm_dsi_host *msm_host = to_msm_dsi_host(host);
+ 
+-	return dsi_cmds2buf_tx(msm_host, msg);
++	return dsi_cmds2buf_tx(msm_host, msg, false);
+ }
+ 
+ int msm_dsi_host_cmd_rx(struct mipi_dsi_host *host,
+@@ -2298,7 +2298,7 @@ int msm_dsi_host_cmd_rx(struct mipi_dsi_host *host,
+ 		DBG("rlen=%d pkt_size=%d rx_byte=%d",
+ 			rlen, pkt_size, rx_byte);
+ 
+-		ret = dsi_cmds2buf_tx(msm_host, &max_pkt_size_msg);
++		ret = dsi_cmds2buf_tx(msm_host, &max_pkt_size_msg, true);
+ 		if (ret < 2) {
+ 			pr_err("%s: Set max pkt size failed, %d\n",
+ 				__func__, ret);
+@@ -2315,7 +2315,7 @@ int msm_dsi_host_cmd_rx(struct mipi_dsi_host *host,
+ 			wmb(); /* release cleared status before transfer */
+ 		}
+ 
+-		ret = dsi_cmds2buf_tx(msm_host, msg);
++		ret = dsi_cmds2buf_tx(msm_host, msg, true);
+ 		if (ret < 0) {
+ 			pr_err("%s: Read cmd Tx failed, %d\n", __func__, ret);
+ 			return ret;
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_manager.c b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+index 058bb00..60230af 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -621,16 +621,18 @@ restore_host0:
+ 	return ret;
+ }
+ 
+-bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len)
++bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len,
++				    bool is_read)
+ {
+ 	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
+ 	struct msm_dsi *msm_dsi0 = dsi_mgr_get_dsi(DSI_0);
+ 	struct mipi_dsi_host *host = msm_dsi->host;
++	bool need_sync = IS_SYNC_NEEDED() && !is_read;
+ 
+-	if (IS_SYNC_NEEDED() && (id == DSI_0))
++	if (need_sync && (id == DSI_0))
+ 		return false;
+ 
+-	if (IS_SYNC_NEEDED() && msm_dsi0)
++	if (need_sync && msm_dsi0)
+ 		msm_dsi_host_cmd_xfer_commit(msm_dsi0->host, dma_base, len);
+ 
+ 	msm_dsi_host_cmd_xfer_commit(host, dma_base, len);

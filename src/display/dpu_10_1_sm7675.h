@@ -102,15 +102,16 @@ static const struct dpu_merge_3d_cfg sm7675_merge_3d[] = {
 	{ .name = "merge_3d_1", .id = MERGE_3D_1, .base = 0x4f000, .len = 0x8 },
 };
 
+/* Uke OEM MDSS >= 10 supports full ICH precision for > 8-bpc DSC. */
 static const struct dpu_dsc_cfg sm7675_dsc[] = {
 	{ .name = "dce_0_0", .id = DSC_0, .base = 0x80000, .len = 0x6,
-	  .features = BIT(DPU_DSC_NATIVE_42x_EN),
+	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
 	  .sblk = &dsc_sblk_0 },
 	{ .name = "dce_0_1", .id = DSC_1, .base = 0x80000, .len = 0x6,
-	  .features = BIT(DPU_DSC_NATIVE_42x_EN),
+	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
 	  .sblk = &dsc_sblk_1 },
 	{ .name = "dce_1_0", .id = DSC_2, .base = 0x81000, .len = 0x6,
-	  .features = BIT(DPU_DSC_NATIVE_42x_EN),
+	  .features = BIT(DPU_DSC_NATIVE_42x_EN) | BIT(DPU_DSC_FULL_ICH_PREC),
 	  .sblk = &dsc_sblk_0 },
 };
 

@@ -155,14 +155,14 @@
 					};
 				};
 				uke_phy0: phy@ae95000 {
-					compatible = "qcom,sm7675-dsi-phy-4nm";
+					compatible = "xiaomi,uke-o82-dsi-phy-4nm", "qcom,sm7675-dsi-phy-4nm";
 					reg = <0xae95000 0x200>, <0xae95200 0x280>, <0xae95500 0x400>;
 					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
 					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
 					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L2B>;
 				};
 				uke_phy1: phy@ae97000 {
-					compatible = "qcom,sm7675-dsi-phy-4nm";
+					compatible = "xiaomi,uke-o82-dsi-phy-4nm", "qcom,sm7675-dsi-phy-4nm";
 					reg = <0xae97000 0x200>, <0xae97200 0x280>, <0xae97500 0x400>;
 					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
 					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
