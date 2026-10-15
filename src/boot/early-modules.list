@@ -253,7 +253,6 @@ drivers/regulator/vctrl-regulator.ko.zst
 drivers/remoteproc/qcom_common.ko.zst
 drivers/remoteproc/qcom_pil_info.ko.zst
 drivers/remoteproc/qcom_q6v5.ko.zst
-drivers/remoteproc/qcom_q6v5_pas.ko.zst
 drivers/remoteproc/qcom_sysmon.ko.zst
 drivers/reset/reset-gpio.ko.zst
 drivers/reset/reset-qcom-pdc.ko.zst

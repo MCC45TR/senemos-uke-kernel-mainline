@@ -66,6 +66,10 @@ The new source recipe and update path still require a successful matched
 package installation and physical reboot test before being considered usable.
 Development headers and the userdata root layout are not provided.
 
+Revision 1.41 keeps PAS remoteproc loading on the real root, where the matched
+OEM firmware is installed. The firmware-free initramfs retains storage and USB
+drivers. Battery and DSP startup still require a separate tablet reboot check.
+
 ## Build from source
 
 ```sh

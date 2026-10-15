@@ -43,7 +43,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "cddeba69671cfb9c8af96a964b17397028756843acbca2459ac572b1a141e814"
+      "sha256": "377d4b72288567ed3c8fb54162097e1c0c25b16216fbb2c0287c83c3606e1883"
     },
     {
       "path": "src/boot/check-ufs-tables.sh",
@@ -79,7 +79,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "e091790449e50679060edd55f4f089296fa5fa5fbf6d8d43d59d7641370361cf"
+      "sha256": "150539cec9ad23984d389a88943c7962cefe144fc9e1fecaeb17ba393f8c88fa"
     },
     {
       "path": "src/boot/licenses/builder-MIT",

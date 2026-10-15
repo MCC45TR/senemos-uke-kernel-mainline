@@ -24,6 +24,7 @@ for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SI
     grep -Fx "CONFIG_${flag}=y" "$out/.config"
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
+grep -Fx 'CONFIG_QCOM_Q6V5_PAS=m' "$out/.config"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules dtbs
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" modules_install \
     INSTALL_MOD_PATH="$stage" INSTALL_MOD_STRIP=1 DEPMOD=true
@@ -40,6 +41,15 @@ for name in modules.builtin modules.builtin.modinfo modules.order; do
     install -m644 "$source_modules/$name" "$target/$name"
 done
 depmod -b "$init" "$release"
+# PAS autoboot needs OEM firmware from the real root; an early failure is not retried.
+[[ ! -e $target/kernel/drivers/remoteproc/qcom_q6v5_pas.ko.zst ]]
+if grep -Fq '/qcom_q6v5_pas.ko' "$target/modules.dep"; then
+    echo 'Early module dependencies must not start PAS before root firmware is available' >&2
+    exit 1
+else
+    [[ $? == 1 ]]
+fi
+[[ -s $source_modules/kernel/drivers/remoteproc/qcom_q6v5_pas.ko.zst ]]
 bash "$here/../audit/check-target-payload.sh" "$init"
 bash "$here/../audit/check-target-privacy.sh" "$init"
 find "$init" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +

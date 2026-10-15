@@ -3,7 +3,7 @@
 %global __os_install_post %{nil}
 %global _source_filedigest_algorithm 8
 %global _binary_filedigest_algorithm 8
-%global senemos_build_release 1.40
+%global senemos_build_release 1.41
 %global krel %{version}-senemos.%{senemos_build_release}
 %global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 %global _uke_out %{_topdir}/kernel-out
@@ -271,6 +271,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Thu Oct 15 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.41
+- Load the PAS remoteproc module after the root filesystem provides OEM firmware.
+- Keep the early storage and USB module dependency closure independent of PAS.
 * Thu Oct 15 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.40
 - Build a source-only stock-ABL boot payload with its matching versioned modules.
 - Invoke the locally configured native boot updater after the RPM transaction.
