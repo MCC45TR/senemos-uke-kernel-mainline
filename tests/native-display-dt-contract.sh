@@ -10,6 +10,9 @@ framebuffer=$(fdtget -t s "$input" /chosen stdout-path)
 primary=/soc/qcom,qupv3_0_geni_se@ac0000/i2c@a80000/ktz8866@11
 [[ $(fdtget -t s "$input" "$primary" compatible) == xiaomi,uke-ktz8866-primary ]]
 fdtput -t s "$out/input.dtb" /__symbols__ uke_primary_backlight "$primary"
+for rail in vsp vsn; do
+    fdtput -t s "$out/input.dtb" /__symbols__ "display_panel_$rail" "/soc/display_gpio_regulator_$rail"
+done
 fdtoverlay -i "$out/input.dtb" -o "$out/native.dtb" "$overlay"
 fdtput -t s "$out/native.dtb" "$framebuffer" status disabled
 fdtput -d "$out/native.dtb" /chosen stdout-path
@@ -33,6 +36,16 @@ for dsi in "$dsi0" "$dsi1"; do
     remote=$(fdtget -t x "$out/native.dtb" "$endpoint" remote-endpoint)
     [[ -n $remote && $remote != 0 && $remote != ffffffff ]]
 done
+for id in 0 1; do
+    old_dsi=/soc/qcom,mdss_dsi_ctrl$id@$(printf '%x' "$((0xae94000 + id*0x2000))")
+    old_phy=/soc/qcom,mdss_dsi_phy$id@$(printf '%x' "$((0xae95500 + id*0x2000))")
+    new_dsi=$mdss/dsi@$(printf '%x' "$((0xae94000 + id*0x2000))")
+    new_phy=$mdss/phy@$(printf '%x' "$((0xae95000 + id*0x2000))")
+    [[ $(fdtget -t x "$out/native.dtb" "$new_dsi" vdda-supply) == "$(fdtget -t x "$input" "$old_dsi" vdda-1p2-supply)" ]]
+    [[ $(fdtget -t x "$out/native.dtb" "$new_phy" vdds-supply) == "$(fdtget -t x "$input" "$old_phy" vdda-0p9-supply)" ]]
+done
+phy0=$(fdtget -t x "$out/native.dtb" "$mdss/phy@ae95000" phandle)
+[[ $(fdtget -t x "$out/native.dtb" "$dsi1" assigned-clock-parents) == "$phy0 0 $phy0 1" ]]
 for node in /soc/qcom,mdss_mdp@ae00000 /soc/qcom,mdss_dsi_ctrl0@ae94000 /soc/qcom,mdss_dsi_ctrl1@ae96000 /soc/qcom,mdss_dsi_phy0@ae95500 /soc/qcom,mdss_dsi_phy1@ae97500 /soc/qcom,dp_display@ae154000 "$framebuffer"; do
     [[ $(fdtget -t s "$out/native.dtb" "$node" status) == disabled ]]
 done

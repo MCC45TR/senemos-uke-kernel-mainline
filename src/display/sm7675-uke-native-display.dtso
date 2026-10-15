@@ -110,7 +110,7 @@
 						 <&dispcc DISP_CC_MDSS_AHB_CLK>, <&gcc GCC_DISP_HF_AXI_CLK>;
 					clock-names = "byte", "byte_intf", "pixel", "core", "iface", "bus";
 					phys = <&uke_phy0>; phy-names = "dsi";
-					vdda-supply = <&L3B>;
+					vdda-supply = <&L4B>;
 					qcom,dual-dsi-mode; qcom,master-dsi; qcom,sync-dual-dsi;
 					assigned-clocks = <&dispcc DISP_CC_MDSS_BYTE0_CLK_SRC>, <&dispcc DISP_CC_MDSS_PCLK0_CLK_SRC>;
 					assigned-clock-parents = <&uke_phy0 DSI_BYTE_PLL_CLK>, <&uke_phy0 DSI_PIXEL_PLL_CLK>;
@@ -122,6 +122,7 @@
 					};
 					uke_panel: panel@0 {
 						compatible = O82_PANEL_COMPATIBLE; reg = <0>;
+						xiaomi,initial-60hz-only;
 						vddio-supply = <&L8B>;
 						vsp-supply = <&display_panel_vsp>; vsn-supply = <&display_panel_vsn>;
 						reset-gpios = <&tlmm 2 0>;
@@ -141,10 +142,11 @@
 						 <&dispcc DISP_CC_MDSS_PCLK1_CLK>, <&dispcc DISP_CC_MDSS_ESC1_CLK>,
 						 <&dispcc DISP_CC_MDSS_AHB_CLK>, <&gcc GCC_DISP_HF_AXI_CLK>;
 					clock-names = "byte", "byte_intf", "pixel", "core", "iface", "bus";
-					phys = <&uke_phy1>; phy-names = "dsi"; vdda-supply = <&L3B>;
-					qcom,dual-dsi-mode;
+					phys = <&uke_phy1>; phy-names = "dsi"; vdda-supply = <&L4B>;
+					qcom,dual-dsi-mode; qcom,sync-dual-dsi;
 					assigned-clocks = <&dispcc DISP_CC_MDSS_BYTE1_CLK_SRC>, <&dispcc DISP_CC_MDSS_PCLK1_CLK_SRC>;
-					assigned-clock-parents = <&uke_phy1 DSI_BYTE_PLL_CLK>, <&uke_phy1 DSI_PIXEL_PLL_CLK>;
+					/* Bonded DSI1 consumes the clock-master PHY0 PLL. */
+					assigned-clock-parents = <&uke_phy0 DSI_BYTE_PLL_CLK>, <&uke_phy0 DSI_PIXEL_PLL_CLK>;
 					#address-cells = <1>; #size-cells = <0>;
 					ports {
 						#address-cells = <1>; #size-cells = <0>;
@@ -157,14 +159,14 @@
 					reg = <0xae95000 0x200>, <0xae95200 0x280>, <0xae95500 0x400>;
 					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
 					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
-					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L1B>;
+					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L2B>;
 				};
 				uke_phy1: phy@ae97000 {
 					compatible = "qcom,sm7675-dsi-phy-4nm";
 					reg = <0xae97000 0x200>, <0xae97200 0x280>, <0xae97500 0x400>;
 					reg-names = "dsi_phy", "dsi_phy_lane", "dsi_pll";
 					clocks = <&gcc GCC_DISP_AHB_CLK>, <&rpmhcc 0>; clock-names = "iface", "ref";
-					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L1B>;
+					#clock-cells = <1>; #phy-cells = <0>; vdds-supply = <&L2B>;
 				};
 			};
 		};

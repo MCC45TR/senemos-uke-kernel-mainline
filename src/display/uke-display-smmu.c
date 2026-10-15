@@ -24,6 +24,7 @@ int qcom_uke_display_release(struct device *supplier, struct device *display)
 	 */
 	for (i = 0; i < smmu->num_mapping_groups; i++) {
 		struct arm_smmu_smr *smr = &smmu->smrs[i];
+		u32 original;
 
 		if (!smr->valid || ((smr->id ^ 0x1c00) & ~2U) || (smr->mask & ~2U))
 			continue;
@@ -31,15 +32,34 @@ int qcom_uke_display_release(struct device *supplier, struct device *display)
 			ret = -EBUSY;
 			goto out;
 		}
+		original = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
+		if (original != (FIELD_PREP(ARM_SMMU_SMR_ID, smr->id) |
+				 FIELD_PREP(ARM_SMMU_SMR_MASK, smr->mask) |
+				 ARM_SMMU_SMR_VALID)) {
+			dev_err(display, "display SMR[%d] changed: %#010x\n", i, original);
+			ret = -EBUSY;
+			goto out;
+		}
 	}
 	for (i = 0; i < smmu->num_mapping_groups; i++) {
 		struct arm_smmu_smr *smr = &smmu->smrs[i];
+		u32 original, value;
 
 		if (!smr->valid || ((smr->id ^ 0x1c00) & ~2U) || (smr->mask & ~2U))
 			continue;
-		/* Invalidate the old match only after DMA has been drained. No bypass. */
-		arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(i), 0);
-		if (arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i)) & ARM_SMMU_SMR_VALID) {
+		/* OEM SID release retains ID/mask for virtualized SMR ownership. */
+		original = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
+		if (original != (FIELD_PREP(ARM_SMMU_SMR_ID, smr->id) |
+				 FIELD_PREP(ARM_SMMU_SMR_MASK, smr->mask) |
+				 ARM_SMMU_SMR_VALID)) {
+			ret = -EBUSY;
+			goto out;
+		}
+		arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(i), original & ~ARM_SMMU_SMR_VALID);
+		value = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
+		if (value != (original & ~ARM_SMMU_SMR_VALID)) {
+			dev_err(display, "display SMR[%d] release refused: before=%#010x after=%#010x S2CR=%#010x\n",
+				i, original, value, arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_S2CR(i)));
 			ret = -EACCES;
 			goto out;
 		}

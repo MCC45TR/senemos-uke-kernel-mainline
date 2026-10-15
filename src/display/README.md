@@ -1,12 +1,12 @@
 # SM7675 native display candidate
 
-Recorded on 14 October 2026. This directory contains a Linux 7.2.10 source
+Recorded on 15 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
 candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
-**Native display has not been enabled or tested on Uke.**
+**Native display trials reached Fedora and SSH but have not produced scanout.**
 
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
-objects compile for AArch64. The panel exposes seven fixed modes: 30, 48, 50,
+objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
 extend vertical front porch using the downstream calculation. This does not
 advertise continuous VRR or seamless rate switching. The first native test
@@ -49,12 +49,44 @@ directory supply its included assets. It does not modify the normal release
 series or activate native DT nodes. Removed 6.12-only feature fields follow
 the 7.2.10 catalog API; DPU instances, XINs and offsets remain explicit.
 
-`prepare-source.sh` stages these files only in a separate prepared 7.2.10
+`prepare-source.sh` stages these files only in a separate prepared 7.2.9 or 7.2.10
 source tree, checks the patch before modification and refuses a second install.
 `sm7675-uke-native-display.dtso` is an offline dual-DSI graph. Its panel variant
 must be selected explicitly as 36 or 42; neither is assumed. Graph tests retain
 RAM, reserved-memory and the firmware SMMU handoff rules, and reuse the existing
 paired backlight. This overlay is not embedded in the normal boot image.
+
+The isolated native entry now recovers the existing OEM bias-regulator symbols
+that ABL omits. It retains the actual provider nodes, bootloader-selected panel,
+RAM and reserved memory. The graph uses the OEM L4B controller and L2B PHY
+supplies; the bonded DSI1 byte/pixel clocks use the master PHY0 PLL. Host checks
+compare the supply phandles with the captured OEM graph and reject missing
+providers. No adjacent board regulator or GPIO values are substituted.
+
+The first native boot reached the Fedora root, USB console and Wi-Fi SSH, but
+did not create a display connector. DISPCC was waiting for its OEM MMCX rail;
+the retained RPMh admission list omitted `mmcx.lvl`. Panel IO resource `ldob8`
+also needed admission. The isolated supply patch adds these exact resources
+and retains command-DB address/type/level validation and the OEM CX parent
+dependency. It does not substitute a dummy regulator or fixed voltage.
+
+The second physical trial passed the supply dependency and reached display SMR
+retirement, which returned `-EACCES`. The core stayed reset and the screen was
+black. The next candidate preserves SID/mask when clearing SMR validity, as in
+the exact Uke OEM SID-release path. It checks identity before each write and
+retains refusal diagnostics, secure-stream isolation and context reservations.
+Host fixtures cover ownership changes and rejected writes; physical acceptance
+remains open.
+
+`prepare-native-abl-source.sh` applies this entry only to a separate tree that
+already contains the normal ABL adaptation and native providers. Its initial
+bring-up graph sets `xiaomi,initial-60hz-only`, so a saved desktop setting cannot
+select an unmeasured high mode. The complete seven-mode source table remains;
+the limitation is removed after physical rate qualification. Standard DRM
+connector modes make accepted fixed rates visible to KDE and other desktops.
+OEM VFP-based dynamic FPS does not alone establish DRM adaptive sync. Neither
+the prepared DPU nor DSI implementation currently provides a qualified VRR
+path; no `vrr_capable` property is fabricated.
 
 ## Validation and remaining work
 
@@ -63,6 +95,9 @@ both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and
 invalid mode state. The decoder rejects malformed/truncated DT and packet
 inputs without emitting a partial header. These are host results.
+
+On/off commands retain the OEM LP state; timing-switch video commands use HS.
+The lifecycle test checks both states separately for each timing group.
 
 Recovery on the connected tablet selects O82 42_02_0b. This identifies the
 observed unit; it does not remove variant selection for other tablets.

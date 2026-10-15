@@ -51,14 +51,15 @@ struct o82_panel {
 	unsigned int loaded_supplies;
 	bool reset_output;
 	bool prepared;
+	bool initial_60hz_only;
 };
 
-static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd)
+static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
 {
 	struct mipi_dsi_msg msg = {
 		.channel = cmd->channel,
 		.type = cmd->type,
-		.flags = MIPI_DSI_MSG_USE_LPM,
+		.flags = lpm ? MIPI_DSI_MSG_USE_LPM : 0,
 		.tx_len = cmd->len,
 		.tx_buf = cmd->data,
 	};
@@ -91,7 +92,7 @@ static int o82_off(struct o82_panel *ctx)
 	int i, ret, first_error = 0;
 
 	for (i = 0; i < ctx->active->off_count; i++) {
-		ret = o82_send(ctx, &ctx->active->off[i]);
+		ret = o82_send(ctx, &ctx->active->off[i], true);
 		if (ret && !first_error)
 			first_error = ret;
 	}
@@ -175,7 +176,8 @@ static int o82_prepare(struct drm_panel *panel)
 	for (i = 0; i < profile->on_count + profile->switch_count; i++) {
 		const struct o82_command *cmd = i < profile->on_count ?
 			&profile->on[i] : &profile->switch_commands[i - profile->on_count];
-		ret = o82_send(ctx, cmd);
+		/* OEM on/off sequences use LP; timing-switch video commands use HS. */
+		ret = o82_send(ctx, cmd, i < profile->on_count);
 		if (ret) {
 			o82_off(ctx);
 			o82_power_off(ctx);
@@ -206,11 +208,14 @@ static int o82_unprepare(struct drm_panel *panel)
 static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connector)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
-	int i;
+	int i, count = 0;
 
 	ctx->connector = connector;
 	for (i = 0; i < ARRAY_SIZE(o82_modes); i++) {
-		struct drm_display_mode *mode = drm_mode_duplicate(connector->dev, &o82_modes[i].mode);
+		struct drm_display_mode *mode;
+		if (ctx->initial_60hz_only && drm_mode_vrefresh(&o82_modes[i].mode) != 60)
+			continue;
+		mode = drm_mode_duplicate(connector->dev, &o82_modes[i].mode);
 		if (!mode)
 			return -ENOMEM;
 		drm_mode_set_name(mode);
@@ -218,11 +223,12 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 		if (drm_mode_vrefresh(mode) == 60)
 			mode->type |= DRM_MODE_TYPE_PREFERRED;
 		drm_mode_probed_add(connector, mode);
+		count++;
 	}
 	connector->display_info.bpc = 10;
 	connector->display_info.width_mm = 237;
 	connector->display_info.height_mm = 158;
-	return ARRAY_SIZE(o82_modes);
+	return count;
 }
 
 static const struct drm_panel_funcs o82_funcs = {
@@ -251,6 +257,8 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	if (!ctx->profiles)
 		return -EINVAL;
 	ctx->active = &ctx->profiles[0];
+	/* shortcut: keep first native bring-up at 60 Hz until other modes are measured. */
+	ctx->initial_60hz_only = of_property_read_bool(dev->of_node, "xiaomi,initial-60hz-only");
 	for (i = 0; i < ARRAY_SIZE(supply_names); i++) {
 		ctx->supplies[i] = devm_regulator_get(dev, supply_names[i]);
 		if (IS_ERR(ctx->supplies[i]))

@@ -15,14 +15,32 @@ typedef uint8_t u8; typedef uint16_t u16; typedef long ssize_t;
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define BIT(n) (1U<<(n))
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
-enum { MIPI_DSI_MSG_USE_LPM=2 };
+enum { MIPI_DSI_MSG_USE_LPM=2, DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 struct drm_display_mode { unsigned int clock,hdisplay,hsync_start,hsync_end,htotal,
-    vdisplay,vsync_start,vsync_end,vtotal,width_mm,height_mm; };
+    vdisplay,vsync_start,vsync_end,vtotal,width_mm,height_mm,type; };
 struct drm_panel {};
 struct drm_crtc_state { struct drm_display_mode adjusted_mode; };
 struct drm_crtc { struct drm_crtc_state *state; };
 struct drm_connector_state { struct drm_crtc *crtc; };
-struct drm_connector { struct drm_connector_state *state; };
+struct drm_connector { struct drm_connector_state *state; void *dev;
+    struct { int bpc,width_mm,height_mm; } display_info; };
+static unsigned int published, preferred, duplication_failure;
+static struct drm_display_mode copies[7];
+static int drm_mode_vrefresh(const struct drm_display_mode *m) {
+    uint64_t total=(uint64_t)m->htotal*m->vtotal;
+    return ((uint64_t)m->clock*1000+total/2)/total;
+}
+static struct drm_display_mode *drm_mode_duplicate(void *dev,const struct drm_display_mode *mode) {
+    (void)dev; assert(published<7);
+    if(duplication_failure) return NULL;
+    copies[published]=*mode; return &copies[published];
+}
+static void drm_mode_set_name(struct drm_display_mode *mode) { (void)mode; }
+static void drm_mode_probed_add(struct drm_connector *c,struct drm_display_mode *mode) {
+    (void)c; assert(mode->type&DRM_MODE_TYPE_DRIVER);
+    if(mode->type&DRM_MODE_TYPE_PREFERRED) { assert(drm_mode_vrefresh(mode)==60); preferred++; }
+    published++;
+}
 struct regulator { int id; }; struct gpio_desc {};
 struct mipi_dsi_msg { unsigned int channel,type,flags; size_t tx_len; const void *tx_buf; };
 struct mipi_dsi_host;
@@ -31,7 +49,8 @@ struct mipi_dsi_host { struct host_ops *ops; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; };
 struct drm_dsc_config {};
 int balance[3], loads[3], enables, disables, transfers, failure=-1, operation, gpio_failure,
-    short_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3];
+    short_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3],
+    lpm_transfers, hs_transfers;
 static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
     return !memcmp(a,b,offsetof(struct drm_display_mode,width_mm));
 }
@@ -51,7 +70,8 @@ static int gpiod_direction_output(struct gpio_desc *g,int value) {
 static void gpiod_set_value_cansleep(struct gpio_desc *g,int value) { (void)g; (void)value; }
 static void msleep(unsigned int ms) { assert(ms<=200); settle_ms+=ms; }
 static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m) {
-    (void)host; assert(m->flags==MIPI_DSI_MSG_USE_LPM && m->channel==0 && m->tx_len>0);
+    (void)host; assert((m->flags==MIPI_DSI_MSG_USE_LPM || m->flags==0) && m->channel==0 && m->tx_len>0);
+    if (m->flags==MIPI_DSI_MSG_USE_LPM) lpm_transfers++; else hs_transfers++;
     const int n=transfers++; if(n==transfer_failure) return -EIO;
     return short_write ? 0 : (ssize_t)m->tx_len;
 }
@@ -61,6 +81,7 @@ sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$source_file" | sed '$d
 cat "$header"
 sed -n '/^struct o82_panel {/,/^};/p' "$source_file"
 sed -n '/^static int o82_send(/,/^static int o82_get_modes(/p' "$source_file" | sed '$d'
+sed -n '/^static int o82_get_modes(/,/^static const struct drm_panel_funcs/p' "$source_file" | sed '$d'
 } >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct o82_panel context(int variant,int mode) {
@@ -71,9 +92,10 @@ static struct o82_panel context(int variant,int mode) {
     static struct drm_crtc_state cs;
     static struct drm_crtc crtc={&cs};
     static struct drm_connector_state state={&crtc};
-    static struct drm_connector connector={&state};
+    static struct drm_connector connector={.state=&state};
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
     enables=disables=transfers=operation=gpio_failure=short_write=settle_ms=0;
+    lpm_transfers=hs_transfers=0;
     failure=transfer_failure=disable_failure=-1;
     cs.adjusted_mode=o82_modes[mode].mode;
     const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
@@ -84,6 +106,15 @@ static struct o82_panel context(int variant,int mode) {
 int main(void) {
     const unsigned int rates[]={30,48,50,60,90,120,144};
     assert(ARRAY_SIZE(o82_modes)==7);
+    struct o82_panel selection=context(0,3);
+    published=preferred=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==7 && published==7 && preferred==1);
+    selection.initial_60hz_only=true; published=preferred=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==1 && published==1 && preferred==1);
+    assert(drm_mode_vrefresh(&copies[0])==60);
+    duplication_failure=1; published=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==-ENOMEM && !published);
+    duplication_failure=0;
     for(unsigned int v=0;v<2;v++) for(unsigned int m=0;m<7;m++) {
         const struct drm_display_mode *mode=&o82_modes[m].mode;
         const uint64_t divisor=(uint64_t)mode->htotal*mode->vtotal;
@@ -93,6 +124,8 @@ int main(void) {
         assert(o82_prepare(&c.panel)==0 && c.prepared && c.enabled_supplies==7);
         const int full=transfers;
         assert(full==2*(int)(c.active->on_count+c.active->switch_count));
+        assert(lpm_transfers==2*(int)c.active->on_count);
+        assert(hs_transfers==2*(int)c.active->switch_count);
         assert(o82_prepare(&c.panel)==0 && transfers==full && enables==3);
         assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
         assert(off_order[0]==2 && off_order[1]==1 && off_order[2]==0);

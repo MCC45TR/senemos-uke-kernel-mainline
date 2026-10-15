@@ -1,0 +1,47 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] regulator: admit the exact Uke native display supplies
+
+The retained source deliberately admits only reviewed resources. The native
+DISPCC graph references OEM mmcx.lvl through VDD_MM_LEVEL and the O82 panel
+references ldob8 through L8B. Both were missing from the admission list.
+Consequently the first native test never registered the MMCX provider and
+DISPCC/MDSS could not probe. L8B would also block the panel's IO supply.
+
+Admit these two exact names only in the isolated native profile. Retain
+CMD-DB address, slave/type and ARC mapping checks, named CX parent dependency,
+OEM constraints and the existing proxy-consumer lifecycle. No dummy supply,
+fixed voltage substitution or separate RPMh writer is introduced.
+
+Source: MiCode display DT 4a3e1c391130237c5e8c2b250d1c94f3e25b9b11,
+display/uke-sde-display.dtsi; Uke DT94c84aeb9e517dbde546fc732033c184094c8e57,
+qcom/cliffs-regulators.dtsi; captured selected Uke FDT and runtime supplier
+inspection. Linux source retains its GPL notices. Native scanout remains
+unqualified until a separate physical test.
+
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -1991,12 +1991,13 @@
+ 		return rc;
+ 	}
+ 
+-	/* OEM Uke supplies required by CPU, USB, UFS, WLAN, ADSP and GPU clocks. */
++	/* Reviewed OEM Uke supplies, including native display MMCX and panel IO. */
+ 	if (strcmp(aggr_vreg->resource_name, "cx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "mx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "lcx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "lmx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "mxc.lvl") &&
++	    strcmp(aggr_vreg->resource_name, "mmcx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob2") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob4") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob7") &&
+@@ -2007,6 +2008,7 @@
+ 	    strcmp(aggr_vreg->resource_name, "ldod1") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob5") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob12") &&
++	    strcmp(aggr_vreg->resource_name, "ldob8") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldod3"))
+ 		return -ENODEV;
+ 
+-- 
+2.51.0
