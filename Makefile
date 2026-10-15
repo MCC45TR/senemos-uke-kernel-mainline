@@ -47,3 +47,7 @@ test-entry:
 .PHONY: test-led-overlay
 test-led-overlay:
 	bash tests/led-overlay-contract.sh
+
+.PHONY: test-led-admission
+test-led-admission:
+	bash tests/led-admission-contract.sh "$(SOURCE_TREE)"

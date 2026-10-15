@@ -1,12 +1,9 @@
 From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
 Subject: [PATCH] dt-bindings: leds: qcom-lpg: describe the PMXR2230 PWM block
 
-The Uke OEM PMXR2230 description uses the same four PWM channel offsets,
-tri-LED enable register and channel masks as the PM8350C LPG descriptor.
-Describe its identity with that existing fallback. Board routing and visible
-color support are independent of the peripheral compatibility declaration.
-
-This is a source candidate; it is not part of the admitted kernel patch set.
+PMXR2230 shares the reviewed PM8350C channel/output layout, but uses a
+standalone compatible so an older driver cannot bypass subtype validation.
+Board routing and emitted colors remain separate physical acceptance gates.
 ---
  Documentation/devicetree/bindings/leds/leds-qcom-lpg.yaml | 1 +
  1 file changed, 1 insertion(+)
@@ -14,11 +11,11 @@ This is a source candidate; it is not part of the admitted kernel patch set.
 diff --git a/Documentation/devicetree/bindings/leds/leds-qcom-lpg.yaml b/Documentation/devicetree/bindings/leds/leds-qcom-lpg.yaml
 --- a/Documentation/devicetree/bindings/leds/leds-qcom-lpg.yaml
 +++ b/Documentation/devicetree/bindings/leds/leds-qcom-lpg.yaml
-@@ -44,6 +44,7 @@ properties:
-           - enum:
-               - qcom,pm8550-pwm
-               - qcom,pmh0101-pwm
-+              - qcom,pmxr2230-pwm
-           - const: qcom,pm8350c-pwm
+@@ -36,6 +36,7 @@ properties:
+           - qcom,pmi8994-lpg
+           - qcom,pmi8998-lpg
+           - qcom,pmk8550-pwm
++          - qcom,pmxr2230-pwm
        - items:
            - enum:
+               - qcom,pm6150l-lpg

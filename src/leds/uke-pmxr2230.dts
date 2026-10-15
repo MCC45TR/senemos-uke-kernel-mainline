@@ -12,7 +12,7 @@
 			#size-cells = <0>;
 
 			pwm@e800 {
-				compatible = "qcom,pmxr2230-pwm", "qcom,pm8350c-pwm";
+				compatible = "qcom,pmxr2230-pwm";
 				reg = <0xe800>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -23,7 +23,6 @@
 					reg = <1>;
 					color = <1>; /* LED_COLOR_ID_RED */
 					function = "status";
-					label = "uke:red:status";
 					default-state = "off";
 				};
 
@@ -31,7 +30,6 @@
 					reg = <2>;
 					color = <2>; /* LED_COLOR_ID_GREEN */
 					function = "status";
-					label = "uke:green:status";
 					default-state = "off";
 				};
 
@@ -39,7 +37,6 @@
 					reg = <3>;
 					color = <3>; /* LED_COLOR_ID_BLUE */
 					function = "status";
-					label = "uke:blue:status";
 					default-state = "off";
 				};
 			};

@@ -51,7 +51,7 @@ check_source() {
 }
 check_graph() {
     local file=$1 path channel
-    [[ $(fdtget -t s "$file" "$lpg" compatible) == 'qcom,pmxr2230-pwm qcom,pm8350c-pwm' ]] || return 1
+    [[ $(fdtget -t s "$file" "$lpg" compatible) == qcom,pmxr2230-pwm ]] || return 1
     [[ $(fdtget -t x "$file" "$lpg" reg) == e800 ]] || return 1
     [[ $(fdtget -t x "$file" "$lpg" '#pwm-cells') == 2 ]] || return 1
     for path in pwms@e800 pwms@e900 pwms@eb00 qcom,leds@ef00; do
@@ -65,6 +65,7 @@ check_graph() {
         [[ $(fdtget -t s "$file" "$path" default-state) == off ]] || return 1
         [[ $(fdtget -t s "$file" "$path" function) == status ]] || return 1
         ! fdtget "$file" "$path" linux,default-trigger >/dev/null 2>&1 || return 1
+        ! fdtget "$file" "$path" label >/dev/null 2>&1 || return 1
     done
     ! fdtget -p "$file" "$lpg" | grep -Eq 'nvmem|sdam|lut|current|power-source' || return 1
 }

@@ -1,0 +1,95 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] leds: qcom-lpg: validate PMXR2230 before enabling outputs
+
+Reuse the reviewed PM8350C channel layout through a dedicated compatible.
+Read OEM tri-LED type and PWM subtype registers before any write.
+Reject the PBS-dependent LED2H0L12 subtype, unknown blocks and
+register-read errors.
+
+Source comparison: MiCode Xiaomi_Kernel_OpenSource uke-v-oss,
+5712080a4b0c0b1a879e6d145c601c649ddaddfd, drivers/leds/leds-qti-tri-led.c
+and drivers/pwm/pwm-qti-lpg.c (GPL-2.0-only).
+This candidate is not in an admitted boot profile or a hardware result.
+---
+diff --git a/drivers/leds/rgb/leds-qcom-lpg.c b/drivers/leds/rgb/leds-qcom-lpg.c
+index d7d6518..f259524 100644
+--- a/drivers/leds/rgb/leds-qcom-lpg.c
++++ b/drivers/leds/rgb/leds-qcom-lpg.c
+@@ -1468,11 +1468,44 @@ static int lpg_add_led(struct lpg *lpg, struct device_node *np)
+ 	return ret;
+ }
+ 
++static int lpg_pmxr2230_validate(struct lpg *lpg)
++{
++	unsigned int type, subtype;
++	int ret;
++
++	ret = regmap_read(lpg->map, 0xef04, &type);
++	if (ret)
++		return ret;
++	ret = regmap_read(lpg->map, 0xef05, &subtype);
++	if (ret)
++		return ret;
++
++	/* The LED2H0L12 subtype needs an unqualified PBS supply sequence. */
++	if (type != 0x19 || (subtype != 0x02 && subtype != 0x04))
++		return dev_err_probe(lpg->dev, -ENODEV,
++				     "unsupported PMXR2230 tri-LED type/subtype\n");
++
++	for (unsigned int i = 0; i < lpg->data->num_channels; i++) {
++		ret = regmap_read(lpg->map,
++				  lpg->data->channels[i].base + LPG_SUBTYPE_REG,
++				  &subtype);
++		if (ret)
++			return ret;
++		if (subtype != LPG_SUBTYPE_PWM &&
++		    subtype != LPG_SUBTYPE_HI_RES_PWM &&
++		    subtype != LPG_SUBTYPE_LPG_LITE)
++			return dev_err_probe(lpg->dev, -ENODEV,
++					     "unsupported PMXR2230 PWM subtype\n");
++	}
++
++	return 0;
++}
++
+ static int lpg_init_channels(struct lpg *lpg)
+ {
+ 	const struct lpg_data *data = lpg->data;
+ 	struct lpg_channel *chan;
+-	int i;
++	int i, ret;
+ 
+ 	for (i = 0; i < data->num_channels; i++) {
+ 		chan = &lpg->channels[i];
+@@ -1483,7 +1516,9 @@ static int lpg_init_channels(struct lpg *lpg)
+ 		chan->lut_mask = BIT(i);
+ 		chan->sdam_offset = data->channels[i].sdam_offset;
+ 
+-		regmap_read(lpg->map, chan->base + LPG_SUBTYPE_REG, &chan->subtype);
++		ret = regmap_read(lpg->map, chan->base + LPG_SUBTYPE_REG, &chan->subtype);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	return 0;
+@@ -1618,6 +1653,12 @@ static int lpg_probe(struct platform_device *pdev)
+ 	if (!lpg->map)
+ 		return dev_err_probe(&pdev->dev, -ENXIO, "parent regmap unavailable\n");
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "qcom,pmxr2230-pwm")) {
++		ret = lpg_pmxr2230_validate(lpg);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = lpg_init_channels(lpg);
+ 	if (ret < 0)
+ 		return ret;
+@@ -1824,6 +1865,7 @@ static const struct of_device_id lpg_of_table[] = {
+ 	{ .compatible = "qcom,pm8150b-lpg", .data = &pm8150b_lpg_data },
+ 	{ .compatible = "qcom,pm8150l-lpg", .data = &pm8150l_lpg_data },
+ 	{ .compatible = "qcom,pm8350c-pwm", .data = &pm8350c_pwm_data },
++	{ .compatible = "qcom,pmxr2230-pwm", .data = &pm8350c_pwm_data },
+ 	{ .compatible = "qcom,pm8916-pwm", .data = &pm8916_pwm_data },
+ 	{ .compatible = "qcom,pm8941-lpg", .data = &pm8941_lpg_data },
+ 	{ .compatible = "qcom,pm8994-lpg", .data = &pm8994_lpg_data },
