@@ -7,8 +7,10 @@
  * OEM packet types, delays, timing groups and power sequence are retained.
  */
 #include <linux/delay.h>
+#include <linux/backlight.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_graph.h>
 #include <linux/regulator/consumer.h>
@@ -18,6 +20,8 @@
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
+#include <drm/drm_vblank.h>
+#include <drm/drm_vblank_work.h>
 #include <video/mipi_display.h>
 
 struct o82_command {
@@ -47,11 +51,18 @@ struct o82_panel {
 	struct regulator *supplies[3];
 	struct gpio_desc *reset;
 	struct drm_connector *connector;
+	struct backlight_device *backlight;
+	struct drm_vblank_work first_frame_work;
+	struct drm_crtc *first_frame_crtc;
+	u64 first_frame_target;
+	struct mutex lock;
 	const struct o82_profile *profiles, *active;
 	unsigned int enabled_supplies;
 	unsigned int loaded_supplies;
 	bool reset_output;
 	bool prepared;
+	bool first_frame_initialized;
+	bool removing;
 	bool initial_60hz_only;
 	bool initial_120hz_only;
 };
@@ -168,7 +179,7 @@ static int o82_read_initial_mode(struct o82_panel *ctx, struct device_node *node
 	return 0;
 }
 
-static int o82_prepare(struct drm_panel *panel)
+static int o82_prepare_locked(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
 	struct drm_dsc_config pps_config;
@@ -181,6 +192,8 @@ static int o82_prepare(struct drm_panel *panel)
 	const struct drm_display_mode *mode;
 	const struct o82_profile *profile = NULL;
 
+	if (ctx->removing)
+		return -ESHUTDOWN;
 	if (!ctx->connector || !ctx->connector->state ||
 	    !ctx->connector->state->crtc || !ctx->connector->state->crtc->state) {
 		dev_err(&ctx->dsi[0]->dev, "O82 prepare has no active connector state\n");
@@ -213,6 +226,9 @@ static int o82_prepare(struct drm_panel *panel)
 	/* Do not accumulate enable references after a failed power-down. */
 	if (ctx->enabled_supplies || ctx->loaded_supplies)
 		return -EBUSY;
+	ret = backlight_disable(ctx->backlight);
+	if (ret)
+		return ret;
 	ctx->active = profile;
 	for (i = 0; i < ARRAY_SIZE(ctx->supplies); i++) {
 		ret = regulator_set_load(ctx->supplies[i], 300000);
@@ -271,17 +287,86 @@ rollback_supplies:
 	return ret;
 }
 
-static int o82_enable(struct drm_panel *panel)
+static int o82_prepare(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	int ret;
+
+	mutex_lock(&ctx->lock);
+	ret = o82_prepare_locked(panel);
+	mutex_unlock(&ctx->lock);
+	return ret;
+}
+
+static void o82_cancel_first_frame(struct o82_panel *ctx)
+{
+	if (ctx->first_frame_initialized) {
+		drm_vblank_work_cancel_sync(&ctx->first_frame_work);
+		ctx->first_frame_initialized = false;
+		ctx->first_frame_crtc = NULL;
+	}
+}
+
+static void o82_first_frame(struct kthread_work *work)
+{
+	struct drm_vblank_work *vblank_work = to_drm_vblank_work(work);
+	struct o82_panel *ctx = container_of(vblank_work, struct o82_panel, first_frame_work);
 	const struct o82_command normal_pixels[] = {
 		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
 		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0x13, 0x00 } },
 	};
+	const char *stage = "prepared";
+	int i = -1, ret, blank_ret, brightness;
+
+	dev_info(&ctx->dsi[0]->dev,
+		 "O82 first-frame boundary: target=%llu current=%llu\n",
+		 (unsigned long long)ctx->first_frame_target,
+		 (unsigned long long)drm_crtc_vblank_count(ctx->first_frame_crtc));
+	if (!ctx->prepared) {
+		ret = -EINVAL;
+		goto failed;
+	}
+	stage = "backlight";
+	ret = backlight_enable(ctx->backlight);
+	if (ret)
+		goto failed;
+	brightness = backlight_get_brightness(ctx->backlight);
+	if (brightness <= 0) {
+		ret = -ERANGE;
+		goto failed;
+	}
+	dev_info(&ctx->dsi[0]->dev,
+		 "O82 first-frame checked backlight: brightness=%d result=0\n", brightness);
+	stage = "normal-pixels";
+	for (i = 0; i < ARRAY_SIZE(normal_pixels); i++) {
+		ret = o82_send(ctx, &normal_pixels[i], true);
+		if (ret)
+			goto failed;
+	}
+	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
+	return;
+
+failed:
+	blank_ret = backlight_disable(ctx->backlight);
+	dev_err(&ctx->dsi[0]->dev,
+		"O82 first-frame restoration failed: stage=%s command=%d result=%d blank_result=%d\n",
+		stage, i, ret, blank_ret);
+}
+
+static int o82_enable_locked(struct drm_panel *panel)
+{
+	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	struct drm_crtc *crtc;
 	int i, ret;
 
-	if (!ctx->prepared)
+	if (ctx->removing)
+		return -ESHUTDOWN;
+	if (!ctx->prepared || !ctx->backlight || !ctx->connector ||
+	    !ctx->connector->state || !ctx->connector->state->crtc)
 		return -EINVAL;
+	if (ctx->first_frame_initialized)
+		return -EBUSY;
+	crtc = ctx->connector->state->crtc;
 	/* Exact OEM post-enable updates TP FPS after PPS and video start. */
 	for (i = 0; i < ctx->active->switch_count; i++) {
 		ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
@@ -291,32 +376,72 @@ static int o82_enable(struct drm_panel *panel)
 			return ret;
 		}
 	}
-	/* OEM O81/O82 restores normal pixels on the first positive backlight
-	 * update. Preserve its LP packet types and zero waits before DRM core
-	 * admits the backlight; runtime brightness-zero handling is separate.
-	 */
-	for (i = 0; i < ARRAY_SIZE(normal_pixels); i++) {
-		ret = o82_send(ctx, &normal_pixels[i], true);
-		if (ret) {
-			dev_err(&ctx->dsi[0]->dev,
-				"O82 normal-pixels command[%d] failed: %d\n", i, ret);
-			return ret;
-		}
+	/* MSM kicks off after panel enable, so the first-frame gate must not block. */
+	ctx->first_frame_crtc = crtc;
+	ctx->first_frame_target = drm_crtc_vblank_count(crtc) + 1;
+	drm_vblank_work_init(&ctx->first_frame_work, crtc, o82_first_frame);
+	ctx->first_frame_initialized = true;
+	dev_info(&ctx->dsi[0]->dev, "O82 first-frame arm: target=%llu\n",
+		 (unsigned long long)ctx->first_frame_target);
+	ret = drm_vblank_work_schedule(&ctx->first_frame_work,
+				       ctx->first_frame_target, true);
+	if (ret <= 0) {
+		o82_cancel_first_frame(ctx);
+		ret = ret < 0 ? ret : -EIO;
+		dev_err(&ctx->dsi[0]->dev, "O82 first-frame schedule refused: %d\n",
+			ret);
+		return ret;
 	}
+	return 0;
+}
+
+static int o82_enable(struct drm_panel *panel)
+{
+	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+	int ret;
+
+	mutex_lock(&ctx->lock);
+	ret = o82_enable_locked(panel);
+	mutex_unlock(&ctx->lock);
+	return ret;
+}
+
+static void o82_disable_locked(struct o82_panel *ctx)
+{
+	int ret;
+
+	o82_cancel_first_frame(ctx);
+	ret = backlight_disable(ctx->backlight);
+	if (ret)
+		dev_err(&ctx->dsi[0]->dev, "O82 backlight blank failed: %d\n", ret);
+}
+
+static int o82_disable(struct drm_panel *panel)
+{
+	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+
+	mutex_lock(&ctx->lock);
+	o82_disable_locked(ctx);
+	mutex_unlock(&ctx->lock);
 	return 0;
 }
 
 static int o82_unprepare(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
-	int ret, power_ret;
+	int ret = 0, power_ret;
 
+	mutex_lock(&ctx->lock);
+	o82_disable_locked(ctx);
 	if (!ctx->prepared && !ctx->enabled_supplies && !ctx->loaded_supplies)
-		return 0;
+		goto out;
 	ret = ctx->prepared ? o82_off(ctx) : 0;
 	power_ret = o82_power_off(ctx);
 	ctx->prepared = false;
-	return ret ? ret : power_ret;
+	ret = ret ? ret : power_ret;
+out:
+	mutex_unlock(&ctx->lock);
+	return ret;
 }
 
 static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connector)
@@ -350,6 +475,7 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 static const struct drm_panel_funcs o82_funcs = {
 	.prepare = o82_prepare,
 	.enable = o82_enable,
+	.disable = o82_disable,
 	.unprepare = o82_unprepare,
 	.get_modes = o82_get_modes,
 };
@@ -369,6 +495,7 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 				 DRM_MODE_CONNECTOR_DSI);
 	if (IS_ERR(ctx))
 		return PTR_ERR(ctx);
+	mutex_init(&ctx->lock);
 	ctx->dsi[0] = dsi;
 	ctx->profiles = of_device_get_match_data(dev);
 	if (!ctx->profiles)
@@ -406,9 +533,15 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	ctx->dsc.bits_per_component = 10;
 	ctx->dsc.bits_per_pixel = 8 << 4;
 	ctx->dsc.block_pred_enable = true;
-	ret = drm_panel_of_backlight(&ctx->panel);
-	if (ret)
+	ctx->backlight = devm_of_find_backlight(dev);
+	if (IS_ERR(ctx->backlight)) {
+		ret = PTR_ERR(ctx->backlight);
 		goto unregister_secondary;
+	}
+	if (!ctx->backlight) {
+		ret = -ENODEV;
+		goto unregister_secondary;
+	}
 	mipi_dsi_set_drvdata(dsi, ctx);
 	ctx->panel.prepare_prev_first = true;
 	drm_panel_add(&ctx->panel);
@@ -439,6 +572,9 @@ static void o82_remove(struct mipi_dsi_device *dsi)
 {
 	struct o82_panel *ctx = mipi_dsi_get_drvdata(dsi);
 
+	mutex_lock(&ctx->lock);
+	ctx->removing = true;
+	mutex_unlock(&ctx->lock);
 	drm_panel_disable(&ctx->panel);
 	if (o82_unprepare(&ctx->panel))
 		dev_warn(&dsi->dev, "Panel power-down failed during removal\n");
@@ -452,6 +588,9 @@ static void o82_shutdown(struct mipi_dsi_device *dsi)
 {
 	struct o82_panel *ctx = mipi_dsi_get_drvdata(dsi);
 
+	mutex_lock(&ctx->lock);
+	ctx->removing = true;
+	mutex_unlock(&ctx->lock);
 	drm_panel_disable(&ctx->panel);
 	if (o82_unprepare(&ctx->panel))
 		dev_warn(&dsi->dev, "Panel power-down failed during shutdown\n");

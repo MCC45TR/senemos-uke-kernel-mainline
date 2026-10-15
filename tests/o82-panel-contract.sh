@@ -14,7 +14,9 @@ cat > "$work/check.c" <<'C'
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t __be16; typedef long ssize_t;
+#include <stdio.h>
+static char last_error[512];
+typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64; typedef uint16_t __be16; typedef long ssize_t;
 #define __packed __attribute__((packed))
 #define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define BUILD_BUG_ON(c) _Static_assert(!(c), #c)
@@ -26,11 +28,14 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint16_t
 #define cpu_to_be16(v) ((uint16_t)__builtin_bswap16((uint16_t)(v)))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define BIT(n) (1U<<(n))
-#define dev_err(...) ((void)0)
+#define dev_err(dev,fmt,...) ((void)snprintf(last_error,sizeof(last_error),fmt,##__VA_ARGS__))
 #define dev_info(...) ((void)0)
 #define dev_warn(...) ((void)0)
 #define dev_err_probe(dev,err,...) (err)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
+#define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
+#define PTR_ERR(p) ((long)(p))
+#define ERR_PTR(e) ((void *)(intptr_t)(e))
 enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
        MIPI_DCS_GET_POWER_MODE=0x0a, MIPI_DSI_FMT_RGB101010=10,
        DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
@@ -75,22 +80,65 @@ struct drm_display_mode { unsigned int clock,hdisplay,hsync_start,hsync_end,htot
     vdisplay,vsync_start,vsync_end,vtotal,width_mm,height_mm,type; };
 struct drm_panel;
 struct drm_panel_funcs {int (*enable)(struct drm_panel *); int (*disable)(struct drm_panel *);};
+struct mutex {int locked;};
 struct drm_panel {bool enabled; const struct drm_panel_funcs *funcs;
-    int follower_lock,followers; void *backlight;};
+    struct mutex follower_lock; int followers; void *backlight;};
 struct drm_panel_follower;
 struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);
     int (*panel_disabling)(struct drm_panel_follower *);};
 struct drm_panel_follower {const struct follower_ops *funcs;};
 static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers;
-static void mutex_lock(int *lock) {(void)lock;}
-static void mutex_unlock(int *lock) {(void)lock;}
+static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
+static bool boundary_seen;
+struct backlight_device {bool on;};
+static void mutex_init(struct mutex *lock) {lock->locked=0;}
+static void mutex_lock(struct mutex *lock) {assert(!lock->locked); lock->locked=1;}
+static void mutex_unlock(struct mutex *lock) {assert(lock->locked); lock->locked=0;}
 static int backlight_enable(void *backlight) {
-    (void)backlight; assert(normal_transfers==4 && hs_transfers==8); ++backlight_calls; return 0;
+    if(!backlight) return 0;
+    assert(boundary_seen && normal_transfers==0 && hs_transfers==8);
+    ++backlight_calls; ((struct backlight_device *)backlight)->on=true;
+    return backlight_enable_error;
 }
-static int backlight_disable(void *backlight) {(void)backlight; ++backlight_disable_calls; return 0;}
+static int backlight_disable(void *backlight) {
+    if(!backlight) return 0;
+    ++backlight_disable_calls; if(backlight_disable_error) return backlight_disable_error;
+    ((struct backlight_device *)backlight)->on=false; return 0;
+}
+static int backlight_get_brightness(struct backlight_device *backlight) {
+    return backlight->on ? positive_brightness:0;
+}
 #define list_for_each_entry(entry,head,member) for(entry=NULL;entry;entry=NULL)
 struct drm_crtc_state { struct drm_display_mode adjusted_mode; };
-struct drm_crtc { struct drm_crtc_state *state; };
+struct drm_crtc { struct drm_crtc_state *state; u64 count; };
+struct kthread_work {void (*func)(struct kthread_work *);};
+struct drm_vblank_work {struct kthread_work base; struct drm_crtc *crtc; u64 count; bool pending;};
+#define to_drm_vblank_work(work) container_of(work,struct drm_vblank_work,base)
+static int schedule_result=1,scheduled,cancelled;
+static bool dispatch_during_cancel;
+static void drm_vblank_work_init(struct drm_vblank_work *work,struct drm_crtc *crtc,
+    void (*func)(struct kthread_work *)) {
+    assert(crtc); work->base.func=func; work->crtc=crtc; work->pending=false;
+}
+static u64 drm_crtc_vblank_count(struct drm_crtc *crtc) {return crtc->count;}
+static int drm_vblank_work_schedule(struct drm_vblank_work *work,u64 count,bool nextonmiss) {
+    assert(nextonmiss && count==work->crtc->count+1 && !work->pending);
+    assert(!backlight_calls && !normal_transfers); ++scheduled;
+    if(schedule_result>0) {work->pending=true; work->count=count;}
+    return schedule_result;
+}
+static bool drm_vblank_work_cancel_sync(struct drm_vblank_work *work) {
+    bool pending=work->pending; ++cancelled;
+    if(pending && dispatch_during_cancel) {
+        boundary_seen=true; work->crtc->count=work->count;
+        work->pending=false; work->base.func(&work->base);
+    }
+    work->pending=false; return pending;
+}
+static void first_boundary(struct drm_vblank_work *work) {
+    assert(work->pending); boundary_seen=true;
+    work->crtc->count=work->count; work->pending=false; work->base.func(&work->base);
+}
 struct drm_connector_state { struct drm_crtc *crtc; };
 struct drm_connector { struct drm_connector_state *state; void *dev;
     struct { int bpc,width_mm,height_mm; } display_info; };
@@ -160,7 +208,7 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
         if(video_started) {
             static const u8 normal[2][2]={{0xff,0x10},{0x13,0x00}};
             assert(hs_transfers==8 && normal_transfers<4);
-            assert(host->id==normal_transfers%2 && !backlight_calls);
+            assert(host->id==normal_transfers%2 && backlight_calls==1 && boundary_seen);
             assert(m->type==(normal_transfers<2 ? 0x15U:0x39U) && m->tx_len==2);
             assert(!memcmp(m->tx_buf,normal[normal_transfers/2],2));
             normal_transfers++;
@@ -194,6 +242,10 @@ sed -n '/^void drm_panel_disable(/,/^EXPORT_SYMBOL(drm_panel_disable)/p' \
     "$kernel/drivers/gpu/drm/drm_panel.c" | sed '$d' >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct o82_panel *attach_ctx;
+static struct backlight_device *probe_backlight;
+static struct backlight_device *devm_of_find_backlight(struct device *dev) {
+    (void)dev; return probe_backlight;
+}
 static int attach_failure,attached,detached,panel_removed,secondary_removed;
 static int mipi_dsi_attach(struct mipi_dsi_device *dsi) {
     int id=attached++;
@@ -203,10 +255,11 @@ static int mipi_dsi_attach(struct mipi_dsi_device *dsi) {
     return id==attach_failure ? -EIO:0;
 }
 static void mipi_dsi_detach(struct mipi_dsi_device *dsi) {
-    assert(dsi==attach_ctx->dsi[0]); ++detached;
+    assert(dsi==attach_ctx->dsi[0] || dsi==attach_ctx->dsi[1]);
+    assert(!attach_ctx->first_frame_initialized && !attach_ctx->prepared); ++detached;
 }
 static void drm_panel_remove(struct drm_panel *panel) {
-    assert(panel==&attach_ctx->panel); ++panel_removed;
+    assert(panel==&attach_ctx->panel && !attach_ctx->first_frame_initialized); ++panel_removed;
 }
 static void mipi_dsi_device_unregister(struct mipi_dsi_device *dsi) {
     assert(dsi==attach_ctx->dsi[1]); ++secondary_removed;
@@ -224,6 +277,27 @@ awk '
     emit && !/^unregister_secondary:/ { print }
 ' "$source_file" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
+static int o82_probe_backlight(struct o82_panel *ctx) {
+    struct device device={0},*dev=&device;
+    int ret;
+C
+awk '
+    /^static int o82_probe\(/ {probe=1}
+    probe && /^\tctx->backlight = devm_of_find_backlight/ {emit=1}
+    emit && /^\tmipi_dsi_set_drvdata/ {exit}
+    emit {print}
+' "$source_file" >> "$work/check.c"
+cat >> "$work/check.c" <<'C'
+    return 0;
+unregister_secondary:
+    return ret;
+}
+static struct o82_panel *mipi_dsi_get_drvdata(struct mipi_dsi_device *dsi) {
+    assert(dsi==attach_ctx->dsi[0]); return attach_ctx;
+}
+C
+sed -n '/^static void o82_remove(/,/^static const struct of_device_id/p' "$source_file" | sed '$d' >> "$work/check.c"
+cat >> "$work/check.c" <<'C'
 /* Execute the probe's profile admission before any regulator acquisition. */
 static int o82_probe_initial_mode(struct o82_panel *ctx,struct device_node *node) {
     struct device device={node},*dev=&device;
@@ -239,25 +313,30 @@ cat >> "$work/check.c" <<'C'
     return 0;
 }
 static struct o82_panel context(int variant,int mode) {
-    static const struct drm_panel_funcs funcs={.enable=o82_enable};
+    static const struct drm_panel_funcs funcs={.enable=o82_enable,.disable=o82_disable};
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
     static struct mipi_dsi_device dsis[2]={{.host=&hosts[0],.mode_flags=MIPI_DSI_MODE_LPM},
                                          {.host=&hosts[1],.mode_flags=MIPI_DSI_MODE_LPM,.id=1}};
     static struct regulator supplies[3]={{0},{1},{2}};
     static struct drm_crtc_state cs;
-    static struct drm_crtc crtc={&cs};
+    static struct drm_crtc crtc={.state=&cs};
     static struct drm_connector_state state={&crtc};
     static struct drm_connector connector={.state=&state};
+    static struct backlight_device backlight;
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=normal_transfers=0;
-    backlight_calls=backlight_disable_calls=0; video_started=false;
+    backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
+    scheduled=cancelled=0; schedule_result=positive_brightness=1;
+    video_started=boundary_seen=backlight.on=dispatch_during_cancel=false; crtc.count=100;
+    last_error[0]=0;
     failure=transfer_failure=disable_failure=transfer_short=-1;
     cs.adjusted_mode=o82_modes[mode].mode;
     const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
     struct o82_panel ctx={.panel={.funcs=&funcs},.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
-        .connector=&connector,.profiles=p,.active=p,.initial_120hz_only=variant && mode==5};
+        .connector=&connector,.backlight=&backlight,.profiles=p,.active=p,.initial_120hz_only=variant && mode==5};
+    mutex_init(&ctx.lock);
     pps_start=2*p[o82_modes[mode].group].on_count;
     struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
     struct platform_device platform={.dev={&node}};
@@ -272,6 +351,14 @@ static struct o82_panel context(int variant,int mode) {
     return ctx;
 }
 int main(void) {
+    for(int result=0;result<4;result++) {
+        struct o82_panel ctx=context(0,3);
+        probe_backlight=result==0 ? ctx.backlight:result==1 ? NULL:ERR_PTR(result==2 ? -EIO:-ENODEV);
+        ctx.backlight=NULL;
+        assert(o82_probe_backlight(&ctx)==(result==0 ? 0:result==2 ? -EIO:-ENODEV));
+        assert(!ctx.panel.backlight && ctx.backlight==probe_backlight);
+        assert(!enables && !transfers && !operation && !scheduled);
+    }
     for(int variant=0;variant<2;variant++) for(int flags=0;flags<4;flags++) {
         struct o82_panel ctx=context(variant,3);
         struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
@@ -332,9 +419,18 @@ int main(void) {
         assert(o82_prepare(&c.panel)==0 && transfers==full && enables==3);
         const int before_enable_wait=settle_ms;
         video_started=true; drm_panel_enable(&c.panel);
-        assert(c.panel.enabled && backlight_calls==1 && enables==3);
+        assert(c.panel.enabled && !backlight_calls && enables==3 && scheduled==1);
         assert(hs_transfers==2*(int)c.active->switch_count && settle_ms==before_enable_wait);
-        assert(normal_transfers==4 && transfers==full+12);
+        assert(!normal_transfers && transfers==full+8 && c.first_frame_work.pending);
+        assert(!c.backlight->on && c.first_frame_initialized);
+        /* Event-less startup remains nonblocking, blank and cancellable. */
+        const int pending_full=transfers;
+        drm_panel_enable(&c.panel);
+        assert(transfers==pending_full && scheduled==1 && !backlight_calls);
+        assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
+        first_boundary(&c.first_frame_work);
+        assert(c.backlight->on);
+        assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);
         for(unsigned int command=0;command<c.active->switch_count;command++)
             for(int link=0;link<2;link++)
                 assert(!memcmp(hs_payloads[2*command+link],c.active->switch_commands[command].data,2));
@@ -342,13 +438,16 @@ int main(void) {
         drm_panel_enable(&c.panel);
         assert(transfers==enabled_full && backlight_calls==1);
         drm_panel_disable(&c.panel);
-        assert(!c.panel.enabled && backlight_disable_calls==1);
+        assert(!c.panel.enabled && backlight_disable_calls==2 && cancelled==1);
+        assert(!c.first_frame_initialized && !c.first_frame_crtc && !c.backlight->on);
         drm_panel_disable(&c.panel);
-        assert(backlight_disable_calls==1);
+        assert(backlight_disable_calls==2);
         /* A fresh core enable after disable repeats the panel protocol. */
-        hs_transfers=normal_transfers=0; backlight_calls=0;
+        hs_transfers=normal_transfers=0; backlight_calls=0; boundary_seen=false;
         drm_panel_enable(&c.panel);
-        assert(c.panel.enabled && backlight_calls==1 && normal_transfers==4 && hs_transfers==8);
+        assert(c.panel.enabled && !backlight_calls && !normal_transfers && hs_transfers==8);
+        first_boundary(&c.first_frame_work);
+        assert(backlight_calls==1 && normal_transfers==4);
         drm_panel_disable(&c.panel);
         video_started=false;
         assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
@@ -356,11 +455,13 @@ int main(void) {
         assert(o82_unprepare(&c.panel)==0 && disables==3);
         /* Full unprepare/prepare also retains normal restoration on enable. */
         pps_start=transfers+2*c.active->on_count; pps_transfers=0;
-        hs_transfers=normal_transfers=backlight_calls=0;
+        hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
         assert(o82_prepare(&c.panel)==0 && c.prepared && pps_transfers==2);
         assert(!normal_transfers && !hs_transfers);
         video_started=true; drm_panel_enable(&c.panel);
-        assert(c.panel.enabled && backlight_calls==1 && normal_transfers==4 && hs_transfers==8);
+        assert(c.panel.enabled && !backlight_calls && !normal_transfers && hs_transfers==8);
+        first_boundary(&c.first_frame_work);
+        assert(backlight_calls==1 && normal_transfers==4);
         drm_panel_disable(&c.panel); video_started=false;
         assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
         for(int fault=0;fault<6;fault++) {
@@ -384,15 +485,28 @@ int main(void) {
             const int before=transfers;
             if(short_reply) transfer_short=before+fault; else transfer_failure=before+fault;
             video_started=true; drm_panel_enable(&c.panel);
-            assert(!c.panel.enabled && !backlight_calls && c.prepared && c.enabled_supplies==7);
+            if(fault<8) {
+                assert(!c.panel.enabled && !backlight_calls && !scheduled);
+                assert(!c.first_frame_initialized);
+            } else {
+                assert(c.panel.enabled && !backlight_calls && c.first_frame_work.pending);
+                first_boundary(&c.first_frame_work);
+                assert(backlight_calls==1 && strstr(last_error,"result=-5 blank_result=0"));
+                assert(!c.backlight->on && c.first_frame_initialized);
+                drm_panel_disable(&c.panel);
+            }
+            assert(c.prepared && c.enabled_supplies==7);
             assert(disables==0 && transfers==before+fault+1);
             assert(hs_transfers==(fault<8 ? fault+1:8));
             assert(normal_transfers==(fault<8 ? 0:fault-7));
-            transfer_failure=transfer_short=-1; hs_transfers=normal_transfers=0;
+            transfer_failure=transfer_short=-1; hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
             if(fault&1) {
                 drm_panel_enable(&c.panel);
-                assert(c.panel.enabled && backlight_calls==1 && hs_transfers==8 && normal_transfers==4 && enables==3);
+                assert(c.panel.enabled && !backlight_calls && hs_transfers==8 && !normal_transfers && enables==3);
+                first_boundary(&c.first_frame_work);
+                assert(backlight_calls==1 && normal_transfers==4);
             }
+            drm_panel_disable(&c.panel);
             video_started=false;
             assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
         }
@@ -415,6 +529,79 @@ int main(void) {
         assert(o82_prepare(&c.panel)==-EINVAL && enables==0);
     }
     struct o82_panel c=context(0,3);
+    for(int variant=0;variant<2;variant++) {
+        for(int refusal=0;refusal<3;refusal++) {
+            c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+            const int before=transfers;
+            schedule_result=refusal==0 ? 0:refusal==1 ? -EIO:-EINVAL;
+            video_started=true; drm_panel_enable(&c.panel);
+            assert(!c.panel.enabled && !c.backlight->on && !backlight_calls && !normal_transfers);
+            assert(transfers==before+8 && scheduled==1 && cancelled==1);
+            assert(!c.first_frame_initialized && strstr(last_error,refusal==2 ? "refused: -22":"refused: -5"));
+            video_started=false; assert(o82_unprepare(&c.panel)==0 && !c.prepared);
+        }
+        for(int fault=0;fault<3;fault++) {
+            c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+            video_started=true; drm_panel_enable(&c.panel);
+            if(fault==0) backlight_enable_error=-EIO;
+            else positive_brightness=fault==1 ? 0:-1;
+            first_boundary(&c.first_frame_work);
+            assert(c.panel.enabled && c.first_frame_initialized);
+            assert(strstr(last_error,fault==0 ? "result=-5 blank_result=0":"result=-34 blank_result=0"));
+            assert(!normal_transfers && !c.backlight->on && backlight_calls==1);
+            drm_panel_disable(&c.panel); assert(cancelled==1 && !c.first_frame_initialized);
+            video_started=false; assert(o82_unprepare(&c.panel)==0);
+        }
+        c=context(variant,3); backlight_disable_error=-EIO;
+        assert(o82_prepare(&c.panel)==-EIO && !enables && !transfers && !operation);
+        c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+        video_started=true; drm_panel_enable(&c.panel); dispatch_during_cancel=true;
+        drm_panel_disable(&c.panel);
+        assert(cancelled==1 && !c.first_frame_initialized && !c.first_frame_crtc);
+        assert(backlight_calls==1 && normal_transfers==4 && !c.backlight->on);
+        video_started=false; assert(o82_unprepare(&c.panel)==0);
+        c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+        video_started=true; drm_panel_enable(&c.panel); first_boundary(&c.first_frame_work);
+        backlight_disable_error=-EIO; drm_panel_disable(&c.panel);
+        assert(!c.panel.enabled && !c.first_frame_initialized && !c.first_frame_crtc);
+        assert(strstr(last_error,"backlight blank failed: -5") && c.backlight->on);
+        video_started=false; assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
+        backlight_disable_error=0; assert(o82_unprepare(&c.panel)==0 && !c.backlight->on);
+        c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+        video_started=true; drm_panel_enable(&c.panel);
+        backlight_enable_error=-EINVAL; backlight_disable_error=-EIO;
+        first_boundary(&c.first_frame_work);
+        assert(strstr(last_error,"result=-22 blank_result=-5") && !normal_transfers);
+        assert(c.backlight->on);
+        drm_panel_disable(&c.panel); assert(!c.panel.enabled && !c.first_frame_initialized);
+        assert(strstr(last_error,"backlight blank failed: -5"));
+        video_started=false; assert(o82_unprepare(&c.panel)==0 && !c.prepared);
+        c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+        video_started=true; drm_panel_enable(&c.panel);
+        assert(c.first_frame_work.pending && !c.backlight->on);
+        /* No IRQ is required to cancel a pending event before direct teardown. */
+        video_started=false; assert(o82_unprepare(&c.panel)==0 && cancelled==1);
+        assert(!c.first_frame_initialized && !c.first_frame_work.pending && !c.prepared);
+        assert(!normal_transfers && !backlight_calls);
+        const int after_unprepare=transfers;
+        assert(o82_unprepare(&c.panel)==0 && cancelled==1 && transfers==after_unprepare);
+        drm_panel_disable(&c.panel);
+        for(int callback=0;callback<2;callback++) {
+            c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+            video_started=true; drm_panel_enable(&c.panel);
+            assert(c.first_frame_initialized && c.first_frame_work.pending);
+            attach_ctx=&c; detached=panel_removed=secondary_removed=0;
+            video_started=false;
+            if(callback) o82_shutdown(c.dsi[0]); else o82_remove(c.dsi[0]);
+            assert(c.removing && !c.prepared && !c.first_frame_initialized && cancelled==1);
+            assert(!c.backlight->on && !backlight_calls && !normal_transfers);
+            assert(detached==(callback ? 0:2) && panel_removed==!callback && secondary_removed==!callback);
+            const int after_remove=transfers;
+            assert(o82_prepare(&c.panel)==-ESHUTDOWN && o82_enable(&c.panel)==-ESHUTDOWN);
+            assert(transfers==after_remove && !c.first_frame_initialized);
+        }
+    }
+    c=context(0,3);
     struct device_node node={"unrelated,panel"};
     struct platform_device platform={.dev={&node}};
     struct msm_dsi_host h={&platform};
@@ -428,4 +615,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes: exclusive O82-42 initial120 admission and pre-power mode rejection; unchanged ON/PPS, HS post-enable, LP normal-pixels and DRM core lifecycle/fault cleanup passed\n'
+printf 'Two O82 variants, seven modes: unchanged ON/PPS/HS; nonblocking boundary then checked positive backlight then LP normal pixels; async faults, schedule refusal, duplicate/re-enable, missing IRQ cancellation and remove/shutdown rearm exclusion passed\n'

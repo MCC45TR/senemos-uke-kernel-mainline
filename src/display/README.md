@@ -280,8 +280,18 @@ SM7675 snapshots separately include DSC_CTL offsets 0x10/0x14 for the two active
 encoders, whose earlier dump span omitted them. This extends read-only telemetry;
 it does not enable 4HS or assert a mismatch with the working OEM capture's zeros.
 `tests/dsc-ctl-snapshot-contract.sh` checks the actual catalog and snapshot
-reader/printer bounds, including no access to padded words. Native values still
-require a matched physical snapshot.
+reader/printer bounds, including no access to padded words. Native24 on Uke on
+16 October confirmed the exact 120 Hz mode and both control-word pairs at zero,
+matching the active OEM capture. The desktop and held XR24 test remained blank.
+
+The next isolated panel candidate retains the four HS timing commands and
+defers the existing positive KTZ update and two LP normal-pixel commands until
+a standard DRM vblank work item runs. Panel enable returns before MSM kickoff;
+disable and unprepare join pending or running work before host or rail teardown.
+Schedule refusal, backlight and packet failures are reported and request blanking.
+Core enable admission is separate from asynchronous completion. A vblank is not
+a panel acknowledgement or proof of this commit's first frame with inherited
+running timing; missing events, resume and visible output still need Uke tests.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
