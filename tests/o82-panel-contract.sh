@@ -181,7 +181,7 @@ struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
     unsigned int lanes,format; struct drm_dsc_config *dsc; int id; };
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
     assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1);
-    assert(reg==0xda || reg==0x0a || (reg>=0x0c && reg<=0x0f));
+    assert(reg==0xda || reg==0x0a || (reg>=0x0c && reg<=0x0f) || reg==0x54);
     if(video_started) {
         assert(boundary_seen && backlight_calls>=1 && normal_transfers>=4 && hs_transfers>=8);
         ++post_frame_reads;
@@ -487,7 +487,7 @@ int main(void) {
         assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
-        assert(post_frame_reads==(v==1&&m==5 ? 6:0));
+        assert(post_frame_reads==(v==1&&m==5 ? 7:0));
         assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
         assert(batch_api_calls==(v==1&&m==5));
         assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);

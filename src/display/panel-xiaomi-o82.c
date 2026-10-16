@@ -215,6 +215,7 @@ static void o82_readback(struct o82_panel *ctx, bool post_frame)
 		0xda, MIPI_DCS_GET_POWER_MODE, MIPI_DCS_GET_PIXEL_FORMAT,
 		MIPI_DCS_GET_DISPLAY_MODE, MIPI_DCS_GET_SIGNAL_MODE,
 		MIPI_DCS_GET_DIAGNOSTIC_RESULT,
+		MIPI_DCS_GET_CONTROL_DISPLAY,
 	};
 	/* Exact Uke OEM reads use command-master DSI0, not the secondary link. */
 	struct mipi_dsi_device *dsi = ctx->dsi[0];

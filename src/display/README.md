@@ -78,9 +78,10 @@ their existing timer state. Source and host checks do not establish that the
 previous timer caused the blank display; visible output remains a separate gate.
 
 The isolated 120 Hz profile also records standard one-byte panel replies after
-its first-frame commands, separately from the existing pre-video reads. These
-command-master-only diagnostics stop on the first read error; they do not
-change panel settings or establish visible output from a status byte.
+the first-frame sequence, including control-display read `54` for comparison
+with the exact ON value and observed OEM response. Reads remain primary-only
+and stop at the first unavailable result. Pre-video reads remain separate;
+these diagnostics do not change settings or establish a visible picture.
 The query runs one second after protocol completion in the asynchronous worker;
 this diagnostic interval is not an NT36532 startup requirement. Cancellation
 can wait for the additional second in this experimental profile.
