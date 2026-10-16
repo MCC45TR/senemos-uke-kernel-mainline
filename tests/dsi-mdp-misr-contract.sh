@@ -126,14 +126,17 @@ int main() {
     for(int pm:{0,-EIO}) {reset();pm_result=pm;run(pm?pm:-EAGAIN);assert(writes.empty());}
     reset();regs[0]=1;run(-EBUSY);assert(writes.empty());
     reset();regs[UKE_DSI_MISR_CTRL/4]=BIT(8);run(-EBUSY);assert(writes.empty());
-    for(u32 sticky:{0U,UKE_DSI_MISR_STATUS}) {
+    for(u32 sticky:{0U,UKE_DSI_MISR_STATUS,BIT(24),BIT(24)|UKE_DSI_MISR_STATUS}) {
         reset();regs[UKE_DSI_MISR_CTRL/4]=sticky;run(0);
-        assert(host.misr_capture.completed==4&&writes==std::vector<u32>({0,UKE_DSI_MISR_CONFIG,0}));
-        assert(!(regs[UKE_DSI_MISR_CTRL/4]&~UKE_DSI_MISR_STATUS));
+        assert(host.misr_capture.completed==4&&writes==std::vector<u32>({0,UKE_DSI_MISR_CONFIG,sticky&~UKE_DSI_MISR_STATUS}));
+        assert((regs[UKE_DSI_MISR_CTRL/4]&~UKE_DSI_MISR_STATUS)==(sticky&~UKE_DSI_MISR_STATUS));
         for(auto s:host.misr_capture.samples) {if(s.control)assert(s.signature==0x12345678);}
         run(0,1);assert(host.misr_capture.sequence==2&&host.misr_capture.completed==1);
     }
-    for(int at:{1,3}) {reset();interrupt_at=at;run(-ERESTARTSYS);assert(writes.back()==0);}
+    for(int at:{1,3}) {
+        reset();regs[UKE_DSI_MISR_CTRL/4]=BIT(24);interrupt_at=at;
+        run(-ERESTARTSYS);assert(writes.back()==BIT(24));
+    }
     reset();missing_ready=1;run(-ETIMEDOUT);assert(writes.back()==0&&host.misr_capture.completed==1);
     reset();changed_config=1;run(-EIO);assert(writes.back()==0);
     reset();changed_engine=1;run(-EIO);assert(writes.back()==0);
