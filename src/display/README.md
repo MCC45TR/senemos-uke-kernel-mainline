@@ -314,6 +314,20 @@ bias references. Rate, voltage, dividers and the existing lock sequence remain
 unchanged. Host fixtures cover register order, refusal and error cleanup.
 This source-backed difference has not established the cause of the blank image.
 
+Native28 confirmed all seven FLL values, PLL lock and the panel readback on
+16 October; the held SMPTE image remained invisible. Controlled SMPTE/tiles/SMPTE
+tests produced repeatable, pattern-dependent signatures at both layer mixers
+and DPU interfaces. This does not establish valid DSC decoding or DSI delivery.
+
+The next isolated O82 trial stages both command DMA engines before triggering
+slave1 and master0, following the exact Uke OEM ordering. Both completions are
+required. Reads and other panels retain their existing path. Timeout disables
+and resets both engines, then checks idle before command-role restoration.
+If reset cannot clear busy, both hosts retain TX storage and refuse further use.
+This trial must end and reboot on its first transfer timeout; unbind, reprobe,
+module unload and KMS teardown are outside its recovery contract. It is not a
+production recovery implementation or a qualified display fix.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

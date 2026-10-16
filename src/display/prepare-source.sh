@@ -39,7 +39,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0014-native-o82-retime-clock-select.patch \
                  0015-native-dpu-video-timing-master.patch \
                  0016-native-o82-host-clock-timing.patch \
-                 0018-uke-o82-fll-cold-start.patch; do
+                 0018-uke-o82-fll-cold-start.patch \
+                 0019-uke-o82-staged-command-broadcast.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
