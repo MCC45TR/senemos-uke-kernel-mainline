@@ -30,6 +30,8 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define U32_MAX UINT32_MAX
 #define BIT(n) (1U << (n))
 #define DSI_CMD_DMA_CTRL_BROADCAST_MASTER BIT(30)
+#define UKE_DSI_DMA_SCHEDULE_CTRL 0xfc
+#define UKE_DSI_DMA_SCHEDULE_CTRL2 0x100
 #define SINGLE_DEPTH_NESTING 1
 #define READ_ONCE(x) (x)
 #define WRITE_ONCE(x,v) ((x)=(v))
@@ -39,8 +41,9 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define pr_err(...) ((void)0)
 #define pr_warn(...) ((void)0)
 #define dev_info_once(dev,message) do { (void)(dev); \
-    assert(!strcmp(message,"Uke O82 staged command broadcast completed on both links\n")); \
-    ++broadcast_notices; } while(0)
+    if(!strcmp(message,"Uke O82 staged command broadcast completed on both links\n")) ++broadcast_notices; \
+    else {assert(!strcmp(message,"Uke O82 video commands completed at scheduled line2285\n")); \
+        ++schedule_notices;} } while(0)
 #define pr_err_ratelimited(...) ((void)0)
 #define container_of(ptr,type,member) ((type *)((char *)(ptr)-offsetof(type,member)))
 #define DSI_ERR_STATE_MDP_FIFO_UNDERFLOW 0x0008
@@ -109,6 +112,10 @@ static int writes_count,ctrl_writes[2],reinitialized[2];
 static u32 dma_ctrl[2],saved_ctrl[2],prepared_ctrl[2],dma_address[2],dma_len[2];
 static bool high_address;
 static int resets[2],irq_sync[2],irq_masked[2],busy_host=-1,idle_reads[2];
+static u32 video_total[2],video_active[2],schedule_ctrl[2],schedule_ctrl2[2];
+static int schedule_writes[2],video_waits,initial_busy_host=-1;
+static bool schedule_expected;
+static int schedule_notices;
 static u32 ctrl_register[2];
 static bool reset_asserted[2];
 static int clock_disables[2],pm_puts;
@@ -147,9 +154,14 @@ static u8 response[4]={MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_1BYTE,0xab,0,0};
 static u8 last_header[4];
 static int rx_result=4;
 static u32 dsi_read(struct msm_dsi_host *host,u32 address) {
+    if(address==REG_DSI_TOTAL)return video_total[host->id];
+    if(address==REG_DSI_ACTIVE_V)return video_active[host->id];
+    if(address==UKE_DSI_DMA_SCHEDULE_CTRL)return schedule_ctrl[host->id];
+    if(address==UKE_DSI_DMA_SCHEDULE_CTRL2)return schedule_ctrl2[host->id];
     if(address==REG_DSI_CMD_DMA_CTRL) return dma_ctrl[host->id];
     if(address==REG_DSI_CTRL) return ctrl_register[host->id];
     if(address==REG_DSI_STATUS0) {
+        if(!resets[host->id])return host->id==initial_busy_host ? DSI_STATUS0_CMD_MODE_DMA_BUSY:0;
         ++idle_reads[host->id]; assert(resets[host->id]==1);
         return host->id==busy_host ? DSI_STATUS0_CMD_MODE_DMA_BUSY:0;
     }
@@ -180,7 +192,7 @@ static void msm_dsi_host_cmd_xfer_commit(struct mipi_dsi_host *host,u32 address,
     assert(len==4 && commit_count<8); committed[commit_count++]=host->id;
 }
 static void reinit_completion(int *completion) {++reinitialized[completion==&hosts[0].dma_comp ? 0:1];}
-static void dsi_wait4video_eng_busy(struct msm_dsi_host *host) {(void)host;}
+static void dsi_wait4video_eng_busy(struct msm_dsi_host *host) {(void)host; ++video_waits;}
 static int wait_for_completion_timeout(int *completion,int timeout) {
     assert(timeout==200 && wait_count<8); waited[wait_count]=completion==&hosts[0].dma_comp ? 0:1;
     return ++wait_count==fail_wait ? 0:1;
@@ -202,6 +214,12 @@ static void dsi_write(struct msm_dsi_host *host,u32 address,u32 value) {
     if(address==REG_DSI_RDBK_DATA_CTRL) {assert(value==0 || value==DSI_RDBK_DATA_CTRL_CLR); return;}
     assert(hosts[0].cmd_mutex && hosts[1].cmd_mutex);
     ++writes_count;
+    if(address==UKE_DSI_DMA_SCHEDULE_CTRL) {
+        assert(schedule_expected);
+        if(value)assert(value==(BIT(28)|2285U)&&!trigger_count);
+        else assert(wait_count==2&&!hosts[0].cmd_dma_blocked&&!hosts[1].cmd_dma_blocked);
+        schedule_ctrl[id]=value;++schedule_writes[id];return;
+    }
     if(address==REG_DSI_CTRL) {
         assert(!(value&(DSI_CTRL_ENABLE|DSI_CTRL_CMD_MODE_EN|DSI_CTRL_VID_MODE_EN)));
         ctrl_register[id]=value; return;
@@ -220,6 +238,7 @@ static void dsi_write(struct msm_dsi_host *host,u32 address,u32 value) {
             assert(!!(value & DSI_CMD_DMA_CTRL_BROADCAST_MASTER)==!id);
             assert((value & ~(BIT(31)|BIT(30)))==(prepared_ctrl[id] & ~(BIT(31)|BIT(30))));
         } else {
+            assert(!schedule_ctrl[0]&&!schedule_ctrl[1]);
             assert(value==prepared_ctrl[id] && wait_count==2);
             if(fail_wait>0) assert(resets[0]==1 && resets[1]==1 && idle_reads[0] && idle_reads[1]);
             assert(!hosts[0].cmd_dma_blocked && !hosts[1].cmd_dma_blocked);
@@ -229,6 +248,7 @@ static void dsi_write(struct msm_dsi_host *host,u32 address,u32 value) {
     if(address==REG_DSI_DMA_BASE) {assert(!trigger_count); dma_address[id]=value; staged[id]|=1; return;}
     if(address==REG_DSI_DMA_LEN) {assert(!trigger_count); dma_len[id]=value; staged[id]|=2; return;}
     assert(address==REG_DSI_TRIG_DMA && value==1 && trigger_count<2);
+    if(schedule_expected)assert(schedule_ctrl[0]==(BIT(28)|2285U)&&schedule_ctrl[1]==(BIT(28)|2285U));
     assert(staged[0]==3 && staged[1]==3 && dma_address[0]==dma_address[1] && dma_len[0]==dma_len[1]);
     assert(id==1-trigger_count); triggers[trigger_count++]=id;
 }
@@ -258,6 +278,7 @@ C
     extract 'int msm_dsi_host_enable(struct mipi_dsi_host *host)' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_wait_idle(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_abort_broadcast(struct msm_dsi_host *master,' "$base/dsi_host.c"
+    extract 'static int dsi_uke_dma_schedule(struct msm_dsi_host *master,' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_broadcast(struct msm_dsi_host *master,' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_tx(struct msm_dsi_host *msm_host, int len, bool is_read,' "$base/dsi_host.c"
     extract 'static int dsi_cmds2buf_tx(struct msm_dsi_host *msm_host,' "$base/dsi_host.c"
@@ -283,6 +304,9 @@ static void reset(void) {
     gem_puts=vm_puts=tx_allocs=dma_frees=0;
     error_irq_enables=outer_locks=0;
     broadcast_notices=0;
+    memset(video_total,0,sizeof(video_total));memset(video_active,0,sizeof(video_active));
+    memset(schedule_ctrl,0,sizeof(schedule_ctrl));memset(schedule_ctrl2,0,sizeof(schedule_ctrl2));
+    memset(schedule_writes,0,sizeof(schedule_writes));video_waits=0;initial_busy_host=-1;schedule_expected=false;schedule_notices=0;
     for(int id=0;id<2;id++) {
         hosts[id].cmd_mutex=id; hosts[id].power_on=true; hosts[id].cphy_mode=false; hosts[id].vm=hosts;
         hosts[id].cmd_dma_blocked=false; hosts[id].enabled=true; hosts[id].irq=id;
@@ -300,6 +324,10 @@ static void admit_o82(void) {
 static void assert_cleanup(void) {
     assert(lock_count==1 && unlock_count==1 && !hosts[0].cmd_mutex && hosts[1].cmd_mutex);
     assert(dma_ctrl[0]==0x1c123456 && dma_ctrl[1]==0x1c123456);
+}
+static void admit_scheduled(void) {
+    admit_o82();schedule_expected=true;
+    for(int id=0;id<2;id++){video_total[id]=0x0905023b;video_active[id]=0x08ec0094;}
 }
 int main(void) {
     struct test_ops ops={dma_base_get,link_clk_disable,tx_buf_alloc};
@@ -375,6 +403,55 @@ int main(void) {
         assert(msm_dsi_manager_cmd_xfer(id,&read)<0 && commit_count==0 && restored[id]==0);
     }
     cfg.minor=MSM_DSI_6G_VER_MINOR_V2_8_0;
+    for(int lpm=0;lpm<2;lpm++) {
+        admit_scheduled();write.flags=lpm ? MIPI_DSI_MSG_USE_LPM:0;
+        assert(msm_dsi_manager_cmd_xfer(1,&write)==4);
+        assert(writes_count==14&&schedule_writes[0]==2&&schedule_writes[1]==2&&!video_waits);
+        assert(schedule_notices==1);
+        assert(!schedule_ctrl[0]&&!schedule_ctrl[1]&&!schedule_ctrl2[0]&&!schedule_ctrl2[1]);
+        assert_cleanup();
+    }
+    for(int gate=0;gate<2;gate++) {
+        admit_scheduled();schedule_expected=false;
+        if(gate==0)hosts[0].enabled=hosts[1].enabled=false;
+        else video_total[0]=video_total[1]=0x120b023b;
+        assert(msm_dsi_manager_cmd_xfer(1,&write)==4);
+        assert(writes_count==10&&video_waits==1&&!schedule_writes[0]&&!schedule_writes[1]);
+        assert(!schedule_notices);
+        assert_cleanup();
+    }
+    for(int id=0;id<2;id++)for(int gate=0;gate<7;gate++) {
+        admit_scheduled();
+        switch(gate) {
+        case 0:hosts[id].enabled=false;break;
+        case 1:video_total[id]^=1;break;
+        case 2:video_active[id]^=1;break;
+        case 3:ctrl_register[id]&=~DSI_CTRL_VID_MODE_EN;break;
+        case 4:schedule_ctrl[id]=1;break;
+        case 5:schedule_ctrl2[id]=1;break;
+        case 6:initial_busy_host=id;break;
+        }
+        int expected=(gate>=1&&gate<=3)?-EINVAL:-EBUSY;
+        assert(msm_dsi_manager_cmd_xfer(1,&write)==expected);
+        assert(!writes_count&&!trigger_count&&!wait_count&&!video_waits);
+        assert(!schedule_notices);
+        assert(!schedule_writes[0]&&!schedule_writes[1]);assert_cleanup();
+    }
+    for(int stage=1;stage<=2;stage++) {
+        admit_scheduled();fail_wait=stage;
+        assert(msm_dsi_manager_cmd_xfer(1,&write)==-ETIMEDOUT);
+        assert(wait_count==2&&!schedule_ctrl[0]&&!schedule_ctrl[1]);
+        assert(!schedule_notices);
+        assert(schedule_writes[0]==2&&schedule_writes[1]==2);assert_cleanup();
+    }
+    for(int stuck=0;stuck<2;stuck++) {
+        admit_scheduled();fail_wait=1;busy_host=stuck;
+        assert(msm_dsi_manager_cmd_xfer(1,&write)==-EIO);
+        assert(hosts[0].cmd_dma_blocked&&hosts[1].cmd_dma_blocked);
+        assert(!schedule_notices);
+        assert(reset_asserted[0]&&reset_asserted[1]);
+        assert(schedule_writes[0]==1&&schedule_writes[1]==1&&ctrl_writes[0]==1&&ctrl_writes[1]==1);
+    }
     for(int lpm=0;lpm<2;lpm++) {
         admit_o82(); write.flags=lpm ? MIPI_DSI_MSG_USE_LPM:0;
         assert(msm_dsi_manager_cmd_xfer(1,&write)==4);

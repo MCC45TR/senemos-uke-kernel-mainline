@@ -17,6 +17,14 @@ generator. It changes no panel packets, clocks or mode. A content change is
 still needed to exclude stale signatures; neither a checksum nor a successful
 build establishes visible output or valid wire signaling.
 
+Patch `0022` follows the same MiCode revision's video-command scheduler for the
+measured O82 120 Hz timing group. Both idle controllers are validated before
+arming line 2285; completion clears scheduling and restores DMA roles. Other
+timing groups keep their previous command policy. Trigger bit12 is preserved.
+A stuck abort retains the existing held-reset quarantine and requires reboot.
+Host fixtures cover admission, fallback, paired completion and both timeout
+paths; physical scheduling and visible output still require a separate test.
+
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
