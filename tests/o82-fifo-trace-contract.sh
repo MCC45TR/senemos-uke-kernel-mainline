@@ -186,17 +186,18 @@ int main() {
         std::vector<std::string> want={"pm-get"};
         if(!preserve)want.emplace_back("set-rate");
         want.emplace_back("clk-enable");
-        if(preserve&&(original_trigger&DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME))want.emplace_back("frame-block-clear");
+        if(h.enabled&&preserve&&(original_trigger&DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME))want.emplace_back("frame-block-clear");
         if(!lpm)want.emplace_back("hs");
         want.emplace_back("ctrl-enable");want.emplace_back("irq-enable");
         assert(events==want&&h.dma_cmd_ctrl_restore==0x1f3);
-        assert(trigger==(preserve?(original_trigger&~DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME):original_trigger));
+        assert(trigger==((h.enabled&&preserve)?(original_trigger&~DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME):original_trigger));
         assert(node_gets==node_puts);
     };
     prepare(true,false);prepare(true,true);
     prepare(true,false,0x80000004);prepare(true,true,0x800019a5);
+    h.enabled=false;prepare(true,false);prepare(true,true);h.enabled=true;
 #define ORDINARY(field,value) do {auto old=(field);(field)=(value);prepare(false,false);(field)=old;}while(0)
-    ORDINARY(h.enabled,false);ORDINARY(h.power_on,false);ORDINARY(h.cmd_dma_blocked,true);
+    ORDINARY(h.power_on,false);ORDINARY(h.cmd_dma_blocked,true);
     ORDINARY(scope,false);ORDINARY(node.pb,false);ORDINARY(node.isolated,false);
     ORDINARY(remote,nullptr);ORDINARY(h.mode,nullptr);ORDINARY(mode.hz,60);
     ORDINARY(mode.clock,967427);ORDINARY(mode.htotal,3489);ORDINARY(mode.vtotal,2309);
@@ -242,4 +243,4 @@ CPP
     "$work/check.cpp" -o "$work/check"
 "$work/check"
 [[ $(rg -c '^[[:space:]]*dsi_uke_fifo_trace\(' "$host") == 6 ]]
-printf 'Actual O82 diagnostics/transfer lifecycle: bounded logs, live clock preservation, scoped W1C after command restore, unrelated errors retained, read/profile/quarantine refusal and balanced PM/clock votes passed\n'
+printf 'Actual O82 transfer lifecycle: powered pre-video/active-video rate preservation, scoped trigger/W1C handling, unrelated state retained, profile/quarantine refusal and balanced PM/clock votes passed\n'

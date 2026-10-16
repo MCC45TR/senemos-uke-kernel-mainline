@@ -44,6 +44,12 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+Patch `0030` extends exact O82 initial120 clock retention to powered pre-video
+transfers. Initial host rate setup and ordinary profiles remain unchanged;
+PM/clock votes, command bytes, active-video trigger policy and quarantine are
+retained. This separately tests reprogramming after paired retime; native40's
+negative active-video-only comparison did not exclude that earlier phase.
+
 Patch `0029` compares the exact OEM active-video command trigger policy. It
 clears only `BLOCK_DMA_WITHIN_FRAME` after link-clock enable and before command
 enable on the isolated O82-42 initial120 profile. Other trigger bits, explicit
