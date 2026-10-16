@@ -1,0 +1,63 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: preserve live O82 clocks during transfers
+
+The isolated O82 trial logs actual PLL programming on every transfer while
+video is active. MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl.c transfer_prepare (GPL-2.0-only), votes existing clocks
+instead. Preserve programmed rates for this exact active O82-42 initial120
+profile, retaining PM and enable/disable votes and the ordinary setup path.
+No new rate, voltage, IRQ mask, packet or quarantine changes are introduced.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -251,10 +251,7 @@
+ 		msm_host->ctrl_size >= UKE_DSI_MISR_SIGNATURE + sizeof(u32);
+ }
+ 
+-/* Trial-only, passive snapshots: do not clear sticky FIFO evidence or unmask IRQs. */
+-static void dsi_uke_fifo_trace(struct msm_dsi_host *msm_host,
+-			     const struct mipi_dsi_msg *msg,
+-			     const char *stage, bool begin)
++static bool dsi_uke_o82_initial120(struct msm_dsi_host *msm_host)
+ {
+ 	struct device_node *panel;
+ 	bool selected;
+@@ -262,15 +259,25 @@
+ 	if (!dsi_uke_misr_scope(msm_host) || !msm_host->power_on ||
+ 	    READ_ONCE(msm_host->cmd_dma_blocked) || !msm_host->mode ||
+ 	    msm_host->mode->hdisplay != 3200 || msm_host->mode->vdisplay != 2136 ||
++	    msm_host->mode->clock != 967428 || msm_host->mode->htotal != 3490 ||
++	    msm_host->mode->vtotal != 2310 ||
+ 	    drm_mode_vrefresh(msm_host->mode) != 120 || msm_host->cphy_mode ||
+ 	    msm_host->lanes != 4 || msm_host->format != MIPI_DSI_FMT_RGB101010 ||
+ 	    !(msm_host->mode_flags & MIPI_DSI_MODE_VIDEO))
+-		return;
++		return false;
+ 	panel = of_graph_get_remote_node(msm_host->pdev->dev.of_node, 1, -1);
+ 	selected = of_device_is_compatible(panel, "xiaomi,o82-42-02-0b") &&
+ 		of_property_read_bool(panel, "xiaomi,initial-120hz-only");
+ 	of_node_put(panel);
+-	if (!selected)
++	return selected;
++}
++
++/* Trial-only, passive snapshots: do not clear sticky FIFO evidence or unmask IRQs. */
++static void dsi_uke_fifo_trace(struct msm_dsi_host *msm_host,
++			     const struct mipi_dsi_msg *msg,
++			     const char *stage, bool begin)
++{
++	if (!dsi_uke_o82_initial120(msm_host))
+ 		return;
+ 	/* Saturate past the limit so later restore calls cannot resume logging. */
+ 	if (msg && begin && msm_host->uke_fifo_trace_xfers <= 24)
+@@ -2690,7 +2697,9 @@
+ 	 * mdp clock need to be enabled to receive dsi interrupt
+ 	 */
+ 	pm_runtime_get_sync(&msm_host->pdev->dev);
+-	cfg_hnd->ops->link_clk_set_rate(msm_host);
++	/* OEM transfers vote existing link clocks while video is running. */
++	if (!msm_host->enabled || !dsi_uke_o82_initial120(msm_host))
++		cfg_hnd->ops->link_clk_set_rate(msm_host);
+ 	cfg_hnd->ops->link_clk_enable(msm_host);
+ 
+ 	/* TODO: vote for bus bandwidth */

@@ -28,21 +28,40 @@ using u8=uint8_t;using u32=uint32_t;
 #define READ_ONCE(v) (v)
 #define MIPI_DSI_FMT_RGB101010 4
 #define MIPI_DSI_MODE_VIDEO 1
+#define MIPI_DSI_MSG_USE_LPM 2
 struct device_node {bool pb=true,isolated=true,phy=true;};
 struct device {device_node *of_node;};
 struct platform_device {device dev;};
-struct drm_display_mode {int hdisplay=3200,vdisplay=2136,hz=120;};
+struct drm_display_mode {int hdisplay=3200,vdisplay=2136,hz=120,clock=967428,htotal=3490,vtotal=2310;};
 struct mipi_dsi_msg {u8 type=0x39;unsigned flags=1;size_t tx_len=2;const void *tx_buf;};
+struct mipi_dsi_host {void *owner;};
+struct msm_dsi_host;
+struct clock_ops {void (*link_clk_set_rate)(msm_dsi_host *);void (*link_clk_enable)(msm_dsi_host *);};
+struct msm_dsi_cfg_handler {clock_ops *ops;};
 struct msm_dsi_host {
     platform_device *pdev;drm_display_mode *mode;
     bool power_on=true,cmd_dma_blocked=false,cphy_mode=false;
     unsigned lanes=4,format=MIPI_DSI_FMT_RGB101010,mode_flags=MIPI_DSI_MODE_VIDEO;
     u8 uke_fifo_trace_xfers=0;
+    bool enabled=true;
+    msm_dsi_cfg_handler *cfg_hnd=nullptr;
+    u32 dma_cmd_ctrl_restore=0;
 };
 static bool scope=true,uke=true,sm7675=true;
 static device_node node;static device_node *remote=&node;
 static unsigned reads,node_gets,node_puts;
 static std::vector<std::string> logs,events;
+static msm_dsi_host *to_msm_dsi_host(mipi_dsi_host *host) {return static_cast<msm_dsi_host *>(host->owner);}
+static void pm_runtime_get_sync(device *) {events.emplace_back("pm-get");}
+static void set_rate(msm_dsi_host *) {events.emplace_back("set-rate");}
+static void enable_clk(msm_dsi_host *) {events.emplace_back("clk-enable");}
+static void dsi_set_tx_power_mode(int mode,msm_dsi_host *) {assert(!mode);events.emplace_back("hs");}
+static void dsi_write(msm_dsi_host *,u32 reg,u32 value) {
+    assert(reg==REG_DSI_CTRL&&value==0x1f7);events.emplace_back("ctrl-enable");
+}
+static void dsi_intr_ctrl(msm_dsi_host *,int irq,int enable) {
+    assert(irq==DSI_IRQ_MASK_CMD_DMA_DONE&&enable==1);events.emplace_back("irq-enable");
+}
 static bool dsi_uke_misr_scope(msm_dsi_host *) {return scope;}
 static int drm_mode_vrefresh(drm_display_mode *m) {return m->hz;}
 static device_node *of_graph_get_remote_node(device_node *n,int port,int endpoint) {
@@ -96,7 +115,9 @@ static void dsi_pll_disable_pll_bias(dsi_pll_7nm *) {events.emplace_back("bias-o
 static void wmb() {events.emplace_back("barrier");}
 CPP
 {
+extract 'static bool dsi_uke_o82_initial120(' "$host"
 extract 'static void dsi_uke_fifo_trace(' "$host"
+extract 'int msm_dsi_host_xfer_prepare(' "$host"
 extract 'static int dsi_pll_7nm_vco_set_rate(' "$phy"
 cat <<'CPP'
 int main() {
@@ -111,6 +132,7 @@ int main() {
     REFUSE(scope,false);REFUSE(h.power_on,false);REFUSE(h.cmd_dma_blocked,true);
     REFUSE(h.mode,nullptr);REFUSE(mode.hdisplay,3199);REFUSE(mode.vdisplay,2135);
     REFUSE(mode.hz,60);REFUSE(h.cphy_mode,true);REFUSE(h.lanes,3);
+    REFUSE(mode.clock,967427);REFUSE(mode.htotal,3489);REFUSE(mode.vtotal,2309);
     REFUSE(h.format,0);REFUSE(h.mode_flags,0);REFUSE(node.pb,false);
     REFUSE(node.isolated,false);REFUSE(remote,nullptr);
     reset();
@@ -140,6 +162,27 @@ int main() {
     };
     rate(true);uke=false;rate(false);uke=true;sm7675=false;rate(false);sm7675=true;
     node.phy=false;rate(false);node.phy=true;rate(true);
+
+    clock_ops ops{set_rate,enable_clk};msm_dsi_cfg_handler cfg{&ops};h.cfg_hnd=&cfg;
+    mipi_dsi_host base{&h};msg.tx_buf=payload;msg.tx_len=2;
+    auto prepare=[&](bool preserve,bool lpm) {
+        events.clear();msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
+        assert(!msm_dsi_host_xfer_prepare(&base,&msg));
+        std::vector<std::string> want={"pm-get"};
+        if(!preserve)want.emplace_back("set-rate");
+        want.emplace_back("clk-enable");if(!lpm)want.emplace_back("hs");
+        want.emplace_back("ctrl-enable");want.emplace_back("irq-enable");
+        assert(events==want&&h.dma_cmd_ctrl_restore==0x1f3);
+        assert(node_gets==node_puts);
+    };
+    prepare(true,false);prepare(true,true);
+#define ORDINARY(field,value) do {auto old=(field);(field)=(value);prepare(false,false);(field)=old;}while(0)
+    ORDINARY(h.enabled,false);ORDINARY(h.power_on,false);ORDINARY(h.cmd_dma_blocked,true);
+    ORDINARY(scope,false);ORDINARY(node.pb,false);ORDINARY(node.isolated,false);
+    ORDINARY(remote,nullptr);ORDINARY(h.mode,nullptr);ORDINARY(mode.hz,60);
+    ORDINARY(mode.clock,967427);ORDINARY(mode.htotal,3489);ORDINARY(mode.vtotal,2309);
+    ORDINARY(h.lanes,3);ORDINARY(h.format,0);ORDINARY(h.cphy_mode,true);ORDINARY(h.mode_flags,0);
+    prepare(true,false);
 }
 CPP
 } >> "$work/check.cpp"
@@ -148,4 +191,4 @@ CPP
     "$work/check.cpp" -o "$work/check"
 "$work/check"
 [[ $(rg -c '^[[:space:]]*dsi_uke_fifo_trace\(' "$host") == 6 ]]
-printf 'Actual O82 passive FIFO/PLL diagnostics: bounded logs, unchanged PLL sequence, scoped refusals and no diagnostic writes passed\n'
+printf 'Actual O82 diagnostics and transfer clock preservation: bounded logs, active-video rate exclusion, unchanged PM/clock votes/command writes and ordinary-profile rate setup passed\n'

@@ -44,6 +44,13 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+Patch `0027` preserves the already-programmed link rates during transfers on
+the exact active O82-42 initial120 video profile, matching the OEM clock vote
+policy. Initial rate setup and ordinary profiles retain their existing path;
+PM/clock votes, IRQ masks, payloads and quarantine are unchanged. Native39
+measured actual live PLL programming before the first latched HS overflow;
+causality and visible output still require a separate physical test.
+
 Patch `0026` passively records the first 24 transfers on each host and actual
 PLL setter calls for the isolated Uke O82-42 120 Hz trial. It preserves status,
 interrupt masks, commands and clock programming. OEM clears sticky HS overflow
