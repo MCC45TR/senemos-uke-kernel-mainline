@@ -297,6 +297,17 @@ Core enable admission is separate from asynchronous completion. A vblank is not
 a panel acknowledgement or proof of this commit's first frame with inherited
 running timing; missing events, resume and visible output still need Uke tests.
 
+Native26 on 16 October completed the deferred HS, backlight and LP sequence,
+but neither the desktop nor an independent XR24 pattern was visible. A separate
+VIG0/VIG1 scaled SMPTE test also produced no visible color bars. The next isolated
+Uke trial sets the OEM hardware split-flush flag for the single-CTL bonded video
+route while retaining upstream's two software submissions and both interface
+masks. Disable clears it only after a successful final master stop wait and
+fresh inactive status from both interfaces. Host tests cover scope refusal,
+unchanged unrelated register fields, stop failures and repeated enable/disable.
+This combination still requires a physical test; it is not a general reversal
+of upstream's modern CTL policy or an established fix for the blank screen.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and
