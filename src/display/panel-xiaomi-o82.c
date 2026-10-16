@@ -209,14 +209,19 @@ static int o82_power_off(struct o82_panel *ctx)
 	return first_error;
 }
 
-static void o82_readback(struct o82_panel *ctx)
+static void o82_readback(struct o82_panel *ctx, bool post_frame)
 {
-	static const u8 registers[] = { 0xda, MIPI_DCS_GET_POWER_MODE };
+	static const u8 registers[] = {
+		0xda, MIPI_DCS_GET_POWER_MODE, MIPI_DCS_GET_PIXEL_FORMAT,
+		MIPI_DCS_GET_DISPLAY_MODE, MIPI_DCS_GET_SIGNAL_MODE,
+		MIPI_DCS_GET_DIAGNOSTIC_RESULT,
+	};
 	/* Exact Uke OEM reads use command-master DSI0, not the secondary link. */
 	struct mipi_dsi_device *dsi = ctx->dsi[0];
+	unsigned int count = post_frame ? ARRAY_SIZE(registers) : 2;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(registers); i++) {
+	for (i = 0; i < count; i++) {
 		unsigned long mode_flags = dsi->mode_flags;
 		u8 value = 0;
 		ssize_t ret;
@@ -227,12 +232,14 @@ static void o82_readback(struct o82_panel *ctx)
 		dsi->mode_flags = mode_flags;
 		if (ret == 1)
 			dev_info(&dsi->dev,
-				 "O82 readback: link=0 cmd=%#x hs result=%zd value=%#x\n",
-				 registers[i], ret, value);
+				 "O82 readback: link=0 cmd=%#x hs result=%zd value=%#x phase=%s\n",
+				 registers[i], ret, value, post_frame ? "post-frame" : "pre-video");
 		else
 			dev_warn(&dsi->dev,
-				 "O82 readback: link=0 cmd=%#x hs result=%zd value=unavailable\n",
-				 registers[i], ret);
+				 "O82 readback: link=0 cmd=%#x hs result=%zd value=unavailable phase=%s\n",
+				 registers[i], ret, post_frame ? "post-frame" : "pre-video");
+		if (post_frame && ret != 1)
+			return;
 	}
 }
 
@@ -350,7 +357,7 @@ static int o82_prepare_locked(struct drm_panel *panel)
 		o82_power_off(ctx);
 		return ret;
 	}
-	o82_readback(ctx);
+	o82_readback(ctx, false);
 	ctx->prepared = true;
 	return 0;
 
@@ -454,6 +461,8 @@ static void o82_first_frame(struct kthread_work *work)
 			goto failed;
 	}
 	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
+	if (ctx->initial_120hz_only)
+		o82_readback(ctx, true);
 	return;
 
 failed:

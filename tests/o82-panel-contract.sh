@@ -16,6 +16,7 @@ cat > "$work/check.c" <<'C'
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <video/mipi_display.h>
 static char last_error[512];
 static int on_complete;
 static void info(const char *format,...) {
@@ -45,9 +46,7 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define PTR_ERR(p) ((long)(p))
 #define ERR_PTR(e) ((void *)(intptr_t)(e))
-enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
-       MIPI_DSI_DCS_LONG_WRITE=0x39,
-       MIPI_DCS_GET_POWER_MODE=0x0a, MIPI_DSI_FMT_RGB101010=10,
+enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_FMT_RGB101010=10,
        DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 C
 # Use the selected kernel's public flag definitions.
@@ -102,6 +101,8 @@ static int batch_api_calls,batch_api_error;
 static int on_batch_calls,on_batch_error=-1,on_batch_counts[8],on_batch_sizes[8],on_batch_total;
 static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
 static bool boundary_seen;
+static bool video_started;
+static int post_frame_reads;
 struct backlight_device {bool on;};
 static void mutex_init(struct mutex *lock) {lock->locked=0;}
 static void mutex_lock(struct mutex *lock) {assert(!lock->locked); lock->locked=1;}
@@ -179,7 +180,12 @@ struct mipi_dsi_host { struct host_ops *ops; int id; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
     unsigned int lanes,format; struct drm_dsc_config *dsc; int id; };
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
-    assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1 && (reg==0xda || reg==0x0a));
+    assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1);
+    assert(reg==0xda || reg==0x0a || (reg>=0x0c && reg<=0x0f));
+    if(video_started) {
+        assert(boundary_seen && backlight_calls>=1 && normal_transfers>=4 && hs_transfers>=8);
+        ++post_frame_reads;
+    } else assert(reg==0xda || reg==0x0a);
     *(u8 *)value=0; return 1;
 }
 static const u8 golden_pps[128]={
@@ -193,7 +199,6 @@ static const u8 golden_pps[128]={
 int balance[3], loads[3], enables, disables, transfers, failure=-1, operation, gpio_failure,
     short_write, wire_write, transfer_failure=-1, disable_failure=-1, settle_ms, off_order[3],
     lpm_transfers, pps_transfers, pps_start, transfer_short=-1;
-static bool video_started;
 static u8 hs_payloads[8][2];
 static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
     return !memcmp(a,b,offsetof(struct drm_display_mode,width_mm));
@@ -371,6 +376,7 @@ static struct o82_panel context(int variant,int mode) {
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=normal_transfers=0;
     batch_api_calls=batch_api_error=0;
+    post_frame_reads=0;
     on_batch_calls=on_batch_total=on_complete=0;on_batch_error=-1;
     backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
     scheduled=cancelled=0; schedule_result=positive_brightness=1;
@@ -477,6 +483,7 @@ int main(void) {
         assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
+        assert(post_frame_reads==(v==1&&m==5 ? 6:0));
         assert(batch_api_calls==(v==1&&m==5));
         assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);
         for(unsigned int command=0;command<c.active->switch_count;command++)
@@ -718,6 +725,6 @@ int main(void) {
     assert(dsi_populate_dsc_params(&h,&c.dsc)==0 && node_refs==0);
 }
 C
-"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
 printf 'Actual O82 lifecycle: isolated PB120 ON eight OEM chunks/884 bytes and120-ms settle, full metadata/error refusal, unchanged other modes/PPS/OFF/HS batch and cancellation passed\n'

@@ -49,6 +49,11 @@ for the isolated O82-42 120 Hz profile on DSI 2.8. Other modes and panels retain
 their existing timer state. Source and host checks do not establish that the
 previous timer caused the blank display; visible output remains a separate gate.
 
+The isolated 120 Hz profile also records standard one-byte panel replies after
+its first-frame commands, separately from the existing pre-video reads. These
+command-master-only diagnostics stop on the first read error; they do not
+change panel settings or establish visible output from a status byte.
+
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
