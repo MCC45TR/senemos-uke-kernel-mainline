@@ -1,0 +1,206 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: batch the O82 120 Hz TP-FPS group
+
+Follow MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a and
+display DT 4a3e1c391130237c5e8c2b250d1c94f3e25b9b11 (GPL-2.0-only).
+Pack the exact four HS commands in one synchronous bounded transaction.
+Preserve ordinary transfers, paired scheduling, completion and quarantine.
+Visible output remains a separate physical acceptance gate.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -1554,7 +1554,7 @@
+  * prepare cmd buffer to be txed
+  */
+ static int dsi_cmd_dma_add(struct msm_dsi_host *msm_host,
+-			   const struct mipi_dsi_msg *msg)
++			   const struct mipi_dsi_msg *msg, int offset, bool last)
+ {
+ 	const struct msm_dsi_cfg_handler *cfg_hnd = msm_host->cfg_hnd;
+ 	struct mipi_dsi_packet packet;
+@@ -1569,7 +1569,8 @@
+ 	}
+ 	len = (packet.size + 3) & (~0x3);
+ 
+-	if (len > msm_host->tx_size) {
++	if (offset < 0 || offset > msm_host->tx_size || offset > SZ_4K ||
++	    len > msm_host->tx_size - offset || len > SZ_4K - offset) {
+ 		pr_err("%s: packet size is too big\n", __func__);
+ 		return -EINVAL;
+ 	}
+@@ -1582,10 +1583,11 @@
+ 	}
+ 
+ 	/* MSM specific command format in memory */
++	data += offset;
+ 	data[0] = packet.header[1];
+ 	data[1] = packet.header[2];
+ 	data[2] = packet.header[0];
+-	data[3] = BIT(7); /* Last packet */
++	data[3] = last ? BIT(7) : 0;
+ 	if (mipi_dsi_packet_format_is_long(msg->type))
+ 		data[3] |= BIT(6);
+ 	if (msg->rx_buf && msg->rx_len)
+@@ -1919,7 +1921,7 @@
+ 	int bllp_len = msm_host->mode->hdisplay *
+ 			mipi_dsi_pixel_format_to_bpp(msm_host->format) / 8;
+ 
+-	len = dsi_cmd_dma_add(msm_host, msg);
++	len = dsi_cmd_dma_add(msm_host, msg, 0, true);
+ 	if (len < 0) {
+ 		pr_err("%s: failed to add cmd type = 0x%x\n",
+ 			__func__,  msg->type);
+@@ -2648,13 +2650,13 @@
+ 	pm_runtime_put(&msm_host->pdev->dev);
+ }
+ 
+-int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
+-			       struct mipi_dsi_host *slave_host,
+-			       const struct mipi_dsi_msg *msg)
++static int dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
++				  struct mipi_dsi_host *slave_host,
++				  const struct mipi_dsi_msg *msg, unsigned int count)
+ {
+ 	struct msm_dsi_host *master = to_msm_dsi_host(master_host);
+ 	struct msm_dsi_host *slave = to_msm_dsi_host(slave_host);
+-	int ret;
++	int i, len = 0, ret;
+ 
+ 	/* The manager admits only Uke O82 bonded video writes. */
+ 	if (master->id != DSI_0 || slave->id != DSI_1 ||
+@@ -2675,6 +2677,18 @@
+ 		ret = -EIO;
+ 		goto unlock;
+ 	}
++	if (count == 4 && (!master->enabled || !slave->enabled ||
++	    !master->mode || !slave->mode ||
++	    master->lanes != 4 || slave->lanes != 4 ||
++	    master->format != MIPI_DSI_FMT_RGB101010 ||
++	    slave->format != MIPI_DSI_FMT_RGB101010 ||
++	    !(master->mode_flags & MIPI_DSI_MODE_VIDEO) ||
++	    !(slave->mode_flags & MIPI_DSI_MODE_VIDEO) ||
++	    dsi_read(master, REG_DSI_TOTAL) != 0x0905023b ||
++	    dsi_read(slave, REG_DSI_TOTAL) != 0x0905023b)) {
++		ret = -EOPNOTSUPP;
++		goto unlock;
++	}
+ 	ret = msm_dsi_host_xfer_prepare(master_host, msg);
+ 	if (ret)
+ 		goto unlock;
+@@ -2683,10 +2697,29 @@
+ 		goto restore_master;
+ 
+ 	/* Both TX buffers use the same KMS VM; the peer can read this IOVA. */
+-	ret = dsi_cmds2buf_tx(slave, msg, false, master);
++	if (count == 1) {
++		ret = dsi_cmds2buf_tx(slave, msg, false, master);
++	} else {
++		for (i = 0; i < count; i++) {
++			ret = dsi_cmd_dma_add(slave, &msg[i], len, i == count - 1);
++			if (ret < 0)
++				goto restore_slave;
++			len += ret;
++		}
++		/* Exact admitted O82 120 Hz mode has a 3200-pixel RGB101010 line. */
++		if (len > 3200 *
++		    mipi_dsi_pixel_format_to_bpp(slave->format) / 8) {
++			ret = -EINVAL;
++			goto restore_slave;
++		}
++		ret = dsi_cmd_dma_tx(slave, len, false, master);
++		if (ret >= 0)
++			ret = ret == len ? 0 : -EIO;
++	}
+ 	if (ret >= 0)
+ 		dev_info_once(&slave->pdev->dev,
+ 			      "Uke O82 staged command broadcast completed on both links\n");
++restore_slave:
+ 	msm_dsi_host_xfer_restore(slave_host, msg);
+ restore_master:
+ 	msm_dsi_host_xfer_restore(master_host, msg);
+@@ -2695,6 +2728,41 @@
+ 	return ret;
+ }
+ 
++int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
++			       struct mipi_dsi_host *slave_host,
++			       const struct mipi_dsi_msg *msg)
++{
++	return dsi_host_cmd_broadcast(master_host, slave_host, msg, 1);
++}
++
++int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,
++			  struct mipi_dsi_host *slave_host,
++			  const struct mipi_dsi_msg msgs[4])
++{
++	static const u8 payloads[4][2] = {
++		{ 0xff, 0x10 }, { 0xfb, 0x01 }, { 0xb2, 0x91 }, { 0xb3, 0x40 },
++	};
++	struct msm_dsi_host *slave;
++	int i, ret;
++
++	if (!master_host || !slave_host || !msgs)
++		return -EINVAL;
++	slave = to_msm_dsi_host(slave_host);
++	for (i = 0; i < ARRAY_SIZE(payloads); i++)
++		if (msgs[i].type != MIPI_DSI_DCS_LONG_WRITE || msgs[i].channel ||
++		    msgs[i].flags || msgs[i].rx_buf || msgs[i].rx_len ||
++		    msgs[i].tx_len != sizeof(payloads[i]) || !msgs[i].tx_buf ||
++		    memcmp(msgs[i].tx_buf, payloads[i], sizeof(payloads[i])))
++			return -EINVAL;
++	mutex_lock(&slave->cmd_mutex);
++	ret = dsi_host_cmd_broadcast(master_host, slave_host, msgs, ARRAY_SIZE(payloads));
++	mutex_unlock(&slave->cmd_mutex);
++	if (!ret)
++		dev_info_once(&slave->pdev->dev,
++			      "Uke O82 four-command HS TP-FPS batch completed: bytes=32 line=2285\n");
++	return ret;
++}
++
+ int msm_dsi_host_cmd_tx(struct mipi_dsi_host *host,
+ 				const struct mipi_dsi_msg *msg)
+ {
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -6,6 +6,7 @@
+ #include "drm/drm_bridge_connector.h"
+ #include <drm/drm_panel.h>
+ #include <linux/of_graph.h>
++#include <linux/qcom-uke-display.h>
+ 
+ #include "msm_kms.h"
+ #include "dsi.h"
+@@ -593,6 +594,21 @@
+ 	return 0;
+ }
+ 
++int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
++			      const struct mipi_dsi_msg *msgs)
++{
++	struct msm_dsi *master = dsi_mgr_get_dsi(DSI_0);
++	struct msm_dsi *slave = dsi_mgr_get_dsi(DSI_1);
++
++	if (!dsi || !msgs || !dsi->host || !master || !slave ||
++	    !master->host || !slave->host ||
++	    dsi->host != master->host || !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
++	    IS_ERR_OR_NULL(dsi_mgr_o82_panel(master)))
++		return -EOPNOTSUPP;
++	return msm_dsi_host_cmd_tp_fps(master->host, slave->host, msgs);
++}
++EXPORT_SYMBOL_GPL(qcom_uke_dsi_tp_fps_batch);
++
+ int msm_dsi_manager_cmd_xfer(int id, const struct mipi_dsi_msg *msg)
+ {
+ 	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
+--- a/drivers/gpu/drm/msm/dsi/dsi.h
++++ b/drivers/gpu/drm/msm/dsi/dsi.h
+@@ -68,6 +68,9 @@
+ int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
+ 			       struct mipi_dsi_host *slave_host,
+ 			       const struct mipi_dsi_msg *msg);
++int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,
++			  struct mipi_dsi_host *slave_host,
++			  const struct mipi_dsi_msg msgs[4]);
+ int msm_dsi_host_cmd_rx(struct mipi_dsi_host *host,
+ 					const struct mipi_dsi_msg *msg);
+ void msm_dsi_host_cmd_xfer_commit(struct mipi_dsi_host *host,

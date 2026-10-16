@@ -13,6 +13,7 @@
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_graph.h>
+#include <linux/qcom-uke-display.h>
 #include <linux/regulator/consumer.h>
 #include <drm/display/drm_dsc_helper.h>
 #include <drm/drm_connector.h>
@@ -328,10 +329,35 @@ static void o82_first_frame(struct kthread_work *work)
 	}
 	/* OEM starts DPU timing before its four HS TP-FPS updates. */
 	stage = "timing-switch";
-	for (i = 0; i < ctx->active->switch_count; i++) {
-		ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
+	if (ctx->initial_120hz_only) {
+		struct mipi_dsi_msg msgs[4] = { };
+
+		if (ctx->active->switch_count != ARRAY_SIZE(msgs)) {
+			ret = -EINVAL;
+			goto failed;
+		}
+		for (i = 0; i < ARRAY_SIZE(msgs); i++) {
+			const struct o82_command *cmd = &ctx->active->switch_commands[i];
+
+			if (cmd->delay_ms || cmd->downstream_flags != (i == 3 ? 0 : BIT(6))) {
+				ret = -EINVAL;
+				goto failed;
+			}
+			msgs[i].channel = cmd->channel;
+			msgs[i].type = cmd->type;
+			msgs[i].tx_len = cmd->len;
+			msgs[i].tx_buf = cmd->data;
+		}
+		i = -1;
+		ret = qcom_uke_dsi_tp_fps_batch(ctx->dsi[0], msgs);
 		if (ret)
 			goto failed;
+	} else {
+		for (i = 0; i < ctx->active->switch_count; i++) {
+			ret = o82_send(ctx, &ctx->active->switch_commands[i], false);
+			if (ret)
+				goto failed;
+		}
 	}
 	i = -1;
 	stage = "backlight";

@@ -17,4 +17,19 @@ static inline int qcom_uke_display_release(struct device *supplier,
 	return -ENODEV;
 }
 #endif
+
+struct mipi_dsi_device;
+struct mipi_dsi_msg;
+
+/* Synchronous, exact O82 120 Hz four-packet HS TP-FPS group; no queued state. */
+#if IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI)
+int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
+			      const struct mipi_dsi_msg *msgs);
+#else
+static inline int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
+					 const struct mipi_dsi_msg *msgs)
+{
+	return -EOPNOTSUPP;
+}
+#endif
 #endif

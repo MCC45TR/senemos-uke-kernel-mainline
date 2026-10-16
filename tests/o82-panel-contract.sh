@@ -88,6 +88,7 @@ struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);
     int (*panel_disabling)(struct drm_panel_follower *);};
 struct drm_panel_follower {const struct follower_ops *funcs;};
 static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers;
+static int batch_api_calls,batch_api_error;
 static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
 static bool boundary_seen;
 struct backlight_device {bool on;};
@@ -227,6 +228,19 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
     }
     return short_write || n==transfer_short ? 0 : (ssize_t)(wire_write ? (m->tx_len+7)&~3UL : m->tx_len);
 }
+/* Panel fixture observes the API's ordered payloads; the host fixture executes
+ * the actual single-DMA transport, packet builder, locks and timeout cleanup.
+ */
+static int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs) {
+    assert(dsi->id==0&&boundary_seen&&video_started);++batch_api_calls;
+    if(batch_api_error)return batch_api_error;
+    static struct mipi_dsi_host peer={.id=1};
+    for(int i=0;i<4;i++)for(int link=0;link<2;link++) {
+        ssize_t ret=transfer(link ? &peer:dsi->host,&msgs[i]);
+        if(ret<2)return ret<0 ? (int)ret:-EIO;
+    }
+    return 0;
+}
 C
 {
 sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$source_file" | sed '$d; /#include "o82-data.h"/d'
@@ -327,6 +341,7 @@ static struct o82_panel context(int variant,int mode) {
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=normal_transfers=0;
+    batch_api_calls=batch_api_error=0;
     backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
     scheduled=cancelled=0; schedule_result=positive_brightness=1;
     video_started=boundary_seen=backlight.on=dispatch_during_cancel=false; crtc.count=100;
@@ -430,6 +445,7 @@ int main(void) {
         assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
+        assert(batch_api_calls==(v==1&&m==5));
         assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);
         for(unsigned int command=0;command<c.active->switch_count;command++)
             for(int link=0;link<2;link++)
@@ -598,6 +614,26 @@ int main(void) {
             assert(transfers==after_remove && !c.first_frame_initialized);
         }
     }
+    /* The isolated batch must not discard future OEM delay or grouping changes. */
+    for(int index=0;index<4;index++)for(int gate=0;gate<2;gate++) {
+        c=context(1,5);assert(o82_prepare(&c.panel)==0);
+        struct o82_command commands[4];
+        memcpy(commands,c.active->switch_commands,sizeof(commands));
+        struct o82_profile changed=*c.active;changed.switch_commands=commands;c.active=&changed;
+        if(gate)commands[index].downstream_flags^=BIT(6);else commands[index].delay_ms=1;
+        video_started=true;drm_panel_enable(&c.panel);first_boundary(&c.first_frame_work);
+        assert(!batch_api_calls&&!hs_transfers&&!normal_transfers&&!backlight_calls&&!c.backlight->on);
+        assert(strstr(last_error,"stage=timing-switch")&&strstr(last_error,"result=-22"));
+        drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
+    }
+    for(int fault=0;fault<4;fault++) {
+        static const int errors[]={-EOPNOTSUPP,-EIO,-ETIMEDOUT,-EINVAL};
+        c=context(1,5);assert(o82_prepare(&c.panel)==0);batch_api_error=errors[fault];
+        video_started=true;drm_panel_enable(&c.panel);first_boundary(&c.first_frame_work);
+        assert(batch_api_calls==1&&!hs_transfers&&!normal_transfers&&!backlight_calls&&!c.backlight->on);
+        assert(strstr(last_error,"stage=timing-switch")&&!disables);
+        drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
+    }
     c=context(0,3);
     struct device_node node={"unrelated,panel"};
     struct platform_device platform={.dev={&node}};
@@ -612,4 +648,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes: unchanged ON/PPS; no HS before boundary; boundary then unchanged four HS then checked positive backlight then LP normal pixels; async HS/LP faults, refusal, re-enable and cancellation passed\n'
+printf 'Two O82 variants, seven modes: unchanged ON/PPS; isolated 120-Hz batch API at first boundary; metadata/API refusal has no serialized fallback; other modes, faults and cancellation passed\n'

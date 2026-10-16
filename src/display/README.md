@@ -25,6 +25,15 @@ A stuck abort retains the existing held-reset quarantine and requires reboot.
 Host fixtures cover admission, fallback, paired completion and both timeout
 paths; physical scheduling and visible output still require a separate test.
 
+Patch `0023` and the isolated 120 Hz panel profile preserve OEM grouping of the
+four HS TP-FPS commands. A synchronous private API packs one 32-byte DMA group,
+sets LAST only on the final packet and reuses paired completion and abort
+handling. No state accumulates across independent transfers. Other panel
+profiles retain serialization; changed group metadata or an API error refuses
+the first-frame update. The panel module imports the MSM provider symbol.
+Host tests cover packet bytes, refusal, timeout and provider reachability;
+visible output remains unverified.
+
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
