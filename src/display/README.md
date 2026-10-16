@@ -5,6 +5,18 @@ candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
 **Native display reaches Fedora, SSH and active scanout, but visible output remains unavailable.**
 
+The 16 October native30 trial matched the working OEM LM and INTF signatures
+for identical grey and two-half SMPTE inputs, while its panel remained blank.
+Patch `0021` adds a default-off DSI MDP MISR diagnostic for the exact Uke
+DSI 2.8, four-lane D-PHY 3200×2136/120 Hz profile. A root-only debugfs write
+of 1–8 to `uke-dsi0-mdp-misr` or `uke-dsi1-mdp-misr` captures bounded samples,
+then restores the admitted disabled configuration. Reads return only that
+capture, including raw status and errors; they do not initiate measurements.
+This follows MiCode display revision `44275c404a67`, not a panel test-pattern
+generator. It changes no panel packets, clocks or mode. A content change is
+still needed to exclude stale signatures; neither a checksum nor a successful
+build establishes visible output or valid wire signaling.
+
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,
 60, 90, 120 and 144 Hz. Lower rates retain their OEM timing-group clock and
