@@ -258,7 +258,6 @@ static int o82_read_initial_mode(struct o82_panel *ctx, struct device_node *node
 static int o82_prepare_locked(struct drm_panel *panel)
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
-	struct drm_dsc_config pps_config;
 	struct drm_dsc_picture_parameter_set pps;
 	const struct o82_command pps_cmd = {
 		.type = MIPI_DSI_PICTURE_PARAMETER_SET,
@@ -348,10 +347,8 @@ static int o82_prepare_locked(struct drm_panel *panel)
 			}
 		}
 	}
-	/* OEM PPS describes each link; DPU keeps the shared 3200-pixel frame. */
-	pps_config = ctx->dsc;
-	pps_config.pic_width /= ARRAY_SIZE(ctx->dsi);
-	drm_dsc_pps_payload_pack(&pps, &pps_config);
+	/* OEM panel PPS describes the full picture, independently of encoder split. */
+	drm_dsc_pps_payload_pack(&pps, &ctx->dsc);
 	ret = o82_send(ctx, &pps_cmd, true);
 	if (ret) {
 		o82_off(ctx);

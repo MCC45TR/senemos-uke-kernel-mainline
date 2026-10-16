@@ -188,8 +188,9 @@ static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,si
     } else assert(reg==0xda || reg==0x0a);
     *(u8 *)value=0; return 1;
 }
+/* Working OEM PPS buffer after full off/on: full picture, not encoder width. */
 static const u8 golden_pps[128]={
-    0x11,0,0,0xab,0x30,0x80,0x08,0x58,0x06,0x40,0,0x18,0x03,0x20,0x03,0x20,
+    0x11,0,0,0xab,0x30,0x80,0x08,0x58,0x0c,0x80,0,0x18,0x03,0x20,0x03,0x20,
     0x02,0,0x02,0xb2,0,0x20,0x02,0x9f,0,0x0b,0,0x0d,0x04,0x86,0x02,0xdc,
     0x18,0,0x10,0xf0,0x07,0x10,0x20,0,0x06,0x0f,0x0f,0x33,0x0e,0x1c,0x2a,0x38,
     0x46,0x54,0x62,0x69,0x70,0x77,0x79,0x7b,0x7d,0x7e,0x02,0x02,0x22,0,0x2a,0x40,
@@ -755,4 +756,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual O82 lifecycle: isolated PB120 ON eight OEM chunks/884 bytes and120-ms settle, full metadata/error refusal, scoped post-normal dimming order and eight fault positions, unchanged other modes/PPS/OFF/HS batch and cancellation passed\n'
+printf 'Actual O82 lifecycle: full-picture OEM PPS and unchanged shared encoder config, PB120 ON eight chunks/884 bytes, dimming order/faults, mode/refusal/OFF/HS and cancellation checks passed\n'

@@ -437,7 +437,10 @@ The O82 rate-control parameters follow Xiaomi display revision
 `44275c404a677d9d9e5230fedd1af2ef02fc7b9a`: first-line BPG offset 13 and
 range-zero maximum QP 8 are applied before upstream RC calculation. The panel
 then sends the standard 128-byte PPS over both LP links after initialization.
-Each PPS describes 1600 pixels; the shared DPU frame remains 3200 pixels.
+The panel PPS describes the full 3200-pixel picture; the encoders retain
+1600 pixels per interface. A 16 October working-recovery buffer read corrected
+the earlier per-link PPS assumption: only PPS bytes 8/9 differed. The actual
+128-byte packet is now the fixture oracle; visible native output remains pending.
 Host fixtures execute the selected upstream RC calculator and PPS packer,
 compare all payload bytes with the OEM-derived fixture, and reject failed or
 short transfers on either link. An isolated DPU correction rounds compressed
