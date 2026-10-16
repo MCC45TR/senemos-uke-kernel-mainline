@@ -118,6 +118,9 @@ static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
 }
 /* Diagnostic lifecycle locks are exercised by dsi-mdp-misr-contract.sh. */
 static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {(void)host; return false;}
+static void dsi_uke_fifo_trace(struct msm_dsi_host *host,const struct mipi_dsi_msg *msg,const char *stage,bool begin) {
+    (void)host;(void)msg;(void)stage;(void)begin;
+}
 static int committed[8],commit_count,wait_count,fail_wait,base_error,add_count,fail_add,rx_count;
 static int prepared[2],restored[2],fail_prepare,packets[128];
 static int lock_count,unlock_count,staged[2],triggers[2],trigger_count,waited[8],dma_size=4;

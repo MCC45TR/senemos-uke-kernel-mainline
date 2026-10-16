@@ -1,0 +1,135 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: observe isolated O82 transfer phases
+
+Observe the first 24 transfers and actual PLL setter calls on the isolated
+Uke O82-42 initial120 profile. Use read-only status samples; preserve sticky
+FIFO flags, interrupt masks, transfers and PLL programming order.
+
+MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a, GPL-2.0-only,
+msm/dsi/dsi_ctrl.c and dsi_ctrl_hw_cmn.c explicitly clear HS overflow around
+command/BTA operations. Thus sticky native flags are not a causal diagnosis.
+This trial-only logging may perturb timing and does not establish output.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -219,6 +219,7 @@
+ 	bool cphy_mode;
+ 
+ 	u32 dma_cmd_ctrl_restore;
++	u8 uke_fifo_trace_xfers;
+ 
+ 	bool registered;
+ 	bool power_on;
+@@ -250,6 +251,48 @@
+ 		msm_host->ctrl_size >= UKE_DSI_MISR_SIGNATURE + sizeof(u32);
+ }
+ 
++/* Trial-only, passive snapshots: do not clear sticky FIFO evidence or unmask IRQs. */
++static void dsi_uke_fifo_trace(struct msm_dsi_host *msm_host,
++			     const struct mipi_dsi_msg *msg,
++			     const char *stage, bool begin)
++{
++	struct device_node *panel;
++	bool selected;
++
++	if (!dsi_uke_misr_scope(msm_host) || !msm_host->power_on ||
++	    READ_ONCE(msm_host->cmd_dma_blocked) || !msm_host->mode ||
++	    msm_host->mode->hdisplay != 3200 || msm_host->mode->vdisplay != 2136 ||
++	    drm_mode_vrefresh(msm_host->mode) != 120 || msm_host->cphy_mode ||
++	    msm_host->lanes != 4 || msm_host->format != MIPI_DSI_FMT_RGB101010 ||
++	    !(msm_host->mode_flags & MIPI_DSI_MODE_VIDEO))
++		return;
++	panel = of_graph_get_remote_node(msm_host->pdev->dev.of_node, 1, -1);
++	selected = of_device_is_compatible(panel, "xiaomi,o82-42-02-0b") &&
++		of_property_read_bool(panel, "xiaomi,initial-120hz-only");
++	of_node_put(panel);
++	if (!selected)
++		return;
++	/* Saturate past the limit so later restore calls cannot resume logging. */
++	if (msg && begin && msm_host->uke_fifo_trace_xfers <= 24)
++		msm_host->uke_fifo_trace_xfers++;
++	if (msm_host->uke_fifo_trace_xfers > 24 ||
++	    (msg && !msm_host->uke_fifo_trace_xfers))
++		return;
++	dev_info(&msm_host->pdev->dev,
++		 "Uke O82 FIFO trace: seq=%u stage=%s type=%#x op=%#x len=%zu flags=%#x ctrl=%#x fifo=%#x mask=%#x timeout=%#x ack=%#x irq=%#x status=%#x clk=%#x\n",
++		 msm_host->uke_fifo_trace_xfers, stage, msg ? msg->type : 0,
++		 msg && msg->tx_buf && msg->tx_len ? *(const u8 *)msg->tx_buf : 0,
++		 msg ? msg->tx_len : 0, msg ? msg->flags : 0,
++		 dsi_read(msm_host, REG_DSI_CTRL),
++		 dsi_read(msm_host, REG_DSI_FIFO_STATUS),
++		 dsi_read(msm_host, REG_DSI_ERR_INT_MASK0),
++		 dsi_read(msm_host, REG_DSI_TIMEOUT_STATUS),
++		 dsi_read(msm_host, REG_DSI_ACK_ERR_STATUS),
++		 dsi_read(msm_host, REG_DSI_INTR_CTRL),
++		 dsi_read(msm_host, REG_DSI_STATUS0),
++		 dsi_read(msm_host, REG_DSI_CLK_STATUS));
++}
++
+ /*
+  * Bounded, default-off diagnostic for a held 120 Hz video pattern. The setup
+  * matches MiCode xiaomi-display 44275c404a67 dsi_ctrl_hw_22_setup_misr().
+@@ -2634,6 +2677,8 @@
+ 	struct msm_dsi_host *msm_host = to_msm_dsi_host(host);
+ 	const struct msm_dsi_cfg_handler *cfg_hnd = msm_host->cfg_hnd;
+ 
++	dsi_uke_fifo_trace(msm_host, msg, "prepare-before", true);
++
+ 	/* TODO: make sure dsi_cmd_mdp is idle.
+ 	 * Since DSI6G v1.2.0, we can set DSI_TRIG_CTRL.BLOCK_DMA_WITHIN_FRAME
+ 	 * to ask H/W to wait until cmd mdp is idle. S/W wait is not needed.
+@@ -2659,6 +2704,7 @@
+ 		DSI_CTRL_CMD_MODE_EN |
+ 		DSI_CTRL_ENABLE);
+ 	dsi_intr_ctrl(msm_host, DSI_IRQ_MASK_CMD_DMA_DONE, 1);
++	dsi_uke_fifo_trace(msm_host, msg, "prepare-after", false);
+ 
+ 	return 0;
+ }
+@@ -2671,11 +2717,13 @@
+ 
+ 	if (READ_ONCE(msm_host->cmd_dma_blocked))
+ 		goto disable_clocks;
++	dsi_uke_fifo_trace(msm_host, msg, "restore-before", false);
+ 	dsi_intr_ctrl(msm_host, DSI_IRQ_MASK_CMD_DMA_DONE, 0);
+ 	dsi_write(msm_host, REG_DSI_CTRL, msm_host->dma_cmd_ctrl_restore);
+ 
+ 	if (!(msg->flags & MIPI_DSI_MSG_USE_LPM))
+ 		dsi_set_tx_power_mode(1, msm_host);
++	dsi_uke_fifo_trace(msm_host, msg, "restore-after", false);
+ 
+ 	/* TODO: unvote for bus bandwidth */
+ 
+@@ -3088,6 +3136,7 @@
+ 		ret = -EIO;
+ 		goto unlock;
+ 	}
++	dsi_uke_fifo_trace(msm_host, NULL, "video-before", false);
+ 	dsi_op_mode_config(msm_host,
+ 		!!(msm_host->mode_flags & MIPI_DSI_MODE_VIDEO), true);
+ 
+@@ -3101,6 +3150,7 @@
+ 	 * }
+ 	 */
+ 	msm_host->enabled = true;
++	dsi_uke_fifo_trace(msm_host, NULL, "video-after", false);
+ unlock:
+ 	if (serialize) {
+ 		mutex_unlock(&msm_host->cmd_mutex);
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
+@@ -351,6 +351,14 @@
+ 	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+ 	struct dsi_pll_config config;
+ 
++	if (of_machine_is_compatible("xiaomi,uke") &&
++	    of_machine_is_compatible("qcom,sm7675") &&
++	    of_device_is_compatible(pll_7nm->phy->pdev->dev.of_node,
++				    "xiaomi,uke-o82-dsi-phy-4nm"))
++		dev_info(&pll_7nm->phy->pdev->dev,
++			 "Uke O82 PLL rate trace: rate=%lu parent=%lu pll_on=%d\n",
++			 rate, parent_rate, pll_7nm->phy->pll_on);
++
+ 	dsi_pll_enable_pll_bias(pll_7nm);
+ 	DBG("DSI PLL%d rate=%lu, parent's=%lu", pll_7nm->phy->id, rate,
+ 	    parent_rate);

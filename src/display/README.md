@@ -44,6 +44,12 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+Patch `0026` passively records the first 24 transfers on each host and actual
+PLL setter calls for the isolated Uke O82-42 120 Hz trial. It preserves status,
+interrupt masks, commands and clock programming. OEM clears sticky HS overflow
+around commands/BTA; native flags alone do not prove a sustained video fault.
+This diagnostic can perturb timing and is not a production display fix.
+
 Patch `0025` programs the exact Uke OEM HS video timer, including its resolution,
 for the isolated O82-42 120 Hz profile on DSI 2.8. Other modes and panels retain
 their existing timer state. Source and host checks do not establish that the

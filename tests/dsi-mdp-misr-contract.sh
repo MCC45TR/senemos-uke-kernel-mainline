@@ -93,6 +93,8 @@ static drm_display_mode *drm_mode_duplicate(drm_device *,const drm_display_mode 
     assert(locks==std::vector<int>({1}));return duplicate_fail?nullptr:const_cast<drm_display_mode *>(m);
 }
 #define pr_err(...) do {} while(0)
+struct mipi_dsi_msg;
+static void dsi_uke_fifo_trace(msm_dsi_host *,const mipi_dsi_msg *,const char *,bool) {}
 CPP
 for function in 'static bool dsi_uke_misr_scope(' 'static int dsi_uke_misr_capture(' \
                 'int msm_dsi_host_enable(' 'int msm_dsi_host_disable(' \
