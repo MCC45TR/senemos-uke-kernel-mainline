@@ -40,6 +40,7 @@ using u8=uint8_t; using u32=uint32_t; using s32=int32_t;
 #define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define mult_frac(x,n,d) ((x)*(n)/(d))
 namespace retime { static void check(); }
+namespace fll { static void check(); }
 CPP
 {
     sed -n '/^#define DSI_PHY_7NM_QUIRK_/p' "$source_file"
@@ -194,6 +195,7 @@ int main() {
     }
     phy.pdev->dev.of_node=nullptr; unchanged(0);
     retime::check();
+    fll::check();
 }
 CPP
     cat <<'CPP'
@@ -295,9 +297,127 @@ static void check() {
 }
 }
 CPP
+    cat <<'CPP'
+namespace fll {
+struct device_node {const char *compatible;};
+struct device {device_node *of_node;};
+struct platform_device {device dev;};
+struct phy_cfg {u32 quirks;};
+struct msm_dsi_phy {platform_device *pdev; int id; bool cphy_mode;
+    int usecase; const phy_cfg *cfg; uintptr_t base,pll_base; bool pll_on;};
+struct clk_hw {};
+struct dsi_pll_7nm {clk_hw hw;msm_dsi_phy *phy;dsi_pll_7nm *slave;
+    uint64_t vco_current_rate;int bias;};
+static dsi_pll_7nm *to_pll_7nm(clk_hw *hw) {return reinterpret_cast<dsi_pll_7nm *>(hw);}
+static bool uke=true,sm7675=true;
+static std::map<uintptr_t,u32> registers;
+static std::vector<std::pair<uintptr_t,u32>> writes;
+static std::vector<uintptr_t> reads;
+static std::vector<std::string> events;
+static int notices,errors,lock_result;
+static bool of_machine_is_compatible(const char *name) {
+    return !std::strcmp(name,"xiaomi,uke") ? uke:sm7675;
+}
+static bool of_device_is_compatible(device_node *node,const char *name) {
+    return node && !std::strcmp(node->compatible,name);
+}
+static u32 readl(uintptr_t address) {reads.push_back(address);events.emplace_back("read");return registers[address];}
+static void writel(u32 value,uintptr_t address) {
+    registers[address]=value;writes.emplace_back(address,value);events.emplace_back("write");
+}
+static void barrier() {events.emplace_back("wmb");}
+static void dsi_pll_enable_pll_bias(dsi_pll_7nm *pll) {++pll->bias;events.emplace_back("bias+");}
+static void dsi_pll_disable_pll_bias(dsi_pll_7nm *pll) {--pll->bias;events.emplace_back("bias-");}
+static int dsi_pll_7nm_lock_status(dsi_pll_7nm *) {events.emplace_back("lock");return lock_result;}
+static void dsi_pll_phy_dig_reset(dsi_pll_7nm *) {events.emplace_back("reset");}
+static void dsi_pll_enable_global_clk(dsi_pll_7nm *) {events.emplace_back("clock");}
+#define dev_info(dev,...) ((void)(dev),++notices)
+#define pr_err(...) (++errors)
+CPP
+    extract 'enum msm_dsi_phy_usecase {' "$base/dsi.h"
+    extract 'static int dsi_pll_7nm_uke_o82_init_fll(struct dsi_pll_7nm *pll)' "$source_file" |
+        sed 's/void __iomem \*base = phy->pll_base;/uintptr_t base = phy->pll_base;/'
+    extract 'static int dsi_pll_7nm_vco_prepare(struct clk_hw *hw)' "$source_file"
+    cat <<'CPP'
+static void check() {
+    device_node nodes[2]{{"xiaomi,uke-o82-dsi-phy-4nm"},{"xiaomi,uke-o82-dsi-phy-4nm"}};
+    platform_device platforms[2]{{{&nodes[0]}},{{&nodes[1]}}};
+    phy_cfg cfg{DSI_PHY_7NM_QUIRK_V5_2},other{DSI_PHY_7NM_QUIRK_V5_2};
+    msm_dsi_phy phys[2]{{&platforms[0],0,false,MSM_DSI_PHY_MASTER,&cfg,0x1000,0x3000,false},
+                        {&platforms[1],1,false,MSM_DSI_PHY_SLAVE,&cfg,0x2000,0x4000,false}};
+    dsi_pll_7nm slave{{},&phys[1],nullptr,1189188000ULL,0},pll{{},&phys[0],&slave,1189188000ULL,0};
+    const uintptr_t start0=phys[0].base+REG_DSI_7nm_PHY_CMN_PLL_CNTRL;
+    const uintptr_t start1=phys[1].base+REG_DSI_7nm_PHY_CMN_PLL_CNTRL;
+    const std::vector<std::pair<uintptr_t,u32>> expected{
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_CONFIG,2},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_FREQ_ACQ_TIME,0x11},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_CODE0,0},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_CODE1,0},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_GAIN0,0x80},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FLL_GAIN1,0},
+        {0x3000+REG_DSI_7nm_PHY_PLL_FAST_PWRUP,0}};
+    auto reset=[&] {
+        writes.clear();reads.clear();events.clear();notices=errors=lock_result=0;
+        registers.clear();registers[start0]=registers[start1]=0;
+        for(const auto &[address,value]:expected)registers[address]=value^0xff;
+        pll.bias=slave.bias=0;phys[0].pll_on=phys[1].pll_on=false;
+    };
+    reset();
+    for(uint64_t rate:{1189187000ULL,1189188000ULL,1189191000ULL}) {
+        pll.vco_current_rate=rate;
+        for(int cycle=0;cycle<2;cycle++) {
+            reset();assert(dsi_pll_7nm_vco_prepare(&pll.hw)==0);
+            assert(writes.size()==10 && std::equal(expected.begin(),expected.end(),writes.begin()));
+            assert(writes[7]==std::make_pair(start0,1U));
+            assert(writes[8]==std::make_pair(phys[0].base+REG_DSI_7nm_PHY_CMN_RBUF_CTRL,1U));
+            assert(writes[9]==std::make_pair(phys[1].base+REG_DSI_7nm_PHY_CMN_RBUF_CTRL,1U));
+            const std::vector<std::string> order{"bias+","bias+","read","read",
+                "write","write","write","write","write","write","write","write","wmb",
+                "lock","reset","reset","clock","clock","write","write"};
+            assert(events==order && notices==1 && !errors && phys[0].pll_on && !phys[1].pll_on);
+            assert(pll.bias==1 && slave.bias==1 && reads==std::vector<uintptr_t>({start0,start1}));
+        }
+    }
+    pll.vco_current_rate=1189188000ULL;
+    auto refuse=[&](int error,bool may_read=false) {
+        writes.clear();reads.clear();events.clear();notices=errors=0;pll.bias=slave.bias=0;
+        const auto before=registers;
+        assert(dsi_pll_7nm_vco_prepare(&pll.hw)==error);
+        assert(writes.empty() && !notices && errors==1 && registers==before);
+        assert(pll.bias==0 && slave.bias==0);
+        if(!may_read)assert(reads.empty());
+        assert(std::find(events.begin(),events.end(),"lock")==events.end());
+    };
+#define REFUSE(field,value) do {reset();const auto saved=(field);(field)=(value);refuse(-EINVAL);(field)=saved;}while(0)
+    REFUSE(uke,false);REFUSE(sm7675,false);REFUSE(phys[0].id,1);
+    REFUSE(phys[0].cphy_mode,true);REFUSE(phys[0].usecase,MSM_DSI_PHY_STANDALONE);
+    REFUSE(cfg.quirks,DSI_PHY_7NM_QUIRK_V4_3);REFUSE(pll.slave,nullptr);
+    REFUSE(phys[1].id,0);REFUSE(phys[1].cphy_mode,true);
+    REFUSE(phys[1].usecase,MSM_DSI_PHY_MASTER);REFUSE(phys[1].cfg,&other);
+    REFUSE(nodes[1].compatible,"qcom,sm7675-dsi-phy-4nm");
+    REFUSE(platforms[1].dev.of_node,nullptr);
+    for(uint64_t rate:{0ULL,1189186999ULL,1189191001ULL,2500000000ULL,~0ULL})
+        REFUSE(pll.vco_current_rate,rate);
+#undef REFUSE
+    reset();slave.phy=nullptr;
+    assert(dsi_pll_7nm_uke_o82_init_fll(&pll)==-EINVAL && writes.empty() && reads.empty());
+    slave.phy=&phys[1];
+    for(int id:{0,1}) {reset();phys[id].pll_on=true;refuse(-EBUSY);phys[id].pll_on=false;}
+    for(auto addr:{start0,start1}) {reset();registers[addr]=1;refuse(-EBUSY,true);}
+    // Unrelated PHY keeps the complete original prepare sequence and no FLL write.
+    reset();nodes[0].compatible="qcom,sm8650-dsi-phy-4nm";
+    assert(dsi_pll_7nm_vco_prepare(&pll.hw)==0 && !notices && reads.empty() && writes.size()==3);
+    nodes[0].compatible="xiaomi,uke-o82-dsi-phy-4nm";
+    // Preserve and report the existing lock-error return; no clock/reset follows.
+    reset();lock_result=-ETIMEDOUT;
+    assert(dsi_pll_7nm_vco_prepare(&pll.hw)==-ETIMEDOUT && !phys[0].pll_on);
+    assert(writes.size()==8 && notices==1 && errors==1 && events.back()=="lock");
+}
+}
+CPP
 } >> "$work/check.cpp"
 "${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror \
     -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'O82 PHY: exact timing/strength and post-link pair FIFO/clock-select order; unsupported or mismatched pairs refuse with no register access\n'
+printf 'O82 PHY: timing/strength, pair FIFO/clock-select and seven-write FLL-before-start order; invalid/running pairs refuse and new refusal restores bias\n'

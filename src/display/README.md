@@ -300,13 +300,19 @@ running timing; missing events, resume and visible output still need Uke tests.
 Native26 on 16 October completed the deferred HS, backlight and LP sequence,
 but neither the desktop nor an independent XR24 pattern was visible. A separate
 VIG0/VIG1 scaled SMPTE test also produced no visible color bars. The next isolated
-Uke trial sets the OEM hardware split-flush flag for the single-CTL bonded video
-route while retaining upstream's two software submissions and both interface
-masks. Disable clears it only after a successful final master stop wait and
-fresh inactive status from both interfaces. Host tests cover scope refusal,
-unchanged unrelated register fields, stop failures and repeated enable/disable.
-This combination still requires a physical test; it is not a general reversal
-of upstream's modern CTL policy or an established fix for the blank screen.
+Uke trial set the OEM hardware split-flush flag while retaining upstream's two
+software submissions. Native27 confirmed the flag on the tablet, but the held
+XR24 SMPTE pattern remained invisible. That patch is retained for attribution
+and excluded from the active preparation queue.
+
+The next isolated trial restores seven OEM FLL defaults immediately before
+starting the stopped master PLL. The exact Uke OEM and same-SoC sources agree
+on these values; the active OEM capture differs from the native capture at all
+seven fields. The guard requires the admitted O82 D-PHY pair and lane rate.
+Invalid scope or a running PLL refuses initialization and balances the acquired
+bias references. Rate, voltage, dividers and the existing lock sequence remain
+unchanged. Host fixtures cover register order, refusal and error cleanup.
+This source-backed difference has not established the cause of the blank image.
 
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
