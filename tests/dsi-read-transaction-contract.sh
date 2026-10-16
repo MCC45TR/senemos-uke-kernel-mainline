@@ -63,7 +63,7 @@ struct drm_display_mode {int hdisplay;};
 struct drm_device {void *dev;};
 struct work_struct {int unused;};
 struct msm_dsi_host {struct mipi_dsi_host base; const struct msm_dsi_cfg_handler *cfg_hnd;
-    int id,format,dma_comp,cmd_mutex; unsigned long mode_flags; struct drm_display_mode *mode; u8 rx_buf[16];
+    int id,format,dma_comp,cmd_mutex,dev_mutex; unsigned long mode_flags; struct drm_display_mode *mode; u8 rx_buf[16];
     bool power_on,cphy_mode,enabled,cmd_dma_blocked; int irq; u32 dma_cmd_ctrl_restore; void *vm;
     struct platform_device *pdev; struct drm_device *dev; void *tx_gem_obj,*tx_buf;
     int tx_size; unsigned long tx_buf_paddr; u32 err_work_state; struct work_struct err_work;};
@@ -100,6 +100,8 @@ static struct msm_dsi *dsi_mgr_get_dsi(int id) {assert(id==0 || id==1); return &
 static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
     return (struct msm_dsi_host *)host;
 }
+/* Diagnostic lifecycle locks are exercised by dsi-mdp-misr-contract.sh. */
+static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {(void)host; return false;}
 static int committed[8],commit_count,wait_count,fail_wait,base_error,add_count,fail_add,rx_count;
 static int prepared[2],restored[2],fail_prepare,packets[8];
 static int lock_count,unlock_count,staged[2],triggers[2],trigger_count,waited[8],dma_size=4;
