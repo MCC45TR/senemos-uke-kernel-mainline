@@ -96,7 +96,7 @@ struct drm_panel_follower;
 struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);
     int (*panel_disabling)(struct drm_panel_follower *);};
 struct drm_panel_follower {const struct follower_ops *funcs;};
-static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers;
+static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers,dimming_transfers;
 static int batch_api_calls,batch_api_error;
 static int on_batch_calls,on_batch_error=-1,on_batch_counts[8],on_batch_sizes[8],on_batch_total;
 static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
@@ -227,12 +227,22 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
     if (m->flags==MIPI_DSI_MSG_USE_LPM) {
         lpm_transfers++;
         if(video_started) {
+            if(normal_transfers==4) {
+                static const u8 dimming[4][2]={{0xff,0x27},{0xd1,0x28},{0xff,0x10},{0x53,0x2c}};
+                assert(dimming_transfers<8 && host->id==dimming_transfers%2);
+                assert(boundary_seen && backlight_calls==1 && hs_transfers==8);
+                assert(m->type==(dimming_transfers<4 ? 0x39U:0x15U) && m->tx_len==2);
+                assert(!memcmp(m->tx_buf,dimming[dimming_transfers/2],2));
+                ++dimming_transfers;
+            } else {
             static const u8 normal[2][2]={{0xff,0x10},{0x13,0x00}};
+            if(!normal_transfers)dimming_transfers=0;
             assert(hs_transfers==8 && normal_transfers<4);
             assert(host->id==normal_transfers%2 && backlight_calls==1 && boundary_seen);
             assert(m->type==(normal_transfers<2 ? 0x15U:0x39U) && m->tx_len==2);
             assert(!memcmp(m->tx_buf,normal[normal_transfers/2],2));
             normal_transfers++;
+            }
         }
     }
     else {
@@ -378,7 +388,7 @@ static struct o82_panel context(int variant,int mode) {
     static struct backlight_device backlight;
     memset(balance,0,sizeof(balance)); memset(loads,0,sizeof(loads));
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
-    lpm_transfers=hs_transfers=pps_transfers=normal_transfers=0;
+    lpm_transfers=hs_transfers=pps_transfers=normal_transfers=dimming_transfers=0;
     batch_api_calls=batch_api_error=0;
     post_frame_reads=0;
     on_batch_calls=on_batch_total=on_complete=0;on_batch_error=-1;
@@ -490,7 +500,8 @@ int main(void) {
         assert(post_frame_reads==(v==1&&m==5 ? 7:0));
         assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
         assert(batch_api_calls==(v==1&&m==5));
-        assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);
+        assert(normal_transfers==4 && transfers==full+(c.initial_120hz_only ? 20:12) && c.first_frame_initialized);
+        assert(dimming_transfers==(c.initial_120hz_only ? 8:0));
         for(unsigned int command=0;command<c.active->switch_count;command++)
             for(int link=0;link<2;link++)
                 assert(!memcmp(hs_payloads[2*command+link],c.active->switch_commands[command].data,2));
@@ -718,6 +729,18 @@ int main(void) {
         assert(strstr(last_error,"stage=timing-switch")&&!disables);
         drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
     }
+    /* Every serialized dimming failure stops its later commands and readback. */
+    for(int short_reply=0;short_reply<2;short_reply++)for(int fault=0;fault<8;fault++) {
+        c=context(1,5);assert(o82_prepare(&c.panel)==0);
+        int before=transfers;
+        if(short_reply)transfer_short=before+12+fault;else transfer_failure=before+12+fault;
+        video_started=true;drm_panel_enable(&c.panel);first_boundary(&c.first_frame_work);
+        assert(dimming_transfers==fault+1 && !post_frame_reads && !c.backlight->on);
+        assert(transfers==before+13+fault && strstr(last_error,"stage=dimming-on"));
+        assert(strstr(last_error,"result=-5 blank_result=0"));
+        transfer_failure=transfer_short=-1;
+        drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
+    }
     c=context(0,3);
     struct device_node node={"unrelated,panel"};
     struct platform_device platform={.dev={&node}};
@@ -732,4 +755,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual O82 lifecycle: isolated PB120 ON eight OEM chunks/884 bytes and120-ms settle, full metadata/error refusal, unchanged other modes/PPS/OFF/HS batch and cancellation passed\n'
+printf 'Actual O82 lifecycle: isolated PB120 ON eight OEM chunks/884 bytes and120-ms settle, full metadata/error refusal, scoped post-normal dimming order and eight fault positions, unchanged other modes/PPS/OFF/HS batch and cancellation passed\n'

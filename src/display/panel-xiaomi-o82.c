@@ -400,6 +400,12 @@ static void o82_first_frame(struct kthread_work *work)
 		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
 		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0x13, 0x00 } },
 	};
+	const struct o82_command dimming_on[] = {
+		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0xff, 0x27 } },
+		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0xd1, 0x28 } },
+		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
+		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0x53, 0x2c } },
+	};
 	const char *stage = "prepared";
 	int i = -1, ret, blank_ret, brightness;
 
@@ -463,6 +469,14 @@ static void o82_first_frame(struct kthread_work *work)
 	}
 	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
 	if (ctx->initial_120hz_only) {
+		/* Compare OEM post-normal dimming state without new rails or rates. */
+		stage = "dimming-on";
+		for (i = 0; i < ARRAY_SIZE(dimming_on); i++) {
+			ret = o82_send(ctx, &dimming_on[i], true);
+			if (ret)
+				goto failed;
+		}
+		dev_info(&ctx->dsi[0]->dev, "O82 first-frame dimming-on complete\n");
 		/* Delay this experimental sample, not panel startup. */
 		msleep(1000);
 		o82_readback(ctx, true);

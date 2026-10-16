@@ -478,3 +478,8 @@ timings, and verify the clock/bias power lifecycle on Uke. The common OEM
 bit-clock override needs reconciliation for the 90/144 Hz groups; derived DRM
 mode arithmetic alone does not validate their physical link rates. Preserve
 the firmware framebuffer boot image and Android return route for these tests.
+
+16 October 2026: the isolated O82-42 initial120 trial also compares the exact
+OEM post-normal dimming values through the existing synchronous panel sender.
+This is a final-state comparison; it does not reproduce OEM command batching.
+Other profiles retain their prior sequence. Optical effectiveness is pending.
