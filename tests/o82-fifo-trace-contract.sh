@@ -50,7 +50,7 @@ struct msm_dsi_host {
 static bool scope=true,uke=true,sm7675=true;
 static device_node node;static device_node *remote=&node;
 static unsigned reads,node_gets,node_puts;
-static u32 ctrl=0x1f3,fifo=0x44441310,expected_restore=0x1f3;
+static u32 ctrl=0x1f3,fifo=0x44441310,expected_restore=0x1f3,trigger=0x80001004;
 static bool restoring=false;
 static std::vector<std::string> logs,events;
 static msm_dsi_host *to_msm_dsi_host(mipi_dsi_host *host) {return static_cast<msm_dsi_host *>(host->owner);}
@@ -61,6 +61,10 @@ static void disable_clk(msm_dsi_host *) {events.emplace_back("clk-disable");}
 static void pm_runtime_put(device *) {events.emplace_back("pm-put");}
 static void dsi_set_tx_power_mode(int mode,msm_dsi_host *) {assert(mode==(restoring?1:0));events.emplace_back(mode?"lp":"hs");}
 static void dsi_write(msm_dsi_host *,u32 reg,u32 value) {
+    if(reg==REG_DSI_TRIG_CTRL) {
+        assert(!restoring&&value==(trigger&~DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME));
+        trigger=value;events.emplace_back("frame-block-clear");return;
+    }
     if(reg==REG_DSI_FIFO_STATUS) {
         assert(restoring&&!(ctrl&DSI_CTRL_CMD_MODE_EN));
         assert(value&&(value==(fifo&0x44440000)));fifo&=~value;events.emplace_back("fifo-w1c");return;
@@ -92,6 +96,7 @@ static u32 dsi_read(msm_dsi_host *,u32 reg) {
     ++reads;
     switch(reg) {
     case REG_DSI_CTRL:return ctrl;
+    case REG_DSI_TRIG_CTRL:return trigger;
     case REG_DSI_FIFO_STATUS:return fifo;
     case REG_DSI_ERR_INT_MASK0:return 0x13ff3be0;
     case REG_DSI_TIMEOUT_STATUS:return 1;
@@ -175,17 +180,21 @@ int main() {
 
     clock_ops ops{set_rate,enable_clk,disable_clk};msm_dsi_cfg_handler cfg{&ops};h.cfg_hnd=&cfg;
     mipi_dsi_host base{&h};msg.tx_buf=payload;msg.tx_len=2;
-    auto prepare=[&](bool preserve,bool lpm) {
-        events.clear();ctrl=0x1f3;msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
+    auto prepare=[&](bool preserve,bool lpm,u32 original_trigger=0x80001004) {
+        events.clear();ctrl=0x1f3;trigger=original_trigger;msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
         assert(!msm_dsi_host_xfer_prepare(&base,&msg));
         std::vector<std::string> want={"pm-get"};
         if(!preserve)want.emplace_back("set-rate");
-        want.emplace_back("clk-enable");if(!lpm)want.emplace_back("hs");
+        want.emplace_back("clk-enable");
+        if(preserve&&(original_trigger&DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME))want.emplace_back("frame-block-clear");
+        if(!lpm)want.emplace_back("hs");
         want.emplace_back("ctrl-enable");want.emplace_back("irq-enable");
         assert(events==want&&h.dma_cmd_ctrl_restore==0x1f3);
+        assert(trigger==(preserve?(original_trigger&~DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME):original_trigger));
         assert(node_gets==node_puts);
     };
     prepare(true,false);prepare(true,true);
+    prepare(true,false,0x80000004);prepare(true,true,0x800019a5);
 #define ORDINARY(field,value) do {auto old=(field);(field)=(value);prepare(false,false);(field)=old;}while(0)
     ORDINARY(h.enabled,false);ORDINARY(h.power_on,false);ORDINARY(h.cmd_dma_blocked,true);
     ORDINARY(scope,false);ORDINARY(node.pb,false);ORDINARY(node.isolated,false);

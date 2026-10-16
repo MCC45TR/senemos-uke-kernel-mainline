@@ -44,12 +44,19 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+Patch `0029` compares the exact OEM active-video command trigger policy. It
+clears only `BLOCK_DMA_WITHIN_FRAME` after link-clock enable and before command
+enable on the isolated O82-42 initial120 profile. Other trigger bits, explicit
+scheduling, ordinary profiles and quarantine are unchanged. Its effect on
+visible output requires a separate physical comparison.
+
 Patch `0028` compares the OEM command-cleanup policy on the exact active
 O82-42 initial120 profile. After command-engine restoration, it clears only
 captured HS overflow W1C flags for writes, retaining before/after diagnostics,
 unrelated errors, IRQ masks and quarantine. Read transactions and already
 enabled command engines are excluded. This isolates sticky command evidence
-from later video status; visible output remains unqualified.
+from later video status. Native41 clears these flags and retains clear later
+video samples, but its held SMPTE pattern remains invisible.
 
 Patch `0027` preserves the already-programmed link rates during transfers on
 the exact active O82-42 initial120 video profile, matching the OEM clock vote
