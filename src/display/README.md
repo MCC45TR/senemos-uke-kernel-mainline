@@ -44,12 +44,20 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+Patch `0028` compares the OEM command-cleanup policy on the exact active
+O82-42 initial120 profile. After command-engine restoration, it clears only
+captured HS overflow W1C flags for writes, retaining before/after diagnostics,
+unrelated errors, IRQ masks and quarantine. Read transactions and already
+enabled command engines are excluded. This isolates sticky command evidence
+from later video status; visible output remains unqualified.
+
 Patch `0027` preserves the already-programmed link rates during transfers on
 the exact active O82-42 initial120 video profile, matching the OEM clock vote
 policy. Initial rate setup and ordinary profiles retain their existing path;
 PM/clock votes, IRQ masks, payloads and quarantine are unchanged. Native39
-measured actual live PLL programming before the first latched HS overflow;
-causality and visible output still require a separate physical test.
+measured actual live PLL programming before the first latched HS overflow.
+Native40 removes those live callbacks, but the panel remains blank with the
+same sticky flags; rewriting the active PLL is not a necessary sole cause.
 
 Patch `0026` passively records the first 24 transfers on each host and actual
 PLL setter calls for the isolated Uke O82-42 120 Hz trial. It preserves status,

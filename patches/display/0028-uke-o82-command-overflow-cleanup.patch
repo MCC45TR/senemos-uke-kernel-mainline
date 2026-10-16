@@ -1,0 +1,36 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: compare O82 command overflow cleanup
+
+MiCode Uke display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl.c and dsi_ctrl_hw_cmn.c (GPL-2.0-only), disables
+the command engine and clears sticky write overflow before unmasking.
+OnePlus SM7675 modules/DT 1138e00fee63582a0cc6a53af3286621786827b7
+uses the same shared-IP cleanup. Native flags alone therefore do not prove
+continuous video overflow. Compare cleanup only for the isolated active
+O82-42 initial120 profile. Keep captured before/after diagnostics, clear
+only captured HS overflow W1C bits, and leave other errors/IRQ masks intact.
+Read transactions, enabled command engines and DMA quarantine are excluded.
+No claim that sticky flags cause the blank display is made.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -2732,6 +2732,19 @@
+ 
+ 	if (!(msg->flags & MIPI_DSI_MSG_USE_LPM))
+ 		dsi_set_tx_power_mode(1, msm_host);
++	/* OEM clears sticky write overflow after disabling the command engine. */
++	if (msm_host->enabled && dsi_uke_o82_initial120(msm_host) &&
++	    !msg->rx_buf && !msg->rx_len &&
++	    !(msm_host->dma_cmd_ctrl_restore & DSI_CTRL_CMD_MODE_EN)) {
++		u32 overflow = dsi_read(msm_host, REG_DSI_FIFO_STATUS) &
++			(DSI_FIFO_STATUS_DLN0_HS_FIFO_OVERFLOW |
++			 DSI_FIFO_STATUS_DLN1_HS_FIFO_OVERFLOW |
++			 DSI_FIFO_STATUS_DLN2_HS_FIFO_OVERFLOW |
++			 DSI_FIFO_STATUS_DLN3_HS_FIFO_OVERFLOW);
++
++		if (overflow)
++			dsi_write(msm_host, REG_DSI_FIFO_STATUS, overflow);
++	}
+ 	dsi_uke_fifo_trace(msm_host, msg, "restore-after", false);
+ 
+ 	/* TODO: unvote for bus bandwidth */

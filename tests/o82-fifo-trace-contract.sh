@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Execute passive O82 host/PLL diagnostics; no target access.
+# Execute O82 host diagnostics, clock and FIFO lifecycle checks; no target access.
 set -Eeuo pipefail
 host=${1:?Pass candidate dsi_host.c}
 phy=${2:?Pass candidate dsi_phy_7nm.c}
@@ -33,10 +33,10 @@ struct device_node {bool pb=true,isolated=true,phy=true;};
 struct device {device_node *of_node;};
 struct platform_device {device dev;};
 struct drm_display_mode {int hdisplay=3200,vdisplay=2136,hz=120,clock=967428,htotal=3490,vtotal=2310;};
-struct mipi_dsi_msg {u8 type=0x39;unsigned flags=1;size_t tx_len=2;const void *tx_buf;};
+struct mipi_dsi_msg {u8 type=0x39;unsigned flags=1;size_t tx_len=2;const void *tx_buf;void *rx_buf=nullptr;size_t rx_len=0;};
 struct mipi_dsi_host {void *owner;};
 struct msm_dsi_host;
-struct clock_ops {void (*link_clk_set_rate)(msm_dsi_host *);void (*link_clk_enable)(msm_dsi_host *);};
+struct clock_ops {void (*link_clk_set_rate)(msm_dsi_host *);void (*link_clk_enable)(msm_dsi_host *);void (*link_clk_disable)(msm_dsi_host *);};
 struct msm_dsi_cfg_handler {clock_ops *ops;};
 struct msm_dsi_host {
     platform_device *pdev;drm_display_mode *mode;
@@ -50,17 +50,26 @@ struct msm_dsi_host {
 static bool scope=true,uke=true,sm7675=true;
 static device_node node;static device_node *remote=&node;
 static unsigned reads,node_gets,node_puts;
+static u32 ctrl=0x1f3,fifo=0x44441310,expected_restore=0x1f3;
+static bool restoring=false;
 static std::vector<std::string> logs,events;
 static msm_dsi_host *to_msm_dsi_host(mipi_dsi_host *host) {return static_cast<msm_dsi_host *>(host->owner);}
 static void pm_runtime_get_sync(device *) {events.emplace_back("pm-get");}
 static void set_rate(msm_dsi_host *) {events.emplace_back("set-rate");}
 static void enable_clk(msm_dsi_host *) {events.emplace_back("clk-enable");}
-static void dsi_set_tx_power_mode(int mode,msm_dsi_host *) {assert(!mode);events.emplace_back("hs");}
+static void disable_clk(msm_dsi_host *) {events.emplace_back("clk-disable");}
+static void pm_runtime_put(device *) {events.emplace_back("pm-put");}
+static void dsi_set_tx_power_mode(int mode,msm_dsi_host *) {assert(mode==(restoring?1:0));events.emplace_back(mode?"lp":"hs");}
 static void dsi_write(msm_dsi_host *,u32 reg,u32 value) {
-    assert(reg==REG_DSI_CTRL&&value==0x1f7);events.emplace_back("ctrl-enable");
+    if(reg==REG_DSI_FIFO_STATUS) {
+        assert(restoring&&!(ctrl&DSI_CTRL_CMD_MODE_EN));
+        assert(value&&(value==(fifo&0x44440000)));fifo&=~value;events.emplace_back("fifo-w1c");return;
+    }
+    assert(reg==REG_DSI_CTRL&&value==(restoring?expected_restore:0x1f7U));
+    ctrl=value;events.emplace_back(restoring?"ctrl-restore":"ctrl-enable");
 }
 static void dsi_intr_ctrl(msm_dsi_host *,int irq,int enable) {
-    assert(irq==DSI_IRQ_MASK_CMD_DMA_DONE&&enable==1);events.emplace_back("irq-enable");
+    assert(irq==DSI_IRQ_MASK_CMD_DMA_DONE&&enable==(restoring?0:1));events.emplace_back(enable?"irq-enable":"irq-disable");
 }
 static bool dsi_uke_misr_scope(msm_dsi_host *) {return scope;}
 static int drm_mode_vrefresh(drm_display_mode *m) {return m->hz;}
@@ -82,8 +91,8 @@ static bool of_machine_is_compatible(const char *name) {
 static u32 dsi_read(msm_dsi_host *,u32 reg) {
     ++reads;
     switch(reg) {
-    case REG_DSI_CTRL:return 0x1f3;
-    case REG_DSI_FIFO_STATUS:return 0x44441310;
+    case REG_DSI_CTRL:return ctrl;
+    case REG_DSI_FIFO_STATUS:return fifo;
     case REG_DSI_ERR_INT_MASK0:return 0x13ff3be0;
     case REG_DSI_TIMEOUT_STATUS:return 1;
     case REG_DSI_ACK_ERR_STATUS:return 2;
@@ -118,6 +127,7 @@ CPP
 extract 'static bool dsi_uke_o82_initial120(' "$host"
 extract 'static void dsi_uke_fifo_trace(' "$host"
 extract 'int msm_dsi_host_xfer_prepare(' "$host"
+extract 'void msm_dsi_host_xfer_restore(' "$host"
 extract 'static int dsi_pll_7nm_vco_set_rate(' "$phy"
 cat <<'CPP'
 int main() {
@@ -163,10 +173,10 @@ int main() {
     rate(true);uke=false;rate(false);uke=true;sm7675=false;rate(false);sm7675=true;
     node.phy=false;rate(false);node.phy=true;rate(true);
 
-    clock_ops ops{set_rate,enable_clk};msm_dsi_cfg_handler cfg{&ops};h.cfg_hnd=&cfg;
+    clock_ops ops{set_rate,enable_clk,disable_clk};msm_dsi_cfg_handler cfg{&ops};h.cfg_hnd=&cfg;
     mipi_dsi_host base{&h};msg.tx_buf=payload;msg.tx_len=2;
     auto prepare=[&](bool preserve,bool lpm) {
-        events.clear();msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
+        events.clear();ctrl=0x1f3;msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
         assert(!msm_dsi_host_xfer_prepare(&base,&msg));
         std::vector<std::string> want={"pm-get"};
         if(!preserve)want.emplace_back("set-rate");
@@ -183,6 +193,38 @@ int main() {
     ORDINARY(mode.clock,967427);ORDINARY(mode.htotal,3489);ORDINARY(mode.vtotal,2309);
     ORDINARY(h.lanes,3);ORDINARY(h.format,0);ORDINARY(h.cphy_mode,true);ORDINARY(h.mode_flags,0);
     prepare(true,false);
+    restoring=true;
+    auto restore=[&](bool cleanup,bool lpm,bool blocked=false,bool command_on=false) {
+        events.clear();msg.flags=lpm?MIPI_DSI_MSG_USE_LPM:0;
+        ctrl=0x1f7;expected_restore=command_on?0x1f7:0x1f3;
+        h.dma_cmd_ctrl_restore=expected_restore;h.uke_fifo_trace_xfers=25;
+        reads=0;const u32 before=fifo;
+        msm_dsi_host_xfer_restore(&base,&msg);
+        std::vector<std::string> want;
+        if(!blocked) {
+            want={"irq-disable","ctrl-restore"};if(!lpm)want.emplace_back("lp");
+            if(cleanup&&(before&0x44440000))want.emplace_back("fifo-w1c");
+        }
+        want.emplace_back("clk-disable");want.emplace_back("pm-put");
+        assert(events==want&&node_gets==node_puts);
+        assert(fifo==(cleanup?(before&~0x44440000):before));
+        if(blocked)assert(reads==0&&ctrl==0x1f7);
+    };
+    fifo=0x44441310;restore(true,false);
+    fifo=0x44441310;restore(true,true);
+    fifo=0x40001310;restore(true,false); // Clear only the captured lane's flag.
+    fifo=0x88881310;restore(true,false); // Unrelated underflow flags survive.
+    fifo=0x1310;restore(true,false); // No flags: no W1C.
+#define NO_CLEAN(field,value) do {auto old=(field);(field)=(value);fifo=0x44441310;restore(false,false);(field)=old;}while(0)
+    NO_CLEAN(h.enabled,false);NO_CLEAN(h.power_on,false);NO_CLEAN(scope,false);
+    NO_CLEAN(node.pb,false);NO_CLEAN(node.isolated,false);NO_CLEAN(remote,nullptr);
+    NO_CLEAN(h.mode,nullptr);NO_CLEAN(mode.clock,967427);NO_CLEAN(mode.hz,60);
+    NO_CLEAN(mode.hdisplay,3199);NO_CLEAN(mode.vdisplay,2135);
+    NO_CLEAN(mode.htotal,3489);NO_CLEAN(mode.vtotal,2309);NO_CLEAN(h.mode_flags,0);
+    NO_CLEAN(h.lanes,3);NO_CLEAN(h.format,0);NO_CLEAN(h.cphy_mode,true);
+    NO_CLEAN(msg.rx_buf,(void *)payload);NO_CLEAN(msg.rx_len,1U);
+    fifo=0x44441310;restore(false,false,false,true);
+    h.cmd_dma_blocked=true;fifo=0x44441310;restore(false,false,true);h.cmd_dma_blocked=false;
 }
 CPP
 } >> "$work/check.cpp"
@@ -191,4 +233,4 @@ CPP
     "$work/check.cpp" -o "$work/check"
 "$work/check"
 [[ $(rg -c '^[[:space:]]*dsi_uke_fifo_trace\(' "$host") == 6 ]]
-printf 'Actual O82 diagnostics and transfer clock preservation: bounded logs, active-video rate exclusion, unchanged PM/clock votes/command writes and ordinary-profile rate setup passed\n'
+printf 'Actual O82 diagnostics/transfer lifecycle: bounded logs, live clock preservation, scoped W1C after command restore, unrelated errors retained, read/profile/quarantine refusal and balanced PM/clock votes passed\n'

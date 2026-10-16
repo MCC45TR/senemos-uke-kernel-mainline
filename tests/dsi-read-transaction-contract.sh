@@ -118,6 +118,8 @@ static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
 }
 /* Diagnostic lifecycle locks are exercised by dsi-mdp-misr-contract.sh. */
 static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {(void)host; return false;}
+/* Exact-profile overflow handling is exercised by o82-fifo-trace-contract.sh. */
+static bool dsi_uke_o82_initial120(struct msm_dsi_host *host) {(void)host; return false;}
 static void dsi_uke_fifo_trace(struct msm_dsi_host *host,const struct mipi_dsi_msg *msg,const char *stage,bool begin) {
     (void)host;(void)msg;(void)stage;(void)begin;
 }
