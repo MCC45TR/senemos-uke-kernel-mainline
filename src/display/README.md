@@ -41,7 +41,13 @@ bytes before ending that chunk. Both video engines must remain off. Ordinary
 bridge disable/re-enable now preserves a blocked DMA quarantine before PHY or
 power changes; arbitrary unbind or KMS destruction remains outside the trial.
 ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
-and order. Host fixtures pass; visible output needs a separate physical test.
+and order. Native35 completed ON and HS groups in a physical test, but held
+SMPTE remained invisible.
+
+Patch `0025` programs the exact Uke OEM HS video timer, including its resolution,
+for the isolated O82-42 120 Hz profile on DSI 2.8. Other modes and panels retain
+their existing timer state. Source and host checks do not establish that the
+previous timer caused the blank display; visible output remains a separate gate.
 
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,

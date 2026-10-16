@@ -45,7 +45,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0021-uke-dsi-mdp-misr-diagnostic.patch \
                  0022-uke-o82-video-command-scheduling.patch \
                  0023-uke-o82-tp-fps-command-batch.patch \
-                 0024-uke-o82-on-command-groups.patch; do
+                 0024-uke-o82-on-command-groups.patch \
+                 0025-uke-o82-video-hs-timer.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

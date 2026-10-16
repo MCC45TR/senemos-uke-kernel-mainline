@@ -1,0 +1,59 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: program the isolated O82 PB120 video timer
+
+Use the video HS timer from MiCode display
+44275c404a677d9d9e5230fedd1af2ef02fc7b9a, msm/dsi/dsi_ctrl_hw_cmn.c:526
+(GPL-2.0-only), also read back on the working Uke OEM path.
+Limit the change to the exact Uke O82-42 initial120 profile and DSI2.8.
+Keep other modes/panels unchanged; this is not physical display acceptance.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -1212,6 +1212,39 @@
+ 	}
+ }
+ 
++static void dsi_uke_o82_video_timer(struct msm_dsi_host *msm_host, bool is_bonded_dsi)
++{
++	const struct drm_display_mode *mode = msm_host->mode;
++	struct device_node *panel;
++
++	if (!is_bonded_dsi || !mode || !msm_host->cfg_hnd ||
++	    !of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    (msm_host->id != DSI_0 && msm_host->id != DSI_1) ||
++	    msm_host->cfg_hnd->major != MSM_DSI_VER_MAJOR_6G ||
++	    msm_host->cfg_hnd->minor != MSM_DSI_6G_VER_MINOR_V2_8_0 ||
++	    !(msm_host->mode_flags & MIPI_DSI_MODE_VIDEO) ||
++	    msm_host->cphy_mode || msm_host->lanes != 4 ||
++	    msm_host->format != MIPI_DSI_FMT_RGB101010 || !msm_host->dsc ||
++	    msm_host->dsc->bits_per_component != 10 ||
++	    msm_host->dsc->bits_per_pixel != 8 << 4 ||
++	    mode->clock != 967428 || mode->hdisplay != 3200 ||
++	    mode->hsync_start != 3426 || mode->hsync_end != 3458 ||
++	    mode->htotal != 3490 || mode->vdisplay != 2136 ||
++	    mode->vsync_start != 2162 || mode->vsync_end != 2164 ||
++	    mode->vtotal != 2310)
++		return;
++
++	panel = of_graph_get_remote_node(msm_host->pdev->dev.of_node, 1, -1);
++	if (of_device_is_compatible(panel, "xiaomi,o82-42-02-0b") &&
++	    of_property_read_bool(panel, "xiaomi,initial-120hz-only"))
++		/* Exact Uke video timer, including resolution; no stop-on-timeout. */
++		dsi_write(msm_host, REG_DSI_HS_TIMER_CTRL,
++			DSI_HS_TIMER_CTRL_HS_TX_TO(0xbb80) |
++			DSI_HS_TIMER_CTRL_TIMER_RESOLUTION(4));
++	of_node_put(panel);
++}
++
+ static void dsi_timing_setup(struct msm_dsi_host *msm_host, bool is_bonded_dsi)
+ {
+ 	struct drm_display_mode *mode = msm_host->mode;
+@@ -1321,6 +1354,7 @@
+ 		dsi_write(msm_host, REG_DSI_ACTIVE_VSYNC_VPOS,
+ 			DSI_ACTIVE_VSYNC_VPOS_START(vs_start) |
+ 			DSI_ACTIVE_VSYNC_VPOS_END(vs_end));
++		dsi_uke_o82_video_timer(msm_host, is_bonded_dsi);
+ 	} else {		/* command mode */
+ 		if (msm_host->dsc)
+ 			dsi_update_dsc_timing(msm_host, true);
