@@ -53,6 +53,9 @@ The isolated 120 Hz profile also records standard one-byte panel replies after
 its first-frame commands, separately from the existing pre-video reads. These
 command-master-only diagnostics stop on the first read error; they do not
 change panel settings or establish visible output from a status byte.
+The query runs one second after protocol completion in the asynchronous worker;
+this diagnostic interval is not an NT36532 startup requirement. Cancellation
+can wait for the additional second in this experimental profile.
 
 The DPU catalog, panel, DISPCC, HLOS interconnect, DSI PHY and SMMU handoff
 objects compile for AArch64. The source contains seven fixed modes: 30, 48, 50,

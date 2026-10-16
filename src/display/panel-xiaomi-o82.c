@@ -461,8 +461,11 @@ static void o82_first_frame(struct kthread_work *work)
 			goto failed;
 	}
 	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
-	if (ctx->initial_120hz_only)
+	if (ctx->initial_120hz_only) {
+		/* Delay this experimental sample, not panel startup. */
+		msleep(1000);
 		o82_readback(ctx, true);
+	}
 	return;
 
 failed:

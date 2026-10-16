@@ -217,7 +217,11 @@ static int gpiod_direction_output(struct gpio_desc *g,int value) {
     (void)g; assert(value==0); return gpio_failure ? -EIO : 0;
 }
 static void gpiod_set_value_cansleep(struct gpio_desc *g,int value) { (void)g; (void)value; }
-static void msleep(unsigned int ms) { assert(ms<=200); settle_ms+=ms; }
+static void msleep(unsigned int ms) {
+    if(ms==1000)assert(video_started && boundary_seen && normal_transfers>=4 && hs_transfers>=8 && backlight_calls>=1);
+    else assert(ms<=200);
+    settle_ms+=ms;
+}
 static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m) {
     assert((m->flags==MIPI_DSI_MSG_USE_LPM || m->flags==0) && m->channel==0 && m->tx_len>0);
     if (m->flags==MIPI_DSI_MSG_USE_LPM) {
@@ -484,6 +488,7 @@ int main(void) {
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
         assert(post_frame_reads==(v==1&&m==5 ? 6:0));
+        assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
         assert(batch_api_calls==(v==1&&m==5));
         assert(normal_transfers==4 && transfers==full+12 && c.first_frame_initialized);
         for(unsigned int command=0;command<c.active->switch_count;command++)
