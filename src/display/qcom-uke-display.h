@@ -25,9 +25,17 @@ struct mipi_dsi_msg;
 #if IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI)
 int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 			      const struct mipi_dsi_msg *msgs);
+/* One bounded LP ON chunk, selected by the isolated PB120 panel caller. */
+int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
+			 const struct mipi_dsi_msg *msgs, unsigned int count);
 #else
 static inline int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 					 const struct mipi_dsi_msg *msgs)
+{
+	return -EOPNOTSUPP;
+}
+static inline int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
+				      const struct mipi_dsi_msg *msgs, unsigned int count)
 {
 	return -EOPNOTSUPP;
 }

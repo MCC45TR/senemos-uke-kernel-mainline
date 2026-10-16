@@ -20,12 +20,18 @@ int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_
 {
     (void)dsi; (void)msgs; return 0;
 }
+int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count)
+{
+    (void)dsi; (void)msgs; (void)count; return 0;
+}
 #endif
 int main(void)
 {
     assert(qcom_uke_dsi_tp_fps_batch(0,0)==
         (IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI) ? 0:-EOPNOTSUPP));
     assert(qcom_uke_display_release(0,0)==-ENODEV);
+    assert(qcom_uke_dsi_on_batch(0,0,0)==
+        (IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI) ? 0:-EOPNOTSUPP));
 }
 C
 for msm in 0 1 2; do

@@ -15,7 +15,15 @@ cat > "$work/check.c" <<'C'
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 static char last_error[512];
+static int on_complete;
+static void info(const char *format,...) {
+    if(!strcmp(format,"Uke O82 LP ON batching complete: commands=108 chunks=%u bytes=%u\n")) {
+        va_list args;va_start(args,format);assert(va_arg(args,unsigned int)==8);
+        assert(va_arg(args,unsigned int)==884);va_end(args);++on_complete;
+    }
+}
 typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64; typedef uint16_t __be16; typedef long ssize_t;
 #define __packed __attribute__((packed))
 #define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
@@ -27,9 +35,10 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t
 #define DP_SDP_PPS_HEADER_PAYLOAD_BYTES_MINUS_1 127
 #define cpu_to_be16(v) ((uint16_t)__builtin_bswap16((uint16_t)(v)))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+#define ALIGN(n,a) (((n)+(a)-1)&~((a)-1))
 #define BIT(n) (1U<<(n))
 #define dev_err(dev,fmt,...) ((void)snprintf(last_error,sizeof(last_error),fmt,##__VA_ARGS__))
-#define dev_info(...) ((void)0)
+#define dev_info(dev,fmt,...) info(fmt,##__VA_ARGS__)
 #define dev_warn(...) ((void)0)
 #define dev_err_probe(dev,err,...) (err)
 #define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
@@ -37,6 +46,7 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t
 #define PTR_ERR(p) ((long)(p))
 #define ERR_PTR(e) ((void *)(intptr_t)(e))
 enum { MIPI_DSI_MSG_USE_LPM=2, MIPI_DSI_PICTURE_PARAMETER_SET=0x0a,
+       MIPI_DSI_DCS_LONG_WRITE=0x39,
        MIPI_DCS_GET_POWER_MODE=0x0a, MIPI_DSI_FMT_RGB101010=10,
        DRM_MODE_TYPE_DRIVER=1, DRM_MODE_TYPE_PREFERRED=2 };
 C
@@ -89,6 +99,7 @@ struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);
 struct drm_panel_follower {const struct follower_ops *funcs;};
 static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers;
 static int batch_api_calls,batch_api_error;
+static int on_batch_calls,on_batch_error=-1,on_batch_counts[8],on_batch_sizes[8],on_batch_total;
 static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
 static bool boundary_seen;
 struct backlight_device {bool on;};
@@ -241,6 +252,24 @@ static int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mi
     }
     return 0;
 }
+static int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count) {
+    static const int counts[8]={7,6,31,31,28,3,1,1},sizes[8]={56,48,248,248,244,24,8,8};
+    assert(!video_started&&!boundary_seen&&dsi->id==0&&count<=31&&on_batch_calls<8);
+    unsigned int bytes=0;
+    for(unsigned int i=0;i<count;i++) {
+        assert(msgs[i].type==0x39&&msgs[i].channel==0&&msgs[i].flags==MIPI_DSI_MSG_USE_LPM);
+        bytes+=ALIGN(msgs[i].tx_len+4,4);
+    }
+    assert(count==counts[on_batch_calls]&&bytes==sizes[on_batch_calls]);
+    int call=on_batch_calls++;on_batch_counts[call]=count;on_batch_sizes[call]=bytes;on_batch_total+=bytes;
+    if(call==on_batch_error)return -EIO;
+    static struct mipi_dsi_host peer={.id=1};
+    for(unsigned int i=0;i<count;i++)for(int link=0;link<2;link++) {
+        ssize_t ret=transfer(link ? &peer:dsi->host,&msgs[i]);
+        if(ret<(ssize_t)msgs[i].tx_len)return ret<0 ? (int)ret:-EIO;
+    }
+    return 0;
+}
 C
 {
 sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$source_file" | sed '$d; /#include "o82-data.h"/d'
@@ -342,6 +371,7 @@ static struct o82_panel context(int variant,int mode) {
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=normal_transfers=0;
     batch_api_calls=batch_api_error=0;
+    on_batch_calls=on_batch_total=on_complete=0;on_batch_error=-1;
     backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
     scheduled=cancelled=0; schedule_result=positive_brightness=1;
     video_started=boundary_seen=backlight.on=dispatch_during_cancel=false; crtc.count=100;
@@ -428,6 +458,8 @@ int main(void) {
         assert(!memcmp(&c.dsc,&encoder,sizeof(encoder)) && pps_transfers==2);
         const int full=transfers;
         assert(full==2*(int)(c.active->on_count+1));
+        if(v==1&&m==5)assert(on_batch_calls==8&&on_batch_total==884&&on_complete==1);
+        else assert(!on_batch_calls&&!on_complete);
         assert(lpm_transfers==2*(int)(c.active->on_count+1));
         assert(!hs_transfers && !c.panel.enabled && !backlight_calls);
         assert(c.active->switch_count==4);
@@ -471,6 +503,7 @@ int main(void) {
         assert(o82_unprepare(&c.panel)==0 && disables==3);
         /* Full unprepare/prepare also retains normal restoration on enable. */
         pps_start=transfers+2*c.active->on_count; pps_transfers=0;
+        on_batch_calls=on_batch_total=0;
         hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
         assert(o82_prepare(&c.panel)==0 && c.prepared && pps_transfers==2);
         assert(!normal_transfers && !hs_transfers);
@@ -614,7 +647,46 @@ int main(void) {
             assert(transfers==after_remove && !c.first_frame_initialized);
         }
     }
-    /* The isolated batch must not discard future OEM delay or grouping changes. */
+    /* Full ON metadata is checked before the first chunk, even near its tail. */
+    for(int index=0;index<108;index++)for(int gate=0;gate<2;gate++) {
+        c=context(1,5);
+        struct o82_profile profiles[3];memcpy(profiles,o82_42_02_0b_profiles,sizeof(profiles));
+        struct o82_command commands[108];memcpy(commands,profiles[0].on,sizeof(commands));
+        profiles[0].on=commands;c.profiles=profiles;
+        if(gate)commands[index].downstream_flags^=BIT(6);else commands[index].delay_ms^=1;
+        assert(o82_prepare(&c.panel)==-EINVAL&&!c.prepared&&!on_batch_calls&&!on_complete);
+        assert(!pps_transfers&&disables==3&&lpm_transfers==6&&!c.enabled_supplies);
+    }
+    for(int gate=0;gate<7;gate++) {
+        c=context(1,5);
+        struct o82_profile profiles[3];memcpy(profiles,o82_42_02_0b_profiles,sizeof(profiles));
+        struct o82_command commands[108];memcpy(commands,profiles[0].on,sizeof(commands));
+        profiles[0].on=commands;c.profiles=profiles;
+        switch(gate) {
+        case 0:profiles[0].on_count--;break;
+        case 1:commands[107].type=0x15;break;
+        case 2:commands[107].channel=1;break;
+        case 3:commands[107].len=0;break;
+        case 4:commands[107].len=18;break;
+        case 5:commands[107].data=NULL;break;
+        case 6:commands[0].len=17;break;
+        }
+        assert(o82_prepare(&c.panel)<0&&!on_batch_calls&&!on_complete&&!pps_transfers);
+        assert(disables==3&&!c.enabled_supplies);
+    }
+    /* Any synchronous ON chunk error suppresses later ON/PPS/HS and unwinds. */
+    int successful_settle;
+    c=context(1,5);assert(o82_prepare(&c.panel)==0);successful_settle=settle_ms;
+    assert(on_complete==1&&on_batch_calls==8);assert(o82_unprepare(&c.panel)==0);
+    for(int fault=0;fault<8;fault++) {
+        c=context(1,5);on_batch_error=fault;
+        assert(o82_prepare(&c.panel)==-EIO&&!c.prepared&&!on_complete);
+        assert(on_batch_calls==fault+1&&!pps_transfers&&!hs_transfers&&!normal_transfers);
+        assert(disables==3&&!c.enabled_supplies&&!c.loaded_supplies&&!c.backlight->on);
+        /* OFF/rail unwind adds126ms; command106 settles even on failed DMA. */
+        assert(settle_ms==successful_settle+126+(fault<6 ? -120:0));
+    }
+    /* The isolated TP batch must not discard future OEM delay/grouping changes. */
     for(int index=0;index<4;index++)for(int gate=0;gate<2;gate++) {
         c=context(1,5);assert(o82_prepare(&c.panel)==0);
         struct o82_command commands[4];
@@ -648,4 +720,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Two O82 variants, seven modes: unchanged ON/PPS; isolated 120-Hz batch API at first boundary; metadata/API refusal has no serialized fallback; other modes, faults and cancellation passed\n'
+printf 'Actual O82 lifecycle: isolated PB120 ON eight OEM chunks/884 bytes and120-ms settle, full metadata/error refusal, unchanged other modes/PPS/OFF/HS batch and cancellation passed\n'

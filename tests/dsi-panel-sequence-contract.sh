@@ -37,6 +37,7 @@ struct msm_dsi_phy_clk_request {unsigned long bitclk_rate,escclk_rate;};
 struct msm_dsi { platform_device *pdev; mipi_dsi_host *host; int phy; } devices[2]{{&platform,&hosts[0],0},{&platform,&hosts[1],1}};
 static bool bonded=true,uke=true,sm7675=true,missing_node=false,missing_secondary=false;
 static bool clocks_ready[2];
+static bool dma_blocked[2];
 static int master=0,node_puts=0;
 static drm_panel *found_panel=&panel;
 static std::string fault;
@@ -52,7 +53,7 @@ static int msm_dsi_host_power_on(mipi_dsi_host *host,msm_dsi_phy_shared_timings 
     int ret=event(link("power",host)); if(!ret) clocks_ready[host->id]=true; return ret;
 }
 static int msm_dsi_host_power_off(mipi_dsi_host *host) {
-    clocks_ready[host->id]=false; return event(link("off",host));
+    int ret=event(link("off",host));if(!ret)clocks_ready[host->id]=false;return ret;
 }
 static void msm_dsi_host_get_phy_clk_req(mipi_dsi_host *host,msm_dsi_phy_clk_request *request,bool is_bonded) {
     assert(host->id==0 && is_bonded && clocks_ready[0] && clocks_ready[1]);
@@ -67,6 +68,7 @@ static void msm_dsi_host_enable_irq(mipi_dsi_host *host) { event(link("irq",host
 static void msm_dsi_host_disable_irq(mipi_dsi_host *host) { event(link("noirq",host)); }
 static int msm_dsi_host_enable(mipi_dsi_host *host) { return event(link("video",host)); }
 static int msm_dsi_host_disable(mipi_dsi_host *host) { return event(link("stop",host)); }
+static bool msm_dsi_host_dma_blocked(mipi_dsi_host *host) {return dma_blocked[host->id];}
 static void msm_dsi_phy_pll_save_state(int) { event("save_pll"); }
 static bool of_machine_is_compatible(const char *name) { return !strcmp(name,"xiaomi,uke") ? uke : sm7675; }
 static unsigned long msm_dsi_host_get_mode_flags(mipi_dsi_host *host) { return host->flags; }
@@ -81,7 +83,7 @@ CPP
     for callback in \
         'static int dsi_mgr_bridge_get_id(struct drm_bridge *bridge)' \
         'static int dsi_mgr_bridge_power_on(struct drm_bridge *bridge)' \
-        'static void dsi_mgr_bridge_power_off(struct drm_bridge *bridge)' \
+        'static int dsi_mgr_bridge_power_off(struct drm_bridge *bridge)' \
         'static int dsi_mgr_bridge_enable_hosts(struct drm_bridge *bridge)' \
         'static void dsi_mgr_bridge_pre_enable(struct drm_bridge *bridge)' \
         'static void dsi_mgr_bridge_enable(struct drm_bridge *bridge)' \
@@ -160,6 +162,30 @@ int main() {
     fault.clear(); dsi_mgr_bridge_pre_enable(&bridge.base); events.clear();
     prepare(false); dsi_mgr_bridge_enable(&bridge.base);
     expect({"reset","panel_on","pps"});
+    dsi_mgr_bridge_post_disable(&bridge.base);
+    expect({"save_pll","noirq0","noirq1","off1","off0","phy_off"});
+
+    // Failed ON preparation may automatically unwind while DMA is quarantined.
+    dsi_mgr_bridge_pre_enable(&bridge.base);events.clear();prepare(false);events.clear();
+    fault="off1";dsi_mgr_bridge_post_disable(&bridge.base);
+    expect({"save_pll","noirq0","noirq1","off1"});
+    assert(bridge.powered&&!bridge.video_enabled&&clocks_ready[0]&&clocks_ready[1]);
+    dsi_mgr_bridge_post_disable(&bridge.base);
+    expect({"save_pll","noirq0","noirq1","off1"});
+    assert(bridge.powered&&clocks_ready[0]&&clocks_ready[1]);
+    fault.clear();dsi_mgr_bridge_post_disable(&bridge.base);
+    expect({"save_pll","noirq0","noirq1","off1","off0","phy_off"});
+    assert(!bridge.powered);
+    dsi_mgr_bridge_pre_enable(&bridge.base);events.clear();prepare(false);events.clear();
+    dma_blocked[0]=dma_blocked[1]=true;
+    dsi_mgr_bridge_post_disable(&bridge.base);expect({});
+    dsi_mgr_bridge_pre_enable(&bridge.base);expect({});
+    assert(bridge.powered&&clocks_ready[0]&&clocks_ready[1]);
+    dsi_bridge blocked_slave{{},1,nullptr,true,false};
+    dsi_mgr_bridge_post_disable(&blocked_slave.base);expect({});
+    dsi_mgr_bridge_pre_enable(&blocked_slave.base);expect({});
+    assert(blocked_slave.powered&&clocks_ready[0]&&clocks_ready[1]);
+    dma_blocked[0]=dma_blocked[1]=false;
     dsi_mgr_bridge_post_disable(&bridge.base);
     expect({"save_pll","noirq0","noirq1","off1","off0","phy_off"});
 

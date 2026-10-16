@@ -49,6 +49,7 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define container_of(ptr,type,member) ((type *)((char *)(ptr)-offsetof(type,member)))
 #define DSI_ERR_STATE_MDP_FIFO_UNDERFLOW 0x0008
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+#define ALIGN(n,a) (((n)+(a)-1)&~((a)-1))
 #define wmb() ((void)0)
 #define DSI_0 0
 #define DSI_1 1
@@ -61,19 +62,20 @@ typedef uint8_t u8; typedef uint32_t u32;
 struct mipi_dsi_msg {u8 channel,type; size_t tx_len; const void *tx_buf; void *rx_buf; size_t rx_len; unsigned int flags;};
 struct mipi_dsi_packet {size_t size; u8 header[4]; size_t payload_length; const u8 *payload;};
 struct mipi_dsi_host {int id;};
-struct mipi_dsi_device {struct mipi_dsi_host *host;};
+struct mipi_dsi_device {struct mipi_dsi_host *host; struct {struct device_node *of_node;} dev;};
 struct msm_dsi_host;
 struct test_ops {int (*dma_base_get)(struct msm_dsi_host *,uint64_t *); void (*link_clk_disable)(struct msm_dsi_host *);
     int (*tx_buf_alloc)(struct msm_dsi_host *,int); void *(*tx_buf_get)(struct msm_dsi_host *);
     void (*tx_buf_put)(struct msm_dsi_host *);};
-struct msm_dsi_cfg_handler {int major,minor; struct test_ops *ops;};
+struct test_cfg {int num_regulators;};
+struct msm_dsi_cfg_handler {int major,minor; struct test_ops *ops; const struct test_cfg *cfg;};
 struct drm_display_mode {int hdisplay;};
 struct drm_device {void *dev;};
 struct work_struct {int unused;};
 struct msm_dsi_host {struct mipi_dsi_host base; const struct msm_dsi_cfg_handler *cfg_hnd;
     int id,format,dma_comp,cmd_mutex,dev_mutex,lanes; unsigned long mode_flags; struct drm_display_mode *mode; u8 rx_buf[16];
     bool power_on,cphy_mode,enabled,cmd_dma_blocked; int irq; u32 dma_cmd_ctrl_restore; void *vm;
-    struct platform_device *pdev; struct drm_device *dev; void *tx_gem_obj,*tx_buf;
+    struct platform_device *pdev; struct drm_device *dev; void *tx_gem_obj,*tx_buf,*supplies;
     int tx_size; unsigned long tx_buf_paddr; u32 err_work_state; struct work_struct err_work;};
 struct device_node {int unused;};
 struct drm_panel {int unused;};
@@ -82,6 +84,7 @@ struct msm_dsi {struct mipi_dsi_host *host; struct platform_device *pdev;};
 static struct msm_dsi_host hosts[2];
 static struct msm_dsi devices[2];
 static bool sync_needed,bonded,board_uke,board_sm7675,panel_o82,panel_error;
+static bool panel_pb=true,initial120=true;
 static struct device_node panel_node;
 static struct drm_panel panel;
 #define IS_SYNC_NEEDED() sync_needed
@@ -100,7 +103,10 @@ static struct device_node *of_graph_get_remote_node(struct device_node *node,int
 static bool of_device_is_compatible(struct device_node *node,const char *name) {
     assert(node==&panel_node);
     assert(!strcmp(name,"xiaomi,o82-36-02-0a") || !strcmp(name,"xiaomi,o82-42-02-0b"));
-    return panel_o82;
+    return panel_o82&&(!strcmp(name,"xiaomi,o82-36-02-0a")||panel_pb);
+}
+static bool of_property_read_bool(struct device_node *node,const char *name) {
+    assert(node==&panel_node&&!strcmp(name,"xiaomi,initial-120hz-only"));return initial120;
 }
 static struct drm_panel *of_drm_find_panel(struct device_node *node) {
     assert(node==&panel_node); return panel_error ? (struct drm_panel *)(intptr_t)-EIO:&panel;
@@ -113,7 +119,7 @@ static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
 /* Diagnostic lifecycle locks are exercised by dsi-mdp-misr-contract.sh. */
 static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {(void)host; return false;}
 static int committed[8],commit_count,wait_count,fail_wait,base_error,add_count,fail_add,rx_count;
-static int prepared[2],restored[2],fail_prepare,packets[8];
+static int prepared[2],restored[2],fail_prepare,packets[128];
 static int lock_count,unlock_count,staged[2],triggers[2],trigger_count,waited[8],dma_size=4;
 static int writes_count,ctrl_writes[2],reinitialized[2];
 static u32 dma_ctrl[2],saved_ctrl[2],prepared_ctrl[2],dma_address[2],dma_len[2];
@@ -141,6 +147,11 @@ static void dma_free_coherent(void *dev,int size,void *buf,unsigned long phys) {
 }
 static void link_clk_disable(struct msm_dsi_host *host) {++clock_disables[host->id];}
 static void pm_runtime_put(void *dev) {(void)dev; ++pm_puts;}
+static int lifecycle_mutations;
+static void dsi_ctrl_disable(struct msm_dsi_host *host) {(void)host;++lifecycle_mutations;}
+static int pinctrl_pm_select_sleep_state(void *dev) {(void)dev;++lifecycle_mutations;return 0;}
+static int regulator_bulk_disable(int count,void *supplies) {(void)count;(void)supplies;++lifecycle_mutations;return 0;}
+static void msm_dsi_sfpb_config(struct msm_dsi_host *host,bool enabled) {(void)host;(void)enabled;++lifecycle_mutations;}
 static void msleep(unsigned int ms) {assert(ms==20);}
 static void synchronize_irq(int irq) {assert(irq==0 || irq==1); ++irq_sync[irq];}
 static void dsi_intr_ctrl(struct msm_dsi_host *host,u32 mask,int enable) {
@@ -157,7 +168,7 @@ static void mutex_lock_nested(int *lock,int subclass) {
     assert(lock==&hosts[0].cmd_mutex && !*lock && hosts[1].cmd_mutex && subclass==1);
     *lock=1; ++lock_count;
 }
-static void mutex_unlock(int *lock) {assert((lock==&hosts[0].cmd_mutex || lock==&hosts[1].cmd_mutex) && *lock); *lock=0; ++unlock_count;}
+static void mutex_unlock(int *lock) {assert((lock==&hosts[0].cmd_mutex || lock==&hosts[1].cmd_mutex || lock==&hosts[0].dev_mutex || lock==&hosts[1].dev_mutex) && *lock); *lock=0; ++unlock_count;}
 static void mutex_lock(int *lock) {assert(!*lock); *lock=1; ++outer_locks;}
 static int invalid_logs,register_reads,last_log_link,last_log_cmd,last_ctrl_valid;
 static u32 last_ctrl,last_raw[4],last_timeout;
@@ -279,7 +290,7 @@ C
         sed 's/^int mipi_dsi_create_packet(/int actual_mipi_dsi_create_packet(/'
     cat <<'C'
 static int mipi_dsi_create_packet(struct mipi_dsi_packet *packet,const struct mipi_dsi_msg *msg) {
-    assert(add_count<8); packets[add_count++]=msg->type;
+    assert(add_count<128); packets[add_count++]=msg->type;
     if(add_count==fail_add)return -EIO;
     int ret=actual_mipi_dsi_create_packet(packet,msg);
     if(!ret&&dma_size!=4)packet->size=dma_size;
@@ -287,6 +298,11 @@ static int mipi_dsi_create_packet(struct mipi_dsi_packet *packet,const struct mi
 }
 C
     extract 'static int dsi_cmd_dma_add(struct msm_dsi_host *msm_host,' "$base/dsi_host.c"
+    cat <<'C'
+struct o82_command {u8 type,last,channel,downstream_flags,delay_ms;uint16_t len;const u8 *data;};
+C
+    extract 'static const struct o82_command o82_42_02_0b_120_on[] = {' \
+        "$kernel/drivers/gpu/drm/panel/o82-data.h"
     extract 'bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len,' "$base/dsi_manager.c"
     sed -n '/^#define DSI_CLK_CTRL_ENABLE_CLKS/,/^$/p' "$base/dsi_host.c"
     extract 'static void dsi_sw_reset(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
@@ -297,6 +313,8 @@ C
     extract 'void msm_dsi_tx_buf_free(struct mipi_dsi_host *host)' "$base/dsi_host.c"
     extract 'int msm_dsi_host_modeset_init(struct mipi_dsi_host *host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_enable(struct mipi_dsi_host *host)' "$base/dsi_host.c"
+    extract 'int msm_dsi_host_disable(struct mipi_dsi_host *host)' "$base/dsi_host.c"
+    extract 'int msm_dsi_host_power_off(struct mipi_dsi_host *host)' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_wait_idle(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
     extract 'static int dsi_cmd_dma_abort_broadcast(struct msm_dsi_host *master,' "$base/dsi_host.c"
     extract 'static int dsi_uke_dma_schedule(struct msm_dsi_host *master,' "$base/dsi_host.c"
@@ -309,8 +327,10 @@ C
     extract 'static int dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
+    extract 'int msm_dsi_host_cmd_on_batch(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'static struct drm_panel *dsi_mgr_o82_panel(struct msm_dsi *msm_dsi)' "$base/dsi_manager.c"
     extract 'int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,' "$base/dsi_manager.c"
+    extract 'int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,' "$base/dsi_manager.c"
     extract 'int msm_dsi_manager_cmd_xfer(int id, const struct mipi_dsi_msg *msg)' "$base/dsi_manager.c"
     extract 'static ssize_t dsi_host_transfer(struct mipi_dsi_host *host,' "$base/dsi_host.c"
     cat <<'C'
@@ -318,6 +338,7 @@ static void reset(void) {
     commit_count=wait_count=base_error=add_count=rx_count=0;
     fail_wait=fail_add=fail_prepare=-1;
     bonded=board_uke=board_sm7675=panel_o82=panel_error=false;
+    panel_pb=initial120=true;
     lock_count=unlock_count=trigger_count=writes_count=0; high_address=false; dma_size=4;
     memset(staged,0,sizeof(staged)); memset(ctrl_writes,0,sizeof(ctrl_writes));
     memset(reinitialized,0,sizeof(reinitialized));
@@ -327,6 +348,7 @@ static void reset(void) {
     memset(clock_disables,0,sizeof(clock_disables)); pm_puts=0;
     gem_puts=vm_puts=tx_allocs=dma_frees=0;
     error_irq_enables=outer_locks=0;
+    lifecycle_mutations=0;
     broadcast_notices=batch_notices=0;
     memset(video_total,0,sizeof(video_total));memset(video_active,0,sizeof(video_active));
     memset(schedule_ctrl,0,sizeof(schedule_ctrl));memset(schedule_ctrl2,0,sizeof(schedule_ctrl2));
@@ -353,6 +375,10 @@ static void assert_cleanup(void) {
 static void admit_scheduled(void) {
     admit_o82();schedule_expected=true;
     for(int id=0;id<2;id++){video_total[id]=0x0905023b;video_active[id]=0x08ec0094;}
+}
+static void admit_on(void) {
+    admit_scheduled();schedule_expected=false;hosts[1].cmd_mutex=0;
+    for(int id=0;id<2;id++){hosts[id].enabled=false;ctrl_register[id]&=~DSI_CTRL_VID_MODE_EN;}
 }
 int main(void) {
     struct test_ops ops={dma_base_get,link_clk_disable,tx_buf_alloc,tx_buf_get,tx_buf_put};
@@ -430,7 +456,128 @@ int main(void) {
     cfg.minor=MSM_DSI_6G_VER_MINOR_V2_8_0;
     static const u8 tp_payloads[4][2]={{0xff,0x10},{0xfb,1},{0xb2,0x91},{0xb3,0x40}};
     struct mipi_dsi_msg tp[4];
-    struct mipi_dsi_device panel_dsi={&hosts[0].base};
+    struct mipi_dsi_device panel_dsi={.host=&hosts[0].base,.dev={&panel_node}};
+    static const int on_counts[8]={7,6,31,31,28,3,1,1};
+    static const int on_sizes[8]={56,48,248,248,244,24,8,8};
+    struct mipi_dsi_msg on[31];unsigned int command=0,total_bytes=0;
+    for(int chunk=0;chunk<8;chunk++) {
+        unsigned int bytes=0,start=command,count=0;
+        do {
+            const struct o82_command *cmd=&o82_42_02_0b_120_on[command++];
+            on[count++]=(struct mipi_dsi_msg){.type=cmd->type,.channel=cmd->channel,
+                .flags=MIPI_DSI_MSG_USE_LPM,.tx_len=cmd->len,.tx_buf=cmd->data};
+            struct mipi_dsi_packet packet;
+            assert(actual_mipi_dsi_create_packet(&packet,&on[count-1])==0);
+            bytes+=ALIGN(packet.size,4);
+            if(!(cmd->downstream_flags&64)||bytes>240)break;
+        }while(command<ARRAY_SIZE(o82_42_02_0b_120_on));
+        assert(count==on_counts[chunk]&&bytes==on_sizes[chunk]);
+        admit_on();memset(tx_storage,0xa5,sizeof(tx_storage));
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,count)==0);
+        assert(add_count==count&&trigger_count==2&&wait_count==2&&!schedule_notices&&!batch_notices);
+        assert(!schedule_writes[0]&&!schedule_writes[1]&&video_waits==1);
+        assert(dma_len[0]==bytes&&dma_len[1]==bytes&&prepared[0]==1&&prepared[1]==1);
+        assert(restored[0]==1&&restored[1]==1&&!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex);
+        unsigned int offset=0;
+        for(unsigned int i=0;i<count;i++) {
+            const struct o82_command *cmd=&o82_42_02_0b_120_on[start+i];
+            const u8 header[4]={(u8)cmd->len,0,0x39,(u8)(0x40|(i+1==count ? 0x80:0))};
+            assert(!memcmp(tx_storage[1]+offset,header,4));
+            assert(!memcmp(tx_storage[1]+offset+4,cmd->data,cmd->len));
+            for(unsigned int pad=cmd->len+4;pad<ALIGN(cmd->len+4,4);pad++)
+                assert(tx_storage[1][offset+pad]==0xff);
+            offset+=ALIGN(cmd->len+4,4);
+        }
+        assert(offset==bytes&&tx_storage[1][bytes]==0xa5&&tx_storage[0][0]==0xa5);
+        total_bytes+=bytes;
+    }
+    assert(command==108&&total_bytes==884);
+    /* ON admits neither running video nor a different panel/profile/controller. */
+    for(int gate=0;gate<13;gate++) {
+        admit_on();
+        switch(gate) {
+        case 0:hosts[0].enabled=true;break;
+        case 1:hosts[1].enabled=true;break;
+        case 2:ctrl_register[1]|=DSI_CTRL_VID_MODE_EN;break;
+        case 3:video_total[0]^=1;break;
+        case 4:video_active[1]^=1;break;
+        case 5:schedule_ctrl[0]=1;break;
+        case 6:schedule_ctrl2[1]=1;break;
+        case 7:initial_busy_host=0;break;
+        case 8:initial120=false;break;
+        case 9:panel_pb=false;break;
+        case 10:cfg.minor=1;break;
+        case 11:hosts[1].cphy_mode=true;break;
+        case 12:hosts[0].vm=NULL;break;
+        }
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,1)<0);
+        assert(!writes_count&&!trigger_count&&!add_count&&!prepared[0]&&!prepared[1]);
+        cfg.minor=MSM_DSI_6G_VER_MINOR_V2_8_0;
+    }
+    for(int gate=0;gate<9;gate++) {
+        struct mipi_dsi_msg bad=on[0];admit_on();
+        switch(gate) {
+        case 0:bad.type=MIPI_DSI_DCS_SHORT_WRITE_PARAM;break;
+        case 1:bad.flags=0;break;
+        case 2:bad.channel=1;break;
+        case 3:bad.rx_len=1;break;
+        case 4:bad.rx_buf=&value;break;
+        case 5:bad.tx_len=0;break;
+        case 6:bad.tx_len=18;break;
+        case 7:bad.tx_buf=NULL;break;
+        case 8:bad.flags|=16;break;
+        }
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,&bad,1)==-EINVAL&&!outer_locks&&!writes_count);
+    }
+    admit_on();assert(qcom_uke_dsi_on_batch(NULL,on,1)==-EOPNOTSUPP);
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,NULL,1)==-EOPNOTSUPP);
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,on,0)==-EINVAL);
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,on,32)==-EINVAL);
+    assert(msm_dsi_host_cmd_on_batch(NULL,&hosts[1].base,on,1)==-EINVAL);
+    assert(msm_dsi_host_cmd_on_batch(&hosts[0].base,NULL,on,1)==-EINVAL);
+    for(int i=0;i<31;i++)on[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,
+        .flags=MIPI_DSI_MSG_USE_LPM,.tx_len=2,.tx_buf=tp_payloads[0]};
+    /* Allocation and each packet-creation failure perform no DMA, and retain no offset. */
+    for(int fault=1;fault<=31;fault++) {
+        admit_on();fail_add=fault;
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==-EIO);
+        assert(add_count==fault&&!writes_count&&!trigger_count&&restored[0]==1&&restored[1]==1);
+        fail_add=-1;add_count=0;
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==0&&dma_len[0]==248&&dma_len[1]==248);
+    }
+    admit_on();hosts[1].tx_size=247;
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==-EINVAL&&!writes_count&&restored[1]==1);
+    static const u8 long_on[5]={0xff,0x27,1,2,3};
+    admit_on();on[30].tx_len=3;on[30].tx_buf=long_on;
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==0); /* same padded length */
+    on[30].tx_len=5;admit_on();
+    assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==-EINVAL&&!outer_locks&&!writes_count);
+    on[30].tx_len=2;
+    for(int fault=0;fault<4;fault++) {
+        admit_on();if(fault<2)fail_prepare=fault;else if(fault==2)base_error=-EIO;else high_address=true;
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)<0&&!writes_count&&!trigger_count);
+    }
+    for(int fault=1;fault<=2;fault++) {
+        admit_on();fail_wait=fault;
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==-ETIMEDOUT);
+        assert(wait_count==2&&resets[0]==1&&resets[1]==1&&!schedule_ctrl[0]&&!schedule_ctrl[1]);
+        assert(!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex);
+    }
+    for(int stuck=0;stuck<2;stuck++) {
+        admit_on();fail_wait=1;busy_host=stuck;
+        assert(qcom_uke_dsi_on_batch(&panel_dsi,on,31)==-EIO);
+        assert(hosts[0].cmd_dma_blocked&&hosts[1].cmd_dma_blocked&&reset_asserted[0]&&reset_asserted[1]);
+        assert(!schedule_writes[0]&&!schedule_writes[1]);
+        int prior_writes=writes_count,prior_clocks=clock_disables[0]+clock_disables[1],prior_pm=pm_puts;
+        for(int id=0;id<2;id++) {
+            assert(msm_dsi_host_disable(&hosts[id].base)==-EIO);
+            assert(msm_dsi_host_power_off(&hosts[id].base)==-EIO);
+            assert(hosts[id].power_on&&reset_asserted[id]&&hosts[id].cmd_dma_blocked);
+            assert(!hosts[id].dev_mutex&&!hosts[id].cmd_mutex);
+        }
+        assert(writes_count==prior_writes&&!lifecycle_mutations&&pm_puts==prior_pm);
+        assert(clock_disables[0]+clock_disables[1]==prior_clocks);
+    }
     for(int i=0;i<4;i++)tp[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,
         .tx_len=2,.tx_buf=tp_payloads[i]};
     admit_scheduled();hosts[1].cmd_mutex=0;memset(tx_storage,0xa5,sizeof(tx_storage));
@@ -720,4 +867,4 @@ C
     -Wno-missing-field-initializers -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$headers/include" -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual DSI: unchanged legacy transfers; exact 32-byte TP-FPS batch packing, final-only LAST, one trigger per link, admission/bounds/faults, scheduled cleanup and quarantine passed\n'
+printf 'Actual DSI: PB120 ON eight chunks/884 exact bytes/final-only LAST and one trigger per link, LP prevideo admission/faults/quarantine; unchanged HS TP batch and legacy transfers passed\n'

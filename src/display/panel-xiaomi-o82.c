@@ -116,6 +116,73 @@ static int o82_off(struct o82_panel *ctx)
 	return first_error;
 }
 
+static int o82_on_batch(struct o82_panel *ctx)
+{
+	struct mipi_dsi_msg msgs[31] = { };
+	const struct o82_profile *profile = ctx->active;
+	unsigned int i, count = 0, bytes = 0, chunks = 0, total = 0;
+	int ret;
+
+	if (!ctx->initial_120hz_only || profile != &ctx->profiles[0] ||
+	    profile->on_count != 108)
+		return -EINVAL;
+	/* Reject changed metadata before the first ON chunk can reach the panel. */
+	for (i = 0; i < profile->on_count; i++) {
+		const struct o82_command *cmd = &profile->on[i];
+		bool terminal = i == 6 || i == 12 || i == 74 || i >= 105;
+
+		if (cmd->type != MIPI_DSI_DCS_LONG_WRITE || cmd->channel ||
+		    !cmd->data || !cmd->len || cmd->len > 17 ||
+		    cmd->downstream_flags != (terminal ? 0 : BIT(6)) ||
+		    cmd->delay_ms != (i == 106 ? 120 : 0))
+			return -EINVAL;
+		count++;
+		bytes += ALIGN(cmd->len + 4, 4);
+		if (terminal || bytes > 240) {
+			if (count > ARRAY_SIZE(msgs) || bytes > 248)
+				return -E2BIG;
+			chunks++;
+			total += bytes;
+			count = bytes = 0;
+		}
+	}
+	if (count || chunks != 8 || total != 884)
+		return -EINVAL;
+	chunks = total = 0;
+	for (i = 0; i < profile->on_count; i++) {
+		const struct o82_command *cmd = &profile->on[i];
+
+		if (count == ARRAY_SIZE(msgs))
+			return -E2BIG;
+		msgs[count++] = (struct mipi_dsi_msg) {
+			.channel = cmd->channel, .type = cmd->type,
+			.flags = MIPI_DSI_MSG_USE_LPM, .tx_len = cmd->len,
+			.tx_buf = cmd->data,
+		};
+		bytes += ALIGN(cmd->len + 4, 4);
+		/* OEM includes the nonterminal packet crossing240 in this DMA. */
+		if (!(cmd->downstream_flags & BIT(6)) || bytes > 240) {
+			ret = qcom_uke_dsi_on_batch(ctx->dsi[0], msgs, count);
+			/* A failed DMA may still reach the panel; preserve its settle delay. */
+			if (cmd->delay_ms)
+				msleep(cmd->delay_ms);
+			if (ret) {
+				dev_err(&ctx->dsi[0]->dev,
+					"O82 ON batch failed: command=%u chunk=%u bytes=%u result=%d\n",
+					i, chunks, bytes, ret);
+				return ret;
+			}
+			chunks++;
+			total += bytes;
+			count = bytes = 0;
+		}
+	}
+	dev_info(&ctx->dsi[0]->dev,
+		 "Uke O82 LP ON batching complete: commands=108 chunks=%u bytes=%u\n",
+		 chunks, total);
+	return 0;
+}
+
 static int o82_power_off(struct o82_panel *ctx)
 {
 	int i, ret, first_error = 0;
@@ -260,13 +327,17 @@ static int o82_prepare_locked(struct drm_panel *panel)
 	msleep(3);
 	gpiod_set_value_cansleep(ctx->reset, 1);
 	msleep(15);
-	for (i = 0; i < profile->on_count; i++) {
-		ret = o82_send(ctx, &profile->on[i], true);
-		if (ret) {
-			dev_err(&ctx->dsi[0]->dev, "O82 prepare command[%d] failed: %d\n", i, ret);
-			o82_off(ctx);
-			o82_power_off(ctx);
-			return ret;
+	if (ctx->initial_120hz_only) {
+		ret = o82_on_batch(ctx);
+		if (ret)
+			goto failed_on;
+	} else {
+		for (i = 0; i < profile->on_count; i++) {
+			ret = o82_send(ctx, &profile->on[i], true);
+			if (ret) {
+				dev_err(&ctx->dsi[0]->dev, "O82 prepare command[%d] failed: %d\n", i, ret);
+				goto failed_on;
+			}
 		}
 	}
 	/* OEM PPS describes each link; DPU keeps the shared 3200-pixel frame. */
@@ -283,6 +354,11 @@ static int o82_prepare_locked(struct drm_panel *panel)
 	ctx->prepared = true;
 	return 0;
 
+failed_on:
+	dev_err(&ctx->dsi[0]->dev, "O82 prepare ON failed: result=%d\n", ret);
+	o82_off(ctx);
+	o82_power_off(ctx);
+	return ret;
 rollback_supplies:
 	o82_power_off(ctx);
 	return ret;
