@@ -328,6 +328,15 @@ This trial must end and reboot on its first transfer timeout; unbind, reprobe,
 module unload and KMS teardown are outside its recovery contract. It is not a
 production recovery implementation or a qualified display fix.
 
+Native29 confirmed both command completions on 16 October. The held SMPTE
+image remained invisible, with no observed command timeout or underrun. The
+next isolated trial submits the shared DPU CTL once, following the OEM route,
+while retaining both modern interface masks and both physical encoder counters.
+The scoped split flag is cleared only after a completed stop and fresh inactive
+status from both interfaces. Patch20 includes this behavior; patch17 remains
+excluded. Host fixtures cover repeated frames, transition states and unrelated
+topologies. Visible output and the physical stop/re-enable cycle remain unverified.
+
 The host tests execute the real panel lifecycle and clock functions. They cover
 both variants, all seven mode timings, every command-transfer failure, short
 writes, supply/GPIO failures, reverse-order cleanup, failed-disable retry and

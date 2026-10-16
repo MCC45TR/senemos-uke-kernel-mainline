@@ -1,0 +1,210 @@
+From: Uke Linux development <noreply@github.com>
+Subject: [PATCH] drm/msm/dpu: scope single-CTL bonded flush to Uke
+
+Keep modern per-interface mask programming while submitting the shared Uke
+CTL once with split flush enabled. Preserve both physical encoder pending
+counters and retain the existing behavior outside the exact board/topology.
+Clear the split flag only after a completed stop and fresh inactive status
+on both interfaces.
+
+Source basis: MiCode display-drivers 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+sde_encoder.c, sde_encoder_phys_vid.c and sde_encoder_phys.h. The OEM single
+CTL path combines its masks without skipping modern slave INTF programming.
+This is an isolated O82 profile experiment, not a display support claim.
+
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -10,6 +10,7 @@
+ #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+ #include <linux/debugfs.h>
+ #include <linux/kthread.h>
++#include <linux/of.h>
+ #include <linux/seq_file.h>
+ 
+ #include <drm/drm_atomic.h>
+@@ -559,6 +560,44 @@
+ 	return linecount;
+ }
+ 
++/* Uke's single-CTL bonded video route; keep software flush selection separate. */
++static bool dpu_encoder_uke_split_flush(struct dpu_encoder_phys *phys_enc)
++{
++	struct dpu_encoder_virt *dpu_enc;
++	struct dpu_encoder_phys *slave;
++
++	if (!phys_enc->parent || !phys_enc->dpu_kms ||
++	    phys_enc->dpu_kms->catalog != &dpu_sm7675_cfg ||
++	    !of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    phys_enc->split_role != ENC_ROLE_MASTER ||
++	    phys_enc->intf_mode != INTF_MODE_VIDEO ||
++	    !phys_enc->hw_intf || phys_enc->hw_intf->idx != INTF_1 ||
++	    !phys_enc->hw_ctl || !phys_enc->hw_mdptop ||
++	    !phys_enc->hw_mdptop->ops.setup_split_pipe)
++		return false;
++
++	dpu_enc = to_dpu_encoder_virt(phys_enc->parent);
++	if (dpu_enc->disp_info.intf_type != INTF_DSI ||
++	    dpu_enc->disp_info.is_cmd_mode ||
++	    dpu_enc->disp_info.num_of_h_tiles != 2 ||
++	    dpu_enc->disp_info.h_tile_instance[0] != 0 ||
++	    dpu_enc->disp_info.h_tile_instance[1] != 1 ||
++	    dpu_enc->num_phys_encs != 2 || dpu_enc->cur_master != phys_enc ||
++	    dpu_enc->phys_encs[0] != phys_enc ||
++	    dpu_enc->phys_encs[1] != dpu_enc->cur_slave)
++		return false;
++
++	slave = dpu_enc->cur_slave;
++	return slave && slave->parent == phys_enc->parent &&
++		slave->split_role == ENC_ROLE_SLAVE &&
++		slave->intf_mode == INTF_MODE_VIDEO &&
++		slave->dpu_kms == phys_enc->dpu_kms &&
++		slave->hw_mdptop == phys_enc->hw_mdptop &&
++		slave->hw_ctl == phys_enc->hw_ctl &&
++		slave->hw_intf && slave->hw_intf->idx == INTF_2;
++}
++
+ /**
+  * dpu_encoder_helper_split_config - split display configuration helper function
+  *	This helper function may be used by physical encoders to configure
+@@ -606,6 +645,8 @@
+ 	if (cfg.en && phys_enc->ops.needs_single_flush &&
+ 			phys_enc->ops.needs_single_flush(phys_enc))
+ 		cfg.split_flush_en = true;
++	if (dpu_encoder_uke_split_flush(phys_enc))
++		cfg.split_flush_en = true;
+ 
+ 	if (phys_enc->split_role == ENC_ROLE_MASTER) {
+ 		DPU_DEBUG_ENC(dpu_enc, "enable %d\n", cfg.en);
+@@ -615,6 +656,43 @@
+ 	}
+ }
+ 
++/* Clear only after a completed master stop and fresh inactive status on both links. */
++void dpu_encoder_helper_split_flush_cleanup(struct dpu_encoder_phys *phys_enc,
++		int wait_ret)
++{
++	struct dpu_encoder_virt *dpu_enc;
++	struct dpu_encoder_phys *slave;
++	struct dpu_hw_intf_status status = { 0 };
++	struct split_pipe_cfg cfg = { 0 };
++
++	if (!dpu_encoder_uke_split_flush(phys_enc))
++		return;
++
++	dpu_enc = to_dpu_encoder_virt(phys_enc->parent);
++	slave = dpu_enc->cur_slave;
++	if (wait_ret || !phys_enc->hw_intf->ops.get_status ||
++	    !slave->hw_intf->ops.get_status)
++		goto retain;
++
++	phys_enc->hw_intf->ops.get_status(phys_enc->hw_intf, &status);
++	if (status.is_en)
++		goto retain;
++	slave->hw_intf->ops.get_status(slave->hw_intf, &status);
++	if (status.is_en)
++		goto retain;
++
++	/* Preserve the current split enable/mux values; only clear SSPP_SPARE. */
++	cfg.en = true;
++	cfg.mode = phys_enc->intf_mode;
++	cfg.intf = phys_enc->hw_intf->idx;
++	phys_enc->hw_mdptop->ops.setup_split_pipe(phys_enc->hw_mdptop, &cfg);
++	return;
++
++retain:
++	DPU_ERROR("Uke split flush retained: stop incomplete or status active/unknown (%d)\n",
++		  wait_ret);
++}
++
+ /**
+  * dpu_encoder_use_dsc_merge - returns true if the encoder uses DSC merge topology.
+  * @drm_enc:    Pointer to previously created drm encoder structure
+@@ -1787,12 +1865,30 @@
+ 	struct dpu_hw_ctl *ctl;
+ 	uint32_t i, pending_flush;
+ 	unsigned long lock_flags;
++	bool uke_single_ctl_flush;
+ 
+ 	pending_flush = 0x0;
+ 
+ 	/* update pending counts and trigger kickoff ctl flush atomically */
+ 	spin_lock_irqsave(&dpu_enc->enc_spinlock, lock_flags);
+ 
++	/*
++	 * Uke shares one modern CTL between both video interfaces. Keep both
++	 * interface/DSC masks and pending counters, but submit that shared mask
++	 * only once with split flush enabled, as in the OEM single-CTL route.
++	 * Do not change needs_single_flush: modern slave enable still needs it
++	 * false so it adds its own INTF mask. Transitional/unrelated routes keep
++	 * the existing per-physical submission behavior.
++	 */
++	uke_single_ctl_flush = dpu_enc->cur_master &&
++		dpu_encoder_uke_split_flush(dpu_enc->cur_master) &&
++		dpu_enc->cur_master->hw_pp && dpu_enc->cur_slave->hw_pp &&
++		dpu_enc->cur_master->hw_ctl->ops.trigger_flush &&
++		(dpu_enc->cur_master->enable_state == DPU_ENC_ENABLING ||
++		 dpu_enc->cur_master->enable_state == DPU_ENC_ENABLED) &&
++		(dpu_enc->cur_slave->enable_state == DPU_ENC_ENABLING ||
++		 dpu_enc->cur_slave->enable_state == DPU_ENC_ENABLED);
++
+ 	/* don't perform flush/start operations for slave encoders */
+ 	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
+ 		struct dpu_encoder_phys *phys = dpu_enc->phys_encs[i];
+@@ -1810,6 +1906,13 @@
+ 		if (phys->split_role != ENC_ROLE_SLAVE)
+ 			set_bit(i, dpu_enc->frame_busy_mask);
+ 
++		if (uke_single_ctl_flush) {
++			/* The shared master flush below increments its own counter. */
++			if (phys != dpu_enc->cur_master)
++				dpu_encoder_phys_inc_pending(phys);
++			continue;
++		}
++
+ 		if (!phys->ops.needs_single_flush ||
+ 				!phys->ops.needs_single_flush(phys))
+ 			_dpu_encoder_trigger_flush(&dpu_enc->base, phys, 0x0);
+@@ -1818,7 +1921,10 @@
+ 	}
+ 
+ 	/* for split flush, combine pending flush masks and send to master */
+-	if (pending_flush && dpu_enc->cur_master) {
++	if (uke_single_ctl_flush) {
++		_dpu_encoder_trigger_flush(&dpu_enc->base,
++				dpu_enc->cur_master, 0);
++	} else if (pending_flush && dpu_enc->cur_master) {
+ 		_dpu_encoder_trigger_flush(
+ 				&dpu_enc->base,
+ 				dpu_enc->cur_master,
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
+@@ -579,7 +579,7 @@
+ static void dpu_encoder_phys_vid_disable(struct dpu_encoder_phys *phys_enc)
+ {
+ 	unsigned long lock_flags;
+-	int ret;
++	int ret = 0;
+ 	struct dpu_hw_intf_status intf_status = {0};
+ 
+ 	if (!phys_enc->parent || !phys_enc->parent->dev) {
+@@ -645,6 +645,7 @@
+ 		}
+ 	}
+ 
++	dpu_encoder_helper_split_flush_cleanup(phys_enc, ret);
+ 	dpu_encoder_helper_phys_cleanup(phys_enc);
+ 	phys_enc->enable_state = DPU_ENC_DISABLED;
+ }
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h
+@@ -323,6 +323,9 @@
+ 		struct dpu_encoder_phys *phys_enc,
+ 		enum dpu_intf interface);
+ 
++void dpu_encoder_helper_split_flush_cleanup(struct dpu_encoder_phys *phys_enc,
++		int wait_ret);
++
+ void dpu_encoder_helper_report_irq_timeout(struct dpu_encoder_phys *phys_enc,
+ 		enum dpu_intr_idx intr_idx);
+ 
