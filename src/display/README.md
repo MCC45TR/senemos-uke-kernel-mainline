@@ -5,6 +5,15 @@ candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
 **Native display reaches Fedora, SSH and active scanout, but visible output remains unavailable.**
 
+`configs/development-debug.config` is an optional development-only fragment for
+kprobe/fprobe events, ftrace/function-graph, scheduler/stack/syscall tracing,
+BPF events and dynamic debug. The native47 candidate merges it after the
+existing configuration. Trace sessions are enabled separately; it adds no
+boot-time recorder, arbitrary register interface or desktop service. This
+changes instrumentation and can affect timing, so compare its optical results
+with the preceding non-tracing build. It does not enable memory sanitizers,
+fault injection or lock validation, and is not part of the normal release.
+
 The 16 October native30 trial matched the working OEM LM and INTF signatures
 for identical grey and two-half SMPTE inputs, while its panel remained blank.
 Patch `0021` adds a default-off DSI MDP MISR diagnostic for the exact Uke
