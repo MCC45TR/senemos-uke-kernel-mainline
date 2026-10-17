@@ -27,6 +27,17 @@ error. The active minimum is 1%; panel blanking separately uses true zero.
 The 819-to-821 difference is lookup-table quantization. Host tests exercise
 all 2,048 requests against the pinned OEM table; HBM remains excluded.
 
+The O82 primary DSI device exposes read-only `touch_reset_state` as
+`generation ready`. One atomic value holds both fields. The generation advances
+before RESX, which Uke shares with NT36532; readiness becomes one only after
+the post-frame TP-FPS, normal-pixel and dimming command groups complete.
+Disable, power-down and failure clear readiness. The native touch application
+can use this boundary to restore its RAM firmware after a complete modeset
+without creating a second input device or guessing a startup delay. It must
+recheck the generation after restoration before publishing contacts.
+Host lifecycle tests cover the reset and readiness sequence. Matched firmware
+recovery and per-mode finger tests remain required on the tablet.
+
 `configs/development-debug.config` is an optional development-only fragment for
 kprobe/fprobe events, ftrace/function-graph, scheduler/stack/syscall tracing,
 BPF events and dynamic debug. The native47 candidate merges it after the

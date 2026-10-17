@@ -9,6 +9,7 @@
  */
 #include <linux/delay.h>
 #include <linux/backlight.h>
+#include <linux/atomic.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
@@ -68,7 +69,19 @@ struct o82_panel {
 	bool initial_60hz_only;
 	bool initial_120hz_only;
 	bool oem_refresh_modes;
+	atomic64_t touch_state;
 };
+
+static void o82_touch_state(struct o82_panel *ctx, bool reset, bool ready)
+{
+	u64 state = (u64)atomic64_read(&ctx->touch_state) & ~1ULL;
+
+	/* Lifecycle writers are serialized; readers receive one generation/ready pair. */
+	if (reset)
+		state += 2;
+	atomic64_set(&ctx->touch_state, state | ready);
+	sysfs_notify(&ctx->dsi[0]->dev.kobj, NULL, "touch_reset_state");
+}
 
 static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
 {
@@ -218,6 +231,7 @@ static int o82_power_off(struct o82_panel *ctx)
 {
 	int i, ret, first_error = 0;
 
+	o82_touch_state(ctx, false, false);
 	if (ctx->reset_output)
 		gpiod_set_value_cansleep(ctx->reset, 0);
 	for (i = ARRAY_SIZE(ctx->supplies) - 1; i >= 0; i--) {
@@ -358,6 +372,8 @@ static int o82_prepare_locked(struct drm_panel *panel)
 		msleep(2);
 	}
 	/* ASIS at probe preserves splash; establish direction before first toggle. */
+	/* O82 RESX is also the NT36532 reset; firmware must follow completed DSI setup. */
+	o82_touch_state(ctx, true, false);
 	ret = gpiod_direction_output(ctx->reset, 0);
 	if (ret) {
 		dev_err(&ctx->dsi[0]->dev, "O82 reset direction failed: %d\n", ret);
@@ -521,9 +537,11 @@ static void o82_first_frame(struct kthread_work *work)
 		msleep(1000);
 		o82_readback(ctx, true);
 	}
+	o82_touch_state(ctx, false, true);
 	return;
 
 failed:
+	o82_touch_state(ctx, false, false);
 	blank_ret = backlight_disable(ctx->backlight);
 	dev_err(&ctx->dsi[0]->dev,
 		"O82 first-frame restoration failed: stage=%s command=%d result=%d blank_result=%d\n",
@@ -579,6 +597,7 @@ static void o82_disable_locked(struct o82_panel *ctx)
 	int ret;
 
 	o82_cancel_first_frame(ctx);
+	o82_touch_state(ctx, false, false);
 	ret = backlight_disable(ctx->backlight);
 	if (ret)
 		dev_err(&ctx->dsi[0]->dev, "O82 backlight blank failed: %d\n", ret);
@@ -649,6 +668,18 @@ static const struct drm_panel_funcs o82_funcs = {
 	.get_modes = o82_get_modes,
 };
 
+static ssize_t touch_reset_state_show(struct device *dev,
+				     struct device_attribute *attr, char *buf)
+{
+	struct o82_panel *ctx = dev_get_drvdata(dev);
+	u64 state = (u64)atomic64_read(&ctx->touch_state);
+
+	return sysfs_emit(buf, "%llu %u\n", state >> 1, (unsigned int)(state & 1));
+}
+static DEVICE_ATTR_RO(touch_reset_state);
+static struct attribute *o82_attrs[] = { &dev_attr_touch_reset_state.attr, NULL };
+ATTRIBUTE_GROUPS(o82);
+
 static int o82_probe(struct mipi_dsi_device *dsi)
 {
 	static const char * const supply_names[] = { "vddio", "vsp", "vsn" };
@@ -665,6 +696,7 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	if (IS_ERR(ctx))
 		return PTR_ERR(ctx);
 	mutex_init(&ctx->lock);
+	atomic64_set(&ctx->touch_state, 0);
 	ctx->dsi[0] = dsi;
 	ctx->profiles = of_device_get_match_data(dev);
 	if (!ctx->profiles)
@@ -776,7 +808,8 @@ static struct mipi_dsi_driver o82_driver = {
 	.probe = o82_probe,
 	.remove = o82_remove,
 	.shutdown = o82_shutdown,
-	.driver = { .name = "panel-xiaomi-o82", .of_match_table = o82_match },
+	.driver = { .name = "panel-xiaomi-o82", .of_match_table = o82_match,
+		    .dev_groups = o82_groups },
 };
 module_mipi_dsi_driver(o82_driver);
 MODULE_DESCRIPTION("Xiaomi O82 dual-DSI panel with OEM timing groups");

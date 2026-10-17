@@ -70,7 +70,13 @@ static bool of_property_read_bool(struct device_node *node,const char *property)
     if(!strcmp(property,"xiaomi,initial-120hz-only")) return requested_initial120;
     assert(!strcmp(property,"xiaomi,oem-refresh-modes")); return requested_oem_modes;
 }
-struct device { struct device_node *of_node; };
+struct device { struct device_node *of_node; int kobj; };
+typedef struct {u64 value;} atomic64_t;
+static u64 atomic64_read(const atomic64_t *state) {return state->value;}
+static void atomic64_set(atomic64_t *state,u64 value) {state->value=value;}
+static void sysfs_notify(int *kobj,const char *directory,const char *name) {
+    assert(kobj&&!directory&&!strcmp(name,"touch_reset_state"));
+}
 struct platform_device { struct device dev; };
 struct msm_dsi_host { struct platform_device *pdev; };
 static int node_refs;
@@ -181,7 +187,7 @@ struct mipi_dsi_host;
 struct host_ops { ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_dsi_msg *); };
 struct mipi_dsi_host { struct host_ops *ops; int id; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
-    unsigned int lanes,format; struct drm_dsc_config *dsc; int id; };
+    unsigned int lanes,format; struct drm_dsc_config *dsc; int id; struct device dev; };
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
     assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1);
     assert(reg==0xda || reg==0x0a || (reg>=0x0c && reg<=0x0f) || reg==0x54);
@@ -311,7 +317,7 @@ C
 sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$source_file" | sed '$d; /#include "o82-data.h"/d'
 cat "$header"
 sed -n '/^struct o82_panel {/,/^};/p' "$source_file"
-sed -n '/^static int o82_send(/,/^static int o82_get_modes(/p' "$source_file" | sed '$d'
+sed -n '/^static void o82_touch_state(/,/^static int o82_get_modes(/p' "$source_file" | sed '$d'
 sed -n '/^static int o82_get_modes(/,/^static const struct drm_panel_funcs/p' "$source_file" | sed '$d'
 } >> "$work/check.c"
 # Execute the selected DRM core's duplicate-enable guard and backlight admission.
@@ -379,7 +385,7 @@ sed -n '/^static void o82_remove(/,/^static const struct of_device_id/p' "$sourc
 cat >> "$work/check.c" <<'C'
 /* Execute the probe's profile admission before any regulator acquisition. */
 static int o82_probe_initial_mode(struct o82_panel *ctx,struct device_node *node) {
-    struct device device={node},*dev=&device;
+    struct device device={.of_node=node},*dev=&device;
     int ret;
 C
 awk '
@@ -424,7 +430,7 @@ static struct o82_panel context(int variant,int mode) {
     mutex_init(&ctx.lock);
     pps_start=2*p[o82_modes[mode].group].on_count;
     struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
-    struct platform_device platform={.dev={&node}};
+    struct platform_device platform={.dev={.of_node=&node}};
     struct msm_dsi_host h={&platform};
     ctx.dsc=(struct drm_dsc_config){.dsc_version_major=1,.dsc_version_minor=1,
         .slice_width=800,.slice_height=24,.slice_count=2,.bits_per_component=10,
@@ -514,6 +520,7 @@ int main(void) {
         drm_panel_enable(&c.panel);
         assert(!c.panel.enabled && !transfers && !backlight_calls);
         assert(o82_prepare(&c.panel)==0 && c.prepared && c.enabled_supplies==7);
+        assert(atomic64_read(&c.touch_state)==2); /* reset generation1, not command-ready */
         assert(c.active==&c.profiles[groups[m]]);
         assert(!memcmp(&c.dsc,&encoder,sizeof(encoder)) && pps_transfers==2);
         assert(pre_video_reads==(batched ? 0:2));
@@ -538,6 +545,7 @@ int main(void) {
         assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
+        assert(atomic64_read(&c.touch_state)==3); /* all post-frame groups complete */
         assert(post_frame_reads==0);
         assert(settle_ms==before_enable_wait+(batched ? 1000:0));
         assert(batch_api_calls==batched);
@@ -552,6 +560,7 @@ int main(void) {
         assert(transfers==enabled_full && backlight_calls==1);
         drm_panel_disable(&c.panel);
         assert(!c.panel.enabled && backlight_disable_calls==2 && cancelled==1);
+        assert(atomic64_read(&c.touch_state)==2);
         assert(!c.first_frame_initialized && !c.first_frame_crtc && !c.backlight->on);
         drm_panel_disable(&c.panel);
         assert(backlight_disable_calls==2);
@@ -564,6 +573,7 @@ int main(void) {
         drm_panel_disable(&c.panel);
         video_started=false;
         assert(o82_unprepare(&c.panel)==0 && !c.prepared && !c.enabled_supplies);
+        assert(atomic64_read(&c.touch_state)==2);
         assert(off_order[0]==2 && off_order[1]==1 && off_order[2]==0);
         assert(o82_unprepare(&c.panel)==0 && disables==3);
         /* Full unprepare/prepare also retains normal restoration on enable. */
@@ -571,6 +581,7 @@ int main(void) {
         on_batch_calls=on_batch_total=0;
         hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
         assert(o82_prepare(&c.panel)==0 && c.prepared && pps_transfers==2);
+        assert(atomic64_read(&c.touch_state)==4);
         assert(!normal_transfers && !hs_transfers);
         video_started=true; drm_panel_enable(&c.panel);
         assert(c.panel.enabled && !backlight_calls && !normal_transfers && !hs_transfers);
@@ -815,7 +826,7 @@ int main(void) {
     }
     c=context(0,3);
     struct device_node node={"unrelated,panel"};
-    struct platform_device platform={.dev={&node}};
+    struct platform_device platform={.dev={.of_node=&node}};
     struct msm_dsi_host h={&platform};
     assert(dsi_populate_dsc_params(&h,&c.dsc)==0 && node_refs==0);
     assert(c.dsc.first_line_bpg_offset==12 && c.dsc.rc_range_params[0].range_max_qp==4);
