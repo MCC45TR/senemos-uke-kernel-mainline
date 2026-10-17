@@ -132,8 +132,8 @@ static int UKE_INIT uke_bluetooth(void *fdt)
 	UKE_BT_SET(fdt_setprop(fdt, node, "pinctrl-0", &reset_pin, sizeof(reset_pin)));
 	UKE_BT_SET(fdt_setprop(fdt, node, "enable-gpios", enable, sizeof(enable)));
 	UKE_BT_SET(fdt_setprop(fdt, node, "swctrl-gpios", swctrl, sizeof(swctrl)));
-	/* shortcut: retain the initial baud rate until Uke high-speed UART is measured. */
-	UKE_BT_SET(fdt_setprop_u32(fdt, node, "max-speed", 115200));
+	/* The Uke TLV transfer times out at 115200; 3 Mbit/s completes firmware setup. */
+	UKE_BT_SET(fdt_setprop_u32(fdt, node, "max-speed", 3000000));
 	for (i = 0; i < 8; i++)
 		UKE_BT_SET(fdt_setprop(fdt, node, supplies[i].native, &rails[i], sizeof(rails[i])));
 #undef UKE_BT_SET

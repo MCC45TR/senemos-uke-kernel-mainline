@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 1.4055.1
+%global senemos_build_release 1.4056.1
 %global krel %{version}-senemos.%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
 
@@ -181,6 +181,10 @@ test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name '
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.4056.1
+- Enable standard Bluetooth LE HID input and RFCOMM facilities.
+- Use the Uke UART speed that completes stock QCA firmware transfer.
+
 * Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.4054.3
 - Consolidate the complete O82 source profile under the mainline package name.
 - Give each numeric build its own module ABI and preserve installed fallback kernels.

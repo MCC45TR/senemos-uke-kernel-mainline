@@ -6,7 +6,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The source RPM contains signed Linux 7.2.9, the 44 ordered Uke base patches,
+The source RPM contains signed Linux 7.2.10, the 44 ordered Uke base patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Numeric Senemos
 build releases have separate module paths. Install-only packages do not obsolete

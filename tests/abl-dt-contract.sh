@@ -56,7 +56,7 @@ bt=$uart/bluetooth
 [[ $(fdtget -t x "$out/admitted.dtb" "$uart" clocks) == "$(fdtget -t x "$input" "$uart" clocks)" ]]
 [[ $(fdtget -t x "$out/admitted.dtb" "$uart" interconnects) == "$(fdtget -t x "$input" "$uart" interconnects)" ]]
 [[ $(fdtget -t s "$out/admitted.dtb" "$bt" compatible) == xiaomi,uke-wcn6750-bt ]]
-[[ $(fdtget -t u "$out/admitted.dtb" "$bt" max-speed) == 115200 ]]
+[[ $(fdtget -t u "$out/admitted.dtb" "$bt" max-speed) == 3000000 ]]
 [[ $(fdtget -t s "$out/admitted.dtb" /soc/bt_wcn6750 status) == disabled ]]
 [[ $(fdtget -t x "$out/admitted.dtb" "$bt" pinctrl-0) == "$(fdtget -t x "$input" /soc/bt_wcn6750 pinctrl-0)" ]]
 for pair in 'qcom,bt-reset-gpio enable-gpios' 'qcom,bt-sw-ctrl-gpio swctrl-gpios' 'qcom,bt-vdd-io-supply vddio-supply' 'qcom,bt-vdd-aon-supply vddaon-supply' 'qcom,bt-vdd-dig-supply vddbtcxmx-supply' 'qcom,bt-vdd-rfacmn-supply vddrfacmn-supply' 'qcom,bt-vdd-rfa-0p8-supply vddrfa0p8-supply' 'qcom,bt-vdd-rfa1-supply vddrfa1p7-supply' 'qcom,bt-vdd-rfa2-supply vddrfa1p2-supply' 'qcom,bt-vdd-ipa-2p2-supply vddrfa2p2-supply'; do
