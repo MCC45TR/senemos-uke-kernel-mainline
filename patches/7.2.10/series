@@ -46,3 +46,4 @@
 0046-adc5-gen3-voltage-units.patch
 0047-smp2p-preserve-edges-without-restart.patch
 0048-adc5-gen3-charger-and-battery-scalers.patch
+0049-input-qcom-smp2p-switch.patch

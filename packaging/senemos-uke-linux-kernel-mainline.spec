@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 6
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
@@ -151,6 +151,7 @@ CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-scalers.sh "$PWD"
+CC=clang CXX=clang++ bash native-profile/tests/hall-contract.sh "$PWD"
 CC=clang bash native-profile/tests/smp2p-restart-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
@@ -229,6 +230,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-7
+- Map OEM paired hall events to standard input switches without physical GPIO ownership.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-6
 - Admit OEM charger and battery ADC conversions with standard current and temperature units.
 

@@ -196,6 +196,10 @@
     {
       "path": "patches/7.2.9/0048-adc5-gen3-charger-and-battery-scalers.patch",
       "sha256": "ef098f331d0883589aaceafc081afd308329f8a63e58c72d3046c28f30b4358b"
+    },
+    {
+      "path": "patches/7.2.9/0049-input-qcom-smp2p-switch.patch",
+      "sha256": "a8295c9a7971874708784e163551e324e3f34e0737b16d198c28aa500575e28f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -207,7 +211,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "acb505205a7815c1bd8e698fbcf14609176f3461ec2e462441fa0a8b048d38be"
+      "sha256": "5296cbf69279930ad1486c164b87c098ce1bd23bbd1b1dd350ccdbfd774e8bf6"
     },
     {
       "path": "configs/fedora.config",
