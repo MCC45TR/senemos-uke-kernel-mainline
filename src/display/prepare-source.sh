@@ -52,7 +52,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0028-uke-o82-command-overflow-cleanup.patch \
                  0029-uke-o82-video-command-frame-block.patch \
                  0030-uke-o82-powered-transfer-clocks.patch \
-                 0031-uke-o82-post-start-lp-groups.patch; do
+                 0031-uke-o82-post-start-lp-groups.patch \
+                 0032-uke-o82-bonded-bias-replay.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

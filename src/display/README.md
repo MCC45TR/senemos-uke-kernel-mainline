@@ -73,6 +73,27 @@ Host fixtures check full bytes, group order, refusals and error cleanup. No new
 delay or timing policy is introduced. Matched build and optical testing remain
 pending; the native47 PPS comparison is a separate prerequisite.
 
+17 October 2026: patch `0032` separately compares bias-write replay for Uke
+SM7675's custom O82 D-PHY master0/slave1 roles. Native49's matched lifecycle
+trace observed positive-count skips during VCO programming and prepare; that
+establishes the skipped writer, not the optical failure's cause. The experiment
+replays the existing CTRL_0 bit5 and SYSTEM_MUXES writes for valid positive
+counts. Count seeds, increments/decrements, locks, zero-count writes, invalid
+and warning-boundary handling, PLL data and disable semantics are retained.
+Other devices, standalone roles and ordinary PHY compatibles keep the upstream
+path. This is narrower than bonded fix `93c97bc8d85d`; its global upstream
+revert `44784327815b` remains applicable to nonmatching paths.
+
+Recalc/save calls on the admitted PHY also replay the writer while active;
+clock inspection must therefore be included in a matched physical test.
+Final SYSTEM_MUXES must be measured: the OEM master initialization overwrites
+the bias helper's 0xc0 with zero. Existing initial host rate setup, powered
+transfer retention, PLL start, packets and timing remain unchanged. The host
+`tests/o82-pll-bias-contract.sh PREPARED_KERNEL KERNEL_OBJECTS` fixture executes
+the actual shared bias functions and checks admission, nested references,
+store/lock/delay order and invalid/overflow behavior. Build and optical
+qualification remain pending.
+
 Patch `0030` extends exact O82 initial120 clock retention to powered pre-video
 transfers. Initial host rate setup and ordinary profiles remain unchanged;
 PM/clock votes, command bytes, active-video trigger policy and quarantine are

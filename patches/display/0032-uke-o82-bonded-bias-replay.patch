@@ -1,0 +1,62 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: compare scoped O82 bonded bias write replay
+
+Native49 records positive-count bias skips on both Uke PHYs through initial
+VCO programming and prepare. Replay the existing writer for the exact Uke
+SM7675 O82 D-PHY master0/slave1 roles while retaining count, lock, seed,
+disable and error semantics. Other PHYs retain the upstream refcount path.
+Invalid and warning-boundary counts retain their existing handling.
+
+This isolates one behavior from Neil Armstrong's GPL-2.0-only bonded fix
+93c97bc8d85d5742d6f000d8bf3eeeb705bc6082, not its counter-lifetime changes.
+The global upstream revert 44784327815b2a1ad8bb56b9236770cb538c7c27 addressed
+non-bonded divider regressions and remains effective outside this gate.
+Uke OEM MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_pll_4nm.c:enable_pll_bias, uses the same existing writes/delay;
+GPL-2.0-only Linux Foundation/Qualcomm attribution is retained.
+
+Nested recalc/save calls also replay the writer. This is an optical experiment,
+not a root-cause finding; final SYSTEM_MUXES must be measured. No rate,
+packet, clock-retention, timing or PLL-start change is included.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
+@@ -429,16 +429,33 @@
+ 	ndelay(250);
+ }
+ 
++static bool dsi_pll_7nm_uke_o82_bias_replay(struct dsi_pll_7nm *pll)
++{
++	struct msm_dsi_phy *phy = pll->phy;
++
++	return of_machine_is_compatible("xiaomi,uke") &&
++		of_machine_is_compatible("qcom,sm7675") && !phy->cphy_mode &&
++		of_device_is_compatible(phy->pdev->dev.of_node,
++					"xiaomi,uke-o82-dsi-phy-4nm") &&
++		((phy->id == 0 && phy->usecase == MSM_DSI_PHY_MASTER) ||
++		 (phy->id == 1 && phy->usecase == MSM_DSI_PHY_SLAVE));
++}
++
+ static void dsi_pll_enable_pll_bias(struct dsi_pll_7nm *pll)
+ {
+ 	unsigned long flags;
+ 	u32 data;
++	bool replay = dsi_pll_7nm_uke_o82_bias_replay(pll);
+ 
+ 	spin_lock_irqsave(&pll->pll_enable_lock, flags);
+ 	if (pll->pll_enable_cnt++) {
+-		spin_unlock_irqrestore(&pll->pll_enable_lock, flags);
+-		WARN_ON(pll->pll_enable_cnt == INT_MAX);
+-		return;
++		/* Retain upstream handling for invalid and warning-boundary counts. */
++		if (!replay || pll->pll_enable_cnt <= 1 ||
++		    pll->pll_enable_cnt == INT_MAX) {
++			spin_unlock_irqrestore(&pll->pll_enable_lock, flags);
++			WARN_ON(pll->pll_enable_cnt == INT_MAX);
++			return;
++		}
+ 	}
+ 
+ 	data = readl(pll->phy->base + REG_DSI_7nm_PHY_CMN_CTRL_0);
