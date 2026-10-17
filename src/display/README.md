@@ -11,6 +11,22 @@ PLL bias-write replay. Repeated starts, blank/unblank, suspend, other refresh
 modes and sustained stability remain unqualified. The normal release recipe
 is unchanged; this result applies to the matched development artifact only.
 
+The opt-in `sm7675-uke-native-display-oem-modes.dtso` profile exposes the exact
+OEM 30, 48, 50, 60, 90, 120 and 144 Hz modes, with 120 Hz preferred. Patch
+`0033` retains the accepted lane clock across the three timing groups and
+matches each group's ON and TP-FPS commands, compressed totals and paired
+command scheduling. Invalid and mismatched modes are rejected before transfer;
+the bridge also rejects custom timings before power-up. The separate initial
+120 Hz control remains available. These are discrete modes; adaptive VRR is
+not advertised. Physical mode changes are still pending.
+
+The paired KTZ8866 driver already uses Xiaomi's normal-mode logarithmic table
+and reports the standard non-linear backlight scale. On native50, requests of
+0, 102 and 819 returned 21, 102 and 821 respectively, with no paired readback
+error. The active minimum is 1%; panel blanking separately uses true zero.
+The 819-to-821 difference is lookup-table quantization. Host tests exercise
+all 2,048 requests against the pinned OEM table; HBM remains excluded.
+
 `configs/development-debug.config` is an optional development-only fragment for
 kprobe/fprobe events, ftrace/function-graph, scheduler/stack/syscall tracing,
 BPF events and dynamic debug. The native47 candidate merges it after the

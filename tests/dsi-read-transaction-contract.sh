@@ -50,6 +50,7 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define DSI_ERR_STATE_MDP_FIFO_UNDERFLOW 0x0008
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define ALIGN(n,a) (((n)+(a)-1)&~((a)-1))
+#define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define wmb() ((void)0)
 #define DSI_0 0
 #define DSI_1 1
@@ -69,13 +70,16 @@ struct test_ops {int (*dma_base_get)(struct msm_dsi_host *,uint64_t *); void (*l
     void (*tx_buf_put)(struct msm_dsi_host *);};
 struct test_cfg {int num_regulators;};
 struct msm_dsi_cfg_handler {int major,minor; struct test_ops *ops; const struct test_cfg *cfg;};
-struct drm_display_mode {int hdisplay;};
+struct drm_display_mode {int hdisplay,clock,htotal,vdisplay,vtotal;
+    int hsync_start,hsync_end,vsync_start,vsync_end,flags,hskew,vscan;};
+struct drm_dsc_config {int bits_per_component,bits_per_pixel,slice_width,slice_height;};
 struct drm_device {void *dev;};
 struct work_struct {int unused;};
 struct msm_dsi_host {struct mipi_dsi_host base; const struct msm_dsi_cfg_handler *cfg_hnd;
     int id,format,dma_comp,cmd_mutex,dev_mutex,lanes; unsigned long mode_flags; struct drm_display_mode *mode; u8 rx_buf[16];
     bool power_on,cphy_mode,enabled,cmd_dma_blocked; int irq; u32 dma_cmd_ctrl_restore; void *vm;
     struct platform_device *pdev; struct drm_device *dev; void *tx_gem_obj,*tx_buf,*supplies;
+    struct drm_dsc_config *dsc;
     int tx_size; unsigned long tx_buf_paddr; u32 err_work_state; struct work_struct err_work;};
 struct device_node {int unused;};
 struct drm_panel {int unused;};
@@ -85,6 +89,7 @@ static struct msm_dsi_host hosts[2];
 static struct msm_dsi devices[2];
 static bool sync_needed,bonded,board_uke,board_sm7675,panel_o82,panel_error;
 static bool panel_pb=true,initial120=true;
+static bool refresh_modes;
 static struct device_node panel_node;
 static struct drm_panel panel;
 #define IS_SYNC_NEEDED() sync_needed
@@ -106,7 +111,9 @@ static bool of_device_is_compatible(struct device_node *node,const char *name) {
     return panel_o82&&(!strcmp(name,"xiaomi,o82-36-02-0a")||panel_pb);
 }
 static bool of_property_read_bool(struct device_node *node,const char *name) {
-    assert(node==&panel_node&&!strcmp(name,"xiaomi,initial-120hz-only"));return initial120;
+    assert(node==&panel_node);
+    if(!strcmp(name,"xiaomi,oem-refresh-modes"))return refresh_modes;
+    assert(!strcmp(name,"xiaomi,initial-120hz-only"));return initial120;
 }
 static struct drm_panel *of_drm_find_panel(struct device_node *node) {
     assert(node==&panel_node); return panel_error ? (struct drm_panel *)(intptr_t)-EIO:&panel;
@@ -117,9 +124,14 @@ static struct msm_dsi_host *to_msm_dsi_host(struct mipi_dsi_host *host) {
     return (struct msm_dsi_host *)host;
 }
 /* Diagnostic lifecycle locks are exercised by dsi-mdp-misr-contract.sh. */
-static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {(void)host; return false;}
+static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {
+    (void)host;return refresh_modes&&board_uke&&board_sm7675;
+}
 /* Exact-profile overflow handling is exercised by o82-fifo-trace-contract.sh. */
 static bool dsi_uke_o82_initial120(struct msm_dsi_host *host) {(void)host; return false;}
+static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
+    return !memcmp(a,b,sizeof(*a));
+}
 static void dsi_uke_fifo_trace(struct msm_dsi_host *host,const struct mipi_dsi_msg *msg,const char *stage,bool begin) {
     (void)host;(void)msg;(void)stage;(void)begin;
 }
@@ -289,6 +301,11 @@ static void msm_dsi_host_xfer_restore(struct mipi_dsi_host *host,const struct mi
 }
 C
 {
+    sed '/^#include/d' "$kernel/include/drm/uke-o82-mode.h"
+    extract 'static bool dsi_uke_o82_refresh_selected(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
+    extract 'static bool dsi_uke_o82_refresh_modes(struct msm_dsi_host *msm_host,' "$base/dsi_host.c"
+    extract 'static bool dsi_uke_o82_powered_profile(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
+    extract 'static u32 dsi_uke_o82_total(struct msm_dsi_host *msm_host)' "$base/dsi_host.c"
     extract 'bool mipi_dsi_packet_format_is_short(u8 type)' "$headers/drivers/gpu/drm/drm_mipi_dsi.c"
     extract 'bool mipi_dsi_packet_format_is_long(u8 type)' "$headers/drivers/gpu/drm/drm_mipi_dsi.c"
     extract 'int mipi_dsi_create_packet(struct mipi_dsi_packet *packet,' "$headers/drivers/gpu/drm/drm_mipi_dsi.c" |
@@ -346,6 +363,7 @@ static void reset(void) {
     fail_wait=fail_add=fail_prepare=-1;
     bonded=board_uke=board_sm7675=panel_o82=panel_error=false;
     panel_pb=initial120=true;
+    refresh_modes=false;
     lock_count=unlock_count=trigger_count=writes_count=0; high_address=false; dma_size=4;
     memset(staged,0,sizeof(staged)); memset(ctrl_writes,0,sizeof(ctrl_writes));
     memset(reinitialized,0,sizeof(reinitialized));
@@ -976,6 +994,64 @@ int main(void) {
     reset(); hosts[0].cmd_mutex=0; hosts[0].err_work_state=0;
     dsi_err_worker(&hosts[0].err_work);
     assert(outer_locks==1 && !hosts[0].cmd_mutex && error_irq_enables==1 && !writes_count);
+
+    /* Exact OEM totals and TP-FPS bytes must reach both staged links in all modes. */
+    static const struct {int clock,htotal,vtotal,group;u32 total;} timing[]={
+        {967428,3490,2310,0,0x0905023b}, {967428,3490,4620,0,0x120b023b},
+        {1097712,3300,2310,1,0x090501dc}, {804988,3872,2310,2,0x090502fa},
+        {804988,3872,4158,2,0x103d02fa}, {804988,3872,4331,2,0x10ea02fa},
+        {804988,3872,6930,2,0x1b1102fa},
+    };
+    struct drm_dsc_config dsc={10,8<<4,800,24};
+    for(unsigned int t=0;t<ARRAY_SIZE(timing);t++) {
+        struct drm_display_mode modes[2];
+        modes[0]=(struct drm_display_mode){.hdisplay=3200,.vdisplay=2136,
+            .clock=timing[t].clock,.htotal=timing[t].htotal,.vtotal=timing[t].vtotal,
+            .hsync_start=timing[t].htotal-64,.hsync_end=timing[t].htotal-32,
+            .vsync_start=timing[t].vtotal-148,.vsync_end=timing[t].vtotal-146};
+        modes[1]=modes[0];
+        u8 selected[4][2];memcpy(selected,tp_payloads,sizeof(selected));
+        if(timing[t].group) {
+            selected[2][1]=0;
+            selected[3][1]=timing[t].group==1 ? 0:0x80;
+        }
+        for(int trial=0;trial<5;trial++) {
+            admit_scheduled();initial120=false;refresh_modes=true;hosts[1].cmd_mutex=0;
+            for(int id=0;id<2;id++) {
+                hosts[id].mode=&modes[id];hosts[id].dsc=&dsc;
+                video_total[id]=timing[t].total;
+                assert(dsi_uke_o82_refresh_modes(&hosts[id],&modes[id]));
+                assert(dsi_uke_o82_powered_profile(&hosts[id]));
+                assert(dsi_uke_o82_total(&hosts[id])==timing[t].total);
+            }
+            for(int i=0;i<4;i++)tp[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,
+                .tx_len=2,.tx_buf=selected[i]};
+            if(trial==1)video_total[0]^=1;
+            if(trial==2)modes[0].vtotal++;
+            if(trial==3) {
+                modes[0].vtotal++;
+                modes[1]=modes[0];
+            }
+            if(trial==4)dsc.slice_width=799;
+            const int result=qcom_uke_dsi_tp_fps_batch(&panel_dsi,tp);
+            if(trial) {
+                /* An invalid slave profile can fail payload validation first. */
+                assert((result==-EOPNOTSUPP || (trial>=3 && result==-EINVAL)) &&
+                       !writes_count && !add_count && !trigger_count);
+            } else {
+                assert(!result && add_count==4 && trigger_count==2 && wait_count==2);
+                assert(schedule_notices==1 && batch_notices==1 && !video_waits);
+                for(int i=0;i<4;i++) {
+                    const u8 expected[8]={2,0,0x39,(u8)(0x40|(i==3 ? 0x80:0)),
+                        selected[i][0],selected[i][1],0xff,0xff};
+                    assert(!memcmp(tx_storage[1]+8*i,expected,sizeof(expected)));
+                }
+                for(int id=0;id<2;id++)assert(schedule_writes[id]==2 && !schedule_ctrl[id]);
+            }
+            modes[0].vtotal=modes[1].vtotal=timing[t].vtotal;
+            dsc.slice_width=800;
+        }
+    }
 }
 C
 } >> "$work/check.c"
@@ -983,4 +1059,4 @@ C
     -Wno-missing-field-initializers -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$headers/include" -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual DSI: exact PB120 normal12/dimming24 LP bytes/final-only LAST, admission/faults/paired scheduling/quarantine; unchanged ON/HS/read/legacy transfers passed\n'
+printf 'Actual DSI: all seven OEM mode totals/TP-FPS paired bytes/scheduling, exact PB120 LP/ON/HS/read/legacy controls and fault/quarantine refusals passed\n'

@@ -56,6 +56,7 @@ i2c_client *candidate;
 bool absent_node, action_failure, link_failure, registration_failure;
 void (*cleanup_action)(void *); void *cleanup_data;
 backlight_device registered;
+backlight_properties registered_properties{};
 device_node *of_parse_phandle(void *, const char *, int) { return absent_node ? nullptr : &node; }
 i2c_client *of_find_i2c_device_by_node(device_node *) { if(candidate) candidate->dev.refs++; return candidate; }
 void of_node_put(device_node *) {}
@@ -73,6 +74,7 @@ struct backlight_ops { int (*update_status)(backlight_device *); int (*get_brigh
 const backlight_ops ktz8866_uke_backlight_ops{};
 backlight_device *devm_backlight_device_register(device *, const char *, device *, ktz8866 *data,
                                                const backlight_ops *, const backlight_properties *props) {
+    registered_properties=*props;
     registered={data,{static_cast<unsigned int>(props->brightness)}};
     return registration_failure ? reinterpret_cast<backlight_device *>(-ENOMEM) : &registered;
 }
@@ -105,6 +107,19 @@ int main() {
     ktz8866 secondary{&clients[1],&maps[1],nullptr,{}};
     ktz8866 primary{&clients[0],&maps[0],&secondary,{}};
     backlight_device bl{&primary,{0}};
+    for (unsigned int level=0;level<=MAX_BRIGHTNESS;level++) {
+        reset(maps); bl.props.brightness=level;
+        assert(ktz8866_uke_update_status(&bl)==0);
+        const auto effective=level<21 ? 21 : level;
+        const auto expected=static_cast<unsigned int>(mi_bl_level_remap[effective*1535/2047]);
+        assert(bl.props.brightness==effective);
+        for (int i=0;i<2;i++)
+            assert((maps[i].regs[BL_BRT_MSB]<<3 | (maps[i].regs[BL_BRT_LSB]&7))==expected);
+        const int actual=ktz8866_uke_get_brightness(&bl);
+        assert(actual>=0 && ktz8866_uke_code(actual)==expected);
+    }
+    // The inverse reports the top of an OEM quantization plateau, not a changed code.
+    assert(ktz8866_uke_level(ktz8866_uke_code(819))==821);
     for (unsigned int level : {0U,1U,2U,7U,8U,128U,512U,1024U,1535U,2047U}) {
         reset(maps); bl.props.brightness=level;
         regmap original[2]; std::memcpy(original,maps,sizeof(maps));
@@ -156,6 +171,9 @@ int main() {
         assert(clients[1].dev.refs==1 && !clients[1].dev.locked);
     };
     setup_probe(); assert(ktz8866_uke_probe(&primary)==0 && writes==0);
+    assert(registered_properties.type==BACKLIGHT_RAW &&
+           registered_properties.max_brightness==MAX_BRIGHTNESS &&
+           registered_properties.scale==BACKLIGHT_SCALE_NON_LINEAR);
     const int probe_reads=operations;
     for(int fault=0;fault<probe_reads;fault++) {
         setup_probe(); failure=fault;
@@ -181,4 +199,4 @@ CPP
 } > "$work/check.cpp"
 g++ -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Exact OEM normal mapping, paired I/O/readback/rollback and read-only probe dependency faults: passed\n'
+printf 'Exact OEM normal mapping, all 2048 paired levels, non-linear API and I/O/readback/rollback faults: passed\n'

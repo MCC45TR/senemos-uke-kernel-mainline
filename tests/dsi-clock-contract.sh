@@ -17,6 +17,8 @@ struct drm_display_mode { int clock,hdisplay,htotal; };
 struct drm_dsc_config { unsigned int bits_per_component,bits_per_pixel; };
 struct mipi_dsi_host {};
 struct msm_dsi_host { mipi_dsi_host base; unsigned int lanes,format; drm_dsc_config *dsc; bool cphy_mode; };
+/* The separate o82-refresh-host contract exercises the new mode gate/clocks. */
+static bool dsi_uke_o82_refresh_modes(msm_dsi_host *,const drm_display_mode *) {return false;}
 #define to_msm_dsi_host(p) container_of(p,msm_dsi_host,base)
 unsigned int drm_dsc_get_bpp_int(const drm_dsc_config *dsc) {return dsc->bits_per_pixel>>4;}
 unsigned int mipi_dsi_pixel_format_to_bpp(unsigned int format) {return format;}

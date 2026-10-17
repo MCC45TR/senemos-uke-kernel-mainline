@@ -50,6 +50,10 @@ static void of_node_put(struct device_node *n) {assert(n==remote);++puts;}
 static void dsi_write(struct msm_dsi_host *host,uint32_t reg,uint32_t value) {
     assert(host && reg==REG_DSI_HS_TIMER_CTRL);++writes;encoded=value;
 }
+/* New-profile integration is exercised by dsi-read-transaction-contract.sh. */
+static bool dsi_uke_o82_refresh_modes(struct msm_dsi_host *host,const struct drm_display_mode *mode) {
+    (void)host;(void)mode;return false;
+}
 C
 awk '
  /^static void dsi_uke_o82_video_timer\(/ {found=1}

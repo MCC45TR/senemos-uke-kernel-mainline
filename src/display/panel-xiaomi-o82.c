@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Experimental Xiaomi Pad 7 O82 dual-DSI panel candidate for Linux 7.2.9/7.2.10.
- * Not activated by the supported build or DTBO. Hardware unvalidated.
+ * Native 120 Hz output observed in development build 1.4050; other modes
+ * require separate physical tests. Not activated by the normal release.
  * Lifecycle based on the archived O82 draft and upstream nt35950 pattern.
  * Based on linuxgamer/uke-fedora cf4f9317a7fef3e9bdddc36bedcb257fa51b0994.
  * OEM packet types, delays, timing groups and power sequence are retained.
@@ -66,6 +67,7 @@ struct o82_panel {
 	bool removing;
 	bool initial_60hz_only;
 	bool initial_120hz_only;
+	bool oem_refresh_modes;
 };
 
 static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
@@ -122,7 +124,10 @@ static int o82_lp_batch(struct o82_panel *ctx,
 	struct mipi_dsi_msg msgs[4] = { };
 	unsigned int i;
 
-	if (!ctx->initial_120hz_only || ctx->active != &ctx->profiles[0] ||
+	if (!(ctx->initial_120hz_only || ctx->oem_refresh_modes) ||
+	    (ctx->active != &ctx->profiles[0] &&
+	     !(ctx->oem_refresh_modes && (ctx->active == &ctx->profiles[1] ||
+					ctx->active == &ctx->profiles[2]))) ||
 	    (count != 2 && count != 4))
 		return -EINVAL;
 	for (i = 0; i < count; i++) {
@@ -146,7 +151,10 @@ static int o82_on_batch(struct o82_panel *ctx)
 	unsigned int i, count = 0, bytes = 0, chunks = 0, total = 0;
 	int ret;
 
-	if (!ctx->initial_120hz_only || profile != &ctx->profiles[0] ||
+	if (!(ctx->initial_120hz_only || ctx->oem_refresh_modes) ||
+	    (profile != &ctx->profiles[0] &&
+	     !(ctx->oem_refresh_modes && (profile == &ctx->profiles[1] ||
+					profile == &ctx->profiles[2]))) ||
 	    profile->on_count != 108)
 		return -EINVAL;
 	/* Reject changed metadata before the first ON chunk can reach the panel. */
@@ -246,7 +254,7 @@ static void o82_readback(struct o82_panel *ctx, bool post_frame)
 	int i;
 
 	/* Isolate initial120 optics from advisory bus-turnaround traffic. */
-	if (ctx->initial_120hz_only)
+	if (ctx->initial_120hz_only || ctx->oem_refresh_modes)
 		return;
 
 	for (i = 0; i < count; i++) {
@@ -275,8 +283,10 @@ static int o82_read_initial_mode(struct o82_panel *ctx, struct device_node *node
 {
 	ctx->initial_60hz_only = of_property_read_bool(node, "xiaomi,initial-60hz-only");
 	ctx->initial_120hz_only = of_property_read_bool(node, "xiaomi,initial-120hz-only");
+	ctx->oem_refresh_modes = of_property_read_bool(node, "xiaomi,oem-refresh-modes");
 	if ((ctx->initial_60hz_only && ctx->initial_120hz_only) ||
-	    (ctx->initial_120hz_only &&
+	    (ctx->oem_refresh_modes && (ctx->initial_60hz_only || ctx->initial_120hz_only)) ||
+	    ((ctx->initial_120hz_only || ctx->oem_refresh_modes) &&
 	     !of_device_is_compatible(node, "xiaomi,o82-42-02-0b")))
 		return -EINVAL;
 	return 0;
@@ -361,7 +371,7 @@ static int o82_prepare_locked(struct drm_panel *panel)
 	msleep(3);
 	gpiod_set_value_cansleep(ctx->reset, 1);
 	msleep(15);
-	if (ctx->initial_120hz_only) {
+	if (ctx->initial_120hz_only || ctx->oem_refresh_modes) {
 		ret = o82_on_batch(ctx);
 		if (ret)
 			goto failed_on;
@@ -443,7 +453,7 @@ static void o82_first_frame(struct kthread_work *work)
 	}
 	/* OEM starts DPU timing before its four HS TP-FPS updates. */
 	stage = "timing-switch";
-	if (ctx->initial_120hz_only) {
+	if (ctx->initial_120hz_only || ctx->oem_refresh_modes) {
 		struct mipi_dsi_msg msgs[4] = { };
 
 		if (ctx->active->switch_count != ARRAY_SIZE(msgs)) {
@@ -486,7 +496,7 @@ static void o82_first_frame(struct kthread_work *work)
 	dev_info(&ctx->dsi[0]->dev,
 		 "O82 first-frame checked backlight: brightness=%d result=0\n", brightness);
 	stage = "normal-pixels";
-	if (ctx->initial_120hz_only) {
+	if (ctx->initial_120hz_only || ctx->oem_refresh_modes) {
 		i = -1;
 		ret = o82_lp_batch(ctx, normal_pixels, ARRAY_SIZE(normal_pixels));
 		if (ret)
@@ -499,7 +509,7 @@ static void o82_first_frame(struct kthread_work *work)
 		}
 	}
 	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
-	if (ctx->initial_120hz_only) {
+	if (ctx->initial_120hz_only || ctx->oem_refresh_modes) {
 		/* Installed OEM uses a separate four-packet LP dimming group. */
 		stage = "dimming-on";
 		i = -1;
@@ -619,7 +629,8 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 			return -ENOMEM;
 		drm_mode_set_name(mode);
 		mode->type = DRM_MODE_TYPE_DRIVER;
-		if (drm_mode_vrefresh(mode) == (ctx->initial_120hz_only ? 120 : 60))
+		if (drm_mode_vrefresh(mode) ==
+		    (ctx->initial_120hz_only || ctx->oem_refresh_modes ? 120 : 60))
 			mode->type |= DRM_MODE_TYPE_PREFERRED;
 		drm_mode_probed_add(connector, mode);
 		count++;

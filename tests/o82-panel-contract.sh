@@ -63,11 +63,12 @@ awk '/^u8 drm_dsc_initial_scale_value\(/ {p=1} p && /^EXPORT_SYMBOL/ {exit} p' \
 } >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 struct device_node { const char *compatible; };
-static bool requested_initial60,requested_initial120;
+static bool requested_initial60,requested_initial120,requested_oem_modes;
 static bool of_property_read_bool(struct device_node *node,const char *property) {
     assert(node);
     if(!strcmp(property,"xiaomi,initial-60hz-only")) return requested_initial60;
-    assert(!strcmp(property,"xiaomi,initial-120hz-only")); return requested_initial120;
+    if(!strcmp(property,"xiaomi,initial-120hz-only")) return requested_initial120;
+    assert(!strcmp(property,"xiaomi,oem-refresh-modes")); return requested_oem_modes;
 }
 struct device { struct device_node *of_node; };
 struct platform_device { struct device dev; };
@@ -418,7 +419,8 @@ static struct o82_panel context(int variant,int mode) {
     cs.adjusted_mode=o82_modes[mode].mode;
     const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
     struct o82_panel ctx={.panel={.funcs=&funcs},.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
-        .connector=&connector,.backlight=&backlight,.profiles=p,.active=p,.initial_120hz_only=variant && mode==5};
+        .connector=&connector,.backlight=&backlight,.profiles=p,.active=p,
+        .initial_120hz_only=variant==1 && mode==5,.oem_refresh_modes=variant==2};
     mutex_init(&ctx.lock);
     pps_start=2*p[o82_modes[mode].group].on_count;
     struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
@@ -442,14 +444,25 @@ int main(void) {
         assert(!ctx.panel.backlight && ctx.backlight==probe_backlight);
         assert(!enables && !transfers && !operation && !scheduled);
     }
-    for(int variant=0;variant<2;variant++) for(int flags=0;flags<4;flags++) {
+    for(int variant=0;variant<2;variant++) for(int flags=0;flags<8;flags++) {
         struct o82_panel ctx=context(variant,3);
         struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
-        requested_initial60=flags&1; requested_initial120=flags&2;
-        const bool invalid=flags==3 || (requested_initial120 && !variant);
+        requested_initial60=flags&1; requested_initial120=flags&2; requested_oem_modes=flags&4;
+        const bool invalid=(requested_initial60 && requested_initial120) ||
+            (requested_oem_modes && (requested_initial60 || requested_initial120)) ||
+            ((requested_initial120 || requested_oem_modes) && !variant);
         assert(o82_probe_initial_mode(&ctx,&node)==(invalid ? -EINVAL:0));
         assert(!enables && !transfers && !operation && !ctx.prepared);
-        assert(ctx.initial_60hz_only==requested_initial60 && ctx.initial_120hz_only==requested_initial120);
+        assert(ctx.initial_60hz_only==requested_initial60 && ctx.initial_120hz_only==requested_initial120 &&
+               ctx.oem_refresh_modes==requested_oem_modes);
+    }
+    {
+        struct o82_panel ctx=context(0,3);
+        struct device_node node={"unrelated,panel"};
+        requested_initial60=requested_initial120=false; requested_oem_modes=true;
+        assert(o82_probe_initial_mode(&ctx,&node)==-EINVAL);
+        assert(!enables && !transfers && !operation && !ctx.prepared);
+        requested_oem_modes=false;
     }
     for(int variant=0;variant<2;variant++) for(int fail=-1;fail<2;fail++) {
         struct o82_panel ctx=context(variant,3); attach_ctx=&ctx;
@@ -460,6 +473,7 @@ int main(void) {
         assert(panel_removed==(fail>=0) && secondary_removed==(fail>=0));
     }
     const unsigned int rates[]={30,48,50,60,90,120,144};
+    const unsigned int groups[]={2,2,2,0,2,0,1};
     assert(ARRAY_SIZE(o82_modes)==7);
     struct o82_panel selection=context(0,3);
     published=preferred=0;
@@ -476,6 +490,12 @@ int main(void) {
     duplication_failure=1; published=0;
     assert(o82_get_modes(&selection.panel,selection.connector)==-ENOMEM && !published);
     duplication_failure=0;
+    selection=context(2,5); published=preferred=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==7 && published==7 && preferred==1 && preferred_rate==120);
+    for(unsigned int m=0;m<ARRAY_SIZE(rates);m++) assert(drm_mode_vrefresh(&copies[m])==rates[m]);
+    duplication_failure=1; published=0;
+    assert(o82_get_modes(&selection.panel,selection.connector)==-ENOMEM && !published);
+    duplication_failure=0;
     for(int mode=0;mode<7;mode++) {
         if(mode==5) continue;
         struct o82_panel ctx=context(1,mode); ctx.initial_120hz_only=true;
@@ -483,21 +503,23 @@ int main(void) {
     }
     selection=context(1,5); selection.connector->state->crtc->state->adjusted_mode.clock++;
     assert(o82_prepare(&selection.panel)==-EINVAL && !enables && !transfers && !operation);
-    for(unsigned int v=0;v<2;v++) for(unsigned int m=0;m<7;m++) {
+    for(unsigned int v=0;v<3;v++) for(unsigned int m=0;m<7;m++) {
         const struct drm_display_mode *mode=&o82_modes[m].mode;
         const uint64_t divisor=(uint64_t)mode->htotal*mode->vtotal;
         assert(((uint64_t)mode->clock*1000+divisor/2)/divisor==rates[m]);
         assert(mode->width_mm==237 && mode->height_mm==158 && mode->vtotal<=8191);
         struct o82_panel c=context(v,m);
+        const bool batched=c.initial_120hz_only || c.oem_refresh_modes;
         const struct drm_dsc_config encoder=c.dsc;
         drm_panel_enable(&c.panel);
         assert(!c.panel.enabled && !transfers && !backlight_calls);
         assert(o82_prepare(&c.panel)==0 && c.prepared && c.enabled_supplies==7);
+        assert(c.active==&c.profiles[groups[m]]);
         assert(!memcmp(&c.dsc,&encoder,sizeof(encoder)) && pps_transfers==2);
-        assert(pre_video_reads==(c.initial_120hz_only ? 0:2));
+        assert(pre_video_reads==(batched ? 0:2));
         const int full=transfers;
         assert(full==2*(int)(c.active->on_count+1));
-        if(v==1&&m==5)assert(on_batch_calls==8&&on_batch_total==884&&on_complete==1);
+        if(batched)assert(on_batch_calls==8&&on_batch_total==884&&on_complete==1);
         else assert(!on_batch_calls&&!on_complete);
         assert(lpm_transfers==2*(int)(c.active->on_count+1));
         assert(!hs_transfers && !c.panel.enabled && !backlight_calls);
@@ -517,11 +539,11 @@ int main(void) {
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
         assert(post_frame_reads==0);
-        assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
-        assert(batch_api_calls==(v==1&&m==5));
-        assert(lp_api_calls==(v==1&&m==5 ? 2:0));
-        assert(normal_transfers==4 && transfers==full+(c.initial_120hz_only ? 20:12) && c.first_frame_initialized);
-        assert(dimming_transfers==(c.initial_120hz_only ? 8:0));
+        assert(settle_ms==before_enable_wait+(batched ? 1000:0));
+        assert(batch_api_calls==batched);
+        assert(lp_api_calls==(batched ? 2:0));
+        assert(normal_transfers==4 && transfers==full+(batched ? 20:12) && c.first_frame_initialized);
+        assert(dimming_transfers==(batched ? 8:0));
         for(unsigned int command=0;command<c.active->switch_count;command++)
             for(int link=0;link<2;link++)
                 assert(!memcmp(hs_payloads[2*command+link],c.active->switch_commands[command].data,2));
@@ -805,4 +827,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual O82 lifecycle: full-picture OEM PPS, PB120 normal/dimming LP group order/refusal/faults, unchanged other profiles/ON/OFF/HS and cancellation checks passed\n'
+printf 'Actual O82 lifecycle: all seven OEM modes, preserved initial120/legacy profiles, exact PPS and grouped ON/HS/normal/dimming/OFF, fault unwind, cancellation and profile admission passed\n'

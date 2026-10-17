@@ -76,6 +76,8 @@ static void dsi_intr_ctrl(msm_dsi_host *,int irq,int enable) {
     assert(irq==DSI_IRQ_MASK_CMD_DMA_DONE&&enable==(restoring?0:1));events.emplace_back(enable?"irq-enable":"irq-disable");
 }
 static bool dsi_uke_misr_scope(msm_dsi_host *) {return scope;}
+/* This fixture preserves the original isolated-profile control. */
+static bool dsi_uke_o82_refresh_modes(msm_dsi_host *,const drm_display_mode *) {return false;}
 static int drm_mode_vrefresh(drm_display_mode *m) {return m->hz;}
 static device_node *of_graph_get_remote_node(device_node *n,int port,int endpoint) {
     assert(n==&node&&port==1&&endpoint==-1);++node_gets;return remote;
@@ -130,6 +132,7 @@ static void wmb() {events.emplace_back("barrier");}
 CPP
 {
 extract 'static bool dsi_uke_o82_initial120(' "$host"
+extract 'static bool dsi_uke_o82_powered_profile(' "$host"
 extract 'static void dsi_uke_fifo_trace(' "$host"
 extract 'int msm_dsi_host_xfer_prepare(' "$host"
 extract 'void msm_dsi_host_xfer_restore(' "$host"

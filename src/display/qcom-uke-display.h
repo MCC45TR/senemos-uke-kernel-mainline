@@ -21,14 +21,14 @@ static inline int qcom_uke_display_release(struct device *supplier,
 struct mipi_dsi_device;
 struct mipi_dsi_msg;
 
-/* Synchronous, exact O82 120 Hz four-packet HS TP-FPS group; no queued state. */
+/* Synchronous, exact O82 four-packet HS TP-FPS group; no queued state. */
 #if IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI)
 int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 			      const struct mipi_dsi_msg *msgs);
-/* One bounded LP ON chunk, selected by the isolated PB120 panel caller. */
+/* One bounded LP ON chunk, selected by an explicit O82 panel profile. */
 int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
 			 const struct mipi_dsi_msg *msgs, unsigned int count);
-/* Exact PB120 post-start normal-pixel or dimming LP group. */
+/* Exact O82 post-start normal-pixel or dimming LP group. */
 int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,
 			 const struct mipi_dsi_msg *msgs, unsigned int count);
 #else
