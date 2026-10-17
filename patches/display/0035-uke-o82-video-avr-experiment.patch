@@ -8,9 +8,10 @@ The read-only opt-in parameter defaults to zero. The exact PB/42 OEM
 120 Hz profile admits at most 32 additional lines. No qualified connector
 range or vrr_capable claim is supplied.
 
-Based on the continuous video AVR register operations by PortareOS, patch 1097
-at 67ed458421d919aba9c687c3f72d7678954b6902, and the Uke OEM QSync contract at
-MiCode/vendor_opensource_display-drivers 44275c404a677d9d9e5230fedd1af2ef02fc7b9a.
+Based on PortareOS continuous video AVR operations, patch 1097 at
+67ed458421d919aba9c687c3f72d7678954b6902, and the Uke OEM QSync contract:
+MiCode/vendor_opensource_display-drivers at
+44275c404a677d9d9e5230fedd1af2ef02fc7b9a.
 Retain upstream Linux GPL-2.0-only licensing and existing file attribution.
 No panel commands or donor panel range are imported.
 
