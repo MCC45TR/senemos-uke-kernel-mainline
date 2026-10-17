@@ -1,37 +1,34 @@
-# Native display source-build gate
+# Mainline display source profile
 
-17 October 2026. This experimental package builds the complete native54 kernel
-source profile from the signed Linux 7.2.9 archive, all 44 ordered Uke base
-patches, the ABL adaptation, native display patches and the explicit O82-42
-seven-mode overlay. The source RPM retains all preparation code, tests,
-configuration, asset hashes and its source commit. It includes the shared-reset
-readiness boundary and live refresh timing candidate, with all seven-mode host,
-panel and atomic-commit contract checks. Visible transitions and continuous touch
-input require separate physical testing.
+17 October 2026. The native O82 profile is part of
+`senemos-uke-linux-kernel-mainline`; there is no separate native kernel package.
+The root `make srpm` and `.copr/Makefile` use one specification and source
+producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
+to the same producer. EL2 work remains separate.
 
-The package is named `senemos-uke-linux-kernel-mainline-native` and uses a
-separate `7.2.9-senemos.1.4054.copr2` module directory. It neither replaces the
-normal kernel packages nor writes a boot partition. It contains a raw Image,
-matching modules, independent compile-stage DTB and the compiled native overlay.
+The source RPM contains signed Linux 7.2.9, the 44 ordered Uke base patches,
+the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
+configuration, contract checks, source commit and asset hashes. Numeric Senemos
+build releases have separate module paths. Install-only packages do not obsolete
+or overwrite a previous kernel build.
 
-**Compile-only development gate.** It has no embedded initramfs, Android boot
-container, firmware, credentials or per-device data. It cannot reproduce the
-currently tested boot image and must not be presented as an install-tested
-kernel update. A public, reproducible initramfs and boot-container producer is
-required before it can supply the guarded boot-update bundle. COPR build
-success does not establish tablet boot, refresh switching or lifecycle support.
+The binary tuple contains a raw Image, matching modules, independent DTB and
+native overlay. It currently has **no embedded initramfs or Android boot
+container** and performs no boot writes. A successful COPR build is a source
+and compile result. It does not qualify this package as an install-tested boot
+update. Keep the existing validated boot bundle and rollback until the public
+initramfs producer has passed its own package and tablet tests. The historical
+standalone host recipe under `configs/host/` is not this native source producer.
 
-The upstream Linux 7.2.9 host tool
-`drivers/gpu/drm/msm/registers/gen_header.py` generates MSM register headers
-from the kernel's XML descriptions. Its pinned SHA-256 is
+The public `work/dnf-kernel-payload-20261015` branch contains a dracut and guarded
+boot-container producer. Its older framebuffer configuration and early-module
+inventory require integration with this profile before enabling automatic
+mainline boot updates. Private initramfs files, firmware, credentials and
+per-device calibration are not source inputs here.
+
+Upstream Linux's MSM register generator
+`drivers/gpu/drm/msm/registers/gen_header.py` has SHA-256
 `81763fc03ea0ebf254ab7427af2113dc0c7c0d80dceab61232b6e371463d1f90`.
-The upstream build requires this generator; replacing its parser would add a
-second register-definition implementation. Python is a host-only build
-dependency, with no project Python code or Python payload in the binary RPMs.
-The package install check rejects Python scripts or runtime files.
-
-Use a COPR side repository named `native-display`, limited to
-`fedora-rawhide-aarch64`, with SCM method `make_srpm` and subdirectory
-`packaging/native`. The normal `.copr/Makefile` and package recipe remain
-unchanged. From this directory, `make srpm` creates a source RPM; the source
-archive verification uses the existing pinned upstream manifest and signer.
+It converts upstream XML into register headers and is an unavoidable host-only
+Python build dependency. No project Python or Python payload is supplied to the
+tablet; package installation checks reject Python files and runtimes.
