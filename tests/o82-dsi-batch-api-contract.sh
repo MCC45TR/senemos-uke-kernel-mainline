@@ -5,7 +5,7 @@ header=${1:?Pass candidate include/linux/qcom-uke-display.h}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 mkdir -p "$work/linux"
-printf 'struct device;\n' > "$work/linux/device.h"
+printf '#include <stdbool.h>\nstruct device;\n' > "$work/linux/device.h"
 printf '#define ENODEV 19\n#define EOPNOTSUPP 95\n' > "$work/linux/errno.h"
 cat > "$work/linux/kconfig.h" <<'C'
 #define IS_ENABLED(x) ((x)==1 || (x)==2)
@@ -20,6 +20,15 @@ int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_
 {
     (void)dsi; (void)msgs; return 0;
 }
+int qcom_uke_dsi_pen_clear_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs)
+{
+    (void)dsi; (void)msgs; return 0;
+}
+int qcom_uke_dsi_dfps_register(struct mipi_dsi_device *dsi,struct drm_panel *panel,
+                             const struct qcom_uke_o82_dfps_ops *ops)
+{
+    (void)dsi; (void)panel; (void)ops; return 0;
+}
 int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count)
 {
     (void)dsi; (void)msgs; (void)count; return 0;
@@ -32,6 +41,10 @@ int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg 
 int main(void)
 {
     assert(qcom_uke_dsi_tp_fps_batch(0,0)==
+        (IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI) ? 0:-EOPNOTSUPP));
+    assert(qcom_uke_dsi_pen_clear_batch(0,0)==
+        (IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI) ? 0:-EOPNOTSUPP));
+    assert(qcom_uke_dsi_dfps_register(0,0,0)==
         (IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI) ? 0:-EOPNOTSUPP));
     assert(qcom_uke_display_release(0,0)==-ENODEV);
     assert(qcom_uke_dsi_on_batch(0,0,0)==
