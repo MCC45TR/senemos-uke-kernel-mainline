@@ -18,7 +18,7 @@ Source4: senemos-native-profile-%{version}.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
-BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc dtc-devel
+BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
