@@ -565,10 +565,7 @@ diff --git a/drivers/gpu/drm/msm/msm_atomic.c b/drivers/gpu/drm/msm/msm_atomic.c
 index a8babf1..f5c0958 100644
 --- a/drivers/gpu/drm/msm/msm_atomic.c
 +++ b/drivers/gpu/drm/msm/msm_atomic.c
-@@ -4,6 +4,7 @@
-  * Author: Rob Clark <robdclark@gmail.com>
-  */
- 
+@@ -7,3 +7,4 @@
 +#include <linux/iopoll.h>
  #include <drm/drm_atomic_uapi.h>
  #include <drm/drm_vblank.h>
