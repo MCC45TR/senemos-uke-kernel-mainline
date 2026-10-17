@@ -332,10 +332,12 @@ C
     extract 'static int dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
+    extract 'int msm_dsi_host_cmd_lp_batch(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_on_batch(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'static struct drm_panel *dsi_mgr_o82_panel(struct msm_dsi *msm_dsi)' "$base/dsi_manager.c"
     extract 'int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,' "$base/dsi_manager.c"
     extract 'int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,' "$base/dsi_manager.c"
+    extract 'int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,' "$base/dsi_manager.c"
     extract 'int msm_dsi_manager_cmd_xfer(int id, const struct mipi_dsi_msg *msg)' "$base/dsi_manager.c"
     extract 'static ssize_t dsi_host_transfer(struct mipi_dsi_host *host,' "$base/dsi_host.c"
     cat <<'C'
@@ -582,6 +584,115 @@ int main(void) {
         }
         assert(writes_count==prior_writes&&!lifecycle_mutations&&pm_puts==prior_pm);
         assert(clock_disables[0]+clock_disables[1]==prior_clocks);
+    }
+    /* Independent installed-OEM metadata plus packet-format byte oracles. */
+    static const u8 lp_normal[2][3]={{0x15,0xff,0x10},{0x39,0x13,0}};
+    static const u8 lp_dimming[4][3]={{0x39,0xff,0x27},{0x39,0xd1,0x28},{0x15,0xff,0x10},{0x15,0x53,0x2c}};
+    static const u8 normal_dma[]={0xff,0x10,0x15,0,2,0,0x39,0xc0,0x13,0,0xff,0xff};
+    static const u8 dimming_dma[]={2,0,0x39,0x40,0xff,0x27,0xff,0xff,2,0,0x39,0x40,0xd1,0x28,0xff,0xff,
+        0xff,0x10,0x15,0,0x53,0x2c,0x15,0x80};
+    for(unsigned int count=2;count<=4;count+=2) {
+        const u8 (*commands)[3]=count==2 ? lp_normal:lp_dimming;
+        const u8 *oracle=count==2 ? normal_dma:dimming_dma;
+        unsigned int bytes=count==2 ? sizeof(normal_dma):sizeof(dimming_dma);
+        struct mipi_dsi_msg lp[4]={0};
+        for(unsigned int i=0;i<count;i++)lp[i]=(struct mipi_dsi_msg){.type=commands[i][0],
+            .flags=MIPI_DSI_MSG_USE_LPM,.tx_len=2,.tx_buf=&commands[i][1]};
+        admit_scheduled();hosts[1].cmd_mutex=0;memset(tx_storage,0xa5,sizeof(tx_storage));
+        assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==0);
+        assert(add_count==(int)count&&trigger_count==2&&wait_count==2&&schedule_notices==1&&!video_waits);
+        assert(prepared[0]==1&&prepared[1]==1&&restored[0]==1&&restored[1]==1);
+        assert(outer_locks==1&&lock_count==1&&unlock_count==2&&!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex);
+        assert(dma_len[0]==bytes&&dma_len[1]==bytes&&!memcmp(tx_storage[1],oracle,bytes));
+        assert(tx_storage[1][bytes]==0xa5&&tx_storage[0][0]==0xa5);
+        for(int id=0;id<2;id++)assert(schedule_writes[id]==2&&!schedule_ctrl[id]&&dma_ctrl[id]==0x1c123456);
+        for(unsigned int i=0;i<count;i++)for(int gate=0;gate<8;gate++) {
+            struct mipi_dsi_msg invalid[4];memcpy(invalid,lp,sizeof(invalid));
+            admit_scheduled();hosts[1].cmd_mutex=0;
+            switch(gate) {
+            case 0:invalid[i].type=MIPI_DSI_DCS_SHORT_WRITE;break;
+            case 1:invalid[i].flags=0;break;
+            case 2:invalid[i].channel=1;break;
+            case 3:invalid[i].tx_len=1;break;
+            case 4:invalid[i].tx_buf=NULL;break;
+            case 5:invalid[i].rx_len=1;break;
+            case 6:invalid[i].rx_buf=&reg;break;
+            case 7:invalid[i].tx_buf=&commands[(i+1)%count][1];break;
+            }
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,invalid,count)==-EINVAL);
+            assert(!writes_count&&!add_count&&!outer_locks&&!prepared[0]&&!prepared[1]);
+        }
+        for(int gate=0;gate<13;gate++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;
+            switch(gate) {
+            case 0:board_uke=false;break;
+            case 1:panel_o82=false;break;
+            case 2:bonded=false;break;
+            case 3:sync_needed=false;break;
+            case 4:hosts[0].enabled=hosts[1].enabled=false;break;
+            case 5:video_total[0]=video_total[1]=0x120b023b;break;
+            case 6:hosts[1].lanes=3;break;
+            case 7:hosts[1].mode_flags=0;break;
+            case 8:hosts[0].format=0;break;
+            case 9:hosts[1].mode=NULL;break;
+            case 10:panel_pb=false;break;
+            case 11:initial120=false;break;
+            case 12:panel_dsi.host=&hosts[1].base;break;
+            }
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EOPNOTSUPP);
+            assert(!writes_count&&!add_count&&!prepared[0]&&!prepared[1]);
+            panel_dsi.host=&hosts[0].base;hosts[1].mode_flags=MIPI_DSI_MODE_VIDEO;hosts[1].mode=&mode;
+        }
+        admit_scheduled();hosts[1].cmd_mutex=0;
+        for(unsigned int invalid=0;invalid<=5;invalid++)if(invalid!=2&&invalid!=4)
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,invalid)==-EINVAL);
+        assert(qcom_uke_dsi_lp_batch(NULL,lp,count)==-EOPNOTSUPP);
+        assert(qcom_uke_dsi_lp_batch(&panel_dsi,NULL,count)==-EOPNOTSUPP);
+        assert(msm_dsi_host_cmd_lp_batch(NULL,&hosts[1].base,lp,count)==-EINVAL);
+        assert(msm_dsi_host_cmd_lp_batch(&hosts[0].base,NULL,lp,count)==-EINVAL);
+        assert(!writes_count&&!add_count&&!outer_locks);
+        for(int gate=0;gate<7;gate++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;
+            switch(gate) {
+            case 0:video_active[1]^=1;break;
+            case 1:ctrl_register[0]&=~DSI_CTRL_VID_MODE_EN;break;
+            case 2:schedule_ctrl[0]=1;break;
+            case 3:schedule_ctrl2[1]=1;break;
+            case 4:initial_busy_host=1;break;
+            case 5:hosts[1].vm=NULL;break;
+            case 6:hosts[1].power_on=false;break;
+            }
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)<0);
+            assert(!writes_count&&!trigger_count);
+        }
+        for(int stage=0;stage<2;stage++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;fail_prepare=stage;
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EIO);
+            assert(!add_count&&!writes_count&&restored[0]==stage&&!restored[1]);
+        }
+        for(unsigned int fault=1;fault<=count;fault++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;fail_add=fault;
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EIO);
+            assert(add_count==(int)fault&&!trigger_count&&!writes_count&&restored[0]==1&&restored[1]==1);
+        }
+        admit_scheduled();hosts[1].cmd_mutex=0;hosts[1].tx_size=bytes-1;
+        assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EINVAL&&!trigger_count&&!writes_count);
+        admit_scheduled();hosts[1].cmd_mutex=0;base_error=-EIO;
+        assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EIO&&!trigger_count&&!writes_count);
+        for(int fault=1;fault<=2;fault++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;fail_wait=fault;
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-ETIMEDOUT);
+            assert(wait_count==2&&resets[0]==1&&resets[1]==1&&!schedule_ctrl[0]&&!schedule_ctrl[1]);
+            assert(!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex);
+        }
+        for(int stuck=0;stuck<2;stuck++) {
+            admit_scheduled();hosts[1].cmd_mutex=0;fail_wait=1;busy_host=stuck;
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EIO);
+            assert(hosts[0].cmd_dma_blocked&&hosts[1].cmd_dma_blocked&&reset_asserted[0]&&reset_asserted[1]);
+            int prior=writes_count;
+            assert(qcom_uke_dsi_lp_batch(&panel_dsi,lp,count)==-EIO&&writes_count==prior);
+            assert(schedule_writes[0]==1&&schedule_writes[1]==1);
+        }
     }
     for(int i=0;i<4;i++)tp[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,
         .tx_len=2,.tx_buf=tp_payloads[i]};
@@ -872,4 +983,4 @@ C
     -Wno-missing-field-initializers -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$headers/include" -I "$objects/drivers/gpu/drm/msm/generated" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual DSI: PB120 ON eight chunks/884 exact bytes/final-only LAST and one trigger per link, LP prevideo admission/faults/quarantine; unchanged HS TP batch and legacy transfers passed\n'
+printf 'Actual DSI: exact PB120 normal12/dimming24 LP bytes/final-only LAST, admission/faults/paired scheduling/quarantine; unchanged ON/HS/read/legacy transfers passed\n'

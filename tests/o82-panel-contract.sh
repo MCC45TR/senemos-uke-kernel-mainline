@@ -98,6 +98,7 @@ struct follower_ops {int (*panel_enabled)(struct drm_panel_follower *);
 struct drm_panel_follower {const struct follower_ops *funcs;};
 static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers,dimming_transfers;
 static int batch_api_calls,batch_api_error;
+static int lp_api_calls,lp_api_error,lp_api_fail_call=-1;
 static int on_batch_calls,on_batch_error=-1,on_batch_counts[8],on_batch_sizes[8],on_batch_total;
 static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
 static bool boundary_seen;
@@ -272,6 +273,19 @@ static int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mi
     }
     return 0;
 }
+static int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count) {
+    assert(dsi->id==0&&boundary_seen&&video_started&&backlight_calls==1);
+    assert(count==(normal_transfers==0 ? 2U:4U));
+    int call=lp_api_calls++;
+    if(call==lp_api_fail_call)return lp_api_error;
+    static struct mipi_dsi_host peer={.id=1};
+    for(unsigned int i=0;i<count;i++)for(int link=0;link<2;link++) {
+        assert(msgs[i].flags==MIPI_DSI_MSG_USE_LPM);
+        ssize_t ret=transfer(link ? &peer:dsi->host,&msgs[i]);
+        if(ret<2)return ret<0 ? (int)ret:-EIO;
+    }
+    return 0;
+}
 static int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count) {
     static const int counts[8]={7,6,31,31,28,3,1,1},sizes[8]={56,48,248,248,244,24,8,8};
     assert(!video_started&&!boundary_seen&&dsi->id==0&&count<=31&&on_batch_calls<8);
@@ -391,6 +405,7 @@ static struct o82_panel context(int variant,int mode) {
     enables=disables=transfers=operation=gpio_failure=short_write=wire_write=settle_ms=0;
     lpm_transfers=hs_transfers=pps_transfers=normal_transfers=dimming_transfers=0;
     batch_api_calls=batch_api_error=0;
+    lp_api_calls=lp_api_error=0;lp_api_fail_call=-1;
     post_frame_reads=0;
     on_batch_calls=on_batch_total=on_complete=0;on_batch_error=-1;
     backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
@@ -501,6 +516,7 @@ int main(void) {
         assert(post_frame_reads==(v==1&&m==5 ? 7:0));
         assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
         assert(batch_api_calls==(v==1&&m==5));
+        assert(lp_api_calls==(v==1&&m==5 ? 2:0));
         assert(normal_transfers==4 && transfers==full+(c.initial_120hz_only ? 20:12) && c.first_frame_initialized);
         assert(dimming_transfers==(c.initial_120hz_only ? 8:0));
         for(unsigned int command=0;command<c.active->switch_count;command++)
@@ -730,7 +746,7 @@ int main(void) {
         assert(strstr(last_error,"stage=timing-switch")&&!disables);
         drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
     }
-    /* Every serialized dimming failure stops its later commands and readback. */
+    /* The mock observes payload order; actual DMA grouping is checked by the host fixture. */
     for(int short_reply=0;short_reply<2;short_reply++)for(int fault=0;fault<8;fault++) {
         c=context(1,5);assert(o82_prepare(&c.panel)==0);
         int before=transfers;
@@ -741,6 +757,36 @@ int main(void) {
         assert(strstr(last_error,"result=-5 blank_result=0"));
         transfer_failure=transfer_short=-1;
         drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
+    }
+    for(int group=0;group<2;group++)for(int fault=0;fault<4;fault++) {
+        static const int errors[]={-EOPNOTSUPP,-EIO,-ETIMEDOUT,-EINVAL};
+        c=context(1,5);assert(o82_prepare(&c.panel)==0);
+        lp_api_fail_call=group;lp_api_error=errors[fault];
+        video_started=true;drm_panel_enable(&c.panel);first_boundary(&c.first_frame_work);
+        assert(lp_api_calls==group+1 && !post_frame_reads && !c.backlight->on);
+        assert(normal_transfers==(group ? 4:0) && !dimming_transfers);
+        assert(strstr(last_error,group ? "stage=dimming-on":"stage=normal-pixels"));
+        drm_panel_disable(&c.panel);video_started=false;assert(o82_unprepare(&c.panel)==0);
+    }
+    /* Refuse changed grouping/delays before the API can send a partial group. */
+    for(unsigned int count=2;count<=4;count+=2) {
+        struct o82_command commands[4]={0};
+        for(unsigned int i=0;i<count;i++)commands[i].downstream_flags=i==count-1 ? 0:BIT(6);
+        for(unsigned int i=0;i<count;i++)for(int gate=0;gate<2;gate++) {
+            c=context(1,5);assert(o82_prepare(&c.panel)==0);
+            if(gate)commands[i].downstream_flags^=BIT(6);else commands[i].delay_ms=1;
+            assert(o82_lp_batch(&c,commands,count)==-EINVAL && !lp_api_calls);
+            commands[i].downstream_flags=i==count-1 ? 0:BIT(6);commands[i].delay_ms=0;
+            assert(o82_unprepare(&c.panel)==0);
+        }
+        c=context(1,5);assert(o82_prepare(&c.panel)==0);
+        for(unsigned int invalid=0;invalid<=5;invalid++)if(invalid!=2&&invalid!=4)
+            assert(o82_lp_batch(&c,commands,invalid)==-EINVAL && !lp_api_calls);
+        c.initial_120hz_only=false;
+        assert(o82_lp_batch(&c,commands,count)==-EINVAL && !lp_api_calls);
+        c.initial_120hz_only=true;struct o82_profile changed=*c.active;c.active=&changed;
+        assert(o82_lp_batch(&c,commands,count)==-EINVAL && !lp_api_calls);
+        assert(o82_unprepare(&c.panel)==0);
     }
     c=context(0,3);
     struct device_node node={"unrelated,panel"};
@@ -756,4 +802,4 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -Wno-misleading-indentation -fsanitize=undefined -fsanitize-undefined-trap-on-error -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual O82 lifecycle: full-picture OEM PPS and unchanged shared encoder config, PB120 ON eight chunks/884 bytes, dimming order/faults, mode/refusal/OFF/HS and cancellation checks passed\n'
+printf 'Actual O82 lifecycle: full-picture OEM PPS, PB120 normal/dimming LP group order/refusal/faults, unchanged other profiles/ON/OFF/HS and cancellation checks passed\n'

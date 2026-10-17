@@ -53,6 +53,18 @@ ON delays, OFF, PPS, HS TP-FPS and other modes retain their existing contents
 and order. Native35 completed ON and HS groups in a physical test, but held
 SMPTE remained invisible.
 
+17 October 2026: patch `0031` and the isolated O82-42 initial120 caller preserve
+the installed OEM normal-pixel and dimming LP groups. The two normal packets
+form one 12-byte DMA group; the four dimming packets form a separate 24-byte
+group. Only the final packet has LAST. Exact type, payload, LP flags and mode
+admission precede the existing synchronous paired broadcast. Scheduling,
+both-link completion, failure blanking and held-reset quarantine are retained.
+The installed OEM metadata differs from the published common DT; packet offsets
+and DMA lengths are source-derived contracts, not captured OEM DMA buffers.
+Host fixtures check full bytes, group order, refusals and error cleanup. No new
+delay or timing policy is introduced. Matched build and optical testing remain
+pending; the native47 PPS comparison is a separate prerequisite.
+
 Patch `0030` extends exact O82 initial120 clock retention to powered pre-video
 transfers. Initial host rate setup and ordinary profiles remain unchanged;
 PM/clock votes, command bytes, active-video trigger policy and quarantine are
@@ -446,8 +458,8 @@ The O82 rate-control parameters follow Xiaomi display revision
 `44275c404a677d9d9e5230fedd1af2ef02fc7b9a`: first-line BPG offset 13 and
 range-zero maximum QP 8 are applied before upstream RC calculation. The panel
 then sends the standard 128-byte PPS over both LP links after initialization.
-The panel PPS describes the full 3200-pixel picture; the encoders retain
-1600 pixels per interface. A 16 October working-recovery buffer read corrected
+The panel PPS and both DSC picture registers describe the full 3200-pixel
+picture; each interface covers 1600 input pixels. A 16 October working-recovery buffer read corrected
 the earlier per-link PPS assumption: only PPS bytes 8/9 differed. The actual
 128-byte packet is now the fixture oracle; visible native output remains pending.
 Host fixtures execute the selected upstream RC calculator and PPS packer,
@@ -491,7 +503,8 @@ bit-clock override needs reconciliation for the 90/144 Hz groups; derived DRM
 mode arithmetic alone does not validate their physical link rates. Preserve
 the firmware framebuffer boot image and Android return route for these tests.
 
-16 October 2026: the isolated O82-42 initial120 trial also compares the exact
-OEM post-normal dimming values through the existing synchronous panel sender.
-This is a final-state comparison; it does not reproduce OEM command batching.
-Other profiles retain their prior sequence. Optical effectiveness is pending.
+The 16 October O82-42 initial120 trial compared the exact OEM post-normal
+dimming values through the serialized panel sender. It reached the expected
+control-display value without visible output. Patch `0031` separately compares
+the installed command grouping. Other profiles retain their prior sequence;
+optical effectiveness remains pending.

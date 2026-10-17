@@ -116,6 +116,29 @@ static int o82_off(struct o82_panel *ctx)
 	return first_error;
 }
 
+static int o82_lp_batch(struct o82_panel *ctx,
+			const struct o82_command *commands, unsigned int count)
+{
+	struct mipi_dsi_msg msgs[4] = { };
+	unsigned int i;
+
+	if (!ctx->initial_120hz_only || ctx->active != &ctx->profiles[0] ||
+	    (count != 2 && count != 4))
+		return -EINVAL;
+	for (i = 0; i < count; i++) {
+		const struct o82_command *cmd = &commands[i];
+
+		if (cmd->delay_ms || cmd->downstream_flags != (i == count - 1 ? 0 : BIT(6)))
+			return -EINVAL;
+		msgs[i] = (struct mipi_dsi_msg) {
+			.channel = cmd->channel, .type = cmd->type,
+			.flags = MIPI_DSI_MSG_USE_LPM, .tx_len = cmd->len,
+			.tx_buf = cmd->data,
+		};
+	}
+	return qcom_uke_dsi_lp_batch(ctx->dsi[0], msgs, count);
+}
+
 static int o82_on_batch(struct o82_panel *ctx)
 {
 	struct mipi_dsi_msg msgs[31] = { };
@@ -394,13 +417,13 @@ static void o82_first_frame(struct kthread_work *work)
 	struct drm_vblank_work *vblank_work = to_drm_vblank_work(work);
 	struct o82_panel *ctx = container_of(vblank_work, struct o82_panel, first_frame_work);
 	const struct o82_command normal_pixels[] = {
-		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
+		{ .type = 0x15, .downstream_flags = BIT(6), .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
 		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0x13, 0x00 } },
 	};
 	const struct o82_command dimming_on[] = {
-		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0xff, 0x27 } },
-		{ .type = 0x39, .len = 2, .data = (const u8[]) { 0xd1, 0x28 } },
-		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
+		{ .type = 0x39, .downstream_flags = BIT(6), .len = 2, .data = (const u8[]) { 0xff, 0x27 } },
+		{ .type = 0x39, .downstream_flags = BIT(6), .len = 2, .data = (const u8[]) { 0xd1, 0x28 } },
+		{ .type = 0x15, .downstream_flags = BIT(6), .len = 2, .data = (const u8[]) { 0xff, 0x10 } },
 		{ .type = 0x15, .len = 2, .data = (const u8[]) { 0x53, 0x2c } },
 	};
 	const char *stage = "prepared";
@@ -459,20 +482,26 @@ static void o82_first_frame(struct kthread_work *work)
 	dev_info(&ctx->dsi[0]->dev,
 		 "O82 first-frame checked backlight: brightness=%d result=0\n", brightness);
 	stage = "normal-pixels";
-	for (i = 0; i < ARRAY_SIZE(normal_pixels); i++) {
-		ret = o82_send(ctx, &normal_pixels[i], true);
+	if (ctx->initial_120hz_only) {
+		i = -1;
+		ret = o82_lp_batch(ctx, normal_pixels, ARRAY_SIZE(normal_pixels));
 		if (ret)
 			goto failed;
-	}
-	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
-	if (ctx->initial_120hz_only) {
-		/* Compare OEM post-normal dimming state without new rails or rates. */
-		stage = "dimming-on";
-		for (i = 0; i < ARRAY_SIZE(dimming_on); i++) {
-			ret = o82_send(ctx, &dimming_on[i], true);
+	} else {
+		for (i = 0; i < ARRAY_SIZE(normal_pixels); i++) {
+			ret = o82_send(ctx, &normal_pixels[i], true);
 			if (ret)
 				goto failed;
 		}
+	}
+	dev_info(&ctx->dsi[0]->dev, "O82 first-frame normal-pixels complete\n");
+	if (ctx->initial_120hz_only) {
+		/* Installed OEM uses a separate four-packet LP dimming group. */
+		stage = "dimming-on";
+		i = -1;
+		ret = o82_lp_batch(ctx, dimming_on, ARRAY_SIZE(dimming_on));
+		if (ret)
+			goto failed;
 		dev_info(&ctx->dsi[0]->dev, "O82 first-frame dimming-on complete\n");
 		/* Delay this experimental sample, not panel startup. */
 		msleep(1000);

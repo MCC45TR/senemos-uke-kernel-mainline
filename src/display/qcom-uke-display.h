@@ -28,6 +28,9 @@ int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 /* One bounded LP ON chunk, selected by the isolated PB120 panel caller. */
 int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
 			 const struct mipi_dsi_msg *msgs, unsigned int count);
+/* Exact PB120 post-start normal-pixel or dimming LP group. */
+int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,
+			 const struct mipi_dsi_msg *msgs, unsigned int count);
 #else
 static inline int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 					 const struct mipi_dsi_msg *msgs)
@@ -35,6 +38,11 @@ static inline int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 	return -EOPNOTSUPP;
 }
 static inline int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
+				      const struct mipi_dsi_msg *msgs, unsigned int count)
+{
+	return -EOPNOTSUPP;
+}
+static inline int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,
 				      const struct mipi_dsi_msg *msgs, unsigned int count)
 {
 	return -EOPNOTSUPP;
