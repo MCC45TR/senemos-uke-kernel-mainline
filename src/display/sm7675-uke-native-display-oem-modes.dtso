@@ -9,3 +9,8 @@
 	/delete-property/ xiaomi,initial-60hz-only;
 	xiaomi,oem-refresh-modes;
 };
+
+/* Cliffs OEM core-clock ceiling; the existing DISPCC table supplies its vote. */
+&uke_mdp_opps {
+	opp-600000000 { opp-hz = /bits/ 64 <600000000>; };
+};
