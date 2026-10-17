@@ -192,6 +192,10 @@
     {
       "path": "patches/7.2.10/0046-adc5-gen3-voltage-units.patch",
       "sha256": "9cf109bd352837b0a3c8e53caa3158c43bf68c3ef6f2187bb078a45b343461c3"
+    },
+    {
+      "path": "patches/7.2.10/0047-smp2p-preserve-edges-without-restart.patch",
+      "sha256": "35c7dad5f9230707c7916c009bc04615bfbf755b610e14526115c6dcd959b3bd"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

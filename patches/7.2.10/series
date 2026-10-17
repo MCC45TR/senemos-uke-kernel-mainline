@@ -44,3 +44,4 @@
 0044-uke-usb-charger-readiness-diagnostics.patch
 0045-uke-battery-derived-power.patch
 0046-adc5-gen3-voltage-units.patch
+0047-smp2p-preserve-edges-without-restart.patch
