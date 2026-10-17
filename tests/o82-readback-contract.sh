@@ -35,7 +35,7 @@ struct mipi_dsi_host;
 struct mipi_dsi_host_ops {ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_dsi_msg *);};
 struct mipi_dsi_host {const struct mipi_dsi_host_ops *ops; int id;};
 struct mipi_dsi_device {struct device dev; struct mipi_dsi_host *host; unsigned long mode_flags; u8 channel;};
-struct o82_panel {struct mipi_dsi_device *dsi[2];};
+struct o82_panel {struct mipi_dsi_device *dsi[2]; bool initial_120hz_only;};
 static int calls,logs,warnings;
 static const u8 commands[]={0xda,0x0a,0x0c,0x0d,0x0e,0x0f,0x54};
 static ssize_t results[7];
@@ -69,7 +69,7 @@ int main(void) {
     struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
     struct mipi_dsi_device dsis[2]={{{0},&hosts[0],0x941UL|MIPI_DSI_MODE_LPM|MIPI_DSI_CLOCK_NON_CONTINUOUS,0},
                                   {{1},&hosts[1],0x51UL|MIPI_DSI_CLOCK_NON_CONTINUOUS,0}};
-    struct o82_panel panel={{&dsis[0],&dsis[1]}}; context=&panel;
+    struct o82_panel panel={{&dsis[0],&dsis[1]},false}; context=&panel;
     for(int scenario=0;scenario<4;scenario++) {
         calls=logs=warnings=0; memset(messages,0,sizeof(messages));
         for(int i=0;i<2;i++) results[i]=scenario==2 ? -EIO:1;
@@ -104,6 +104,13 @@ int main(void) {
             assert(!!strstr(messages[i],"value=unavailable")==!!(i==fault));
         }
     }
+    calls=logs=warnings=0;
+    panel.initial_120hz_only=true;
+    const unsigned long flags[2]={dsis[0].mode_flags,dsis[1].mode_flags};
+    o82_readback(&panel,false);
+    o82_readback(&panel,true);
+    assert(!calls && !logs && !warnings);
+    assert(dsis[0].mode_flags==flags[0] && dsis[1].mode_flags==flags[1]);
     context=NULL;
 }
 C
@@ -112,4 +119,4 @@ C
     -fsanitize=undefined -fsanitize-undefined-trap-on-error \
     -I "$kernel/include" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'O82 actual MIPI/helper: unchanged pre-video reads; seven post-frame replies including control-display, first-error stop, primary-only HS and restored flags passed\n'
+printf 'O82 actual MIPI/helper: initial120 excludes all advisory reads; other-profile replies, first-error stop, primary-only HS and restored flags passed\n'

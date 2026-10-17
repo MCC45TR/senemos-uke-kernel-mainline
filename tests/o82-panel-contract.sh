@@ -104,6 +104,7 @@ static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
 static bool boundary_seen;
 static bool video_started;
 static int post_frame_reads;
+static int pre_video_reads;
 struct backlight_device {bool on;};
 static void mutex_init(struct mutex *lock) {lock->locked=0;}
 static void mutex_lock(struct mutex *lock) {assert(!lock->locked); lock->locked=1;}
@@ -186,7 +187,7 @@ static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,si
     if(video_started) {
         assert(boundary_seen && backlight_calls>=1 && normal_transfers>=4 && hs_transfers>=8);
         ++post_frame_reads;
-    } else assert(reg==0xda || reg==0x0a);
+    } else {assert(reg==0xda || reg==0x0a); ++pre_video_reads;}
     *(u8 *)value=0; return 1;
 }
 /* Working OEM PPS buffer after full off/on: full picture, not encoder width. */
@@ -407,6 +408,7 @@ static struct o82_panel context(int variant,int mode) {
     batch_api_calls=batch_api_error=0;
     lp_api_calls=lp_api_error=0;lp_api_fail_call=-1;
     post_frame_reads=0;
+    pre_video_reads=0;
     on_batch_calls=on_batch_total=on_complete=0;on_batch_error=-1;
     backlight_calls=backlight_disable_calls=backlight_enable_error=backlight_disable_error=0;
     scheduled=cancelled=0; schedule_result=positive_brightness=1;
@@ -492,6 +494,7 @@ int main(void) {
         assert(!c.panel.enabled && !transfers && !backlight_calls);
         assert(o82_prepare(&c.panel)==0 && c.prepared && c.enabled_supplies==7);
         assert(!memcmp(&c.dsc,&encoder,sizeof(encoder)) && pps_transfers==2);
+        assert(pre_video_reads==(c.initial_120hz_only ? 0:2));
         const int full=transfers;
         assert(full==2*(int)(c.active->on_count+1));
         if(v==1&&m==5)assert(on_batch_calls==8&&on_batch_total==884&&on_complete==1);
@@ -513,7 +516,7 @@ int main(void) {
         assert(o82_enable(&c.panel)==-EBUSY && transfers==pending_full && scheduled==1);
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
-        assert(post_frame_reads==(v==1&&m==5 ? 7:0));
+        assert(post_frame_reads==0);
         assert(settle_ms==before_enable_wait+(v==1&&m==5 ? 1000:0));
         assert(batch_api_calls==(v==1&&m==5));
         assert(lp_api_calls==(v==1&&m==5 ? 2:0));

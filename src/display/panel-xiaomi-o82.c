@@ -245,6 +245,10 @@ static void o82_readback(struct o82_panel *ctx, bool post_frame)
 	unsigned int count = post_frame ? ARRAY_SIZE(registers) : 2;
 	int i;
 
+	/* Isolate initial120 optics from advisory bus-turnaround traffic. */
+	if (ctx->initial_120hz_only)
+		return;
+
 	for (i = 0; i < count; i++) {
 		unsigned long mode_flags = dsi->mode_flags;
 		u8 value = 0;

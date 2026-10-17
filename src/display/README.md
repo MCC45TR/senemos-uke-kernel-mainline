@@ -14,6 +14,14 @@ changes instrumentation and can affect timing, so compare its optical results
 with the preceding non-tracing build. It does not enable memory sanitizers,
 fault injection or lock validation, and is not part of the normal release.
 
+The 17 October initial120 optical control omits advisory DCS readback traffic.
+The actual working OEM off/on command capture contains no DCS-read packets;
+native48 includes reads before video and after its first-frame sequence.
+The next control keeps ON/PPS, normal/dimming groups, clocks and timing intact
+while excluding those reads. Other profiles retain the diagnostic helper.
+Host fixtures verify both paths. This tests possible observer interference;
+it does not establish bus turnaround as the cause of the blank display.
+
 The 16 October native30 trial matched the working OEM LM and INTF signatures
 for identical grey and two-half SMPTE inputs, while its panel remained blank.
 Patch `0021` adds a default-off DSI MDP MISR diagnostic for the exact Uke
