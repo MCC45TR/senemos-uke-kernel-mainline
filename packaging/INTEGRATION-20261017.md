@@ -30,8 +30,11 @@ producer. This preserves attributable source without silently enabling an
 untested driver, memory permission or boot path.
 
 The complete native profile passed independent SRPM preparation and eight
-actual-source host contracts. The newest seamless-refresh build and its full
-binary RPM tuple still require their separate physical and package checks.
+actual-source host contracts. COPR build 11163806 completed the consolidated
+mainline tuple. The separate local `.4054` boot bundle passed package checks,
+slot-B readback, normal startup and nine measured transitions through all seven
+rates without panel reset. Direct tests found no visible blanking or touch loss.
+That local result does not qualify the different COPR binary tuple for boot.
 The raw COPR Image must not replace a validated Android boot container. Existing
 boot bundles, fallback kernels and published artifacts remain available until
 a source-built boot producer has passed its own recoverable tablet test.

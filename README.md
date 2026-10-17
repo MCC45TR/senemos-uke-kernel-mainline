@@ -10,10 +10,16 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 ## Status — 17 October 2026
 
 The mainline source package now includes the native O82 DPU/DSI profile and
-the seven exact OEM display modes. A native 120 Hz KDE desktop was observed on
-the installed `7.2.9-senemos.1.4050` development kernel. The latest seamless
-refresh and continuous-touch candidate still requires its physical test; a
-source or COPR result does not qualify those transitions.
+the seven exact OEM display modes. The installed
+`7.2.9-senemos.1.4054` development kernel displays KDE at 30/48/50/60/90/120/144 Hz.
+Nine measured transitions on 17 October retained the panel reset count, touch
+process and input device. Direct testing found no visible blanking or interrupted
+single-finger/multitouch input. Repeated cold starts, suspend and long-run tests
+remain open. Discrete switching does not provide Adaptive Sync.
+
+[COPR build 11163806](https://copr.fedorainfracloud.org/coprs/build/11163806)
+successfully built the consolidated mainline source as 7.2.9-1.4054.3.
+Its raw Image is not the separately matched `.4054` tablet boot bundle.
 
 The OEM non-linear backlight mapping is retained. Timed fade and expanded
 FastRPC context-bank experiments are preserved in history and are not activated
