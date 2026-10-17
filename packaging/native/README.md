@@ -6,7 +6,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The source RPM contains signed Linux 7.2.10, the 45 ordered Uke base patches,
+The source RPM contains signed Linux 7.2.10, the 46 ordered Uke base patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-2`, `7.2.10-3`, then `7.2.11-1` when that
@@ -34,3 +34,19 @@ Upstream Linux's MSM register generator
 It converts upstream XML into register headers and is an unavoidable host-only
 Python build dependency. No project Python or Python payload is supplied to the
 tablet; package installation checks reject Python files and runtimes.
+
+## PMIC and CPU thermal candidate, 18 October 2026
+
+Release 3 admits the exact OEM PMIC ADC graph through upstream ADC5 Gen3,
+IIO, iio-hwmon and generic-adc-thermal. It exports 23 supported channels and
+connects ten board thermistors to their existing thermal zones. Four private
+charger scalers remain unexported; GLINK battery telemetry remains separate.
+Processed voltage uses the IIO millivolt ABI, including the two divided-voltage
+channels previously classified as temperature by the upstream table.
+
+Thirteen OEM emergency cooling maps are connected to the three standard
+cpufreq cooling devices. The OEM 110 degree junction triggers and respective
+8/10 degree hysteresis remain unchanged. Vendor CPU pause is replaced by
+frequency cooling; the complete OEM skin and BCL policy is not implemented.
+These are source and fixture results until the exact COPR bundle boots and the
+new channels and cooling bindings are inspected on the tablet.

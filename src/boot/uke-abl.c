@@ -61,6 +61,9 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
 }
 
+#include "uke-pmic-adc.h"
+#include "uke-cpu-thermal.h"
+
 static int UKE_INIT uke_reboot_cell(const void *fdt)
 {
 	int node = fdt_path_offset(fdt, "/soc/reboot_reason"), size, parent;
@@ -888,6 +891,12 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_sensor_fastrpc(output);
+	if (ret)
+		return ret;
+	ret = uke_cpu_thermal(output);
+	if (ret)
+		return ret;
+	ret = uke_pmic_adc(output);
 	if (ret)
 		return ret;
 	ret = uke_bluetooth(output);

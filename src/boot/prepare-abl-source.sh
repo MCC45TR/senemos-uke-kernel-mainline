@@ -28,6 +28,8 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0004-uke-bluetooth-powe
 git -C "$kernel" apply "$here/../../patches/boot/0004-uke-bluetooth-power.patch"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h"
+install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
+install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-thermal.h"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]
 grep -F 'DTC 1.7.2-g53373d13' "$kernel/scripts/dtc/version_gen.h" >/dev/null
 install -m644 "$here/vendor/fdt_check.c" "$kernel/scripts/dtc/libfdt/fdt_check.c"
@@ -57,6 +59,7 @@ for name in ufs usb; do
 done
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
+    "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" \
     "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
     "$here/../../patches/boot/0002-uke-sensor-context-banks.patch" \
     "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch" \

@@ -188,6 +188,10 @@
     {
       "path": "patches/7.2.9/0045-uke-battery-derived-power.patch",
       "sha256": "d452a44134478b427407d0e4a1761249014ab5524f384c9180763a0d7cd5718b"
+    },
+    {
+      "path": "patches/7.2.9/0046-adc5-gen3-voltage-units.patch",
+      "sha256": "9cf109bd352837b0a3c8e53caa3158c43bf68c3ef6f2187bb078a45b343461c3"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

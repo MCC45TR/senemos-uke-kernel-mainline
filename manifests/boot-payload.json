@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "1644e85e85308797693c4e4bcecb54b94dc2f7b993bce51b996782e35e8e09a7"
+      "sha256": "fb538bf62a86197a4f9e273e42cc084eefa71996d9b8ff50d15dd8763bac0e6b"
     },
     {
       "path": "src/audit/check-target-payload.sh",

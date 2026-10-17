@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 2
+%global senemos_build_release 3
 %global krel %{version}-%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
@@ -144,6 +144,8 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelea
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
+CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
@@ -221,6 +223,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-3
+- Expose admitted PMIC voltage and temperature channels through standard Linux interfaces.
+- Correct ADC5 Gen3 voltage types and processed units.
+
 * Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-2
 - Restore the source-built native boot bundle with versioned matching modules.
 - Use integer releases and expose signed battery power from voltage/current.

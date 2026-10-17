@@ -43,3 +43,4 @@
 0043-uke-cdc-usb2-power-budget.patch
 0044-uke-usb-charger-readiness-diagnostics.patch
 0045-uke-battery-derived-power.patch
+0046-adc5-gen3-voltage-units.patch
