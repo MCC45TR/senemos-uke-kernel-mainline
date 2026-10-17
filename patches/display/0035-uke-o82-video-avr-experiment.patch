@@ -40,7 +40,7 @@ index 42d0a52..9a8afd5 100644
  	if (crtc_state->mode_changed || crtc_state->connectors_changed ||
  	    crtc_state->color_mgmt_changed) {
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
-index c7aac33..c72974e 100644
+index c7aac33..833b0e5 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 @@ -18,6 +18,7 @@
@@ -198,9 +198,17 @@ index c7aac33..c72974e 100644
  }
  
  /**
-@@ -2280,6 +2386,18 @@ void dpu_encoder_kickoff(struct drm_encoder *drm_enc)
+@@ -2280,6 +2386,7 @@ void dpu_encoder_kickoff(struct drm_encoder *drm_enc)
  	/* All phys encs are ready to go, trigger the kickoff */
  	_dpu_encoder_kickoff_phys(dpu_enc);
+ 
++
+ 	/* allow phys encs to handle any post-kickoff business */
+ 	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
+ 		phys = dpu_enc->phys_encs[i];
+@@ -2287,6 +2394,19 @@ void dpu_encoder_kickoff(struct drm_encoder *drm_enc)
+ 			phys->ops.handle_post_kickoff(phys);
+ 	}
  
 +	/* Trigger both interfaces under the shared lock, after their common CTL flush. */
 +	if (dpu_enc->avr_enabled) {
@@ -214,10 +222,11 @@ index c7aac33..c72974e 100644
 +		spin_unlock_irqrestore(&dpu_enc->enc_spinlock, flags);
 +	}
 +
- 	/* allow phys encs to handle any post-kickoff business */
- 	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
- 		phys = dpu_enc->phys_encs[i];
-@@ -2612,6 +2730,9 @@ static int _dpu_encoder_status_show(struct seq_file *s, void *data)
++
+ 	DPU_ATRACE_END("encoder_kickoff");
+ }
+ 
+@@ -2612,6 +2732,9 @@ static int _dpu_encoder_status_show(struct seq_file *s, void *data)
  	struct dpu_encoder_virt *dpu_enc = to_dpu_encoder_virt(drm_enc);
  	int i;
  

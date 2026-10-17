@@ -19,7 +19,8 @@ programmed horizontal period after split/DSC conversion. Overflow, register
 readback failure and unequal periods reject activation. Both DSI hosts are
 validated under the existing bonded lock order before either is changed.
 A failed host readback clears AVR on both hosts. One logical encoder owns
-enable/disable and triggers both interfaces after their shared CTL flush.
+enable/disable and triggers both interfaces after their shared CTL flush and
+initial timing-enable callbacks.
 Disable and hardware-reset paths clear both interfaces before host cleanup.
 A failed activation is retried only after VRR off or a full modeset.
 Leaving VRR for another fixed mode uses a full modeset; the existing DFPS
