@@ -1,13 +1,16 @@
 # Native display source-build gate
 
-17 October 2026. This experimental package builds the complete native51 kernel
+17 October 2026. This experimental package builds the complete native54 kernel
 source profile from the signed Linux 7.2.9 archive, all 44 ordered Uke base
 patches, the ABL adaptation, native display patches and the explicit O82-42
 seven-mode overlay. The source RPM retains all preparation code, tests,
-configuration, asset hashes and its source commit.
+configuration, asset hashes and its source commit. It includes the shared-reset
+readiness boundary and live refresh timing candidate, with all seven-mode host,
+panel and atomic-commit contract checks. Visible transitions and continuous touch
+input require separate physical testing.
 
 The package is named `senemos-uke-linux-kernel-mainline-native` and uses a
-separate `7.2.9-senemos.1.4051.copr1` module directory. It neither replaces the
+separate `7.2.9-senemos.1.4054.copr2` module directory. It neither replaces the
 normal kernel packages nor writes a boot partition. It contains a raw Image,
 matching modules, independent compile-stage DTB and the compiled native overlay.
 
