@@ -7,7 +7,20 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json)
 
-## Status — 15 October 2026
+## Status — 17 October 2026
+
+The mainline source package now includes the native O82 DPU/DSI profile and
+the seven exact OEM display modes. A native 120 Hz KDE desktop was observed on
+the installed `7.2.9-senemos.1.4050` development kernel. The latest seamless
+refresh and continuous-touch candidate still requires its physical test; a
+source or COPR result does not qualify those transitions.
+
+The OEM non-linear backlight mapping is retained. Timed fade and expanded
+FastRPC context-bank experiments are preserved in history and are not activated
+by this consolidation. See the [integration record](packaging/INTEGRATION-20261017.md)
+for the source and package boundaries.
+
+### Earlier firmware-framebuffer baseline — 15 October 2026
 
 Linux **7.2.9, revision 1.39** starts from slot B on POCO Pad X1 and reaches the
 internal Fedora Rawhide root, KDE desktop and Wi-Fi SSH. KWin uses Adreno 732
@@ -25,10 +38,10 @@ Battery readings and USB charging status are available; the tested computer USB
 connection admits a 500 mA budget. Sustained net charging under desktop load is
 not established. Bluetooth, audio, USB host mode and suspend remain incomplete.
 
-The normal source profile contains 44 adaptation patches. Its revision 1.39
+The earlier source profile contains 44 adaptation patches. Its revision 1.39
 packages were built and signed locally for tablet testing; this does not qualify
-a new COPR build. Linux 7.2.10 and native display sources remain separate
-candidates and have not produced a working display. Repeated cold boots, display
+a new COPR build. Linux 7.2.10 did not produce a working display in that test.
+Repeated cold boots, display
 lifecycle tests and sustained workloads remain open.
 
 The current firmware handoff is **EL1**. EL2/KVM is a separate experimental
@@ -52,11 +65,12 @@ sudo dnf install senemos-uke-linux-kernel-mainline
 sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-COPR signs the RPMs. Kernel files are installed under
-`/usr/lib/modules/7.2.9-senemos-uke/`. DNF updates files and module dependencies;
+COPR signs the RPMs. Consolidated builds have a unique numeric module path,
+such as `/usr/lib/modules/7.2.9-senemos.1.4054.3/`. DNF updates files and module dependencies;
 it does not flash `boot_b`, create a UEFI entry or select a boot slot.
 
-Revisions of Linux 7.2.9 share the same module directory. A tablet update needs
+The older revision 1.39 used a shared module directory. New source packages
+preserve previous kernels as install-only fallbacks. A tablet update needs
 a matching Image, initramfs, device tree and module set. Preserve the working
 boot image and rollback before replacing that set. Development headers are not
 published yet.
@@ -66,24 +80,22 @@ published yet.
 ```sh
 git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
 cd senemos-uke-kernel-mainline
-./senemos.sh --build 7.2.9 --distro=fedora --test
-./senemos.sh --build latest --distro=fedora
-```
-
-`senemos.sh` verifies signed upstream source, applies the reviewed Uke patches
-and configuration, then builds Image, DTBs, modules, RPMs and an SRPM in the
-pinned container. Source and build caches are retained. `latest` requires a
-reviewed Uke version profile and stops if one is missing. Other distributions
-are planned targets.
-
-```sh
 make validate
 make srpm
 ```
 
-`make validate` checks patch/config hashes. `make srpm` verifies the source
-archive and prepares the source package. See [BUILDING.md](docs/BUILDING.md)
-for host requirements, offline builds and test scope.
+`make validate` checks the reviewed version, patch/config hashes and mainline
+package metadata. `make srpm` verifies the signed upstream archive and retains
+the complete native profile, source identity and tests. The binary build uses
+the embedded specification. The source package currently supplies a raw Image,
+modules and DTBs, without an initramfs or flashable boot container.
+
+`senemos.sh` retains the historical container build and stock-DT inspection
+tools. Its host specification remains the earlier revision 1.39 profile; it
+does not reproduce the consolidated native boot image. Its `latest` option
+requires a reviewed source profile and stops if one is missing. See
+[the source profile](packaging/native/README.md) and [BUILDING.md](docs/BUILDING.md)
+for the explicit build and physical-test limits. Other distributions are planned.
 
 After inspecting the stock firmware, the reviewed boot-DT helper is:
 
