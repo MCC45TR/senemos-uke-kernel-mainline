@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2129
 # Execute the panel's scoped OEM timing callbacks without target I/O.
 set -Eeuo pipefail
 panel=${1:?Pass panel-xiaomi-o82.c}
@@ -40,10 +41,12 @@ static void mutex_unlock(struct mutex *m) {assert(m->locked);m->locked=false;}
 typedef struct {u64 value;} atomic64_t;
 static u64 atomic64_read(const atomic64_t *a) {return a->value;}
 C
-sed -n '/^struct qcom_uke_o82_dfps_ops {/,/^};/p' "$api_header" >> "$work/check.c"
-sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$panel" |
-    sed '$d; /#include "o82-data.h"/d' >> "$work/check.c"
-cat "$modes" >> "$work/check.c"
+{
+    sed -n '/^struct qcom_uke_o82_dfps_ops {/,/^};/p' "$api_header"
+    sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$panel" |
+        sed '$d; /#include "o82-data.h"/d'
+    cat "$modes"
+} >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 struct o82_panel {
     struct drm_panel panel;
