@@ -62,7 +62,8 @@ struct drm_dsc_config {
 };
 struct mipi_dsi_host {void *owner;};
 struct msm_dsi_host {
-    mipi_dsi_host base;platform_device *pdev;drm_display_mode *mode;
+    mipi_dsi_host base;platform_device *pdev;drm_display_mode *mode,*uke_dfps_mode=nullptr;
+    bool uke_dfps_staged=false;
     msm_dsi_cfg_handler *cfg_hnd;drm_dsc_config *dsc;
     unsigned int ctrl_size=0x400;
     int id=0;

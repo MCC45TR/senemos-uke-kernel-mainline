@@ -17,6 +17,7 @@ extract() {
 }
 cat > "$work/check.c" <<'C'
 #include <assert.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -79,7 +80,7 @@ struct msm_dsi_host {struct mipi_dsi_host base; const struct msm_dsi_cfg_handler
     int id,format,dma_comp,cmd_mutex,dev_mutex,lanes; unsigned long mode_flags; struct drm_display_mode *mode; u8 rx_buf[16];
     bool power_on,cphy_mode,enabled,cmd_dma_blocked; int irq; u32 dma_cmd_ctrl_restore; void *vm;
     struct platform_device *pdev; struct drm_device *dev; void *tx_gem_obj,*tx_buf,*supplies;
-    struct drm_dsc_config *dsc;
+    struct drm_dsc_config *dsc; struct drm_display_mode *uke_dfps_mode; bool uke_dfps_staged;
     int tx_size; unsigned long tx_buf_paddr; u32 err_work_state; struct work_struct err_work;};
 struct device_node {int unused;};
 struct drm_panel {int unused;};
@@ -129,6 +130,9 @@ static bool dsi_uke_misr_scope(struct msm_dsi_host *host) {
 }
 /* Exact-profile overflow handling is exercised by o82-fifo-trace-contract.sh. */
 static bool dsi_uke_o82_initial120(struct msm_dsi_host *host) {(void)host; return false;}
+static unsigned int drm_mode_vrefresh(const struct drm_display_mode *mode) {
+    return ((uint64_t)mode->clock*1000+mode->htotal*mode->vtotal/2)/(mode->htotal*mode->vtotal);
+}
 static bool drm_mode_equal(const struct drm_display_mode *a,const struct drm_display_mode *b) {
     return !memcmp(a,b,sizeof(*a));
 }
@@ -348,6 +352,8 @@ C
     extract 'int msm_dsi_host_cmd_rx(struct mipi_dsi_host *host,' "$base/dsi_host.c"
     extract 'static int dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
+    extract 'bool msm_dsi_host_uke_dfps_pending(struct mipi_dsi_host *host)' "$base/dsi_host.c"
+    extract 'int msm_dsi_host_cmd_pen_clear(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_lp_batch(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
     extract 'int msm_dsi_host_cmd_on_batch(struct mipi_dsi_host *master_host,' "$base/dsi_host.c"
@@ -381,6 +387,7 @@ static void reset(void) {
     for(int id=0;id<2;id++) {
         hosts[id].cmd_mutex=id; hosts[id].power_on=true; hosts[id].cphy_mode=false; hosts[id].vm=hosts;
         hosts[id].cmd_dma_blocked=false; hosts[id].enabled=true; hosts[id].irq=id;
+        hosts[id].uke_dfps_mode=NULL;hosts[id].uke_dfps_staged=false;
         hosts[id].lanes=4; hosts[id].format=MIPI_DSI_FMT_RGB101010; hosts[id].tx_size=sizeof(tx_storage[id]);
         ctrl_register[id]=0x1f3;
         dma_ctrl[id]=0x1c123456; prepared_ctrl[id]=saved_ctrl[id]=0;
@@ -1052,6 +1059,63 @@ int main(void) {
             dsc.slice_width=800;
         }
     }
+    /* Shadow timing and target payload are admitted as one paired transition. */
+    for(unsigned int from=0;from<ARRAY_SIZE(timing);from++)
+        for(unsigned int to=0;to<ARRAY_SIZE(timing);to++) {
+            struct drm_display_mode old={.hdisplay=3200,.vdisplay=2136,
+                .clock=timing[from].clock,.htotal=timing[from].htotal,.vtotal=timing[from].vtotal,
+                .hsync_start=timing[from].htotal-64,.hsync_end=timing[from].htotal-32,
+                .vsync_start=timing[from].vtotal-148,.vsync_end=timing[from].vtotal-146};
+            struct drm_display_mode next={.hdisplay=3200,.vdisplay=2136,
+                .clock=timing[to].clock,.htotal=timing[to].htotal,.vtotal=timing[to].vtotal,
+                .hsync_start=timing[to].htotal-64,.hsync_end=timing[to].htotal-32,
+                .vsync_start=timing[to].vtotal-148,.vsync_end=timing[to].vtotal-146};
+            u8 selected[4][2];memcpy(selected,tp_payloads,sizeof(selected));
+            if(timing[to].group) {selected[2][1]=0;selected[3][1]=timing[to].group==1 ? 0:0x80;}
+            for(unsigned int fault=0;fault<5;fault++) {
+                admit_scheduled();initial120=false;refresh_modes=true;hosts[1].cmd_mutex=0;
+                for(int id=0;id<2;id++) {
+                    hosts[id].mode=&old;hosts[id].dsc=&dsc;
+                    hosts[id].uke_dfps_mode=&next;hosts[id].uke_dfps_staged=true;
+                    video_total[id]=timing[to].total;
+                }
+                for(int i=0;i<4;i++)tp[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,.tx_len=2,.tx_buf=selected[i]};
+                if(fault==1)hosts[0].uke_dfps_staged=false;
+                if(fault==2)hosts[1].uke_dfps_mode=&old;
+                if(fault==3)video_total[0]^=1;
+                if(fault==4)fail_wait=1;
+                int result=qcom_uke_dsi_tp_fps_batch(&panel_dsi,tp);
+                if(from==to || fault==1 || fault==3 || (fault==2 && from!=to)) {
+                    assert(result==-EOPNOTSUPP&&!trigger_count);
+                } else if(fault==4) {
+                    assert(result==-ETIMEDOUT);
+                } else {
+                    assert(!result&&add_count==4&&trigger_count==2);
+                }
+                assert(!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex&&!hosts[0].dev_mutex&&!hosts[1].dev_mutex);
+            }
+            static const u8 clear_payload[3][2]={{0xff,0x10},{0xfb,0x01},{0xb2,0x80}};
+            struct mipi_dsi_msg clear[3];
+            for(unsigned int fault=0;fault<5;fault++) {
+                admit_scheduled();initial120=false;refresh_modes=true;hosts[1].cmd_mutex=0;
+                for(int id=0;id<2;id++) {
+                    hosts[id].mode=&old;hosts[id].dsc=&dsc;
+                    hosts[id].uke_dfps_mode=&next;video_total[id]=timing[from].total;
+                }
+                for(int i=0;i<3;i++)clear[i]=(struct mipi_dsi_msg){.type=MIPI_DSI_DCS_LONG_WRITE,.tx_len=2,.tx_buf=clear_payload[i]};
+                if(fault==1)clear[2].flags=MIPI_DSI_MSG_USE_LPM;
+                if(fault==2)hosts[0].uke_dfps_staged=true;
+                if(fault==3)fail_wait=1;
+                if(fault==4)hosts[0].cmd_dma_blocked=true;
+                bool valid=from!=to&&drm_mode_vrefresh(&old)==60&&drm_mode_vrefresh(&next)!=120;
+                int result=msm_dsi_host_cmd_pen_clear(&hosts[0].base,&hosts[1].base,clear);
+                if(!valid || fault==2 || fault==4) assert(result==-EOPNOTSUPP&&!trigger_count);
+                else if(fault==1) assert(result==-EINVAL&&!trigger_count);
+                else if(fault==3) assert(result==-ETIMEDOUT);
+                else { if(result||add_count!=3||trigger_count!=2||dma_len[0]!=24||dma_len[1]!=24) fprintf(stderr,"pen from=%u to=%u fault=%u ret=%d add=%d trigger=%d len=%u/%u\n",from,to,fault,result,add_count,trigger_count,dma_len[0],dma_len[1]); assert(!result&&add_count==3&&trigger_count==2&&dma_len[0]==24&&dma_len[1]==24); }
+                assert(!hosts[0].cmd_mutex&&!hosts[1].cmd_mutex&&!hosts[0].dev_mutex&&!hosts[1].dev_mutex);
+            }
+        }
 }
 C
 } >> "$work/check.c"

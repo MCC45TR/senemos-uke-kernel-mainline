@@ -1,10 +1,13 @@
 From: MCC45TR <mcc45tr@users.noreply.github.com>
-Subject: [PATCH] drm/msm: stage exact Uke O82 live VFP timing
+Subject: [PATCH] drm/msm: stage exact Uke O82 live refresh timing
 
-Use the DSI 6G timing database for exact same-group OEM modes.
 MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a and
-Nabu 0b3226fc8f3cab5efb8a47bd17f5d7bd3ed609d1 provide the
-shadow-trigger and DPU flush ordering. Uke commands and clocks stay scoped.
+DT 4a3e1c391130237c5e8c2b250d1c94f3e25b9b11 supply the exact
+seven-mode porch updates, target TP-FPS and conditional pen-clear. Nabu
+0b3226fc8f3cab5efb8a47bd17f5d7bd3ed609d1 provides DPU flush and
+vblank ordering, not portable MMIO addresses. The native controller base
+shift is explicitly subtracted from physical OEM timing-DB offsets.
+Retain power, reset, backlight, PHY and DSC only under exact Uke admission.
 Host checks do not establish a physical seamless transition.
 
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
@@ -49,10 +52,18 @@ index 49b8774..c7aac33 100644
  }
  
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h
-index e35a7d0..7fed3b6 100644
+index e35a7d0..7e784fb 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys.h
-@@ -98,6 +98,7 @@ struct dpu_encoder_phys_ops {
+@@ -71,6 +71,7 @@ struct dpu_encoder_phys;
+  *				on split_role and current mode (CMD/VID).
+  * @atomic_mode_set:		DRM Call. Set a DRM mode.
+  *				This likely caches the mode, for use at enable.
++ * @seamless_mode_set:		Update live interface timing without disabling video.
+  * @enable:			DRM Call. Enable a DRM mode.
+  * @disable:			DRM Call. Disable mode.
+  * @control_vblank_irq		Register/Deregister for VBLANK IRQ
+@@ -98,6 +99,7 @@ struct dpu_encoder_phys_ops {
  	void (*atomic_mode_set)(struct dpu_encoder_phys *encoder,
  			struct drm_crtc_state *crtc_state,
  			struct drm_connector_state *conn_state);
@@ -89,13 +100,16 @@ index 553055c..1242797 100644
  	ops->disable = dpu_encoder_phys_vid_disable;
  	ops->control_vblank_irq = dpu_encoder_phys_vid_control_vblank_irq;
 diff --git a/drivers/gpu/drm/msm/dsi/dsi.h b/drivers/gpu/drm/msm/dsi/dsi.h
-index 80f563f..b37d6a2 100644
+index 80f563f..fd816b0 100644
 --- a/drivers/gpu/drm/msm/dsi/dsi.h
 +++ b/drivers/gpu/drm/msm/dsi/dsi.h
-@@ -56,6 +56,19 @@ bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len,
+@@ -56,6 +56,22 @@ bool msm_dsi_manager_cmd_xfer_trigger(int id, u32 dma_base, u32 len,
  int msm_dsi_manager_register(struct msm_dsi *msm_dsi);
  void msm_dsi_manager_unregister(struct msm_dsi *msm_dsi);
  void msm_dsi_manager_tpg_enable(void);
++int msm_dsi_manager_uke_dfps_panel(struct drm_encoder *encoder,
++		const struct drm_display_mode *old, const struct drm_display_mode *new,
++		bool before);
 +bool msm_dsi_manager_uke_dfps_failed(void);
 +void msm_dsi_manager_uke_dfps_fail(void);
 +bool msm_dsi_manager_uke_dfps_pending(struct drm_encoder *encoder);
@@ -112,8 +126,17 @@ index 80f563f..b37d6a2 100644
  
  /* dsi host */
  struct msm_dsi_host;
+@@ -68,6 +84,8 @@ int msm_dsi_host_cmd_tx(struct mipi_dsi_host *host,
+ int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
+ 			       struct mipi_dsi_host *slave_host,
+ 			       const struct mipi_dsi_msg *msg);
++int msm_dsi_host_cmd_pen_clear(struct mipi_dsi_host *master_host,
++		struct mipi_dsi_host *slave_host, const struct mipi_dsi_msg msgs[3]);
+ int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,
+ 			  struct mipi_dsi_host *slave_host,
+ 			  const struct mipi_dsi_msg msgs[4]);
 diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
-index 2561f88..50e715f 100644
+index 2561f88..bcebb60 100644
 --- a/drivers/gpu/drm/msm/dsi/dsi_host.c
 +++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
 @@ -204,6 +204,8 @@ struct msm_dsi_host {
@@ -125,13 +148,101 @@ index 2561f88..50e715f 100644
  	struct drm_dsc_config *dsc;
  
  	/* connected device info */
-@@ -3493,6 +3495,119 @@ int msm_dsi_host_set_display_mode(struct mipi_dsi_host *host,
+@@ -310,7 +312,8 @@ static bool dsi_uke_o82_powered_profile(struct msm_dsi_host *msm_host)
+ 
+ static u32 dsi_uke_o82_total(struct msm_dsi_host *msm_host)
+ {
+-	const struct drm_display_mode *mode = msm_host->mode;
++	const struct drm_display_mode *mode = msm_host->uke_dfps_staged ?
++		msm_host->uke_dfps_mode : msm_host->mode;
+ 	u32 horizontal = mode->htotal / 2 - 1600 + DIV_ROUND_UP(1600 * 8, 30);
+ 
+ 	return DSI_TOTAL_H_TOTAL(horizontal - 1) | DSI_TOTAL_V_TOTAL(mode->vtotal - 1);
+@@ -2944,6 +2947,44 @@ int msm_dsi_host_cmd_broadcast(struct mipi_dsi_host *master_host,
+ 	return dsi_host_cmd_broadcast(master_host, slave_host, msg, 1, false);
+ }
+ 
++int msm_dsi_host_cmd_pen_clear(struct mipi_dsi_host *master_host,
++		struct mipi_dsi_host *slave_host, const struct mipi_dsi_msg msgs[3])
++{
++	static const u8 payloads[3][2] = {
++		{ 0xff, 0x10 }, { 0xfb, 0x01 }, { 0xb2, 0x80 },
++	};
++	struct msm_dsi_host *master, *slave;
++	unsigned int i;
++	int ret;
++
++	if (!master_host || !slave_host || !msgs)
++		return -EINVAL;
++	master = to_msm_dsi_host(master_host);
++	slave = to_msm_dsi_host(slave_host);
++	if (!msm_dsi_host_uke_dfps_pending(master_host) ||
++	    !msm_dsi_host_uke_dfps_pending(slave_host) ||
++	    !drm_mode_equal(master->mode, slave->mode) ||
++	    !drm_mode_equal(master->uke_dfps_mode, slave->uke_dfps_mode) ||
++	    !dsi_uke_o82_refresh_modes(master, master->mode) ||
++	    !dsi_uke_o82_refresh_modes(slave, slave->mode) ||
++	    !dsi_uke_o82_refresh_modes(master, master->uke_dfps_mode) ||
++	    !dsi_uke_o82_refresh_modes(slave, slave->uke_dfps_mode) ||
++	    !qcom_uke_o82_live_change(master->mode, master->uke_dfps_mode) ||
++	    drm_mode_vrefresh(slave->mode) != 60 ||
++	    drm_mode_vrefresh(slave->uke_dfps_mode) == 120)
++		return -EOPNOTSUPP;
++	for (i = 0; i < ARRAY_SIZE(payloads); i++)
++		if (msgs[i].type != MIPI_DSI_DCS_LONG_WRITE || msgs[i].channel ||
++		    msgs[i].flags || msgs[i].rx_buf || msgs[i].rx_len ||
++		    msgs[i].tx_len != sizeof(payloads[i]) || !msgs[i].tx_buf ||
++		    memcmp(msgs[i].tx_buf, payloads[i], sizeof(payloads[i])))
++			return -EINVAL;
++	mutex_lock(&slave->cmd_mutex);
++	ret = dsi_host_cmd_broadcast(master_host, slave_host, msgs, ARRAY_SIZE(payloads), false);
++	mutex_unlock(&slave->cmd_mutex);
++	return ret;
++}
++
+ int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,
+ 			  struct mipi_dsi_host *slave_host,
+ 			  const struct mipi_dsi_msg msgs[4])
+@@ -2951,17 +2992,29 @@ int msm_dsi_host_cmd_tp_fps(struct mipi_dsi_host *master_host,
+ 	static const u8 payloads[4][2] = {
+ 		{ 0xff, 0x10 }, { 0xfb, 0x01 }, { 0xb2, 0x91 }, { 0xb3, 0x40 },
+ 	};
+-	struct msm_dsi_host *slave;
++	struct msm_dsi_host *master, *slave;
++	const struct drm_display_mode *target;
+ 	u8 selected[4][2];
+ 	int group;
+ 	int i, ret;
+ 
+ 	if (!master_host || !slave_host || !msgs)
+ 		return -EINVAL;
++	master = to_msm_dsi_host(master_host);
+ 	slave = to_msm_dsi_host(slave_host);
++	target = slave->mode;
++	if (master->uke_dfps_staged || slave->uke_dfps_staged) {
++		if (!master->uke_dfps_staged || !slave->uke_dfps_staged ||
++		    !qcom_uke_o82_live_change(master->mode, master->uke_dfps_mode) ||
++		    !dsi_uke_o82_refresh_modes(master, master->uke_dfps_mode) ||
++		    !dsi_uke_o82_refresh_modes(slave, slave->uke_dfps_mode) ||
++		    !drm_mode_equal(master->uke_dfps_mode, slave->uke_dfps_mode))
++			return -EOPNOTSUPP;
++		target = slave->uke_dfps_mode;
++	}
+ 	memcpy(selected, payloads, sizeof(selected));
+-	if (dsi_uke_o82_refresh_modes(slave, slave->mode)) {
+-		group = qcom_uke_o82_mode_group(slave->mode);
++	if (dsi_uke_o82_refresh_modes(slave, target)) {
++		group = qcom_uke_o82_mode_group(target);
+ 		if (group == 1) {
+ 			selected[2][1] = 0x00;
+ 			selected[3][1] = 0x00;
+@@ -3493,6 +3546,124 @@ int msm_dsi_host_set_display_mode(struct mipi_dsi_host *host,
  	return ret;
  }
  
 +/* MiCode 44275c404a67 and Nabu 0b3226fc8f3c: 6G timing shadow DB. */
-+#define DSI_UKE_TIMING_DB_TRIGGER 0x01e4
-+#define DSI_UKE_TIMING_DB_MODE    0x01e8
++#define DSI_UKE_TIMING_DB_TRIGGER (0x01e4 - DSI_6G_REG_SHIFT)
++#define DSI_UKE_TIMING_DB_MODE    (0x01e8 - DSI_6G_REG_SHIFT)
 +
 +int msm_dsi_host_uke_dfps_queue(struct mipi_dsi_host *host,
 +		const struct drm_display_mode *old, const struct drm_display_mode *new_mode)
@@ -146,7 +257,7 @@ index 2561f88..50e715f 100644
 +	if (!h->power_on || !h->enabled || READ_ONCE(h->cmd_dma_blocked) ||
 +	    h->uke_dfps_mode || !h->mode || !drm_mode_equal(h->mode, old) ||
 +	    !dsi_uke_o82_refresh_modes(h, old) || !dsi_uke_o82_refresh_modes(h, new_mode) ||
-+	    !qcom_uke_o82_vfp_change(old, new_mode)) {
++	    !qcom_uke_o82_live_change(old, new_mode)) {
 +		ret = -EOPNOTSUPP;
 +	} else {
 +		h->uke_dfps_mode = pending;
@@ -194,6 +305,8 @@ index 2561f88..50e715f 100644
 +		return -EINVAL;
 +	mutex_lock(&hosts[0]->dev_mutex);
 +	mutex_lock_nested(&hosts[1]->dev_mutex, SINGLE_DEPTH_NESTING);
++	mutex_lock(&hosts[1]->cmd_mutex);
++	mutex_lock_nested(&hosts[0]->cmd_mutex, SINGLE_DEPTH_NESTING);
 +	for (i = 0; i < ARRAY_SIZE(hosts); i++) {
 +		struct msm_dsi_host *h = hosts[i];
 +
@@ -201,10 +314,11 @@ index 2561f88..50e715f 100644
 +		    !h->uke_dfps_mode || h->uke_dfps_staged != complete ||
 +		    !dsi_uke_o82_refresh_modes(h, h->mode) ||
 +		    !dsi_uke_o82_refresh_modes(h, h->uke_dfps_mode) ||
-+		    !qcom_uke_o82_vfp_change(h->mode, h->uke_dfps_mode))
++		    !qcom_uke_o82_live_change(h->mode, h->uke_dfps_mode))
 +			goto unlock;
 +	}
-+	if (!drm_mode_equal(hosts[0]->mode, hosts[1]->mode) ||
++	if (!hosts[0]->vm || hosts[0]->vm != hosts[1]->vm ||
++	    !drm_mode_equal(hosts[0]->mode, hosts[1]->mode) ||
 +	    !drm_mode_equal(hosts[0]->uke_dfps_mode, hosts[1]->uke_dfps_mode))
 +		goto unlock;
 +	/* Both links are validated and held before the first MMIO write. */
@@ -237,6 +351,8 @@ index 2561f88..50e715f 100644
 +	}
 +	ret = 0;
 +unlock:
++	mutex_unlock(&hosts[0]->cmd_mutex);
++	mutex_unlock(&hosts[1]->cmd_mutex);
 +	mutex_unlock(&hosts[1]->dev_mutex);
 +	mutex_unlock(&hosts[0]->dev_mutex);
 +	return ret;
@@ -246,18 +362,24 @@ index 2561f88..50e715f 100644
  					    const struct drm_display_mode *mode)
  {
 diff --git a/drivers/gpu/drm/msm/dsi/dsi_manager.c b/drivers/gpu/drm/msm/dsi/dsi_manager.c
-index 4e6b453..79e0411 100644
+index 4e6b453..203b51d 100644
 --- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
 +++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
-@@ -30,6 +30,7 @@ struct msm_dsi_manager {
+@@ -30,9 +30,13 @@ struct msm_dsi_manager {
  	bool is_bonded_dsi;
  	bool is_sync_needed;
  	int master_dsi_link_id;
 +	bool uke_dfps_failed;
++	struct drm_panel *uke_dfps_panel;
++	const struct qcom_uke_o82_dfps_ops *uke_dfps_ops;
  };
  
  static struct msm_dsi_manager msm_dsim_glb;
-@@ -492,6 +493,10 @@ static void dsi_mgr_bridge_mode_set(struct drm_bridge *bridge,
++static DEFINE_MUTEX(uke_dfps_panel_lock);
+ 
+ #define IS_BONDED_DSI()		(msm_dsim_glb.is_bonded_dsi)
+ #define IS_SYNC_NEEDED()	(msm_dsim_glb.is_sync_needed)
+@@ -492,6 +496,10 @@ static void dsi_mgr_bridge_mode_set(struct drm_bridge *bridge,
  	if (is_bonded_dsi && !IS_MASTER_DSI_LINK(id))
  		return;
  
@@ -268,10 +390,56 @@ index 4e6b453..79e0411 100644
  	msm_dsi_host_set_display_mode(host, adjusted_mode);
  	if (is_bonded_dsi && other_dsi)
  		msm_dsi_host_set_display_mode(other_dsi->host, adjusted_mode);
-@@ -560,6 +565,85 @@ static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {
+@@ -560,6 +568,139 @@ static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {
  	.mode_valid = dsi_mgr_bridge_mode_valid,
  };
  
++int qcom_uke_dsi_dfps_register(struct mipi_dsi_device *dsi,
++		struct drm_panel *panel, const struct qcom_uke_o82_dfps_ops *ops)
++{
++	struct msm_dsi *master = dsi_mgr_get_dsi(DSI_CLOCK_MASTER);
++	int ret = 0;
++
++	if (!dsi || !panel || !master || dsi->host != master->host ||
++	    !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
++	    !of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    !of_device_is_compatible(dsi->dev.of_node, "xiaomi,o82-42-02-0b") ||
++	    !of_property_read_bool(dsi->dev.of_node, "xiaomi,oem-refresh-modes") ||
++	    (ops && (!ops->check || !ops->apply)))
++		return -EOPNOTSUPP;
++	mutex_lock(&uke_dfps_panel_lock);
++	if (msm_dsim_glb.uke_dfps_panel && msm_dsim_glb.uke_dfps_panel != panel) {
++		ret = -EBUSY;
++	} else {
++		/* Unregister waits for the last callback before panel removal. */
++		msm_dsim_glb.uke_dfps_panel = ops ? panel : NULL;
++		msm_dsim_glb.uke_dfps_ops = ops;
++	}
++	mutex_unlock(&uke_dfps_panel_lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(qcom_uke_dsi_dfps_register);
++
++int msm_dsi_manager_uke_dfps_panel(struct drm_encoder *encoder,
++		const struct drm_display_mode *old, const struct drm_display_mode *new,
++		bool before)
++{
++	struct drm_bridge *bridge = drm_bridge_chain_get_first_bridge(encoder);
++	struct dsi_bridge *b;
++	int ret = -EOPNOTSUPP;
++
++	if (!bridge || bridge->funcs != &dsi_mgr_bridge_funcs)
++		return ret;
++	b = to_dsi_bridge(bridge);
++	mutex_lock(&uke_dfps_panel_lock);
++	if (msm_dsim_glb.uke_dfps_panel == b->o82_panel &&
++	    msm_dsim_glb.uke_dfps_ops && !msm_dsi_manager_uke_dfps_failed())
++		ret = msm_dsim_glb.uke_dfps_ops->apply(b->o82_panel, old, new, before);
++	mutex_unlock(&uke_dfps_panel_lock);
++	return ret;
++}
++
 +bool msm_dsi_manager_uke_dfps_failed(void)
 +{
 +	return READ_ONCE(msm_dsim_glb.uke_dfps_failed);
@@ -311,12 +479,20 @@ index 4e6b453..79e0411 100644
 +
 +	if (!bridge || bridge->funcs != &dsi_mgr_bridge_funcs ||
 +	    !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
-+	    msm_dsi_manager_uke_dfps_failed() || !qcom_uke_o82_vfp_change(old, new))
++	    msm_dsi_manager_uke_dfps_failed() || !qcom_uke_o82_live_change(old, new))
 +		return false;
 +	b = to_dsi_bridge(bridge);
 +	if (!b->o82_panel || !b->o82_panel->prepared || !b->powered ||
 +	    !b->video_enabled || !IS_MASTER_DSI_LINK(b->id))
 +		return false;
++	mutex_lock(&uke_dfps_panel_lock);
++	if (msm_dsim_glb.uke_dfps_panel != b->o82_panel ||
++	    !msm_dsim_glb.uke_dfps_ops ||
++	    !msm_dsim_glb.uke_dfps_ops->check(b->o82_panel, old, new)) {
++		mutex_unlock(&uke_dfps_panel_lock);
++		return false;
++	}
++	mutex_unlock(&uke_dfps_panel_lock);
 +	master = dsi_mgr_get_dsi(b->id);
 +	slave = dsi_mgr_get_other_dsi(b->id);
 +	if (!master || !slave)
@@ -354,25 +530,58 @@ index 4e6b453..79e0411 100644
  static struct drm_panel *dsi_mgr_o82_panel(struct msm_dsi *msm_dsi)
  {
  	struct device_node *node;
+@@ -617,6 +758,20 @@ int msm_dsi_manager_connector_init(struct msm_dsi *msm_dsi,
+ 	return 0;
+ }
+ 
++int qcom_uke_dsi_pen_clear_batch(struct mipi_dsi_device *dsi,
++		const struct mipi_dsi_msg *msgs)
++{
++	struct msm_dsi *master = dsi_mgr_get_dsi(DSI_CLOCK_MASTER);
++	struct msm_dsi *slave = dsi_mgr_get_dsi(DSI_CLOCK_SLAVE);
++
++	if (!dsi || !msgs || !master || !slave || dsi->host != master->host ||
++	    !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
++	    msm_dsi_manager_uke_dfps_failed())
++		return -EOPNOTSUPP;
++	return msm_dsi_host_cmd_pen_clear(master->host, slave->host, msgs);
++}
++EXPORT_SYMBOL_GPL(qcom_uke_dsi_pen_clear_batch);
++
+ int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
+ 			      const struct mipi_dsi_msg *msgs)
+ {
 diff --git a/drivers/gpu/drm/msm/msm_atomic.c b/drivers/gpu/drm/msm/msm_atomic.c
-index a8babf1..0a104c6 100644
+index a8babf1..a868e9e 100644
 --- a/drivers/gpu/drm/msm/msm_atomic.c
 +++ b/drivers/gpu/drm/msm/msm_atomic.c
-@@ -11,6 +11,9 @@
+@@ -4,6 +4,7 @@
+  * Author: Rob Clark <robdclark@gmail.com>
+  */
+ 
++#include <linux/iopoll.h>
+ #include <drm/drm_atomic_uapi.h>
+ #include <drm/drm_vblank.h>
+ 
+@@ -11,6 +12,13 @@
  #include "msm_drv.h"
  #include "msm_gem.h"
  #include "msm_kms.h"
 +#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
 +#include "dsi/dsi.h"
++#if IS_ENABLED(CONFIG_DRM_MSM_DPU)
++struct msm_display_topology;
++#include "disp/dpu1/dpu_encoder.h"
++#endif
 +#endif
  
  /*
   * Helpers to control vblanks while we flush.. basically just to ensure
-@@ -181,6 +184,105 @@ static unsigned get_crtc_mask(struct drm_atomic_commit *state)
+@@ -181,6 +189,176 @@ static unsigned get_crtc_mask(struct drm_atomic_commit *state)
  	return mask;
  }
  
-+/* Exact fixed-link Uke VFP updates retain panel power, RESX and touch RAM. */
++/* Exact fixed-link Uke OEM updates retain panel power, RESX and touch RAM. */
 +static bool msm_uke_dfps_failed(void)
 +{
 +#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
@@ -418,6 +627,77 @@ index a8babf1..0a104c6 100644
 +		if (mask & drm_crtc_mask(crtc))
 +			new->mode_changed = !hide;
 +	}
++}
++
++static int msm_uke_dfps_wait_active(struct drm_encoder *encoder,
++				    const struct drm_display_mode *mode)
++{
++#if IS_ENABLED(CONFIG_DRM_MSM_DSI) && IS_ENABLED(CONFIG_DRM_MSM_DPU)
++	int line;
++	int start = mode->vtotal - mode->vsync_start + mode->vsync_end - mode->vsync_start;
++	int end = mode->vdisplay + start - mode->vdisplay / 4;
++
++	/* OEM active window, bounded by two frames of the slowest exact mode. */
++	return read_poll_timeout(dpu_encoder_get_linecount, line,
++				 line > start && line < end, 100, 70000, false, encoder);
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++
++static int msm_uke_dfps_panel(struct drm_atomic_commit *state, unsigned int mask,
++			      bool before)
++{
++#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
++	struct drm_connector_state *conn_state;
++	struct drm_connector *connector;
++	struct drm_connector_list_iter iter;
++	int ret = 0;
++
++	drm_connector_list_iter_begin(state->dev, &iter);
++	drm_for_each_connector_iter(connector, &iter) {
++		struct drm_crtc_state *old, *new;
++		struct drm_encoder *enc;
++		struct drm_crtc *crtc;
++		u64 sequence;
++
++		conn_state = drm_atomic_get_new_connector_state(state, connector);
++		if (!conn_state)
++			conn_state = connector->state;
++		crtc = conn_state->crtc;
++		if (!crtc || !(mask & drm_crtc_mask(crtc)))
++			continue;
++		old = drm_atomic_get_old_crtc_state(state, crtc);
++		new = drm_atomic_get_new_crtc_state(state, crtc);
++		enc = conn_state->best_encoder;
++		if (before) {
++			ret = msm_uke_dfps_wait_active(enc, &old->adjusted_mode);
++			if (ret)
++				break;
++		}
++		ret = msm_dsi_manager_uke_dfps_panel(enc, &old->adjusted_mode,
++						     &new->adjusted_mode, before);
++		if (ret)
++			break;
++		if (!before || drm_mode_vrefresh(&old->adjusted_mode) != 60 ||
++		    drm_mode_vrefresh(&new->adjusted_mode) == 120)
++			continue;
++		/* Exact O82 PEN_CLEAR precedes a real frame and active scan. */
++		sequence = drm_crtc_vblank_count(crtc);
++		drm_crtc_wait_one_vblank(crtc);
++		if (drm_crtc_vblank_count(crtc) == sequence) {
++			ret = -ETIMEDOUT;
++			break;
++		}
++		ret = msm_uke_dfps_wait_active(enc, &old->adjusted_mode);
++		if (ret)
++			break;
++	}
++	drm_connector_list_iter_end(&iter);
++	return ret;
++#else
++	return -EOPNOTSUPP;
++#endif
 +}
 +
 +static int msm_uke_dfps_modeset(struct drm_atomic_commit *state, unsigned int mask)
@@ -474,7 +754,7 @@ index a8babf1..0a104c6 100644
  int msm_atomic_check(struct drm_device *dev, struct drm_atomic_commit *state)
  {
  	struct msm_drm_private *priv = dev->dev_private;
-@@ -189,6 +291,9 @@ int msm_atomic_check(struct drm_device *dev, struct drm_atomic_commit *state)
+@@ -189,6 +367,9 @@ int msm_atomic_check(struct drm_device *dev, struct drm_atomic_commit *state)
  	struct drm_crtc *crtc;
  	int i, ret = 0;
  
@@ -484,7 +764,7 @@ index a8babf1..0a104c6 100644
  	/*
  	 * FIXME: stop setting allow_modeset and move this check to the DPU
  	 * driver.
-@@ -218,6 +323,7 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
+@@ -218,6 +399,7 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
  	struct drm_crtc *async_crtc = NULL;
  	unsigned crtc_mask = get_crtc_mask(state);
  	bool async = can_do_async(state, &async_crtc);
@@ -492,7 +772,7 @@ index a8babf1..0a104c6 100644
  
  	trace_msm_atomic_commit_tail_start(async, crtc_mask);
  
-@@ -228,6 +334,8 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
+@@ -228,6 +410,8 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
  	 * completed:
  	 */
  	lock_crtcs(kms, crtc_mask);
@@ -501,11 +781,18 @@ index a8babf1..0a104c6 100644
  	trace_msm_atomic_wait_flush_start(crtc_mask);
  	kms->funcs->wait_flush(kms, crtc_mask);
  	trace_msm_atomic_wait_flush_finish(crtc_mask);
-@@ -244,9 +352,22 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
+@@ -244,9 +428,29 @@ void msm_atomic_commit_tail(struct drm_atomic_commit *state)
  	/*
  	 * Push atomic updates down to hardware:
  	 */
 +	dfps_mask = msm_uke_dfps_prepare(state);
++	if (dfps_mask && msm_uke_dfps_panel(state, dfps_mask, true)) {
++#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
++		msm_dsi_manager_uke_dfps_fail();
++#endif
++		drm_err(dev, "Uke DFPS pre-kickoff failed; reboot required\n");
++		goto quarantined;
++	}
 +	msm_uke_dfps_mask(state, dfps_mask, true);
  	drm_atomic_helper_commit_modeset_disables(dev, state);
 +	msm_uke_dfps_mask(state, dfps_mask, false);
@@ -524,28 +811,41 @@ index a8babf1..0a104c6 100644
  
  	if (async) {
  		struct msm_pending_timer *timer =
-@@ -302,7 +423,8 @@ fallback:
+@@ -302,7 +506,17 @@ fallback:
  	 */
  	trace_msm_atomic_flush_commit(crtc_mask);
  	kms->funcs->flush_commit(kms, crtc_mask);
 -	unlock_crtcs(kms, crtc_mask);
++	/* OEM O82 sends the target TP scan group after kickoff with DB held. */
++	if (dfps_mask && msm_uke_dfps_panel(state, dfps_mask, false)) {
++#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
++		msm_dsi_manager_uke_dfps_fail();
++#endif
++		drm_err(dev, "Uke DFPS post-kickoff failed; reboot required\n");
++		vblank_put(kms, crtc_mask);
++		goto quarantined;
++	}
 +	if (!dfps_mask)
 +		unlock_crtcs(kms, crtc_mask);
  	/*
  	 * Wait for flush to complete:
  	 */
-@@ -310,6 +432,10 @@ fallback:
+@@ -310,6 +524,14 @@ fallback:
  	kms->funcs->wait_flush(kms, crtc_mask);
  	trace_msm_atomic_wait_flush_finish(crtc_mask);
  
 +	if (dfps_mask) {
 +		msm_uke_dfps_complete(state, dfps_mask);
++		if (msm_uke_dfps_failed()) {
++			vblank_put(kms, crtc_mask);
++			goto quarantined;
++		}
 +		unlock_crtcs(kms, crtc_mask);
 +	}
  	vblank_put(kms, crtc_mask);
  
  	lock_crtcs(kms, crtc_mask);
-@@ -321,4 +447,12 @@ fallback:
+@@ -321,4 +543,12 @@ fallback:
  	drm_atomic_helper_cleanup_planes(dev, state);
  
  	trace_msm_atomic_commit_tail_finish(async, crtc_mask);
