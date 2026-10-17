@@ -28,6 +28,8 @@ permits database release. The OEM 60-to-non-120 transition also sends its
 three-command pen-clear group before kickoff. Native register offsets account
 for the controller's four-byte base shift. A failed latch or packet blocks
 further commits until reboot; it must not be recovered by module removal.
+Quarantine retains failed atomic states and scanout pins until reboot; it does
+not run the normal old-framebuffer cleanup while video may still read them.
 The modular panel registers scoped callbacks with MSM, avoiding a circular
 module dependency. Source fixtures cover all 49 mode pairs, exact command
 bytes, refusal paths and state preservation. Visible seamless transitions and

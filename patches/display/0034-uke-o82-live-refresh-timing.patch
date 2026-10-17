@@ -362,7 +362,7 @@ index 2561f88..bcebb60 100644
  					    const struct drm_display_mode *mode)
  {
 diff --git a/drivers/gpu/drm/msm/dsi/dsi_manager.c b/drivers/gpu/drm/msm/dsi/dsi_manager.c
-index 4e6b453..203b51d 100644
+index 4e6b453..8a2aa5d 100644
 --- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
 +++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
 @@ -30,9 +30,13 @@ struct msm_dsi_manager {
@@ -390,7 +390,7 @@ index 4e6b453..203b51d 100644
  	msm_dsi_host_set_display_mode(host, adjusted_mode);
  	if (is_bonded_dsi && other_dsi)
  		msm_dsi_host_set_display_mode(other_dsi->host, adjusted_mode);
-@@ -560,6 +568,139 @@ static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {
+@@ -560,6 +568,149 @@ static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {
  	.mode_valid = dsi_mgr_bridge_mode_valid,
  };
  
@@ -430,13 +430,15 @@ index 4e6b453..203b51d 100644
 +	int ret = -EOPNOTSUPP;
 +
 +	if (!bridge || bridge->funcs != &dsi_mgr_bridge_funcs)
-+		return ret;
++		goto out;
 +	b = to_dsi_bridge(bridge);
 +	mutex_lock(&uke_dfps_panel_lock);
 +	if (msm_dsim_glb.uke_dfps_panel == b->o82_panel &&
 +	    msm_dsim_glb.uke_dfps_ops && !msm_dsi_manager_uke_dfps_failed())
 +		ret = msm_dsim_glb.uke_dfps_ops->apply(b->o82_panel, old, new, before);
 +	mutex_unlock(&uke_dfps_panel_lock);
++out:
++	drm_bridge_put(bridge);
 +	return ret;
 +}
 +
@@ -456,18 +458,22 @@ index 4e6b453..203b51d 100644
 +	struct drm_bridge *bridge = drm_bridge_chain_get_first_bridge(encoder);
 +	struct msm_dsi *master, *slave;
 +	struct dsi_bridge *b;
++	bool pending = false;
 +
 +	if (!bridge || bridge->funcs != &dsi_mgr_bridge_funcs ||
 +	    !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
 +	    msm_dsi_manager_uke_dfps_failed())
-+		return false;
++		goto out;
 +	b = to_dsi_bridge(bridge);
 +	if (!IS_MASTER_DSI_LINK(b->id))
-+		return false;
++		goto out;
 +	master = dsi_mgr_get_dsi(b->id);
 +	slave = dsi_mgr_get_other_dsi(b->id);
-+	return master && slave && msm_dsi_host_uke_dfps_pending(master->host) &&
++	pending = master && slave && msm_dsi_host_uke_dfps_pending(master->host) &&
 +		msm_dsi_host_uke_dfps_pending(slave->host);
++out:
++	drm_bridge_put(bridge);
++	return pending;
 +}
 +
 +bool msm_dsi_manager_uke_dfps_prepare(struct drm_encoder *encoder,
@@ -476,35 +482,39 @@ index 4e6b453..203b51d 100644
 +	struct drm_bridge *bridge = drm_bridge_chain_get_first_bridge(encoder);
 +	struct dsi_bridge *b;
 +	struct msm_dsi *master, *slave;
++	bool prepared = false;
 +
 +	if (!bridge || bridge->funcs != &dsi_mgr_bridge_funcs ||
 +	    !IS_BONDED_DSI() || !IS_SYNC_NEEDED() ||
 +	    msm_dsi_manager_uke_dfps_failed() || !qcom_uke_o82_live_change(old, new))
-+		return false;
++		goto out;
 +	b = to_dsi_bridge(bridge);
 +	if (!b->o82_panel || !b->o82_panel->prepared || !b->powered ||
 +	    !b->video_enabled || !IS_MASTER_DSI_LINK(b->id))
-+		return false;
++		goto out;
 +	mutex_lock(&uke_dfps_panel_lock);
 +	if (msm_dsim_glb.uke_dfps_panel != b->o82_panel ||
 +	    !msm_dsim_glb.uke_dfps_ops ||
 +	    !msm_dsim_glb.uke_dfps_ops->check(b->o82_panel, old, new)) {
 +		mutex_unlock(&uke_dfps_panel_lock);
-+		return false;
++		goto out;
 +	}
 +	mutex_unlock(&uke_dfps_panel_lock);
 +	master = dsi_mgr_get_dsi(b->id);
 +	slave = dsi_mgr_get_other_dsi(b->id);
 +	if (!master || !slave)
-+		return false;
++		goto out;
 +	if (msm_dsi_host_uke_dfps_queue(master->host, old, new))
-+		return false;
++		goto out;
 +	if (msm_dsi_host_uke_dfps_queue(slave->host, old, new)) {
 +		/* Nothing was written; the ordinary full modeset is still safe. */
 +		msm_dsi_host_uke_dfps_cancel(master->host);
-+		return false;
++		goto out;
 +	}
-+	return true;
++	prepared = true;
++out:
++	drm_bridge_put(bridge);
++	return prepared;
 +}
 +
 +int msm_dsi_manager_uke_dfps_stage(void)
@@ -530,7 +540,7 @@ index 4e6b453..203b51d 100644
  static struct drm_panel *dsi_mgr_o82_panel(struct msm_dsi *msm_dsi)
  {
  	struct device_node *node;
-@@ -617,6 +758,20 @@ int msm_dsi_manager_connector_init(struct msm_dsi *msm_dsi,
+@@ -617,6 +768,20 @@ int msm_dsi_manager_connector_init(struct msm_dsi *msm_dsi,
  	return 0;
  }
  
@@ -552,7 +562,7 @@ index 4e6b453..203b51d 100644
  			      const struct mipi_dsi_msg *msgs)
  {
 diff --git a/drivers/gpu/drm/msm/msm_atomic.c b/drivers/gpu/drm/msm/msm_atomic.c
-index a8babf1..a868e9e 100644
+index a8babf1..f5c0958 100644
 --- a/drivers/gpu/drm/msm/msm_atomic.c
 +++ b/drivers/gpu/drm/msm/msm_atomic.c
 @@ -4,6 +4,7 @@
@@ -845,7 +855,7 @@ index a8babf1..a868e9e 100644
  	vblank_put(kms, crtc_mask);
  
  	lock_crtcs(kms, crtc_mask);
-@@ -321,4 +543,12 @@ fallback:
+@@ -321,4 +543,13 @@ fallback:
  	drm_atomic_helper_cleanup_planes(dev, state);
  
  	trace_msm_atomic_commit_tail_finish(async, crtc_mask);
@@ -855,6 +865,7 @@ index a8babf1..a868e9e 100644
 +	unlock_crtcs(kms, crtc_mask);
 +	kms->funcs->disable_commit(kms);
 +	drm_atomic_helper_commit_hw_done(state);
-+	drm_atomic_helper_cleanup_planes(dev, state);
++	/* Failed latch: retain old scanout references and prepared pins until reboot. */
++	drm_atomic_commit_get(state);
 +	trace_msm_atomic_commit_tail_finish(async, crtc_mask);
  }
