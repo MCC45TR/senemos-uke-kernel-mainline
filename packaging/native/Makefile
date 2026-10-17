@@ -9,11 +9,14 @@ srpm:
 	if test "$$(id -u)" = 0; then
 		dnf -y --setopt=install_weak_deps=False install make curl jq gnupg2 xz tar rpm-build coreutils git-core
 	fi
-	$(MAKE) -C "$$root" srpm outdir="$$root/build/native-copr-base"
+	# GnuPG agent sockets must fit the source builder's Unix path limit.
+	base=$$(mktemp -d)
+	trap 'rm -rf -- "$$base"' EXIT
+	$(MAKE) -C "$$root" srpm outdir="$$base"
 	top="$$root/build/native-copr-source/rpmbuild"
 	mkdir -p "$$top"/{SOURCES,SPECS,SRPMS,BUILD,BUILDROOT,RPMS}
-	cp "$$root/build/native-copr-base/rpmbuild/SOURCES/"* "$$top/SOURCES/"
-	assets="$$root/build/native-copr-source/assets/native-profile"
+	cp "$$base/rpmbuild/SOURCES/"* "$$top/SOURCES/"
+	assets="$$base/assets/native-profile"
 	mkdir -p "$$assets"
 	git -C "$$root" archive HEAD src/display src/boot patches/7.2.9 patches/display patches/boot tests | tar -xf - -C "$$assets"
 	install -m644 native.config README.md "$$assets/"
