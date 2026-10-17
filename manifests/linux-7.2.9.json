@@ -107,7 +107,7 @@
     },
     {
       "path": "patches/7.2.9/0025-uke-paired-normal-backlight.patch",
-      "sha256": "f7fbe96d9eddcfc39a1f7dc99ae81640fab9a6b8fe92ef2f7e3fca018ddd679c"
+      "sha256": "4281dd44953ba1c63620a7b177fe807fa1543866d7eb80e4d957c4958a3345c8"
     },
     {
       "path": "patches/7.2.9/0026-cliffs-lpass-adsp-interconnect.patch",
