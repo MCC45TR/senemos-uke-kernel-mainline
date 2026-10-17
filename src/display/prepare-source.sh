@@ -19,6 +19,7 @@ paths=(
     drivers/gpu/drm/msm/uke-mdss-handoff.c
     include/linux/qcom-uke-display.h
     include/drm/uke-o82-mode.h
+    include/drm/uke-o82-avr.h
 )
 for path in "${paths[@]}"; do [[ ! -e $kernel/$path ]]; done
 git -C "$kernel" apply --check "$patch"
@@ -56,7 +57,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0031-uke-o82-post-start-lp-groups.patch \
                  0032-uke-o82-bonded-bias-replay.patch \
                  0033-uke-o82-oem-refresh-modes.patch \
-                 0034-uke-o82-live-refresh-timing.patch; do
+                 0034-uke-o82-live-refresh-timing.patch \
+                 0035-uke-o82-video-avr-experiment.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
@@ -64,6 +66,7 @@ done
 for path in "${paths[@]}"; do
     source=${path##*/}
     [[ $source != uke-o82-mode.h ]] || source=o82-mode.h
+    [[ $source != uke-o82-avr.h ]] || source=o82-avr.h
     install -m644 "$here/$source" "$kernel/$path"
 done
 printf 'Native display providers staged; kernel config and DT activation unchanged\n'

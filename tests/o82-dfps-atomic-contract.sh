@@ -15,6 +15,7 @@ typedef uint64_t u64;
 struct drm_display_mode {int value;};
 struct drm_crtc_state {
     bool active,mode_changed,active_changed,connectors_changed,color_mgmt_changed;
+    bool vrr_enabled;
     unsigned int encoder_mask;struct drm_display_mode adjusted_mode;
 };
 struct drm_crtc {unsigned int mask;u64 sequence;bool advance;};
@@ -60,7 +61,7 @@ static void reset(struct drm_atomic_commit *s) {
 int main(void) {
     struct drm_device dev;struct drm_atomic_commit s={.dev=&dev};reset(&s);
     assert(msm_uke_dfps_prepare(&s)==3&&admissions==2);
-    for(unsigned gate=0;gate<8;++gate) {
+    for(unsigned gate=0;gate<10;++gate) {
         reset(&s);
         switch(gate) {
         case 0:s.old[0].active=false;break;
@@ -71,6 +72,8 @@ int main(void) {
         case 5:s.new_state[0].color_mgmt_changed=true;break;
         case 6:s.new_state[0].encoder_mask=2;break;
         case 7:s.old[0].encoder_mask=s.new_state[0].encoder_mask=3;break;
+        case 8:s.old[0].vrr_enabled=true;break;
+        case 9:s.new_state[0].vrr_enabled=true;break;
         }
         assert(msm_uke_dfps_prepare(&s)==2&&admissions==1);
     }
