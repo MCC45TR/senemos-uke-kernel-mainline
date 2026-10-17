@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Exact Uke OEM ADC graph; unsupported charger scalers stay unexported. */
+/* Exact Uke OEM ADC graph with standard IIO, hwmon and thermal consumers. */
 static int UKE_INIT uke_pmic_adc(void *fdt)
 {
 	static const char path[] = "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/vadc@9000";
@@ -21,7 +21,7 @@ static int UKE_INIT uke_pmic_adc(void *fdt)
 		{ "charger_therm0", "charger-thermal-sensor", 0x749 },
 		{ "conn_therm", "connector-thermal-sensor", 0x747 },
 	};
-	fdt32_t hwmon[46], io[2];
+	fdt32_t hwmon[54], io[2];
 	unsigned int phandle, found = 0, count = 0, i;
 	int adc = fdt_path_offset(fdt, path), child, bytes, ret, node, zone;
 	const fdt32_t *value;
@@ -47,21 +47,21 @@ static int UKE_INIT uke_pmic_adc(void *fdt)
 	if (found != (1U << (sizeof(channels) / sizeof(channels[0]))) - 1)
 		return -FDT_ERR_BADVALUE;
 
-	/* These four OEM scalers are absent upstream; GLINK still supplies battery telemetry. */
-	for (i = 14; i < 18; i++) {
-		fdt_for_each_subnode(child, fdt, adc) {
-			value = fdt_getprop(fdt, child, "reg", NULL);
-			if (fdt32_to_cpu(*value) == channels[i])
-				break;
-		}
-		ret = fdt_del_node(fdt, child);
-		if (ret)
-			return ret;
-	}
 	fdt_for_each_subnode(child, fdt, adc) {
 		unsigned int channel = fdt32_to_cpu(*(const fdt32_t *)fdt_getprop(fdt, child, "reg", NULL));
 		char name[24];
 
+		if (channel == 0x744) {
+			value = fdt_getprop(fdt, child, "qcom,scale-fn-type", &bytes);
+			if (!value || bytes != 4 || fdt32_to_cpu(*value) != 23)
+				return -FDT_ERR_BADVALUE;
+			ret = fdt_delprop(fdt, child, "qcom,scale-fn-type");
+			if (ret)
+				return ret;
+			ret = fdt_setprop(fdt, child, "qcom,adc5-gen3-batt-therm-100k", NULL, 0);
+			if (ret)
+				return ret;
+		}
 		ret = fdt_delprop(fdt, child, "qcom,adc-tm-type");
 		if (ret && ret != -FDT_ERR_NOTFOUND)
 			return ret;

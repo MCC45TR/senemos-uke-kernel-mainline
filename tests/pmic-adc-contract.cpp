@@ -35,6 +35,7 @@ static Blob fixture() {
         assert(!fdt_setprop_u32(b.data(),child,"reg",id));
         assert(!fdt_setprop_u32(b.data(),child,"qcom,adc-tm-type",1));
         assert(!fdt_setprop_string(b.data(),child,"label",name));
+        if(id==0x744) assert(!fdt_setprop_u32(b.data(),child,"qcom,scale-fn-type",23));
     }
     add(b.data(),0,"thermal-zones");
     for (unsigned i=0;i<10;i++) {
@@ -118,11 +119,14 @@ int main(int argc,char **argv) {
         assert(!std::strncmp(fdt_get_name(b.data(),child,nullptr),"channel@",8));
         assert(!fdt_getprop(b.data(),child,"qcom,adc-tm-type",nullptr)); count++;
     }
-    assert(count==23);
+    assert(count==27);
+    int batt=fdt_path_offset(b.data(),"/soc/qcom,spmi@c42d000/qcom,pmk8550@0/vadc@9000/channel@744");
+    assert(batt>=0 && fdt_getprop(b.data(),batt,"qcom,adc5-gen3-batt-therm-100k",nullptr));
+    assert(!fdt_getprop(b.data(),batt,"qcom,scale-fn-type",nullptr));
     int bytes=0, hwmon=fdt_path_offset(b.data(),"/pmic-adc-hwmon");
     assert(!fdt_node_check_compatible(b.data(),hwmon,"iio-hwmon"));
     auto channels=static_cast<const fdt32_t *>(fdt_getprop(b.data(),hwmon,"io-channels",&bytes));
-    assert(channels && bytes==23*8);
+    assert(channels && bytes==27*8);
     for (unsigned i=0;i<10;i++) {
         char path[80]; std::snprintf(path,sizeof(path),"/thermal-zones/%s",zones[i]);
         int zone=fdt_path_offset(b.data(),path);
@@ -134,7 +138,7 @@ int main(int argc,char **argv) {
         assert(io && bytes==8 && fdt32_to_cpu(io[0])==0x12 && fdt32_to_cpu(io[1])==thermistors[i]);
         assert(!fdt_getprop(b.data(),sensor,"temperature-lookup-table",nullptr));
     }
-    for (unsigned bad=0;bad<5;bad++) {
+    for (unsigned bad=0;bad<6;bad++) {
         b=base; adc=fdt_path_offset(b.data(),adc_path);
         int first=fdt_first_subnode(b.data(),adc), second=fdt_next_subnode(b.data(),first);
         if (bad==0) assert(!fdt_del_node(b.data(),first));
@@ -146,7 +150,11 @@ int main(int argc,char **argv) {
         if (bad==2) assert(!fdt_setprop_u32(b.data(),first,"reg",0x666));
         if (bad==3) assert(!fdt_setprop_string(b.data(),adc,"compatible","qcom,foreign-adc"));
         if (bad==4) assert(!fdt_setprop_u32(b.data(),adc,"reg",0x9000));
+        if (bad==5) {
+            int battery=fdt_path_offset(b.data(),"/soc/qcom,spmi@c42d000/qcom,pmk8550@0/vadc@9000/oem-sensor@744");
+            assert(!fdt_setprop_u32(b.data(),battery,"qcom,scale-fn-type",8));
+        }
         assert(uke_pmic_adc_test(b.data())<0);
     }
-    std::puts("PMIC ADC: 23 IIO/hwmon channels, ten standard thermal consumers and five malformed-resource refusals passed");
+    std::puts("PMIC ADC: 27 IIO/hwmon channels, ten thermal consumers and six malformed-resource refusals passed");
 }

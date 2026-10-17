@@ -8,7 +8,7 @@ cat > "$work/test.c" <<'C'
 #include <stdbool.h>
 #include <stdint.h>
 typedef uint16_t u16;
-enum { IIO_VOLTAGE, IIO_TEMP, IIO_CHAN_INFO_PROCESSED=10, IIO_VAL_INT=20, IIO_VAL_FRACTIONAL };
+enum { IIO_VOLTAGE, IIO_TEMP, IIO_CURRENT, IIO_CHAN_INFO_PROCESSED=10, IIO_VAL_INT=20, IIO_VAL_FRACTIONAL };
 struct adc5_channel_common_prop { int scale_fn_type, prescale; };
 struct adc5_channel_prop { struct adc5_channel_common_prop common_props; };
 struct adc5_chip { struct adc5_channel_prop chan_props[1]; int data; };
@@ -29,6 +29,9 @@ int main(void) {
     reading=4999123; div=0;
     assert(adc5_gen3_read_raw(&dev,&chan,&val,&div,IIO_CHAN_INFO_PROCESSED)==IIO_VAL_FRACTIONAL);
     assert(val==4999123 && div==1000 && scaled);
+    chan.type=IIO_CURRENT; reading=-366; div=0;
+    assert(adc5_gen3_read_raw(&dev,&chan,&val,&div,IIO_CHAN_INFO_PROCESSED)==IIO_VAL_FRACTIONAL);
+    assert(val==-366 && div==1000);
     chan.type=IIO_TEMP; reading=32123; div=-1;
     assert(adc5_gen3_read_raw(&dev,&chan,&val,&div,IIO_CHAN_INFO_PROCESSED)==IIO_VAL_INT);
     assert(val==32123 && div==-1);

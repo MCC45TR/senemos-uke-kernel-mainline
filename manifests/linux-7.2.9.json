@@ -192,6 +192,10 @@
     {
       "path": "patches/7.2.9/0046-adc5-gen3-voltage-units.patch",
       "sha256": "9cf109bd352837b0a3c8e53caa3158c43bf68c3ef6f2187bb078a45b343461c3"
+    },
+    {
+      "path": "patches/7.2.9/0048-adc5-gen3-charger-and-battery-scalers.patch",
+      "sha256": "ef098f331d0883589aaceafc081afd308329f8a63e58c72d3046c28f30b4358b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -196,6 +196,10 @@
     {
       "path": "patches/7.2.10/0047-smp2p-preserve-edges-without-restart.patch",
       "sha256": "35c7dad5f9230707c7916c009bc04615bfbf755b610e14526115c6dcd959b3bd"
+    },
+    {
+      "path": "patches/7.2.10/0048-adc5-gen3-charger-and-battery-scalers.patch",
+      "sha256": "ef098f331d0883589aaceafc081afd308329f8a63e58c72d3046c28f30b4358b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
