@@ -27,8 +27,8 @@ Requires: %{name}-dtbs = %{version}-%{release}
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
-This source package currently has no embedded initramfs, Android boot image, firmware or device-private data is
-included. No boot partition is written. A successful build is not tablet boot
+This source package contains no embedded initramfs, Android boot image,
+firmware or device-private data. No boot partition is written. A successful build is not tablet boot
 acceptance and does not supply the guarded kernel-update bundle.
 
 %package core

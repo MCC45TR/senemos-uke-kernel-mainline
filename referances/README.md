@@ -3,6 +3,11 @@
 The [14 October 2026 research inventory](../manifests/research-donors-20261014.json)
 maps local donor checkouts to exact revisions, purpose and verification limits.
 It supplements the archival catalog and does not change an active build lock.
+The [15 October MiCode catalogue](../manifests/research-micode-20261015.json)
+screens all 80 public repositories, verifies the existing Uke pins and records
+complete NT36532/AIS source acquisitions. A shared controller is not a board
+match; source acquisition does not establish native display, input or camera
+support. Consult its linked private survey before selecting these sources.
 Before a hardware fix, follow the workspace's
 `uke-linux-docs/docs/DONOR-POLICY.md`: compare Uke OEM, the applicable same-SoC or
 shared-IP donor and current upstream; record source files, attribution and Uke

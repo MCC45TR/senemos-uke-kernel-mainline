@@ -3,47 +3,33 @@
 Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 (`uke`, Qualcomm SM7675).
 
-**Development target:** Linux 7.2.10 · AArch64 · Fedora Rawhide
+**Development target:** Linux 7.2.9 · AArch64 · Fedora Rawhide
 
-[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.10.json)
+[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json)
 
-## Status — 13 October 2026
+## Status — 15 October 2026
 
-Matched RAM boots reach the tablet console, internal Fedora root, the KDE
-desktop and Wi-Fi SSH. Battery readings and manual backlight control are
-available. Touch, Bluetooth, audio and USB host mode remain
-incomplete. Detailed results are in the [project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
+Linux **7.2.9, revision 1.39** starts from slot B on POCO Pad X1 and reaches the
+internal Fedora Rawhide root, KDE desktop and Wi-Fi SSH. KWin uses Adreno 732
+hardware rendering; display scanout still uses the firmware framebuffer through
+simpledrm. Native DPU/DSI, refresh-rate switching and display stability remain
+incomplete. Detailed results are in the
+[project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
 
-The experimental Adreno 732 port on Linux 7.2.9 passes native shader and pixel-readback tests
-at 255 MHz. The original Fedora KWin also reports hardware OpenGL ES rendering.
-Mesa currently labels this exact chip `FD735`; the kernel reports `0x43030b00`.
-A fresh graphical session also reports accelerated Xwayland/OpenGL 4.6, and a
-120-frame Turnip Wayland cube completes. Higher frequencies, sustained workloads
-and suspend remain incomplete. Early initramfs GPU loading failed and is rejected;
-automatic GPU startup still requires correction.
-The 7.2.10 source profile now contains 40 adaptation patches, including firmware
-display metadata, Adreno removal and SM7675 EPSS core-count corrections. The
-stock-ABL overlay defines nine Adreno 732 operating points from 255 to 950 MHz.
-The first integrated RAM trial on 14 October produced no display or USB
-connection; its cause remains under investigation. Revision 1.33 is a source
-candidate and is not a qualified tablet update. Native DPU/DSI and seven panel
-mode definitions are tracked separately in [the display candidate](src/display/README.md).
-Normal B-slot testing exposed an independent AVB mismatch; correcting B metadata
-allows the preserved 7.2.9 image to enumerate Linux CDC. The 7.2.10 image still
-stalls at the splash screen. Neither observation qualifies 7.2.10 device support.
-These results use a RAM candidate with matched local GPU modules and firmware;
-they do not qualify a signed COPR package or normal slot-B startup.
+Finger input, ten simultaneous contacts, and power and volume buttons worked in
+the 14 October tablet test. Revision 1.39 reaches touch input on its first startup
+attempt. Manual backlight control and display blanking work, with a minimum
+visible level while the display is on. The paired backlight uses the OEM mapping;
+smooth adjustment across the full range remains unqualified.
+Battery readings and USB charging status are available; the tested computer USB
+connection admits a 500 mA budget. Sustained net charging under desktop load is
+not established. Bluetooth, audio, USB host mode and suspend remain incomplete.
 
-Tablet testing currently uses package revision **1.27**. The **1.29** charger and
-battery corrections are on `main`. The **1.30** brightness candidate has passed
-native COPR, signed package and module checks, but has not been tested on the
-tablet. Suspend remains disabled. Normal slot-B startup and repeated cold boots
-still need work; successful compilation does not establish hardware support.
-
-GPU package revision **1.31** is separate from the **1.30** brightness candidate.
-GPU builds stay in the `custom:gpu` COPR directory until package and boot tests
-complete. The stock-ABL overlay preserves firmware scanout and uses only the
-lowest OEM GPU operating point. The independent Uke DTS is a separate boot path.
+The normal source profile contains 44 adaptation patches. Its revision 1.39
+packages were built and signed locally for tablet testing; this does not qualify
+a new COPR build. Linux 7.2.10 and native display sources remain separate
+candidates and have not produced a working display. Repeated cold boots, display
+lifecycle tests and sustained workloads remain open.
 
 The current firmware handoff is **EL1**. EL2/KVM is a separate experimental
 branch. Uke UEFI integration is not ready. Pad 7 Pro (`muyu`) and Pad 5 (`nabu`)
@@ -66,11 +52,11 @@ sudo dnf install senemos-uke-linux-kernel-mainline
 sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-COPR signs published RPMs. For the 7.2.10 candidate, kernel files install under
-`/usr/lib/modules/7.2.10-senemos-uke/`. DNF updates files and module dependencies;
+COPR signs the RPMs. Kernel files are installed under
+`/usr/lib/modules/7.2.9-senemos-uke/`. DNF updates files and module dependencies;
 it does not flash `boot_b`, create a UEFI entry or select a boot slot.
 
-Revisions of Linux 7.2.10 share the same module directory. A tablet update needs
+Revisions of Linux 7.2.9 share the same module directory. A tablet update needs
 a matching Image, initramfs, device tree and module set. Preserve the working
 boot image and rollback before replacing that set. Development headers are not
 published yet.
@@ -80,7 +66,7 @@ published yet.
 ```sh
 git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
 cd senemos-uke-kernel-mainline
-./senemos.sh --build 7.2.10 --distro=fedora --test
+./senemos.sh --build 7.2.9 --distro=fedora --test
 ./senemos.sh --build latest --distro=fedora
 ```
 

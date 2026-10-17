@@ -20,8 +20,8 @@ update. Keep the existing validated boot bundle and rollback until the public
 initramfs producer has passed its own package and tablet tests. The historical
 standalone host recipe under `configs/host/` is not this native source producer.
 
-The public `work/dnf-kernel-payload-20261015` branch contains a dracut and guarded
-boot-container producer. Its older framebuffer configuration and early-module
+Commit `4eb69e5`, published as `feature/dnf-stock-abl-updates-20261015`, contains
+a dracut and guarded boot-container producer. Its older framebuffer configuration and early-module
 inventory require integration with this profile before enabling automatic
 mainline boot updates. Private initramfs files, firmware, credentials and
 per-device calibration are not source inputs here.
