@@ -4,6 +4,11 @@ set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=${1:-$root/packaging/senemos-uke-linux-kernel-mainline.spec}
 command -v rpmspec >/dev/null
+future=$(mktemp)
+trap 'rm -f "$future"' EXIT
+sed 's/^Version: .*/Version: 7.2.11/' "$spec" > "$future"
+future_release=$(rpmspec -q --srpm --qf '%{RELEASE}' --target aarch64 "$future")
+[[ $future_release == 1 || $future_release == 1.* ]]
 expected=senemos-uke-linux-kernel-mainline
 names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot" ]]

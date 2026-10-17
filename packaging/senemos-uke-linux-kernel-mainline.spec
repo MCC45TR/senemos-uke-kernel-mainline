@@ -1,13 +1,17 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 4
-%global krel %{version}-%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
+%if "%{version}" == "7.2.10"
+%global senemos_build_release 4
+%else
+%global senemos_build_release 1
+%endif
+%global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Uke kernel with the O82 display profile
 License: GPL-2.0-only
