@@ -44,14 +44,14 @@ static inline bool qcom_uke_o82_mode(const struct drm_display_mode *mode)
 	return qcom_uke_o82_mode_group(mode) >= 0;
 }
 
-/* Within one OEM timing group only VFP changes; DDIC and touch commands stay put. */
-static inline bool qcom_uke_o82_vfp_change(const struct drm_display_mode *old,
+/* Exact OEM timings share one physical link clock; callers gate board and DSC. */
+static inline bool qcom_uke_o82_live_change(const struct drm_display_mode *old,
 					const struct drm_display_mode *new_mode)
 {
 	int group = qcom_uke_o82_mode_group(old);
 
-	return group >= 0 && group == qcom_uke_o82_mode_group(new_mode) &&
-		old->vtotal != new_mode->vtotal;
+	return group >= 0 && qcom_uke_o82_mode_group(new_mode) >= 0 &&
+		(old->clock != new_mode->clock || old->vtotal != new_mode->vtotal);
 }
 
 #endif

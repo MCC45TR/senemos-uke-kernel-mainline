@@ -25,6 +25,7 @@
 #include <drm/drm_panel.h>
 #include <drm/drm_vblank.h>
 #include <drm/drm_vblank_work.h>
+#include <drm/uke-o82-mode.h>
 #include <video/mipi_display.h>
 
 struct o82_command {
@@ -660,6 +661,92 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 	return count;
 }
 
+static bool o82_dfps_check_locked(struct o82_panel *ctx,
+		const struct drm_display_mode *old, const struct drm_display_mode *new_mode)
+{
+	int old_group = qcom_uke_o82_mode_group(old);
+
+	return qcom_uke_o82_live_change(old, new_mode) &&
+		ctx->oem_refresh_modes && ctx->profiles == o82_42_02_0b_profiles &&
+		ctx->active == &ctx->profiles[old_group] && ctx->prepared &&
+		!ctx->removing && (atomic64_read(&ctx->touch_state) & 1);
+}
+
+static bool o82_dfps_check(struct drm_panel *panel,
+		const struct drm_display_mode *old, const struct drm_display_mode *new_mode)
+{
+	struct o82_panel *ctx;
+	bool ready;
+
+	if (!panel)
+		return false;
+	ctx = container_of(panel, struct o82_panel, panel);
+	mutex_lock(&ctx->lock);
+	ready = o82_dfps_check_locked(ctx, old, new_mode);
+	mutex_unlock(&ctx->lock);
+	return ready;
+}
+
+static int o82_dfps_apply(struct drm_panel *panel,
+		const struct drm_display_mode *old, const struct drm_display_mode *new_mode,
+		bool before)
+{
+	static const u8 pen_clear[3][2] = { { 0xff, 0x10 }, { 0xfb, 0x01 }, { 0xb2, 0x80 } };
+	struct o82_panel *ctx;
+	const struct o82_profile *target;
+	struct mipi_dsi_msg msgs[4] = { };
+	int i, ret = -EAGAIN;
+
+	if (!panel)
+		return -EINVAL;
+	ctx = container_of(panel, struct o82_panel, panel);
+	mutex_lock(&ctx->lock);
+	if (!o82_dfps_check_locked(ctx, old, new_mode))
+		goto out;
+	if (before) {
+		ret = 0;
+		/* OEM clears the 60 Hz pen setting before entering another timing group. */
+		if (drm_mode_vrefresh(old) == 60 && drm_mode_vrefresh(new_mode) != 120) {
+			for (i = 0; i < ARRAY_SIZE(pen_clear); i++)
+				msgs[i] = (struct mipi_dsi_msg) {
+					.type = MIPI_DSI_DCS_LONG_WRITE,
+					.tx_len = sizeof(pen_clear[i]), .tx_buf = pen_clear[i],
+				};
+			ret = qcom_uke_dsi_pen_clear_batch(ctx->dsi[0], msgs);
+		}
+		goto out;
+	}
+	target = &ctx->profiles[qcom_uke_o82_mode_group(new_mode)];
+	if (target->switch_count != ARRAY_SIZE(msgs)) {
+		ret = -EINVAL;
+		goto out;
+	}
+	for (i = 0; i < ARRAY_SIZE(msgs); i++) {
+		const struct o82_command *cmd = &target->switch_commands[i];
+
+		if (cmd->delay_ms || cmd->downstream_flags != (i == 3 ? 0 : BIT(6))) {
+			ret = -EINVAL;
+			goto out;
+		}
+		msgs[i] = (struct mipi_dsi_msg) {
+			.channel = cmd->channel, .type = cmd->type,
+			.tx_len = cmd->len, .tx_buf = cmd->data,
+		};
+	}
+	/* OEM sends this group after every video timing kickoff, including VFP-only changes. */
+	ret = qcom_uke_dsi_tp_fps_batch(ctx->dsi[0], msgs);
+	if (!ret)
+		ctx->active = target;
+out:
+	mutex_unlock(&ctx->lock);
+	return ret;
+}
+
+static const struct qcom_uke_o82_dfps_ops o82_dfps_ops = {
+	.check = o82_dfps_check,
+	.apply = o82_dfps_apply,
+};
+
 static const struct drm_panel_funcs o82_funcs = {
 	.prepare = o82_prepare,
 	.enable = o82_enable,
@@ -758,6 +845,11 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 		if (ret)
 			goto detach_attached;
 	}
+	if (ctx->oem_refresh_modes) {
+		ret = qcom_uke_dsi_dfps_register(dsi, &ctx->panel, &o82_dfps_ops);
+		if (ret)
+			goto detach_attached;
+	}
 	return 0;
 
 detach_attached:
@@ -773,6 +865,8 @@ static void o82_remove(struct mipi_dsi_device *dsi)
 {
 	struct o82_panel *ctx = mipi_dsi_get_drvdata(dsi);
 
+	if (ctx->oem_refresh_modes)
+		qcom_uke_dsi_dfps_register(dsi, &ctx->panel, NULL);
 	mutex_lock(&ctx->lock);
 	ctx->removing = true;
 	mutex_unlock(&ctx->lock);
@@ -789,6 +883,8 @@ static void o82_shutdown(struct mipi_dsi_device *dsi)
 {
 	struct o82_panel *ctx = mipi_dsi_get_drvdata(dsi);
 
+	if (ctx->oem_refresh_modes)
+		qcom_uke_dsi_dfps_register(dsi, &ctx->panel, NULL);
 	mutex_lock(&ctx->lock);
 	ctx->removing = true;
 	mutex_unlock(&ctx->lock);

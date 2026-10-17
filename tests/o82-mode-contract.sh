@@ -39,15 +39,15 @@ int main(void)
 {
     assert(qcom_uke_o82_mode_group(NULL) == -EINVAL);
     assert(!qcom_uke_o82_mode(NULL));
-    assert(!qcom_uke_o82_vfp_change(NULL, NULL));
+    assert(!qcom_uke_o82_live_change(NULL, NULL));
     for (size_t i = 0; i < sizeof(oem) / sizeof(oem[0]); i++) {
         assert(qcom_uke_o82_mode_group(&oem[i].mode) == oem[i].group);
         assert(qcom_uke_o82_mode(&oem[i].mode));
-        assert(!qcom_uke_o82_vfp_change(&oem[i].mode, NULL));
-        assert(!qcom_uke_o82_vfp_change(NULL, &oem[i].mode));
+        assert(!qcom_uke_o82_live_change(&oem[i].mode, NULL));
+        assert(!qcom_uke_o82_live_change(NULL, &oem[i].mode));
         for (size_t j = 0; j < sizeof(oem) / sizeof(oem[0]); j++) {
-            bool expected = i != j && oem[i].group == oem[j].group;
-            assert(qcom_uke_o82_vfp_change(&oem[i].mode, &oem[j].mode) == expected);
+            bool expected = i != j;
+            assert(qcom_uke_o82_live_change(&oem[i].mode, &oem[j].mode) == expected);
         }
         for (unsigned int field = 0; field < 12; field++) {
             struct drm_display_mode bad = oem[i].mode;
@@ -67,8 +67,8 @@ int main(void)
             }
             assert(qcom_uke_o82_mode_group(&bad) == -EINVAL);
             assert(!qcom_uke_o82_mode(&bad));
-            assert(!qcom_uke_o82_vfp_change(&oem[i].mode, &bad));
-            assert(!qcom_uke_o82_vfp_change(&bad, &oem[i].mode));
+            assert(!qcom_uke_o82_live_change(&oem[i].mode, &bad));
+            assert(!qcom_uke_o82_live_change(&bad, &oem[i].mode));
         }
         for (unsigned int bit = 0; bit < 32; bit++) {
             struct drm_display_mode bad = oem[i].mode;
@@ -95,4 +95,4 @@ C
 "${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -fsanitize=undefined \
     -fsanitize-undefined-trap-on-error -I"$work" "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Actual shared O82 mode helper: all seven exact OEM modes, group mapping, field/flag and cross-group refusals passed\n'
+printf 'Actual shared O82 mode helper: all seven exact OEM modes, group mapping, field/flag and invalid-mode refusals passed\n'

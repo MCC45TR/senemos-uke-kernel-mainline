@@ -20,6 +20,19 @@ the bridge also rejects custom timings before power-up. The separate initial
 120 Hz control remains available. These are discrete modes; adaptive VRR is
 not advertised. Physical mode changes are still pending.
 
+Patch `0034` adds an exact seven-mode live timing candidate. It retains panel
+power, backlight, shared touch reset, DSC and the accepted physical link clocks.
+Both DSI timing databases are validated and updated together; DPU interface
+timing is flushed before the OEM target TP-FPS batch and a measured vblank
+permits database release. The OEM 60-to-non-120 transition also sends its
+three-command pen-clear group before kickoff. Native register offsets account
+for the controller's four-byte base shift. A failed latch or packet blocks
+further commits until reboot; it must not be recovered by module removal.
+The modular panel registers scoped callbacks with MSM, avoiding a circular
+module dependency. Source fixtures cover all 49 mode pairs, exact command
+bytes, refusal paths and state preservation. Visible seamless transitions and
+continuous finger input at each rate still require a matched tablet test.
+
 The paired KTZ8866 driver already uses Xiaomi's normal-mode logarithmic table
 and reports the standard non-linear backlight scale. On native50, requests of
 0, 102 and 819 returned 21, 102 and 821 respectively, with no paired readback

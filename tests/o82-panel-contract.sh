@@ -318,7 +318,7 @@ sed -n '/^struct o82_command {/,/^struct o82_panel {/p' "$source_file" | sed '$d
 cat "$header"
 sed -n '/^struct o82_panel {/,/^};/p' "$source_file"
 sed -n '/^static void o82_touch_state(/,/^static int o82_get_modes(/p' "$source_file" | sed '$d'
-sed -n '/^static int o82_get_modes(/,/^static const struct drm_panel_funcs/p' "$source_file" | sed '$d'
+sed -n '/^static int o82_get_modes(/,/^static bool o82_dfps_check_locked(/p' "$source_file" | sed '$d'
 } >> "$work/check.c"
 # Execute the selected DRM core's duplicate-enable guard and backlight admission.
 sed -n '/^void drm_panel_enable(/,/^EXPORT_SYMBOL(drm_panel_enable)/p' \
@@ -327,11 +327,23 @@ sed -n '/^void drm_panel_disable(/,/^EXPORT_SYMBOL(drm_panel_disable)/p' \
     "$kernel/drivers/gpu/drm/drm_panel.c" | sed '$d' >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct o82_panel *attach_ctx;
+static int attach_failure,attached,detached,panel_removed,secondary_removed;
+struct qcom_uke_o82_dfps_ops {int unused;};
+static const struct qcom_uke_o82_dfps_ops o82_dfps_ops={0};
+static int dfps_register_calls,dfps_unregister_calls,dfps_register_error;
+static int qcom_uke_dsi_dfps_register(struct mipi_dsi_device *dsi,
+    struct drm_panel *panel,const struct qcom_uke_o82_dfps_ops *ops) {
+    assert(dsi==attach_ctx->dsi[0] && panel==&attach_ctx->panel && !attach_ctx->lock.locked);
+    if(ops) {
+        assert(ops==&o82_dfps_ops && attached==2 && !detached);
+        ++dfps_register_calls; return dfps_register_error;
+    }
+    ++dfps_unregister_calls; return 0;
+}
 static struct backlight_device *probe_backlight;
 static struct backlight_device *devm_of_find_backlight(struct device *dev) {
     (void)dev; return probe_backlight;
 }
-static int attach_failure,attached,detached,panel_removed,secondary_removed;
 static int mipi_dsi_attach(struct mipi_dsi_device *dsi) {
     int id=attached++;
     assert(id<2 && dsi==attach_ctx->dsi[id]);
@@ -354,6 +366,7 @@ static void mipi_dsi_device_unregister(struct mipi_dsi_device *dsi) {
  */
 static int o82_probe_links(struct o82_panel *ctx) {
     int i,ret;
+    struct mipi_dsi_device *dsi=ctx->dsi[0];
 C
 awk '
     /^static int o82_probe\(/ { probe=1 }
@@ -470,13 +483,24 @@ int main(void) {
         assert(!enables && !transfers && !operation && !ctx.prepared);
         requested_oem_modes=false;
     }
-    for(int variant=0;variant<2;variant++) for(int fail=-1;fail<2;fail++) {
+    for(int variant=0;variant<3;variant++) for(int fail=-1;fail<2;fail++) {
         struct o82_panel ctx=context(variant,3); attach_ctx=&ctx;
+        dfps_register_calls=dfps_unregister_calls=dfps_register_error=0;
         attach_failure=fail; attached=detached=panel_removed=secondary_removed=0;
         assert(o82_probe_links(&ctx)==(fail<0 ? 0:-EIO));
         assert(attached==(fail==0 ? 1:2));
         assert(detached==(fail==1 ? 1:0));
         assert(panel_removed==(fail>=0) && secondary_removed==(fail>=0));
+        assert(dfps_register_calls==(variant==2 && fail<0) && !dfps_unregister_calls);
+    }
+    {
+        struct o82_panel ctx=context(2,3); attach_ctx=&ctx;
+        attach_failure=-1; attached=detached=panel_removed=secondary_removed=0;
+        dfps_register_calls=dfps_unregister_calls=0; dfps_register_error=-EIO;
+        assert(o82_probe_links(&ctx)==-EIO);
+        assert(attached==2 && detached==2 && panel_removed==1 && secondary_removed==1);
+        assert(dfps_register_calls==1 && !dfps_unregister_calls);
+        dfps_register_error=0;
     }
     const unsigned int rates[]={30,48,50,60,90,120,144};
     const unsigned int groups[]={2,2,2,0,2,0,1};
@@ -651,7 +675,7 @@ int main(void) {
         assert(o82_prepare(&c.panel)==-EINVAL && enables==0);
     }
     struct o82_panel c=context(0,3);
-    for(int variant=0;variant<2;variant++) {
+    for(int variant=0;variant<3;variant++) {
         for(int refusal=0;refusal<3;refusal++) {
             c=context(variant,3); assert(o82_prepare(&c.panel)==0);
             const int before=transfers;
@@ -713,9 +737,11 @@ int main(void) {
             video_started=true; drm_panel_enable(&c.panel);
             assert(c.first_frame_initialized && c.first_frame_work.pending);
             attach_ctx=&c; detached=panel_removed=secondary_removed=0;
+            dfps_unregister_calls=0;
             video_started=false;
             if(callback) o82_shutdown(c.dsi[0]); else o82_remove(c.dsi[0]);
             assert(c.removing && !c.prepared && !c.first_frame_initialized && cancelled==1);
+            assert(dfps_unregister_calls==(variant==2));
             assert(!c.backlight->on && !backlight_calls && !normal_transfers);
             assert(detached==(callback ? 0:2) && panel_removed==!callback && secondary_removed==!callback);
             const int after_remove=transfers;
