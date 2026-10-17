@@ -21,6 +21,7 @@ validated under the existing bonded lock order before either is changed.
 A failed host readback clears AVR on both hosts. One logical encoder owns
 enable/disable and triggers both interfaces after their shared CTL flush.
 Disable and hardware-reset paths clear both interfaces before host cleanup.
+A failed activation is retried only after VRR off or a full modeset.
 Leaving VRR for another fixed mode uses a full modeset; the existing DFPS
 shortcut is excluded while either atomic state requests VRR.
 

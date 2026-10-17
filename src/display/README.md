@@ -35,6 +35,11 @@ module dependency. Source fixtures cover all 49 mode pairs, exact command
 bytes, refusal paths and state preservation. Visible seamless transitions and
 continuous finger input at each rate still require a matched tablet test.
 
+Patch `0035` adds a default-disabled, bounded video AVR receiver experiment.
+It uses standard atomic `VRR_ENABLED` with one logical owner for both DSI
+links and INTFs, without advertising a qualified range. See the
+[experiment and validation procedure](../../docs/O82-VRR-EXPERIMENT.md).
+
 The paired KTZ8866 driver already uses Xiaomi's normal-mode logarithmic table
 and reports the standard non-linear backlight scale. On native50, requests of
 0, 102 and 819 returned 21, 102 and 821 respectively, with no paired readback

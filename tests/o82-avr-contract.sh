@@ -183,7 +183,7 @@ struct dpu_hw_intf {
 struct dpu_hw_ctl {struct {void (*update_pending_flush_intf)(struct dpu_hw_ctl *,unsigned);} ops;unsigned mask;};
 struct dpu_encoder_phys { struct dpu_hw_intf *hw_intf;struct dpu_hw_ctl *hw_ctl;int enable_state; };
 struct dpu_encoder_virt {
- struct drm_encoder base;bool avr_enabled;unsigned enc_spinlock,num_phys_encs;
+ struct drm_encoder base;bool avr_enabled,avr_failed;unsigned enc_spinlock,num_phys_encs;
  struct dpu_encoder_phys *phys_encs[2],*cur_master;struct drm_crtc *crtc;
 };
 static unsigned o82_vrr_test_min_hz=119,host_calls;
@@ -227,10 +227,16 @@ int main(void) {
  dpu_encoder_uke_avr_update(&enc);assert(host_calls==2);
  state.vrr_enabled=true;interfaces[1].error=-22;
  dpu_encoder_uke_avr_update(&enc);assert(!enc.avr_enabled&&!hosts_on&&host_calls==2);
+ assert(enc.avr_failed);dpu_encoder_uke_avr_update(&enc);assert(host_calls==2);
+ state.vrr_enabled=false;dpu_encoder_uke_avr_update(&enc);state.vrr_enabled=true;
+ assert(!enc.avr_failed);
  interfaces[1].error=0;interfaces[1].period_bias=1;
  dpu_encoder_uke_avr_update(&enc);assert(!enc.avr_enabled&&!hosts_on&&host_calls==2);
+ state.vrr_enabled=false;dpu_encoder_uke_avr_update(&enc);state.vrr_enabled=true;
  interfaces[1].period_bias=0;host_error=-5;
  dpu_encoder_uke_avr_update(&enc);assert(!enc.avr_enabled&&!interfaces[0].enabled&&!interfaces[1].enabled&&host_calls==3);
+ assert(enc.avr_failed);dpu_encoder_uke_avr_update(&enc);assert(host_calls==3);
+ state.vrr_enabled=false;dpu_encoder_uke_avr_update(&enc);state.vrr_enabled=true;
  host_error=0;
  for(unsigned gate=0;gate<5;++gate) {
   allowed=split=true;phys[1].enable_state=DPU_ENC_ENABLED;enc.cur_master=&phys[0];

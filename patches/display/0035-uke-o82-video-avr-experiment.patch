@@ -40,7 +40,7 @@ index 42d0a52..9a8afd5 100644
  	if (crtc_state->mode_changed || crtc_state->connectors_changed ||
  	    crtc_state->color_mgmt_changed) {
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
-index c7aac33..2b7a3a8 100644
+index c7aac33..c72974e 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 @@ -18,6 +18,7 @@
@@ -51,15 +51,16 @@ index c7aac33..2b7a3a8 100644
  
  #include "msm_drv.h"
  #if IS_ENABLED(CONFIG_DRM_MSM_DSI)
-@@ -180,6 +181,7 @@ struct dpu_encoder_virt {
+@@ -180,6 +181,8 @@ struct dpu_encoder_virt {
  	spinlock_t enc_spinlock;
  
  	bool enabled;
 +	bool avr_enabled;
++	bool avr_failed;
  	bool commit_done_timedout;
  
  	unsigned int num_phys_encs;
-@@ -223,6 +225,11 @@ struct dpu_encoder_virt {
+@@ -223,6 +226,11 @@ struct dpu_encoder_virt {
  
  #define to_dpu_encoder_virt(x) container_of(x, struct dpu_encoder_virt, base)
  
@@ -71,7 +72,7 @@ index c7aac33..2b7a3a8 100644
  static u32 dither_matrix[DITHER_MATRIX_SZ] = {
  	15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10
  };
-@@ -601,6 +608,94 @@ static bool dpu_encoder_uke_split_flush(struct dpu_encoder_phys *phys_enc)
+@@ -601,6 +609,100 @@ static bool dpu_encoder_uke_split_flush(struct dpu_encoder_phys *phys_enc)
  		slave->hw_intf && slave->hw_intf->idx == INTF_2;
  }
  
@@ -96,6 +97,7 @@ index c7aac33..2b7a3a8 100644
 +	unsigned long flags;
 +	unsigned int i;
 +
++	enc->avr_failed = false;
 +	if (!enc->avr_enabled)
 +		return;
 +	spin_lock_irqsave(&enc->enc_spinlock, flags);
@@ -123,7 +125,7 @@ index c7aac33..2b7a3a8 100644
 +		dpu_encoder_uke_avr_disable(enc);
 +		return;
 +	}
-+	if (enc->avr_enabled)
++	if (enc->avr_enabled || enc->avr_failed)
 +		return;
 +	if (!dpu_encoder_uke_vrr_check(&enc->base, state) || !enc->cur_master ||
 +	    !dpu_encoder_uke_split_flush(enc->cur_master))
@@ -142,15 +144,15 @@ index c7aac33..2b7a3a8 100644
 +
 +		ret = phys->hw_intf->ops.setup_avr(phys->hw_intf, lines, &periods[i]);
 +		if (ret)
-+			return;
++			goto fail;
 +	}
-+	if (periods[0] != periods[1])
-+		return;
++	if (periods[0] != periods[1]) {
++		ret = -EINVAL;
++		goto fail;
++	}
 +	ret = msm_dsi_manager_uke_avr_set(true);
-+	if (ret) {
-+		DRM_ERROR("O82 AVR pair refused: %d; retaining fixed timing\n", ret);
-+		return;
-+	}
++	if (ret)
++		goto fail;
 +	spin_lock_irqsave(&enc->enc_spinlock, flags);
 +	for (i = 0; i < enc->num_phys_encs; i++) {
 +		struct dpu_encoder_phys *phys = enc->phys_encs[i];
@@ -161,12 +163,17 @@ index c7aac33..2b7a3a8 100644
 +	enc->avr_enabled = true;
 +	spin_unlock_irqrestore(&enc->enc_spinlock, flags);
 +	DRM_INFO("O82 unqualified AVR experiment: %d maximum lines per frame\n", lines);
++	return;
++fail:
++	/* Retry only after VRR off or a full modeset, not on every page flip. */
++	enc->avr_failed = true;
++	DRM_ERROR("O82 AVR experiment failed: %d; retaining fixed timing\n", ret);
 +}
 +
  /**
   * dpu_encoder_helper_split_config - split display configuration helper function
   *	This helper function may be used by physical encoders to configure
-@@ -1495,6 +1590,7 @@ static void dpu_encoder_virt_atomic_disable(struct drm_encoder *drm_enc,
+@@ -1495,6 +1597,7 @@ static void dpu_encoder_virt_atomic_disable(struct drm_encoder *drm_enc,
  	trace_dpu_enc_disable(DRMID(drm_enc));
  
  	/* wait for idle */
@@ -174,7 +181,7 @@ index c7aac33..2b7a3a8 100644
  	dpu_encoder_wait_for_tx_complete(drm_enc);
  
  	dpu_encoder_resource_control(drm_enc, DPU_ENC_RC_EVENT_PRE_STOP);
-@@ -2207,6 +2303,7 @@ void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
+@@ -2207,6 +2310,7 @@ void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
  
  	/* if any phys needs reset, reset all phys, in-order */
  	if (needs_hw_reset) {
@@ -182,7 +189,7 @@ index c7aac33..2b7a3a8 100644
  		trace_dpu_enc_prepare_kickoff_reset(DRMID(drm_enc));
  		for (i = 0; i < dpu_enc->num_phys_encs; i++) {
  			dpu_encoder_helper_hw_reset(dpu_enc->phys_encs[i]);
-@@ -2215,6 +2312,8 @@ void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
+@@ -2215,6 +2319,8 @@ void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
  
  	if (dpu_enc->dsc)
  		dpu_encoder_prep_dsc(dpu_enc, dpu_enc->dsc);
@@ -191,7 +198,7 @@ index c7aac33..2b7a3a8 100644
  }
  
  /**
-@@ -2280,6 +2379,18 @@ void dpu_encoder_kickoff(struct drm_encoder *drm_enc)
+@@ -2280,6 +2386,18 @@ void dpu_encoder_kickoff(struct drm_encoder *drm_enc)
  	/* All phys encs are ready to go, trigger the kickoff */
  	_dpu_encoder_kickoff_phys(dpu_enc);
  
@@ -210,12 +217,13 @@ index c7aac33..2b7a3a8 100644
  	/* allow phys encs to handle any post-kickoff business */
  	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
  		phys = dpu_enc->phys_encs[i];
-@@ -2612,6 +2723,8 @@ static int _dpu_encoder_status_show(struct seq_file *s, void *data)
+@@ -2612,6 +2730,9 @@ static int _dpu_encoder_status_show(struct seq_file *s, void *data)
  	struct dpu_encoder_virt *dpu_enc = to_dpu_encoder_virt(drm_enc);
  	int i;
  
 +	seq_printf(s, "avr_enabled: %u (unqualified experiment)\n",
 +		   READ_ONCE(dpu_enc->avr_enabled));
++	seq_printf(s, "avr_failed: %u\n", READ_ONCE(dpu_enc->avr_failed));
  	mutex_lock(&dpu_enc->enc_lock);
  	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
  		struct dpu_encoder_phys *phys = dpu_enc->phys_encs[i];
