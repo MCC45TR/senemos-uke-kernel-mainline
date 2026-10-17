@@ -18,6 +18,8 @@ typedef uint32_t u32;
 typedef uint32_t __le32;
 typedef uint16_t __le16;
 typedef uint8_t u8;
+typedef int64_t s64;
+static s64 div_s64(s64 n, int d) { return n / d; }
 struct work_struct { int unused; };
 struct delayed_work { struct work_struct work; };
 struct completion { int done; };
@@ -28,7 +30,10 @@ struct platform_device { struct device dev; };
 struct of_device_id { const char *compatible; const void *data; };
 #define BIT(n) (1UL << (n))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
-enum power_supply_property { POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT };
+C
+awk '/^enum power_supply_property \{/ {emit=1} emit {print} emit && /^};/ {exit}' \
+    "$kernel/include/linux/power_supply.h"
+cat <<'C'
 enum { POWER_SUPPLY_USB_TYPE_UNKNOWN, POWER_SUPPLY_USB_TYPE_SDP, POWER_SUPPLY_USB_TYPE_PD };
 union power_supply_propval { int intval; };
 struct power_supply { void *drvdata; };
@@ -57,9 +62,10 @@ awk '/^static const struct pmic_glink_data pmic_glink_uke_data/ {emit=1}
     "$kernel/drivers/soc/qcom/pmic_glink.c" | sed '/^MODULE_DEVICE_TABLE/d'
 cat <<'C'
 static struct qcom_battmgr_property_request sent;
-static int requests, request_result;
+static int requests, request_result, request_fail_at;
 static int qcom_battmgr_request(struct qcom_battmgr *b, void *p, size_t n) {
- assert(b && n==sizeof(sent)); memcpy(&sent,p,n); requests++; return request_result;
+ assert(b && n==sizeof(sent)); memcpy(&sent,p,n); requests++;
+ return requests==request_fail_at ? -ETIMEDOUT : request_result;
 }
 static bool uke_root;
 static const struct of_device_id *match_result;
@@ -88,6 +94,8 @@ for name in uke_battery_property request_property usb_set_property usb_is_writea
         $0 ~ "^static (int|void) " name "\\(" {emit=1}
         emit {print} emit && /^}/ {exit}' "$source"
 done
+awk '/^static const u8 sm8350_bat_prop_map\[\]/ {emit=1} emit {print} emit && /^};/ {exit}' "$source"
+awk '/^static int qcom_battmgr_bat_sm8350_update\(/ {emit=1} emit {print} emit && /^}/ {exit}' "$source"
 awk '/^static int dwc3_gadget_vbus_draw\(/ {emit=1} emit {print} emit && /^}/ {exit}' "$kernel/drivers/usb/dwc3/gadget.c"
 cat <<'C'
 static void select_variant(struct qcom_battmgr *battmgr, struct device *dev) {
@@ -122,6 +130,22 @@ int main(void) {
  assert(pmic_glink_of_match[0].data==&pmic_glink_uke_data);
  assert(pmic_glink_adsp_data.client_mask==(BIT(PMIC_GLINK_CLIENT_BATT)|BIT(PMIC_GLINK_CLIENT_ALTMODE)|BIT(PMIC_GLINK_CLIENT_UCSI)));
  struct qcom_battmgr b={.variant=QCOM_BATTMGR_UKE};
+ b.status.voltage_now=4000000; b.status.current_now=500000;
+ int power_requests=requests;
+ assert(qcom_battmgr_bat_sm8350_update(&b,POWER_SUPPLY_PROP_POWER_NOW)==0);
+ assert(b.status.power_now==2000000 && requests==power_requests+2 && sent.property==9 && !b.lock.unused);
+ b.status.current_now=-500000;
+ assert(qcom_battmgr_bat_sm8350_update(&b,POWER_SUPPLY_PROP_POWER_NOW)==0 && b.status.power_now==-2000000);
+ b.status.current_now=0;
+ assert(qcom_battmgr_bat_sm8350_update(&b,POWER_SUPPLY_PROP_POWER_NOW)==0 && !b.status.power_now);
+ b.status.voltage_now=UINT_MAX; b.status.current_now=INT_MAX;
+ assert(qcom_battmgr_bat_sm8350_update(&b,POWER_SUPPLY_PROP_POWER_NOW)==-ERANGE && !b.status.power_now && !b.lock.unused);
+ b.status.voltage_now=4000000; b.status.current_now=500000;
+ for (int fail=1;fail<=2;fail++) {
+  request_fail_at=requests+fail;
+  assert(qcom_battmgr_bat_sm8350_update(&b,POWER_SUPPLY_PROP_POWER_NOW)==-ETIMEDOUT && !b.status.power_now && !b.lock.unused);
+ }
+ request_fail_at=0;
  /* Independent wire IDs from the pinned Uke OEM enum, including its inserted ID 12. */
  const int wire[]={0,1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
  for (unsigned int i=0;i<sizeof(wire)/sizeof(wire[0]);i++) {

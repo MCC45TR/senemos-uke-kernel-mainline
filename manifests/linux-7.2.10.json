@@ -184,6 +184,10 @@
     {
       "path": "patches/7.2.10/0044-uke-usb-charger-readiness-diagnostics.patch",
       "sha256": "e6921ea8d40ae66bd04b4de9408bbfa447cabad67c57d38333d88a3c721c0973"
+    },
+    {
+      "path": "patches/7.2.10/0045-uke-battery-derived-power.patch",
+      "sha256": "d452a44134478b427407d0e4a1761249014ab5524f384c9180763a0d7cd5718b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

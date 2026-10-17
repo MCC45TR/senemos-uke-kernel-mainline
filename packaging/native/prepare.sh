@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile-gate source closure only; no device, boot image or initramfs input.
+# Prepare native source; the boot producer separately generates its initramfs.
 set -Eeuo pipefail
 kernel=$(realpath "${1:?Pass prepared kernel}")
 profile=$(cd -- "$(dirname -- "$0")" && pwd)
@@ -20,4 +20,4 @@ dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
     printf '};\n'
 } > "$kernel/arch/arm64/kernel/uke-native-display.h"
 fdtdump "$output/display.dtbo" 2>/dev/null | grep -Eq '^[[:space:]]+xiaomi,oem-refresh-modes;'
-printf 'Exact seven-mode O82-42 native source prepared; no initramfs or boot image input\n'
+printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'

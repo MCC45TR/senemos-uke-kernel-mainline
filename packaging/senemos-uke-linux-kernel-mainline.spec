@@ -1,9 +1,10 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 1.4056.1
-%global krel %{version}-senemos.%{senemos_build_release}
+%global senemos_build_release 2
+%global krel %{version}-%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
+%global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
@@ -16,20 +17,25 @@ Source1: senemos-uke-adaptation-%{version}.tar.xz
 Source2: linux-%{version}.tar.sign
 Source3: linux-stable.asc
 Source4: senemos-native-profile-%{version}.tar.xz
+Source5: senemos-uke-boot-recipe.tar.xz
+Source6: boot-payload.json
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
+BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
+Requires: %{name}-boot = %{version}-%{release}
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
-This source package contains no embedded initramfs, Android boot image,
-firmware or device-private data. No boot partition is written. A successful build is not tablet boot
-acceptance and does not supply the guarded kernel-update bundle.
+The boot subpackage contains a source-built initramfs and Android v4 container
+with matching modules. It contains no OEM firmware or device-private data.
+Boot writes require the explicitly enabled native updater. Build success does
+not establish physical tablet acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -37,8 +43,7 @@ Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
 
 %description core
-Raw Image without an initramfs or boot container. Keep the previously validated
-boot bundle until a matching source-built boot producer is physically accepted.
+Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
 Summary: Matching Uke kernel modules
@@ -57,6 +62,19 @@ Provides: installonlypkg(kernel)
 %description dtbs
 Independent compile-stage DTB and exact O82-42 native display overlay. Physical
 boot requires the separately validated dynamic stock-bootloader handoff.
+
+%package boot
+Summary: Matched native-display boot bundle for Uke
+Requires: %{name}-core = %{version}-%{release}
+Requires: %{name}-modules = %{version}-%{release}
+Requires: %{name}-dtbs = %{version}-%{release}
+Requires: uke-kernel-update >= 0.1.0-15
+Provides: installonlypkg(kernel)
+
+%description boot
+Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
+checks package identities, module digests, physical storage and power, preserves
+the previous image, and verifies write readback. Android A is not an update target.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
@@ -97,6 +115,9 @@ cmp senemos-expected-patches.txt senemos-applied-patches.txt
 
 tar -xJf %{SOURCE4}
 bash native-profile/prepare.sh "$PWD"
+tar -xJf %{SOURCE5}
+cmp boot-recipe/lock.json %{SOURCE6}
+(cd boot-recipe; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
 
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
@@ -104,21 +125,25 @@ export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VER
 export SOURCE_DATE_EPOCH=1791725270
 export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
 mkdir -p %{_uke_out}
-install -m644 native-profile/native.config %{_uke_out}/.config
-scripts/config --file %{_uke_out}/.config --set-str INITRAMFS_SOURCE ''
-make O=%{_uke_out} LOCALVERSION=-senemos.%{senemos_build_release} olddefconfig
-grep -Fx 'CONFIG_INITRAMFS_SOURCE=""' %{_uke_out}/.config
+if test ! -e %{uke_boot_userspace}; then
+    bash boot-recipe/src/boot/make-initramfs-base.sh %{uke_boot_userspace} '%{krel}'
+fi
+test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
+(cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
+jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
+test "$jobs" -le 8 || jobs=8
+bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
-jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-test "$jobs" -le 8 || jobs=8
-make O=%{_uke_out} LOCALVERSION=-senemos.%{senemos_build_release} -j"$jobs" Image modules dtbs
-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos.%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
+bash boot-recipe/tests/target-privacy-contract.sh
+CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
@@ -135,13 +160,9 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 
 %install
 export ARCH=arm64 LLVM=1
-make O=%{_uke_out} LOCALVERSION=-senemos.%{senemos_build_release} modules_install INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
 mkdir -p %{buildroot}/usr/lib/modules
-mv %{buildroot}/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
-rm -rf %{buildroot}/lib
+cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
 module_dir=%{buildroot}/usr/lib/modules/%{krel}
-rm -f "$module_dir/build" "$module_dir/source"
-find "$module_dir" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
 install -m644 %{_uke_out}/arch/arm64/boot/Image "$module_dir/vmlinuz"
 install -m644 %{_uke_out}/.config "$module_dir/config"
 install -m644 %{_uke_out}/System.map "$module_dir/System.map"
@@ -154,6 +175,21 @@ mkdir -p "$identity"
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
+bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
+mkdir -p "$bundle"
+install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
+install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
+install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
+install -m644 %{SOURCE6} "$bundle/source-lock.json"
+install -m644 %{uke_boot_userspace}/build-rpms.tsv "$bundle/build-rpms.tsv"
+mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
+cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
+cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
+
+%posttrans boot -p /bin/sh
+if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
+    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
+fi
 
 %files
 %doc native-profile/README.md
@@ -180,7 +216,15 @@ test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name '
 %files dtbs
 /usr/lib/modules/%{krel}/dtb/
 
+%files boot
+/usr/lib/senemos/kernel-updates/%{krel}/
+%license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
+
 %changelog
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-2
+- Restore the source-built native boot bundle with versioned matching modules.
+- Use integer releases and expose signed battery power from voltage/current.
+
 * Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.4056.1
 - Enable standard Bluetooth LE HID input and RFCOMM facilities.
 - Use the Uke UART speed that completes stock QCA firmware transfer.
