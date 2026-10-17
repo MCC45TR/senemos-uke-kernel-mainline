@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Host-only stock-ABL build. The base contains no firmware or kernel modules.
 set -Eeuo pipefail
+trap 'printf "Boot payload failed at line %s\n" "$LINENO" >&2' ERR
 [[ $# == 5 ]] || exit 2
 kernel=$(realpath "$1") out=$(realpath -m "$2")
 base=$(realpath "$3") release=$4 jobs=$5

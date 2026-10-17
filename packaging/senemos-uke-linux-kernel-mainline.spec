@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 3
+%global senemos_build_release 4
 %global krel %{version}-%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
@@ -223,6 +223,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-4
+- Exclude PAS from the early module list until root firmware is available.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-3
 - Expose admitted PMIC voltage and temperature channels through standard Linux interfaces.
 - Correct ADC5 Gen3 voltage types and processed units.

@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "9cd40243e112126fd34672055e6f69c001cf50644573f8aed28f2f6e46da5d51"
+      "sha256": "6cac0a33dabe2a024f95be2927a4c2dfae216a3f960b0d5ef26039d912eb49e2"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -61,7 +61,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "b3aaeb9b9ad9c31c0cbaa13b74ef9b01dd925f44771e672fdf29c44c5cde027e"
+      "sha256": "f090469d2435eda7b96ee6397ef029799e517632480fb1d73ca321c9d45ecd94"
     },
     {
       "path": "src/boot/licenses/builder-MIT",

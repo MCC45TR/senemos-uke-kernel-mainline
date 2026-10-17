@@ -16,7 +16,7 @@ or overwrite a previous kernel build.
 Release 2 restores the source-built boot tuple: Image, matching modules,
 independent DTB/native overlay, and a kernel-only Android v4 boot container.
 The dracut base is generated on the AArch64 build worker from original Fedora
-packages. The 377 early modules follow the physically tested native56 inventory;
+packages. The 376 early modules follow the native56 inventory with PAS excluded;
 PAS starts after the real root supplies OEM firmware. The native updater writes
 only when its local configuration explicitly enables automatic updates. It keeps
 the previous full image and validates readback. The new producer needs its own
@@ -37,7 +37,7 @@ tablet; package installation checks reject Python files and runtimes.
 
 ## PMIC and CPU thermal candidate, 18 October 2026
 
-Release 3 admits the exact OEM PMIC ADC graph through upstream ADC5 Gen3,
+Release 3 introduces the source change; release 4 admits the exact OEM PMIC ADC graph through upstream ADC5 Gen3,
 IIO, iio-hwmon and generic-adc-thermal. It exports 23 supported channels and
 connects ten board thermistors to their existing thermal zones. Four private
 charger scalers remain unexported; GLINK battery telemetry remains separate.
@@ -50,3 +50,8 @@ cpufreq cooling devices. The OEM 110 degree junction triggers and respective
 frequency cooling; the complete OEM skin and BCL policy is not implemented.
 These are source and fixture results until the exact COPR bundle boots and the
 new channels and cooling bindings are inspected on the tablet.
+
+Release 2 compiles the full kernel but fails the early-PAS guard because its
+module inventory includes PAS. Release 3 is cancelled before repeating that
+known packaging fault. Release 4 removes PAS from the early inventory and
+keeps the fail-closed check. No failed bundle is installed on the tablet.
