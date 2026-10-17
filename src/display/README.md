@@ -1,9 +1,15 @@
 # SM7675 native display candidate
 
-Recorded on 16 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
+Updated on 17 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
 candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.
-**Native display reaches Fedora, SSH and active scanout, but visible output remains unavailable.**
+**The 7.2.9 development build `7.2.9-senemos.1.4050` displays the original KDE
+desktop through native MSM DPU/DSI at 3200×2136/120 Hz.** The first ordinary
+persistent B boot is confirmed by the physical observation, running kernel,
+boot/module hashes and `msm-kmsdrmfb`. Patch `0032` supplies the narrowly scoped
+PLL bias-write replay. Repeated starts, blank/unblank, suspend, other refresh
+modes and sustained stability remain unqualified. The normal release recipe
+is unchanged; this result applies to the matched development artifact only.
 
 `configs/development-debug.config` is an optional development-only fragment for
 kprobe/fprobe events, ftrace/function-graph, scheduler/stack/syscall tracing,
@@ -92,7 +98,10 @@ transfer retention, PLL start, packets and timing remain unchanged. The host
 `tests/o82-pll-bias-contract.sh PREPARED_KERNEL KERNEL_OBJECTS` fixture executes
 the actual shared bias functions and checks admission, nested references,
 store/lock/delay order and invalid/overflow behavior. Build and optical
-qualification remain pending.
+qualification was initially pending. On 17 October, native50's complete build,
+signed matched delivery and first ordinary B boot passed, with a recognizable
+native KDE desktop. The first-frame artifact is preserved separately; the
+broader lifecycle limits above still apply.
 
 Patch `0030` extends exact O82 initial120 clock retention to powered pre-video
 transfers. Initial host rate setup and ordinary profiles remain unchanged;
