@@ -20,7 +20,14 @@ grep -Fxq 0037-uke-gpu-interconnect.patch "$kernel/senemos-applied-patches.txt"
 hook_args=(--exclude=drivers/regulator/qcom-rpmh-regulator-uke.c --exclude=drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c)
 git -C "$kernel" apply --check "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
 git -C "$kernel" apply "${hook_args[@]}" "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0002-uke-sensor-context-banks.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0002-uke-sensor-context-banks.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0004-uke-bluetooth-power.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0004-uke-bluetooth-power.patch"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
+install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]
 grep -F 'DTC 1.7.2-g53373d13' "$kernel/scripts/dtc/version_gen.h" >/dev/null
 install -m644 "$here/vendor/fdt_check.c" "$kernel/scripts/dtc/libfdt/fdt_check.c"
@@ -49,8 +56,11 @@ for name in ufs usb; do
     } >> "$header"
 done
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
-sha256sum "$here/uke-abl.c" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
+sha256sum "$here/uke-abl.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
     "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
+    "$here/../../patches/boot/0002-uke-sensor-context-banks.patch" \
+    "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch" \
+    "$here/../../patches/boot/0004-uke-bluetooth-power.patch" \
     "$here/../../patches/$version/0036-uke-adreno732-render.patch" \
     "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"

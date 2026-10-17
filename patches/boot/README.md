@@ -1,5 +1,14 @@
 # Stock-ABL boot-specific adaptation
 
+17 October 2026: the separate sensor candidate restores the exact Uke ADSP
+root/sensor FastRPC banks alongside native display. It translates the OEM
+channel to `qcom,fastrpc`, admits only the two validated IOMMU groups, and leaves
+the original OEM context-bank devices disabled. `0002-uke-sensor-context-banks.patch`
+composes with the native-display SMMU patch; graph and stream rejection fixtures
+cover wrong channels, labels, PDs, mappings, secure banks and foreign consumers.
+The accepted native54 boot is preserved. Candidate build and tablet rotation
+acceptance are separate; this does not provide continuous VRR or DSP recovery.
+
 This directory is separate from the accepted `patches/7.2.9/series` RPM port.
 The Fedora image builder applies its one additional patch only to an isolated,
 verified Linux 7.2.9 tree with all 13 accepted patches already present.
@@ -74,3 +83,12 @@ all modules and DTBs must compile, and final module bytes must match the signed
 RPM payload before the paired Fedora root is composed. Host checks and generic
 VM boots do not qualify Qualcomm ABL, UFS, panel, input or USB power. No captured
 unit DT, RAM map, calibration data or firmware binary is embedded in this patch.
+
+The next kernel candidate uses signed 7.2.10. Patch 0003 exposes the four legacy
+sensor-profile attributes from validated SMEM data on Uke only; unknown labels
+fail. Its GPL helper export supports the modular socinfo driver. Patch 0004
+preserves Uke's exact eight Bluetooth suppliers and admits S3E without dummy
+rails or new voltage limits. The UART transform retains original interconnect,
+pin and interrupt references; WLAN reset is untouched. Host fixtures cover
+foreign clock/IRQ/GPIO/supplier and ownership rejection. Firmware, controller,
+sensors and desktop behavior still require a matched physical boot.

@@ -168,6 +168,22 @@
     {
       "path": "patches/7.2.10/0040-sm7675-epss-core-count.patch",
       "sha256": "d18f2f2942427522ff479baebc078841d0f6463d649dfcc813967bbddd1f266e"
+    },
+    {
+      "path": "patches/7.2.10/0041-sysfb-bounded-damage-copy.patch",
+      "sha256": "91232e80e7fabb4c27820ad8bb10f817e3dfe9fcae360342df7b13a82ee409ff"
+    },
+    {
+      "path": "patches/7.2.10/0042-uke-backlight-visible-minimum.patch",
+      "sha256": "01d64d28d9cdb749bf8df3acc6fba187430b1b831e935271b6046fb0588b86c4"
+    },
+    {
+      "path": "patches/7.2.10/0043-uke-cdc-usb2-power-budget.patch",
+      "sha256": "363cf1f068338c6a68ee31e49b5ee86f55a944a6d891c1d0a16eedfb5cd404c7"
+    },
+    {
+      "path": "patches/7.2.10/0044-uke-usb-charger-readiness-diagnostics.patch",
+      "sha256": "e6921ea8d40ae66bd04b4de9408bbfa447cabad67c57d38333d88a3c721c0973"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

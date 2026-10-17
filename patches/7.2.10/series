@@ -38,3 +38,7 @@
 0038-uke-handoff-panel-metadata.patch
 0039-adreno-unbound-component-removal.patch
 0040-sm7675-epss-core-count.patch
+0041-sysfb-bounded-damage-copy.patch
+0042-uke-backlight-visible-minimum.patch
+0043-uke-cdc-usb2-power-budget.patch
+0044-uke-usb-charger-readiness-diagnostics.patch

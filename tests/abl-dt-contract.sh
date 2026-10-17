@@ -45,6 +45,40 @@ for target in 'ufshc@1d84000 60' 'ssusb@a600000 40' 'qcom,gpi-dma@a00000 b6' 'qc
     [[ $(fdtget -t x "$out/admitted.dtb" "/soc/$node" iommus) == "$apps $sid 0" ]]
 done
 second=/soc/qcom,qupv3_1_geni_se@8c0000
+uart=$second/qcom,qup_uart@888000
+bt=$uart/bluetooth
+[[ $(fdtget -t s "$out/admitted.dtb" "$uart" compatible) == qcom,geni-uart ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$uart" status) == okay ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$uart" clock-names) == se ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$uart" pinctrl-names) == 'default sleep' ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$uart" pinctrl-0) == "$(fdtget -t x "$input" "$uart" pinctrl-1)" ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$uart" pinctrl-1) == "$(fdtget -t x "$input" "$uart" pinctrl-3)" ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$uart" clocks) == "$(fdtget -t x "$input" "$uart" clocks)" ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$uart" interconnects) == "$(fdtget -t x "$input" "$uart" interconnects)" ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$bt" compatible) == xiaomi,uke-wcn6750-bt ]]
+[[ $(fdtget -t u "$out/admitted.dtb" "$bt" max-speed) == 115200 ]]
+[[ $(fdtget -t s "$out/admitted.dtb" /soc/bt_wcn6750 status) == disabled ]]
+[[ $(fdtget -t x "$out/admitted.dtb" "$bt" pinctrl-0) == "$(fdtget -t x "$input" /soc/bt_wcn6750 pinctrl-0)" ]]
+for pair in 'qcom,bt-reset-gpio enable-gpios' 'qcom,bt-sw-ctrl-gpio swctrl-gpios' 'qcom,bt-vdd-io-supply vddio-supply' 'qcom,bt-vdd-aon-supply vddaon-supply' 'qcom,bt-vdd-dig-supply vddbtcxmx-supply' 'qcom,bt-vdd-rfacmn-supply vddrfacmn-supply' 'qcom,bt-vdd-rfa-0p8-supply vddrfa0p8-supply' 'qcom,bt-vdd-rfa1-supply vddrfa1p7-supply' 'qcom,bt-vdd-rfa2-supply vddrfa1p2-supply' 'qcom,bt-vdd-ipa-2p2-supply vddrfa2p2-supply'; do
+    read -r original native <<< "$pair"
+    [[ $(fdtget -t x "$out/admitted.dtb" "$bt" "$native") == "$(fdtget -t x "$input" /soc/bt_wcn6750 "$original")" ]]
+done
+[[ $(fdtget -t x "$out/admitted.dtb" /soc/bt_wcn6750 qcom,wl-reset-gpio) == "$(fdtget -t x "$input" /soc/bt_wcn6750 qcom,wl-reset-gpio)" ]]
+rpc=/soc/remoteproc-adsp@03000000/glink-edge/qcom,msm_fastrpc_rpmsg
+[[ $(fdtget -t s "$out/admitted.dtb" "$rpc" compatible) == qcom,fastrpc ]]
+[[ $(fdtget -t s "$out/admitted.dtb" "$rpc" label) == adsp ]]
+[[ $(fdtget -l "$out/admitted.dtb" "$rpc" | sort) == $'compute-cb@3\ncompute-cb@5' ]]
+if fdtget "$out/admitted.dtb" "$rpc" qcom,vmids 2>/dev/null; then exit 1; fi
+if fdtget "$out/admitted.dtb" "$rpc" memory-region 2>/dev/null; then exit 1; fi
+for mapping in '3 10' '5 12'; do
+    read -r id original <<< "$mapping"
+    cb=/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb$original
+    [[ $(fdtget -t u "$out/admitted.dtb" "$rpc/compute-cb@$id" reg) == "$id" ]]
+    [[ $(fdtget -t x "$out/admitted.dtb" "$rpc/compute-cb@$id" iommus) == "$(fdtget -t x "$input" "$cb" iommus)" ]]
+done
+for child in $(fdtget -l "$input" /soc/qcom,msm_fastrpc); do
+    [[ $(fdtget -t s "$out/admitted.dtb" "/soc/qcom,msm_fastrpc/$child" status) == disabled ]]
+done
 bus=$second/i2c@890000
 gpi=$(fdtget -t x "$input" /soc/qcom,gpi-dma@800000 phandle)
 [[ $(fdtget -t s "$out/admitted.dtb" "$bus" compatible) == qcom,geni-i2c ]]
@@ -65,7 +99,7 @@ fdtput -t x "$out/existing-backlight-phandle.dtb" "$secondary" phandle "$(fdtget
 [[ $(fdtget -t x "$out/existing-backlight-admitted.dtb" "$primary" xiaomi,secondary) == "$(fdtget -t x "$out/existing-backlight-phandle.dtb" "$secondary" phandle)" ]]
 for parent in "$second" "$bus"; do
     for child in $(fdtget -l "$out/admitted.dtb" "$parent"); do
-        case "$parent/$child" in "$bus"|"$bus/ktz8866@11") continue;; esac
+        case "$parent/$child" in "$bus"|"$bus/ktz8866@11"|"$uart") continue;; esac
         [[ $(fdtget -t s "$out/admitted.dtb" "$parent/$child" status) == disabled ]]
     done
 done
@@ -210,8 +244,43 @@ for scenario in gpu-chip gpu-irq gmu-base gpu-gx board graph symbols splash trun
     fi
     [[ ! -e $out/rejected-$scenario.dtb ]]
 done
+for scenario in rpc-channel rpc-compatible rpc-label rpc-pd rpc-map rpc-secure; do
+    cp "$input" "$out/$scenario.dtb"
+    cb=/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb12
+    case $scenario in
+        rpc-channel) fdtput -t s "$out/$scenario.dtb" "$rpc" qcom,glink-channels other-channel;;
+        rpc-compatible) fdtput -t s "$out/$scenario.dtb" "$rpc" compatible qcom,other;;
+        rpc-label) fdtput -t s "$out/$scenario.dtb" "$cb" label cdsprpc-smd;;
+        rpc-pd) fdtput -t u "$out/$scenario.dtb" "$cb" pd-type 7;;
+        rpc-map) fdtput -t x "$out/$scenario.dtb" "$cb" iommus "$apps" 1005 80 "$apps" 1045 40;;
+        rpc-secure) fdtput "$out/$scenario.dtb" "$cb" qcom,secure-context-bank;;
+    esac
+    if "$binary" "$out/$scenario.dtb" "$ufs" "$usb" "$out/rejected-$scenario.dtb"; then
+        echo "Invalid FastRPC map was admitted: $scenario" >&2; exit 1
+    fi
+    [[ ! -e $out/rejected-$scenario.dtb ]]
+done
 printf '/dts-v1/; / { model="QEMU virtual fixture"; compatible="linux,dummy-virt"; };\n' | dtc -q -I dts -O dtb -o "$out/foreign.dtb"
 result=0
 "$binary" "$out/foreign.dtb" "$ufs" "$usb" "$out/foreign-output.dtb" || result=$?
 [[ $result == 3 && ! -e $out/foreign-output.dtb ]]
+for scenario in compatible clock irq enable-gpio swctrl-gpio supply load active-pin sleep-function reset-pinctrl child-collision; do
+    file=$out/bt-$scenario.dtb
+    cp "$input" "$file"
+    case $scenario in
+        compatible) fdtput -t s "$file" /soc/bt_wcn6750 compatible qcom,wcn3990-bt;;
+        clock) fdtput -t x "$file" "$uart" clocks deadbeef 5a;;
+        irq) fdtput -t x "$file" "$uart" interrupts-extended 1 0 249 4 2 2b 4;;
+        enable-gpio) fdtput -t x "$file" /soc/bt_wcn6750 qcom,bt-reset-gpio "$tlmm_phandle" 23 0;;
+        swctrl-gpio) fdtput -t x "$file" /soc/bt_wcn6750 qcom,bt-sw-ctrl-gpio "$tlmm_phandle" 51 0;;
+        supply) fdtput -t x "$file" /soc/bt_wcn6750 qcom,bt-vdd-ipa-2p2-supply deadbeef;;
+        load) fdtput -t x "$file" /soc/bt_wcn6750 qcom,bt-vdd-io-config 1b7740 1b7740 1 1;;
+        active-pin) fdtput -t s "$file" /soc/pinctrl@f000000/qupv3_se10_4uart_pins/qupv3_se10_cts/mux pins gpio39;;
+        sleep-function) fdtput -t s "$file" /soc/pinctrl@f000000/qupv3_se10_4uart_pins/qupv3_se10_default_cts/mux function qup1_se2_l0;;
+        reset-pinctrl) fdtput -t x "$file" /soc/bt_wcn6750 pinctrl-0 deadbeef;;
+        child-collision) fdtput -c "$file" "$bt";;
+    esac
+    if "$binary" "$file" "$ufs" "$usb" "$out/bt-rejected-$scenario.dtb"; then exit 1; fi
+    [[ ! -e $out/bt-rejected-$scenario.dtb ]]
+done
 echo 'Live-stock DT transform, scoped DMA consumers and malformed-input/foreign-DT rejection groups passed'

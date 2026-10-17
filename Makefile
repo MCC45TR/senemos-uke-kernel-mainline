@@ -2,10 +2,10 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm
-version := 7.2.9
+version := 7.2.10
 outdir ?= $(CURDIR)/build/srpm
 validate:
-	test "$(version)" = 7.2.9
+	test "$(version)" = 7.2.10
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 44) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
@@ -39,7 +39,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/display src/boot patches/7.2.9 patches/display patches/boot tests | tar -xf - -C "$$assets"
+	git archive HEAD src/display src/boot patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"

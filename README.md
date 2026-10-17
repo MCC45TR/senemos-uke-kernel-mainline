@@ -3,9 +3,9 @@
 Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 (`uke`, Qualcomm SM7675).
 
-**Development target:** Linux 7.2.9 · AArch64 · Fedora Rawhide
+**Development target:** Linux 7.2.10 · AArch64 · Fedora Rawhide
 
-[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json)
+[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.10.json)
 
 ## Status — 17 October 2026
 
@@ -21,9 +21,16 @@ remain open. Discrete switching does not provide Adaptive Sync.
 successfully built the consolidated mainline source as 7.2.9-1.4054.3.
 Its raw Image is not the separately matched `.4054` tablet boot bundle.
 
-The OEM non-linear backlight mapping is retained. Timed fade and expanded
-FastRPC context-bank experiments are preserved in history and are not activated
-by this consolidation. See the [integration record](packaging/INTEGRATION-20261017.md)
+The next candidate uses signed upstream Linux 7.2.10 with all 44 baseline
+adaptations, the native54 display profile, exact SSC context banks and the Uke
+Bluetooth UART/power graph. It preserves the accepted .4054 fallback. Source
+preparation and host fixtures pass; candidate boot, sensor measurements,
+Bluetooth input and repeated startup remain physical acceptance gates. VRR is
+deferred; no continuous display range is advertised.
+
+The OEM non-linear backlight mapping is retained. Timed fade remains historical.
+Only the two exact OEM root/sensor context banks are admitted for SSC; other
+FastRPC contexts remain disabled. See the [integration record](packaging/INTEGRATION-20261017.md)
 for the source and package boundaries.
 
 ### Earlier firmware-framebuffer baseline — 15 October 2026

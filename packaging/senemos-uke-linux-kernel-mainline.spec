@@ -1,12 +1,12 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global senemos_build_release 1.4054.3
+%global senemos_build_release 1.4055.1
 %global krel %{version}-senemos.%{senemos_build_release}
 %global _uke_out %{_topdir}/native-kernel-out
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.9
+Version: 7.2.10
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Uke kernel with the O82 display profile
 License: GPL-2.0-only
@@ -101,7 +101,7 @@ bash native-profile/prepare.sh "$PWD"
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
-export SOURCE_DATE_EPOCH=1791024250
+export SOURCE_DATE_EPOCH=1791725270
 export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
 mkdir -p %{_uke_out}
 install -m644 native-profile/native.config %{_uke_out}/.config

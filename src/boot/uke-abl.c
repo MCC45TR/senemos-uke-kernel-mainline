@@ -258,6 +258,94 @@ static int UKE_INIT uke_scope_smmu_clients(void *fdt)
 	return node == -FDT_ERR_NOTFOUND ? 0 : node;
 }
 
+static int UKE_INIT uke_sensor_fastrpc(void *fdt)
+{
+	static const char * const source[] = {
+		"/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb10",
+		"/soc/qcom,msm_fastrpc/qcom,msm_fastrpc_compute_cb12",
+	};
+	static const char * const names[] = { "compute-cb@3", "compute-cb@5" };
+	static const unsigned int ids[] = { 3, 5 }, pd[] = { 1, 2 };
+	const char *path = "/soc/remoteproc-adsp@03000000/glink-edge/qcom,msm_fastrpc_rpmsg";
+	fdt32_t maps[2][6];
+	int smmu = fdt_path_offset(fdt, "/soc/apps-smmu@15000000");
+	unsigned int phandle = smmu < 0 ? 0 : fdt_get_phandle(fdt, smmu);
+	int node, length, ret, i;
+	const fdt32_t *value;
+	const char *label;
+
+	if (!phandle)
+		return -FDT_ERR_BADPHANDLE;
+	node = fdt_path_offset(fdt, path);
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,msm-fastrpc-rpmsg"))
+		return -FDT_ERR_BADVALUE;
+	label = fdt_getprop(fdt, node, "qcom,glink-channels", &length);
+	if (!label || length != sizeof("fastrpcglink-apps-dsp") ||
+	    memcmp(label, "fastrpcglink-apps-dsp", length))
+		return -FDT_ERR_BADVALUE;
+	for (i = 0; i < 2; i++) {
+		node = fdt_path_offset(fdt, source[i]);
+		if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,msm-fastrpc-compute-cb"))
+			return -FDT_ERR_BADVALUE;
+		label = fdt_getprop(fdt, node, "label", &length);
+		if (!label || length != sizeof("adsprpc-smd") || memcmp(label, "adsprpc-smd", length))
+			return -FDT_ERR_BADVALUE;
+		value = fdt_getprop(fdt, node, "pd-type", &length);
+		if (!value || length != 4 || fdt32_to_cpu(*value) != pd[i])
+			return -FDT_ERR_BADVALUE;
+		value = fdt_getprop(fdt, node, "iommus", &length);
+		if (!value || length != sizeof(maps[i]) ||
+		    fdt32_to_cpu(value[0]) != phandle || fdt32_to_cpu(value[3]) != phandle ||
+		    fdt32_to_cpu(value[1]) != 0x1000 + ids[i] || fdt32_to_cpu(value[2]) != 0x80 ||
+		    fdt32_to_cpu(value[4]) != 0x1040 + ids[i] || fdt32_to_cpu(value[5]) != 0x20)
+			return -FDT_ERR_BADVALUE;
+		memcpy(maps[i], value, sizeof(maps[i]));
+		if (!fdt_getprop(fdt, node, "dma-coherent", &length) || length ||
+		    fdt_getprop(fdt, node, "qcom,secure-context-bank", NULL))
+			return -FDT_ERR_BADVALUE;
+	}
+	/* Keep OEM context banks disabled; only the root/sensor maps are copied.
+	 * No remote heap, VMID reassignment, CDSP or audio context is admitted.
+	 */
+	node = fdt_path_offset(fdt, path);
+	ret = fdt_setprop_string(fdt, node, "compatible", "qcom,fastrpc");
+	if (ret)
+		return ret;
+	ret = fdt_setprop_string(fdt, node, "label", "adsp");
+	if (ret)
+		return ret;
+	ret = fdt_setprop(fdt, node, "qcom,non-secure-domain", NULL, 0);
+	if (ret)
+		return ret;
+	ret = fdt_setprop_u32(fdt, node, "#address-cells", 1);
+	if (ret)
+		return ret;
+	ret = fdt_setprop_u32(fdt, node, "#size-cells", 0);
+	if (ret)
+		return ret;
+	ret = fdt_delprop(fdt, node, "qcom,intents");
+	if (ret && ret != -FDT_ERR_NOTFOUND)
+		return ret;
+	for (i = 1; i >= 0; i--) {
+		node = fdt_add_subnode(fdt, fdt_path_offset(fdt, path), names[i]);
+		if (node < 0)
+			return node;
+		ret = fdt_setprop_string(fdt, node, "compatible", "qcom,fastrpc-compute-cb");
+		if (ret)
+			return ret;
+		ret = fdt_setprop_u32(fdt, node, "reg", ids[i]);
+		if (ret)
+			return ret;
+		ret = fdt_setprop(fdt, node, "iommus", maps[i], sizeof(maps[i]));
+		if (ret)
+			return ret;
+		ret = fdt_setprop(fdt, node, "dma-coherent", NULL, 0);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
 static int UKE_INIT uke_backlight_bus(const void *fdt)
 {
 	const char *bus = "/soc/qcom,qupv3_1_geni_se@8c0000/i2c@890000";
@@ -618,6 +706,8 @@ static int UKE_INIT uke_board_pins(const void *fdt)
 	return 0;
 }
 
+#include "uke-bluetooth.h"
+
 static int UKE_INIT uke_framebuffer(void *fdt)
 {
 	const fdt32_t *reg;
@@ -795,6 +885,12 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_scope_smmu_clients(output);
+	if (ret)
+		return ret;
+	ret = uke_sensor_fastrpc(output);
+	if (ret)
+		return ret;
+	ret = uke_bluetooth(output);
 	if (ret)
 		return ret;
 	ret = uke_framebuffer(output);
