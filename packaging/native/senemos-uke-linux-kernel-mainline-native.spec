@@ -1,12 +1,12 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global krel %{version}-senemos.1.4051.copr1
+%global krel %{version}-senemos.1.4054.copr2
 %global _uke_out %{_topdir}/native-kernel-out
 
 Name: senemos-uke-linux-kernel-mainline-native
 Version: 7.2.9
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Experimental Uke native display kernel source-build gate
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -103,7 +103,7 @@ export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d 
 mkdir -p %{_uke_out}
 install -m644 native-profile/native.config %{_uke_out}/.config
 scripts/config --file %{_uke_out}/.config --set-str INITRAMFS_SOURCE ''
-make O=%{_uke_out} LOCALVERSION=-senemos.1.4051.copr1 olddefconfig
+make O=%{_uke_out} LOCALVERSION=-senemos.1.4054.copr2 olddefconfig
 grep -Fx 'CONFIG_INITRAMFS_SOURCE=""' %{_uke_out}/.config
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
@@ -112,8 +112,8 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_DRM_MSM=m \
 done
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 test "$jobs" -le 8 || jobs=8
-make O=%{_uke_out} LOCALVERSION=-senemos.1.4051.copr1 -j"$jobs" Image modules dtbs
-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos.1.4051.copr1 kernelrelease)" = '%{krel}'
+make O=%{_uke_out} LOCALVERSION=-senemos.1.4054.copr2 -j"$jobs" Image modules dtbs
+test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos.1.4054.copr2 kernelrelease)" = '%{krel}'
 
 %check
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
@@ -132,7 +132,7 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 
 %install
 export ARCH=arm64 LLVM=1
-make O=%{_uke_out} LOCALVERSION=-senemos.1.4051.copr1 modules_install INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
+make O=%{_uke_out} LOCALVERSION=-senemos.1.4054.copr2 modules_install INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
 mkdir -p %{buildroot}/usr/lib/modules
 mv %{buildroot}/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
 rm -rf %{buildroot}/lib
@@ -178,6 +178,10 @@ test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name '
 /usr/lib/modules/%{krel}/dtb/
 
 %changelog
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-2
+- Build the native54 live-refresh source and all seven-mode contract checks.
+- Retain the compile-only boundary without a flashable boot container.
+
 * Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1
 - Build the complete native O82 source profile in an isolated kernel namespace.
 - Keep private initramfs and unreproducible boot containers out of COPR.
