@@ -7,31 +7,30 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.10.json)
 
-## Status — 17 October 2026
+## Status — 18 October 2026
 
-The mainline source package now includes the native O82 DPU/DSI profile and
-the seven exact OEM display modes. The installed
-`7.2.9-senemos.1.4054` development kernel displays KDE at 30/48/50/60/90/120/144 Hz.
-Nine measured transitions on 17 October retained the panel reset count, touch
-process and input device. Direct testing found no visible blanking or interrupted
-single-finger/multitouch input. Repeated cold starts, suspend and long-run tests
-remain open. Discrete switching does not provide Adaptive Sync.
+The matched persistent `7.2.10-senemos.1.4056` development bundle reaches
+original Fedora KDE through native O82 DPU/DSI. Normal-boot user checks confirm
+automatic four-pose rotation and dual-light automatic brightness. Bluetooth
+mouse input works. The earlier seven-rate display trial covers
+30/48/50/60/90/120/144 Hz with nine transitions retaining panel and touch state.
+Long-run, suspend and VRR qualification remain open. The verified .4054 image
+and matched modules remain the rollback.
 
-[COPR build 11163806](https://copr.fedorainfracloud.org/coprs/build/11163806)
-successfully built the consolidated mainline source as 7.2.9-1.4054.3.
-Its raw Image is not the separately matched `.4054` tablet boot bundle.
+The source producer now builds Image, matching modules, DTBs and an Android
+boot container with a source-generated initramfs. Integer releases use
+`7.2.10-1`, `-2`, `-3`, and restart at `7.2.11-1` after a new upstream pin.
+[COPR 11164946](https://copr.fedorainfracloud.org/coprs/build/11164946) builds
+`7.2.10-4`, including 46 baseline patches, standard PMIC IIO/hwmon/thermal
+consumers and native CPU emergency cooling maps. Source/fixture checks and
+AArch64 object builds pass. Exact artifact and physical acceptance remain
+separate from the existing .4056 result.
 
-The next candidate uses signed upstream Linux 7.2.10 with all 44 baseline
-adaptations, the native54 display profile, exact SSC context banks and the Uke
-Bluetooth UART/power graph. It preserves the accepted .4054 fallback. Source
-preparation and host fixtures pass; candidate boot, sensor measurements,
-Bluetooth input and repeated startup remain physical acceptance gates. VRR is
-deferred; no continuous display range is advertised.
-
-The OEM non-linear backlight mapping is retained. Timed fade remains historical.
-Only the two exact OEM root/sensor context banks are admitted for SSC; other
-FastRPC contexts remain disabled. See the [integration record](packaging/INTEGRATION-20261017.md)
-for the source and package boundaries.
+The OEM non-linear backlight mapping is retained. Only the exact OEM root/sensor
+FastRPC contexts are admitted. Four private PMIC charger scalers and complete
+OEM skin/BCL policy remain incomplete. Sustained CPU/GPU thermal behavior is
+unqualified. See the [source profile](packaging/native/README.md) and
+[integration record](packaging/INTEGRATION-20261017.md) for delivery boundaries.
 
 ### Earlier firmware-framebuffer baseline — 15 October 2026
 
@@ -68,25 +67,25 @@ are different targets; their firmware and device settings are not reused.
 | `senemos-uke-linux-kernel-mainline` | Matching core, modules and DTB package set |
 | `senemos-uke-linux-kernel-mainline-core` | ARM64 Image, config, System.map and source identity |
 | `senemos-uke-linux-kernel-mainline-modules` | Modules for the same kernel and configuration |
-| `senemos-uke-linux-kernel-mainline-dtbs` | Independent Uke device tree |
+| `senemos-uke-linux-kernel-mainline-dtbs` | Independent Uke device tree and native display overlay |
+| `senemos-uke-linux-kernel-mainline-boot` | Matched Android boot container, module inventory and boot provenance |
 
 For Fedora Rawhide AArch64 development systems:
 
 ```sh
 sudo dnf copr enable mcc45tr/uke-linux-test
-sudo dnf install senemos-uke-linux-kernel-mainline
-sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
+sudo dnf --setopt=installonly_limit=0 install senemos-uke-linux-kernel-mainline
+sudo dnf --setopt=installonly_limit=0 upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-COPR signs the RPMs. Consolidated builds have a unique numeric module path,
-such as `/usr/lib/modules/7.2.9-senemos.1.4054.3/`. DNF updates files and module dependencies;
-it does not flash `boot_b`, create a UEFI entry or select a boot slot.
-
-The older revision 1.39 used a shared module directory. New source packages
-preserve previous kernels as install-only fallbacks. A tablet update needs
-a matching Image, initramfs, device tree and module set. Preserve the working
-boot image and rollback before replacing that set. Development headers are not
-published yet.
+COPR signs the RPMs. Integer releases have separate module paths such as
+`/usr/lib/modules/7.2.10-4/`. Keep the previous kernel and complete boot image.
+The boot package calls the native updater only when automatic updates are
+explicitly enabled locally. It validates the matched inventory, retains the
+previous full image, writes only slot B and verifies readback. It does not
+select another slot or change partitions. Installation on an unconfigured
+system does not enable boot writes. See the updater's validation requirements
+before enabling it. Development headers are not published yet.
 
 ## Build from source
 
@@ -100,8 +99,9 @@ make srpm
 `make validate` checks the reviewed version, patch/config hashes and mainline
 package metadata. `make srpm` verifies the signed upstream archive and retains
 the complete native profile, source identity and tests. The binary build uses
-the embedded specification. The source package currently supplies a raw Image,
-modules and DTBs, without an initramfs or flashable boot container.
+the embedded specification. The source package supplies Image, matched modules, DTBs and a boot container
+with an embedded, source-generated initramfs. No OEM firmware or per-device
+calibration is a package source input.
 
 `senemos.sh` retains the historical container build and stock-DT inspection
 tools. Its host specification remains the earlier revision 1.39 profile; it
