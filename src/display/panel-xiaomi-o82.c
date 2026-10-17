@@ -534,9 +534,6 @@ static void o82_first_frame(struct kthread_work *work)
 		if (ret)
 			goto failed;
 		dev_info(&ctx->dsi[0]->dev, "O82 first-frame dimming-on complete\n");
-		/* Delay this experimental sample, not panel startup. */
-		msleep(1000);
-		o82_readback(ctx, true);
 	}
 	o82_touch_state(ctx, false, true);
 	return;

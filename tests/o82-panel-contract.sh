@@ -228,8 +228,7 @@ static int gpiod_direction_output(struct gpio_desc *g,int value) {
 }
 static void gpiod_set_value_cansleep(struct gpio_desc *g,int value) { (void)g; (void)value; }
 static void msleep(unsigned int ms) {
-    if(ms==1000)assert(video_started && boundary_seen && normal_transfers>=4 && hs_transfers>=8 && backlight_calls>=1);
-    else assert(ms<=200);
+    assert(ms<=200); /* Readiness follows completed commands, not the removed diagnostic timer. */
     settle_ms+=ms;
 }
 static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m) {
@@ -571,7 +570,7 @@ int main(void) {
         assert(c.backlight->on);
         assert(atomic64_read(&c.touch_state)==3); /* all post-frame groups complete */
         assert(post_frame_reads==0);
-        assert(settle_ms==before_enable_wait+(batched ? 1000:0));
+        assert(settle_ms==before_enable_wait);
         assert(batch_api_calls==batched);
         assert(lp_api_calls==(batched ? 2:0));
         assert(normal_transfers==4 && transfers==full+(batched ? 20:12) && c.first_frame_initialized);
