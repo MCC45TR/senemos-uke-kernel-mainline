@@ -5,6 +5,7 @@ SHELL := /bin/bash
 version := 7.2.9
 outdir ?= $(CURDIR)/build/srpm
 validate:
+	test "$(version)" = 7.2.9
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 44) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
