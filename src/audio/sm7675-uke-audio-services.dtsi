@@ -1,0 +1,37 @@
+/* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
+/* MiCode audio 8eb0eccb: APM/PRM remote modules are 1/2, clients are 3/7.
+ * Service-only development profile: no enabled PCM, clock consumer or amp.
+ */
+&{/soc/remoteproc-adsp@03000000/glink-edge/qcom,gpr} {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	uke_q6apm: service@1 {
+		compatible = "qcom,q6apm";
+		reg = <1>;
+		#sound-dai-cells = <0>;
+
+		bedais {
+			compatible = "qcom,q6apm-lpass-dais";
+			#sound-dai-cells = <1>;
+			status = "disabled";
+		};
+
+		dais {
+			compatible = "qcom,q6apm-dais";
+			/* Exact OEM msm-audio-ion context banks; DAI remains disabled. */
+			iommus = <&apps_smmu 0x1001 0x80>, <&apps_smmu 0x1061 0>;
+			status = "disabled";
+		};
+	};
+
+	uke_q6prm: service@2 {
+		compatible = "qcom,q6prm";
+		reg = <2>;
+
+		clock-controller {
+			compatible = "qcom,q6prm-lpass-clocks";
+			#clock-cells = <2>;
+		};
+	};
+};

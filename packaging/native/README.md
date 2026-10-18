@@ -6,7 +6,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The source RPM contains signed Linux 7.2.10, the 49 ordered Uke base patches,
+The source RPM contains signed Linux 7.2.10, the 77 ordered Uke base patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-2`, `7.2.10-3`, then `7.2.11-1` when that
@@ -35,6 +35,18 @@ Upstream Linux's MSM register generator
 It converts upstream XML into register headers and is an unavoidable host-only
 Python build dependency. No project Python or Python payload is supplied to the
 tablet; package installation checks reject Python files and runtimes.
+
+## Audio service development profile, 18 October 2026
+
+`audio-profile` defaults to `disabled`. The explicit `services-only` selection
+adds upstream APM/PRM module ports 1/2 using the Uke OEM packet contract. It
+leaves both DAI children disabled and adds no sound card, clock consumer,
+amplifier, microphone bias or DMA route. It is a transport investigation profile,
+not internal audio support. Keep SLIM and the amplifier bus gated.
+
+Patch 0077 qualifies readiness publication/query timing, state response tokens
+and lengths, and GPR header bounds. Its fixtures are in the RPM check phase.
+These checks do not establish graph/DMA/PDR teardown or speaker protection.
 
 ## PMIC and CPU thermal candidate, 18 October 2026
 
