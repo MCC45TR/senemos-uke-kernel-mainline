@@ -124,3 +124,11 @@ it only after an explicit user request. The existing accepted peripheral kernel
 remains the rollback. Source, build and device acceptance are separate; see
 [the full-profile record](../../docs/USB-TYPEC-FULL-PROFILE-20261018.md) for the
 source pins, interfaces, composition requirements and remaining physical gates.
+
+Kernel24 development profile compiles the restricted Uke threshold and positive
+FCC interfaces after host guard/transport checks and actual AArch64 OFF/ON
+translation-unit checks. Compilation leaves runtime qualification disabled.
+The helper's shipped profile is unqualified and admission services remain off;
+no threshold/current write, voltage negotiation or physical charging result is
+implied. Exact per-boot firmware, protocol, source, cable and protection evidence
+remains necessary before control operations. Upstream Kconfig defaults stay off.
