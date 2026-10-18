@@ -346,7 +346,7 @@ cat > "$work/watchdog.c" <<'C'
 struct drm_crtc_state { bool active,vrr_enabled;struct drm_display_mode adjusted_mode; };
 struct drm_crtc { struct drm_crtc_state *state; };
 struct drm_encoder { struct drm_crtc *crtc; };
-struct dpu_encoder_virt { struct drm_encoder base;bool avr_enabled,avr_failed;unsigned long frame_done_timeout_ms,frame_done_timer; };
+struct dpu_encoder_virt { struct drm_encoder base;bool avr_enabled,avr_failed;unsigned long frame_done_timer; };
 static bool allowed=true;
 static unsigned o82_vrr_test_min_hz=30;
 static unsigned long jiffies=1000;
@@ -364,7 +364,7 @@ awk '/^void dpu_encoder_start_frame_done_timer\(/ {emit=1;found=1} emit {print} 
 cat >> "$work/watchdog.c" <<'C'
 static void expect(struct dpu_encoder_virt *e,unsigned long ms) {
  dpu_encoder_start_frame_done_timer(&e->base);
- assert(e->frame_done_timeout_ms==ms && e->frame_done_timer==jiffies+ms);
+ assert(e->frame_done_timer==jiffies+ms);
 }
 int main(void) {
  const unsigned modes[][4]={
@@ -415,7 +415,7 @@ struct drm_encoder {struct {int id;} base;};
 struct drm_atomic_commit {struct drm_crtc *crtc;};
 struct dpu_encoder_phys {struct {void (*disable)(struct dpu_encoder_phys *);} ops;int id;};
 struct dpu_encoder_virt {struct drm_encoder base;int enc_lock,num_phys_encs;bool enabled;
- struct dpu_encoder_phys *phys_encs[2];int frame_done_timeout_ms,frame_done_timer;void *connector;};
+ struct dpu_encoder_phys *phys_encs[2];int frame_done_timer;void *connector;};
 static char events[32];static unsigned n,errors;static int stop_error;
 static void event(char value) {assert(n+1<sizeof(events));events[n++]=value;events[n]=0;}
 static struct dpu_encoder_virt *to_dpu_encoder_virt(struct drm_encoder *e) {return (void *)e;}
@@ -434,8 +434,7 @@ static void dpu_encoder_wait_for_tx_complete(struct drm_encoder *e) {(void)e;eve
 static void dpu_encoder_resource_control(struct drm_encoder *e,int value) {(void)e;event(value==DPU_ENC_RC_EVENT_PRE_STOP?'P':'S');}
 static void disable(struct dpu_encoder_phys *p) {event('0'+p->id);}
 static int msm_dsi_manager_uke_video_stop(struct drm_encoder *e) {(void)e;event('D');return stop_error;}
-static int atomic_xchg(int *p,int value) {int old=*p;*p=value;return old;}
-static void timer_delete_sync(int *t) {assert(*t);*t=0;event('T');}
+static void timer_delete_sync(int *t) {*t=0;event('T');}
 C
 awk '/^static void dpu_encoder_virt_atomic_disable\(/ {emit=1;found=1} emit {print} emit&&/^}/ {exit} END {if(!found)exit 1}' "$encoder" >> "$work/disable.c"
 cat >> "$work/disable.c" <<'C'
@@ -444,16 +443,16 @@ int main(void) {
  struct dpu_encoder_virt e={.num_phys_encs=2,.phys_encs={&phys[0],&phys[1]},.enabled=true,.connector=&e};
  struct drm_crtc_state old={0};struct drm_crtc crtc={&old};struct drm_atomic_commit s={&crtc};
  dpu_encoder_virt_atomic_disable(&e.base,&s);
- assert(!strcmp(events,"AWP01DS")&&!e.connector&&!e.enabled&&!e.enc_lock&&!errors);
+ assert(!strcmp(events,"AWP01DTS")&&!e.connector&&!e.enabled&&!e.enc_lock&&!errors);
  n=0;events[0]=0;e.enabled=true;e.connector=&e;old.self_refresh_active=true;
  dpu_encoder_virt_atomic_disable(&e.base,&s);
  assert(!n&&e.enabled&&e.connector==&e&&!e.enc_lock);
- old.self_refresh_active=false;stop_error=-5;e.frame_done_timeout_ms=1;e.frame_done_timer=1;
+ old.self_refresh_active=false;stop_error=-5;e.frame_done_timer=1;
  dpu_encoder_virt_atomic_disable(&e.base,&s);
- assert(!strcmp(events,"AWP01DTS")&&errors==2&&!e.frame_done_timeout_ms&&!e.frame_done_timer&&!e.enc_lock);
+ assert(!strcmp(events,"AWP01DTS")&&errors==1&&!e.frame_done_timer&&!e.enc_lock);
  n=errors=0;events[0]=0;stop_error=0;s.crtc=NULL;phys[0].ops.disable=NULL;
  dpu_encoder_virt_atomic_disable(&e.base,&s);
- assert(!strcmp(events,"AWP1DS")&&!errors&&!e.enc_lock);
+ assert(!strcmp(events,"AWP1DTS")&&!errors&&!e.enc_lock);
 }
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/disable.c" -o "$work/disable"

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 17
+%global senemos_build_release 18
 %else
 %global senemos_build_release 1
 %endif
@@ -163,6 +163,7 @@ test -s %{_uke_out}/net/bluetooth/bnep/bnep.ko
 CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
+CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h

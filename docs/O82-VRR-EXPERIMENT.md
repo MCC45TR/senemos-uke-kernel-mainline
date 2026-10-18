@@ -53,6 +53,11 @@ frame timestamp. Patch `0037` selects DRM's monotonic timestamp estimate;
 fixed scanout keeps its existing helper. The resulting VRR timestamps have
 IRQ/scheduling uncertainty and must not be reported as precise glass timing.
 
+Patch `0041` removes a redundant watchdog armed flag and always drains the
+timer after both physical encoders stop. A completion IRQ can precede timer
+arming; an already completed frame must not become a false stop error. Genuine
+busy-frame expiry retains its error, snapshot and CRTC notification paths.
+
 ## Validation and device procedure
 
 The actual-source host test is `bash tests/o82-avr-contract.sh PREPARED_KERNEL`.

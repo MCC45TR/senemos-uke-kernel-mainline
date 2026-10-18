@@ -1,0 +1,84 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: cancel the frame watchdog unconditionally at stop
+
+A frame-done IRQ may clear the busy mask before kickoff's caller arms the
+watchdog. The later timer correctly finds no busy frame, but the separate
+atomic timeout flag stays nonzero and causes a false stop error. Uke traces
+show this ordering five times during a seven-mode matrix.
+
+Use the timer as the sole armed-state owner and always drain it after the
+physical encoders stop. Remove the redundant flag, as proposed by Dmitry
+Baryshkov in review of Jun Nie's September 2026 report of the same race.
+Active busy-frame expiry still reports the original error, captures state
+and notifies the CRTC. Retain the existing five-frame AVR timeout budget.
+No kickoff/IRQ lock nesting is added.
+
+Link: https://lists.openwall.net/linux-kernel/2026/09/13/1017
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -160,7 +160,6 @@
+  * @frame_busy_mask:		Bitmask tracking which phys_enc we are still
+  *				busy processing current command.
+  *				Bit0 = phys_encs[0] etc.
+- * @frame_done_timeout_ms:	frame done timeout in ms
+  * @frame_done_timeout_cnt:	atomic counter tracking the number of frame
+  * 				done timeouts
+  * @frame_done_timer:		watchdog timer for frame done event
+@@ -204,7 +203,6 @@
+ 	struct mutex enc_lock;
+ 	DECLARE_BITMAP(frame_busy_mask, MAX_PHYS_ENCODERS_PER_VIRTUAL);
+ 
+-	atomic_t frame_done_timeout_ms;
+ 	atomic_t frame_done_timeout_cnt;
+ 	struct timer_list frame_done_timer;
+ 
+@@ -1621,11 +1619,8 @@
+ 	if (ret)
+ 		DPU_ERROR_ENC(dpu_enc, "DSI video stop failed: %d\n", ret);
+ 
+-	/* after phys waits for frame-done, should be no more frames pending */
+-	if (atomic_xchg(&dpu_enc->frame_done_timeout_ms, 0)) {
+-		DPU_ERROR("enc%d timeout pending\n", drm_enc->base.id);
+-		timer_delete_sync(&dpu_enc->frame_done_timer);
+-	}
++	/* A completed frame IRQ can precede watchdog arming after kickoff. */
++	timer_delete_sync(&dpu_enc->frame_done_timer);
+ 
+ 	dpu_encoder_resource_control(drm_enc, DPU_ENC_RC_EVENT_STOP);
+ 
+@@ -1795,7 +1790,6 @@
+ 		}
+ 
+ 		if (!dpu_enc->frame_busy_mask[0]) {
+-			atomic_set(&dpu_enc->frame_done_timeout_ms, 0);
+ 			timer_delete(&dpu_enc->frame_done_timer);
+ 
+ 			dpu_encoder_resource_control(drm_enc,
+@@ -2387,7 +2381,6 @@
+ 					  mode->clock));
+ 	}
+ 
+-	atomic_set(&dpu_enc->frame_done_timeout_ms, timeout_ms);
+ 	mod_timer(&dpu_enc->frame_done_timer,
+ 			jiffies + msecs_to_jiffies(timeout_ms));
+ 
+@@ -2986,9 +2979,6 @@
+ 		DRM_DEBUG_KMS("id:%u invalid timeout frame_busy_mask=%lu\n",
+ 			      DRMID(drm_enc), dpu_enc->frame_busy_mask[0]);
+ 		return;
+-	} else if (!atomic_xchg(&dpu_enc->frame_done_timeout_ms, 0)) {
+-		DRM_DEBUG_KMS("id:%u invalid timeout\n", DRMID(drm_enc));
+-		return;
+ 	}
+ 
+ 	DPU_ERROR_ENC_RATELIMITED(dpu_enc, "frame done timeout\n");
+@@ -3045,7 +3035,6 @@
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+-	atomic_set(&dpu_enc->frame_done_timeout_ms, 0);
+ 	atomic_set(&dpu_enc->frame_done_timeout_cnt, 0);
+ 	timer_setup(&dpu_enc->frame_done_timer,
+ 			dpu_encoder_frame_done_timeout, 0);
