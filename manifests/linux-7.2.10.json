@@ -227,7 +227,7 @@
     },
     {
       "path": "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch",
-      "sha256": "f0d9c388807659d690f0f3fe9910c08169bcaad70073f7facc3284908b39bd2e"
+      "sha256": "77f272726ade1221460e1152e33bab98c3d71224f3d6d0431f8d57381ad9c4d0"
     },
     {
       "path": "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",

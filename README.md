@@ -38,6 +38,14 @@ trial finds neither USB dongles nor HDMI output, with no Type-C partner and
 the controller still in device role. No unsupported color-depth or RGB-range
 choice is advertised for DSI.
 
+The release-27 source candidate corrects UCSI asynchronous notification dispatch.
+On release 26, bounded tracing identifies valid type-2 completion notifications
+while SET_NOTIFICATION_ENABLE times out; the previous global type-1 filter
+drops those events. The correction accepts type-2 notifications while retaining
+strict reply types, owner, exact size, receiver and lifecycle checks. The actual
+callback fixture passes and rejects the unchanged release-26 callback. Build,
+package and tablet acceptance of release 27 remain separate pending gates.
+
 CDC defaults off in the matched full-profile boot/root pair; explicit ACM
 opt-in is provided by the separate native management package. Charging services
 remain disabled and the shipped qualification profile is unqualified. No raw

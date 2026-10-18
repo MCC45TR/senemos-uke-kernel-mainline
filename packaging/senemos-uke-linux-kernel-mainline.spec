@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 26
+%global senemos_build_release 27
 %else
 %global senemos_build_release 1
 %endif
@@ -159,6 +159,7 @@ bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
 CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-role-observation-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/ucsi-notification-contract.sh drivers/usb/typec/ucsi/ucsi_glink.c
 CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-scalers.sh "$PWD"
@@ -256,6 +257,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-27
+- Accept observed UCSI type-2 notifications with opcode-specific validation.
+- Exercise the actual callback's reply, notification and lifecycle boundaries.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-22
 - Retain exact O82 live timing updates while AVR remains enabled.
 - Update both AVR periods before their common timing flush without panel reset.
