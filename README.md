@@ -43,6 +43,23 @@ firmware as an XZ file, while release 27 cannot decode compressed firmware.
 Source checks, native packaging and physical HDMI/Ethernet results remain
 separate validation stages.
 
+Signed COPR 11168191 subsequently provides release 28. Exact source/payload,
+signature, module and initramfs checks pass. DNF installs the matched bundle;
+boot B readback matches and Android A is unchanged. A normal reboot returns to
+SSH and the original KDE session. Touch service readiness and zero restarts
+are verified; physical display/touch confirmation is pending. The first KDE
+policy is Automatic; the previous Always preference is restored through
+KScreen and persisted. With 144 Hz selected, DPU measurement reports about
+30 Hz at idle with VRR enabled; this is not optical panel metrology.
+
+The earlier Realtek missing-firmware error is absent after the compressed-loader
+change, and the NIC binds. Ethernet traffic is untested. DP remains disconnected;
+an initial alternate-mode mux error is recorded with the unpowered dock. The
+user reports this Juo dock requires PD power for HDMI even on a laptop, so an
+unpowered display trial is inconclusive. Powered HDMI testing is deferred while
+battery termination and system-power behavior remain unqualified. No battery
+bypass control or electrical-protection acceptance is claimed.
+
 CDC defaults off in the matched full-profile boot/root pair; explicit ACM
 opt-in is provided by the separate native management package. Charging services
 remain disabled and the shipped qualification profile is unqualified. No raw
