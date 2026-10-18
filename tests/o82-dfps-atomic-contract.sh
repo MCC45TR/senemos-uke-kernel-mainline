@@ -10,6 +10,7 @@ cat > "$work/check.c" <<'C'
 #include <stdint.h>
 typedef uint64_t u64;
 #define CONFIG_DRM_MSM_DSI 1
+#define CONFIG_DRM_MSM_DPU 1
 #define IS_ENABLED(v) (v)
 #define hweight32(v) __builtin_popcount(v)
 struct drm_display_mode {int value;};
@@ -19,7 +20,7 @@ struct drm_crtc_state {
     unsigned int encoder_mask;struct drm_display_mode adjusted_mode;
 };
 struct drm_crtc {unsigned int mask;u64 sequence;bool advance;};
-struct drm_encoder {bool admitted;};
+struct drm_encoder {bool admitted,avr_active;};
 struct drm_device {struct drm_crtc crtc[2];struct drm_encoder enc[2];};
 struct drm_atomic_commit {struct drm_device *dev;struct drm_crtc_state old[2],new_state[2];};
 #define for_each_oldnew_crtc_in_state(s,c,o,n,i) \
@@ -35,6 +36,7 @@ struct drm_atomic_commit {struct drm_device *dev;struct drm_crtc_state old[2],ne
 static unsigned int drm_crtc_mask(struct drm_crtc *c){return c->mask;}
 static unsigned int admissions,completions,failures,errors;
 static bool complete_error;
+static bool dpu_encoder_uke_avr_active(struct drm_encoder *e){return e->avr_active;}
 static bool msm_dsi_manager_uke_dfps_prepare(struct drm_encoder *e,
         const struct drm_display_mode *old,const struct drm_display_mode *next) {
     assert(old&&next);++admissions;return e->admitted;
@@ -56,11 +58,17 @@ static void reset(struct drm_atomic_commit *s) {
         s->new_state[i]=s->old[i];s->new_state[i].mode_changed=true;
         s->dev->crtc[i]=(struct drm_crtc){.mask=1U<<i,.advance=true};
         s->dev->enc[i].admitted=true;
+        s->dev->enc[i].avr_active=true;
     }
 }
 int main(void) {
     struct drm_device dev;struct drm_atomic_commit s={.dev=&dev};reset(&s);
     assert(msm_uke_dfps_prepare(&s)==3&&admissions==2);
+    s.old[0].vrr_enabled=s.new_state[0].vrr_enabled=true;
+    admissions=0;
+    assert(msm_uke_dfps_prepare(&s)==3&&admissions==2); // Retain working AVR during exact timing update.
+    s.dev->enc[0].avr_active=false;admissions=0;
+    assert(msm_uke_dfps_prepare(&s)==2&&admissions==1); // A failed/inactive AVR cannot enter live retiming.
     for(unsigned gate=0;gate<10;++gate) {
         reset(&s);
         switch(gate) {

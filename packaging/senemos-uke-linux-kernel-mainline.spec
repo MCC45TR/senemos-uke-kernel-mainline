@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 21
+%global senemos_build_release 22
 %else
 %global senemos_build_release 1
 %endif
@@ -167,6 +167,7 @@ grep -Fx 'CONFIG_BT_BNEP=m' %{_uke_out}/.config
 test -s %{_uke_out}/net/bluetooth/bnep/bnep.ko
 CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
@@ -247,6 +248,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-22
+- Retain exact O82 live timing updates while AVR remains enabled.
+- Update both AVR periods before their common timing flush without panel reset.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-21
 - Register the single battery diagnostic group with the supported managed API.
 - Remove unused getter snapshots while retaining coordinated generation checks.
