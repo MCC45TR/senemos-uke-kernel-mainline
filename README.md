@@ -47,7 +47,7 @@ Signed COPR 11168191 subsequently provides release 28. Exact source/payload,
 signature, module and initramfs checks pass. DNF installs the matched bundle;
 boot B readback matches and Android A is unchanged. A normal reboot returns to
 SSH and the original KDE session. Touch service readiness and zero restarts
-are verified; physical display/touch confirmation is pending. The first KDE
+are verified; the user confirms physical display and touch operation. The first KDE
 policy is Automatic; the previous Always preference is restored through
 KScreen and persisted. With 144 Hz selected, DPU measurement reports about
 30 Hz at idle with VRR enabled; this is not optical panel metrology.
