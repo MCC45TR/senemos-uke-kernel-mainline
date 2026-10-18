@@ -312,6 +312,10 @@
     {
       "path": "patches/7.2.10/0076-uke-charge-readonly-settings.patch",
       "sha256": "90e480eee772f4466d0a447db689975a3cebb2d37b4c071cf4ba6fd1ce44fc53"
+    },
+    {
+      "path": "patches/7.2.10/0077-uke-preconfigured-cap-enable.patch",
+      "sha256": "ed57e6cb9f07d4d14ee5dbaceda20af0c12467767855f902117c78863820bee0"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

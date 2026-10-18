@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 29
+%global senemos_build_release 30
 %else
 %global senemos_build_release 1
 %endif
@@ -155,6 +155,7 @@ CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
 bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
 bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"

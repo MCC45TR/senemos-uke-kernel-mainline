@@ -39,7 +39,7 @@ struct qcom_battmgr_uke_transaction {
 struct qcom_battmgr {
  int variant; bool service_up; struct mutex lock;
  struct qcom_battmgr_uke_transaction transaction;
- struct { u64 expires_ns,settings_probe_ns; bool enabled,verified,current_verified; } control;
+ struct { u64 expires_ns,settings_probe_ns,verified_until_ns,current_until_ns; bool enabled,verified,current_verified; } control;
  struct { u32 charge_ctrl_start,charge_ctrl_end; } info;
 };
 struct device { struct qcom_battmgr *data; };
@@ -89,24 +89,24 @@ int main(void) {
 #else
  struct qcom_battmgr_uke_settings result,unchanged;
  memset(&result,0xa5,sizeof(result));unchanged=result;
- assert(!qcom_battmgr_uke_settings_read(&b,&result) && requests==3);
+ assert(!qcom_battmgr_uke_settings_read(&b,&result,true) && requests==3);
  assert(result.instance==71 && result.generation==7 && result.firmware==2 && result.source==3);
  assert(result.received_ns==clock_ns && result.enabled==1 && result.start==70 && result.end==80);
  assert(!b.control.expires_ns && !b.control.verified && !b.control.current_verified);
- requests=0;assert(qcom_battmgr_uke_settings_read(&b,&result)==-EAGAIN && !requests);
+ requests=0;assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EAGAIN && !requests);
  clock_ns=6*NSEC_PER_SEC;
- assert(!qcom_battmgr_uke_settings_read(&b,&result) && requests==3);
+ assert(!qcom_battmgr_uke_settings_read(&b,&result,true) && requests==3);
  initialize(&b);remote_enabled=false;remote_start=remote_end=0;
- assert(!qcom_battmgr_uke_settings_read(&b,&result));
+ assert(!qcom_battmgr_uke_settings_read(&b,&result,true));
  assert(!result.enabled && !result.start && !result.end);
  for(unsigned fail=1;fail<=3;fail++) {
   initialize(&b);fail_at=fail;result=unchanged;
-  assert(qcom_battmgr_uke_settings_read(&b,&result)==-EPROTO && requests==fail);
+  assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EPROTO && requests==fail);
   assert(!memcmp(&result,&unchanged,sizeof(result)));
  }
  for(unsigned change=1;change<=3;change++) {
   initialize(&b);change_at=change;result=unchanged;
-  assert(qcom_battmgr_uke_settings_read(&b,&result)==-ESTALE && requests==change);
+  assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-ESTALE && requests==change);
   assert(!memcmp(&result,&unchanged,sizeof(result)));
  }
  for(unsigned state=0;state<5;state++) {
@@ -116,19 +116,23 @@ int main(void) {
   if(state==2)b.transaction.suspended=true;
   if(state==3)b.transaction.removing=true;
   if(state==4)b.transaction.instance_ns=0;
-  assert(qcom_battmgr_uke_settings_read(&b,&result)==-EHOSTDOWN && !requests);
+  assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EHOSTDOWN && !requests);
  }
  initialize(&b);b.control.expires_ns=clock_ns+1;
- assert(qcom_battmgr_uke_settings_read(&b,&result)==-EBUSY && !requests);
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EBUSY && !requests);
+ initialize(&b);b.control.verified=true;b.control.verified_until_ns=clock_ns+1;
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EBUSY && !requests);
+ initialize(&b);b.control.current_verified=true;b.control.current_until_ns=clock_ns+1;
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EBUSY && !requests);
  initialize(&b);b.variant=0;
- assert(qcom_battmgr_uke_settings_read(&b,&result)==-EOPNOTSUPP && !requests);
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-EOPNOTSUPP && !requests);
  initialize(&b);remote_end=101;result=unchanged;
- assert(qcom_battmgr_uke_settings_read(&b,&result)==-ENODATA);
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-ENODATA);
  assert(!memcmp(&result,&unchanged,sizeof(result)));
  initialize(&b);remote_start=90;
- assert(qcom_battmgr_uke_settings_read(&b,&result)==-ENODATA);
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-ENODATA);
  initialize(&b);request_ns=2*NSEC_PER_SEC;result=unchanged;
- assert(qcom_battmgr_uke_settings_read(&b,&result)==-ESTALE);
+ assert(qcom_battmgr_uke_settings_read(&b,&result,true)==-ESTALE);
  assert(!memcmp(&result,&unchanged,sizeof(result)));
  initialize(&b);privileged=false;
  assert(uke_charge_settings_show(&dev,NULL,output)==-EPERM && !requests);

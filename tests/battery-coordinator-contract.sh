@@ -186,6 +186,22 @@ int main(void) {
  before=sends;
  assert(get(&h,0x31)==(IS_ENABLED(CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS)?-EACCES:-EOPNOTSUPP) && sends==before);
 #if CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS
+ struct qcom_battmgr pre; initialize(&pre);
+ struct qcom_battmgr_property_request cap={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_BAT_PROPERTY_SET},.property=25,.value=1};
+ pre.control.preconfigured_enable=true;
+ pre.control.preconfigured_generation=pre.transaction.generation;
+ mutex_lock(&pre.lock);
+ assert(!qcom_battmgr_uke_request(&pre,&cap,sizeof(cap)));
+ before=sends;cap.value=0;
+ assert(qcom_battmgr_uke_request(&pre,&cap,sizeof(cap))==-EACCES && sends==before);
+ cap.value=1;cap.property=12;
+ assert(qcom_battmgr_uke_request(&pre,&cap,sizeof(cap))==-EACCES && sends==before);
+ cap.property=25;pre.control.preconfigured_generation++;
+ assert(qcom_battmgr_uke_request(&pre,&cap,sizeof(cap))==-EACCES && sends==before);
+ pre.control.preconfigured_generation=pre.transaction.generation;
+ pre.control.preconfigured_enable=false;
+ assert(qcom_battmgr_uke_request(&pre,&cap,sizeof(cap))==-EACCES && sends==before);
+ mutex_unlock(&pre.lock);
  struct qcom_battmgr ctrl; initialize(&ctrl);
  ctrl.transaction.instance_ns=1;
  ctrl.control.owner=&owner; ctrl.control.expires_ns=100; ctrl.control.reviewed_ns=41;

@@ -85,3 +85,32 @@ create a lease, choose pack limits, activate a service or issue FCC/XM/PD comman
 The actual helper and root sysfs wrapper pass synthetic off/on permission, lease,
 rate, response and lifecycle fixtures. Complete driver compilation, signed
 packaging and offline-power tablet readback remain separate validation stages.
+
+## Preconfigured-cap candidate — release 30
+
+On18 October, POCO Pad X1 / Fedora Rawhide AArch64 boots signed release29
+(COPR11168479) normally; physical display/touch are confirmed. Original KDE
+retains VRRAlways without intervention. A single deliberate query with PD input
+off reports enabled=false, restart70 and stop80. It performs no SET or admission.
+
+Release30 adds a separate root-only permission to enable that existing70/80
+band while external input is absent. It does not invent pack limits or promote
+the general threshold/current profile. Exact Uke OEM5712080 and same-SoC
+OnePlusfc892483 charge_control_en_store use independent standard property25
+boolean SET; target/delta configuration is a different command. Only property25
+value1 is possible in this synchronous scope. The shared/upstream comparisons
+above do not provide a Uke battery-bypass contract.
+
+Fresh fixed GETs require the exact70/80 band, battery presence/Good health,
+input off, healthy unchanged lifecycle and no active/recent admitted control.
+The request mutex serializes the whole operation. Mandatory same-epoch readback
+must report enabled70/80 within five seconds; an uncertain attempted write is
+quarantined for the driver instance without replay or rollback. Already enabled
+configuration needs no SET. No target, FCC, voltage, disable, XM or PD command
+is added. General controls retain their existing independent admission.
+
+Actual helper/wrapper and coordinator fixtures pass on the development host
+with options off/on. Complete AArch64 compilation, COPR delivery, physical
+current response and reboot persistence remain pending. Configuration readback
+cannot establish charge stop, battery isolation, bypass or all fault protection.
+No automatic service or persisted intent is introduced by this candidate.
