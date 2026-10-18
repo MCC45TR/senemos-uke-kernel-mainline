@@ -501,17 +501,6 @@ static void o82_first_frame(struct kthread_work *work)
 		}
 	}
 	i = -1;
-	stage = "backlight";
-	ret = backlight_enable(ctx->backlight);
-	if (ret)
-		goto failed;
-	brightness = backlight_get_brightness(ctx->backlight);
-	if (brightness <= 0) {
-		ret = -ERANGE;
-		goto failed;
-	}
-	dev_info(&ctx->dsi[0]->dev,
-		 "O82 first-frame checked backlight: brightness=%d result=0\n", brightness);
 	stage = "normal-pixels";
 	if (ctx->initial_120hz_only || ctx->oem_refresh_modes) {
 		i = -1;
@@ -535,6 +524,18 @@ static void o82_first_frame(struct kthread_work *work)
 			goto failed;
 		dev_info(&ctx->dsi[0]->dev, "O82 first-frame dimming-on complete\n");
 	}
+	/* Keep the LCD dark until both links leave the initialization state. */
+	stage = "backlight";
+	ret = backlight_enable(ctx->backlight);
+	if (ret)
+		goto failed;
+	brightness = backlight_get_brightness(ctx->backlight);
+	if (brightness <= 0) {
+		ret = -ERANGE;
+		goto failed;
+	}
+	dev_info(&ctx->dsi[0]->dev,
+		 "O82 first-frame checked backlight: brightness=%d result=0\n", brightness);
 	o82_touch_state(ctx, false, true);
 	return;
 
@@ -828,6 +829,10 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 		ret = -ENODEV;
 		goto unregister_secondary;
 	}
+	/* DSI attachment can bind MSM and replace the lit firmware scanout. */
+	ret = backlight_disable(ctx->backlight);
+	if (ret)
+		goto unregister_secondary;
 	mipi_dsi_set_drvdata(dsi, ctx);
 	ctx->panel.prepare_prev_first = true;
 	drm_panel_add(&ctx->panel);

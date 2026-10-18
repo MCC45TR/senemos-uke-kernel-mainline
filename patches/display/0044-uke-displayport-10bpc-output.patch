@@ -78,12 +78,20 @@ index b659d22..151a598 100644
  #include <drm/drm_atomic_helper.h>
  #include <drm/drm_atomic.h>
  #include <drm/drm_bridge.h>
-@@ -321,6 +322,11 @@ struct drm_connector *msm_dp_drm_connector_init(struct msm_dp *msm_dp_display,
+@@ -321,6 +322,19 @@ struct drm_connector *msm_dp_drm_connector_init(struct msm_dp *msm_dp_display,
  	connector = drm_bridge_connector_init(msm_dp_display->drm_dev, encoder);
  	if (IS_ERR(connector))
  		return connector;
 +	if (of_device_is_compatible(msm_dp_display->pdev->dev.of_node, "qcom,sm7675-dp")) {
-+		int ret = drm_connector_attach_max_bpc_property(connector, 6, 10);
++		int ret;
++
++		/* The property helper writes the connector's atomic state. */
++		if (!connector->state) {
++			connector->funcs->reset(connector);
++			if (!connector->state)
++				return ERR_PTR(-ENOMEM);
++		}
++		ret = drm_connector_attach_max_bpc_property(connector, 6, 10);
 +		if (ret)
 +			return ERR_PTR(ret);
 +	}

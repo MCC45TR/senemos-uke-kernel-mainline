@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 25
+%global senemos_build_release 26
 %else
 %global senemos_build_release 1
 %endif
@@ -178,6 +178,7 @@ CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/ms
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
+CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"

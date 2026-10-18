@@ -118,7 +118,8 @@ static void mutex_lock(struct mutex *lock) {assert(!lock->locked); lock->locked=
 static void mutex_unlock(struct mutex *lock) {assert(lock->locked); lock->locked=0;}
 static int backlight_enable(void *backlight) {
     if(!backlight) return 0;
-    assert(boundary_seen && normal_transfers==0 && hs_transfers==8);
+    assert(boundary_seen && normal_transfers==4 && hs_transfers==8);
+    assert(dimming_transfers==0 || dimming_transfers==8);
     ++backlight_calls; ((struct backlight_device *)backlight)->on=true;
     return backlight_enable_error;
 }
@@ -242,7 +243,7 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
             if(normal_transfers==4) {
                 static const u8 dimming[4][2]={{0xff,0x27},{0xd1,0x28},{0xff,0x10},{0x53,0x2c}};
                 assert(dimming_transfers<8 && host->id==dimming_transfers%2);
-                assert(boundary_seen && backlight_calls==1 && hs_transfers==8);
+                assert(boundary_seen && backlight_calls==0 && hs_transfers==8);
                 assert(m->type==(dimming_transfers<4 ? 0x39U:0x15U) && m->tx_len==2);
                 assert(!memcmp(m->tx_buf,dimming[dimming_transfers/2],2));
                 ++dimming_transfers;
@@ -250,7 +251,7 @@ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m)
             static const u8 normal[2][2]={{0xff,0x10},{0x13,0x00}};
             if(!normal_transfers)dimming_transfers=0;
             assert(hs_transfers==8 && normal_transfers<4);
-            assert(host->id==normal_transfers%2 && backlight_calls==1 && boundary_seen);
+            assert(host->id==normal_transfers%2 && backlight_calls==0 && boundary_seen);
             assert(m->type==(normal_transfers<2 ? 0x15U:0x39U) && m->tx_len==2);
             assert(!memcmp(m->tx_buf,normal[normal_transfers/2],2));
             normal_transfers++;
@@ -284,7 +285,7 @@ static int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,const struct mi
     return 0;
 }
 static int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count) {
-    assert(dsi->id==0&&boundary_seen&&video_started&&backlight_calls==1);
+    assert(dsi->id==0&&boundary_seen&&video_started&&backlight_calls==0);
     assert(count==(normal_transfers==0 ? 2U:4U));
     int call=lp_api_calls++;
     if(call==lp_api_fail_call)return lp_api_error;
@@ -464,6 +465,12 @@ int main(void) {
         assert(o82_probe_backlight(&ctx)==(result==0 ? 0:result==2 ? -EIO:-ENODEV));
         assert(!ctx.panel.backlight && ctx.backlight==probe_backlight);
         assert(!enables && !transfers && !operation && !scheduled);
+        if(result==0) assert(backlight_disable_calls==1 && !ctx.backlight->on);
+    }
+    {
+        struct o82_panel ctx=context(0,3);
+        probe_backlight=ctx.backlight; backlight_disable_error=-EIO;
+        assert(o82_probe_backlight(&ctx)==-EIO && !transfers && !scheduled);
     }
     for(int variant=0;variant<2;variant++) for(int flags=0;flags<8;flags++) {
         struct o82_panel ctx=context(variant,3);
@@ -631,22 +638,24 @@ int main(void) {
             assert(o82_prepare(&c.panel)==-EIO && !c.prepared && !c.enabled_supplies);
             for(int i=0;i<3;i++) assert(!balance[i] && !loads[i]);
         }
-        for(int short_reply=0;short_reply<2;short_reply++) for(int fault=0;fault<12;fault++) {
-            c=context(v,m); assert(o82_prepare(&c.panel)==0);
+        for(int short_reply=0;short_reply<2;short_reply++) for(int fault=0;fault<20;fault++) {
+            c=context(v,m);
+            if(fault>=12 && !c.initial_120hz_only && !c.oem_refresh_modes) continue;
+            assert(o82_prepare(&c.panel)==0);
             const int before=transfers;
             if(short_reply) transfer_short=before+fault; else transfer_failure=before+fault;
             video_started=true; drm_panel_enable(&c.panel);
             assert(c.panel.enabled && !backlight_calls && !hs_transfers && c.first_frame_work.pending);
             assert(transfers==before);
             first_boundary(&c.first_frame_work);
-            assert(backlight_calls==(fault<8 ? 0:1) && strstr(last_error,"result=-5 blank_result=0"));
-            assert(strstr(last_error,fault<8 ? "stage=timing-switch":"stage=normal-pixels"));
+            assert(!backlight_calls && strstr(last_error,"result=-5 blank_result=0"));
+            assert(strstr(last_error,fault<8 ? "stage=timing-switch":fault<12 ? "stage=normal-pixels":"stage=dimming-on"));
             assert(!c.backlight->on && c.first_frame_initialized);
             drm_panel_disable(&c.panel);
             assert(c.prepared && c.enabled_supplies==7);
             assert(disables==0 && transfers==before+fault+1);
             assert(hs_transfers==(fault<8 ? fault+1:8));
-            assert(normal_transfers==(fault<8 ? 0:fault-7));
+            assert(normal_transfers==(fault<8 ? 0:fault<12 ? fault-7:4));
             transfer_failure=transfer_short=-1; hs_transfers=normal_transfers=backlight_calls=0; boundary_seen=false;
             if(fault&1) {
                 drm_panel_enable(&c.panel);
@@ -696,7 +705,7 @@ int main(void) {
             first_boundary(&c.first_frame_work);
             assert(c.panel.enabled && c.first_frame_initialized);
             assert(strstr(last_error,fault==0 ? "result=-5 blank_result=0":"result=-34 blank_result=0"));
-            assert(!normal_transfers && !c.backlight->on && backlight_calls==1);
+            assert(normal_transfers==4 && !c.backlight->on && backlight_calls==1);
             drm_panel_disable(&c.panel); assert(cancelled==1 && !c.first_frame_initialized);
             video_started=false; assert(o82_unprepare(&c.panel)==0);
         }
@@ -719,7 +728,7 @@ int main(void) {
         video_started=true; drm_panel_enable(&c.panel);
         backlight_enable_error=-EINVAL; backlight_disable_error=-EIO;
         first_boundary(&c.first_frame_work);
-        assert(strstr(last_error,"result=-22 blank_result=-5") && !normal_transfers);
+        assert(strstr(last_error,"result=-22 blank_result=-5") && normal_transfers==4);
         assert(c.backlight->on);
         drm_panel_disable(&c.panel); assert(!c.panel.enabled && !c.first_frame_initialized);
         assert(strstr(last_error,"backlight blank failed: -5"));
