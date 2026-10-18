@@ -1,5 +1,20 @@
 # Kernel source integration — 17 October 2026
 
+**18 October update:** the current producer uses signed Linux 7.2.10 and integer
+module releases. COPR 11164946 supplies the matched Image, modules, DTBs and
+source-built Android boot container for `7.2.10-4`; guarded DNF delivery,
+backup/readback and normal persistent boot pass on POCO Pad X1. The .4054 and
+.4056 images/modules remain verified rollback material. The native profile now
+admits the exact OEM root/sensor contexts and PMIC/CPU thermal integration with
+separate physical evidence. The original integration decisions below remain
+dated history; see the [current report](../README.md) for later scope and limits.
+
+COPR 11165033 subsequently delivers `7.2.10-5`, adding the tested SMP2P
+input-history guard. Signed delivery, boot-B readback and bounded physical
+interrupt checks pass. Normal KDE reboot cycles follow an initial forced power
+cycle; full shutdown remains unresolved. Original Fedora Plasma Login Manager
+starts the current Wayland session.
+
 Environment: Fedora Rawhide development host and the pinned kernel SDK. This
 record describes repository ancestry and source selection. It is not a tablet
 hardware acceptance report.
@@ -38,3 +53,17 @@ That local result does not qualify the different COPR binary tuple for boot.
 The raw COPR Image must not replace a validated Android boot container. Existing
 boot bundles, fallback kernels and published artifacts remain available until
 a source-built boot producer has passed its own recoverable tablet test.
+
+## 18 October: combined sensor release 8
+
+COPR 11165188 builds source a831167 as 7.2.10-8 with all 49 base patches and
+the separately reviewed, default-off AVR experiment. Signatures, complete module
+inventory, Image/container identity and source identity pass. Guarded DNF
+delivery preserves Android A, previous images/modules and read-only persist.
+Normal KDE reboot starts original Plasma Login Manager and the sensor stack.
+All 27 PMIC measurements are readable through IIO/hwmon/KDE; the charger
+conversion reports an unqualified OEM-clamped 0 °C. Physical lid and rear-fold
+switch transitions pass. These results do not accept automatic cover blanking,
+closed-cover startup, real heat protection or physical VRR. The standard VRR
+CRTC property attachment is still missing and belongs to the separate test
+continuation.

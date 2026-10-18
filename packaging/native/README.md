@@ -6,7 +6,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The source RPM contains signed Linux 7.2.10, the 46 ordered Uke base patches,
+The source RPM contains signed Linux 7.2.10, the 49 ordered Uke base patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-2`, `7.2.10-3`, then `7.2.11-1` when that
@@ -19,8 +19,9 @@ The dracut base is generated on the AArch64 build worker from original Fedora
 packages. The 376 early modules follow the native56 inventory with PAS excluded;
 PAS starts after the real root supplies OEM firmware. The native updater writes
 only when its local configuration explicitly enables automatic updates. It keeps
-the previous full image and validates readback. The new producer needs its own
-COPR artifact and tablet acceptance; the earlier native56 boot is separate evidence.
+the previous full image and validates readback. Release 4 passes signed COPR
+artifact checks and normal persistent tablet boot; the earlier native56 boot
+is separate evidence.
 
 Commit `4eb69e5`, published as `feature/dnf-stock-abl-updates-20261015`, contains
 a dracut and guarded boot-container producer. Release 2 integrates its source
@@ -48,10 +49,51 @@ Thirteen OEM emergency cooling maps are connected to the three standard
 cpufreq cooling devices. The OEM 110 degree junction triggers and respective
 8/10 degree hysteresis remain unchanged. Vendor CPU pause is replaced by
 frequency cooling; the complete OEM skin and BCL policy is not implemented.
-These are source and fixture results until the exact COPR bundle boots and the
-new channels and cooling bindings are inspected on the tablet.
+The exact release 4 COPR bundle boots normally. Its 23 IIO channels, ten board
+thermal consumers and thirteen CPU cooling bindings are present. The full
+installation has 67 readable hwmon temperature inputs and 51 thermal zones,
+including overlapping measurements. Software-emulated thermal events lower
+all three CPU policy limits and the GPU cap; all emulation is cleared afterward.
+Actual heat protection and sustained workloads remain unqualified.
+
+Release 5 adds a tested SMP2P history guard: ordinary entry notifications cannot
+replay asserted ADSP ready/handover edges. Both genuine restart transitions
+still reset input history. COPR 11165033 passes signed artifact checks; DNF
+delivery and boot-B readback pass. Bounded tablet traces confirm the corrected
+edge handling. Subsequent normal KDE reboots reach the installed system; the
+first release-5 boot follows a forced power cycle. Full shutdown remains open.
+
+Release 6 adds the four previously excluded OEM charger/battery ADC scalers,
+with signed current, standard mA/mC units and a distinct battery thermistor
+binding. The graph retains all 27 OEM channels. Full-code arithmetic sweeps,
+battery monotonicity and malformed-resource refusal fixtures pass on the host.
+COPR and tablet acceptance remain separate gates.
+
+Release 7 maps the exact OEM lid/table SMP2P entries to standard EV_SW input
+devices. The kernel reads remote open/closed line state and ignores missing or
+conflicting initial reports. It neither acquires SSC-owned GPIOs nor introduces
+polling or a startup service. Host state/refusal tests and the exact OEM graph
+pass; normal module startup and physical Linux switch events remain separate
+tablet gates.
+
+Release 8 combines these sensor changes with the separately reviewed bounded
+O82 video AVR experiment. Host checks pass against the combined source.
+The read-only module parameter defaults to zero; no connector capability or
+qualified VRR range is advertised. Physical activation tests use the separate
+[AVR procedure](../../docs/O82-VRR-EXPERIMENT.md) after package delivery.
 
 Release 2 compiles the full kernel but fails the early-PAS guard because its
 module inventory includes PAS. Release 3 is cancelled before repeating that
 known packaging fault. Release 4 removes PAS from the early inventory and
 keeps the fail-closed check. No failed bundle is installed on the tablet.
+
+Combined release 8 passes signed COPR 11165188 delivery, boot-B readback and
+normal KDE reboot. The Hall module and both input devices appear automatically; physical lid and rear
+fold/unfold events pass through standard evdev, and logind tracks the lid.
+All 27 PMIC channels appear in IIO, hwmon and the original KDE backend with
+standard units. The charger-temperature formula returns its OEM-clamped 0 °C
+in this trial; this is not qualified physical temperature. Battery temperature
+and signed current feedback values are readable. Cover display policy, closed
+cover boot, calibration accuracy and real heat protection remain unqualified.
+The included AVR code defaults off and lacks the standard CRTC property
+attachment; activation testing remains a separate continuation.

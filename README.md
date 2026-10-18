@@ -9,8 +9,10 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 ## Status — 18 October 2026
 
-The matched persistent `7.2.10-senemos.1.4056` development bundle reaches
-original Fedora KDE through native O82 DPU/DSI. Normal-boot user checks confirm
+The signed COPR `7.2.10-8` development bundle installs through DNF and reaches
+original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
+Original Fedora Plasma Login Manager now starts the Wayland session.
+The previous .4056 normal-boot user checks confirm
 automatic four-pose rotation and dual-light automatic brightness. Bluetooth
 mouse input works. The earlier seven-rate display trial covers
 30/48/50/60/90/120/144 Hz with nine transitions retaining panel and touch state.
@@ -20,17 +22,35 @@ and matched modules remain the rollback.
 The source producer now builds Image, matching modules, DTBs and an Android
 boot container with a source-generated initramfs. Integer releases use
 `7.2.10-1`, `-2`, `-3`, and restart at `7.2.11-1` after a new upstream pin.
-[COPR 11164946](https://copr.fedorainfracloud.org/coprs/build/11164946) builds
-`7.2.10-4`, including 46 baseline patches, standard PMIC IIO/hwmon/thermal
-consumers and native CPU emergency cooling maps. Source/fixture checks and
-AArch64 object builds pass. Exact artifact and physical acceptance remain
-separate from the existing .4056 result.
+[COPR 11165188](https://copr.fedorainfracloud.org/coprs/build/11165188) builds
+`7.2.10-8`, including 49 baseline patches, standard PMIC IIO/hwmon/thermal
+consumers and native CPU emergency cooling maps. Signatures, matching Image,
+modules and boot-container checks pass. The tablet exposes all 27 configured
+PMIC IIO channels, two Hall input devices and 51 readable thermal zones.
+Original KDE's sensor backend reads all 27 PMIC measurements. The battery
+thermistor and two current feedback channels return live values; charger
+temperature returns the OEM-clamped 0 °C and remains physically unqualified.
+Front close/open and rear fold/unfold produce standard switch events;
+logind tracks the lid. Cover-triggered display blanking remains unqualified.
+Software-emulated thermal events in the earlier release-4 test lower three
+CPU policy limits and the GPU cap; all emulation values are cleared afterward.
+Original KDE System Monitor's backend returns live PMIC values and battery
+voltage, signed current and derived power with standard units.
+[COPR 11165033](https://copr.fedorainfracloud.org/coprs/build/11165033) builds
+release 5 with the SMP2P edge-history correction. Signed delivery and bounded
+tablet traces confirm stable ready/handover counters while sleep-state updates
+continue. Full shutdown still has an upstream clipboard deadlock; two SPI/GPI
+timeouts leave long-idle touchscreen reliability open.
 
 The OEM non-linear backlight mapping is retained. Only the exact OEM root/sensor
-FastRPC contexts are admitted. Four private PMIC charger scalers and complete
-OEM skin/BCL policy remain incomplete. Sustained CPU/GPU thermal behavior is
+FastRPC contexts are admitted. All four previously excluded ADC conversions
+are ported from the exact OEM source. Complete OEM skin/BCL policy remains
+incomplete. Sustained CPU/GPU thermal behavior is
 unqualified. See the [source profile](packaging/native/README.md) and
 [integration record](packaging/INTEGRATION-20261017.md) for delivery boundaries.
+The combined source contains the default-off [AVR experiment](docs/O82-VRR-EXPERIMENT.md).
+No qualified VRR range is advertised; atomic property attachment and physical
+activation tests remain a separate continuation.
 
 ### Earlier firmware-framebuffer baseline — 15 October 2026
 

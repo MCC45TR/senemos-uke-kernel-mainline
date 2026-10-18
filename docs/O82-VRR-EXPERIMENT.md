@@ -5,7 +5,9 @@ for Uke SM7675, the native OEM PB/42 profile, dual DSI and DSC. It defaults to
 off. There is no qualified VRR range or `vrr_capable` advertisement.
 
 The existing seven fixed modes and panel command sequences are retained.
-The CRTC's standard atomic `VRR_ENABLED` property controls the experiment.
+The code handles the CRTC's standard atomic `VRR_ENABLED` state, but the
+combined release-8 MSM source does not yet attach that property. Property
+attachment must be implemented and verified before an activation test.
 Unsupported active modes and topology are rejected during atomic checking.
 That stage does not write hardware. A read-only MSM module parameter,
 `o82_vrr_test_min_hz`, supplies the experimental lower bound. Zero disables
@@ -46,7 +48,8 @@ that test boot. Keep the installed fallback and Android return route.
 
 1. Record fixed 120 Hz scanout, both INTF/DSI register snapshots, DRM events,
    touch state and the kernel log.
-2. Obtain DRM master or a valid lease using the distribution's KMS tools;
+2. First verify the currently missing CRTC property attachment. Obtain DRM
+   master or a valid lease using the distribution's KMS tools;
    request `VRR_ENABLED=1` only with the exact current 120 Hz mode. Test-only
    atomic requests for another mode must fail before hardware changes.
 3. Deliver reproducible irregular frames near the 8.333–8.402 ms experiment
