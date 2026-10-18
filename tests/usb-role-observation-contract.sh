@@ -6,7 +6,9 @@ work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 source_file=$kernel/drivers/usb/roles/class.c
 extract() {
-    awk -v pattern="$1" '$0 ~ pattern {emit=1; found=1} emit {print} emit && /^}/ {exit} END {if (!found) exit 2}' "$2"
+    UKE_ROLE_PATTERN="$1" awk 'BEGIN {pattern=ENVIRON["UKE_ROLE_PATTERN"]}
+        $0 ~ pattern {emit=1; found=1} emit {print} emit && /^}/ {exit}
+        END {if (!found) exit 2}' "$2"
 }
 {
 cat <<'C'
