@@ -54,3 +54,21 @@ matching root and rollback audit, the patched original UPower host fixture,
 coordinated PC-USB observation, and physical display/lifecycle tests. F5 testing
 requires evidence-derived limits, protection ownership and a present operator;
 none is inferred from these host tests.
+
+## Full-build follow-up
+
+18 October 2026: COPR 11166008 compiles the combined kernel until the battery
+provider uses an undeclared devm_device_add_groups call. Three getter snapshot
+locals are also unused. Release 21 adds patch 0064, uses the supported managed
+single-group API, retains registration failure handling and removes those
+unused locals. The generation helper remains in coordinated power sampling
+and SDP validation. The 7.2.10/7.2.9 queues now contain 64/59 patches. Strict
+coordinator/protocol fixtures and checkpatch pass; a complete translation-unit
+and package rebuild are required. This correction changes no wire value,
+charging limit, attribute permission, actuator or USB ownership contract.
+
+The complete qcom_battmgr translation unit passes AArch64 Clang 23.1.3 Kbuild
+with KCFLAGS=-Werror using the recorded release-18 configuration. The two
+actual-source request/protocol contracts also pass. This is a host object
+compile; the complete release-21 boot/package build and tablet admission remain
+open. The 7.2.9 queue update has not been separately built.

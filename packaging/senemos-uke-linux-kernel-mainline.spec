@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 19
+%global senemos_build_release 21
 %else
 %global senemos_build_release 1
 %endif
@@ -247,6 +247,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-21
+- Register the single battery diagnostic group with the supported managed API.
+- Remove unused getter snapshots while retaining coordinated generation checks.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-16
 - Remove an unused legacy VA scalar flag that OF misinterprets as a GPIO provider.
 

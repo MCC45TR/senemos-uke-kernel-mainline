@@ -240,6 +240,10 @@
     {
       "path": "patches/7.2.9/0062-usb-uke-wcd-revision-observation.patch",
       "sha256": "f1828e3778c28d445d57e6a17c6c279d672234a0a46f40c97a7a64b118967732"
+    },
+    {
+      "path": "patches/7.2.9/0064-uke-battmgr-managed-group.patch",
+      "sha256": "de5b3d17f8232b4855bca78a926cb8f92710404471d88725c7678cf50c56bc72"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

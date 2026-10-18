@@ -260,6 +260,10 @@
     {
       "path": "patches/7.2.10/0063-ath11k-ahb-unregistered-remove.patch",
       "sha256": "36b056cfe8ce78262e72a684ac05088bac1033ffe3101de8853373398d1a4e7b"
+    },
+    {
+      "path": "patches/7.2.10/0064-uke-battmgr-managed-group.patch",
+      "sha256": "de5b3d17f8232b4855bca78a926cb8f92710404471d88725c7678cf50c56bc72"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

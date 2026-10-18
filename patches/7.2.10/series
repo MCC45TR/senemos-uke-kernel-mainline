@@ -61,3 +61,4 @@
 0061-drm-msm-uke-dp-controller.patch
 0062-usb-uke-wcd-revision-observation.patch
 0063-ath11k-ahb-unregistered-remove.patch
+0064-uke-battmgr-managed-group.patch
