@@ -4,6 +4,8 @@ set -Eeuo pipefail
 [[ $# == 2 && -d $1 && -d $2 ]] || exit 2
 kernel=$(realpath "$1") output=$(realpath "$2")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
+usb_profile=${UKE_USB_PROFILE:-peripheral}
+case $usb_profile in peripheral|typec-v1) ;; *) echo 'Unknown USB source profile' >&2; exit 2;; esac
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
 case $version in 7.2.9|7.2.10) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
@@ -31,6 +33,7 @@ install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h
 install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
 install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-thermal.h"
 install -m644 "$here/uke-hall.h" "$kernel/arch/arm64/kernel/uke-hall.h"
+install -m644 "$here/../usb/wcd939x-uke-typec.c" "$kernel/drivers/usb/typec/mux/wcd939x-uke-typec.c"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]
 grep -F 'DTC 1.7.2-g53373d13' "$kernel/scripts/dtc/version_gen.h" >/dev/null
 install -m644 "$here/vendor/fdt_check.c" "$kernel/scripts/dtc/libfdt/fdt_check.c"
@@ -50,6 +53,7 @@ header=$kernel/arch/arm64/kernel/uke-abl-overlays.h
 for name in ufs usb; do
     source=$here/sm7675-uke-ufs.dtso
     [[ $name != usb ]] || source=$here/sm7675-uke-usb2.dtso
+    if [[ $name == usb && $usb_profile == typec-v1 ]]; then source=$here/sm7675-uke-typec.dtso; fi
     cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" "$source" > "$output/$name.dts"
     dtc -q -@ -I dts -O dtb -o "$output/$name.dtbo" "$output/$name.dts"
     {
@@ -58,6 +62,7 @@ for name in ufs usb; do
         printf '};\n'
     } >> "$header"
 done
+printf '%s\n' "$usb_profile" > "$output/usb-profile"
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
     "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" \

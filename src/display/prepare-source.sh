@@ -71,6 +71,9 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
 done
+patch=$here/../../patches/display/0044-uke-displayport-10bpc-output.patch
+git -C "$kernel" apply --check "$patch"
+git -C "$kernel" apply "$patch"
 for path in "${paths[@]}"; do
     source=${path##*/}
     [[ $source != uke-o82-mode.h ]] || source=o82-mode.h

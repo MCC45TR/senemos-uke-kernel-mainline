@@ -338,6 +338,7 @@ drivers/usb/typec/mux/nb7vpq904m.ko.zst
 drivers/usb/typec/mux/ps883x.ko.zst
 drivers/usb/typec/mux/ptn36502.ko.zst
 drivers/usb/typec/mux/wcd939x-usbss.ko.zst
+drivers/usb/typec/mux/wcd939x-uke-typec.ko.zst
 drivers/usb/typec/tcpm/fusb302.ko.zst
 drivers/usb/typec/tcpm/qcom/qcom_pmic_tcpm.ko.zst
 drivers/usb/typec/tcpm/tcpci.ko.zst

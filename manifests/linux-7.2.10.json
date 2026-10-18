@@ -264,6 +264,14 @@
     {
       "path": "patches/7.2.10/0064-uke-battmgr-managed-group.patch",
       "sha256": "de5b3d17f8232b4855bca78a926cb8f92710404471d88725c7678cf50c56bc72"
+    },
+    {
+      "path": "patches/7.2.10/0065-usb-uke-typec-phy-framework.patch",
+      "sha256": "81af05b888fe78bc41e1ad6fd609da80cbc6a74ded8fea96a69b1fc91e61f56b"
+    },
+    {
+      "path": "patches/7.2.10/0066-phy-uke-qmp-power-routing.patch",
+      "sha256": "4df9145ed67303f2ba02bf6f4a5c07acd32c2a4b12dca0688f1980f10591d6e1"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -62,3 +62,5 @@
 0062-usb-uke-wcd-revision-observation.patch
 0063-ath11k-ahb-unregistered-remove.patch
 0064-uke-battmgr-managed-group.patch
+0065-usb-uke-typec-phy-framework.patch
+0066-phy-uke-qmp-power-routing.patch

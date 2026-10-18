@@ -6,11 +6,17 @@ profile=$(cd -- "$(dirname -- "$0")" && pwd)
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
+export UKE_USB_PROFILE
+UKE_USB_PROFILE=$(cat "$profile/usb-profile")
+case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
+usb_cpp=()
+[[ $UKE_USB_PROFILE != typec-v1 ]] || usb_cpp=(-DUKE_USB_TYPEC=1)
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
+    "${usb_cpp[@]}" \
     -I "$kernel/include" "$profile/src/display/sm7675-uke-native-display-oem-modes.dtso" > "$output/display.dts"
 dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
 {

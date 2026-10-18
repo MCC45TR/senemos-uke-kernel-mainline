@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "6bb38878a386e882ee87067a6d974e4e5d7b55ca7df414a462f672b1bf8688c4"
+      "sha256": "25dcc5e681dc291f89ad320fc70bf3a72781bb9de7e9574989559d53e26b823b"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "6cac0a33dabe2a024f95be2927a4c2dfae216a3f960b0d5ef26039d912eb49e2"
+      "sha256": "d93c995d252481f285d6a6b86908716e92805553d9ab9f6332ee96a27ebcb0c5"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -61,7 +61,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "f090469d2435eda7b96ee6397ef029799e517632480fb1d73ca321c9d45ecd94"
+      "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
     },
     {
       "path": "src/boot/licenses/builder-MIT",

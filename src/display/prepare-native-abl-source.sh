@@ -10,7 +10,10 @@ patch=$here/../../patches/display/0002-arm64-uke-native-abl-entry.patch
 git -C "$kernel" apply --check "$patch"
 timing_patch=$here/../../patches/display/0005-native-dpu-dsc-active-width.patch
 git -C "$kernel" apply --check "$timing_patch"
+usb_cpp=()
+[[ ${UKE_USB_PROFILE:-peripheral} != typec-v1 ]] || usb_cpp=(-DUKE_USB_TYPEC=1)
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT="$variant" -x assembler-with-cpp \
+    "${usb_cpp[@]}" \
     -I "$kernel/include" "$here/sm7675-uke-native-display.dtso" > "$output/display.dts"
 dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
 if [[ $variant == 36 ]]; then suffix=36_02_0a; else suffix=42_02_0b; fi

@@ -33,3 +33,9 @@ Own-device graphics results remain from the 7.2.9 RAM experiment. A clean source
 application, build, signed package check and matched 7.2.10 tablet boot are separate
 acceptance steps. Early GPU probing, full DVFS, thermal limits and suspend remain
 open; the independent Uke DTS and stock-ABL handoff are different boot paths.
+
+Patches 0065 and 0066 add the separately selected full Uke Type-C profile:
+firmware-owned roles, one generic eUSB2 PHY, exact WCD 2.0 routing, QMP analog
+supplies/GDSC and checked PHY restoration. The native source producer supplies
+the associated full USB/DisplayPort graph; adding dormant driver matches alone
+is not device support. No new hardware acceptance follows from these patches.

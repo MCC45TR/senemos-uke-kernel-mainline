@@ -16,6 +16,19 @@ init=$out/boot-initramfs stage=$out/boot-modules
 [[ ! -e $init && ! -e $stage ]] || { echo 'Use an empty boot output for source compilation' >&2; exit 1; }
 cp -a "$base" "$init"
 cp "$here/../../packaging/native/native.config" "$out/.config"
+usb_profile=$(cat "$kernel/native-generated/usb-profile")
+case $usb_profile in peripheral|typec-v1) ;; *) echo 'Missing USB source-profile receipt' >&2; exit 2;; esac
+if [[ $usb_profile == typec-v1 ]]; then
+    # The full role manager has no early legacy gadget owner or root console.
+    for unit_dir in "$init/usr/lib/systemd/system" "$init/etc/systemd/system"; do
+        [[ -d $unit_dir ]] || continue
+        find "$unit_dir" -type l \( -name uke-cdc-acm.service -o -name uke-cdc-shell.service \) -delete
+    done
+    if [[ -d $init/etc/cmdline.d ]] && grep -rlF 'senemos.debug=cdc-acm' "$init/etc/cmdline.d"; then
+        echo 'Legacy debug argument present in the full-profile initramfs base' >&2
+        exit 1
+    fi
+fi
 localversion=-${release#*-}
 export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''

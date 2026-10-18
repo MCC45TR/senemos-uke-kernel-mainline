@@ -39,8 +39,8 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/display src/boot patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
-	install -m644 packaging/native/native.config packaging/native/README.md "$$assets/"
+	git archive HEAD src/display src/boot src/usb patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
+	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
 	(cd "$$assets"; find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS)

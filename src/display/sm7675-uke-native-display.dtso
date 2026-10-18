@@ -172,3 +172,6 @@
 		};
 	};
 };
+#ifdef UKE_USB_TYPEC
+#include "sm7675-uke-displayport.dtsi"
+#endif

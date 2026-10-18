@@ -927,15 +927,41 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	ret = uke_delete_optional(output, "/soc/ufshc@1d84000", "shared-ice-cfg");
 	if (ret)
 		return ret;
-	ret = uke_delete_optional(output, "/soc/ssusb@a600000", "interrupts-extended");
-	if (ret)
-		return ret;
 	ret = uke_delete_optional(output, "/soc/ssusb@a600000", "extcon");
 	if (ret)
 		return ret;
-	ret = uke_delete_optional(output, "/soc/ssusb@a600000", "usb-role-switch");
-	if (ret)
-		return ret;
+	{
+		const char *path = "/soc/ssusb@a600000";
+		int usb = fdt_path_offset(output, path);
+		int typec = !fdt_node_check_compatible(output, usb, "qcom,sm7675-dwc3-typec");
+		const char *const full_remove[] = {
+			"usb-phy", "interrupts", "qcom,select-utmi-as-pipe-clk"
+		};
+		unsigned int i;
+
+		if (typec) {
+			const void *property = fdt_getprop(output, usb, "interrupts-extended", &size);
+			if (!property || size != 17 * sizeof(fdt32_t) ||
+			    !fdt_getprop(output, usb, "usb-role-switch", NULL))
+				return -FDT_ERR_BADVALUE;
+			for (i = 0; i < sizeof(full_remove) / sizeof(full_remove[0]); i++) {
+				ret = uke_delete_optional(output, path, full_remove[i]);
+				if (ret)
+					return ret;
+			}
+			/* Remove the inherited OEM single port before using ports@0/1. */
+			usb = fdt_path_offset(output, "/soc/ssusb@a600000/port");
+			if (usb >= 0 && (ret = fdt_del_node(output, usb)))
+				return ret;
+		} else {
+			ret = uke_delete_optional(output, path, "interrupts-extended");
+			if (ret)
+				return ret;
+			ret = uke_delete_optional(output, path, "usb-role-switch");
+			if (ret)
+				return ret;
+		}
+	}
 	ret = uke_scope_qup_buses(output);
 	if (ret)
 		return ret;
@@ -1017,7 +1043,7 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 	if (!ret)
 		return input;
 	*physical = __pa_symbol(uke_fdt);
-	pr_info("Uke ABL DT: selected RAM preserved; UFS, USB peripheral and simplefb prepared\n");
+	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
 	return uke_fdt;
 }
 #endif

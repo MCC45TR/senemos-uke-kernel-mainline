@@ -114,3 +114,13 @@ specifier and incorrectly resolves value 1 to the interrupt controller. The
 actual FDT helper preserves native compatibles and other values. This does
 not enable audio or alter the SoundWire pinctrl reference; tablet warning
 validation remains pending.
+
+## Full Type-C source candidate, 18 October 2026
+
+The versioned `usb-profile` now selects `typec-v1` for the next combined native
+build. It connects UCSI/HOST, Gen1 and external DisplayPort through the exact
+Uke PHY, WCD and clock graph. CDC defaults off; the matching root manager enables
+it only after an explicit user request. The existing accepted peripheral kernel
+remains the rollback. Source, build and device acceptance are separate; see
+[the full-profile record](../../docs/USB-TYPEC-FULL-PROFILE-20261018.md) for the
+source pins, interfaces, composition requirements and remaining physical gates.
