@@ -39,7 +39,9 @@ find "$source_modules" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
 while IFS= read -r path; do
-    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* && -s $source_modules/kernel/$path ]]
+    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* && -s $source_modules/kernel/$path ]] || {
+        printf 'Required early module is invalid or unavailable: %s\n' "$path" >&2; exit 1;
+    }
     install -Dm644 "$source_modules/kernel/$path" "$target/kernel/$path"
 done < "$here/early-modules.list"
 for name in modules.builtin modules.builtin.modinfo modules.order; do

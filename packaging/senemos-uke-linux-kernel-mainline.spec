@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 30
+%global senemos_build_release 31
 %else
 %global senemos_build_release 1
 %endif
@@ -250,6 +250,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-31
+- Remove the debugfs-only Qualcomm statistics module from the early release set.
+- Identify an unavailable required early module before refusing packaging.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-30
 - Build a common kernel with explicit linux/ext4 and userdata/F2FS root profiles.
 - Enable F2FS security labels and remove development command-line defaults.

@@ -19,3 +19,4 @@ if grep -Eq 'inst_simple.*(uke-cdc-shell|uke-initrd-screen)|ln -s.*(uke-cdc-shel
     echo 'Development root shell entered the release initramfs recipe' >&2; exit 1
 fi
 echo 'Release root filesystems, security labels, command line and instrumentation policy passed'
+! grep -Fxq drivers/soc/qcom/qcom_stats.ko.zst "$root/src/boot/early-modules.list"
