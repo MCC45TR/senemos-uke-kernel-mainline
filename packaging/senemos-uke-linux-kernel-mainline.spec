@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 28
+%global senemos_build_release 29
 %else
 %global senemos_build_release 1
 %endif
@@ -154,6 +154,7 @@ CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
 bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
 bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
@@ -261,6 +262,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-29
+- Add an explicit root-only, read-only firmware threshold query without control admission.
+- Bound diagnostic GETs and reject active leases, lifecycle changes and partial results.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-27
 - Accept observed UCSI type-2 notifications with opcode-specific validation.
 - Exercise the actual callback's reply, notification and lifecycle boundaries.

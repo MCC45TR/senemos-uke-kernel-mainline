@@ -308,6 +308,10 @@
     {
       "path": "patches/7.2.10/0075-uke-qmp-ldob3-supplier.patch",
       "sha256": "1f1be3959b9ce795133e46fd7ef801edd03035d819760eea5c489e8aae8880a2"
+    },
+    {
+      "path": "patches/7.2.10/0076-uke-charge-readonly-settings.patch",
+      "sha256": "90e480eee772f4466d0a447db689975a3cebb2d37b4c071cf4ba6fd1ce44fc53"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -69,3 +69,19 @@ Deferred coordinator checks:
 4. Use the central staged PC-USB/VRR plan; qualify exact active firmware, units,
    source budget, protections, readback and physical effects before adapters.
    No F5 high-power qualification or hardware-risk closure follows from source.
+
+## Read-only threshold diagnosis — release 29 candidate
+
+The installed firmware has not yet supplied a threshold readback. A new explicit
+root-only `uke_charge_settings` attribute reads the existing three standard OEM
+threshold fields without requesting control admission. Existing status and
+admission remain metadata-only, and standard getters remain unavailable without
+their original admitted-client lease. All SET/current/voltage restrictions remain.
+
+This is a bounded diagnostic, not battery protection or bypass. It refuses an
+unexpired control lease or busy driver, uses three fixed GETs, stops on error or
+lifecycle change and emits no partial result. It does not renew a verified cache,
+create a lease, choose pack limits, activate a service or issue FCC/XM/PD commands.
+The actual helper and root sysfs wrapper pass synthetic off/on permission, lease,
+rate, response and lifecycle fixtures. Complete driver compilation, signed
+packaging and offline-power tablet readback remain separate validation stages.
