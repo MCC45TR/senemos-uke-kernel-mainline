@@ -145,7 +145,8 @@ done
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
-CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c
+CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
+CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native
 CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 bash boot-recipe/tests/target-privacy-contract.sh

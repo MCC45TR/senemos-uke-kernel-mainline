@@ -66,3 +66,22 @@ checked sources, execute the admission fixture, compile the complete actual
 regulator translation unit, inspect the frozen full FDT, then separately record
 new package and recoverable tablet probe/DSI/touch results. Preserve the failed
 kernel24 image/logs, matched kernel23 recovery tuple and user acceptance limits.
+
+## Preparation-order correction
+
+The coordinator's first fresh preparation rejected the original patch0075
+before native-profile application. Its hunk was authored against the fully
+prepared provider and contained `mmcx.lvl` context added only by the later
+native display queue. This source preparation failed; no fixture, regulator
+TU or new package PASS followed from that attempt.
+
+The successor is authored against the coordinator's retained actual pre-native
+provider. It inserts only `ldob3` after `ldob17`, before `smpb2`, outside the
+later native supply patch's two hunk spans. It does not rewrite that display
+patch or bypass checked application. Native preparation retains the actual
+post-adaptation/pre-native provider in
+`native-generated/rpmh-regulator-before-native.c`; native `%check` executes the
+actual-admission fixture against that17-resource stage and the final20-resource
+provider separately. The extra native resources must remain refused at the
+earlier stage. Both corrected preparation and fixture/TU outcomes require new
+coordinator evidence. No test or compiler ran in this source task.

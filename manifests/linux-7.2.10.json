@@ -307,7 +307,7 @@
     },
     {
       "path": "patches/7.2.10/0075-uke-qmp-ldob3-supplier.patch",
-      "sha256": "43c102d32394fcb6624c2a2177d5f788b3d35a9a5d1192707cdb1a42bbaad380"
+      "sha256": "1f1be3959b9ce795133e46fd7ef801edd03035d819760eea5c489e8aae8880a2"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
