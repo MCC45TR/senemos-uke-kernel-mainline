@@ -6,7 +6,7 @@ version := 7.2.10
 outdir ?= $(CURDIR)/build/srpm
 validate:
 	test "$(version)" = 7.2.10
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 64) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 68) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"

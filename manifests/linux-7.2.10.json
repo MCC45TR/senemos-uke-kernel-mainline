@@ -274,6 +274,10 @@
       "sha256": "4df9145ed67303f2ba02bf6f4a5c07acd32c2a4b12dca0688f1980f10591d6e1"
     },
     {
+      "path": "patches/7.2.10/0067-uke-battmgr-qualified-control.patch",
+      "sha256": "c4be0714e4015d4f294dc66bc4dfaf994b6dad759fc02d8671d4628e7dedf220"
+    },
+    {
       "path": "patches/7.2.10/0068-usb-uke-role-completion.patch",
       "sha256": "8cfe3b5ed786d84098ad18f2e83af02cfde6edf977b28123c2e56a34902e04d8"
     }

@@ -28,6 +28,6 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1
 fi
-grep -F 'git archive HEAD src/display src/boot patches/$(version) patches/display patches/boot tests' "$root/Makefile"
+grep -F 'git archive HEAD src/display src/boot src/usb patches/$(version) patches/display patches/boot tests' "$root/Makefile"
 [[ ! -e $root/packaging/native/senemos-uke-linux-kernel-mainline-native.spec ]]
 echo 'One mainline tuple, integer module ABI, matched boot and explicitly gated updater passed'
