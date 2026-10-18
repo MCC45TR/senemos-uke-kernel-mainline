@@ -49,3 +49,10 @@ Physical acceptance remains open: USB2 low/full/high speed, Gen1 in both orienta
 The separate charging owner supplies real threshold/current firmware transport with readback and runtime control. This USB source does not set an 80% threshold, certify active charging or replace that backend with a desktop icon.
 
 The internal panel's advertised 12-bit/68.7-billion-color, DCI-P3 and 800-nit HBM specifications are distinct from the exact O82 ten-bpc DSC link. A 12-bpc link, measured gamut, HDR calibration and 800-nit optical output are not established by changing metadata. The coordinator owns the internal display/color/backlight extension and Fastfetch's 11.2-inch presentation. Product references: [global specifications](https://www.mi.com/my/product/xiaomi-pad-7/specs/), [12-bit and HBM specifications](https://www.mi.com/in/product/xiaomi-pad-7/specs/).
+
+Source follow-up 0068 checks generic PHY mode errors before starting the new
+host/gadget after the previous role is stopped. The full profile's read-only
+role value comes from successful driver initialization rather than the earlier
+GCTL request. Failed initialization returns the cached role to none, records
+the error and removes the VBUS-valid override. This completion state still does
+not prove USB enumeration, negotiated PD power or physical operation.
