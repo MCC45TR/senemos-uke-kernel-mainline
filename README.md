@@ -9,6 +9,29 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 ## Status — 18 October 2026
 
+The last tested POCO Pad X1 release is `7.2.10-23`, running Fedora Rawhide
+AArch64 and original KDE through native O82 DPU/DSI. The combined `7.2.10-24`
+development candidate is in [COPR build 11167494](https://copr.fedorainfracloud.org/coprs/build/11167494).
+It adds the full Type-C/USB/DisplayPort source profile and guarded charging
+interfaces. Actual AArch64 translation-unit checks pass with the charging ABI
+both disabled and enabled. The full FDT transform preserves RAM, reservations
+and internal DSI resources. These checks do not establish dock, PD, HDMI or
+charge-control functionality on the tablet.
+
+CDC defaults off in the matched full-profile boot/root pair; explicit ACM
+opt-in is provided by the separate native management package. Charging services
+remain disabled and the shipped qualification profile is unqualified. No raw
+PD/voltage, gauge or factory command is supplied. See the
+[Type-C profile](docs/USB-TYPEC-FULL-PROFILE-20261018.md) and
+[charging protocol limits](docs/CHARGING-PROTOCOLS-20261018.md).
+
+Seven fixed display modes and the experimental AVR path remain separate from
+physical VRR acceptance. Continuous touch, no blanking and actual variable
+panel cadence across the full range are still required. Suspend is unqualified.
+The accepted previous boot image and matching modules remain the rollback.
+
+## Earlier native display and sensor results
+
 The signed COPR `7.2.10-10` development bundle installs through DNF and reaches
 original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
 Original Fedora Plasma Login Manager now starts the Wayland session.
