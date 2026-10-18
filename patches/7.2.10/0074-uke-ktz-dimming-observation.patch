@@ -50,7 +50,7 @@ index 0000000..621a1b0
 +		not a measurement of PWM duty, frequency, luminance, optical flicker
 +		or DC dimming. External bus access is outside this driver's lock.
 diff --git a/drivers/video/backlight/ktz8866.c b/drivers/video/backlight/ktz8866.c
-index bbce706..03b647c 100644
+index bbce706..2066140 100644
 --- a/drivers/video/backlight/ktz8866.c
 +++ b/drivers/video/backlight/ktz8866.c
 @@ -13,6 +13,7 @@
@@ -72,7 +72,7 @@ index bbce706..03b647c 100644
  
  struct ktz8866 {
  	struct i2c_client *client;
-@@ -76,6 +81,66 @@ static int ktz8866_update_bits(struct ktz8866 *ktz, unsigned int reg,
+@@ -76,6 +81,67 @@ static int ktz8866_update_bits(struct ktz8866 *ktz, unsigned int reg,
  	return regmap_update_bits(ktz->regmap, reg, mask, val);
  }
  
@@ -85,7 +85,7 @@ index bbce706..03b647c 100644
 +				    struct device_attribute *attr, char *buf)
 +{
 +	struct ktz8866 *ktz = dev_get_drvdata(dev);
-+	unsigned int primary_cfg, secondary_cfg;
++	unsigned int primary_cfg, secondary_cfg, mismatch;
 +	int primary_error, secondary_error;
 +
 +	if (!ktz || !ktz->uke || ktz->secondary || !ktz->peer || !ktz->backlight)
@@ -101,11 +101,12 @@ index bbce706..03b647c 100644
 +		return sysfs_emit(buf,
 +			"status=read-error primary_errno=%d secondary_errno=%d\n",
 +			primary_error, secondary_error);
-+	if ((primary_cfg ^ secondary_cfg) & BL_CFG1_MODE_MASK)
++	mismatch = (primary_cfg ^ secondary_cfg) & BL_CFG1_MODE_MASK;
++	if (mismatch)
 +		return sysfs_emit(buf,
 +			"status=mismatch primary_cfg1=0x%02x secondary_cfg1=0x%02x mismatch_mask=0x%02x\n",
 +			primary_cfg, secondary_cfg,
-+			(primary_cfg ^ secondary_cfg) & BL_CFG1_MODE_MASK);
++			mismatch);
 +
 +	return sysfs_emit(buf,
 +		"status=ok primary_cfg1=0x%02x secondary_cfg1=0x%02x mode=%s mapping=%s pwm_polarity=%s\n",
@@ -139,7 +140,7 @@ index bbce706..03b647c 100644
  struct ktz8866_state {
  	unsigned int enable, lsb, msb;
  };
-@@ -460,6 +525,7 @@ static struct i2c_driver ktz8866_driver = {
+@@ -460,6 +526,7 @@ static struct i2c_driver ktz8866_driver = {
  	.driver = {
  		.name = "ktz8866",
  		.of_match_table = ktz8866_match_table,

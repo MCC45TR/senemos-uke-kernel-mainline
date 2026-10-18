@@ -85,3 +85,19 @@ configuration. Do not use forced/direct I2C or a mode write to obtain the result
 Record a mismatch or error without normalizing it to a preferred mode. Optical
 DC/flicker, HBM and the panel's advertised color specifications remain separate
 physical acceptance gates.
+
+## Coordinator result and source correction
+
+The coordinator reports the first actual-code fixture passed in kernel25 COW
+staging. Complete actual AArch64 `ktz8866.c` compilation then emitted a format
+warning: Linux `BIT()` uses `unsigned long`, so the inline masked XOR did not
+match `%02x`'s `unsigned int`. A host fixture PASS did not establish a clean
+kernel translation unit. No tablet dimming read was performed.
+
+The source successor stores the bounded mask in an explicit `unsigned int`
+before formatting. The fixture now uses Linux-width `1UL` and gives its
+`sysfs_emit` stub a printf-format attribute so the host compiler diagnoses
+the same mismatch with warnings retained. No warning suppression, output
+format or hardware behavior changes. The original source receipt is retained;
+the coordinator must regenerate the revised patch and repeat the focused
+fixture and actual translation-unit check. This source conversation ran neither.

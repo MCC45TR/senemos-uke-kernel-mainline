@@ -303,7 +303,7 @@
     },
     {
       "path": "patches/7.2.10/0074-uke-ktz-dimming-observation.patch",
-      "sha256": "e983c4c4966a905a61111f2acecb0418f2414dda3a33bb6b2e9249b97566ee78"
+      "sha256": "cc698c3801740b8342de44da08923b6bac4bc6170a78e69c998fb621b066df8f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

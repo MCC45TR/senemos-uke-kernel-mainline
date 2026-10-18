@@ -14,7 +14,7 @@ trap 'rm -r -- "$work"' EXIT
 #include <initializer_list>
 #include <sys/types.h>
 using umode_t = unsigned short;
-#define BIT(n) (1U << (n))
+#define BIT(n) (1UL << (n))
 struct device;
 struct kobject { device *dev; };
 struct device { void *data; kobject kobj; };
@@ -55,6 +55,7 @@ int regmap_read(regmap *map, unsigned int reg, unsigned int *value) {
     if(map->error) return map->error; // Leave the output uninitialized on error.
     *value=map->regs[reg]; return 0;
 }
+__attribute__((format(printf, 2, 3)))
 int sysfs_emit(char *buf, const char *format, ...) {
     assert(!expected_lock->locked);
     va_list args; va_start(args,format);
