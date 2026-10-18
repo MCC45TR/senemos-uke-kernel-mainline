@@ -53,7 +53,8 @@ KScreen and persisted. With 144 Hz selected, DPU measurement reports about
 30 Hz at idle with VRR enabled; this is not optical panel metrology.
 
 The earlier Realtek missing-firmware error is absent after the compressed-loader
-change, and the NIC binds. Ethernet traffic is untested. DP remains disconnected;
+change, and ethtool reports `rtl8153b-2 v2 04/27/23`. Carrier is zero and Ethernet
+traffic is untested. DP remains disconnected;
 an initial alternate-mode mux error is recorded with the unpowered dock. The
 user reports this Juo dock requires PD power for HDMI even on a laptop, so an
 unpowered display trial is inconclusive. Powered HDMI testing is deferred while
