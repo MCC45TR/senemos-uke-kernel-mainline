@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 12
+%global senemos_build_release 13
 %else
 %global senemos_build_release 1
 %endif
@@ -234,6 +234,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-13
+- Align host FDT fixtures to libfdt's eight-byte buffer contract on AArch64.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-12
 - Latch EVO/OLE PLL settings on reset exit without waiting for an unavailable ACK.
 - Preserve live PLL checks and propagate register-access failures.

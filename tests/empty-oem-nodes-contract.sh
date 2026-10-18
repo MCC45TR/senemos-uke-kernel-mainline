@@ -50,7 +50,9 @@ static void demura_state(void *tree,unsigned i,int disabled) {
  assert(fdt_get_phandle(tree,node)==123+i);
 }
 int main(void) {
- char tree[4096];fixture(tree);
+ _Alignas(8) char tree[4096];fixture(tree);
+ _Alignas(8) char misaligned[4104];
+ assert(fdt_create_empty_tree(misaligned+1,4096)==-FDT_ERR_ALIGNMENT);
  assert(!uke_empty_spmi_bus(tree));state(tree,"disabled");
  fixture(tree);int node=fdt_path_offset(tree,path);
  assert(fdt_add_subnode(tree,node,"pmic@0")>=0);

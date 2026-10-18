@@ -14,12 +14,11 @@ original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
 Original Fedora Plasma Login Manager now starts the Wayland session.
 Release 10 binds CPUCP and exchanges the SCMI v2.0 base protocol with the
 Qualcomm firmware; vendor memory-latency control and suspend remain unqualified.
-The release-11 source disables only the exact empty secondary SPMI controller
-and zero-length OEM demura placeholders. Actual helper fixtures preserve
-populated controllers, real reservations and phandles; tablet validation is pending.
-Release 12 adds the OEM EVO/OLE reset-time PLL latch rule with checked register
-accesses. Actual-function host fault tests pass; GPU and tablet qualification
-remain pending for that source.
+The release-13 candidate disables only the exact empty secondary SPMI controller
+and zero-length OEM demura placeholders, and follows the OEM EVO/OLE reset-time
+PLL latch rule with checked register accesses. Aligned FDT and actual PLL
+fixtures pass with AArch64 Clang; populated nodes, reservations and active PLL
+checks are retained. Tablet validation of these boot changes is pending.
 The previous .4056 normal-boot user checks confirm
 automatic four-pose rotation and dual-light automatic brightness. Bluetooth
 mouse input works. The earlier seven-rate display trial covers
