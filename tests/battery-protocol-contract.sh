@@ -15,6 +15,13 @@ cat <<'C'
 #include <errno.h>
 #include <limits.h>
 typedef uint32_t u32;
+typedef int32_t s32;
+typedef uint64_t u64;
+typedef int spinlock_t;
+#define spin_lock_irqsave(l,f) ((void)(l), (f)=0)
+#define spin_unlock_irqrestore(l,f) ((void)(l), (void)(f))
+static unsigned long jiffies;
+#define HZ 1000
 typedef uint32_t __le32;
 typedef uint16_t __le16;
 typedef uint8_t u8;
@@ -44,6 +51,7 @@ static void mutex_unlock(struct mutex *m) { assert(m->unused); m->unused=0; }
 #define le32_to_cpu(v) ((uint32_t)(v))
 #define dev_warn(...) ((void)0)
 #define dev_info(...) ((void)0)
+#define dev_info_ratelimited(...) ((void)0)
 #define DIV_ROUND_CLOSEST(x,d) ({ typeof(x) v=(x); typeof(d) n=(d); (v>0 ? (v+n/2)/n : (v-n/2)/n); })
 static void complete(struct completion *c) { c->done++; }
 static void strscpy(char *dst, const char *src, size_t size) {
@@ -54,7 +62,7 @@ awk '/^#define PMIC_GLINK_/ {print}
      /^struct pmic_glink_hdr/ {emit=1} emit {print} emit && /^};/ {emit=0}' \
     "$kernel/include/linux/soc/qcom/pmic_glink.h"
 awk '/^#define BATTMGR_CHEMISTRY_LEN/ {emit=1}
-     /^static int qcom_battmgr_request\(/ {emit=0} emit {print}' "$source"
+     /^static void qcom_battmgr_sm8350_callback\(/ {emit=0} emit {print}' "$source"
 awk '/^enum \{/ {emit=1} /^struct pmic_glink_data \{/ {emit=1}
      emit {print} emit && /^};/ {emit=0}' "$kernel/drivers/soc/qcom/pmic_glink.c"
 awk '/^static const struct pmic_glink_data pmic_glink_uke_data/ {emit=1}
@@ -79,7 +87,7 @@ static bool of_device_is_compatible(const struct device_node *node, const char *
  assert(!strcmp(name,"qcom,usb-snps-eusb2-phy") || !strcmp(name,"qcom,cliffs-adsp-pas")); return node->uke;
 }
 struct usb_phy { struct device *dev; int (*set_power)(struct usb_phy *, unsigned int); };
-struct dwc3 { struct usb_phy *usb2_phy; struct power_supply *usb_psy; unsigned int current_limit, vbus_draw_retries; struct delayed_work vbus_draw_work; };
+struct dwc3 { struct usb_phy *usb2_phy; struct power_supply *usb_psy; unsigned int current_limit, vbus_draw_retries, vbus_draw_generation; unsigned long vbus_draw_deadline; bool vbus_draw_paused; spinlock_t vbus_draw_lock; struct delayed_work vbus_draw_work; };
 struct usb_gadget { struct dwc3 *dwc; };
 static int scheduled, legacy;
 static struct dwc3 *gadget_to_dwc(struct usb_gadget *g) { return g->dwc; }
@@ -89,10 +97,14 @@ static void mod_delayed_work(void *q, struct delayed_work *w, unsigned int delay
 static int usb_phy_set_power(struct usb_phy *p, unsigned int mA) { (void)p; (void)mA; legacy++; return 42; }
 static const struct of_device_id qcom_battmgr_of_variants[]={{0}};
 C
-for name in uke_battery_property request_property usb_set_property usb_is_writeable sm8350_callback; do
+for name in uke_generation uke_battery_property uke_validate request_property usb_set_property usb_is_writeable sm8350_callback; do
     awk -v name="qcom_battmgr_$name" '
-        $0 ~ "^static (int|void) " name "\\(" {emit=1}
-        emit {print} emit && /^}/ {exit}' "$source"
+        $0 ~ "^static (int|void|u32) " name "\\(" {candidate=1;body=0;buffer=""}
+        candidate {buffer=buffer $0 ORS}
+        candidate && !body && /;$/ {candidate=0;buffer=""}
+        candidate && /^\{/ {body=1}
+        candidate && body && /^}/ {printf "%s",buffer;found=1;exit}
+        END {if(!found)exit 1}' "$source"
 done
 awk '/^static const u8 sm8350_bat_prop_map\[\]/ {emit=1} emit {print} emit && /^};/ {exit}' "$source"
 awk '/^static int qcom_battmgr_bat_sm8350_update\(/ {emit=1} emit {print} emit && /^}/ {exit}' "$source"
@@ -120,7 +132,7 @@ static void reply(struct qcom_battmgr *b, unsigned int opcode,
  m.intval.property=property; m.intval.value=value; m.intval.result=error;
  b->ack.done=0; b->error=0;
  qcom_battmgr_sm8350_callback(b,&m,sizeof(m.hdr)+sizeof(m.intval));
- assert(b->ack.done==1);
+ assert(b->ack.done==(b->variant==QCOM_BATTMGR_UKE?0:1));
 }
 int main(void) {
  assert(pmic_glink_uke_data.client_mask==BIT(PMIC_GLINK_CLIENT_BATT));
@@ -174,6 +186,8 @@ int main(void) {
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,2550,0); assert((int)b.status.temperature==255);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,(uint32_t)-500,0); assert((int)b.status.temperature==-50);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,15,8850,0); assert(b.info.charge_count==8850000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,15,(uint32_t)-100,0); assert((int)b.info.charge_count==-100000);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,15,8850,0);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,15,2147484,0); assert(b.error==-ERANGE && b.info.charge_count==8850000);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)-500000,0); assert(b.status.current_now==500000);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,9,500000,0); assert(b.status.current_now==-500000);
@@ -185,12 +199,12 @@ int main(void) {
  reply(&b,BATTMGR_BAT_PROPERTY_GET,4,1250,0); assert(b.status.percent==12);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,12,1000000,0); assert(b.error==-ENODATA && (int)b.status.temperature==-50);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,28,9,0); assert(b.error==-ENODATA);
- reply(&b,BATTMGR_BAT_PROPERTY_GET,13,1000,EPERM); assert(b.error==EPERM && (int)b.status.temperature==-50);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,13,1000,EPERM); assert(b.error==-EREMOTEIO && (int)b.status.temperature==-50);
  struct qcom_battmgr_message m={.hdr.opcode=BATTMGR_BAT_PROPERTY_GET};
  m.strval.property=19; strcpy(m.strval.model,"OEM protocol fixture");
  b.ack.done=0;
  qcom_battmgr_sm8350_callback(&b,&m,sizeof(m.hdr)+sizeof(m.strval));
- assert(!strcmp(b.info.model_number,"OEM protocol fixture") && b.ack.done==1);
+ assert(!strcmp(b.info.model_number,"OEM protocol fixture") && b.ack.done==0);
  b.ack.done=0; b.error=0;
  qcom_battmgr_sm8350_callback(&b,&m,sizeof(m.hdr)+sizeof(m.intval));
  assert(b.error==-ENODATA && b.ack.done==0);
@@ -226,7 +240,7 @@ int main(void) {
  b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; request_result=-ETIMEDOUT;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-ETIMEDOUT && !b.lock.unused);
  request_result=0;
- reply(&b,BATTMGR_USB_PROPERTY_SET,5,500000,EPERM); assert(b.error==EPERM);
+ reply(&b,BATTMGR_USB_PROPERTY_SET,5,500000,EPERM); assert(b.error==-EREMOTEIO);
  m.hdr.opcode=0x50; b.ack.done=0;
  qcom_battmgr_sm8350_callback(&b,&m,sizeof(m.hdr)+sizeof(m.intval)); assert(!b.ack.done);
  m.hdr.opcode=0xdead;

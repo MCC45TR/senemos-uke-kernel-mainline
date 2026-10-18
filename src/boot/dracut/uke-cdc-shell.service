@@ -1,10 +1,12 @@
 [Unit]
 Description=Uke Fedora development shell over USB CDC ACM
 Requires=uke-cdc-acm.service
+PartOf=uke-cdc-acm.service
 After=uke-cdc-acm.service
 ConditionKernelCommandLine=senemos.debug=cdc-acm
 
 [Service]
+ExecCondition=/usr/libexec/senemos-uke/uke-usb-network allow-legacy
 # Opening the gadget TTY can wait for USB carrier; do not hold up boot.
 Type=simple
 ExecStart=-/usr/bin/bash --noprofile --norc -i

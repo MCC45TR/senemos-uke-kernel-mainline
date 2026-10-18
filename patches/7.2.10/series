@@ -50,3 +50,13 @@
 0050-uke-cpucp-shared-rx.patch
 0051-lucid-evo-reset-latch.patch
 0052-dpu-video-vblank-trace-refcount.patch
+0053-uke-battmgr-request-lifecycle.patch
+0054-uke-usb-budget-generation.patch
+0055-usb-ucsi-glink-packet-lifecycle.patch
+0056-soc-qcom-pmic-altmode-events.patch
+0057-drm-msm-uke-dp-hbr2-limit.patch
+0058-usb-uke-repeater-host-tuning.patch
+0059-usb-qcom-restore-utmi-resume.patch
+0060-phy-qcom-uke-gen1-dp-profile.patch
+0061-drm-msm-uke-dp-controller.patch
+0062-usb-uke-wcd-revision-observation.patch

@@ -1,0 +1,2335 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "target": {
+    "device": "uke",
+    "soc": "SM7675"
+  },
+  "source_status": "partial_source_candidate_not_full_usb_support",
+  "hardware_tested": false,
+  "user_constraint": "Prepare source here; the user designated the VRR thread to coordinate the next combined build, installation and tests. No validation or device operation was run in this USB thread.",
+  "handoff": {
+    "filename": "UKE_USB_TYPEC_DISPLAYPORT_CODEX_HANDOFF_TR_2026-10-18.md",
+    "sha256": "7868c096bc05d5e4cc9409197a52aaefe84509f8e1113fc6841d856a109535d0"
+  },
+  "base_revisions": {
+    "kernel": "99c20362d7be332bc8f33c58424b7c014fffd120",
+    "hardware": "e12f72a83cfd40bdd2436c3de270e8c796ccf5f2",
+    "builder": "78a3377439a07f8930c6bedea16db69dc220ae0a",
+    "upstream": "58161ead29e50d70a317ea26b472e0c7508e69da"
+  },
+  "handoff_revisions": {
+    "kernel": "43e4036e8e23a1dd81985b01178650698e89e74b",
+    "hardware": "4b2ae003df3dcdbba91d482fc7fae52aabedd7e6"
+  },
+  "source_evidence": [
+    {
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "class": "direct_uke_oem"
+    },
+    {
+      "repository": "MiCode/kernel_devicetree",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "class": "direct_uke_oem"
+    },
+    {
+      "repository": "MiCode/vendor_opensource_display-drivers",
+      "commit": "44275c404a677d9d9e5230fedd1af2ef02fc7b9a",
+      "class": "direct_uke_oem"
+    },
+    {
+      "repository": "MiCode/vendor_qcom_proprietary_display-devicetree",
+      "commit": "4a3e1c391130237c5e8c2b250d1c94f3e25b9b11",
+      "class": "direct_uke_oem"
+    },
+    {
+      "repository": "palawan-mainline/linux",
+      "commit": "0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95",
+      "class": "same_soc_reference",
+      "limit": "QMP compatible is present in DTS/binding but has no matching driver entry at this pin."
+    },
+    {
+      "repository": "redzrush101/linux",
+      "commit": "2ed9eadbecae21ef51134e556951e7305ba65f88",
+      "class": "shared_ip_reference",
+      "selected_change": "0ca0f54453cf83502e868faae8a9aa394dbb102d",
+      "license": "GPL-2.0-only"
+    }
+  ],
+  "ownership": {
+    "cc_pd": "remote_firmware",
+    "vbus": "remote_firmware_unqualified_control",
+    "battery": "existing_battmgr_coordinator",
+    "data_role": "Linux_role_switch_DWC3",
+    "mux_phy": "Linux_TypeC_and_PHY_frameworks",
+    "display": "MSM_DRM",
+    "gadget": "serialized_explicit_debug_helper",
+    "observer": "read_only_no_control_methods"
+  },
+  "default_profile": "existing_usb2_peripheral",
+  "full_typec_profile_enabled": false,
+  "python_target_payload": false,
+  "deferred_fixtures": [
+    "drivers/usb/typec/ucsi/ucsi_glink_test.c in patch 0052",
+    "tests/usb-utmi-resume-contract.sh",
+    "uke-linux-hardware-support/uke-boot/tests/usb-port.cpp",
+    "uke-linux-hardware-support/uke-boot/tests/usb-inventory.sh",
+    "tests/usb-qmp-tables.sh",
+    "uke-linux-hardware-support/uke-boot/tests/usb-auto.sh"
+  ],
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "work_packages": [
+        "WP01"
+      ],
+      "host_tests": [
+        "H08",
+        "H71"
+      ],
+      "gates": [
+        "G0"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "docs/USB-TYPEC-SOURCE-20261018.md",
+        "manifests/usb-typec-20261018.json"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-002",
+      "work_packages": [
+        "WP02"
+      ],
+      "host_tests": [
+        "H05",
+        "H07"
+      ],
+      "gates": [
+        "G0"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-003",
+      "work_packages": [
+        "WP02",
+        "WP16"
+      ],
+      "host_tests": [
+        "H06",
+        "H71"
+      ],
+      "gates": [
+        "G0",
+        "G10"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-004",
+      "work_packages": [
+        "WP02",
+        "WP03"
+      ],
+      "host_tests": [
+        "H01",
+        "H24"
+      ],
+      "gates": [
+        "G0"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-005",
+      "work_packages": [
+        "WP01",
+        "WP05"
+      ],
+      "host_tests": [
+        "H02",
+        "H08"
+      ],
+      "gates": [
+        "G0"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "docs/USB-TYPEC-SOURCE-20261018.md",
+        "manifests/usb-typec-20261018.json"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-006",
+      "work_packages": [
+        "WP02",
+        "WP08"
+      ],
+      "host_tests": [
+        "H05",
+        "H34"
+      ],
+      "gates": [
+        "G0",
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-007",
+      "work_packages": [
+        "WP02",
+        "WP09"
+      ],
+      "host_tests": [
+        "H07",
+        "H27",
+        "H32"
+      ],
+      "gates": [
+        "G0",
+        "G5"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-008",
+      "work_packages": [
+        "WP01",
+        "WP16"
+      ],
+      "host_tests": [
+        "H71",
+        "H72"
+      ],
+      "gates": [
+        "G0",
+        "G10"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "docs/USB-TYPEC-SOURCE-20261018.md",
+        "manifests/usb-typec-20261018.json"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-009",
+      "work_packages": [
+        "WP03"
+      ],
+      "host_tests": [
+        "H04",
+        "H13"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-010",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H09",
+        "H13"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "written_not_validated",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-011",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H10"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "written_not_validated",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-012",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H11"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-013",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H12"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "written_not_validated",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-014",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H14"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-015",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H15",
+        "H20"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-016",
+      "work_packages": [
+        "WP04",
+        "WP14"
+      ],
+      "host_tests": [
+        "H18",
+        "H20",
+        "H69"
+      ],
+      "gates": [
+        "G1",
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-017",
+      "work_packages": [
+        "WP04"
+      ],
+      "host_tests": [
+        "H07",
+        "H19"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-018",
+      "work_packages": [
+        "WP03",
+        "WP10"
+      ],
+      "host_tests": [
+        "H04",
+        "H30"
+      ],
+      "gates": [
+        "G1",
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-019",
+      "work_packages": [
+        "WP04",
+        "WP10"
+      ],
+      "host_tests": [
+        "H16",
+        "H31",
+        "H46"
+      ],
+      "gates": [
+        "G1",
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-020",
+      "work_packages": [
+        "WP03",
+        "WP05"
+      ],
+      "host_tests": [
+        "H03",
+        "H55",
+        "H56"
+      ],
+      "gates": [
+        "G1"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-021",
+      "work_packages": [
+        "WP05"
+      ],
+      "host_tests": [
+        "H03",
+        "H51"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-022",
+      "work_packages": [
+        "WP05",
+        "WP15"
+      ],
+      "host_tests": [
+        "H02",
+        "H07",
+        "H50"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-023",
+      "work_packages": [
+        "WP05",
+        "WP15"
+      ],
+      "host_tests": [
+        "H21",
+        "H28",
+        "H45"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-024",
+      "work_packages": [
+        "WP05",
+        "WP15"
+      ],
+      "host_tests": [
+        "H17",
+        "H18",
+        "H65",
+        "H68"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-025",
+      "work_packages": [
+        "WP05"
+      ],
+      "host_tests": [
+        "H14",
+        "H17",
+        "H56"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-026",
+      "work_packages": [
+        "WP06",
+        "WP15"
+      ],
+      "host_tests": [
+        "H51",
+        "H52",
+        "H65"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.cpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-027",
+      "work_packages": [
+        "WP01",
+        "WP15"
+      ],
+      "host_tests": [
+        "H64",
+        "H66"
+      ],
+      "gates": [
+        "G2",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.cpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-028",
+      "work_packages": [
+        "WP05",
+        "WP07"
+      ],
+      "host_tests": [
+        "H21",
+        "H23"
+      ],
+      "gates": [
+        "G2",
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-029",
+      "work_packages": [
+        "WP05"
+      ],
+      "host_tests": [
+        "H22",
+        "H29",
+        "H57"
+      ],
+      "gates": [
+        "G2"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-030",
+      "work_packages": [
+        "WP05",
+        "WP12"
+      ],
+      "host_tests": [
+        "H31",
+        "H40",
+        "H56"
+      ],
+      "gates": [
+        "G2",
+        "G7"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-031",
+      "work_packages": [
+        "WP05",
+        "WP15"
+      ],
+      "host_tests": [
+        "H03",
+        "H42",
+        "H64"
+      ],
+      "gates": [
+        "G2",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp",
+        "uke-linux-hardware-support/uke-boot/src/units/uke-usb-auto.service"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-032",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H24",
+        "H66"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-033",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H02",
+        "H53",
+        "H55"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-034",
+      "work_packages": [
+        "WP06",
+        "WP12"
+      ],
+      "host_tests": [
+        "H53",
+        "H62"
+      ],
+      "gates": [
+        "G3",
+        "G7"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-035",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H35",
+        "H36",
+        "H52",
+        "H70"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-036",
+      "work_packages": [
+        "WP06",
+        "WP15"
+      ],
+      "host_tests": [
+        "H51",
+        "H52",
+        "H65"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.cpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-037",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H54",
+        "H67"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-038",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H08",
+        "H58"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-039",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H54",
+        "H57"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-040",
+      "work_packages": [
+        "WP05",
+        "WP06"
+      ],
+      "host_tests": [
+        "H03",
+        "H24",
+        "H56"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-041",
+      "work_packages": [
+        "WP06"
+      ],
+      "host_tests": [
+        "H64",
+        "H67"
+      ],
+      "gates": [
+        "G3"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-042",
+      "work_packages": [
+        "WP07"
+      ],
+      "host_tests": [
+        "H25"
+      ],
+      "gates": [
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0058-usb-uke-repeater-host-tuning.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-043",
+      "work_packages": [
+        "WP07"
+      ],
+      "host_tests": [
+        "H26",
+        "H27"
+      ],
+      "gates": [
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0058-usb-uke-repeater-host-tuning.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-044",
+      "work_packages": [
+        "WP07",
+        "WP13"
+      ],
+      "host_tests": [
+        "H03",
+        "H25"
+      ],
+      "gates": [
+        "G4"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-045",
+      "work_packages": [
+        "WP08"
+      ],
+      "host_tests": [
+        "H32",
+        "H33",
+        "H34"
+      ],
+      "gates": [
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh",
+        "uke-linux-hardware-support/uke-boot/src/units/uke-usb-auto.service"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-046",
+      "work_packages": [
+        "WP08",
+        "WP16"
+      ],
+      "host_tests": [
+        "H33",
+        "H71"
+      ],
+      "gates": [
+        "G4",
+        "G10"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh",
+        "uke-linux-hardware-support/uke-boot/src/units/uke-usb-auto.service"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-047",
+      "work_packages": [
+        "WP06",
+        "WP08"
+      ],
+      "host_tests": [
+        "H35",
+        "H36",
+        "H70"
+      ],
+      "gates": [
+        "G3",
+        "G4"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-048",
+      "work_packages": [
+        "WP08"
+      ],
+      "host_tests": [
+        "H37",
+        "H38"
+      ],
+      "gates": [
+        "G4",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-049",
+      "work_packages": [
+        "WP08",
+        "WP15"
+      ],
+      "host_tests": [
+        "H60",
+        "H64",
+        "H72"
+      ],
+      "gates": [
+        "G4",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh",
+        "uke-linux-hardware-support/uke-boot/src/units/uke-usb-auto.service"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-050",
+      "work_packages": [
+        "WP08",
+        "WP15"
+      ],
+      "host_tests": [
+        "H22",
+        "H42"
+      ],
+      "gates": [
+        "G4",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh",
+        "uke-linux-hardware-support/uke-boot/src/units/uke-usb-auto.service"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-051",
+      "work_packages": [
+        "WP08",
+        "WP13"
+      ],
+      "host_tests": [
+        "H39",
+        "H60"
+      ],
+      "gates": [
+        "G4",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.cpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-052",
+      "work_packages": [
+        "WP08",
+        "WP13"
+      ],
+      "host_tests": [
+        "H41",
+        "H60"
+      ],
+      "gates": [
+        "G4",
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-053",
+      "work_packages": [
+        "WP09"
+      ],
+      "host_tests": [
+        "H02",
+        "H08",
+        "H55"
+      ],
+      "gates": [
+        "G5"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0057-drm-msm-uke-dp-hbr2-limit.patch",
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp",
+        "patches/7.2.10/0060-phy-qcom-uke-gen1-dp-profile.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-054",
+      "work_packages": [
+        "WP02",
+        "WP09"
+      ],
+      "host_tests": [
+        "H07",
+        "H27",
+        "H32"
+      ],
+      "gates": [
+        "G5"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [
+        "patches/7.2.10/0060-phy-qcom-uke-gen1-dp-profile.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-055",
+      "work_packages": [
+        "WP09"
+      ],
+      "host_tests": [
+        "H23",
+        "H29",
+        "H31"
+      ],
+      "gates": [
+        "G5"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
+        "patches/7.2.10/0060-phy-qcom-uke-gen1-dp-profile.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-056",
+      "work_packages": [
+        "WP09",
+        "WP14"
+      ],
+      "host_tests": [
+        "H28",
+        "H48",
+        "H63"
+      ],
+      "gates": [
+        "G5",
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
+        "patches/7.2.10/0059-usb-qcom-restore-utmi-resume.patch",
+        "patches/7.2.10/0060-phy-qcom-uke-gen1-dp-profile.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-057",
+      "work_packages": [
+        "WP09",
+        "WP10"
+      ],
+      "host_tests": [
+        "H28",
+        "H31",
+        "H48"
+      ],
+      "gates": [
+        "G5",
+        "G6"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-058",
+      "work_packages": [
+        "WP09",
+        "WP10"
+      ],
+      "host_tests": [
+        "H30",
+        "H47"
+      ],
+      "gates": [
+        "G5",
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-059",
+      "work_packages": [
+        "WP09",
+        "WP17"
+      ],
+      "host_tests": [
+        "H26",
+        "H31",
+        "H58"
+      ],
+      "gates": [
+        "G5"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-060",
+      "work_packages": [
+        "WP10"
+      ],
+      "host_tests": [
+        "H04",
+        "H11",
+        "H50"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-061",
+      "work_packages": [
+        "WP10"
+      ],
+      "host_tests": [
+        "H16",
+        "H46"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-062",
+      "work_packages": [
+        "WP10",
+        "WP11"
+      ],
+      "host_tests": [
+        "H31",
+        "H45"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-063",
+      "work_packages": [
+        "WP11"
+      ],
+      "host_tests": [
+        "H43",
+        "H50"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0057-drm-msm-uke-dp-hbr2-limit.patch",
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp",
+        "patches/7.2.10/0061-drm-msm-uke-dp-controller.patch",
+        "src/display/dpu_10_1_sm7675.h",
+        "src/display/uke-dispcc-votes.c",
+        "uke-linux-hardware-support/uke-boot/src/usb-drm.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-064",
+      "work_packages": [
+        "WP11"
+      ],
+      "host_tests": [
+        "H44"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-065",
+      "work_packages": [
+        "WP11"
+      ],
+      "host_tests": [
+        "H45",
+        "H49"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [
+        "patches/7.2.10/0061-drm-msm-uke-dp-controller.patch",
+        "src/display/dpu_10_1_sm7675.h",
+        "src/display/uke-dispcc-votes.c",
+        "uke-linux-hardware-support/uke-boot/src/usb-drm.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-066",
+      "work_packages": [
+        "WP11",
+        "WP13"
+      ],
+      "host_tests": [],
+      "gates": [
+        "G6",
+        "G9"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-067",
+      "work_packages": [
+        "WP10",
+        "WP11",
+        "WP18"
+      ],
+      "host_tests": [
+        "H50",
+        "H55"
+      ],
+      "gates": [
+        "G6"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0057-drm-msm-uke-dp-hbr2-limit.patch",
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-068",
+      "work_packages": [
+        "WP12"
+      ],
+      "host_tests": [
+        "H03",
+        "H45",
+        "H51"
+      ],
+      "gates": [
+        "G7"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-069",
+      "work_packages": [
+        "WP12"
+      ],
+      "host_tests": [
+        "H40",
+        "H41",
+        "H47"
+      ],
+      "gates": [
+        "G7"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-070",
+      "work_packages": [
+        "WP06",
+        "WP12"
+      ],
+      "host_tests": [
+        "H53",
+        "H62"
+      ],
+      "gates": [
+        "G7"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-071",
+      "work_packages": [
+        "WP13"
+      ],
+      "host_tests": [
+        "H07",
+        "H63"
+      ],
+      "gates": [
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "configs/fedora.config",
+        "packaging/native/native.config"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-072",
+      "work_packages": [
+        "WP13"
+      ],
+      "host_tests": [
+        "H27",
+        "H59"
+      ],
+      "gates": [
+        "G9"
+      ],
+      "source_status": "blocked_source_integration",
+      "source_paths": [],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-073",
+      "work_packages": [
+        "WP13",
+        "WP15"
+      ],
+      "host_tests": [
+        "H39",
+        "H42",
+        "H60",
+        "H64"
+      ],
+      "gates": [
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-074",
+      "work_packages": [
+        "WP15"
+      ],
+      "host_tests": [
+        "H51",
+        "H64",
+        "H65",
+        "H67"
+      ],
+      "gates": [
+        "G9"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.cpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-075",
+      "work_packages": [
+        "WP08",
+        "WP14"
+      ],
+      "host_tests": [
+        "H33",
+        "H61",
+        "H71"
+      ],
+      "gates": [
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/uke-usb-network.sh",
+        "src/boot/dracut/module-setup.sh"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-076",
+      "work_packages": [
+        "WP14"
+      ],
+      "host_tests": [
+        "H63"
+      ],
+      "gates": [
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
+        "patches/7.2.10/0059-usb-qcom-restore-utmi-resume.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-077",
+      "work_packages": [
+        "WP14"
+      ],
+      "host_tests": [
+        "H17",
+        "H61",
+        "H68"
+      ],
+      "gates": [
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "uke-linux-hardware-support/uke-boot/src/usb-port.hpp"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-078",
+      "work_packages": [
+        "WP04",
+        "WP14"
+      ],
+      "host_tests": [
+        "H18",
+        "H20",
+        "H69"
+      ],
+      "gates": [
+        "G8"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
+        "patches/7.2.10/0059-usb-qcom-restore-utmi-resume.patch"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-079",
+      "work_packages": [
+        "WP16"
+      ],
+      "host_tests": [
+        "H06",
+        "H71"
+      ],
+      "gates": [
+        "G10"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "docs/USB-TYPEC-SOURCE-20261018.md",
+        "manifests/usb-typec-20261018.json"
+      ],
+      "validation": "NOT_RUN"
+    },
+    {
+      "id": "REQ-080",
+      "work_packages": [
+        "WP17",
+        "WP18"
+      ],
+      "host_tests": [
+        "H71",
+        "H72"
+      ],
+      "gates": [
+        "G10"
+      ],
+      "source_status": "partial_source_candidate",
+      "source_paths": [
+        "docs/USB-TYPEC-SOURCE-20261018.md",
+        "manifests/usb-typec-20261018.json"
+      ],
+      "validation": "NOT_RUN"
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP01",
+      "title": "Source identity and rescue tuple",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP02",
+      "title": "Effective board graph and control ownership",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP03",
+      "title": "Firmware ABI and capabilities",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP04",
+      "title": "GLINK/UCSI/PAN reliability",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP05",
+      "title": "Independent roles and automatic policy",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP06",
+      "title": "Power, charging and source handoff",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP07",
+      "title": "USB2 host and repeater",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP08",
+      "title": "Gadget and UDC ownership",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP09",
+      "title": "Gen1 and shared PHY",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP10",
+      "title": "DP Alt Mode and HPD",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP11",
+      "title": "DRM DP pipeline and audio",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP12",
+      "title": "Combined dock",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP13",
+      "title": "Peripheral and accessory classes",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP14",
+      "title": "Boot, suspend and recovery",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP15",
+      "title": "Observer and desktop API",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP16",
+      "title": "DT, initramfs and packaging",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP17",
+      "title": "Host and physical acceptance",
+      "status": "partial_source_candidate",
+      "complete": false
+    },
+    {
+      "id": "WP18",
+      "title": "Complete delivery and publication",
+      "status": "partial_source_candidate",
+      "complete": false
+    }
+  ],
+  "host_tests": [
+    {
+      "id": "H01",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H02",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H03",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H04",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H05",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H06",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H07",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H08",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H09",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H10",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H12",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H13",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H14",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H15",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H16",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H17",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H18",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H19",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H20",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H21",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H22",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H23",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H24",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H25",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H26",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H27",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H28",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H29",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H30",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H31",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H32",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H33",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H34",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H35",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H36",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H37",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H38",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H39",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H40",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H41",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H42",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H43",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H44",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H45",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H46",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H47",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H48",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H49",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H50",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H51",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H52",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H53",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H54",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H55",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H56",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H57",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H58",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H59",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H60",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H61",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H62",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H63",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H64",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H65",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H66",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H67",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H68",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H69",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H70",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H71",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "H72",
+      "status": "NOT_RUN"
+    }
+  ],
+  "device_tests": [
+    {
+      "id": "D01",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D02",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D03",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D04",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D05",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D06",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D07",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D08",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D09",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D10",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D12",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D13",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D14",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D15",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D16",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D17",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D18",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D19",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D20",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D21",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D22",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D23",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D24",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D25",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D26",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D27",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D28",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D29",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D30",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D31",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D32",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D33",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D34",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D35",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D36",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D37",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D38",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D39",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D40",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D41",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D42",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D43",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D44",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D45",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D46",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D47",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "D48",
+      "status": "NOT_RUN"
+    }
+  ],
+  "gates": [
+    {
+      "id": "G0",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G1",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G2",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G3",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G4",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G5",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G6",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G7",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G8",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G9",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "G10",
+      "status": "NOT_EVALUATED"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "OPEN03",
+      "remaining_work": "Match the effective stock and transformed connector/supplier graph.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN04",
+      "remaining_work": "Patch 0059 adds cached CHIP_ID1 revision observation at OEM address 0x439. Current revision, firmware ownership and host/AUX/audio route remain uncollected.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN05",
+      "remaining_work": "Qualify firmware-owned VBUS/sink/source controls and reject independent power writers.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN06",
+      "remaining_work": "Bind UCSI firmware version and capabilities to the selected image.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN07",
+      "remaining_work": "Document PAN ACK shape/semantics, duplicate responses and an actual post-timeout drain contract.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN09",
+      "remaining_work": "Obtain source limits, autonomous protections, reserve policy and source-off evidence.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN11",
+      "remaining_work": "Complete controller/eUSB2/WCD host propagation; the repeater source candidate alone is insufficient.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN12",
+      "remaining_work": "Patch 0057 maps all 167 normal OEM QMP writes including asymmetric lanes and adds the 4nm-v1.1/HBR2 source profile. Clock/reset/regulator graph, build and physical qualification remain open.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN13",
+      "remaining_work": "Patch 0058 adds the explicit DP controller match. The native DPU source adds DP0 and DISPCC voltage votes. Final AUX/HPD/connector endpoints and DP clock parents remain unconnected.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN14",
+      "remaining_work": "Connect DP codec/ELD/ALSA lifecycle to the actual display graph.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN15",
+      "remaining_work": "Complete analog codec/jack/mic/bias and SBU arbitration.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN17",
+      "remaining_work": "Use only the charging coordinator qualified control surface; no hold or bypass backend is supplied here.",
+      "status": "OPEN"
+    },
+    {
+      "id": "OPEN19",
+      "remaining_work": "Automatic PC-attached ACM reconciliation and KMS observations are written. Full role/lane/power coordination and FunctionFS producers remain incomplete.",
+      "status": "OPEN"
+    }
+  ],
+  "requested_display": {
+    "mode": "extended_desktop",
+    "assumed_width": 2560,
+    "assumed_height": 1440,
+    "refresh_hz": 75,
+    "rgb_bpc": 10,
+    "monitor_model": null,
+    "edid_collected": false,
+    "wire_bpc_verified": false,
+    "mode_forced": false
+  },
+  "observation_policy": "Power-supply getters are not passive reads. Capture/USB observer issue no power GETs; automatic ACM requires real Type-C and USB-role state, with no SDP/CDP polling fallback. The fixed peripheral producer retains legacy rescue until that graph is admitted."
+}

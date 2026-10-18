@@ -10,6 +10,10 @@ installkernel() {
 }
 install() {
     inst_multiple /bin/sh /usr/bin/bash /usr/sbin/modprobe /usr/bin/blkid /usr/bin/readlink /usr/bin/grep /usr/bin/sleep /usr/bin/cat /usr/bin/udevadm /usr/bin/mount /usr/bin/dmesg /usr/bin/tail
+    inst_multiple /usr/bin/flock /usr/bin/stat /usr/bin/id /usr/bin/chmod \
+        /usr/bin/mkdir /usr/bin/rmdir /usr/bin/rm /usr/bin/tr
+    inst_simple "$moddir/uke-usb-network" /usr/libexec/senemos-uke/uke-usb-network
+    chmod 755 "$initdir/usr/libexec/senemos-uke/uke-usb-network"
     inst_binary "$moddir/uke-boot-status" /usr/bin/uke-boot-status
     inst_simple "$moddir/uke-coresight-bringup.conf" /usr/lib/modprobe.d/uke-coresight-bringup.conf
     inst_simple "$moddir/root-guard.sh" /usr/libexec/uke-root-guard

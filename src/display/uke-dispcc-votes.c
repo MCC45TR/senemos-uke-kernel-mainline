@@ -30,8 +30,21 @@ static unsigned long uke_pixel_rates[VDD_NUM] = {
 	[VDD_LOWER_D1] = 225000000, [VDD_LOWER] = 300000000,
 	[VDD_LOW] = 480000000, [VDD_LOW_L1] = 625000000,
 };
+/* OEM Cliffs DPTX0 tables, bounded to Uke's HBR2 source limit. */
+static unsigned long uke_dp_link_rates[VDD_NUM] = {
+	[VDD_LOWER_D1] = 19200000, [VDD_LOWER] = 270000000,
+	[VDD_LOW_L1] = 540000000,
+};
+static unsigned long uke_dp_pixel_rates[VDD_NUM] = {
+	[VDD_LOWER_D1] = 19200000, [VDD_LOWER] = 337500000,
+	[VDD_LOW_L1] = 405000000, [VDD_NOMINAL] = 675000000,
+};
+static unsigned long uke_dp_aux_rates[VDD_NUM] = {
+	[VDD_LOWER_D1] = 19200000,
+};
 static struct clk_ops uke_pll_ops, uke_shared_ops, uke_byte_ops, uke_pixel_ops;
-static struct clk_init_data uke_clock_inits[7];
+static struct clk_ops uke_dp_ops, uke_aux_ops;
+static struct clk_init_data uke_clock_inits[11];
 
 static int uke_pll_prepare(struct clk_hw *hw)
 {
@@ -46,12 +59,12 @@ static int uke_pll_prepare(struct clk_hw *hw)
 }
 
 static void uke_dispcc_add_votes(struct clk_regmap *clock, unsigned long *rates,
-				 const struct clk_ops *ops, bool pll, unsigned int index)
+				 const struct clk_ops *ops, bool mm_only, unsigned int index)
 {
 	clock->vdd_data = (struct clk_vdd_class_data) {
 		.num_rate_max = VDD_NUM, .rate_max = rates,
 	};
-	if (pll)
+	if (mm_only)
 		clock->vdd_data.vdd_class = &uke_vdd_mm;
 	else {
 		clock->vdd_data.vdd_classes = uke_dispcc_regulators;
@@ -76,7 +89,8 @@ static void uke_dispcc_voltage_release(void *data)
 
 static int uke_dispcc_voltage_init(struct device *dev)
 {
-	struct clk_ops *ops[] = { &uke_pll_ops, &uke_shared_ops, &uke_byte_ops, &uke_pixel_ops };
+	struct clk_ops *ops[] = { &uke_pll_ops, &uke_shared_ops, &uke_byte_ops,
+		&uke_pixel_ops, &uke_dp_ops, &uke_aux_ops };
 	int ret;
 
 	/* Supply names must remain OEM vdd_mm/vdd_mxa, not the private C names. */
@@ -88,6 +102,8 @@ static int uke_dispcc_voltage_init(struct device *dev)
 	uke_shared_ops = clk_rcg2_shared_ops;
 	uke_byte_ops = clk_byte2_ops;
 	uke_pixel_ops = clk_pixel_ops;
+	uke_dp_ops = clk_dp_ops;
+	uke_aux_ops = clk_rcg2_ops;
 	uke_pll_ops.prepare = uke_pll_prepare;
 	for (int i = 0; i < ARRAY_SIZE(ops); i++) {
 		if (i)
@@ -103,6 +119,10 @@ static int uke_dispcc_voltage_init(struct device *dev)
 	uke_dispcc_add_votes(&disp_cc_mdss_byte1_clk_src.clkr, uke_byte_rates, &uke_byte_ops, false, 4);
 	uke_dispcc_add_votes(&disp_cc_mdss_pclk0_clk_src.clkr, uke_pixel_rates, &uke_pixel_ops, false, 5);
 	uke_dispcc_add_votes(&disp_cc_mdss_pclk1_clk_src.clkr, uke_pixel_rates, &uke_pixel_ops, false, 6);
+	uke_dispcc_add_votes(&disp_cc_mdss_dptx0_aux_clk_src.clkr, uke_dp_aux_rates, &uke_aux_ops, true, 7);
+	uke_dispcc_add_votes(&disp_cc_mdss_dptx0_link_clk_src.clkr, uke_dp_link_rates, &uke_byte_ops, false, 8);
+	uke_dispcc_add_votes(&disp_cc_mdss_dptx0_pixel0_clk_src.clkr, uke_dp_pixel_rates, &uke_dp_ops, false, 9);
+	uke_dispcc_add_votes(&disp_cc_mdss_dptx0_pixel1_clk_src.clkr, uke_dp_pixel_rates, &uke_dp_ops, false, 10);
 	disp_cc_sm8550_desc.clk_regulators = uke_dispcc_regulators;
 	disp_cc_sm8550_desc.num_clk_regulators = ARRAY_SIZE(uke_dispcc_regulators);
 	ret = clk_regulator_init(dev, &disp_cc_sm8550_desc);

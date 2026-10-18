@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 18
+%global senemos_build_release 19
 %else
 %global senemos_build_release 1
 %endif
@@ -148,6 +148,10 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelea
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
+bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
+CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
+CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
 CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-scalers.sh "$PWD"

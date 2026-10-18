@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "57da65beca2de66b542eb1d77695c6cd52310b78635db5251ca38982282a0cb5"
+      "sha256": "6bb38878a386e882ee87067a6d974e4e5d7b55ca7df414a462f672b1bf8688c4"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "e2b086e8fa828c1c657f1e3bb283e0a1965c2c351235bdb82be9b76d3799cca7"
+      "sha256": "2eee54db21a95c0dd3825666e5a7fbdf613f3cc9094c73d1e507e7137ccb0442"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
@@ -41,11 +41,11 @@
     },
     {
       "path": "src/boot/dracut/uke-cdc-acm.service",
-      "sha256": "e103da66d87e423b3bc46c27dd2b6dffee031c237efbf6e075d1edd571639df8"
+      "sha256": "186cb6d66275d4e1c9cf932ed1fc4e48ff021b59f73aab7b207fac6c88d874d2"
     },
     {
       "path": "src/boot/dracut/uke-cdc-shell.service",
-      "sha256": "9db3027c917c7f193b1756e6b5f2208436ca5bc9129dd38cd08f14026655c2a7"
+      "sha256": "457f758988ed0b5c5b9a5994ea01ce7c01803bf6ca2f77645458bc7dc315526f"
     },
     {
       "path": "src/boot/dracut/uke-coresight-bringup.conf",
@@ -82,6 +82,10 @@
     {
       "path": "tests/target-privacy-contract.sh",
       "sha256": "c44de51c157afc233915075d31d5458707cdb0b2edb75ae9f90c580c7ff1b637"
+    },
+    {
+      "path": "src/boot/dracut/uke-usb-network",
+      "sha256": "1bc170168cfbd6c82cc7e9019f31f0ec385b7400ad685a75b384c2162529c344"
     }
   ]
 }

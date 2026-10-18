@@ -9,8 +9,9 @@ ConditionPathExists=/sys/firmware/devicetree/base/compatible
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=/usr/bin/uke-boot-status --cdc --wait 15
-ExecStart=/usr/sbin/modprobe g_serial use_acm=1
-ExecStop=/usr/sbin/modprobe -r g_serial
+ExecCondition=/usr/libexec/senemos-uke/uke-usb-network allow-legacy
+ExecStart=/usr/libexec/senemos-uke/uke-usb-network start-acm
+ExecStop=/usr/libexec/senemos-uke/uke-usb-network stop-acm
 TimeoutStartSec=30
 
 [Install]

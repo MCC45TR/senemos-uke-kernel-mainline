@@ -216,6 +216,46 @@
     {
       "path": "patches/7.2.10/0052-dpu-video-vblank-trace-refcount.patch",
       "sha256": "cd705f2fc2d46c7740ca0daf5c25a6c89076bd291b62f3766eed236700a81061"
+    },
+    {
+      "path": "patches/7.2.10/0053-uke-battmgr-request-lifecycle.patch",
+      "sha256": "b0223999b2bca55f806272a023bfd3020cb9d58c09a018d7996d65e03a92110c"
+    },
+    {
+      "path": "patches/7.2.10/0054-uke-usb-budget-generation.patch",
+      "sha256": "aa02f97c0449f924c2acd372f59298a239371895ad82a8c4e941831db6bc1657"
+    },
+    {
+      "path": "patches/7.2.10/0055-usb-ucsi-glink-packet-lifecycle.patch",
+      "sha256": "f0d9c388807659d690f0f3fe9910c08169bcaad70073f7facc3284908b39bd2e"
+    },
+    {
+      "path": "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
+      "sha256": "6de3be3ef698aa6e4c1bdb49d0409703ba2b0d21f856865f77cedcc86c93fe4f"
+    },
+    {
+      "path": "patches/7.2.10/0057-drm-msm-uke-dp-hbr2-limit.patch",
+      "sha256": "ac01292583c3a9e85bd2233e9aff9e2641af925e95e381b2142246aa6d32f6b3"
+    },
+    {
+      "path": "patches/7.2.10/0058-usb-uke-repeater-host-tuning.patch",
+      "sha256": "a995a84f736575c447af660dd8bcb00d25bda2e447a49e141d504aee5176309d"
+    },
+    {
+      "path": "patches/7.2.10/0059-usb-qcom-restore-utmi-resume.patch",
+      "sha256": "80f1569fbadf6814032c2ade76f32ce2e2ad1e0fe3f1f873d0fed988cc601b7b"
+    },
+    {
+      "path": "patches/7.2.10/0060-phy-qcom-uke-gen1-dp-profile.patch",
+      "sha256": "a4669907a4359b6e479bfa48ccb86c757eb9d636e1967c57228d6d5809a8fb51"
+    },
+    {
+      "path": "patches/7.2.10/0061-drm-msm-uke-dp-controller.patch",
+      "sha256": "a19762769e47d577f967391d9e2501f54599354d7bb17484705a08bc48bbc22e"
+    },
+    {
+      "path": "patches/7.2.10/0062-usb-uke-wcd-revision-observation.patch",
+      "sha256": "f1828e3778c28d445d57e6a17c6c279d672234a0a46f40c97a7a64b118967732"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -231,7 +271,7 @@
     },
     {
       "path": "configs/fedora.config",
-      "sha256": "6ff76b78c4a47b5b328e6dba07ffd0015b009656d833c58605f8a1cbb83fc78c"
+      "sha256": "69208fd016401450f747595c936c98b756f70e8b055677f944e04e274688caad"
     }
   ]
 }

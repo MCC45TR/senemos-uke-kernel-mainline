@@ -6,7 +6,7 @@
  * Source commit: 0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95
  * Register inventory checked against matching Uke stock DT.
  * Offsets here are relative to DPU @ ae01000, not stock MDP @ ae00000.
- * No DP, writeback or CWB paths are admitted in this initial subset.
+ * DP0 is described for a separate external-display graph; no MST, writeback or CWB.
  * Not registered/activated by the supported build. Hardware unvalidated.
  */
 #ifndef _DPU_10_1_SM7675_H
@@ -127,6 +127,12 @@ static const struct dpu_dsc_cfg sm7675_dsc[] = {
 };
 
 static const struct dpu_intf_cfg sm7675_intf[] = {
+	/* OEM 0x35000 relative to MDP @ ae00000 becomes 0x34000 at DPU @ ae01000. */
+	{ .name = "intf_0", .id = INTF_0, .base = 0x34000, .len = 0x300,
+	  .type = INTF_DP,
+	  .controller_id = MSM_DP_CONTROLLER_0, .prog_fetch_lines_worst_case = 24,
+	  .intr_underrun = DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 24),
+	  .intr_vsync = DPU_IRQ_IDX(MDP_SSPP_TOP0_INTR, 25) },
 	{ .name = "intf_1", .id = INTF_1, .base = 0x35000, .len = 0x300,
 	  .type = INTF_DSI,
 	  .controller_id = MSM_DSI_CONTROLLER_0, .prog_fetch_lines_worst_case = 24,
