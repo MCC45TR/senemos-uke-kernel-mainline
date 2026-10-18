@@ -288,6 +288,18 @@
     {
       "path": "patches/7.2.10/0070-usb-uke-required-wake-irqs.patch",
       "sha256": "a00547b950d4d865eb6ed2534681d559c4e011452ab99f7c7f337b5c14342516"
+    },
+    {
+      "path": "patches/7.2.10/0071-uke-charge-development-admission-help.patch",
+      "sha256": "b25f75f17b3aebbbfe212fd327d42885f80ac7f8de5cbb18150d9b3f4488297a"
+    },
+    {
+      "path": "patches/7.2.10/0072-uke-usb-source-type-provenance.patch",
+      "sha256": "5ed47b5f32a7b02d32020a250d4a3bc8c22281b9c5b3909786b719b096c53987"
+    },
+    {
+      "path": "patches/7.2.10/0073-uke-charge-current-macro-collision.patch",
+      "sha256": "1bf11c8377b006e1ddd27403fe6c4cfab87e86b6450b817acd2707d8cc32d977"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
