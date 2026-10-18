@@ -1,5 +1,12 @@
 # Uke Linux 7.2.10 adaptation
 
+**18 October 2026, release 10 source:** patch 0050 retains the OEM shared RX
+mapping for the exact Uke CPUCP resources. Release 8 failed to reserve that
+aperture because qcom-cpufreq-hw already owns its second page. Modern CPUCP
+keeps its reserving mapping; Uke TX remains reserved. Extracted-function tests
+cover refusal and mapping failures. A matched tablet boot and firmware response
+remain separate acceptance steps; vendor SCMI protocol 0x80 is not implemented.
+
 **18 October 2026:** the 47-patch source package includes the native display
 profile, standard PMIC ADC units and signed battery power. Patch 0047 preserves
 SMP2P input history on ordinary notifications. A physical trace on 7.2.10-4

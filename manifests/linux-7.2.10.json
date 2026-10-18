@@ -204,6 +204,10 @@
     {
       "path": "patches/7.2.10/0049-input-qcom-smp2p-switch.patch",
       "sha256": "a8295c9a7971874708784e163551e324e3f34e0737b16d198c28aa500575e28f"
+    },
+    {
+      "path": "patches/7.2.10/0050-uke-cpucp-shared-rx.patch",
+      "sha256": "092fd30e119e5207bcdbbe42adc28bad3d8e82b315bed8e077cc29339fc6fe7f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
