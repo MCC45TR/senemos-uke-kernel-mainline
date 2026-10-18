@@ -160,6 +160,7 @@ CC=clang bash native-profile/tests/smp2p-restart-contract.sh "$PWD"
 CC=clang bash native-profile/tests/cpucp-mailbox-contract.sh "$PWD"
 CC=clang bash native-profile/tests/empty-oem-nodes-contract.sh "$PWD"
 CC=clang bash native-profile/tests/bluetooth-fdt-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wlan-remove-contract.sh "$PWD"
 CC=clang bash native-profile/tests/bluetooth-power-contract.sh drivers/bluetooth/hci_qca.c
 grep -Fx 'CONFIG_BT_LE=y' %{_uke_out}/.config
 grep -Fx 'CONFIG_BT_BNEP=m' %{_uke_out}/.config

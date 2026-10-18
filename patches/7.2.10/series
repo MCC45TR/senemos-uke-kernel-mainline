@@ -60,3 +60,4 @@
 0060-phy-qcom-uke-gen1-dp-profile.patch
 0061-drm-msm-uke-dp-controller.patch
 0062-usb-uke-wcd-revision-observation.patch
+0063-ath11k-ahb-unregistered-remove.patch

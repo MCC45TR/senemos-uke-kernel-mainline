@@ -256,6 +256,10 @@
     {
       "path": "patches/7.2.10/0062-usb-uke-wcd-revision-observation.patch",
       "sha256": "f1828e3778c28d445d57e6a17c6c279d672234a0a46f40c97a7a64b118967732"
+    },
+    {
+      "path": "patches/7.2.10/0063-ath11k-ahb-unregistered-remove.patch",
+      "sha256": "36b056cfe8ce78262e72a684ac05088bac1033ffe3101de8853373398d1a4e7b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
