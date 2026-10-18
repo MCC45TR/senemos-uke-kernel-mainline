@@ -26,7 +26,13 @@ cat > "$work/check.cpp" <<'CPP'
 #define DBG(...) ((void)0)
 #define dev_err(dev,...) ((void)(dev))
 #define pr_err(...) ((void)0)
-struct drm_bridge {};
+struct drm_bridge;
+struct drm_bridge_funcs {void (*disable)(drm_bridge *);void (*post_disable)(drm_bridge *);};
+struct drm_bridge {const drm_bridge_funcs *funcs;};
+struct drm_encoder {drm_bridge *bridge;};
+static int bridge_refs;
+static drm_bridge *drm_bridge_chain_get_first_bridge(drm_encoder *e) {if(e->bridge)++bridge_refs;return e->bridge;}
+static void drm_bridge_put(drm_bridge *b) {if(b)--bridge_refs;}
 struct drm_panel { bool prepared; } panel;
 struct device_node { const char *compatible; } remote{"xiaomi,o82-36-02-0a"};
 struct device { device_node *of_node; };
@@ -38,6 +44,7 @@ struct msm_dsi { platform_device *pdev; mipi_dsi_host *host; int phy; } devices[
 static bool bonded=true,uke=true,sm7675=true,missing_node=false,missing_secondary=false;
 static bool clocks_ready[2];
 static bool dma_blocked[2];
+static bool intf_active;
 static int master=0,node_puts=0;
 static drm_panel *found_panel=&panel;
 static std::string fault;
@@ -67,7 +74,7 @@ static int msm_dsi_phy_sync_retime(int phy,int peer,const msm_dsi_phy_clk_reques
 static void msm_dsi_host_enable_irq(mipi_dsi_host *host) { event(link("irq",host)); }
 static void msm_dsi_host_disable_irq(mipi_dsi_host *host) { event(link("noirq",host)); }
 static int msm_dsi_host_enable(mipi_dsi_host *host) { return event(link("video",host)); }
-static int msm_dsi_host_disable(mipi_dsi_host *host) { return event(link("stop",host)); }
+static int msm_dsi_host_disable(mipi_dsi_host *host) { assert(!intf_active);return event(link("stop",host)); }
 static bool msm_dsi_host_dma_blocked(mipi_dsi_host *host) {return dma_blocked[host->id];}
 static void msm_dsi_phy_pll_save_state(int) { event("save_pll"); }
 static bool of_machine_is_compatible(const char *name) { return !strcmp(name,"xiaomi,uke") ? uke : sm7675; }
@@ -87,11 +94,16 @@ CPP
         'static int dsi_mgr_bridge_enable_hosts(struct drm_bridge *bridge)' \
         'static void dsi_mgr_bridge_pre_enable(struct drm_bridge *bridge)' \
         'static void dsi_mgr_bridge_enable(struct drm_bridge *bridge)' \
-        'static void dsi_mgr_bridge_disable(struct drm_bridge *bridge)' \
+        'static int dsi_mgr_bridge_stop_video(struct drm_bridge *bridge)' \
         'static void dsi_mgr_bridge_post_disable(struct drm_bridge *bridge)' \
         'static struct drm_panel *dsi_mgr_o82_panel(struct msm_dsi *msm_dsi)'; do
         extract "$callback"
     done
+    printf 'static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {\n'
+    sed -n '/^static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {/,/^};/p' "$manager" | \
+        sed -n '/^[[:space:]]*\.\(disable\|post_disable\) =/p'
+    printf '};\n'
+    extract 'int msm_dsi_manager_uke_video_stop(struct drm_encoder *encoder)'
     cat <<'CPP'
 static void expect(std::initializer_list<const char *> expected) {
     std::vector<std::string> wanted;
@@ -119,6 +131,9 @@ int main() {
     assert(dsi_mgr_o82_panel(&devices[0])==found_panel); found_panel=&panel;
 
     dsi_bridge bridge{{},0,&panel,false,false};
+    bridge.base.funcs=&dsi_mgr_bridge_funcs;
+    drm_encoder encoder{&bridge.base};
+    assert(!dsi_mgr_bridge_funcs.disable);
     dsi_mgr_bridge_enable(&bridge.base); expect({});
     dsi_mgr_bridge_pre_enable(&bridge.base);
     expect({"phy_on","power0","power1","clk_req","retime","irq0","irq1"});
@@ -126,11 +141,37 @@ int main() {
     prepare(); dsi_mgr_bridge_enable(&bridge.base);
     expect({"reset","panel_on","pps","video0","video1"});
     assert(bridge.video_enabled);
-    dsi_mgr_bridge_disable(&bridge.base); unprepare();
+    intf_active=true;
+    if(dsi_mgr_bridge_funcs.disable)dsi_mgr_bridge_funcs.disable(&bridge.base);
+    intf_active=false; // The DPU stops both source timing engines here.
+    assert(!msm_dsi_manager_uke_video_stop(&encoder));
+    assert(!bridge_refs);unprepare();
     dsi_mgr_bridge_post_disable(&bridge.base);
     expect({"stop1","stop0","panel_off","save_pll","noirq0","noirq1","off1","off0","phy_off"});
     assert(!bridge.powered && !bridge.video_enabled);
-    dsi_mgr_bridge_disable(&bridge.base); dsi_mgr_bridge_post_disable(&bridge.base); expect({});
+    assert(!msm_dsi_manager_uke_video_stop(&encoder));
+    dsi_mgr_bridge_post_disable(&bridge.base); expect({});
+
+    // A failed stop must preserve command clocks and propagate the exact error.
+    for(const char *failure:{"stop1","stop0","dma0","dma1","missing"}) {
+        dsi_mgr_bridge_pre_enable(&bridge.base);events.clear();
+        prepare();dsi_mgr_bridge_enable(&bridge.base);events.clear();
+        fault=failure;dma_blocked[0]=fault=="dma0";dma_blocked[1]=fault=="dma1";
+        missing_secondary=fault=="missing";
+        int ret=msm_dsi_manager_uke_video_stop(&encoder);
+        assert(ret==(fault=="missing" ? -ENODEV : -EIO));
+        assert(bridge.powered&&bridge.video_enabled&&clocks_ready[0]&&clocks_ready[1]&&!bridge_refs);
+        dsi_mgr_bridge_post_disable(&bridge.base);
+        assert(bridge.powered&&clocks_ready[0]&&clocks_ready[1]);
+        for(const auto &name:events)assert(name!="off0"&&name!="off1"&&name!="phy_off");
+        events.clear();fault.clear();dma_blocked[0]=dma_blocked[1]=missing_secondary=false;
+        assert(!msm_dsi_manager_uke_video_stop(&encoder));events.clear();
+        unprepare();dsi_mgr_bridge_post_disable(&bridge.base);events.clear();
+    }
+    drm_bridge foreign{};encoder.bridge=&foreign;
+    assert(!msm_dsi_manager_uke_video_stop(&encoder)&&!bridge_refs);expect({});
+    encoder.bridge=nullptr;assert(!msm_dsi_manager_uke_video_stop(&encoder)&&!bridge_refs);
+    encoder.bridge=&bridge.base;
 
     // Every host/PHY power failure must suppress the later enable callback.
     for (const char *failure : {"phy_on","power0","power1"}) {
@@ -210,7 +251,7 @@ int main() {
     bridge.o82_panel=nullptr;
     dsi_mgr_bridge_pre_enable(&bridge.base); dsi_mgr_bridge_enable(&bridge.base);
     expect({"phy_on","power0","power1","irq0","irq1","video0","video1"});
-    dsi_mgr_bridge_disable(&bridge.base); expect({});
+    assert(!msm_dsi_manager_uke_video_stop(&encoder)); expect({});
     dsi_mgr_bridge_post_disable(&bridge.base);
     expect({"stop0","stop1","noirq0","noirq1","save_pll","off0","off1","phy_off"});
     fault="video1"; dsi_mgr_bridge_pre_enable(&bridge.base);
@@ -228,4 +269,4 @@ CPP
     -Wno-missing-field-initializers -fsanitize=undefined \
     -fsanitize-undefined-trap-on-error "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Real DSI callbacks: pair retime after both host clocks, before IRQ/panel; refusal unwinds both hosts, ON/PPS precede video and generic paths stay unchanged\n'
+printf 'Real DSI callbacks: both source timing engines must stop before DSI reset and panel OFF; failed stops preserve power, bridge references balance and generic paths stay unchanged\n'

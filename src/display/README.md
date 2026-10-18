@@ -593,3 +593,11 @@ dimming values through the serialized panel sender. It reached the expected
 control-display value without visible output. Patch `0031` separately compares
 the installed command grouping. Other profiles retain their prior sequence;
 optical effectiveness remains pending.
+
+On 18 October 2026, the Uke AVR candidate retains the existing five-frame
+watchdog budget using the maximum stretched frame period. Its O82 shutdown
+path stops both DPU timing engines before resetting DSI video and retains LP
+command power for panel OFF. Actual-function GCC and AArch64 Clang fixtures
+cover ordering, rejected states, stop failures and bridge references. Tablet
+validation of this shutdown correction remains pending; the experimental
+parameter still defaults to zero and no VRR capability or range is advertised.

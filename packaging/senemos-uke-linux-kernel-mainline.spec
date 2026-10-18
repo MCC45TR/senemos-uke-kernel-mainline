@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 13
+%global senemos_build_release 14
 %else
 %global senemos_build_release 1
 %endif
@@ -157,6 +157,7 @@ CC=clang bash native-profile/tests/cpucp-mailbox-contract.sh "$PWD"
 CC=clang bash native-profile/tests/empty-oem-nodes-contract.sh "$PWD"
 CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
@@ -234,6 +235,11 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-14
+- Stop O82 DSI video after both DPU timing engines and preserve panel OFF clocks.
+- Preserve the five-frame watchdog budget at the experimental AVR floor.
+- Correct the captured secondary SPMI resource address and vblank trace refcount.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-13
 - Align host FDT fixtures to libfdt's eight-byte buffer contract on AArch64.
 

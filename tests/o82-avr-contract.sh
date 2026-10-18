@@ -336,3 +336,126 @@ C
  -fsanitize-undefined-trap-on-error -I"$work" "$work/kickoff.c" -o "$work/kickoff"
 "$work/kickoff"
 printf 'Actual kickoff: shared CTL flush and both initial timing callbacks precede paired AVR triggers; fixed commits do not trigger AVR\n'
+
+# The nominal five-frame watchdog must also cover five stretched AVR frames.
+cat > "$work/watchdog.c" <<'C'
+#include <assert.h>
+#include "o82-avr.h"
+#define DPU_ENCODER_FRAME_DONE_TIMEOUT_FRAMES 5
+#define max_t(t,a,b) ((t)(a)>(t)(b)?(t)(a):(t)(b))
+struct drm_crtc_state { bool active,vrr_enabled;struct drm_display_mode adjusted_mode; };
+struct drm_crtc { struct drm_crtc_state *state; };
+struct drm_encoder { struct drm_crtc *crtc; };
+struct dpu_encoder_virt { struct drm_encoder base;bool avr_enabled,avr_failed;unsigned long frame_done_timeout_ms,frame_done_timer; };
+static bool allowed=true;
+static unsigned o82_vrr_test_min_hz=30;
+static unsigned long jiffies=1000;
+static struct dpu_encoder_virt *to_dpu_encoder_virt(struct drm_encoder *e) {return (void *)e;}
+static bool dpu_encoder_uke_vrr_check(struct drm_encoder *e,const struct drm_crtc_state *s) {(void)e;(void)s;return allowed;}
+static unsigned drm_mode_vrefresh(const struct drm_display_mode *m) {
+ u64 cycles=(u64)m->htotal*m->vtotal;
+ return ((u64)m->clock*1000+cycles/2)/cycles;
+}
+#define atomic_set(p,v) (*(p)=(v))
+#define msecs_to_jiffies(ms) (ms)
+#define mod_timer(p,v) (*(p)=(v))
+C
+awk '/^void dpu_encoder_start_frame_done_timer\(/ {emit=1;found=1} emit {print} emit&&/^}/ {exit} END {if(!found)exit 1}' "$encoder" >> "$work/watchdog.c"
+cat >> "$work/watchdog.c" <<'C'
+static void expect(struct dpu_encoder_virt *e,unsigned long ms) {
+ dpu_encoder_start_frame_done_timer(&e->base);
+ assert(e->frame_done_timeout_ms==ms && e->frame_done_timer==jiffies+ms);
+}
+int main(void) {
+ const unsigned modes[][4]={
+  {967428,3490,2310,41},{967428,3490,4620,83},
+  {1097712,3300,2310,34},{804988,3872,2310,55},
+  {804988,3872,4158,100},{804988,3872,4331,104},{804988,3872,6930,166}
+ };
+ struct drm_crtc_state state={.active=true};
+ (void)&dpu_encoder_uke_vrr_check; (void)o82_vrr_test_min_hz;
+ struct drm_crtc crtc={.state=&state};
+ struct dpu_encoder_virt e={.base={.crtc=&crtc}};
+ for(unsigned i=0;i<7;i++) {
+  state.adjusted_mode=(struct drm_display_mode){
+   .clock=modes[i][0],.hdisplay=3200,.htotal=modes[i][1],
+   .hsync_start=modes[i][1]-64,.hsync_end=modes[i][1]-32,
+   .vdisplay=2136,.vtotal=modes[i][2],
+   .vsync_start=modes[i][2]-148,.vsync_end=modes[i][2]-146
+  };
+  e.avr_enabled=false;e.avr_failed=false;state.vrr_enabled=false;
+  expect(&e,modes[i][3]);
+  state.vrr_enabled=true;expect(&e,167); // Entry before hardware activation.
+  e.avr_enabled=true;expect(&e,167);
+  state.vrr_enabled=false;expect(&e,167); // Exit before hardware deactivation.
+  e.avr_enabled=false;e.avr_failed=true;state.vrr_enabled=true;
+  expect(&e,modes[i][3]);
+  e.avr_failed=false;allowed=false;expect(&e,modes[i][3]);allowed=true;
+  state.active=false;expect(&e,modes[i][3]);state.active=true;
+  o82_vrr_test_min_hz=0;expect(&e,modes[i][3]);o82_vrr_test_min_hz=30;
+  state.adjusted_mode.htotal++; // Foreign geometry must retain the nominal path.
+  expect(&e,5000/drm_mode_vrefresh(&state.adjusted_mode));
+ }
+ return 0;
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -fsanitize-undefined-trap-on-error -I"$work" "$work/watchdog.c" -o "$work/watchdog"
+"$work/watchdog"
+printf 'Actual watchdog: all seven AVR bases retain five maximum frame periods through entry and exit; fixed, failed, inactive and foreign paths remain nominal\n'
+
+# Execute the actual encoder disable caller, including its DSI ownership boundary.
+cat > "$work/disable.c" <<'C'
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+struct drm_crtc_state {bool self_refresh_active;};
+struct drm_crtc {struct drm_crtc_state *state;};
+struct drm_encoder {struct {int id;} base;};
+struct drm_atomic_commit {struct drm_crtc *crtc;};
+struct dpu_encoder_phys {struct {void (*disable)(struct dpu_encoder_phys *);} ops;int id;};
+struct dpu_encoder_virt {struct drm_encoder base;int enc_lock,num_phys_encs;bool enabled;
+ struct dpu_encoder_phys *phys_encs[2];int frame_done_timeout_ms,frame_done_timer;void *connector;};
+static char events[32];static unsigned n,errors;static int stop_error;
+static void event(char value) {assert(n+1<sizeof(events));events[n++]=value;events[n]=0;}
+static struct dpu_encoder_virt *to_dpu_encoder_virt(struct drm_encoder *e) {return (void *)e;}
+static struct drm_crtc *drm_atomic_get_old_crtc_for_encoder(struct drm_atomic_commit *s,struct drm_encoder *e) {(void)e;return s->crtc;}
+static struct drm_crtc_state *drm_atomic_get_old_crtc_state(struct drm_atomic_commit *s,struct drm_crtc *c) {assert(s->crtc==c);return c->state;}
+static void mutex_lock(int *l) {assert(!*l);++*l;}
+static void mutex_unlock(int *l) {assert(*l==1);--*l;}
+#define DPU_DEBUG_ENC(...) ((void)0)
+#define trace_dpu_enc_disable(...) ((void)0)
+#define DPU_ERROR_ENC(...) (++errors)
+#define DPU_ERROR(...) (++errors)
+#define DRMID(e) ((e)->base.id)
+enum {DPU_ENC_RC_EVENT_PRE_STOP,DPU_ENC_RC_EVENT_STOP};
+static void dpu_encoder_uke_avr_disable(struct dpu_encoder_virt *e) {assert(!e->enabled);event('A');}
+static void dpu_encoder_wait_for_tx_complete(struct drm_encoder *e) {(void)e;event('W');}
+static void dpu_encoder_resource_control(struct drm_encoder *e,int value) {(void)e;event(value==DPU_ENC_RC_EVENT_PRE_STOP?'P':'S');}
+static void disable(struct dpu_encoder_phys *p) {event('0'+p->id);}
+static int msm_dsi_manager_uke_video_stop(struct drm_encoder *e) {(void)e;event('D');return stop_error;}
+static int atomic_xchg(int *p,int value) {int old=*p;*p=value;return old;}
+static void timer_delete_sync(int *t) {assert(*t);*t=0;event('T');}
+C
+awk '/^static void dpu_encoder_virt_atomic_disable\(/ {emit=1;found=1} emit {print} emit&&/^}/ {exit} END {if(!found)exit 1}' "$encoder" >> "$work/disable.c"
+cat >> "$work/disable.c" <<'C'
+int main(void) {
+ struct dpu_encoder_phys phys[2]={{{disable},0},{{disable},1}};
+ struct dpu_encoder_virt e={.num_phys_encs=2,.phys_encs={&phys[0],&phys[1]},.enabled=true,.connector=&e};
+ struct drm_crtc_state old={0};struct drm_crtc crtc={&old};struct drm_atomic_commit s={&crtc};
+ dpu_encoder_virt_atomic_disable(&e.base,&s);
+ assert(!strcmp(events,"AWP01DS")&&!e.connector&&!e.enabled&&!e.enc_lock&&!errors);
+ n=0;events[0]=0;e.enabled=true;e.connector=&e;old.self_refresh_active=true;
+ dpu_encoder_virt_atomic_disable(&e.base,&s);
+ assert(!n&&e.enabled&&e.connector==&e&&!e.enc_lock);
+ old.self_refresh_active=false;stop_error=-5;e.frame_done_timeout_ms=1;e.frame_done_timer=1;
+ dpu_encoder_virt_atomic_disable(&e.base,&s);
+ assert(!strcmp(events,"AWP01DTS")&&errors==2&&!e.frame_done_timeout_ms&&!e.frame_done_timer&&!e.enc_lock);
+ n=errors=0;events[0]=0;stop_error=0;s.crtc=NULL;phys[0].ops.disable=NULL;
+ dpu_encoder_virt_atomic_disable(&e.base,&s);
+ assert(!strcmp(events,"AWP1DS")&&!errors&&!e.enc_lock);
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/disable.c" -o "$work/disable"
+"$work/disable"
+printf 'Actual encoder disable: AVR and frame drain, both physical timing stops, DSI stop, then resource release; self-refresh and stop errors remain bounded\n'

@@ -21,7 +21,8 @@ static void fixture(void *tree) {
  int soc=fdt_add_subnode(tree,0,"soc");assert(soc>=0);
  int node=fdt_add_subnode(tree,soc,"qcom,spmi@c432000");assert(node>=0);
  assert(!fdt_setprop_string(tree,node,"compatible","qcom,spmi-pmic-arb"));
- unsigned values[]={0xc432000,0x4000,0xc400000,0x3000,0xc500000,0x400000,0xc440000,0x80000,0xc4d000,0x10000};
+ /* Register cells captured from the selected Uke OEM tree and live kernel 13. */
+ unsigned values[]={0x0c432000,0x4000,0x0c400000,0x3000,0x0c500000,0x400000,0x0c440000,0x80000,0x0c4d0000,0x10000};
  fdt32_t reg[10];for(unsigned i=0;i<10;i++)reg[i]=cpu_to_fdt32(values[i]);
  assert(!fdt_setprop(tree,node,"reg",reg,sizeof(reg)));
  assert(!fdt_setprop_u32(tree,node,"qcom,bus-id",1));

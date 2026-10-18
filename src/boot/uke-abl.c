@@ -66,7 +66,7 @@ static int UKE_INIT uke_empty_spmi_bus(void *fdt)
 {
 	static const unsigned int expected[] = {
 		0xc432000, 0x4000, 0xc400000, 0x3000, 0xc500000, 0x400000,
-		0xc440000, 0x80000, 0xc4d000, 0x10000,
+		0xc440000, 0x80000, 0xc4d0000, 0x10000,
 	};
 	int node = fdt_path_offset(fdt, "/soc/qcom,spmi@c432000"), size, child;
 	const fdt32_t *reg, *bus;

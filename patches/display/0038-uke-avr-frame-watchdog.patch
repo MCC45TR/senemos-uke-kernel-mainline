@@ -1,0 +1,44 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: retain the frame watchdog budget across O82 AVR
+
+The existing watchdog allows five nominal frames. A 144 Hz base stretched
+to the experimental 30 Hz floor needs up to 33.33 ms per frame, so its
+34 ms nominal timeout no longer represents the existing five-frame budget.
+Use the validated maximum vertical total and full-mode clock units, with
+ceiling division. Cover entry before activation and exit before
+deactivation; retain nominal handling for fixed, rejected and foreign
+configurations.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -2356,11 +2356,26 @@
+ void dpu_encoder_start_frame_done_timer(struct drm_encoder *drm_enc)
+ {
+ 	struct dpu_encoder_virt *dpu_enc;
++	const struct drm_crtc_state *state = drm_enc->crtc->state;
++	const struct drm_display_mode *mode = &state->adjusted_mode;
+ 	unsigned long timeout_ms;
+ 
+ 	dpu_enc = to_dpu_encoder_virt(drm_enc);
+ 	timeout_ms = DPU_ENCODER_FRAME_DONE_TIMEOUT_FRAMES * 1000 /
+-			drm_mode_vrefresh(&drm_enc->crtc->state->adjusted_mode);
++			drm_mode_vrefresh(mode);
++
++	/* Preserve the frame-count budget through AVR entry, operation and exit. */
++	if (dpu_enc->avr_enabled ||
++	    (!dpu_enc->avr_failed && state->active && state->vrr_enabled &&
++	     dpu_encoder_uke_vrr_check(drm_enc, state))) {
++		int lines = qcom_uke_o82_avr_lines(mode, o82_vrr_test_min_hz);
++
++		if (lines > 0)
++			timeout_ms = max_t(u64, timeout_ms,
++				div64_u64((u64)DPU_ENCODER_FRAME_DONE_TIMEOUT_FRAMES *
++					  mode->htotal * lines + mode->clock - 1,
++					  mode->clock));
++	}
+ 
+ 	atomic_set(&dpu_enc->frame_done_timeout_ms, timeout_ms);
+ 	mod_timer(&dpu_enc->frame_done_timer,
