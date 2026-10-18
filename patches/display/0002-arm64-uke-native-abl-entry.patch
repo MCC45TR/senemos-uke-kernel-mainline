@@ -39,8 +39,8 @@ evidence and must not be added to the normal release series.
  	if (!ret)
  		return input;
  	*physical = __pa_symbol(uke_fdt);
--	pr_info("Uke ABL DT: selected RAM preserved; UFS, USB peripheral and simplefb prepared\n");
-+	pr_info("Uke ABL DT: selected RAM preserved; isolated native display graph prepared\n");
+-	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
++	pr_info("Uke ABL DT: selected RAM preserved; native display and selected USB profile prepared\n");
  	return uke_fdt;
  }
  #endif

@@ -68,3 +68,10 @@ show/store and kernel role API functions; it checks registration flag copying,
 read-only exposure, direct store rejection, kernel control and requested versus
 observed state. It is prepared for the coordinator and has not run in this
 source task. Full kernel compilation remains a separate check.
+
+The coordinator's first native-profile preparation rejected display entry patch
+0002 because its expected boot log line still named the old fixed peripheral
+profile. The source successor refreshes that exact context and the resulting
+log text for the selected USB profile. The patch is still applied through the
+normal checked producer; no failed hunk or graph check is bypassed. A successful
+preparation/build receipt remains the coordinator's separate result.
