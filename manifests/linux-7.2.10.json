@@ -284,6 +284,10 @@
     {
       "path": "patches/7.2.10/0069-usb-role-readonly-observation.patch",
       "sha256": "1cecead455c913baac3d1c866777efa9081095fa00fb4584ae4f9b955d53621d"
+    },
+    {
+      "path": "patches/7.2.10/0070-usb-uke-required-wake-irqs.patch",
+      "sha256": "a00547b950d4d865eb6ed2534681d559c4e011452ab99f7c7f337b5c14342516"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

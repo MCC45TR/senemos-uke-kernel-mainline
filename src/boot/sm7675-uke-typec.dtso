@@ -80,6 +80,7 @@
 	maximum-speed = "super-speed";
 	usb-role-switch;
 	role-switch-default-mode = "peripheral";
+	wakeup-source;
 	phys = <&eusb2_phy0>, <&usb_qmp_dp_phy QMP_USB43DP_USB3_PHY>;
 	phy-names = "usb2-phy", "usb3-phy";
 	/* Exact OEM IRQs; the running Uke GIC uses three cells, PDC uses two. */

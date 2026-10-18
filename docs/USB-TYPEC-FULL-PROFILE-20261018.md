@@ -75,3 +75,11 @@ profile. The source successor refreshes that exact context and the resulting
 log text for the selected USB profile. The patch is still applied through the
 normal checked producer; no failed hunk or graph check is bypassed. A successful
 preparation/build receipt remains the coordinator's separate result.
+
+The full controller also declares standard `wakeup-source`, so system suspend
+can use its supplied OEM PDC lines. Patch0070 makes DP/DM/SuperSpeed wake IRQs
+mandatory in this full profile and propagates deferred/missing providers;
+otherwise the inherited optional lookup silently loses wake capability.
+The fixed peripheral profile keeps optional lookup semantics. Neither the
+property nor successful IRQ registration proves physical wake or suspend
+stability; those remain coordinator acceptance cases.
