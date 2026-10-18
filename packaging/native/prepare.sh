@@ -25,5 +25,5 @@ dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
     od -An -v -tx1 "$output/display.dtbo" | sed -E 's/[a-f0-9]{2}/0x&,/g'
     printf '};\n'
 } > "$kernel/arch/arm64/kernel/uke-native-display.h"
-fdtdump "$output/display.dtbo" 2>/dev/null | grep -Eq '^[[:space:]]+xiaomi,oem-refresh-modes;'
+fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'
