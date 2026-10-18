@@ -29,7 +29,7 @@
 #define CPLDO_CTL2 0xa1
 #define SWITCH_ENABLE 0x403
 #define SWITCH_SELECT 0x404
-#define SWITCH_STATUS 0x406
+#define SWITCH_STATUS1 0x407
 #define FUNCTION_ENABLE 0x413
 #define EQUALIZER 0x415
 #define USB_CONTROL 0x419
@@ -116,10 +116,12 @@ static int uke_usbss_apply(struct uke_usbss *u, enum typec_orientation orientati
 		ret = regmap_set_bits(u->regmap, SWITCH_ENABLE, AUX_EN);
 		if (ret) goto failed;
 		usleep_range(15, 100);
-		ret = regmap_read(u->regmap, SWITCH_STATUS, &status);
+		ret = regmap_read(u->regmap, SWITCH_STATUS1, &status);
 		if (ret) goto failed;
-		/* OEM checks switch status, not the request register or a GLINK ACK. */
-		if (status != (selection == 0x40 ? 0x48 : 0x84)) {
+		/* OEM STATUS1 reports AUX routing; STATUS0 reports USB DP/DM.
+		 * Ignore unrelated microphone/ground status as the OEM does.
+		 */
+		if ((status & 0xcc) != (selection == 0x40 ? 0x48 : 0x84)) {
 			ret = -EIO;
 			goto failed;
 		}

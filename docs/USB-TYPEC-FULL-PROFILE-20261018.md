@@ -34,6 +34,24 @@ Corrections to preliminary inspection: QMP analog rails are L3B/L2B/L4B, not L1G
 
 ## Cached diagnostic interfaces
 
+18 October follow-up, Linux 7.2.11 source candidate: AUX validation now reads
+`SWITCH_STATUS1` at `0x407` and compares only mask `0xcc`. The earlier address
+`0x406` is `SWITCH_STATUS0`, which reports USB DP/DM rather than AUX. Exact Uke
+MiCode `5712080a4b0c0b1a879e6d145c601c649ddaddfd`,
+`drivers/soc/qcom/wcd-usbss-registers.h` and
+`drivers/soc/qcom/wcd939x-i2c.c::validate_display_port_settings`, define the
+masked `0x48` / `0x84` AUX states. OnePlus
+`fc892483f1d61f245924681eb5abd563564d9cba` agrees. Upstream Linux 7.2.11
+`a2de78ee6ed8bf8cd99d177c74865a6e8c3cb6ea` routes AUX through the same selector
+but does not implement this status check. No register write, tuning value or
+power policy changes in this correction.
+
+The actual driver apply function passes GCC and Clang host fixtures covering
+all 256 status bytes in both orientations, unrelated microphone/ground bits,
+read/write failures, USB-only routing and removal. The earlier source fails
+this fixture. Source preparation runs it before compiling the kernel. These
+results do not establish a live AUX read, EDID, link training or HDMI output.
+
 `route_state` on the WCD device contains version, last confirmed orientation/mode/SVID, revision, applied flag and errno. `applied=0` invalidates the previous route after a failed request. AUX status is checked during application, never by reading this attribute.
 
 `uke_route_state` on the QMP device contains version, requested orientation/mode, reference counts, DP powered flag and fatal restoration errno. It does not claim link training, measured power, actual USB enumeration or monitor acceptance. Both attributes are read-only cached observations and send no GLINK request or PHY/I2C transaction.

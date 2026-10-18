@@ -6,6 +6,7 @@ profile=$(cd -- "$(dirname -- "$0")" && pwd)
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
+bash "$profile/tests/wcd939x-status-contract.sh"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
