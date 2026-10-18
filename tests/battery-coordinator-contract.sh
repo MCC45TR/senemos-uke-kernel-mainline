@@ -25,6 +25,21 @@ struct completion { pthread_mutex_t lock; pthread_cond_t ready; int done; };
 struct device { int unused; }; struct power_supply { int unused; };
 struct work_struct { int unused; }; struct pmic_glink_client { int unused; };
 #define HZ 1000
+#define NSEC_PER_SEC 1000000000ULL
+#ifndef CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS
+#define CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS 0
+#endif
+#ifndef CONFIG_BATTERY_QCOM_BATTMGR_UKE_CURRENT
+#define CONFIG_BATTERY_QCOM_BATTMGR_UKE_CURRENT 0
+#endif
+#define IS_ENABLED(x) (x)
+struct pid { int unused; };
+static struct pid owner;
+#define current NULL
+#define GLOBAL_ROOT_UID 0
+#define uid_eq(a,b) ((a)==(b))
+static struct pid *task_tgid(void *task) { (void)task; return &owner; }
+static unsigned int current_euid(void) { return 0; }
 static unsigned long jiffies;
 #define time_before(a,b) ((long)((a)-(b))<0)
 #define time_after_eq(a,b) (!time_before(a,b))
@@ -77,6 +92,10 @@ static int pmic_glink_send(struct pmic_glink_client *client, void *data, size_t 
   usleep(1000); struct qcom_battmgr_message ack={.hdr=q->hdr};
   qcom_battmgr_uke_callback(active,&ack,sizeof(ack.hdr)); return 0;
  }
+ if(q->hdr.opcode==BATTMGR_CHG_CTRL_LIMIT_EN) {
+  struct qcom_battmgr_message ack={.hdr=q->hdr};
+  qcom_battmgr_uke_callback(active,&ack,sizeof(ack.hdr)+(mode==9?0:4)); return 0;
+ }
  if(mode==1) return 0; /* Timeout: no reply. */
  if(mode==7) return -EIO; /* Delivery is ambiguous, including for SET. */
  if(mode==2) { qcom_battmgr_pdr_notify(active,SERVREG_SERVICE_STATE_DOWN); return 0; }
@@ -103,8 +122,8 @@ static int pmic_glink_send(struct pmic_glink_client *client, void *data, size_t 
  return 0;
 }
 C
-for name in uke_generation uke_battery_property uke_request request uke_callback enable_worker pdr_notify; do
- awk -v name="qcom_battmgr_$name" '$0 ~ "^static (int|void|u32) " name "\\(" {emit=1}
+for name in uke_control_live uke_generation uke_battery_property uke_request request uke_callback enable_worker pdr_notify; do
+ awk -v name="qcom_battmgr_$name" '$0 ~ "^static (int|void|u32|bool) " name "\\(" {emit=1}
  emit {print} emit && /^}/ {exit}' "$source"
 done
 cat <<'C'
@@ -165,11 +184,44 @@ int main(void) {
  assert(qcom_battmgr_uke_generation(&h)==request_generation+10000u);
  assert(!get(&h,BATTMGR_BAT_PROPERTY_GET));
  before=sends;
- assert(get(&h,0x31)==-EOPNOTSUPP && sends==before); /* Battery SET stays blocked. */
+ assert(get(&h,0x31)==(IS_ENABLED(CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS)?-EACCES:-EOPNOTSUPP) && sends==before);
+#if CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS
+ struct qcom_battmgr ctrl; initialize(&ctrl);
+ ctrl.transaction.instance_ns=1;
+ ctrl.control.owner=&owner; ctrl.control.expires_ns=100; ctrl.control.reviewed_ns=41;
+ ctrl.control.instance_ns=1; ctrl.control.current_admitted=true;
+ ctrl.control.current_min_ua=100; ctrl.control.current_max_ua=1000;
+ ctrl.control.measurement_ns=42; ctrl.control.measurement_generation=ctrl.transaction.generation;
+ ctrl.control.ack_bytes=sizeof(struct pmic_glink_hdr);
+ struct qcom_battmgr_property_request set={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_BAT_PROPERTY_SET},.property=12,.value=500};
+ mutex_lock(&ctrl.lock);
+ assert(!qcom_battmgr_uke_request(&ctrl,&set,sizeof(set)));
+ set.value=0; before=sends; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
+ set.value=UINT_MAX; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
+ set.value=500; set.property=10; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
+ set.property=25; set.value=1; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
+ ctrl.control.may_enable=true; assert(!qcom_battmgr_uke_request(&ctrl,&set,sizeof(set)));
+ ctrl.control.invalidation_ns=42; before=sends;
+ assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EACCES && sends==before);
+ ctrl.control.invalidation_ns=0; ctrl.control.measurement_generation++;
+ assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-ESTALE && sends==before);
+ ctrl.control.measurement_generation=ctrl.transaction.generation;
+ set.hdr.opcode=BATTMGR_BAT_PROPERTY_GET; set.property=12;
+ assert(!qcom_battmgr_uke_request(&ctrl,&set,sizeof(set)) && ctrl.control.current_ua==123);
+ struct qcom_battmgr_charge_ctrl_request limit={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_CHG_CTRL_LIMIT_EN},.enable=1,.target_soc=80,.delta_soc=10};
+ mode=9; assert(!qcom_battmgr_uke_request(&ctrl,&limit,sizeof(limit)));
+ assert(!ctrl.control.verified); /* Opaque ACK alone cannot prove applied state. */
+ mode=0; assert(qcom_battmgr_uke_request(&ctrl,&limit,sizeof(limit))==-EPROTO && ctrl.transaction.desynced);
+ before=sends; assert(qcom_battmgr_uke_request(&ctrl,&limit,sizeof(limit))==-EPIPE && sends==before);
+ mutex_unlock(&ctrl.lock);
+#endif
  return 0;
 }
 C
 } > "$work/coordinator.c"
-"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -pthread "$work/coordinator.c" -o "$work/coordinator"
+control=${UKE_TEST_CONTROL:-0}
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -pthread \
+    -DCONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS="$control" \
+    -DCONFIG_BATTERY_QCOM_BATTMGR_UKE_CURRENT="$control" "$work/coordinator.c" -o "$work/coordinator"
 "$work/coordinator"
 printf '%s\n' 'Actual Uke request matching, error, late reply, generation, PDR and concurrent enable/read contract passed; no physical result'
