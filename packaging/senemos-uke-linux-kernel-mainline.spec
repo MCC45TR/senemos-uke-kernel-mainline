@@ -41,11 +41,12 @@ Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
 
 %description
-Source-built kernel with the reviewed O82 native display profile.
+Experimental KVM kernel with the current O82 native display source profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+Installation has no boot writer or slot-selection action. The production
+updater does not admit these experimental package names. Physical Uke firmware
+handoff and device acceptance remain unqualified.
 
 %package core
 Summary: Uke kernel Image and source identity
