@@ -67,9 +67,13 @@ int main(void) {
     s.old[0].vrr_enabled=s.new_state[0].vrr_enabled=true;
     admissions=0;
     assert(msm_uke_dfps_prepare(&s)==3&&admissions==2); // Retain working AVR during exact timing update.
+    s.new_state[0].vrr_enabled=false;admissions=0;
+    assert(msm_uke_dfps_prepare(&s)==3&&admissions==2); // KWin's real modeset may disable AVR after an enabled test.
     s.dev->enc[0].avr_active=false;admissions=0;
-    assert(msm_uke_dfps_prepare(&s)==2&&admissions==1); // A failed/inactive AVR cannot enter live retiming.
-    for(unsigned gate=0;gate<10;++gate) {
+    assert(msm_uke_dfps_prepare(&s)==2&&admissions==1); // A failed old AVR cannot enter either live transition.
+    s.new_state[0].vrr_enabled=true;admissions=0;
+    assert(msm_uke_dfps_prepare(&s)==2&&admissions==1);
+    for(unsigned gate=0;gate<9;++gate) {
         reset(&s);
         switch(gate) {
         case 0:s.old[0].active=false;break;
@@ -80,8 +84,7 @@ int main(void) {
         case 5:s.new_state[0].color_mgmt_changed=true;break;
         case 6:s.new_state[0].encoder_mask=2;break;
         case 7:s.old[0].encoder_mask=s.new_state[0].encoder_mask=3;break;
-        case 8:s.old[0].vrr_enabled=true;break;
-        case 9:s.new_state[0].vrr_enabled=true;break;
+        case 8:s.new_state[0].vrr_enabled=true;break; // Simultaneous VRR entry still needs the ordinary modeset.
         }
         assert(msm_uke_dfps_prepare(&s)==2&&admissions==1);
     }

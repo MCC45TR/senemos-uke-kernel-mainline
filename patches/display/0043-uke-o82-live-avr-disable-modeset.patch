@@ -1,0 +1,26 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: retain live O82 timing when a modeset disables AVR
+
+KWin 6.8 can test a refresh change with VRR enabled, then disable VRR in
+the real modeset and enable it again on presentation. Requiring identical
+VRR state excludes that real commit and resets the panel and touch RAM.
+
+Admit the disable transition when the old AVR session is healthy. Existing
+prepare-for-kickoff processing disables both INTFs and DSI QSync before the
+common timing flush. No new enable operation is needed while DSI shadow
+timing is pending. Retain the full modeset for simultaneous VRR entry from
+fixed timing, and preserve all active, connector, color and paired guards.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/msm_atomic.c
++++ b/drivers/gpu/drm/msm/msm_atomic.c
+@@ -210,7 +210,7 @@
+ 
+ 	for_each_oldnew_crtc_in_state(state, crtc, old, new, i) {
+ 		if (!old->active || !new->active || !new->mode_changed ||
+-		    old->vrr_enabled != new->vrr_enabled ||
++		    (!old->vrr_enabled && new->vrr_enabled) ||
+ 		    new->active_changed || new->connectors_changed ||
+ 		    new->color_mgmt_changed || old->encoder_mask != new->encoder_mask ||
+ 		    hweight32(new->encoder_mask) != 1)

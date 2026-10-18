@@ -605,3 +605,13 @@ command power for panel OFF. Actual-function GCC and AArch64 Clang fixtures
 cover ordering, rejected states, stop failures and bridge references. Tablet
 validation of this shutdown correction remains pending; the experimental
 parameter still defaults to zero and no VRR capability or range is advertised.
+
+The 18 October release-23 candidate also handles KWin's temporary AVR disable
+during a refresh modeset. A bounded release-22 trace observes VRR enabled in
+test-only requests and disabled in the real commit, bypassing its live path.
+Patch `0043` admits that disable only for a healthy old AVR session; the existing
+paired disable runs before the common timing flush. Simultaneous VRR entry
+and a mode change retain the ordinary modeset. The actual admission fixture
+checks both retained and disabled AVR plus inactive-session refusal. Physical
+transition acceptance remains separate. Standard experimental capability still
+requires explicit local opt-in and admission of every probed OEM mode.
