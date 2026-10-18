@@ -107,3 +107,10 @@ repeated runtime-PM wakeups. Host FDT fixtures preserve the other IRQ cells and
 reject foreign graphs. Standard Bluetooth LE and modular BNEP are enabled for
 the original desktop services. Matched package, idle-IRQ and Bluetooth device
 validation remain separate from these source checks.
+
+A separate 18 October source correction removes only the exact unused legacy
+VA scalar qcom,is-used-swr-gpio=1. Upstream OF interprets its suffix as a GPIO
+specifier and incorrectly resolves value 1 to the interrupt controller. The
+actual FDT helper preserves native compatibles and other values. This does
+not enable audio or alter the SoundWire pinctrl reference; tablet warning
+validation remains pending.

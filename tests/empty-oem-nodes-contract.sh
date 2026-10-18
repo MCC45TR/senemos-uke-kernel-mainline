@@ -14,6 +14,7 @@ cat <<'C'
 C
 awk '/^static int UKE_INIT uke_empty_spmi_bus/ {emit=1} emit {print} emit && /^}/ {exit}' "$root/src/boot/uke-abl.c"
 awk '/^static int UKE_INIT uke_empty_demura_regions/ {emit=1} emit {print} emit && /^}/ {exit}' "$root/src/boot/uke-abl.c"
+awk '/^static int UKE_INIT uke_legacy_va_gpio_flag/ {emit=1} emit {print} emit && /^}/ {exit}' "$root/src/boot/uke-abl.c"
 cat <<'C'
 static const char path[]="/soc/qcom,spmi@c432000";
 static void fixture(void *tree) {
@@ -95,6 +96,22 @@ int main(void) {
  demura_fixture(tree);assert(!fdt_pack(tree));
  assert(uke_empty_demura_regions(tree)==-FDT_ERR_NOSPACE);
  demura_state(tree,0,0);demura_state(tree,1,0);
+ for(unsigned variant=0;variant<5;variant++) {
+  assert(!fdt_create_empty_tree(tree,sizeof(tree)));
+  int n=fdt_add_subnode(tree,0,"soc");assert(n>=0);
+  n=fdt_add_subnode(tree,n,"spf_core_platform");assert(n>=0);
+  n=fdt_add_subnode(tree,n,"lpass-cdc");assert(n>=0);
+  n=fdt_add_subnode(tree,n,"va-macro@6D44000");assert(n>=0);
+  assert(!fdt_setprop_string(tree,n,"compatible",variant==1 ? "native,audio" : "qcom,lpass-cdc-va-macro"));
+  assert(!fdt_setprop_u32(tree,n,"phandle",77));
+  if(variant!=2) {
+   fdt32_t cells[]={cpu_to_fdt32(variant==3 ? 0:1),0};
+   assert(!fdt_setprop(tree,n,"qcom,is-used-swr-gpio",cells,variant==4 ? 8:4));
+  }
+  assert(!uke_legacy_va_gpio_flag(tree));
+  assert((fdt_getprop(tree,n,"qcom,is-used-swr-gpio",NULL)==NULL)==(variant==0||variant==2));
+  assert(fdt_get_phandle(tree,n)==77);
+ }
  return 0;
 }
 C
@@ -104,3 +121,4 @@ C
 "$work/check"
 echo 'Only the exact empty Uke secondary SPMI bus is disabled; populated, foreign and missing resource contracts remain unchanged; no-space errors propagate'
 echo 'Only unused zero-length OEM demura placeholders are disabled; populated carveouts, providers and phandles are preserved'
+echo 'Only the exact unused legacy VA scalar flag is removed; native, missing, zero and GPIO-array properties are preserved'

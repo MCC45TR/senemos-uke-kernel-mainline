@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 15
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -240,6 +240,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-16
+- Remove an unused legacy VA scalar flag that OF misinterprets as a GPIO provider.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-15
 - Translate the Uke UART wake IRQ to the falling-edge trigger used by its OEM driver.
 - Enable standard Bluetooth LE and BNEP support required by desktop Bluetooth services.

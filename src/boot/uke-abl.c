@@ -62,6 +62,21 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
 }
 
+static int UKE_INIT uke_legacy_va_gpio_flag(void *fdt)
+{
+	int node = fdt_path_offset(fdt, "/soc/spf_core_platform/lpass-cdc/va-macro@6D44000");
+	const fdt32_t *value;
+	int size;
+
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,lpass-cdc-va-macro"))
+		return 0;
+	value = fdt_getprop(fdt, node, "qcom,is-used-swr-gpio", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 1)
+		return 0;
+	/* Unused legacy scalar flag is otherwise parsed as a GPIO phandle. */
+	return fdt_delprop(fdt, node, "qcom,is-used-swr-gpio");
+}
+
 static int UKE_INIT uke_empty_spmi_bus(void *fdt)
 {
 	static const unsigned int expected[] = {
@@ -925,6 +940,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_empty_spmi_bus(output);
+	if (ret)
+		return ret;
+	ret = uke_legacy_va_gpio_flag(output);
 	if (ret)
 		return ret;
 	ret = uke_empty_demura_regions(output);
