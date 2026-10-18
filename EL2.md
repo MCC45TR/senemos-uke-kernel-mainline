@@ -104,7 +104,12 @@ reservations or disabling SMMU to make a test proceed is not an accepted fix.
   EL1/EL2 comparison. Their outer accelerator is TCG. Added Uke compatible
   strings select an adaptation path; they do not emulate Uke hardware.
 - `src/kvm/make-guest-initramfs.sh OUTPUT` builds a RAM-only native ARM64 guest
-  acceptance initramfs with libc and its loader. The builder's
+  acceptance initramfs with libc and its loader; optional `OUTPUT probe` selects
+  the real KVM probe as PID 1 and admits its libgcc cache-maintenance dependency.
+  Dependencies and their transitive imports are restricted to that small list.
+  `tests/el2-generic-qemu.sh` tests both payloads on a separately configured
+  generic kernel from `configs/el2-qemu.config`. This removes the old Fedora
+  fixture's disk/udev readiness from the KVM execution test. The builder's
   `tests/kvm-linux-guest.sh KERNEL INITRAMFS PROBE OUTPUT` requires actual
   `/dev/kvm`, uses only `-accel kvm`, and tests one then two vCPUs, timer wakeup,
   CPU migration and clean poweroff. No disk, network or TCG fallback is supplied.

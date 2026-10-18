@@ -45,8 +45,11 @@ int main(int argc, char **argv) {
             if (sched_setaffinity(0, sizeof(cpus), &cpus) < 0 || sched_getcpu() != cpu)
                 return fail("cpu-migration");
             const timespec delay{0, 100000000};
-            if (clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, nullptr) != 0)
+            const int timer_error = clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, nullptr);
+            if (timer_error != 0) {
+                errno = timer_error;
                 return fail("timer-wakeup");
+            }
             timespec now{};
             if (clock_gettime(CLOCK_MONOTONIC, &now) < 0) return fail("clock-read");
             const long long elapsed = (now.tv_sec - previous.tv_sec) * 1000000000LL +

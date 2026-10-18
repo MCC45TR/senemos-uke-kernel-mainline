@@ -73,6 +73,9 @@ Host families: Fedora/RHEL, Debian/Ubuntu, openSUSE, Arch, Alpine/postmarketOS.
 Missing prerequisites are installed from official host repositories; build
 dependencies stay in a pinned container. Builds queue behind other compilers.
 Nothing flashes a tablet, unlocks its bootloader or changes boot selection.
+On experiment/el2-kvm, use make srpm and a native Fedora Rawhide AArch64 RPM
+worker. The historical --build binary recipe is refused; --dry-run remains
+available for version/target inspection. See EL2.md.
 HELP
 }
 package_manager() {

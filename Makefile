@@ -40,7 +40,7 @@ srpm: validate
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
 	git archive HEAD src/display src/boot src/usb patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
-	git archive HEAD src/kvm EL2.md | tar -xf - -C "$$assets"
+	git archive HEAD src/kvm EL2.md configs/el2-qemu.config | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
