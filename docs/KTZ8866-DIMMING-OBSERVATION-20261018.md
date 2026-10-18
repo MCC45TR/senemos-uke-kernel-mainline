@@ -101,3 +101,15 @@ the same mismatch with warnings retained. No warning suppression, output
 format or hardware behavior changes. The original source receipt is retained;
 the coordinator must regenerate the revised patch and repeat the focused
 fixture and actual translation-unit check. This source conversation ran neither.
+
+The coordinator subsequently withdrew the first fixture PASS report. Its
+orchestration continued to the kernel translation unit after the host fixture
+failed to compile: a C++ `void *` stub return cannot implicitly convert to
+`ktz8866 *`. That first fixture never passed, and the same harness failure
+persisted after the format successor. The production C conversion is valid.
+The next source successor returns a typed pointer with an explicit C++ cast
+from the host-only `dev_get_drvdata` stub, preserving the extracted production
+C functions unchanged. This corrects the fixture rather than introducing a
+driver bypass. Original report and correction remain separate evidence;
+the corrected fixture and warning-free actual kernel translation unit still
+require independent coordinator results. No test or compiler ran here.

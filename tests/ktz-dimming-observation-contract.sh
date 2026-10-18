@@ -41,7 +41,7 @@ struct ktz8866 {
 mutex *expected_lock;
 regmap *expected_maps[2];
 int reads, locks, unlocks;
-void *dev_get_drvdata(device *dev) { return dev->data; }
+ktz8866 *dev_get_drvdata(device *dev) { return static_cast<ktz8866 *>(dev->data); }
 device *kobj_to_dev(kobject *kobj) { return kobj->dev; }
 void mutex_lock(mutex *lock) {
     assert(lock==expected_lock && !lock->locked); lock->locked=true; locks++;
