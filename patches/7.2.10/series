@@ -68,3 +68,6 @@
 0068-usb-uke-role-completion.patch
 0069-usb-role-readonly-observation.patch
 0070-usb-uke-required-wake-irqs.patch
+0071-uke-charge-development-admission-help.patch
+0072-uke-usb-source-type-provenance.patch
+0073-uke-charge-current-macro-collision.patch

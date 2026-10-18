@@ -41,7 +41,8 @@ C
 awk '/^enum power_supply_property \{/ {emit=1} emit {print} emit && /^};/ {exit}' \
     "$kernel/include/linux/power_supply.h"
 cat <<'C'
-enum { POWER_SUPPLY_USB_TYPE_UNKNOWN, POWER_SUPPLY_USB_TYPE_SDP, POWER_SUPPLY_USB_TYPE_PD };
+enum { POWER_SUPPLY_USB_TYPE_UNKNOWN=0, POWER_SUPPLY_USB_TYPE_SDP=1,
+ POWER_SUPPLY_USB_TYPE_DCP=2, POWER_SUPPLY_USB_TYPE_PD=6, POWER_SUPPLY_USB_TYPE_PD_PPS=8 };
 union power_supply_propval { int intval; };
 struct power_supply { void *drvdata; };
 static void *power_supply_get_drvdata(struct power_supply *psy) { return psy->drvdata; }
@@ -97,7 +98,7 @@ static void mod_delayed_work(void *q, struct delayed_work *w, unsigned int delay
 static int usb_phy_set_power(struct usb_phy *p, unsigned int mA) { (void)p; (void)mA; legacy++; return 42; }
 static const struct of_device_id qcom_battmgr_of_variants[]={{0}};
 C
-for name in uke_generation uke_battery_property uke_validate request_property usb_set_property usb_is_writeable sm8350_callback; do
+for name in uke_generation uke_battery_property uke_usb_type uke_validate request_property usb_set_property usb_is_writeable sm8350_callback; do
     awk -v name="qcom_battmgr_$name" '
         $0 ~ "^static (int|void|u32) " name "\\(" {candidate=1;body=0;buffer=""}
         candidate {buffer=buffer $0 ORS}
@@ -209,6 +210,20 @@ int main(void) {
  qcom_battmgr_sm8350_callback(&b,&m,sizeof(m.hdr)+sizeof(m.intval));
  assert(b.error==-ENODATA && b.ack.done==0);
  reply(&b,BATTMGR_USB_PROPERTY_GET,0,1,0); assert(b.usb.online);
+ reply(&b,BATTMGR_USB_PROPERTY_GET,0,2,0); assert(b.error==-ENODATA && b.usb.online);
+ b.transaction.receipt_ns=42; b.transaction.generation=7;
+ b.transaction.firmware_generation=2; b.transaction.source_generation=3;
+ for (u32 raw=0;raw<=8;raw++) {
+  reply(&b,BATTMGR_USB_PROPERTY_GET,6,raw,0);
+  assert(!b.error && b.usb.usb_type==raw && b.usb.type_raw==raw);
+ }
+ const u32 ambiguous[]={9,10,11,127,128,129,130,131,132,UINT_MAX};
+ for (unsigned i=0;i<ARRAY_SIZE(ambiguous);i++) {
+  reply(&b,BATTMGR_USB_PROPERTY_GET,6,ambiguous[i],0);
+  assert(!b.error && b.usb.usb_type==POWER_SUPPLY_USB_TYPE_UNKNOWN && b.usb.type_raw==ambiguous[i]);
+  assert(b.usb.type_received_ns==42 && b.usb.type_generation==7 && b.usb.type_firmware==2 && b.usb.type_source==3);
+ }
+ /* Wire7 remains separate; this fixture never changes the requested ABI. */
  struct power_supply usb={.drvdata=&b};
  union power_supply_propval budget={.intval=500000};
  assert(qcom_battmgr_usb_is_writeable(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT));
