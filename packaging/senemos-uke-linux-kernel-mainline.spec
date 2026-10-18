@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 23
+%global senemos_build_release 30
 %else
 %global senemos_build_release 1
 %endif
@@ -28,7 +28,7 @@ BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
-BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio
+BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
@@ -146,6 +146,7 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelea
 
 %check
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
+CXX=clang++ bash native-profile/tests/root-selector-contract.sh
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
@@ -205,6 +206,7 @@ test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name '
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
 install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
+install -m644 %{_uke_out}/userdata.img "$bundle/userdata.img"
 install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
 install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
 install -m644 %{SOURCE6} "$bundle/source-lock.json"
@@ -248,6 +250,11 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-30
+- Build a common kernel with explicit linux/ext4 and userdata/F2FS root profiles.
+- Enable F2FS security labels and remove development command-line defaults.
+- Disable tracing, debug instrumentation and local root development consoles.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-22
 - Retain exact O82 live timing updates while AVR remains enabled.
 - Update both AVR periods before their common timing flush without panel reset.

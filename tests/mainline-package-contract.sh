@@ -12,6 +12,8 @@ future_release=$(rpmspec -q --srpm --qf '%{RELEASE}' --target aarch64 "$future")
 expected=senemos-uke-linux-kernel-mainline
 names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot" ]]
+grep -Fx 'install -m644 %{_uke_out}/userdata.img "$bundle/userdata.img"' "$spec"
+grep -Fx 'CONFIG_CMDLINE_FORCE=y' "$root/packaging/native/native.config"
 # Query expanded payload paths rather than retaining the old shared module ABI.
 parsed=$(rpmspec --parse "$spec")
 grep -Eq '^Provides: kernel-uname-r\(7\.2\.10-[1-9][0-9]*\)$' <<< "$parsed"

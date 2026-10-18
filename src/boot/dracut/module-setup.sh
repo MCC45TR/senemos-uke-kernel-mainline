@@ -19,27 +19,6 @@ install() {
     inst_simple "$moddir/root-guard.sh" /usr/libexec/uke-root-guard
     chmod 755 "$initdir/usr/libexec/uke-root-guard"
     inst_simple "$moddir/uke-root-guard.service" "$systemdsystemunitdir/uke-root-guard.service"
-    inst_simple "$moddir/uke-initrd-screen.service" "$systemdsystemunitdir/uke-initrd-screen.service"
     mkdir -p "$initdir$systemdsystemunitdir/sysroot.mount.requires"
     ln -s ../uke-root-guard.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-root-guard.service"
-    mkdir -p "$initdir$systemdsystemunitdir/initrd.target.wants"
-    ln -s ../uke-initrd-screen.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-initrd-screen.service"
-    # Keep the existing peripheral debug shell available when UFS/root fails.
-    for unit in uke-cdc-acm uke-cdc-shell; do
-        inst_simple "$moddir/$unit.service" "$systemdsystemunitdir/$unit.service"
-        mkdir -p "$initdir$systemdsystemunitdir/$unit.service.d"
-        cat > "$initdir$systemdsystemunitdir/$unit.service.d/initrd.conf" <<'UNIT'
-[Unit]
-DefaultDependencies=no
-IgnoreOnIsolate=yes
-After=systemd-udev-trigger.service
-Before=initrd-switch-root.target
-Conflicts=initrd-switch-root.target
-StartLimitIntervalSec=0
-[Service]
-Restart=on-failure
-RestartSec=2
-UNIT
-    done
-    ln -s ../uke-cdc-shell.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-cdc-shell.service"
 }

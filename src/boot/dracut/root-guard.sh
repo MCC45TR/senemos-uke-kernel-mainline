@@ -1,5 +1,5 @@
 #!/bin/sh
-# Native/POSIX initramfs boundary: never fall back to Android or another EXT4 root.
+# Native/POSIX initramfs boundary: admit only the selected provisioned root.
 set -eu
 # Invoked indirectly by the EXIT trap.
 # shellcheck disable=SC2317,SC2329
@@ -37,7 +37,20 @@ root_probe_diagnostics() {
     exit "$status"
 }
 trap 'root_probe_diagnostics' EXIT
-selected=/dev/disk/by-partlabel/linux
+partlabel=''
+set -f
+# shellcheck disable=SC2013
+for argument in $(cat /proc/cmdline); do
+    case "$argument" in
+        root=PARTLABEL=linux|root=PARTLABEL=userdata)
+            [ -z "$partlabel" ] || { echo 'UKE_ROOT_REJECTED: multiple root selectors' >&2; exit 1; }
+            partlabel=${argument#root=PARTLABEL=};;
+        root=*) echo 'UKE_ROOT_REJECTED: unsupported root selector' >&2; exit 1;;
+    esac
+done
+set +f
+[ -n "$partlabel" ] || { echo 'UKE_ROOT_REJECTED: missing root selector' >&2; exit 1; }
+selected=/dev/disk/by-partlabel/$partlabel
 read -r uptime _ < /proc/uptime
 started=${uptime%%.*}
 udevadm settle --timeout=40 || {
@@ -53,25 +66,34 @@ while [ "$attempt" -lt 45 ]; do
         while IFS='=' read -r key value; do
             case "$key" in PARTNAME) name=$value;; DEVNAME) device=$value;; esac
         done < "$metadata"
-        [ "$name" = linux ] || continue
+        [ "$name" = "$partlabel" ] || continue
         case "$(readlink -f "${metadata%/uevent}")" in
             */virtual/block/*)
-                echo 'UKE_ROOT_REJECTED: linux is not a physical partition' >&2; exit 1;;
+                echo 'UKE_ROOT_REJECTED: root is not a physical partition' >&2; exit 1;;
+            */1d84000.ufshc/*/block/*) :;;
+            *) echo 'UKE_ROOT_REJECTED: root is outside the measured Uke UFS controller' >&2; exit 1;;
         esac
         count=$((count + 1))
         candidate=/dev/$device
     done
     if [ "$count" -gt 1 ]; then
-        echo 'UKE_ROOT_REJECTED: multiple linux partitions' >&2; exit 1
+        echo 'UKE_ROOT_REJECTED: multiple selected partitions' >&2; exit 1
     fi
     if [ "$count" -eq 1 ] && [ -b "$candidate" ] && [ -e "$selected" ]; then
         [ "$(readlink -f "$selected")" = "$(readlink -f "$candidate")" ] || {
             echo 'UKE_ROOT_REJECTED: partition-name link points to a different partition' >&2; exit 1;
         }
-        [ "$(blkid -p -s TYPE -o value "$candidate")" = ext4 ] || {
+        expected=ext4
+        [ "$partlabel" != userdata ] || expected=f2fs
+        [ "$(blkid -p -s TYPE -o value "$candidate")" = "$expected" ] || {
             echo 'UKE_ROOT_REJECTED: unexpected filesystem identity' >&2; exit 1;
         }
-        echo 'UKE_ROOT_ADMITTED: unique physical linux partition contains ext4'
+        if [ "$partlabel" = userdata ]; then
+            [ "$(blkid -p -s LABEL -o value "$candidate")" = UKE_LINUX ] || {
+                echo 'UKE_ROOT_REJECTED: userdata is not a provisioned UKE_LINUX filesystem' >&2; exit 1;
+            }
+        fi
+        echo "UKE_ROOT_ADMITTED: unique physical $partlabel partition contains $expected"
         exit 0
     fi
     attempt=$((attempt + 1))
@@ -79,5 +101,5 @@ while [ "$attempt" -lt 45 ]; do
     [ "$(( ${uptime%%.*} - started ))" -lt 45 ] || break
     sleep 1
 done
-echo 'UKE_ROOT_REJECTED: matching linux partition unavailable' >&2
+echo "UKE_ROOT_REJECTED: matching $partlabel partition unavailable" >&2
 exit 1

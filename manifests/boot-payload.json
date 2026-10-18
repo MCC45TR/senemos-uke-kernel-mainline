@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-18",
   "source_date_epoch": 1791725270,
-  "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
+  "source_origin": "Common Image root-selector candidate on the native 7.2.10 source profile; no physical userdata acceptance",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "6bb38878a386e882ee87067a6d974e4e5d7b55ca7df414a462f672b1bf8688c4"
+      "sha256": "62bef4a9aff9d0195acbf8b5b0e834ba4296062bb83f7a05377abdbeb5b57727"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -21,23 +21,23 @@
     },
     {
       "path": "src/boot/boot-image.cpp",
-      "sha256": "72b9f4962707b1338cdc99bc5cb9041802aac3919e56805eb57ba14baed69330"
+      "sha256": "13cb6a40a5e11234e5f349260f266e66c48699d68dcfcf6742d47e69bc9bf0fb"
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "c93f67ff842c64e5d3103a03bbde9d0a168ea723119d6b81a26dd609ba646d14"
+      "sha256": "4fda981ed240a081257ff9336afd3d6d8d41876204a2e454a305a79a6cbfb1ee"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "6cac0a33dabe2a024f95be2927a4c2dfae216a3f960b0d5ef26039d912eb49e2"
+      "sha256": "c49fc4355c8d7d8e12bf5c8831b56a7d3e8677b2c60db8945e6ead5502772f2a"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "2eee54db21a95c0dd3825666e5a7fbdf613f3cc9094c73d1e507e7137ccb0442"
+      "sha256": "b3ddb8ae31c10e0a65c8e64e9a0ccc7e74e7a65cabc789171557c347fc90a9d8"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
-      "sha256": "548ddc31cfb7f3d5862ee29b13bd3910b0e723aa8dad915ddcf158c556fe82db"
+      "sha256": "376277521a0f97d98be8c743f0a018520d16706114efbbd91a0c85d45681b991"
     },
     {
       "path": "src/boot/dracut/uke-cdc-acm.service",
@@ -57,11 +57,11 @@
     },
     {
       "path": "src/boot/dracut/uke-root-guard.service",
-      "sha256": "212c5a8be087e6a8f798b83838267cd8cf130a4468b9086aa5422c75c919f83c"
+      "sha256": "f5cfc874f76963518588ecdd7bf3ba85b389b5c07fc4d43ae4d82ffddda68903"
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "f090469d2435eda7b96ee6397ef029799e517632480fb1d73ca321c9d45ecd94"
+      "sha256": "f4009dab05af5d921850fd07664c2ad7d9424e20304adb544d5040d8750e376e"
     },
     {
       "path": "src/boot/licenses/builder-MIT",
@@ -73,11 +73,11 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "9aa4348ea960ae17eab610b409e60cceb49aa8922f91f4da46a53d334ddbd6cc"
+      "sha256": "3237e0aa66c949b126fe66f26abbac33e5d34c24a24d882034ab83e307f53ad4"
     },
     {
       "path": "tests/boot-image-contract.sh",
-      "sha256": "06cd230930a348dc17b1088409b8fed187971ea59d9f9b3b1809a89049dbf541"
+      "sha256": "2306956da540e1da1de770ede3fcf39bbed6c4c754e11e593e8b29ac889ddc4f"
     },
     {
       "path": "tests/target-privacy-contract.sh",

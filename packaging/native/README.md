@@ -6,6 +6,25 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
+## Common root-selector candidate, 18 October 2026
+
+The userdata update branch retains one kernel package family, one compiled
+Image and common modules. Its two kernel-only boot containers differ only in
+the header: the existing Linux container keeps its empty command line; the
+userdata container carries `senemos.root=userdata`. After normal early DT
+scanning, the Uke adapter can replace exactly the built-in Linux root token.
+`CONFIG_CMDLINE_FORCE` still protects every other option. Unknown or duplicate
+profile tokens are rejected. The embedded dracut defaults contain no second
+root selector; its guard admits only the selected physical Uke UFS EXT4 root
+and requires `UKE_LINUX` for userdata.
+
+Host parser/container/root-guard checks are separate from a complete kernel
+build and physical boot. The existing updater continues to reject userdata
+until its slot backend and readiness path are qualified. The installed Uke
+ABL must be shown to preserve the selector before userdata updates are enabled;
+otherwise reconsider the requested root-specific `-up` package. No COPR build,
+userdata slot write or recovery ZIP is implied by this candidate.
+
 The source RPM contains signed Linux 7.2.10, the 49 ordered Uke base patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases

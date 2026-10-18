@@ -18,7 +18,6 @@ crypto/sha3.ko.zst
 crypto/sm3.ko.zst
 crypto/sm4.ko.zst
 crypto/sm4_generic.ko.zst
-crypto/tcrypt.ko.zst
 crypto/xts.ko.zst
 crypto/zstd.ko.zst
 drivers/ata/ahci_dwc.ko.zst
