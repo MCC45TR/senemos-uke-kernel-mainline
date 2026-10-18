@@ -300,6 +300,10 @@
     {
       "path": "patches/7.2.10/0073-uke-charge-current-macro-collision.patch",
       "sha256": "1bf11c8377b006e1ddd27403fe6c4cfab87e86b6450b817acd2707d8cc32d977"
+    },
+    {
+      "path": "patches/7.2.10/0074-uke-ktz-dimming-observation.patch",
+      "sha256": "e983c4c4966a905a61111f2acecb0418f2414dda3a33bb6b2e9249b97566ee78"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
