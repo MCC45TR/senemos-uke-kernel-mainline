@@ -99,3 +99,11 @@ and signed current feedback values are readable. Cover display policy, closed
 cover boot, calibration accuracy and real heat protection remain unqualified.
 The included AVR code defaults off and lacks the standard CRTC property
 attachment; activation testing remains a separate continuation.
+
+The 18 October 2026 Bluetooth candidate translates the exact selected Uke UART
+wake interrupt to the falling edge requested by its OEM driver. The upstream
+wake-IRQ helper retains the DT trigger, so keeping the OEM level cell causes
+repeated runtime-PM wakeups. Host FDT fixtures preserve the other IRQ cells and
+reject foreign graphs. Standard Bluetooth LE and modular BNEP are enabled for
+the original desktop services. Matched package, idle-IRQ and Bluetooth device
+validation remain separate from these source checks.

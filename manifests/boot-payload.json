@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-17",
+  "date": "2026-10-18",
   "source_date_epoch": 1791725270,
   "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
   "firmware_included": false,
@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "1295a50c9aaceaa2d87df227eabedc690188dca077bc290bb03f46c6dd78370b"
+      "sha256": "57da65beca2de66b542eb1d77695c6cd52310b78635db5251ca38982282a0cb5"
     },
     {
       "path": "src/audit/check-target-payload.sh",

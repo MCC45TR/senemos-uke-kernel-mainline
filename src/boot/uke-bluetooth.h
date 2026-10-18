@@ -14,7 +14,7 @@ static int UKE_INIT uke_bluetooth(void *fdt)
 		{ "qcom,bt-vdd-rfa2", "vddrfa1p2-supply", "smpb2" },
 		{ "qcom,bt-vdd-ipa-2p2", "vddrfa2p2-supply", "smpe3" },
 	};
-	fdt32_t rails[8], active[4], sleep[4], enable[3], swctrl[3], reset_pin;
+	fdt32_t rails[8], active[4], sleep[4], enable[3], swctrl[3], reset_pin, irqs[7];
 	const fdt32_t *value;
 	const char *text;
 	char property[64], pin[16], function[24];
@@ -44,6 +44,9 @@ static int UKE_INIT uke_bluetooth(void *fdt)
 	    fdt32_to_cpu(value[4]) != gpio_phandle ||
 	    fdt32_to_cpu(value[5]) != 43 || fdt32_to_cpu(value[6]) != 4)
 		return -FDT_ERR_BADVALUE;
+	memcpy(irqs, value, sizeof(irqs));
+	/* The OEM UART driver overrides its DT wake level with a falling edge. */
+	irqs[6] = cpu_to_fdt32(2);
 	value = fdt_getprop(fdt, uart, "pinctrl-1", &size);
 	if (!value || size != sizeof(active))
 		return -FDT_ERR_BADVALUE;
@@ -116,6 +119,7 @@ static int UKE_INIT uke_bluetooth(void *fdt)
 #define UKE_BT_SET(operation) do { ret = (operation); if (ret) return ret; } while (0)
 	UKE_BT_SET(fdt_setprop_string(fdt, bt, "status", "disabled"));
 	uart = fdt_path_offset(fdt, uart_path);
+	UKE_BT_SET(fdt_setprop(fdt, uart, "interrupts-extended", irqs, sizeof(irqs)));
 	UKE_BT_SET(fdt_setprop_string(fdt, uart, "compatible", "qcom,geni-uart"));
 	UKE_BT_SET(fdt_setprop_string(fdt, uart, "clock-names", "se"));
 	UKE_BT_SET(fdt_setprop(fdt, uart, "pinctrl-names", "default\0sleep", sizeof("default\0sleep")));

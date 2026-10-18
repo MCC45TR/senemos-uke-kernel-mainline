@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 14
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -155,6 +155,11 @@ CC=clang CXX=clang++ bash native-profile/tests/hall-contract.sh "$PWD"
 CC=clang bash native-profile/tests/smp2p-restart-contract.sh "$PWD"
 CC=clang bash native-profile/tests/cpucp-mailbox-contract.sh "$PWD"
 CC=clang bash native-profile/tests/empty-oem-nodes-contract.sh "$PWD"
+CC=clang bash native-profile/tests/bluetooth-fdt-contract.sh "$PWD"
+CC=clang bash native-profile/tests/bluetooth-power-contract.sh drivers/bluetooth/hci_qca.c
+grep -Fx 'CONFIG_BT_LE=y' %{_uke_out}/.config
+grep -Fx 'CONFIG_BT_BNEP=m' %{_uke_out}/.config
+test -s %{_uke_out}/net/bluetooth/bnep/bnep.ko
 CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
@@ -235,6 +240,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-15
+- Translate the Uke UART wake IRQ to the falling-edge trigger used by its OEM driver.
+- Enable standard Bluetooth LE and BNEP support required by desktop Bluetooth services.
+
 * Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-14
 - Stop O82 DSI video after both DPU timing engines and preserve panel OFF clocks.
 - Preserve the five-frame watchdog budget at the experimental AVR floor.
