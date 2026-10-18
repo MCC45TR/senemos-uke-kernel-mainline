@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-17",
+  "date": "2026-10-18",
   "source_date_epoch": 1791725270,
-  "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
+  "source_origin": "Common Image root-selector candidate on the native 7.2.10 source profile; no physical userdata acceptance",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -21,15 +21,15 @@
     },
     {
       "path": "src/boot/boot-image.cpp",
-      "sha256": "72b9f4962707b1338cdc99bc5cb9041802aac3919e56805eb57ba14baed69330"
+      "sha256": "13cb6a40a5e11234e5f349260f266e66c48699d68dcfcf6742d47e69bc9bf0fb"
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "c93f67ff842c64e5d3103a03bbde9d0a168ea723119d6b81a26dd609ba646d14"
+      "sha256": "4fda981ed240a081257ff9336afd3d6d8d41876204a2e454a305a79a6cbfb1ee"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "6cac0a33dabe2a024f95be2927a4c2dfae216a3f960b0d5ef26039d912eb49e2"
+      "sha256": "c49fc4355c8d7d8e12bf5c8831b56a7d3e8677b2c60db8945e6ead5502772f2a"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
-      "sha256": "548ddc31cfb7f3d5862ee29b13bd3910b0e723aa8dad915ddcf158c556fe82db"
+      "sha256": "61be96a7eb5f310ff30bc2f3cf5d7fe9dcffcf7eebf6bdebccbe4749ff9bce36"
     },
     {
       "path": "src/boot/dracut/uke-cdc-acm.service",
@@ -73,11 +73,11 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "9aa4348ea960ae17eab610b409e60cceb49aa8922f91f4da46a53d334ddbd6cc"
+      "sha256": "58975e8f1e2c623ddedbe878148a081c9c56a45961dcdeadda26b6724cbee706"
     },
     {
       "path": "tests/boot-image-contract.sh",
-      "sha256": "06cd230930a348dc17b1088409b8fed187971ea59d9f9b3b1809a89049dbf541"
+      "sha256": "2306956da540e1da1de770ede3fcf39bbed6c4c754e11e593e8b29ac889ddc4f"
     },
     {
       "path": "tests/target-privacy-contract.sh",
