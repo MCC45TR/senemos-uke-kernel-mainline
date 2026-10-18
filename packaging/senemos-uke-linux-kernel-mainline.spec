@@ -149,6 +149,9 @@ bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
+CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
+bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
 bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
 CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
