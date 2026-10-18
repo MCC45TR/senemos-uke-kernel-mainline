@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 3
+%global senemos_build_release 4
 %else
 %global senemos_build_release 1
 %endif
@@ -25,6 +25,7 @@ Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
+BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
