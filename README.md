@@ -17,11 +17,26 @@ admits that exact provider, then exposes a NULL atomic connector-state access
 while attaching the DisplayPort color-depth property. No dock, PD, HDMI or
 charge-control acceptance follows from either build.
 
-The `7.2.10-26` candidate initializes that connector state before attaching its
+The `7.2.10-26` build initializes that connector state before attaching its
 property and checks allocation failure. It also blanks the panel backlight
 before native DSI attachment and enables it only after first-frame timing,
 normal-pixel and dimming commands succeed. Host lifecycle and failure tests
-are separate from the pending tablet boot and optical white-flash checks.
+are separate from tablet results. Signed COPR 11167794 packages install through
+DNF. After a forced restart, the tablet runs release 26, both DSI and DP
+connectors register, the touchscreen input is published and original KDE shows
+the internal panel at 144 Hz with its saved VRR policy. The user confirms visible
+output. The previous connector-state Oops is absent from the current kernel
+log. Normal restart and optical white-flash acceptance remain pending. A PMIC
+probe warning, UCSI initialization timeout and optional front-color startup
+failure remain open; this is not a clean-log or complete USB acceptance result.
+
+The current internal path uses RGB101010 and 10-bpc DSC; KDE scans out AR30.
+Selectable internal 8/10/12-bpc link profiles are not implemented. Advertised
+12-bit panel capability does not identify a qualified 12-bpc transport or FRC
+path. External DP exposes a 6..10 max-bpc property. The first powered-dock
+trial finds neither USB dongles nor HDMI output, with no Type-C partner and
+the controller still in device role. No unsupported color-depth or RGB-range
+choice is advertised for DSI.
 
 CDC defaults off in the matched full-profile boot/root pair; explicit ACM
 opt-in is provided by the separate native management package. Charging services
