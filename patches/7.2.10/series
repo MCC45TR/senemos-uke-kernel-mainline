@@ -48,3 +48,4 @@
 0048-adc5-gen3-charger-and-battery-scalers.patch
 0049-input-qcom-smp2p-switch.patch
 0050-uke-cpucp-shared-rx.patch
+0051-lucid-evo-reset-latch.patch

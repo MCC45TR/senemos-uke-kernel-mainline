@@ -208,6 +208,10 @@
     {
       "path": "patches/7.2.10/0050-uke-cpucp-shared-rx.patch",
       "sha256": "092fd30e119e5207bcdbbe42adc28bad3d8e82b315bed8e077cc29339fc6fe7f"
+    },
+    {
+      "path": "patches/7.2.10/0051-lucid-evo-reset-latch.patch",
+      "sha256": "f7a1ce81faad1b958cc2195106ebd3951062a62b23e27df2f53d8ee414895f1f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -17,6 +17,9 @@ Qualcomm firmware; vendor memory-latency control and suspend remain unqualified.
 The release-11 source disables only the exact empty secondary SPMI controller
 and zero-length OEM demura placeholders. Actual helper fixtures preserve
 populated controllers, real reservations and phandles; tablet validation is pending.
+Release 12 adds the OEM EVO/OLE reset-time PLL latch rule with checked register
+accesses. Actual-function host fault tests pass; GPU and tablet qualification
+remain pending for that source.
 The previous .4056 normal-boot user checks confirm
 automatic four-pose rotation and dual-light automatic brightness. Bluetooth
 mouse input works. The earlier seven-rate display trial covers
