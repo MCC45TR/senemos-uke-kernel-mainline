@@ -1,0 +1,21 @@
+From: SenemOS Contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] regulator: admit exact Uke L3B resource for full USB/DP
+
+The full QMP graph requests the retained OEM L3B supplier, but the project
+RPMh allowlist rejects ldob3 before it can register. Admit that exact resource
+and preserve command-database/type validation and OEM DT constraints.
+
+Source/runtime limits: docs/USB-TYPEC-SUPPLIER-REGRESSION-20261018.md.
+
+diff --git a/drivers/regulator/qcom-rpmh-regulator-uke.c b/drivers/regulator/qcom-rpmh-regulator-uke.c
+index 3a7c40b..9e00dfa 100644
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -1999,6 +1999,7 @@ static int rpmh_regulator_probe(struct platform_device *pdev)
+ 	    strcmp(aggr_vreg->resource_name, "mxc.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "mmcx.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob2") &&
++	    strcmp(aggr_vreg->resource_name, "ldob3") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob4") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob7") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob17") &&
