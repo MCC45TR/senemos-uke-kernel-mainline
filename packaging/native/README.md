@@ -91,8 +91,10 @@ Combined release 8 passes signed COPR 11165188 delivery, boot-B readback and
 normal KDE reboot. The Hall module and both input devices appear automatically; physical lid and rear
 fold/unfold events pass through standard evdev, and logind tracks the lid.
 All 27 PMIC channels appear in IIO, hwmon and the original KDE backend with
-standard units. The charger-temperature formula returns its OEM-clamped 0 °C
-in this trial; this is not qualified physical temperature. Battery temperature
+standard units. Internal charger temperature reads 31.29–31.41 °C with USB
+power. Without USB power its near-zero input produces the OEM-clamped 0 °C,
+which is not a measured ambient temperature. Independent conversion checks
+pass; absolute calibration remains unqualified. Battery temperature
 and signed current feedback values are readable. Cover display policy, closed
 cover boot, calibration accuracy and real heat protection remain unqualified.
 The included AVR code defaults off and lacks the standard CRTC property

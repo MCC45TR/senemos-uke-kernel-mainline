@@ -62,7 +62,9 @@ inventory, Image/container identity and source identity pass. Guarded DNF
 delivery preserves Android A, previous images/modules and read-only persist.
 Normal KDE reboot starts original Plasma Login Manager and the sensor stack.
 All 27 PMIC measurements are readable through IIO/hwmon/KDE; the charger
-conversion reports an unqualified OEM-clamped 0 °C. Physical lid and rear-fold
+channel reads 31.29–31.41 °C with USB power; without USB power its near-zero
+ADC input produces the OEM-clamped 0 °C. Independent raw/result calculation
+checks pass, while absolute calibration remains unqualified. Physical lid and rear-fold
 switch transitions pass. These results do not accept automatic cover blanking,
 closed-cover startup, real heat protection or physical VRR. The standard VRR
 CRTC property attachment is still missing and belongs to the separate test

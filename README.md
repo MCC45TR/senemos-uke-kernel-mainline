@@ -29,7 +29,10 @@ modules and boot-container checks pass. The tablet exposes all 27 configured
 PMIC IIO channels, two Hall input devices and 51 readable thermal zones.
 Original KDE's sensor backend reads all 27 PMIC measurements. The battery
 thermistor and two current feedback channels return live values; charger
-temperature returns the OEM-clamped 0 °C and remains physically unqualified.
+temperature reads 31.29–31.41 °C with USB power. Without USB power its input
+is near zero and the OEM formula clamps the result to 0 °C. All ten captured
+raw/result pairs match an independent integer calculation; absolute calibration
+remains unqualified.
 Front close/open and rear fold/unfold produce standard switch events;
 logind tracks the lid. Cover-triggered display blanking remains unqualified.
 Software-emulated thermal events in the earlier release-4 test lower three
