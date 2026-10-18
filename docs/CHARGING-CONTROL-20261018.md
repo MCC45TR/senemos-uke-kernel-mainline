@@ -114,3 +114,32 @@ with options off/on. Complete AArch64 compilation, COPR delivery, physical
 current response and reboot persistence remain pending. Configuration readback
 cannot establish charge stop, battery isolation, bypass or all fault protection.
 No automatic service or persisted intent is introduced by this candidate.
+
+## Existing-band application, Linux 7.2.11-3 candidate
+
+The exact Uke OEM5712080 `battery_psy_set_charge_threshold` at lines2445–2465
+sends opcode0x48 with enable/target/delta after feature permission. Same-SoC
+OnePlusfc892483 uses the same split. Current upstream7.2.11 already defines
+the target request; its generic Uke control path remains independently gated.
+Feature25 activation and unchanged settings alone do not demonstrate target
+application. On installed7.2.11-1, the band remains enabled after normal reboot,
+but a subsequent powered observation reaches reported80% with positive battery
+current. Physical cutoff and battery bypass remain unqualified.
+
+Patch0078 adds a root-only, input-off, fixed one-shot request for the already
+enabled70/80 band. Fresh same-epoch settings, presence/Good health, no active or
+recent general control and a five-second guard precede the literal opcode0x48
+`{enable1,target80,delta10}`. Arbitrary targets, disable/current/CV/XM/PD and
+input-suspend operations are absent. The existing general lease stays closed.
+
+The OEM receiver completes this opcode on an opaque reply without a documented
+result payload. This probe records only a bounded, correlated request receipt;
+it does not invent a qualified generic ACK length or decode success. Mandatory
+same-epoch settings readback cannot resolve actuator outcome. Both fixed writers
+remain quarantined after an attempt, including a receipt/readback completion.
+No retry, undo, persisted intent, service or bypass capability is added.
+Actual functions and transport fixtures cover fixed arguments, wrong owner/type,
+malformed/late/foreign replies, lifecycle changes, all GET/request failure
+positions, offline/health/ownership and repeated-writer refusal. Synthetic reply
+sizes are host fixtures, never observed firmware formats. Physical current
+response and autonomous termination still require a separate controlled test.

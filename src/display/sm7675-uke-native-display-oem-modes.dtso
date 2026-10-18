@@ -14,3 +14,7 @@
 &uke_mdp_opps {
 	opp-600000000 { opp-hz = /bits/ 64 <600000000>; };
 };
+
+#ifdef UKE_AUDIO_SERVICES
+#include "../audio/sm7675-uke-audio-services.dtsi"
+#endif

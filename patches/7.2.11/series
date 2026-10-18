@@ -75,3 +75,5 @@
 0075-uke-qmp-ldob3-supplier.patch
 0076-uke-charge-readonly-settings.patch
 0077-uke-preconfigured-cap-enable.patch
+0078-uke-existing-cap-application-probe.patch
+0079-audioreach-readiness-and-response-bounds.patch

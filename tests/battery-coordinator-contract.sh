@@ -94,7 +94,9 @@ static int pmic_glink_send(struct pmic_glink_client *client, void *data, size_t 
  }
  if(q->hdr.opcode==BATTMGR_CHG_CTRL_LIMIT_EN) {
   struct qcom_battmgr_message ack={.hdr=q->hdr};
-  qcom_battmgr_uke_callback(active,&ack,sizeof(ack.hdr)+(mode==9?0:4)); return 0;
+  if(mode==11)return 0; /* Dispatcher drops a truncated header. */
+  if(mode==12)ack.hdr.owner++; /* Foreign response must time out. */
+  qcom_battmgr_uke_callback(active,&ack,mode==10?sizeof(ack)+4:sizeof(ack.hdr)+(mode==9?0:4)); return 0;
  }
  if(mode==1) return 0; /* Timeout: no reply. */
  if(mode==7) return -EIO; /* Delivery is ambiguous, including for SET. */
@@ -202,6 +204,46 @@ int main(void) {
  pre.control.preconfigured_enable=false;
  assert(qcom_battmgr_uke_request(&pre,&cap,sizeof(cap))==-EACCES && sends==before);
  mutex_unlock(&pre.lock);
+ struct qcom_battmgr fixed; initialize(&fixed);
+ fixed.control.preconfigured_apply=true;
+ fixed.control.preconfigured_uncertain=true;
+ fixed.control.preconfigured_limit_attempted=true;
+ fixed.control.preconfigured_generation=fixed.transaction.generation;
+ struct qcom_battmgr_charge_ctrl_request fixed_limit={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_CHG_CTRL_LIMIT_EN},.enable=1,.target_soc=80,.delta_soc=10};
+ mutex_lock(&fixed.lock);
+ mode=9;assert(!qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit)));
+ assert(fixed.transaction.response_len==sizeof(struct pmic_glink_hdr));
+ assert(fixed.control.preconfigured_uncertain && !fixed.control.verified && !fixed.control.ack_bytes);
+ mode=0;assert(!qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit)));
+ assert(fixed.transaction.response_len==sizeof(struct pmic_glink_hdr)+4 && fixed.control.preconfigured_uncertain);
+ before=sends;
+ fixed_limit.enable=0;assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed_limit.enable=1;fixed_limit.target_soc=81;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed_limit.target_soc=80;fixed_limit.delta_soc=5;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed_limit.delta_soc=10;fixed_limit.hdr.owner++;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed_limit.hdr.owner--;fixed_limit.hdr.type++;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed_limit.hdr.type--;fixed.control.preconfigured_generation++;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit))==-EACCES && sends==before);
+ fixed.control.preconfigured_generation=fixed.transaction.generation;
+ assert(qcom_battmgr_uke_request(&fixed,&fixed_limit,sizeof(fixed_limit)-4)==-EINVAL && sends==before);
+ mutex_unlock(&fixed.lock);
+ for(int fault=10;fault<=12;fault++) {
+  struct qcom_battmgr rejected;initialize(&rejected);mode=fault;
+  rejected.control.preconfigured_apply=rejected.control.preconfigured_uncertain=true;
+  rejected.control.preconfigured_limit_attempted=true;
+  rejected.control.preconfigured_generation=rejected.transaction.generation;
+  mutex_lock(&rejected.lock);
+  assert(qcom_battmgr_uke_request(&rejected,&fixed_limit,sizeof(fixed_limit))<0);
+  assert(rejected.transaction.desynced && rejected.control.preconfigured_uncertain);
+  before=sends;
+  assert(qcom_battmgr_uke_request(&rejected,&fixed_limit,sizeof(fixed_limit))==-EPIPE && sends==before);
+  mutex_unlock(&rejected.lock);
+ }
+ mode=0;
  struct qcom_battmgr ctrl; initialize(&ctrl);
  ctrl.transaction.instance_ns=1;
  ctrl.control.owner=&owner; ctrl.control.expires_ns=100; ctrl.control.reviewed_ns=41;

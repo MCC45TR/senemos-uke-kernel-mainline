@@ -12,6 +12,11 @@ UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
 usb_cpp=()
 [[ $UKE_USB_PROFILE != typec-v1 ]] || usb_cpp=(-DUKE_USB_TYPEC=1)
+case $(cat "$profile/audio-profile") in
+    disabled) ;;
+    services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
+    *) printf 'Unknown audio development profile\n' >&2; exit 2;;
+esac
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"

@@ -6,7 +6,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The current source RPM contains signed Linux 7.2.11 and 77 ordered Uke patches,
+The current source RPM contains signed Linux 7.2.11 and 79 ordered Uke patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-29`, `7.2.10-30`, then `7.2.11-1` after the
@@ -132,3 +132,17 @@ The helper's shipped profile is unqualified and admission services remain off;
 no threshold/current write, voltage negotiation or physical charging result is
 implied. Exact per-boot firmware, protocol, source, cable and protection evidence
 remains necessary before control operations. Upstream Kconfig defaults stay off.
+
+## Linux 7.2.11-3 source candidate, 18 October 2026
+
+The79-patch queue adds a restricted one-shot application probe for the already
+enabled70/80 charge band. Firmware receipt/readback leaves physical effect
+unknown and prevents another fixed writer for that driver instance. General
+control qualification remains closed. See the charging-control record.
+
+The separately reviewed AudioReach changes from project commit693dfd4 are
+ported to7.2.11 as patch0079. `audio-profile` defaults to `disabled`; optional
+`services-only` supplies native APM/PRM ports while DAIs, SLIM and amplifier
+buses remain disabled. It creates no sound card or playback/capture path.
+The host-only preset inspector never ships in the target package. Source and
+software checks do not qualify internal speaker or microphone operation.

@@ -44,3 +44,8 @@ firmware-owned roles, one generic eUSB2 PHY, exact WCD 2.0 routing, QMP analog
 supplies/GDSC and checked PHY restoration. The native source producer supplies
 the associated full USB/DisplayPort graph; adding dormant driver matches alone
 is not device support. No new hardware acceptance follows from these patches.
+
+The7.2.11-3 candidate adds patches0078/0079: an offline fixed existing-band
+application probe and the separately reviewed AudioReach response/readiness
+changes. The native audio profile remains disabled. No battery bypass, physical
+charge-stop, speaker or microphone acceptance is established by these sources.

@@ -6,7 +6,7 @@ version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate:
 	test "$(version)" = 7.2.11
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 77) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 79) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
@@ -39,8 +39,8 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/display src/boot src/usb patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
-	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile "$$assets/"
+	git archive HEAD src/display src/boot src/usb src/audio patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
+	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
 	(cd "$$assets"; find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS)

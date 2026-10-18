@@ -316,6 +316,14 @@
     {
       "path": "patches/7.2.11/0077-uke-preconfigured-cap-enable.patch",
       "sha256": "ed57e6cb9f07d4d14ee5dbaceda20af0c12467767855f902117c78863820bee0"
+    },
+    {
+      "path": "patches/7.2.11/0078-uke-existing-cap-application-probe.patch",
+      "sha256": "7e671166e379e3cff13e7c1431307f4346098c81a648fbc1d3bb03e73d9abe5a"
+    },
+    {
+      "path": "patches/7.2.11/0079-audioreach-readiness-and-response-bounds.patch",
+      "sha256": "f8910718a99425f076a8739adc7e25dd6e85bb5618cf8b3955d1b3e1db6744a8"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
