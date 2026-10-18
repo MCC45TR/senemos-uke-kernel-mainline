@@ -23,6 +23,7 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #define UKE_INIT
 #endif
 
@@ -59,6 +60,61 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 		return node;
 	ret = fdt_delprop(fdt, node, property);
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
+}
+
+static int UKE_INIT uke_empty_spmi_bus(void *fdt)
+{
+	static const unsigned int expected[] = {
+		0xc432000, 0x4000, 0xc400000, 0x3000, 0xc500000, 0x400000,
+		0xc440000, 0x80000, 0xc4d000, 0x10000,
+	};
+	int node = fdt_path_offset(fdt, "/soc/qcom,spmi@c432000"), size, child;
+	const fdt32_t *reg, *bus;
+	unsigned int i;
+
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,spmi-pmic-arb"))
+		return 0;
+	reg = fdt_getprop(fdt, node, "reg", &size);
+	if (!reg || size != (int)sizeof(expected))
+		return 0;
+	for (i = 0; i < ARRAY_SIZE(expected); i++)
+		if (fdt32_to_cpu(reg[i]) != expected[i])
+			return 0;
+	bus = fdt_getprop(fdt, node, "qcom,bus-id", &size);
+	if (!bus || size != 4 || fdt32_to_cpu(*bus) != 1)
+		return 0;
+	child = fdt_first_subnode(fdt, node);
+	if (child != -FDT_ERR_NOTFOUND)
+		return child < 0 ? child : 0;
+	/* This selected OEM bus has no children and shares the active arbiter. */
+	return fdt_setprop_string(fdt, node, "status", "disabled");
+}
+
+static int UKE_INIT uke_empty_demura_regions(void *fdt)
+{
+	static const char * const paths[] = {
+		"/reserved-memory/demura_region_0",
+		"/reserved-memory/demura_region_1",
+	};
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(paths); i++) {
+		int node = fdt_path_offset(fdt, paths[i]), size, ret;
+		const fdt32_t *reg;
+
+		if (node < 0 || fdt_first_subnode(fdt, node) != -FDT_ERR_NOTFOUND ||
+		    fdt_getprop(fdt, node, "compatible", NULL) ||
+		    fdt_getprop(fdt, node, "size", NULL))
+			continue;
+		reg = fdt_getprop(fdt, node, "reg", &size);
+		if (!reg || size != 16 || reg[0] || reg[1] || reg[2] || reg[3])
+			continue;
+		/* OEM placeholders are unused only while their address and size are zero. */
+		ret = fdt_setprop_string(fdt, node, "status", "disabled");
+		if (ret)
+			return ret;
+	}
+	return 0;
 }
 
 #include "uke-pmic-adc.h"
@@ -866,6 +922,12 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_scope_qup_buses(output);
+	if (ret)
+		return ret;
+	ret = uke_empty_spmi_bus(output);
+	if (ret)
+		return ret;
+	ret = uke_empty_demura_regions(output);
 	if (ret)
 		return ret;
 	ret = uke_pair_backlights(output);

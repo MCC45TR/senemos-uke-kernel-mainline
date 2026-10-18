@@ -9,9 +9,14 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 ## Status — 18 October 2026
 
-The signed COPR `7.2.10-8` development bundle installs through DNF and reaches
+The signed COPR `7.2.10-10` development bundle installs through DNF and reaches
 original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
 Original Fedora Plasma Login Manager now starts the Wayland session.
+Release 10 binds CPUCP and exchanges the SCMI v2.0 base protocol with the
+Qualcomm firmware; vendor memory-latency control and suspend remain unqualified.
+The release-11 source disables only the exact empty secondary SPMI controller
+and zero-length OEM demura placeholders. Actual helper fixtures preserve
+populated controllers, real reservations and phandles; tablet validation is pending.
 The previous .4056 normal-boot user checks confirm
 automatic four-pose rotation and dual-light automatic brightness. Bluetooth
 mouse input works. The earlier seven-rate display trial covers
@@ -52,8 +57,11 @@ incomplete. Sustained CPU/GPU thermal behavior is
 unqualified. See the [source profile](packaging/native/README.md) and
 [integration record](packaging/INTEGRATION-20261017.md) for delivery boundaries.
 The combined source contains the default-off [AVR experiment](docs/O82-VRR-EXPERIMENT.md).
-No qualified VRR range is advertised; atomic property attachment and physical
-activation tests remain a separate continuation.
+The standard atomic VRR property is attached. Bounded release-9 tests activate
+both interfaces with no active underruns across the seven base modes. Cold
+144 Hz activation with the wide experiment can prevent touch command completion;
+disable-time underruns and physical scan-cadence qualification remain open.
+No qualified VRR range is advertised.
 
 ### Earlier firmware-framebuffer baseline — 15 October 2026
 
