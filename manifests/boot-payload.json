@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-18",
-  "source_date_epoch": 1791725270,
+  "source_date_epoch": 1792058622,
   "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
   "firmware_included": false,
   "device_private_data_included": false,
@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "294d4339aae111fb3d049e766e80c56a10ad387bb87f9e35be64093cd01e34a1"
+      "sha256": "4e1db1b8c67a916df5fa9ea3b67b874b118e29fd1afda3368b278e6f255d503a"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "d93c995d252481f285d6a6b86908716e92805553d9ab9f6332ee96a27ebcb0c5"
+      "sha256": "6d5eb629fa7533478195d3a9c32aaf06b4327271044f69e388bbe3d2bce03ece"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -86,6 +86,22 @@
     {
       "path": "src/boot/dracut/uke-usb-network",
       "sha256": "1bc170168cfbd6c82cc7e9019f31f0ec385b7400ad685a75b384c2162529c344"
+    },
+    {
+      "path": "src/boot/offline-switch-root.cpp",
+      "sha256": "a56fb778646f472b46e74e8d5c2be344b68f7d73aec5e1a42c91c31bdc905a64"
+    },
+    {
+      "path": "src/boot/offline/boot-mode.hpp",
+      "sha256": "e9bc5ea7e7cf05e0e7946dd243a6c868d33c948b396d77343b05bb8f00c2d004"
+    },
+    {
+      "path": "src/boot/offline/io.hpp",
+      "sha256": "a237d32ebb451c8abcaeebea2531a95ed8b93126274b20911ab07ae487e01766"
+    },
+    {
+      "path": "tests/offline-boot-contract.sh",
+      "sha256": "5fbad47d511aff9cad2a04e3e93040a34469250b6e9b584ba31b85281d6d3dad"
     }
   ]
 }

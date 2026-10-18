@@ -6,11 +6,11 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The source RPM contains signed Linux 7.2.10, the 49 ordered Uke base patches,
+The current source RPM contains signed Linux 7.2.11 and 77 ordered Uke patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
-use separate module paths: `7.2.10-2`, `7.2.10-3`, then `7.2.11-1` when that
-upstream version is separately pinned. Install-only packages do not obsolete
+use separate module paths: `7.2.10-29`, `7.2.10-30`, then `7.2.11-1` after the
+upstream source update. Install-only packages do not obsolete
 or overwrite a previous kernel build.
 
 Release 2 restores the source-built boot tuple: Image, matching modules,

@@ -2,10 +2,10 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm
-version := 7.2.10
+version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate:
-	test "$(version)" = 7.2.10
+	test "$(version)" = 7.2.11
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 77) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do

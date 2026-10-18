@@ -15,6 +15,18 @@ mkdir -p "$out"
 init=$out/boot-initramfs stage=$out/boot-modules
 [[ ! -e $init && ! -e $stage ]] || { echo 'Use an empty boot output for source compilation' >&2; exit 1; }
 cp -a "$base" "$init"
+# Compile a native initramfs handoff; normal boots retain upstream switch-root.
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
+    "$here/offline-switch-root.cpp" -o "$out/uke-offline-switch-root"
+readelf -h "$out/uke-offline-switch-root" | grep -E 'Machine:.*AArch64' >/dev/null
+install -Dm755 "$out/uke-offline-switch-root" "$init/usr/libexec/uke-offline-switch-root"
+mkdir -p "$init/usr/lib/systemd/system/initrd-switch-root.service.d"
+cat > "$init/usr/lib/systemd/system/initrd-switch-root.service.d/50-uke-charger.conf" <<'UNIT'
+# Uke native handoff; no charger signal retains the original systemd command.
+[Service]
+ExecStart=
+ExecStart=/usr/libexec/uke-offline-switch-root
+UNIT
 cp "$here/../../packaging/native/native.config" "$out/.config"
 usb_profile=$(cat "$kernel/native-generated/usb-profile")
 case $usb_profile in peripheral|typec-v1) ;; *) echo 'Missing USB source-profile receipt' >&2; exit 2;; esac

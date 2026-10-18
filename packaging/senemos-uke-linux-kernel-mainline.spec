@@ -5,9 +5,9 @@
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.10
-%if "%{version}" == "7.2.10"
-%global senemos_build_release 30
+Version: 7.2.11
+%if "%{version}" == "7.2.11"
+%global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
@@ -156,6 +156,7 @@ CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
 bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
 bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
@@ -263,67 +264,67 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-29
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-29
 - Add an explicit root-only, read-only firmware threshold query without control admission.
 - Bound diagnostic GETs and reject active leases, lifecycle changes and partial results.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-27
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-27
 - Accept observed UCSI type-2 notifications with opcode-specific validation.
 - Exercise the actual callback's reply, notification and lifecycle boundaries.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-22
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-22
 - Retain exact O82 live timing updates while AVR remains enabled.
 - Update both AVR periods before their common timing flush without panel reset.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-21
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-21
 - Register the single battery diagnostic group with the supported managed API.
 - Remove unused getter snapshots while retaining coordinated generation checks.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-16
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
 - Remove an unused legacy VA scalar flag that OF misinterprets as a GPIO provider.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-15
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
 - Translate the Uke UART wake IRQ to the falling-edge trigger used by its OEM driver.
 - Enable standard Bluetooth LE and BNEP support required by desktop Bluetooth services.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-14
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-14
 - Stop O82 DSI video after both DPU timing engines and preserve panel OFF clocks.
 - Preserve the five-frame watchdog budget at the experimental AVR floor.
 - Correct the captured secondary SPMI resource address and vblank trace refcount.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-13
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-13
 - Align host FDT fixtures to libfdt's eight-byte buffer contract on AArch64.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-12
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
 - Latch EVO/OLE PLL settings on reset exit without waiting for an unavailable ACK.
 - Preserve live PLL checks and propagate register-access failures.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-11
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
 - Disable the exact empty secondary SPMI bus and zero-length OEM demura placeholders.
 - Preserve populated controllers, nonzero reservations and all phandles.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-7
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-7
 - Map OEM paired hall events to standard input switches without physical GPIO ownership.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-6
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-6
 - Admit OEM charger and battery ADC conversions with standard current and temperature units.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-5
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-5
 - Preserve SMP2P input history until a real remote restart.
 - Test ordinary updates and both restart flag transitions.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-4
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-4
 - Exclude PAS from the early module list until root firmware is available.
 
-* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-3
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-3
 - Expose admitted PMIC voltage and temperature channels through standard Linux interfaces.
 - Correct ADC5 Gen3 voltage types and processed units.
 
-* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-2
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-2
 - Restore the source-built native boot bundle with versioned matching modules.
 - Use integer releases and expose signed battery power from voltage/current.
 
-* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.10-1.4056.1
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-1.4056.1
 - Enable standard Bluetooth LE HID input and RFCOMM facilities.
 - Use the Uke UART speed that completes stock QCA firmware transfer.
 
