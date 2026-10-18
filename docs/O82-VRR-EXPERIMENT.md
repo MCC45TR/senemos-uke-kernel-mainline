@@ -91,3 +91,20 @@ directly resolve 119–120 Hz glass cadence.
 Sources: [Uke OEM display drivers](https://github.com/MiCode/vendor_opensource_display-drivers/tree/44275c404a677d9d9e5230fedd1af2ef02fc7b9a),
 [PortareOS AVR patch](https://github.com/portare-ch/portareos/tree/67ed458421d919aba9c687c3f72d7678954b6902),
 [standard DRM semantics](https://docs.kernel.org/gpu/drm-kms.html#variable-refresh-properties).
+
+## Auxiliary measurements, 18 October 2026
+
+`o82-te-sample.cpp` is a read-only native laboratory sampler. It validates the
+Cliffs TLMM compatible, aperture and current GPIO77/78 controls before mapping
+two pages with read-only protection. A two-second release-8 sample detected no
+edges. Wiring, pin input visibility and panel TE configuration remain unknown;
+this result supplies no physical cadence measurement. Do not remux the pins
+or infer a panel protocol from the generic OEM TE references.
+
+`o82-scroll-lab.cpp` creates a temporary standard uinput mouse and delivers a
+finite eight-second wheel sequence without clicks or held keys. Positioning
+was checked with original KDE at scale 2.5 and a centered Dolphin window;
+recheck it after layout changes. Run its self-test first. Synthetic input and
+DRM presentation-event timing are separate from physical finger latency and
+calibrated optical measurements. Both programs are laboratory source tools,
+not startup services or release payloads.
