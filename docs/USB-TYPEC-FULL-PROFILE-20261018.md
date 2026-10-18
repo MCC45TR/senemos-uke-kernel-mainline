@@ -56,3 +56,15 @@ role value comes from successful driver initialization rather than the earlier
 GCTL request. Failed initialization returns the cached role to none, records
 the error and removes the VBUS-valid override. This completion state still does
 not prove USB enumeration, negotiated PD power or physical operation.
+
+Coordinator preflight found that Linux hides the entire role attribute when
+userspace control is disabled. Patch 0069 adds an explicit descriptor opt-in
+for read-only observation. Only the Uke full profile opts in. The role attribute
+is then 0444, and its store callback independently rejects access with EACCES
+before parsing or invoking the setter. UCSI/kernel callers retain control.
+The default hidden interface and existing control-enabled switches retain their
+visibility. The new host fixture extracts actual registration, visibility,
+show/store and kernel role API functions; it checks registration flag copying,
+read-only exposure, direct store rejection, kernel control and requested versus
+observed state. It is prepared for the coordinator and has not run in this
+source task. Full kernel compilation remains a separate check.

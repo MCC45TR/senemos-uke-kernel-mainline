@@ -66,3 +66,4 @@
 0066-phy-uke-qmp-power-routing.patch
 0067-uke-battmgr-qualified-control.patch
 0068-usb-uke-role-completion.patch
+0069-usb-role-readonly-observation.patch

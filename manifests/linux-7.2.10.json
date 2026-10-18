@@ -280,6 +280,10 @@
     {
       "path": "patches/7.2.10/0068-usb-uke-role-completion.patch",
       "sha256": "8cfe3b5ed786d84098ad18f2e83af02cfde6edf977b28123c2e56a34902e04d8"
+    },
+    {
+      "path": "patches/7.2.10/0069-usb-role-readonly-observation.patch",
+      "sha256": "1cecead455c913baac3d1c866777efa9081095fa00fb4584ae4f9b955d53621d"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
