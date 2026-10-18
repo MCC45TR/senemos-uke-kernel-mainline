@@ -18,13 +18,17 @@ static int fail(const char *stage) {
 }
 
 int main(int argc, char **argv) {
+    if (getpid() != 1) {
+        std::fputs("Guest init must run as PID 1 in the disposable VM\n", stderr);
+        return 64;
+    }
     mount("devtmpfs", "/dev", "devtmpfs", MS_NOSUID, nullptr);
     const int console = open("/dev/console", O_RDWR);
     if (console >= 0) {
         for (int fd = 0; fd < 3; ++fd) if (dup2(console, fd) < 0) return 1;
         if (console > 2) close(console);
     }
-    if (getpid() != 1 || argc != 2 || (argv[1][0] != '1' && argv[1][0] != '2') || argv[1][1])
+    if (argc != 2 || (argv[1][0] != '1' && argv[1][0] != '2') || argv[1][1])
         return fail("arguments");
     const int expected = argv[1][0] - '0';
     if (mount("proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC, nullptr) < 0 ||

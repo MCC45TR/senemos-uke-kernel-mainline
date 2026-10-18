@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "5dc909be93175d2d2ffb58da9ae72a6dc5b7e1f6295573ecb4b2847ad3f0aa83"
+      "sha256": "7bbc1fc08b924745ed2d9483f0bfd9a71680e6ca2fc075cde2b33530067603f6"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",

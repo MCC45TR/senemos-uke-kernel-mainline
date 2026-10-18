@@ -25,6 +25,11 @@ original early firmware and the accepted image/module fallback.
 
 `make validate`, `make kvm-probe` and `make srpm` are host operations. The SRPM
 producer verifies the pinned kernel archive/signature and source-asset hashes.
+Rebuild the resulting SRPM in a Fedora Rawhide AArch64 RPM worker. The historical
+`senemos.sh --build` binary producer is explicitly refused on this experimental
+branch because it packages the earlier normal-kernel recipe; its inspection,
+version-resolution dry run and self-tests remain available. It cannot silently
+produce a normal kernel under an EL2 request.
 The upstream MSM XML register generator is the documented host-only Python
 build dependency in `packaging/native/README.md`. No project Python, runtime,
 firmware, credentials or device calibration belongs in the tablet payload.

@@ -1,0 +1,23 @@
+name: Experimental EL2 host contracts
+on:
+  push:
+    branches: [experiment/el2-kvm]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-emulation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install host test tools
+        run: sudo apt-get update && sudo apt-get install -y jq rpm g++ clang lld llvm qemu-system-arm
+      - name: Validate isolated packaging and native refusal
+        run: |
+          make validate kvm-probe
+          bash tests/kvm-probe-contract.sh build/kvm/uke-kvm-probe
+          ./senemos.sh --self-test
+      - name: Test early entry on generic ARM64 TCG
+        run: |
+          bash tests/el2-entry-qemu.sh build build/early-entry
+          bash tests/el2-entry-qemu.sh run build/early-entry

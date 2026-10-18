@@ -16,7 +16,7 @@ init=$out/boot-initramfs stage=$out/boot-modules
 [[ ! -e $init && ! -e $stage ]] || { echo 'Use an empty boot output for source compilation' >&2; exit 1; }
 cp -a "$base" "$init"
 # Compile a native initramfs handoff; normal boots retain upstream switch-root.
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
+"${TARGET_CXX:-clang++}" -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
     "$here/offline-switch-root.cpp" -o "$out/uke-offline-switch-root"
 readelf -h "$out/uke-offline-switch-root" | grep -E 'Machine:.*AArch64' >/dev/null
 install -Dm755 "$out/uke-offline-switch-root" "$init/usr/libexec/uke-offline-switch-root"
@@ -95,7 +95,7 @@ find "$init" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
-clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
+"${HOST_CXX:-clang++}" -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
 "$out/boot-image" inspect "$out/linux.img" > "$out/boot-header.json"
 "$out/boot-image" extract "$out/linux.img" "$out/boot-readback-Image"

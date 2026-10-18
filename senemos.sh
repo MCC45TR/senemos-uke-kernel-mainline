@@ -572,8 +572,8 @@ self_test() {
     bash -n "$ROOT/senemos.sh"
     if command -v shellcheck >/dev/null; then shellcheck -s bash "$ROOT/senemos.sh"; fi
     ok 'shell syntax and available ShellCheck'
-    bash "$KERNEL/tests/mainline-package-contract.sh"
-    ok 'canonical mainline metadata preserves the historical host recipe and installed fallback kernels'
+    bash "$KERNEL/tests/el2-package-contract.sh"
+    ok 'isolated EL2 metadata preserves installed fallback kernels without automatic boot writes'
     fixture_identity() {
         local KERNEL=$temporary/guard-fixture before after
         mkdir -p "$KERNEL/tests"
@@ -762,6 +762,9 @@ done
 if ((DRY_RUN)); then
     command -v jq >/dev/null || die 'Dry-run needs jq; no dependencies will be installed'
 else
+    if [[ -f $KERNEL/EL2.md ]]; then
+        die 'This experiment uses the current native SRPM producer: make srpm, then rebuild that SRPM in Fedora Rawhide AArch64. The historical host recipe is not an EL2 build path.'
+    fi
     bootstrap
     mkdir -p "$KERNEL/referances/releases"
     mkdir -p "$BUILDER/build"

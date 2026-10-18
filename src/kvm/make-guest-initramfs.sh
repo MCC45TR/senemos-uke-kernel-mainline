@@ -13,7 +13,7 @@ interpreter=$(readelf -l "$out/root/init" | sed -n 's/.*interpreter: \(.*\)\]/\1
 install -Dm755 "$interpreter" "$out/root$interpreter"
 needed=$(readelf -d "$out/root/init" | sed -n 's/.*Shared library: \[\(.*\)\]/\1/p')
 [[ $needed == libc.so.6 ]]
-libc=$(ldconfig -p | awk '$1 == "libc.so.6" { print $NF; exit }')
+libc=$(ldconfig -p | awk '$1 == "libc.so.6" && !found { print $NF; found=1 }')
 [[ -f $libc ]]
 install -Dm755 "$libc" "$out/root$libc"
 find "$out/root" -exec touch -h -d '@0' {} +

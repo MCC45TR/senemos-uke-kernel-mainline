@@ -152,6 +152,8 @@ clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Wl,--as-needed native-profile/src/
 
 %check
 bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/tests/kvm-probe-abi.cpp -o %{_uke_out}/kvm-probe-abi
+%{_uke_out}/kvm-probe-abi
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native
 CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
