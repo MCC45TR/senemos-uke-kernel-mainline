@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.10
 %if "%{version}" == "7.2.10"
-%global senemos_build_release 27
+%global senemos_build_release 28
 %else
 %global senemos_build_release 1
 %endif
@@ -160,6 +160,10 @@ CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
 CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-role-observation-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/ucsi-notification-contract.sh drivers/usb/typec/ucsi/ucsi_glink.c
+CXX=clang++ bash native-profile/tests/altmode-notification-contract.sh drivers/soc/qcom/pmic_glink_altmode.c
+for symbol in FW_LOADER_COMPRESS FW_LOADER_COMPRESS_XZ FW_LOADER_COMPRESS_ZSTD; do
+    grep -Fx "CONFIG_$symbol=y" %{_uke_out}/.config
+done
 CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
 CC=clang bash native-profile/tests/adc5-gen3-scalers.sh "$PWD"

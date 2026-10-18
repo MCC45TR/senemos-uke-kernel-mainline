@@ -231,7 +231,7 @@
     },
     {
       "path": "patches/7.2.10/0056-soc-qcom-pmic-altmode-events.patch",
-      "sha256": "6de3be3ef698aa6e4c1bdb49d0409703ba2b0d21f856865f77cedcc86c93fe4f"
+      "sha256": "2a128a33ab3a71229979ccee73401fefcb5d4a0f2cad7a435280a06da0d897bf"
     },
     {
       "path": "patches/7.2.10/0057-drm-msm-uke-dp-hbr2-limit.patch",

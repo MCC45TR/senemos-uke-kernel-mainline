@@ -9,42 +9,39 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 ## Status — 18 October 2026
 
-The accepted POCO Pad X1 display/touch baseline is `7.2.10-23`, running Fedora
-Rawhide AArch64 and original KDE through native O82 DPU/DSI. The combined
-`7.2.10-24` and `-25` candidates boot Fedora and Wi-Fi SSH but fail display
-acceptance. Release 24 waits for a missing QMP regulator provider. Release 25
-admits that exact provider, then exposes a NULL atomic connector-state access
-while attaching the DisplayPort color-depth property. No dock, PD, HDMI or
-charge-control acceptance follows from either build.
+Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora
+Rawhide AArch64 and original KDE. The guarded updater verifies boot B by
+readback and preserves Android boot A unchanged. A normal reboot reaches the
+desktop through native O82 DPU/DSI. Touch is active with zero service restarts;
+the saved VRR policy and balanced power profile persist. The previous DP
+connector-state Oops and UCSI initialization timeout are absent. Brief
+white-flash behavior and long-duration stability remain unqualified.
 
-The `7.2.10-26` build initializes that connector state before attaching its
-property and checks allocation failure. It also blanks the panel backlight
-before native DSI attachment and enables it only after first-frame timing,
-normal-pixel and dimming commands succeed. Host lifecycle and failure tests
-are separate from tablet results. Signed COPR 11167794 packages install through
-DNF. After a forced restart, the tablet runs release 26, both DSI and DP
-connectors register, the touchscreen input is published and original KDE shows
-the internal panel at 144 Hz with its saved VRR policy. The user confirms visible
-output. The previous connector-state Oops is absent from the current kernel
-log. Normal restart and optical white-flash acceptance remain pending. A PMIC
-probe warning, UCSI initialization timeout and optional front-color startup
-failure remain open; this is not a clean-log or complete USB acceptance result.
+With the powered Juo dock attached, USB 2 and 5-Gbit/s USB 3 hub trees, a
+YICHIP HID receiver and an RTL8153 Ethernet adapter enumerate. Evdev records
+mouse motion and the user confirms pointer operation. The standard Type-C
+interface reports host data role, sink power role and USB-PD mode while the
+tablet charges. This does not establish a negotiated voltage, wattage or all
+charging protocols. Ethernet has no cable/carrier test yet. HDMI remains
+disconnected. A PMIC probe warning and optional front-color startup failure
+remain open; this is not a clean-log or complete dock acceptance result.
 
 The current internal path uses RGB101010 and 10-bpc DSC; KDE scans out AR30.
 Selectable internal 8/10/12-bpc link profiles are not implemented. Advertised
 12-bit panel capability does not identify a qualified 12-bpc transport or FRC
-path. External DP exposes a 6..10 max-bpc property. The first powered-dock
-trial finds neither USB dongles nor HDMI output, with no Type-C partner and
-the controller still in device role. No unsupported color-depth or RGB-range
-choice is advertised for DSI.
+path. External DP exposes a 6..10 max-bpc property. No unsupported color-depth
+or RGB-range choice is advertised for DSI.
 
-The release-27 source candidate corrects UCSI asynchronous notification dispatch.
-On release 26, bounded tracing identifies valid type-2 completion notifications
-while SET_NOTIFICATION_ENABLE times out; the previous global type-1 filter
-drops those events. The correction accepts type-2 notifications while retaining
-strict reply types, owner, exact size, receiver and lifecycle checks. The actual
-callback fixture passes and rejects the unchanged release-26 callback. Build,
-package and tablet acceptance of release 27 remain separate pending gates.
+Release 27 corrects the UCSI type-2 notification path. On that kernel, a
+controlled HDMI reconnect also produces a type-2, 32-byte DP notification on
+the separate alternate-mode channel. Its callback still applies a global
+type-1-only filter. The release-28 source candidate dispatches that channel's
+notification types separately from strict write acknowledgements. It retains
+owner, payload-parser, bounded queue and lifecycle guards. It also enables
+standard XZ/Zstandard firmware loading: Fedora supplies the requested Realtek
+firmware as an XZ file, while release 27 cannot decode compressed firmware.
+Source checks, native packaging and physical HDMI/Ethernet results remain
+separate validation stages.
 
 CDC defaults off in the matched full-profile boot/root pair; explicit ACM
 opt-in is provided by the separate native management package. Charging services

@@ -3,11 +3,12 @@ Subject: [PATCH] soc: qcom: preserve PAN events and propagate mux errors
 
 Queue bounded generation-tagged notifications instead of overwriting shared worker state. Keep consumption ACKs independent of mux success, correct the DP pin VDO bitmask, reject invalid fields, and quarantine ambiguous ACK/overflow sessions. Preserve disconnect cleanup on service loss. This does not establish applied QMP state, IRQ delivery to a Uke DP controller or physical display readiness.
 
-diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
-index 13c434f..c1596b3 100644
+
+Route asynchronous type-2 notifications separately from type-1 acknowledgements.
+
 --- a/drivers/soc/qcom/pmic_glink_altmode.c
 +++ b/drivers/soc/qcom/pmic_glink_altmode.c
-@@ -95,6 +95,15 @@ enum pmic_glink_altmode_pin_assignment {
+@@ -95,6 +95,15 @@
  
  struct pmic_glink_altmode;
  
@@ -23,7 +24,7 @@ index 13c434f..c1596b3 100644
  #define work_to_altmode_port(w) container_of((w), struct pmic_glink_altmode_port, work)
  
  struct pmic_glink_altmode_port {
-@@ -110,6 +119,9 @@ struct pmic_glink_altmode_port {
+@@ -110,6 +119,9 @@
  	struct typec_altmode tbt_alt;
  
  	struct work_struct work;
@@ -33,7 +34,7 @@ index 13c434f..c1596b3 100644
  
  	struct auxiliary_device *bridge;
  
-@@ -127,12 +139,17 @@ struct pmic_glink_altmode_port {
+@@ -127,12 +139,17 @@
  
  struct pmic_glink_altmode {
  	struct device *dev;
@@ -51,7 +52,7 @@ index 13c434f..c1596b3 100644
  	struct completion pan_ack;
  	struct pmic_glink_client *client;
  
-@@ -144,37 +161,42 @@ struct pmic_glink_altmode {
+@@ -144,37 +161,42 @@
  static int pmic_glink_altmode_request(struct pmic_glink_altmode *altmode, u32 cmd, u32 arg)
  {
  	struct usbc_write_req req = {};
@@ -112,7 +113,7 @@ index 13c434f..c1596b3 100644
  					 struct pmic_glink_altmode_port *port,
  					 u8 mode, bool hpd_state,
  					 bool hpd_irq)
-@@ -187,26 +209,31 @@ static void pmic_glink_altmode_enable_dp(struct pmic_glink_altmode *altmode,
+@@ -187,26 +209,31 @@
  		dp_data.status |= DP_STATUS_HPD_STATE;
  	if (hpd_irq)
  		dp_data.status |= DP_STATUS_IRQ_HPD;
@@ -148,7 +149,7 @@ index 13c434f..c1596b3 100644
  					  struct pmic_glink_altmode_port *port)
  {
  	struct usbc_sc8280x_tbt_data *tbt = &port->tbt_data;
-@@ -252,19 +279,24 @@ static void pmic_glink_altmode_enable_tbt(struct pmic_glink_altmode *altmode,
+@@ -252,19 +279,24 @@
  	port->state.mode = TYPEC_MODAL_STATE(port->mode);
  
  	ret = typec_mux_set(port->typec_mux, &port->state);
@@ -176,7 +177,7 @@ index 13c434f..c1596b3 100644
  					   struct pmic_glink_altmode_port *port)
  {
  	struct usbc_sc8280x_tbt_data *tbt = &port->tbt_data;
-@@ -290,19 +322,24 @@ static void pmic_glink_altmode_enable_usb4(struct pmic_glink_altmode *altmode,
+@@ -290,19 +322,24 @@
  	port->state.mode = TYPEC_MODE_USB4;
  
  	ret = typec_mux_set(port->typec_mux, &port->state);
@@ -204,7 +205,7 @@ index 13c434f..c1596b3 100644
  					  struct pmic_glink_altmode_port *port)
  {
  	int ret;
-@@ -312,19 +349,24 @@ static void pmic_glink_altmode_enable_usb(struct pmic_glink_altmode *altmode,
+@@ -312,19 +349,24 @@
  	port->state.mode = TYPEC_STATE_USB;
  
  	ret = typec_mux_set(port->typec_mux, &port->state);
@@ -232,7 +233,7 @@ index 13c434f..c1596b3 100644
  				    struct pmic_glink_altmode_port *port)
  {
  	int ret;
-@@ -334,63 +376,123 @@ static void pmic_glink_altmode_safe(struct pmic_glink_altmode *altmode,
+@@ -334,63 +376,123 @@
  	port->state.mode = TYPEC_STATE_SAFE;
  
  	ret = typec_mux_set(port->typec_mux, &port->state);
@@ -277,13 +278,7 @@ index 13c434f..c1596b3 100644
 -						     alt_port->hpd_state,
 -						     alt_port->hpd_irq);
 -		}
-+	struct pmic_glink_altmode_port *port = work_to_altmode_port(work);
-+	struct pmic_glink_altmode *am = port->altmode;
-+	struct pmic_glink_altmode_event event;
-+	unsigned long flags;
-+	bool valid, overflow;
-+	int ret;
- 
+-
 -		if (alt_port->hpd_state)
 -			conn_status = connector_status_connected;
 -		else
@@ -303,6 +298,13 @@ index 13c434f..c1596b3 100644
 -		dev_err(altmode->dev, "Got unknown mux_ctrl: %u on port %u, forcing safe mode\n",
 -			alt_port->mux_ctrl, alt_port->index);
 -		pmic_glink_altmode_safe(altmode, alt_port);
++	struct pmic_glink_altmode_port *port = work_to_altmode_port(work);
++	struct pmic_glink_altmode *am = port->altmode;
++	struct pmic_glink_altmode_event event;
++	unsigned long flags;
++	bool valid, overflow;
++	int ret;
++
 +	for (;;) {
 +		spin_lock_irqsave(&am->event_lock, flags);
 +		overflow = port->overflow;
@@ -398,7 +400,7 @@ index 13c434f..c1596b3 100644
  }
  
  static enum typec_orientation pmic_glink_altmode_orientation(unsigned int orientation)
-@@ -414,6 +516,7 @@ static void pmic_glink_altmode_sc8180xp_notify(struct pmic_glink_altmode *altmod
+@@ -414,6 +516,7 @@
  					       const void *data, size_t len)
  {
  	struct pmic_glink_altmode_port *alt_port;
@@ -406,7 +408,7 @@ index 13c434f..c1596b3 100644
  	const struct usbc_sc8180x_notify *msg;
  	u32 notification;
  	u8 orientation;
-@@ -445,13 +548,16 @@ static void pmic_glink_altmode_sc8180xp_notify(struct pmic_glink_altmode *altmod
+@@ -445,13 +548,16 @@
  		return;
  	}
  
@@ -429,7 +431,7 @@ index 13c434f..c1596b3 100644
  }
  
  #define SC8280XP_DPAM_MASK	0x3f
-@@ -462,6 +568,7 @@ static void pmic_glink_altmode_sc8280xp_notify(struct pmic_glink_altmode *altmod
+@@ -462,6 +568,7 @@
  					       u16 svid, const void *data, size_t len)
  {
  	struct pmic_glink_altmode_port *alt_port;
@@ -437,7 +439,7 @@ index 13c434f..c1596b3 100644
  	const struct usbc_sc8280x_tbt_data *tbt;
  	const struct usbc_sc8280x_dp_data *dp;
  	const struct usbc_notify *notify;
-@@ -475,6 +582,18 @@ static void pmic_glink_altmode_sc8280xp_notify(struct pmic_glink_altmode *altmod
+@@ -475,6 +582,18 @@
  	}
  
  	notify = data;
@@ -456,7 +458,7 @@ index 13c434f..c1596b3 100644
  
  	port = notify->port_idx;
  	orientation = notify->orientation;
-@@ -484,25 +603,33 @@ static void pmic_glink_altmode_sc8280xp_notify(struct pmic_glink_altmode *altmod
+@@ -484,25 +603,33 @@
  		return;
  	}
  
@@ -499,14 +501,13 @@ index 13c434f..c1596b3 100644
  }
  
  static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv)
-@@ -511,13 +638,25 @@ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv
+@@ -511,18 +638,36 @@
  	const struct pmic_glink_hdr *hdr = data;
  	u16 opcode;
  	u16 svid;
 +	unsigned long flags;
  
-+	if (len < sizeof(*hdr) || le32_to_cpu(hdr->owner) != altmode->owner_id ||
-+	    le32_to_cpu(hdr->type) != PMIC_GLINK_REQ_RESP)
++	if (len < sizeof(*hdr) || le32_to_cpu(hdr->owner) != altmode->owner_id)
 +		return;
  	opcode = le32_to_cpu(hdr->opcode) & 0xff;
  	svid = le32_to_cpu(hdr->opcode) >> 16;
@@ -514,7 +515,8 @@ index 13c434f..c1596b3 100644
  	switch (opcode) {
  	case USBC_CMD_WRITE_REQ:
 -		complete(&altmode->pan_ack);
-+		if (le32_to_cpu(hdr->opcode) != USBC_CMD_WRITE_REQ)
++		if (le32_to_cpu(hdr->opcode) != USBC_CMD_WRITE_REQ ||
++		    le32_to_cpu(hdr->type) != PMIC_GLINK_REQ_RESP)
 +			return;
 +		spin_lock_irqsave(&altmode->event_lock, flags);
 +		if (altmode->pending && !altmode->stopping && !altmode->quarantined && altmode->online) {
@@ -525,12 +527,26 @@ index 13c434f..c1596b3 100644
 +		spin_unlock_irqrestore(&altmode->event_lock, flags);
  		break;
  	case USBC_NOTIFY_IND:
++		if (le32_to_cpu(hdr->type) != PMIC_GLINK_NOTIFY &&
++		    le32_to_cpu(hdr->type) != PMIC_GLINK_REQ_RESP)
++			return;
  		pmic_glink_altmode_sc8280xp_notify(altmode, svid, data, len);
-@@ -555,10 +694,54 @@ static void pmic_glink_altmode_enable_worker(struct work_struct *work)
+ 		break;
+ 	case USBC_SC8180X_NOTIFY_IND:
++		if (le32_to_cpu(hdr->type) != PMIC_GLINK_NOTIFY &&
++		    le32_to_cpu(hdr->type) != PMIC_GLINK_REQ_RESP)
++			return;
+ 		pmic_glink_altmode_sc8180xp_notify(altmode, data, len);
+ 		break;
+ 	}
+@@ -555,10 +700,54 @@
  
  static void pmic_glink_altmode_pdr_notify(void *priv, int state)
  {
 -	struct pmic_glink_altmode *altmode = priv;
+-
+-	if (state == SERVREG_SERVICE_STATE_UP)
+-		schedule_work(&altmode->enable_work);
 +	struct pmic_glink_altmode *am = priv;
 +	bool online = state == SERVREG_SERVICE_STATE_UP;
 +	unsigned long flags;
@@ -555,9 +571,7 @@ index 13c434f..c1596b3 100644
 +	}
 +	spin_unlock_irqrestore(&am->event_lock, flags);
 +}
- 
--	if (state == SERVREG_SERVICE_STATE_UP)
--		schedule_work(&altmode->enable_work);
++
 +static void pmic_glink_altmode_stop(void *data)
 +{
 +	struct pmic_glink_altmode *am = data;
@@ -584,7 +598,7 @@ index 13c434f..c1596b3 100644
  }
  
  static const struct of_device_id pmic_glink_altmode_of_quirks[] = {
-@@ -582,6 +765,8 @@ static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
+@@ -582,6 +771,8 @@
  		return -ENOMEM;
  
  	altmode->dev = dev;
@@ -593,7 +607,7 @@ index 13c434f..c1596b3 100644
  
  	match = of_match_device(pmic_glink_altmode_of_quirks, dev->parent);
  	if (match)
-@@ -592,6 +777,7 @@ static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
+@@ -592,6 +783,7 @@
  	INIT_WORK(&altmode->enable_work, pmic_glink_altmode_enable_worker);
  	init_completion(&altmode->pan_ack);
  	mutex_init(&altmode->lock);
@@ -601,7 +615,7 @@ index 13c434f..c1596b3 100644
  
  	device_for_each_child_node(dev, fwnode) {
  		ret = fwnode_property_read_u32(fwnode, "reg", &port);
-@@ -632,6 +818,10 @@ static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
+@@ -632,6 +824,10 @@
  		alt_port->tbt_alt.active = 1;
  
  		alt_port->typec_mux = fwnode_typec_mux_get(fwnode);
@@ -612,7 +626,7 @@ index 13c434f..c1596b3 100644
  		if (IS_ERR(alt_port->typec_mux)) {
  			fwnode_handle_put(fwnode);
  			return dev_err_probe(dev, PTR_ERR(alt_port->typec_mux),
-@@ -662,6 +852,10 @@ static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
+@@ -662,6 +858,10 @@
  		}
  
  		alt_port->typec_switch = fwnode_typec_switch_get(fwnode);
@@ -623,7 +637,7 @@ index 13c434f..c1596b3 100644
  		if (IS_ERR(alt_port->typec_switch)) {
  			fwnode_handle_put(fwnode);
  			return dev_err_probe(dev, PTR_ERR(alt_port->typec_switch),
-@@ -687,6 +881,10 @@ static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
+@@ -687,6 +887,10 @@
  			return ret;
  	}
  
@@ -634,7 +648,7 @@ index 13c434f..c1596b3 100644
  	altmode->client = devm_pmic_glink_client_alloc(dev,
  						       altmode->owner_id,
  						       pmic_glink_altmode_callback,
-@@ -706,9 +904,15 @@ static const struct auxiliary_device_id pmic_glink_altmode_id_table[] = {
+@@ -706,9 +910,15 @@
  };
  MODULE_DEVICE_TABLE(auxiliary, pmic_glink_altmode_id_table);
  
