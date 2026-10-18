@@ -62,7 +62,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0036-uke-o82-all-mode-avr-experiment.patch \
                  0037-uke-avr-vblank-timestamp.patch \
                  0038-uke-avr-frame-watchdog.patch \
-                 0039-uke-o82-stop-source-before-video.patch; do
+                 0039-uke-o82-stop-source-before-video.patch \
+                 0040-uke-o82-experimental-vrr-capability.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

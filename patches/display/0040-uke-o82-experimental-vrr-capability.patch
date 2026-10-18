@@ -1,0 +1,129 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: expose opted-in O82 AVR through standard DRM metadata
+
+Keep the production default disabled. When the explicit experiment floor
+admits every probed OEM mode on the exact bonded O82 pipeline, report the
+standard connector capability and monitor range. Reuse the atomic admission
+checks and derive the ceiling from the actual probed modes. Other MSM KMS
+implementations keep a null callback and do not advertise the experiment.
+Attach the immutable property before connector registration; later probes
+only update its value. No EDID, KDE change or additional MMIO is involved.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -609,8 +609,8 @@
+ 		slave->hw_intf && slave->hw_intf->idx == INTF_2;
+ }
+ 
+-bool dpu_encoder_uke_vrr_check(struct drm_encoder *drm_enc,
+-		const struct drm_crtc_state *state)
++unsigned int dpu_encoder_uke_vrr_min_hz(struct drm_encoder *drm_enc,
++		const struct drm_display_mode *mode)
+ {
+ 	struct dpu_encoder_virt *enc = to_dpu_encoder_virt(drm_enc);
+ 	struct msm_drm_private *priv = drm_enc->dev->dev_private;
+@@ -621,8 +621,14 @@
+ 		enc->disp_info.num_of_h_tiles == 2 &&
+ 		enc->disp_info.h_tile_instance[0] == 0 &&
+ 		enc->disp_info.h_tile_instance[1] == 1 &&
+-		qcom_uke_o82_avr_lines(&state->adjusted_mode, o82_vrr_test_min_hz) > 0 &&
+-		msm_dsi_manager_uke_avr_check(drm_enc, &state->adjusted_mode);
++		qcom_uke_o82_avr_lines(mode, o82_vrr_test_min_hz) > 0 &&
++		msm_dsi_manager_uke_avr_check(drm_enc, mode) ? o82_vrr_test_min_hz : 0;
++}
++
++bool dpu_encoder_uke_vrr_check(struct drm_encoder *drm_enc,
++		const struct drm_crtc_state *state)
++{
++	return dpu_encoder_uke_vrr_min_hz(drm_enc, &state->adjusted_mode) != 0;
+ }
+ 
+ static void dpu_encoder_uke_avr_disable(struct dpu_encoder_virt *enc)
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
+@@ -19,6 +19,9 @@
+ 
+ #define IDLE_TIMEOUT	(66 - 16/2)
+ 
++unsigned int dpu_encoder_uke_vrr_min_hz(struct drm_encoder *encoder,
++		const struct drm_display_mode *mode);
++
+ #define MAX_H_TILES_PER_DISPLAY 2
+ 
+ /**
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+@@ -1067,6 +1067,7 @@
+ }
+ 
+ static const struct msm_kms_funcs kms_funcs = {
++	.get_vrr_min_hz = dpu_encoder_uke_vrr_min_hz,
+ 	.hw_init         = dpu_kms_hw_init,
+ 	.irq_preinstall  = dpu_core_irq_preinstall,
+ 	.irq_postinstall = dpu_irq_postinstall,
+--- a/drivers/gpu/drm/msm/msm_kms.h
++++ b/drivers/gpu/drm/msm/msm_kms.h
+@@ -23,6 +23,9 @@
+  * for constructing the appropriate planes/crtcs/encoders/connectors.
+  */
+ struct msm_kms_funcs {
++	/* Read-only mode admission; zero leaves connector VRR disabled. */
++	unsigned int (*get_vrr_min_hz)(struct drm_encoder *encoder,
++				     const struct drm_display_mode *mode);
+ 	/* hw initialization: */
+ 	int (*hw_init)(struct msm_kms *kms);
+ 	/* irq handling: */
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -826,10 +826,49 @@
+ 		DRM_ERROR("Unable to create bridge connector\n");
+ 		return PTR_ERR(connector);
+ 	}
++	if (dsi_bridge->o82_panel) {
++		ret = drm_connector_attach_vrr_capable_property(connector);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return 0;
+ }
+ 
++void qcom_uke_dsi_update_vrr(struct mipi_dsi_device *dsi,
++		struct drm_connector *connector)
++{
++	struct msm_dsi *master = dsi_mgr_get_dsi(DSI_CLOCK_MASTER);
++	struct msm_drm_private *priv = connector->dev->dev_private;
++	struct drm_encoder *encoder;
++	struct drm_display_mode *mode;
++	unsigned int min_hz = 0, max_hz = 0, floor;
++
++	if (!connector->vrr_capable_property)
++		return;
++	drm_connector_set_vrr_capable_property(connector, false);
++	connector->display_info.monitor_range.min_vfreq = 0;
++	connector->display_info.monitor_range.max_vfreq = 0;
++	if (!dsi || !master || dsi->host != master->host ||
++	    !priv->kms->funcs->get_vrr_min_hz)
++		return;
++	drm_connector_for_each_possible_encoder(connector, encoder) {
++		list_for_each_entry(mode, &connector->probed_modes, head) {
++			floor = priv->kms->funcs->get_vrr_min_hz(encoder, mode);
++			if (!floor || (min_hz && min_hz != floor))
++				return;
++			min_hz = floor;
++			max_hz = max_t(unsigned int, max_hz, drm_mode_vrefresh(mode));
++		}
++	}
++	if (!min_hz || max_hz <= min_hz)
++		return;
++	connector->display_info.monitor_range.min_vfreq = min_hz;
++	connector->display_info.monitor_range.max_vfreq = max_hz;
++	drm_connector_set_vrr_capable_property(connector, true);
++}
++EXPORT_SYMBOL_GPL(qcom_uke_dsi_update_vrr);
++
+ int qcom_uke_dsi_pen_clear_batch(struct mipi_dsi_device *dsi,
+ 		const struct mipi_dsi_msg *msgs)
+ {

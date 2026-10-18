@@ -2,7 +2,8 @@
 
 18 October 2026. This source path is an **unqualified receiver experiment**
 for Uke SM7675, the native OEM PB/42 profile, dual DSI and DSC. It defaults to
-off. There is no qualified VRR range or `vrr_capable` advertisement.
+off. There is no physically qualified VRR range. Release 17 adds an explicitly
+opted-in `vrr_capable` advertisement for desktop integration experiments.
 
 The existing seven fixed modes and panel command sequences are retained.
 The code handles the CRTC's standard atomic `VRR_ENABLED` state. Linux's
@@ -19,7 +20,13 @@ source extends host admission to all seven exact OEM modes, with an
 experimental request floor of 30 Hz. A 144 Hz base permits a requested
 30–144 Hz sweep through VFP extension. This is a laboratory envelope,
 not a panel rating or a qualified connector range.
-Do not enable it in a release configuration or compositor policy.
+Do not enable it in a production release configuration. With the existing
+experiment parameter set to 30, release 17 reports the standard DRM connector
+capability to the original KDE compositor. Every actual probed mode must pass
+the same DPU/DSI admission used by atomic checking; the monitor ceiling comes
+from those modes. The property remains false with the default parameter, a
+foreign topology, a missing provider or a refused mode. This desktop opt-in
+does not qualify receiver tolerance, flicker or physical cadence.
 
 The full DRM mode clock and horizontal total give 2,329 maximum vertical
 lines for the initial 119 Hz request. A 144 Hz base and 30 Hz request
@@ -74,8 +81,8 @@ that test boot. Keep the installed fallback and Android return route.
    fixed-mode baseline. Check full modeset, DPMS and suspend/resume separately.
 
 Physical cadence, receiver tolerance, flicker, input behavior, reset/recovery
-and suspend acceptance remain required before advertising VRR capability.
-The parameter alone is not an end-user Adaptive Sync implementation.
+and suspend acceptance remain required before enabling VRR in production.
+The experimental KDE option alone is not physical acceptance evidence.
 
 `src/display/o82-avr-lab.cpp` is a native libdrm lab application, not a
 desktop service. Build it with the host AArch64 SDK's C++17 compiler and

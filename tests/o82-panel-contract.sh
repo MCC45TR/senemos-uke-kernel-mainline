@@ -188,6 +188,9 @@ struct host_ops { ssize_t (*transfer)(struct mipi_dsi_host *,const struct mipi_d
 struct mipi_dsi_host { struct host_ops *ops; int id; };
 struct mipi_dsi_device { struct mipi_dsi_host *host; unsigned long mode_flags;
     unsigned int lanes,format; struct drm_dsc_config *dsc; int id; struct device dev; };
+static void qcom_uke_dsi_update_vrr(struct mipi_dsi_device *d,struct drm_connector *c) {
+    (void)d; assert(published && c->display_info.bpc==10);
+}
 static ssize_t mipi_dsi_dcs_read(struct mipi_dsi_device *d,u8 reg,void *value,size_t len) {
     assert(d->id==0 && !(d->mode_flags&MIPI_DSI_MODE_LPM) && len==1);
     assert(reg==0xda || reg==0x0a || (reg>=0x0c && reg<=0x0f) || reg==0x54);

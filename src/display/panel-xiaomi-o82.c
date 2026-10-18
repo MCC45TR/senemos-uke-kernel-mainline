@@ -655,6 +655,7 @@ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connecto
 	connector->display_info.bpc = 10;
 	connector->display_info.width_mm = 237;
 	connector->display_info.height_mm = 158;
+	qcom_uke_dsi_update_vrr(ctx->dsi[0], connector);
 	return count;
 }
 

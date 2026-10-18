@@ -39,6 +39,10 @@ Patch `0035` adds a default-disabled, bounded video AVR receiver experiment.
 It uses standard atomic `VRR_ENABLED` with one logical owner for both DSI
 links and INTFs, without advertising a qualified range. See the
 [experiment and validation procedure](../../docs/O82-VRR-EXPERIMENT.md).
+Patch `0040` exposes the standard connector capability to the original desktop
+only when the explicit experiment floor admits every probed OEM mode. Default
+configuration remains disabled. This is desktop integration source, with
+physical cadence and panel tolerance still unqualified.
 
 The paired KTZ8866 driver already uses Xiaomi's normal-mode logarithmic table
 and reports the standard non-linear backlight scale. On native50, requests of

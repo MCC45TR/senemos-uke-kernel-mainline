@@ -21,6 +21,7 @@ static inline int qcom_uke_display_release(struct device *supplier,
 struct mipi_dsi_device;
 struct mipi_dsi_msg;
 struct drm_panel;
+struct drm_connector;
 struct drm_display_mode;
 
 /* Registered by the panel so modular MSM never depends on its client module. */
@@ -33,6 +34,9 @@ struct qcom_uke_o82_dfps_ops {
 
 /* Synchronous, exact O82 four-packet HS TP-FPS group; no queued state. */
 #if IS_REACHABLE(CONFIG_DRM_MSM) && IS_ENABLED(CONFIG_DRM_MSM_DSI)
+/* Refresh metadata from the actual probed modes; performs no hardware writes. */
+void qcom_uke_dsi_update_vrr(struct mipi_dsi_device *dsi,
+		struct drm_connector *connector);
 int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 			      const struct mipi_dsi_msg *msgs);
 int qcom_uke_dsi_pen_clear_batch(struct mipi_dsi_device *dsi,
@@ -47,6 +51,10 @@ int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,
 int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,
 			 const struct mipi_dsi_msg *msgs, unsigned int count);
 #else
+static inline void qcom_uke_dsi_update_vrr(struct mipi_dsi_device *dsi,
+		struct drm_connector *connector)
+{
+}
 static inline int qcom_uke_dsi_tp_fps_batch(struct mipi_dsi_device *dsi,
 					 const struct mipi_dsi_msg *msgs)
 {
