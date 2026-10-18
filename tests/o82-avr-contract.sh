@@ -103,7 +103,7 @@ int main(void) {
  assert(qcom_uke_o82_avr_lines(&base,119)==2329);
  for(unsigned hz=1;hz<1000;++hz) {
   int lines=qcom_uke_o82_avr_lines(&base,hz);
-  assert((lines>0)==(hz==119));
+  assert((lines>0)==(hz>=30&&hz<=120));
   if(lines>0) {
    assert((u64)lines*base.htotal*hz<=(u64)base.clock*1000);
    assert((u64)(lines+1)*base.htotal*hz>(u64)base.clock*1000);
@@ -113,6 +113,20 @@ int main(void) {
  struct drm_display_mode bad=base;
  bad.vtotal=4620;bad.vsync_start=4472;bad.vsync_end=4474;
  assert(qcom_uke_o82_avr_lines(&bad,119)==-EINVAL);
+ const struct drm_display_mode modes[] = {
+  {967428,3200,3426,3458,3490,0,2136,2162,2164,2310,0,0},
+  {1097712,3200,3236,3268,3300,0,2136,2162,2164,2310,0,0},
+  {804988,3200,3808,3840,3872,0,2136,2162,2164,2310,0,0},
+  {967428,3200,3426,3458,3490,0,2136,4472,4474,4620,0,0},
+  {804988,3200,3808,3840,3872,0,2136,4010,4012,4158,0,0},
+  {804988,3200,3808,3840,3872,0,2136,4183,4185,4331,0,0},
+  {804988,3200,3808,3840,3872,0,2136,6782,6784,6930,0,0},
+ };
+ const int max_lines[] = {9240,11088,6929,9240,6929,6929,6930};
+ for(unsigned i=0;i<ARRAY_SIZE(modes);++i) {
+  assert(qcom_uke_o82_avr_lines(&modes[i],30)==max_lines[i]);
+  assert(qcom_uke_o82_avr_lines(&modes[i],29)==-EINVAL);
+ }
  bad=base;bad.clock++;assert(qcom_uke_o82_avr_lines(&bad,119)==-EINVAL);
  struct dpu_hw_intf a={0},b={0};u32 period;
  a.hw.reg[INTF_HSYNC_CTL]=572U<<16;b.hw.reg[INTF_HSYNC_CTL]=572U<<16;
@@ -163,6 +177,35 @@ C
  -fsanitize-undefined-trap-on-error -I"$work" "$work/check.c" -o "$work/check"
 "$work/check"
 printf 'Actual AVR: rational floor, experiment bounds, local INTF units/overflow, bonded readiness/locking/readback rollback and fixed fallback passed\n'
+cat > "$work/timestamp.c" <<'C'
+#include <assert.h>
+#include <stdbool.h>
+typedef long long ktime_t;
+struct drm_crtc_state { bool vrr_enabled; };
+struct drm_crtc { struct drm_crtc_state *state; };
+#define READ_ONCE(x) (x)
+static unsigned calls;
+static bool drm_crtc_vblank_helper_get_vblank_timestamp(struct drm_crtc *c,
+ int *error, ktime_t *time, bool irq) {
+ assert(!c->state->vrr_enabled && *error==123 && irq);
+ ++calls; *time=456; return true;
+}
+C
+crtc=$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+awk '/^static bool dpu_crtc_get_vblank_timestamp\(/ {emit=1;found=1} emit {print} emit&&/^}/ {exit} END {if(!found)exit 1}' "$crtc" >> "$work/timestamp.c"
+cat >> "$work/timestamp.c" <<'C'
+int main(void) {
+ struct drm_crtc_state s={false}; struct drm_crtc c={&s}; int error=123;ktime_t time=0;
+ assert(dpu_crtc_get_vblank_timestamp(&c,&error,&time,true)&&calls==1&&time==456);
+ s.vrr_enabled=true;time=0;
+ assert(!dpu_crtc_get_vblank_timestamp(&c,&error,&time,true)&&calls==1&&!time);
+ assert(!dpu_crtc_get_vblank_timestamp(&c,&error,&time,false)&&calls==1&&!time);
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/timestamp.c" -o "$work/timestamp"
+"$work/timestamp"
+grep -Fq '.get_vblank_timestamp = dpu_crtc_get_vblank_timestamp,' "$crtc"
+printf 'Actual timestamp callback: fixed helper retained; VRR selects DRM core estimate inside and outside IRQ\n'
 # Run the logical encoder owner with two physical interfaces and injected errors.
 cat > "$work/lifecycle.c" <<'C'
 #include <assert.h>

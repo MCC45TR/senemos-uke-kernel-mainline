@@ -1,0 +1,39 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: admit exact OEM modes to the O82 AVR experiment
+
+Retain the opt-in receiver experiment and bonded transaction. Validate the
+existing exact seven-mode contract rather than only the initial 120 Hz
+control. The request floor is still experimental, not an advertised range.
+No panel commands or connector capability are changed.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -229,6 +229,6 @@ static unsigned int o82_vrr_test_min_hz;
+ module_param(o82_vrr_test_min_hz, uint, 0400);
+ MODULE_PARM_DESC(o82_vrr_test_min_hz,
+-	"Unqualified O82-42 receiver experiment; 0 disables, maximum 32 extra lines");
++	"Unqualified O82-42 receiver experiment; 0 disables, OEM modes only");
+ 
+ static u32 dither_matrix[DITHER_MATRIX_SZ] = {
+ 	15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10
+@@ -700,3 +700,4 @@ static void dpu_encoder_uke_avr_update(struct dpu_encoder_virt *enc)
+-	DRM_INFO("O82 unqualified AVR experiment: %d maximum lines per frame\n", lines);
++	DRM_INFO("O82 unqualified AVR: lines=%d, local INTF periods=%u/%u\n",
++		 lines, periods[0], periods[1]);
+ 	return;
+ fail:
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -3553,7 +3553,6 @@ bool msm_dsi_host_uke_avr_check(struct mipi_dsi_host *host,
+ 		const struct drm_display_mode *mode)
+ {
+-	return dsi_uke_o82_refresh_modes(to_msm_dsi_host(host), mode) &&
+-		qcom_uke_o82_mode_group(mode) == 0 && mode->vtotal == 2310;
++	return dsi_uke_o82_refresh_modes(to_msm_dsi_host(host), mode);
+ }
+ 
+ int msm_dsi_host_uke_avr_pair(struct mipi_dsi_host *host0,

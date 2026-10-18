@@ -1,0 +1,36 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: use the core timestamp estimate during AVR
+
+The scanout-position helper uses nominal mode geometry. An AVR frame can
+extend its VFP, so that geometry cannot establish a precise timestamp.
+Return false while VRR is requested to select DRM's monotonic IRQ-time
+estimate. Preserve the existing precise helper for fixed scanout.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+@@ -270,3 +270,15 @@
++static bool dpu_crtc_get_vblank_timestamp(struct drm_crtc *crtc,
++		int *max_error, ktime_t *vblank_time, bool in_vblank_irq)
++{
++	/* Nominal scanout geometry does not describe an AVR-extended VFP. */
++	if (READ_ONCE(crtc->state->vrr_enabled))
++		return false;
++
++	return drm_crtc_vblank_helper_get_vblank_timestamp(crtc, max_error,
++						vblank_time, in_vblank_irq);
++}
++
++
+ static bool dpu_crtc_get_scanout_position(struct drm_crtc *crtc,
+ 					   bool in_vblank_irq,
+ 					   int *vpos, int *hpos,
+@@ -1863,5 +1875,5 @@ static const struct drm_crtc_funcs dpu_crtc_funcs = {
+ 	.enable_vblank  = msm_crtc_enable_vblank,
+ 	.disable_vblank = msm_crtc_disable_vblank,
+-	.get_vblank_timestamp = drm_crtc_vblank_helper_get_vblank_timestamp,
++	.get_vblank_timestamp = dpu_crtc_get_vblank_timestamp,
+ 	.get_vblank_counter = dpu_crtc_get_vblank_counter,
+ };
