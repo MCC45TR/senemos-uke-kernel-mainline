@@ -1,0 +1,36 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: round compressed active width up for DSI
+
+Uke's O82 interface has 1600 active pixels, 10 bits per component and an
+8-bpp compressed stream. Truncation gives 426 active pixel clocks while
+the DSI host rounds up to 427. With the same pixel clock and porches, the
+two timing engines then disagree on every line's period.
+
+Match the DSI host and the exact Uke OEM timing conversion, which uses
+drm_fixp2int_ceil() after dividing active width by the compression ratio.
+The source comparison is Xiaomi display-drivers,
+revision 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/sde/sde_encoder_phys_vid.c, drm_mode_to_intf_timing_params().
+
+This patch is staged only for the isolated native display profile. It
+does not qualify panel output or change the supported firmware scanout.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+ drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
+@@ -134,8 +134,8 @@ static void drm_mode_to_intf_timing_params(
+ 		 * TODO: replace drm_dsc_get_bpp_int with logic to handle
+ 		 * fractional part if there is fraction
+ 		 */
+-		timing->width = timing->width * drm_dsc_get_bpp_int(dsc) /
+-				(dsc->bits_per_component * 3);
++		timing->width = DIV_ROUND_UP(timing->width * drm_dsc_get_bpp_int(dsc),
++					     dsc->bits_per_component * 3);
+ 		timing->xres = timing->width;
+ 		timing->dce_bytes_per_line = msm_dsc_get_bytes_per_line(dsc);
+ 	}

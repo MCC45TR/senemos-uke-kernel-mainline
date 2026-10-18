@@ -1,0 +1,2 @@
+# Unified diff context has a mandatory leading space before source indentation.
+*.patch whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab

@@ -1,236 +1,251 @@
 # Senemos Uke Mainline Kernel
 
-Mainline Linux kernel development for **Xiaomi Pad 7** and **POCO Pad X1**
-(`uke`, Qualcomm SM7675). This repository maintains the Uke platform patches,
-device tree, configuration and Fedora packaging needed to advance the port
-through reviewed upstream stable releases.
+Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
+(`uke`, Qualcomm SM7675).
 
-**Current development profile:** Linux **7.2.9** · **AArch64** · **Fedora Rawhide**
+**Development target:** Linux 7.2.11 · AArch64 · Fedora Rawhide
 
-[Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.9.json) · [Hardware status](https://github.com/MCC45TR/uke-linux-docs/blob/main/DEVICE-STATUS.md) · [Build records](https://github.com/MCC45TR/uke-fedora-builder/tree/main/reports) · [Uke Linux project](https://github.com/MCC45TR/uke-linux)
+This `experiment/el2-kvm` branch retains the current native source profile and
+adds a separate KVM package and [EL2 acceptance path](EL2.md). Physical Uke EL2
+handoff remains unqualified. Package installation does not select or write boot.
 
-## Project status
+[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.2.11.json)
 
-The separate [EL2/KVM experiment](EL2.md) measures actual KVM guest execution.
-Stock Uke EL1 boot remains the recorded baseline; an EL2 firmware handoff is not
-yet established. The experiment does not publish production COPR packages.
+The 18 October source update targets signed Linux 7.2.11 with the existing USB,
+battery and VRR adaptations. A native charger-boot handoff selects a separately
+packaged minimal charging interface only from an explicit bootloader signal.
+It does not qualify charge cutoff, bypass or physical offline charging. Tablet
+results below retain their exact older kernel identities until separately tested.
 
-The Uke adaptation has produced an ARM64 kernel Image, an independent Uke DTB,
-matching modules and Fedora RPM/SRPM packages. Local source verification,
-compilation, module ABI and package lifecycle checks have separate records.
-Native AArch64 builds are published through the development COPR.
+## Status — 18 October 2026
 
-The next display candidate enables built-in upstream `simpledrm` for the
-existing firmware framebuffer. It provides a possible software-rendered
-Wayland scanout path while the Adreno 732 native GPU/GMU/SMMU port remains open.
-The early console uses DRM fbdev; upstream excludes the legacy simplefb driver
-when simpledrm is enabled. The rejected 1.16 combination is not a usable build.
-The paired normal-backlight candidate preserves firmware initialization and
-requires independent physical brightness and recovery tests. Neither change
-establishes accelerated graphics, panel ownership or sensor-driven rotation.
+Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora
+Rawhide AArch64 and original KDE. The guarded updater verifies boot B by
+readback and preserves Android boot A unchanged. A normal reboot reaches the
+desktop through native O82 DPU/DSI. Touch is active with zero service restarts;
+the saved VRR policy and balanced power profile persist. The previous DP
+connector-state Oops and UCSI initialization timeout are absent. Brief
+white-flash behavior and long-duration stability remain unqualified.
 
-**Physical boot and peripheral support are still untested.** Packages are
-development candidates. A Core filesystem candidate exists; qualified Uke UEFI
-boot integration remains open. Compatibility is recorded separately for
-each model, SKU, installed firmware and hardware variant in the
-[device matrix](https://github.com/MCC45TR/uke-linux-docs/blob/main/DEVICE-STATUS.md).
+With the powered Juo dock attached, USB 2 and 5-Gbit/s USB 3 hub trees, a
+YICHIP HID receiver and an RTL8153 Ethernet adapter enumerate. Evdev records
+mouse motion and the user confirms pointer operation. The standard Type-C
+interface reports host data role, sink power role and USB-PD mode while the
+tablet charges. This does not establish a negotiated voltage, wattage or all
+charging protocols. Ethernet has no cable/carrier test yet. HDMI remains
+disconnected. A PMIC probe warning and optional front-color startup failure
+remain open; this is not a clean-log or complete dock acceptance result.
 
-| Area | Current scope |
-|---|---|
-| Upstream source | Signed Linux 7.2.9 release with a pinned source identity |
-| Platform adaptation | Native COPR eight-patch release 1.4; thirteen-patch release 1.5 passed local Image/DTB/module and RPM/SRPM qualification |
-| Device tree | Independent compile-stage Uke description; firmware-specific RAM and dynamic reservations still require boot handoff validation |
-| Fedora packages | Kernel, modules and DTB packages for Rawhide AArch64, with source and build metadata |
-| Display, touch, GPU and storage | Further Uke driver and device-tree work; no own-device acceptance |
-| Wireless, audio, sensors, charging and suspend | Tracked individually in the device matrix; no own-device acceptance |
+The current internal path uses RGB101010 and 10-bpc DSC; KDE scans out AR30.
+Selectable internal 8/10/12-bpc link profiles are not implemented. Advertised
+12-bit panel capability does not identify a qualified 12-bpc transport or FRC
+path. External DP exposes a 6..10 max-bpc property. No unsupported color-depth
+or RGB-range choice is advertised for DSI.
 
-Compiled drivers and a compiled DTB establish buildability. Their runtime
-behavior needs firmware-matched boot and hardware tests. Unreviewed peripherals
-remain disabled in the independent DTS. Xiaomi Pad 7 Pro (`muyu`) and Pad 5
-(`nabu`) have separate platform requirements.
+Release 27 corrects the UCSI type-2 notification path. On that kernel, a
+controlled HDMI reconnect also produces a type-2, 32-byte DP notification on
+the separate alternate-mode channel. Its callback still applies a global
+type-1-only filter. The release-28 source candidate dispatches that channel's
+notification types separately from strict write acknowledgements. It retains
+owner, payload-parser, bounded queue and lifecycle guards. It also enables
+standard XZ/Zstandard firmware loading: Fedora supplies the requested Realtek
+firmware as an XZ file, while release 27 cannot decode compressed firmware.
+Source checks, native packaging and physical HDMI/Ethernet results remain
+separate validation stages.
 
-The new UFS PHY profile preserves OEM Cliffs tuning rather than aliasing the
-SM8650 profile. Its 79 effective register addresses match the pinned OEM tables
-for Gear 4/5 and Rate A/B in a host comparison. This does not enable the UFS
-controller in the board DTS or qualify power, reset, DMA and storage operation.
-See [UFS bring-up](docs/UFS-BRINGUP.md).
+Signed COPR 11168191 subsequently provides release 28. Exact source/payload,
+signature, module and initramfs checks pass. DNF installs the matched bundle;
+boot B readback matches and Android A is unchanged. A normal reboot returns to
+SSH and the original KDE session. Touch service readiness and zero restarts
+are verified; the user confirms physical display and touch operation. The first KDE
+policy is Automatic; the previous Always preference is restored through
+KScreen and persisted. With 144 Hz selected, DPU measurement reports about
+30 Hz at idle with VRR enabled; this is not optical panel metrology.
 
-The [October 6 kernel build record](reports/FIRST-CONSOLE-KERNEL-BUILD-2026-10-06.json)
-identifies the new local release `7.2.9-1.4.fc46`, its Image/config hashes and
-1,146 rebuilt modules. Independent SRPM preparation and an isolated AArch64
-install, upgrade and removal test passed. Its EFI/simple framebuffer and fbcon
-configuration supports the first-console work; the board USB/UFS provider graph
-and exact firmware handoff remain open. Native COPR acceptance is recorded
-separately from these unsigned local candidates.
+The earlier Realtek missing-firmware error is absent after the compressed-loader
+change, and ethtool reports `rtl8153b-2 v2 04/27/23`. Carrier is zero and Ethernet
+traffic is untested. DP remains disconnected;
+an initial alternate-mode mux error is recorded with the unpowered dock. The
+user reports this Juo dock requires PD power for HDMI even on a laptop, so an
+unpowered display trial is inconclusive. Powered HDMI testing is deferred while
+battery termination and system-power behavior remain unqualified. No battery
+bypass control or electrical-protection acceptance is claimed.
 
-The [provider source record](reports/FIRST-CONSOLE-PROVIDERS-2026-10-06.json)
-adds UFS NoC/DMA/power paths, repairs RPMh rollback sizing and shared GCC MMIO
-ownership, and preserves explicit USB role/PHY error gates. Targeted AArch64
-objects, four hashed stock-derived DT candidates and negative fixtures passed.
-The corrected complete release `1.5` Image, DTB, 1,146 modules and RPM/SRPM build
-passed on October 7, including independent signed-source preparation and
-isolated AArch64 install, upgrade and removal. The earlier eight-of-thirteen
-patch trial remains rejected and unpublished. Native COPR qualification and
-own-device boot remain separate. The pinned
-[source catalog](manifests/first-console-sources.json) keeps OEM and community
-reports separate from project tests.
+CDC defaults off in the matched full-profile boot/root pair; explicit ACM
+opt-in is provided by the separate native management package. Charging services
+remain disabled and the shipped qualification profile is unqualified. No raw
+PD/voltage, gauge or factory command is supplied. See the
+[Type-C profile](docs/USB-TYPEC-FULL-PROFILE-20261018.md) and
+[charging protocol limits](docs/CHARGING-PROTOCOLS-20261018.md).
 
-Use `./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT` after stock
-inspection, optionally adding `--usb2-peripheral` for the diagnostic USB2
-candidate. Missing DT tools use the pinned dependency container automatically.
-All four alternatives remain unselected; these DTB/DTS files are not an Android
-DTBO partition image and contain no invented RAM or framebuffer map. The
-peripheral diagnostic does not admit the planned ESP32 host/VBUS path.
-The [ESP32 host prerequisites](docs/ESP32-HOST-BRINGUP.md) record the separate
-OEM host tuning, WCD role sequence and unresolved ADSP/Type-C power backend.
+The user accepts the existing VRR/touch baseline on 18 October 2026. This does
+not establish a new instrumented 30–144 Hz panel-cadence measurement or acceptance
+of the combined candidates. Seven fixed modes remain distinct from variable
+refresh. Suspend is unqualified. The accepted previous boot image and matching
+modules remain available for recovery.
 
-## Packages and installation
+## Earlier native display and sensor results
 
-The [mcc45tr/uke-linux-test COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/)
-provides the development packages and source RPMs. Its build history and logs
-identify each submitted version and packaging revision. The current package
-target is **Fedora Rawhide AArch64**.
+The signed COPR `7.2.10-10` development bundle installs through DNF and reaches
+original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
+Original Fedora Plasma Login Manager now starts the Wayland session.
+Release 10 binds CPUCP and exchanges the SCMI v2.0 base protocol with the
+Qualcomm firmware; vendor memory-latency control and suspend remain unqualified.
+The release-13 candidate disables only the exact empty secondary SPMI controller
+and zero-length OEM demura placeholders, and follows the OEM EVO/OLE reset-time
+PLL latch rule with checked register accesses. Aligned FDT and actual PLL
+fixtures pass with AArch64 Clang; populated nodes, reservations and active PLL
+checks are retained. Tablet validation of these boot changes is pending.
+The previous .4056 normal-boot user checks confirm
+automatic four-pose rotation and dual-light automatic brightness. Bluetooth
+mouse input works. The earlier seven-rate display trial covers
+30/48/50/60/90/120/144 Hz with nine transitions retaining panel and touch state.
+Long-run, suspend and VRR qualification remain open. The verified .4054 image
+and matched modules remain the rollback.
+
+The source producer now builds Image, matching modules, DTBs and an Android
+boot container with a source-generated initramfs. Integer releases use
+`7.2.10-1`, `-2`, `-3`, and restart at `7.2.11-1` after a new upstream pin.
+[COPR 11165188](https://copr.fedorainfracloud.org/coprs/build/11165188) builds
+`7.2.10-8`, including 49 baseline patches, standard PMIC IIO/hwmon/thermal
+consumers and native CPU emergency cooling maps. Signatures, matching Image,
+modules and boot-container checks pass. The tablet exposes all 27 configured
+PMIC IIO channels, two Hall input devices and 51 readable thermal zones.
+Original KDE's sensor backend reads all 27 PMIC measurements. The battery
+thermistor and two current feedback channels return live values; charger
+temperature reads 31.29–31.41 °C with USB power. Without USB power its input
+is near zero and the OEM formula clamps the result to 0 °C. All ten captured
+raw/result pairs match an independent integer calculation; absolute calibration
+remains unqualified.
+Front close/open and rear fold/unfold produce standard switch events;
+logind tracks the lid. Cover-triggered display blanking remains unqualified.
+Software-emulated thermal events in the earlier release-4 test lower three
+CPU policy limits and the GPU cap; all emulation values are cleared afterward.
+Original KDE System Monitor's backend returns live PMIC values and battery
+voltage, signed current and derived power with standard units.
+[COPR 11165033](https://copr.fedorainfracloud.org/coprs/build/11165033) builds
+release 5 with the SMP2P edge-history correction. Signed delivery and bounded
+tablet traces confirm stable ready/handover counters while sleep-state updates
+continue. Full shutdown still has an upstream clipboard deadlock; two SPI/GPI
+timeouts leave long-idle touchscreen reliability open.
+
+The OEM non-linear backlight mapping is retained. Only the exact OEM root/sensor
+FastRPC contexts are admitted. All four previously excluded ADC conversions
+are ported from the exact OEM source. Complete OEM skin/BCL policy remains
+incomplete. Sustained CPU/GPU thermal behavior is
+unqualified. See the [source profile](packaging/native/README.md) and
+[integration record](packaging/INTEGRATION-20261017.md) for delivery boundaries.
+The combined source contains the default-off [AVR experiment](docs/O82-VRR-EXPERIMENT.md).
+The standard atomic VRR property is attached. Bounded release-9 tests activate
+both interfaces with no active underruns across the seven base modes. Cold
+144 Hz activation with the wide experiment can prevent touch command completion;
+disable-time underruns and physical scan-cadence qualification remain open.
+No qualified VRR range is advertised.
+
+### Earlier firmware-framebuffer baseline — 15 October 2026
+
+Linux **7.2.9, revision 1.39** starts from slot B on POCO Pad X1 and reaches the
+internal Fedora Rawhide root, KDE desktop and Wi-Fi SSH. KWin uses Adreno 732
+hardware rendering; display scanout still uses the firmware framebuffer through
+simpledrm. Native DPU/DSI, refresh-rate switching and display stability remain
+incomplete. Detailed results are in the
+[project hardware table](https://github.com/MCC45TR/uke-linux#hardware-support).
+
+Finger input, ten simultaneous contacts, and power and volume buttons worked in
+the 14 October tablet test. Revision 1.39 reaches touch input on its first startup
+attempt. Manual backlight control and display blanking work, with a minimum
+visible level while the display is on. The paired backlight uses the OEM mapping;
+smooth adjustment across the full range remains unqualified.
+Battery readings and USB charging status are available; the tested computer USB
+connection admits a 500 mA budget. Sustained net charging under desktop load is
+not established. Bluetooth, audio, USB host mode and suspend remain incomplete.
+
+The earlier source profile contains 44 adaptation patches. Its revision 1.39
+packages were built and signed locally for tablet testing; this does not qualify
+a new COPR build. Linux 7.2.10 did not produce a working display in that test.
+Repeated cold boots, display
+lifecycle tests and sustained workloads remain open.
+
+The current firmware handoff is **EL1**. EL2/KVM is a separate experimental
+branch. Uke UEFI integration is not ready. Pad 7 Pro (`muyu`) and Pad 5 (`nabu`)
+are different targets; their firmware and device settings are not reused.
+
+## Packages
 
 | Package | Contents |
 |---|---|
-| `senemos-uke-linux-kernel-mainline` | Installs the matching core, modules and DTB package set |
-| `senemos-uke-linux-kernel-mainline-core` | ARM64 Image, configuration, System.map and source identity |
-| `senemos-uke-linux-kernel-mainline-modules` | Modules rebuilt for the same kernel and configuration |
-| `senemos-uke-linux-kernel-mainline-dtbs` | Independent Uke device tree |
+| `senemos-uke-linux-kernel-mainline` | Matching core, modules and DTB package set |
+| `senemos-uke-linux-kernel-mainline-core` | ARM64 Image, config, System.map and source identity |
+| `senemos-uke-linux-kernel-mainline-modules` | Modules for the same kernel and configuration |
+| `senemos-uke-linux-kernel-mainline-dtbs` | Independent Uke device tree and native display overlay |
+| `senemos-uke-linux-kernel-mainline-boot` | Matched Android boot container, module inventory and boot provenance |
 
-For an existing Fedora Rawhide AArch64 development environment:
+For Fedora Rawhide AArch64 development systems:
 
 ```sh
 sudo dnf copr enable mcc45tr/uke-linux-test
-sudo dnf install senemos-uke-linux-kernel-mainline
+sudo dnf --setopt=installonly_limit=0 install senemos-uke-linux-kernel-mainline
+sudo dnf --setopt=installonly_limit=0 upgrade 'senemos-uke-linux-kernel-mainline*'
 ```
 
-To receive accepted package revisions from the enabled channel:
+COPR signs the RPMs. Integer releases have separate module paths such as
+`/usr/lib/modules/7.2.10-4/`. Keep the previous kernel and complete boot image.
+The boot package calls the native updater only when automatic updates are
+explicitly enabled locally. It validates the matched inventory, retains the
+previous full image, writes only slot B and verifies readback. It does not
+select another slot or change partitions. Installation on an unconfigured
+system does not enable boot writes. See the updater's validation requirements
+before enabling it. Development headers are not published yet.
 
-```sh
-sudo dnf upgrade 'senemos-uke-linux-kernel-mainline*'
-```
-
-Kernel files live under `/usr/lib/modules/KERNEL_RELEASE/`; the current release
-is `7.2.9-senemos-uke`. Package installation updates module dependency indexes.
-It does not create a UEFI boot entry, select a kernel or write Android
-partitions. Firmware provisioning and boot selection require their own reviewed
-integration. Kernel development headers are a later milestone.
-
-COPR signs distributed RPMs with the project repository key. Verify the
-configured repository key and package identities before evaluation. Package
-signatures and upstream source signatures have separate roles; neither is a
-tablet boot acceptance result. See the
-[package hub](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/PACKAGE-HUB.md)
-for related Uke components and their readiness.
-
-## Stable release maintenance
-
-The project will continue tracking **upstream stable Linux releases**, including
-future version lines as their Uke adaptations are reviewed. The
-[stable tracking workflow](.github/workflows/stable-and-copr.yml) checks
-Kernel.org daily; reviewed changes on `main` also trigger COPR source builds.
-
-Every new kernel version passes the same admission process:
-
-1. Pin the release archive, SHA-256, upstream commit and accepted signing key.
-2. Review and forward-port the Uke patch series against that exact release.
-3. Update the version profile and configuration identities; resolve Kconfig
-   dependencies and compile the Image, DTBs and matching modules.
-4. Verify source RPM preparation, module ABI, payload contents and package
-   installation, upgrade and removal. Collect the independent native COPR result.
-5. Record boot and peripheral tests separately for each supported device profile.
-
-A newly announced version needs its own `manifests/linux-VERSION.json` and
-reviewed adaptation before automatic publication. Tracking stops with an
-explicit error when that profile is missing. The previous accepted source and
-artifacts remain available during the next port. The development channel's
-hardware status advances only with device evidence.
-
-Packaging fixes increase the RPM release. Revisions of one upstream kernel
-replace each other because they share a module directory; different upstream
-versions retain separate installonly paths. Keeping an older package does not
-automatically create or validate a boot fallback. The
-[automation guide](docs/AUTOMATION.md) documents source verification, webhooks
-and build environment boundaries.
-
-## Building from source
-
-This repository owns the standalone `senemos.sh` host build entry, pinned
-container rules and target audits. Clone it directly or use the
-[Uke Linux workspace](https://github.com/MCC45TR/uke-linux):
+## Build from source
 
 ```sh
 git clone https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
 cd senemos-uke-kernel-mainline
-./senemos.sh --build 7.2.9 --distro=fedora --test
-./senemos.sh --build latest --distro=fedora
-```
-
-The builder verifies signed source, applies the exact Uke patch/config profile,
-uses a containerized toolchain and records the resulting Image, DTB, modules,
-RPMs and SRPM. Concurrency follows available host resources; cached source and
-build state are retained under this repository's ignored `build/` and
-`artifacts/` directories. `latest` resolves upstream stable and requires a
-reviewed Uke profile. Other distribution targets have separate readiness gates.
-See the [builder guide](docs/BUILDING.md)
-for host prerequisites, offline operation and test scope.
-
-For source package work within this repository:
-
-```sh
 make validate
 make srpm
 ```
 
-`make validate` checks the reviewed patch and configuration hashes. `make srpm`
-downloads the pinned upstream archive when needed, verifies its checksum and
-detached OpenPGP signature, and creates an AArch64 source RPM. Binary compilation
-and hardware validation are separate steps.
+`make validate` checks the reviewed version, patch/config hashes and mainline
+package metadata. `make srpm` verifies the signed upstream archive and retains
+the complete native profile, source identity and tests. The binary build uses
+the embedded specification. The source package supplies Image, matched modules, DTBs and a boot container
+with an embedded, source-generated initramfs. No OEM firmware or per-device
+calibration is a package source input.
 
-## Source layout and provenance
+`senemos.sh` retains the historical container build and stock-DT inspection
+tools. Its host specification remains the earlier revision 1.39 profile; it
+does not reproduce the consolidated native boot image. Its `latest` option
+requires a reviewed source profile and stops if one is missing. See
+[the source profile](packaging/native/README.md) and [BUILDING.md](docs/BUILDING.md)
+for the explicit build and physical-test limits. Other distributions are planned.
 
-| Path | Purpose |
-|---|---|
-| [`manifests/`](manifests/) | Exact upstream source, patch and configuration identities |
-| [`patches/7.2.9/`](patches/7.2.9/README.md) | Ordered Uke adaptation with donor attribution and porting notes |
-| [`configs/`](configs/) | ARM64, Uke and Fedora configuration fragments; upstream verification key |
-| [`packaging/`](packaging/) | Kernel RPM rules and package lifecycle behavior |
-| [`.copr/`](.copr/) | COPR source package generation |
-| [`.github/workflows/`](.github/workflows/) | Source validation and stable release tracking |
-| [`docs/`](docs/) | Architecture and automation documentation |
-| [`reports/`](reports/) | Reviewed build evidence |
+After inspecting the stock firmware, the reviewed boot-DT helper is:
 
-The adaptation draws on the attributed
-[Uke Linux 6.12 community port](https://github.com/ztsubaki/uke-linux) and
-firmware-specific OEM research. Changes are reviewed against current upstream
-interfaces, and drivers are rebuilt for the target kernel ABI. Android vendor
-modules are not included in the mainline packages. Source attribution and
-original file licenses are preserved in the patch series.
+```sh
+./senemos.sh --prepare-boot-dt RECEIPT KERNEL_SOURCE OUTPUT
+```
 
-Linux 7.2.8 is retained as the
-[historical generic buildability baseline](reports/BASELINE-BUILDABILITY.md).
-That baseline predates the independent Uke DTB. Source/build, package,
-emulation and physical-device evidence are recorded separately; see the
-[engineering lessons](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/lessons/PLATFORM-INDEX.md).
+The optional `--usb2-peripheral` profile is for device-mode diagnostics. It does
+not provide USB host power and is not a replacement Android DTBO image.
 
-## Contributing and security
+## Updates and records
 
-Contributions should identify the upstream base, subsystem, device/firmware
-scope and validation performed. Keep patches focused, preserve attribution and
-report source, build, package and hardware results distinctly. Development code
-belongs in project sources or patches; reference archives remain unchanged.
-Read the [project contribution rules](AGENTS.md) and
-[kernel architecture](docs/ARCHITECTURE.md) before changing the port.
+The [stable workflow](.github/workflows/stable-and-copr.yml) checks Kernel.org
+daily. Reviewed source changes trigger COPR builds. Each new Linux version needs
+its own pinned source, Uke patch/config profile and build/package checks before
+publication. Device testing is recorded separately.
 
-Use [GitHub issues](https://github.com/MCC45TR/senemos-uke-kernel-mainline/issues)
-for ordinary bugs with public reproduction details. Follow the
-[security policy](SECURITY.md) for vulnerabilities and private data handling.
+- [Automation](docs/AUTOMATION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [UFS bring-up](docs/UFS-BRINGUP.md)
+- [USB host prerequisites](docs/ESP32-HOST-BRINGUP.md)
+- [Build reports](reports/)
+- [Private engineering records](https://github.com/MCC45TR/uke-linux-docs)
 
-Project-authored repository tooling and documentation use [MIT](LICENSE).
-Linux sources and derived kernel patches retain their original SPDX and
-GPL-compatible licenses; consult each file and the source package's notices.
+Contributions should state the device/firmware scope and checks performed.
+Keep patches focused and preserve source attribution. Use [issues](https://github.com/MCC45TR/senemos-uke-kernel-mainline/issues)
+for reproducible bugs and [SECURITY.md](SECURITY.md) for vulnerabilities.
 
-Firmware display blanking uses a DT link to the paired Uke backlight in the
-1.27 candidate. Host contracts preserve brightness through blank/unblank and
-report I/O faults; physical DPMS and wake acceptance is still pending.
+Project tooling and documentation use [MIT](LICENSE). Linux code and derived
+patches retain their original SPDX and GPL-compatible licenses.

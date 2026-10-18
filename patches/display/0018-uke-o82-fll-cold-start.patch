@@ -1,0 +1,78 @@
+From: Senemos contributors
+Subject: [PATCH] drm/msm/dsi: restore scoped Uke FLL defaults before PLL start
+
+Apply the seven exact Uke OEM FLL cold-start constants only to the admitted
+O82 D-PHY pair while both PLLs are stopped. Retain existing rate, divider,
+voltage, reset and lock sequence. Refusal unwinds the new prepare bias refs.
+
+Reference: MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_pll_4nm.c, GPL-2.0-only, Linux Foundation and Qualcomm.
+Experimental source-backed initialization; visible output remains unqualified.
+
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_7nm.c
+@@ -531,6 +531,49 @@
+ 	return 0;
+ }
+ 
++static int dsi_pll_7nm_uke_o82_init_fll(struct dsi_pll_7nm *pll)
++{
++	struct msm_dsi_phy *phy = pll->phy;
++	struct msm_dsi_phy *peer;
++	void __iomem *base = phy->pll_base;
++
++	if (!of_device_is_compatible(phy->pdev->dev.of_node,
++				    "xiaomi,uke-o82-dsi-phy-4nm"))
++		return 0;
++
++	if (!of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    phy->id != 0 || phy->cphy_mode ||
++	    phy->usecase != MSM_DSI_PHY_MASTER ||
++	    !(phy->cfg->quirks & DSI_PHY_7NM_QUIRK_V5_2) ||
++	    pll->vco_current_rate < 1189187000ULL ||
++	    pll->vco_current_rate > 1189191000ULL || !pll->slave)
++		return -EINVAL;
++
++	peer = pll->slave->phy;
++	if (!peer || peer->id != 1 || peer->cphy_mode ||
++	    peer->usecase != MSM_DSI_PHY_SLAVE || peer->cfg != phy->cfg ||
++	    !of_device_is_compatible(peer->pdev->dev.of_node,
++				     "xiaomi,uke-o82-dsi-phy-4nm"))
++		return -EINVAL;
++
++	if (phy->pll_on || peer->pll_on ||
++	    readl(phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL) & BIT(0) ||
++	    readl(peer->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL) & BIT(0))
++		return -EBUSY;
++
++	/* Restore the seven exact Uke OEM defaults before starting the stopped PLL. */
++	writel(0x02, base + REG_DSI_7nm_PHY_PLL_FLL_CONFIG);
++	writel(0x11, base + REG_DSI_7nm_PHY_PLL_FLL_FREQ_ACQ_TIME);
++	writel(0x00, base + REG_DSI_7nm_PHY_PLL_FLL_CODE0);
++	writel(0x00, base + REG_DSI_7nm_PHY_PLL_FLL_CODE1);
++	writel(0x80, base + REG_DSI_7nm_PHY_PLL_FLL_GAIN0);
++	writel(0x00, base + REG_DSI_7nm_PHY_PLL_FLL_GAIN1);
++	writel(0x00, base + REG_DSI_7nm_PHY_PLL_FAST_PWRUP);
++	dev_info(&phy->pdev->dev, "Uke O82 FLL cold-start defaults applied\n");
++	return 0;
++}
++
+ static int dsi_pll_7nm_vco_prepare(struct clk_hw *hw)
+ {
+ 	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+@@ -540,5 +583,14 @@
+ 	if (pll_7nm->slave)
+ 		dsi_pll_enable_pll_bias(pll_7nm->slave);
+ 
++	rc = dsi_pll_7nm_uke_o82_init_fll(pll_7nm);
++	if (rc) {
++		pr_err("Uke O82 FLL initialization refused: %d\n", rc);
++		if (pll_7nm->slave)
++			dsi_pll_disable_pll_bias(pll_7nm->slave);
++		dsi_pll_disable_pll_bias(pll_7nm);
++		return rc;
++	}
++
+ 	/* Start PLL */
+ 	writel(BIT(0), pll_7nm->phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL);

@@ -1,0 +1,36 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: retain bounded raw error diagnostics for native bring-up
+
+Native Uke reaches the DRM connector but remains black with repeated FIFO-class
+errors. Report raw controller status before and after the existing clear path;
+worker status alone does not identify sticky errors versus FIFO state bits.
+Do not change interrupt masking, error clearing, clocks or recovery behavior.
+This patch is diagnostic and stays outside the normal release profile.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -1684,6 +1684,14 @@
+ {
+ 	/* disable dsi error interrupt */
+ 	dsi_intr_ctrl(msm_host, DSI_IRQ_MASK_ERROR, 0);
++	pr_err_ratelimited("dsi%d error: irq=%#x fifo=%#x ack=%#x timeout=%#x clk=%#x phy=%#x status=%#x\n",
++		msm_host->id, dsi_read(msm_host, REG_DSI_INTR_CTRL),
++		dsi_read(msm_host, REG_DSI_FIFO_STATUS),
++		dsi_read(msm_host, REG_DSI_ACK_ERR_STATUS),
++		dsi_read(msm_host, REG_DSI_TIMEOUT_STATUS),
++		dsi_read(msm_host, REG_DSI_CLK_STATUS),
++		dsi_read(msm_host, REG_DSI_DLN0_PHY_ERR),
++		dsi_read(msm_host, REG_DSI_STATUS0));
+ 
+ 	dsi_clk_status(msm_host);
+ 	dsi_fifo_status(msm_host);
+@@ -1691,6 +1699,9 @@
+ 	dsi_timeout_status(msm_host);
+ 	dsi_status(msm_host);
+ 	dsi_dln0_phy_err(msm_host);
++	pr_err_ratelimited("dsi%d cleared: irq=%#x fifo=%#x\n", msm_host->id,
++		dsi_read(msm_host, REG_DSI_INTR_CTRL),
++		dsi_read(msm_host, REG_DSI_FIFO_STATUS));
+ 
+ 	queue_work(msm_host->workqueue, &msm_host->err_work);
+ }

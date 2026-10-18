@@ -1,0 +1,24 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: compare powered O82 command clock retention
+
+Uke MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl.c (GPL-2.0-only), votes existing clocks for pre-video and
+active-video commands. The actual Uke PLL setter still runs during pre-video
+ON/PPS/reads after the existing paired post-link retime. Native40 excluded
+only active-video rewrites. Extend that exact powered initial120 admission
+to pre-video transfers, retaining initial host power-on rate setup, ordinary
+profiles, PM/clock votes, trigger policy, packets and DMA quarantine.
+This tests post-synchronization reprogramming, not a new rate or general fix.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -2697,7 +2697,7 @@
+ 	 * mdp clock need to be enabled to receive dsi interrupt
+ 	 */
+ 	pm_runtime_get_sync(&msm_host->pdev->dev);
+-	/* OEM transfers vote existing link clocks while video is running. */
+-	if (!msm_host->enabled || !dsi_uke_o82_initial120(msm_host))
++	/* OEM transfers retain rates after host power-on and paired retime. */
++	if (!dsi_uke_o82_initial120(msm_host))
+ 		cfg_hnd->ops->link_clk_set_rate(msm_host);
+ 	cfg_hnd->ops->link_clk_enable(msm_host);

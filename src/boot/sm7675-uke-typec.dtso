@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/* Full Uke profile; the USB2 peripheral overlay remains a separate rollback. */
+#include "sm7675-uke-usb2.dtso"
+#include <dt-bindings/clock/qcom,gcc-cliffs.h>
+#include <dt-bindings/phy/phy-qcom-qmp.h>
+
+&{/chosen} {
+	senemos,usb-profile = "typec-v1";
+};
+
+&{/pmic-glink} {
+	compatible = "xiaomi,uke-typec-pmic-glink";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	uke_connector: connector@0 {
+		compatible = "usb-c-connector";
+		reg = <0>;
+		label = "USB-C";
+		data-role = "dual";
+		power-role = "dual";
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 { reg = <0>; uke_connector_hs: endpoint { remote-endpoint = <&uke_usb_hs>; }; };
+			port@1 { reg = <1>; uke_connector_ss: endpoint { remote-endpoint = <&uke_qmp_connector>; }; };
+			port@2 { reg = <2>; uke_connector_sbu: endpoint { remote-endpoint = <&uke_wcd_sbu>; }; };
+		};
+	};
+};
+
+&eusb2_phy0 {
+	compatible = "qcom,sm7675-eusb2-typec";
+	#phy-cells = <0>;
+};
+
+&gcc_usb3_phy_gdsc {
+	compatible = "qcom,sm7675-usb-phy-gdsc";
+	reg = <0x00150018 8>;
+	qcom,clock-controller = <&gcc>;
+	status = "okay";
+};
+
+&gcc {
+	clocks = <&rpmhcc RPMH_CXO_CLK>, <&pcie_0_pipe_clk>, <&sleep_clk>,
+		 <&ufsphy_mem 0>, <&ufsphy_mem 1>, <&ufsphy_mem 2>,
+		 <&usb_qmp_dp_phy QMP_USB43DP_USB3_PIPE_CLK>;
+};
+
+&usb_qmp_dp_phy {
+	compatible = "qcom,sm7675-qmp-usb3-dp-phy";
+	#phy-cells = <1>;
+	#clock-cells = <1>;
+	clocks = <&gcc GCC_USB3_PRIM_PHY_AUX_CLK>,
+		 <&tcsrcc TCSR_USB3_CLKREF_EN>,
+		 <&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>,
+		 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>;
+	clock-names = "aux", "ref", "com_aux", "usb3_pipe";
+	resets = <&gcc GCC_USB3_PHY_PRIM_BCR>, <&gcc GCC_USB3_DP_PHY_PRIM_BCR>;
+	reset-names = "phy", "common";
+	vdda-phy-supply = <&L3B>;
+	vdda-pll-supply = <&L4B>;
+	vdda-usb-supply = <&L2B>;
+	gdsc-supply = <&gcc_usb3_phy_gdsc>;
+	orientation-switch;
+	mode-switch;
+	status = "okay";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 { reg = <0>; uke_qmp_connector: endpoint { remote-endpoint = <&uke_connector_ss>; }; };
+		port@1 { reg = <1>; uke_qmp_usb: endpoint { remote-endpoint = <&uke_usb_ss>; }; };
+		/* Native display overlay connects this after creating the DPU/DP graph. */
+		port@2 { reg = <2>; uke_qmp_dp: endpoint {}; };
+	};
+};
+
+&usb0 {
+	compatible = "qcom,sm7675-dwc3-typec";
+	dr_mode = "otg";
+	maximum-speed = "super-speed";
+	usb-role-switch;
+	role-switch-default-mode = "peripheral";
+	wakeup-source;
+	phys = <&eusb2_phy0>, <&usb_qmp_dp_phy QMP_USB43DP_USB3_PHY>;
+	phy-names = "usb2-phy", "usb3-phy";
+	/* Exact OEM IRQs; the running Uke GIC uses three cells, PDC uses two. */
+	interrupts-extended = <&intc 0 133 4>, <&intc 0 130 4>,
+			      <&pdc 14 1>, <&pdc 15 1>, <&pdc 17 4>;
+	interrupt-names = "dwc_usb3", "pwr_event", "dp_hs_phy_irq",
+			  "dm_hs_phy_irq", "ss_phy_irq";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 { reg = <0>; uke_usb_hs: endpoint { remote-endpoint = <&uke_connector_hs>; }; };
+		port@1 { reg = <1>; uke_usb_ss: endpoint { remote-endpoint = <&uke_qmp_usb>; }; };
+	};
+};
+
+&wcd_usbss {
+	compatible = "xiaomi,uke-wcd939x-typec";
+	pinctrl-names = "default", "sleep";
+	orientation-switch;
+	mode-switch;
+	port { uke_wcd_sbu: endpoint { remote-endpoint = <&uke_connector_sbu>; }; };
+};

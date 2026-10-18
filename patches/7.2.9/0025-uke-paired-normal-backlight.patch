@@ -13,9 +13,12 @@ new file mode 100644
 index 0000000..6deb7b3
 --- /dev/null
 +++ b/drivers/video/backlight/ktz8866-uke-levels.h
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,103 @@
 +// SPDX-License-Identifier: GPL-2.0-only
-+/* Normal-mode prefix of the pinned OEM Uke mi_bl_level_remap table. */
++/*
++ * Normal-mode prefix of MiCode/vendor_opensource_display-drivers
++ * 44275c404a677d9d9e5230fedd1af2ef02fc7b9a, msm/mi_disp/mi_backlight_ktz8866.h.
++ */
 +static const unsigned short uke_normal_bl_remap[1536] = {
 +	0, 17, 17, 31, 40, 54, 107, 178, 250, 286, 318, 347, 374, 399, 422, 444,
 +	464, 483, 501, 518, 534, 550, 565, 579, 593, 606, 618, 630, 642, 653, 664, 675,

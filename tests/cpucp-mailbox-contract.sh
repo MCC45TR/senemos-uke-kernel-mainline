@@ -12,6 +12,8 @@ cat <<'C'
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
+#define ERR_PTR(e) ((void *)(intptr_t)(e))
 #define __iomem
 #define BIT(n) (1U << (n))
 #define IORESOURCE_MEM 0
@@ -22,9 +24,20 @@ struct mbox_controller;
 struct mbox_chan { struct mbox_controller *mbox; void *con_priv; int lock; };
 struct mbox_controller { struct mbox_chan *chans; int num_chans; };
 struct resource { unsigned long start, end; };
-struct platform_device { struct resource *resources[2]; };
+struct device { void *of_node; };
+struct platform_device { struct resource *resources[2]; struct device dev; };
 static bool uke;
 static unsigned char tx[0x10], rx[0x2000];
+static unsigned reserved_maps, shared_maps;
+static bool map_fail;
+static void *devm_of_iomap(struct device *dev, void *node, int index, void *size) {
+ assert(dev && node==dev->of_node && index==0 && !size);
+ reserved_maps++; return map_fail ? ERR_PTR(-EBUSY) : rx;
+}
+static void *devm_ioremap(struct device *dev, unsigned long start, unsigned long size) {
+ assert(dev && start==0x17d90000 && size==0x2000);
+ shared_maps++; return map_fail ? NULL : rx;
+}
 static unsigned notices[2], barriers, writes, synchronized;
 static struct mbox_chan chans[2];
 static bool of_machine_is_compatible(const char *name) { assert(!strcmp(name,"xiaomi,uke")); return uke; }
@@ -65,12 +78,19 @@ awk '/^static bool qcom_cpucp_uke_resources/ {emit=1}
 cat <<'C'
 int main(void) {
  struct resource txr={0x17400000,0x1740000f}, rxr={0x17d90000,0x17d91fff};
- struct platform_device p={{&txr,&rxr}};
+ struct platform_device p={.resources={&txr,&rxr}};
  uke=true; assert(qcom_cpucp_uke_resources(&p));
+ assert(qcom_cpucp_map_rx(&p,false)==rx && reserved_maps==1 && !shared_maps);
+ map_fail=true;
+ assert(qcom_cpucp_map_rx(&p,false)==ERR_PTR(-EBUSY));
+ assert(qcom_cpucp_map_rx(&p,true)==ERR_PTR(-ENOMEM));
+ map_fail=false;
+ assert(qcom_cpucp_map_rx(&p,true)==rx && shared_maps==2);
  uke=false; assert(!qcom_cpucp_uke_resources(&p)); uke=true;
  for(unsigned i=0;i<2;i++) {
   struct resource *r=p.resources[i]; unsigned long start=r->start,end=r->end;
-  p.resources[i]=NULL; assert(!qcom_cpucp_uke_resources(&p)); p.resources[i]=r;
+  p.resources[i]=NULL; assert(!qcom_cpucp_uke_resources(&p));
+  assert(qcom_cpucp_map_rx(&p,true)==ERR_PTR(-EINVAL) && shared_maps==2); p.resources[i]=r;
   r->start++; assert(!qcom_cpucp_uke_resources(&p)); r->start=start;
   r->end--; assert(!qcom_cpucp_uke_resources(&p)); r->end=end+1;
   assert(!qcom_cpucp_uke_resources(&p)); r->end=end;

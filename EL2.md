@@ -1,70 +1,127 @@
-# Experimental EL2 and KVM bring-up
+# Uke EL2 and KVM experiment
 
-The target is a Linux host with usable KVM on Uke/SM7675. **Physical EL2 boot is
-blocked by the firmware handoff.** This branch does not change ABL, HYP, TrustZone
-or any partition. It must not replace the working branch or trigger production
-COPR builds before the firmware contract and physical acceptance are complete.
+18 October 2026. Target: POCO Pad X1 / Xiaomi Pad 7, SM7675, Fedora Rawhide
+AArch64. This branch integrates main at
+`dfc8511b5107f867aebf59197dffadd110228875` (Linux 7.2.11, 77 base patches).
+The current display, USB, CPU/GPU and sensor source profile is retained.
+**Physical Uke EL2 boot and the firmware service remain unqualified.**
 
-The reviewed COPR 1.25 boot candidate already has `CONFIG_VIRTUALIZATION=y` and
-`CONFIG_KVM=y`. Earlier physical Uke logs show `All CPU(s) started at EL1` and
-`HYP mode not available`. An image name, command-line flag or kernel config cannot
-turn that handoff into EL2. Linux supports entry at either EL1 or EL2; KVM needs
-access to EL2. The host kernel can subsequently run at EL1 with nVHE, so measuring
-the running kernel's exception level alone is insufficient.
+## Produced configurations
 
-See the [Linux boot requirements](https://docs.kernel.org/arch/arm64/booting.html)
-and [KVM HYP ABI](https://www.kernel.org/doc/html/v7.2/virt/kvm/arm/hyp-abi.html).
-Qualcomm's [KVM guide](https://docs.qualcomm.com/bundle/publicresource/topics/80-70022-3/virtualization.html)
-describes supported developer BSPs, not an established Xiaomi Uke boot contract.
-The [Radxa secure-launch research](https://github.com/TravMurav/Qcom-Secure-Launch)
-is a comparison source; its DT properties and SMC calls are not Uke instructions.
-Qualcomm's [early Gunyah exit proposal](https://lists.u-boot-project.org/pipermail/u-boot/2026-May/618680.html)
-identifies an SMC transition used by some developer platforms. The
-[maintainer review](https://lists.u-boot-project.org/pipermail/u-boot/2026-May/618951.html)
-explicitly asks which platforms support it. Neither establishes support in
-Xiaomi's signed Uke firmware; this branch does not issue that call.
+| Build | Package and module namespace | Early behavior |
+|---|---|---|
+| Default | `uke-senemos-kernel-mainline-kvm`, `7.2.11-2-kvm` | Observe the firmware entry; no takeover SMC. KVM works only if firmware already supplies EL2. |
+| Explicit `rpmbuild --with gunyah_exit` | `uke-senemos-kernel-mainline-kvm-exit`, `7.2.11-2-kvm-exit` | Require EL2, attempting the Qualcomm early exit only from EL1. Experimental; not admitted for a Uke boot trial. |
+| `CONFIG_QCOM_UKE_EL2_ENTRY=y`, exit disabled | Manual diagnostic source configuration | Require existing EL2 on primary and secondary entry; issue no takeover SMC. |
 
-Read-only recovery inspection on 12 October matched all six reviewed B-slot
-payloads to OS3.0.304.0.WOZMIXM, including zero partition padding. All six active
-A-slot payloads differed. Independent device hashes verified the captures.
-The offline archive therefore describes the retained B slot, not the active
-firmware tuple. No slot or firmware was changed during this inspection.
+Both RPM variants contain matching Image/modules/config/DTB/native overlay and a
+source-generated Android v4 boot container. Installation has no boot scriptlet,
+slot selection or production-updater invocation. The experimental package is
+not on the production updater's allowlist. Building a container does not
+establish that stock ABL accepts its early transfer or that the tablet boots.
+Use one namespace per configuration; never substitute these modules into an
+accepted normal-kernel directory. Keep Android A, boot B, `PARTLABEL=linux`,
+original early firmware and the accepted image/module fallback.
 
-## Native acceptance probe
+`make validate`, `make kvm-probe` and `make srpm` are host operations. The SRPM
+producer verifies the pinned kernel archive/signature and source-asset hashes.
+The upstream MSM XML register generator is the documented host-only Python
+build dependency in `packaging/native/README.md`. No project Python, runtime,
+firmware, credentials or device calibration belongs in the tablet payload.
 
-On an AArch64 build host, run `make kvm-probe`. The C++ probe uses the standard
-Linux KVM ABI to create one VM, one vCPU and 4 KiB of anonymous guest memory.
-A tiny AArch64 guest writes a known value to an unmapped MMIO address. Only the
-matching `KVM_RUN` exit produces `kvm-guest-pass`. There are no disks, guest device
-passthrough, physical memory mappings or firmware calls. Execution is bounded by
-a ten-second alarm. Process exit releases the VM and memory.
+## Early entry implementation
 
-Run `build/kvm/uke-kvm-probe` on the tested host, with permission to access
-`/dev/kvm`. Exit 0 means the guest ran; exit 2 means `/dev/kvm` is unavailable;
-exit 3 means an architecture, permission, ABI or execution error; exit 64 rejects
-arguments. A missing or inaccessible node is never treated as an EL2 success.
+`src/boot/uke-el2-entry.S` is integrated by
+`patches/boot/0004-uke-el2-entry.patch` and `prepare-el2-source.sh`, before
+`record_mmu_state` and Linux exception-register initialization. Both Kconfig
+symbols default off. Only the explicit `-kvm-exit` build enables the SMC.
 
-## Acceptance before an EL2 boot image can be released
+The implementation preserves x0/FDT and the return address in callee-saved
+registers without a stack, heap or MMIO access. From EL1 it requires aligned,
+nonzero FDT, zero x1-x3, masked DAIF and disabled MMU/data cache. It uses the
+Qualcomm ABI documented in the pinned Kodiak and U-Boot sources. After a
+return it requires actual EL2, disabled EL2 MMU/data cache and inactive CPU
+stage-2 before restoring the Linux boot arguments. Existing EL2 entry skips
+the call. Secondary CPUs must enter at EL2 through PSCI; they never repeat a
+global hypervisor exit.
 
-1. Match the installed Uke ABL/HYP/UEFI hashes to a reviewed source/firmware tuple.
-2. Establish an exact Uke firmware-supported EL2 transfer or takeover protocol,
-   including all CPUs, RAM reservations, interrupt-controller and SMMU ownership.
-3. Preserve a tested Android/recovery return route and existing ESP/Linux GPT.
-4. Test an isolated RAM boot; collect boot-level and KVM logs and a passing guest.
-5. Recheck UFS, USB, display, WPSS/ADSP firmware services and reboot behavior.
+A failed check parks with interrupts masked. `uke_el2_refused` retains x0 as
+reason and x9 as the last inspected register: 1 wrong primary EL, 2 boot
+arguments/DAIF, 3 MMU/cache, 4 returned without EL2, 5 active stage-2, 6 wrong
+secondary EL. No reset SMC, guessed firmware fallback or continuation into EL1
+is attempted after a partial transfer. A call that never returns cannot be
+recovered by this code or a userspace watchdog.
 
-Generic ARM64 emulation can validate the probe and distinguish EL1 from EL2
-fixtures. It cannot establish Uke firmware ownership or physical support.
+This is an implementation of an **unqualified firmware candidate**, not proof
+that Uke implements its ABI. `manifests/el2-research-20261018.json` retains an
+empty firmware allowlist. The stripped OEM TZ ELF has no section/symbol table;
+bounded static inspection has not established service availability, complete
+call semantics or CPU return behavior. Firmware strings and constants alone
+are insufficient. Do not use this image on hardware until the following
+ownership contract is resolved.
 
-## Separate COPR experimental package, 12 October
+## Firmware and device contract still required
 
-The owner requested `uke-senemos-kernel-mainline-kvm` in the development COPR.
-This branch now produces a separate kernel/module namespace,
-`7.2.9-senemos-uke-kvm`, plus the bounded native probe. It can coexist with the
-accepted mainline kernel; RPM installation never writes a boot partition or
-selects a slot. Stable fixes are merged into this branch, not the reverse.
+| Area | Required Uke evidence |
+|---|---|
+| Firmware identity | Current slot, model/SKU, exact ABL/HYP/TZ/UEFI/UEFISECAPP/XBL payload length/hash, full partition hash and padding separately; rollback constraints and matching archive. The 12 October B-slot comparison is historical. |
+| Service support | Exact installed firmware's supported early-exit ABI, availability policy, return values/state, preserved registers and behavior on failure. No guessed discovery call from a running Linux host. |
+| RAM and entry | Loaded Image/FDT addresses, image extent, cache-to-PoC, boot CPU state, secure/carveout ownership, old Gunyah reservations and guest IPA limit. Do not reclaim reserved memory without evidence. |
+| CPU/PSCI | All eight CPUs, SMC conduit, CPU_ON/OFF return at EL2, coherency, reset and resume. Boot-CPU success alone is insufficient. |
+| GIC and timer | GICv3 redistributors and maintenance PPI 9; timer frequency/offsets, guest timer delivery and migration. Current Uke DT has four timer PPIs 13/14/11/12; Linux's fifth-IRQ fallback is not physical timer qualification. |
+| DMA/SMMU | Quiesced DPU/GPU/GMU/UFS/USB/WPSS/ADSP masters and exact stream/domain ownership. Kodiak describes SMMU reset to bypass; Uke's current firmware-display handoff assumptions need a separate review. CPU stage-2 checks do not check SMMU. |
+| Firmware services | SCM/PAS, AOSS/QMP, RPMh, remoteproc, sensors, charging and GPU firmware after the exit. Keep persist read-only and exact calibration. |
+| Recovery | Independently available bootloader/recovery access, exact accepted image and matching modules, image hashes and a verified return procedure. A 180-second userspace observer cannot undo early lockup. |
 
-The experiment includes the reviewed charger/backlight source candidate but
-has no established Uke EL2 transfer. A timed trial can report EL1/no-KVM; it
-must never be described as EL2 because a package was built or installed.
-Firmware takeover and physical virtualization remain open acceptance gates.
+Do not transplant WoA, Kodiak, QCS9100, Palawan, Peridot or Nabu addresses,
+security firmware, partition geometry or calibration. `slbounce` explicitly
+excludes Android devices; OpenABL/UEFI presence does not acquire EL2. A dedicated
+EL2 DT variant must follow measured ownership differences; deleting Gunyah
+reservations or disabling SMMU to make a test proceed is not an accepted fix.
+
+## Tests and evidence boundaries
+
+- `tests/el2-entry-qemu.sh build OUTPUT` compiles the actual early entry with
+  Clang/LLD. `run OUTPUT` uses generic ARM64 TCG. Eleven cases cover existing
+  EL2, EL1 refusal, argument/cache/stage-2 checks and secondary entry. An
+  explicitly synthetic error-return case verifies that an unchanged EL1 is
+  rejected. Generic QEMU's real vendor SMC does not return; its bounded timeout
+  is recorded separately. No successful Uke firmware transition is simulated.
+- `tests/kvm-probe-abi.cpp` checks the probe's ioctl/memory contract with
+  synthetic 4/16/64 KiB host pages and error paths. It does not execute a guest.
+- `tests/kvm-probe-contract.sh` checks actual arguments and the available host
+  environment. `make kvm-probe` builds the native C++ helper. It creates one VM,
+  one vCPU and one host page, runs known AArch64 code, and accepts only the
+  expected MMIO write. No storage, passthrough or firmware call is involved.
+  Exit 0 is a real guest result, 2 unavailable KVM, 3 ABI/permission/architecture
+  error, 64 invalid arguments; a signal/timeout remains a separate failure.
+- The builder's `tests/el2-kvm-qemu*.sh` retain the earlier disposable Fedora
+  EL1/EL2 comparison. Their outer accelerator is TCG. Added Uke compatible
+  strings select an adaptation path; they do not emulate Uke hardware.
+- `src/kvm/make-guest-initramfs.sh OUTPUT` builds a RAM-only native ARM64 guest
+  acceptance initramfs with libc and its loader. The builder's
+  `tests/kvm-linux-guest.sh KERNEL INITRAMFS PROBE OUTPUT` requires actual
+  `/dev/kvm`, uses only `-accel kvm`, and tests one then two vCPUs, timer wakeup,
+  CPU migration and clean poweroff. No disk, network or TCG fallback is supplied.
+  Use an ARM64 guest kernel that supports virt/GICv3/PL011/devtmpfs/proc/sysfs and
+  external initramfs, with no forced internal initrd or command line.
+
+Physical acceptance is sequential: K0 exact current boot/firmware tuple; K1
+consistent all-CPU EL2 entry and positive HYP/KVM initialization; K2 KVM ABI;
+K3 real MMIO probe; K4 one-vCPU Linux; K5 two-vCPU PSCI/GIC/timer/migration;
+K6 host UFS/USB/display/Wi-Fi/ADSP/GPU/sensors/charging and reboot regressions;
+K7 measured mixed load, thermal limits and repeated cold/reboot/rollback trials.
+None of the source, package or generic-emulation tests closes K0/K1/K6/K7.
+
+## Source attribution
+
+The exact identities and bounded findings are in the research manifest.
+The early-call ABI comes from Qualcomm's BSD-2-Clause-Patent
+[Kodiak helper](https://github.com/tianocore/edk2-platforms/blob/1c500d13a653cf0f556ecf7ce703c12874247efc/Silicon/Qualcomm/KodiakPkg/Library/KodiakLib/KodiakHelper.S)
+and Aswin Murugan's GPL-2.0-only
+[U-Boot v5 proposal](https://mail-archive.com/u-boot@lists.u-boot-project.org/msg09190.html).
+The project assembly adds explicit entry/refusal checks and retains GPL-2.0-only.
+The [arm64 boot contract](https://docs.kernel.org/arch/arm64/booting.html) defines
+required CPU, memory, DMA, cache, interrupt and timer state. These sources do not
+claim Xiaomi Uke firmware support. Detailed trials and corrections belong in the
+central private lesson journal; physical acceptance remains open.

@@ -1,0 +1,138 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: stop O82 DSI video after both source timing engines
+
+The bridge disable callback runs before encoder atomic_disable. Resetting
+DSI there violates msm_dsi_host_disable()s stopped-INTF precondition and
+leaves the live DPU fetching into a disabled sink. Move the O82-only stop
+to the logical encoder after both physical timing engines have stopped,
+while retaining LP command power for the later panel OFF sequence.
+Propagate stop failures and retain command clocks on refusal. Generic
+bridges keep their existing post-disable ordering.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -1576,7 +1576,7 @@
+ 	struct dpu_encoder_virt *dpu_enc = NULL;
+ 	struct drm_crtc *crtc;
+ 	struct drm_crtc_state *old_state = NULL;
+-	int i = 0;
++	int i = 0, ret;
+ 
+ 	dpu_enc = to_dpu_encoder_virt(drm_enc);
+ 	DPU_DEBUG_ENC(dpu_enc, "\n");
+@@ -1611,6 +1611,10 @@
+ 	}
+ 
+ 
++	ret = msm_dsi_manager_uke_video_stop(drm_enc);
++	if (ret)
++		DPU_ERROR_ENC(dpu_enc, "DSI video stop failed: %d\n", ret);
++
+ 	/* after phys waits for frame-done, should be no more frames pending */
+ 	if (atomic_xchg(&dpu_enc->frame_done_timeout_ms, 0)) {
+ 		DPU_ERROR("enc%d timeout pending\n", drm_enc->base.id);
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -381,7 +381,7 @@
+ 		dsi_bridge->video_enabled = true;
+ }
+ 
+-static void dsi_mgr_bridge_disable(struct drm_bridge *bridge)
++static int dsi_mgr_bridge_stop_video(struct drm_bridge *bridge)
+ {
+ 	struct dsi_bridge *dsi_bridge = to_dsi_bridge(bridge);
+ 	int id = dsi_mgr_bridge_get_id(bridge);
+@@ -390,17 +390,27 @@
+ 	int ret;
+ 
+ 	if (!dsi_bridge->video_enabled)
+-		return;
++		return 0;
++	if (IS_BONDED_DSI() && !msm_dsi1)
++		return -ENODEV;
++	if (msm_dsi_host_dma_blocked(msm_dsi->host) ||
++	    (IS_BONDED_DSI() && msm_dsi_host_dma_blocked(msm_dsi1->host)))
++		return -EIO;
+ 
+ 	if (IS_BONDED_DSI() && msm_dsi1) {
+ 		ret = msm_dsi_host_disable(msm_dsi1->host);
+-		if (ret)
++		if (ret) {
+ 			pr_err("%s: host1 disable failed, %d\n", __func__, ret);
++			return ret;
++		}
+ 	}
+ 	ret = msm_dsi_host_disable(msm_dsi->host);
+-	if (ret)
++	if (ret) {
+ 		pr_err("%s: host %d disable failed, %d\n", __func__, id, ret);
++		return ret;
++	}
+ 	dsi_bridge->video_enabled = false;
++	return 0;
+ }
+ 
+ void msm_dsi_manager_tpg_enable(void)
+@@ -440,7 +450,9 @@
+ 
+ 	if (dsi_bridge->o82_panel) {
+ 		if (dsi_bridge->powered) {
+-			dsi_mgr_bridge_disable(bridge);
++			ret = dsi_mgr_bridge_stop_video(bridge);
++			if (ret)
++				return;
+ 			msm_dsi_phy_pll_save_state(msm_dsi->phy);
+ 			if (dsi_mgr_bridge_power_off(bridge))
+ 				return;
+@@ -562,12 +574,27 @@
+ 	.attach = dsi_mgr_bridge_attach,
+ 	.pre_enable = dsi_mgr_bridge_pre_enable,
+ 	.enable = dsi_mgr_bridge_enable,
+-	.disable = dsi_mgr_bridge_disable,
+ 	.post_disable = dsi_mgr_bridge_post_disable,
+ 	.mode_set = dsi_mgr_bridge_mode_set,
+ 	.mode_valid = dsi_mgr_bridge_mode_valid,
+ };
+ 
++int msm_dsi_manager_uke_video_stop(struct drm_encoder *encoder)
++{
++	struct drm_bridge *bridge = drm_bridge_chain_get_first_bridge(encoder);
++	int ret = 0;
++
++	if (bridge && bridge->funcs == &dsi_mgr_bridge_funcs) {
++		struct dsi_bridge *dsi_bridge = to_dsi_bridge(bridge);
++
++		/* INTF must stop before DSI reset; panel OFF still needs LP clocks. */
++		if (dsi_bridge->o82_panel && dsi_bridge->powered)
++			ret = dsi_mgr_bridge_stop_video(bridge);
++	}
++	drm_bridge_put(bridge);
++	return ret;
++}
++
+ int qcom_uke_dsi_dfps_register(struct mipi_dsi_device *dsi,
+ 		struct drm_panel *panel, const struct qcom_uke_o82_dfps_ops *ops)
+ {
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -292,6 +292,7 @@
+ 
+ struct msm_dsi;
+ #ifdef CONFIG_DRM_MSM_DSI
++int msm_dsi_manager_uke_video_stop(struct drm_encoder *encoder);
+ bool msm_dsi_manager_uke_avr_check(struct drm_encoder *encoder,
+ 		const struct drm_display_mode *mode);
+ int msm_dsi_manager_uke_avr_set(bool enable);
+@@ -309,6 +310,10 @@
+ struct drm_dsc_config *msm_dsi_get_dsc_config(struct msm_dsi *msm_dsi);
+ const char *msm_dsi_get_te_source(struct msm_dsi *msm_dsi);
+ #else
++static inline int msm_dsi_manager_uke_video_stop(struct drm_encoder *encoder)
++{
++	return 0;
++}
+ static inline bool msm_dsi_manager_uke_avr_check(struct drm_encoder *encoder,
+ 		const struct drm_display_mode *mode)
+ {

@@ -1,0 +1,125 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: keep Uke DisplayPort color depth consistent through DPU
+
+Source: MiCode/Xiaomi_Kernel_OpenSource 5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Source: MiCode/kernel_devicetree 94c84aeb9e517dbde546fc732033c184094c8e57
+Source: MiCode/vendor_qcom_opensource_display-drivers 44275c404a677d9d9e5230fedd1af2ef02fc7b9a
+Base: Joint Uke kernel23 f429992feb638e7dffc0142ecb77c6b1a86fc16e
+License: GPL-2.0-only
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+index c3cc733..2cd42cf 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -251,6 +251,13 @@ u32 dpu_encoder_get_drm_fmt(struct dpu_encoder_phys *phys_enc)
+ 
+ 	if (drm_mode_is_420_only(info, mode))
+ 		return DRM_FORMAT_YUV420;
++	if (phys_enc->hw_intf->cap->type == INTF_DP &&
++	    of_machine_is_compatible("xiaomi,uke")) {
++		struct msm_drm_private *priv = drm_enc->dev->dev_private;
++		unsigned int id = dpu_enc->disp_info.h_tile_instance[0];
++		if (msm_dp_output_bpc(priv->kms->dp[id], mode) == 10)
++			return DRM_FORMAT_XRGB2101010;
++	}
+ 
+ 	return DRM_FORMAT_RGB888;
+ }
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.c b/drivers/gpu/drm/msm/dp/dp_display.c
+index b714480..07cd79f 100644
+--- a/drivers/gpu/drm/msm/dp/dp_display.c
++++ b/drivers/gpu/drm/msm/dp/dp_display.c
+@@ -1452,6 +1452,26 @@ void msm_dp_bridge_atomic_post_disable(struct drm_bridge *drm_bridge,
+ 	pm_runtime_put_sync(&dp->pdev->dev);
+ }
+ 
++unsigned int msm_dp_output_bpc(const struct msm_dp *dp,
++			       const struct drm_display_mode *mode)
++{
++	const struct msm_dp_display_private *display;
++	unsigned int bpc, pclk;
++	if (!dp || !dp->connector || !mode)
++		return 8;
++	display = container_of(dp, struct msm_dp_display_private, msm_dp_display);
++	if (display->panel->video_test)
++		return msm_dp_link_bit_depth_to_bpp(display->link->test_video.test_bit_depth) / 3;
++	bpc = dp->connector->display_info.bpc ?: 8;
++	if (dp->connector->state && dp->connector->state->max_requested_bpc)
++		bpc = min_t(unsigned int, bpc, dp->connector->state->max_requested_bpc);
++	bpc = bpc >= 10 ? 10 : bpc >= 8 ? 8 : 6;
++	pclk = mode->clock;
++	if (drm_mode_is_420_only(&dp->connector->display_info, mode))
++		pclk /= 2;
++	return msm_dp_panel_get_mode_bpp(display->panel, bpc * 3, pclk) / 3;
++}
++
+ void msm_dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 			const struct drm_display_mode *mode,
+ 			const struct drm_display_mode *adjusted_mode)
+@@ -1473,6 +1493,9 @@ void msm_dp_bridge_mode_set(struct drm_bridge *drm_bridge,
+ 
+ 	if (!msm_dp_display->msm_dp_mode.bpp)
+ 		msm_dp_display->msm_dp_mode.bpp = 24; /* Default bpp */
++	if (of_device_is_compatible(dp->pdev->dev.of_node, "qcom,sm7675-dp") &&
++	    !msm_dp_display_check_video_test(dp))
++		msm_dp_display->msm_dp_mode.bpp = msm_dp_output_bpc(dp, adjusted_mode) * 3;
+ 
+ 	drm_mode_copy(&msm_dp_display->msm_dp_mode.drm_mode, adjusted_mode);
+ 
+diff --git a/drivers/gpu/drm/msm/dp/dp_drm.c b/drivers/gpu/drm/msm/dp/dp_drm.c
+index b659d22..151a598 100644
+--- a/drivers/gpu/drm/msm/dp/dp_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_drm.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <linux/string_choices.h>
++#include <linux/of.h>
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_bridge.h>
+@@ -321,6 +322,19 @@ struct drm_connector *msm_dp_drm_connector_init(struct msm_dp *msm_dp_display,
+ 	connector = drm_bridge_connector_init(msm_dp_display->drm_dev, encoder);
+ 	if (IS_ERR(connector))
+ 		return connector;
++	if (of_device_is_compatible(msm_dp_display->pdev->dev.of_node, "qcom,sm7675-dp")) {
++		int ret;
++
++		/* The property helper writes the connector's atomic state. */
++		if (!connector->state) {
++			connector->funcs->reset(connector);
++			if (!connector->state)
++				return ERR_PTR(-ENOMEM);
++		}
++		ret = drm_connector_attach_max_bpc_property(connector, 6, 10);
++		if (ret)
++			return ERR_PTR(ret);
++	}
+ 
+ 	if (!msm_dp_display->is_edp)
+ 		drm_connector_attach_dp_subconnector_property(connector);
+diff --git a/drivers/gpu/drm/msm/msm_drv.h b/drivers/gpu/drm/msm/msm_drv.h
+index 3dd5d21..adc193e 100644
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -376,6 +376,8 @@ void msm_dp_snapshot(struct msm_disp_state *disp_state, struct msm_dp *dp_displa
+ bool msm_dp_needs_periph_flush(const struct msm_dp *dp_display,
+ 			       const struct drm_display_mode *mode);
+ bool msm_dp_wide_bus_available(const struct msm_dp *dp_display);
++unsigned int msm_dp_output_bpc(const struct msm_dp *dp_display,
++			       const struct drm_display_mode *mode);
+ 
+ #else
+ static inline int __init msm_dp_register(void)
+@@ -407,6 +409,11 @@ static inline bool msm_dp_wide_bus_available(const struct msm_dp *dp_display)
+ {
+ 	return false;
+ }
++static inline unsigned int msm_dp_output_bpc(const struct msm_dp *dp_display,
++					    const struct drm_display_mode *mode)
++{
++	return 8;
++}
+ 
+ #endif
+ 

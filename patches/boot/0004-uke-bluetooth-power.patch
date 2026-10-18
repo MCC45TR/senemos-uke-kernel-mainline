@@ -1,0 +1,46 @@
+From: Uke Linux project <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] Admit the exact Uke Bluetooth power graph
+
+Preserve the eight OEM supplier references and zero current-load votes. Do not
+substitute a dummy ASD regulator or change existing regulator voltage limits.
+The additional smpe3 resource is the selected Uke S3E provider.
+
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -2172,6 +2172,18 @@
+ 	.num_vregs = 4,
+ };
+ 
++/* Uke's OEM power graph has eight rails, no separate ASD rail, and zero load votes. */
++static const struct qca_device_data qca_soc_data_uke_wcn6750 __maybe_unused = {
++	.soc_type = QCA_WCN6750,
++	.vregs = (struct qca_vreg []) {
++		{ "vddio", 0 }, { "vddaon", 0 }, { "vddbtcxmx", 0 },
++		{ "vddrfacmn", 0 }, { "vddrfa0p8", 0 }, { "vddrfa1p7", 0 },
++		{ "vddrfa1p2", 0 }, { "vddrfa2p2", 0 },
++	},
++	.num_vregs = 8,
++	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
++};
++
+ static const struct qca_device_data qca_soc_data_wcn6750 __maybe_unused = {
+ 	.soc_type = QCA_WCN6750,
+ 	.vregs = (struct qca_vreg []) {
+@@ -2788,6 +2800,7 @@
+ 	{ .compatible = "qcom,wcn3990-bt", .data = &qca_soc_data_wcn3990},
+ 	{ .compatible = "qcom,wcn3991-bt", .data = &qca_soc_data_wcn3991},
+ 	{ .compatible = "qcom,wcn3998-bt", .data = &qca_soc_data_wcn3998},
++	{ .compatible = "xiaomi,uke-wcn6750-bt", .data = &qca_soc_data_uke_wcn6750},
+ 	{ .compatible = "qcom,wcn6750-bt", .data = &qca_soc_data_wcn6750},
+ 	{ .compatible = "qcom,wcn6855-bt", .data = &qca_soc_data_wcn6855},
+ 	{ .compatible = "qcom,wcn7850-bt", .data = &qca_soc_data_wcn7850},
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -2005,6 +2005,7 @@
+ 	    strcmp(aggr_vreg->resource_name, "smpb2") &&
+ 	    strcmp(aggr_vreg->resource_name, "smpb1") &&
+ 	    strcmp(aggr_vreg->resource_name, "smpb3") &&
++	    strcmp(aggr_vreg->resource_name, "smpe3") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldod1") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob5") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob12") &&

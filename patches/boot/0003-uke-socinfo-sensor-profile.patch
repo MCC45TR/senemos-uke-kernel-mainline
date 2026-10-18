@@ -1,0 +1,133 @@
+From: Uke Linux project <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] Expose Uke sensor profile fields from validated SMEM data
+
+Retain the OEM MTP/Unknown spelling and actual platform version. Expose the
+read-only group only for Uke with a complete version-6-or-newer SMEM prefix.
+Unknown profile labels fail instead of selecting a guessed sensor registry.
+
+--- a/drivers/soc/qcom/socinfo.c
++++ b/drivers/soc/qcom/socinfo.c
+@@ -7,6 +7,7 @@
+ #include <linux/debugfs.h>
+ #include <linux/err.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/random.h>
+ #include <linux/slab.h>
+@@ -240,6 +241,8 @@
+ struct qcom_socinfo {
+ 	struct soc_device *soc_dev;
+ 	struct soc_device_attribute attr;
++	const struct socinfo *sensor_info;
++	bool sensor_attrs;
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *dbg_root;
+ 	struct socinfo_params info;
+@@ -891,11 +894,64 @@
+ static void socinfo_debugfs_exit(struct qcom_socinfo *qcom_socinfo) {  }
+ #endif /* CONFIG_DEBUG_FS */
+ 
++/* The OEM Uke sensor registry consumes these legacy SMEM field names. */
++static ssize_t hw_platform_show(struct device *dev,
++			       struct device_attribute *attr, char *buf)
++{
++	struct qcom_socinfo *qs = dev_get_drvdata(dev);
++
++	if (le32_to_cpu(qs->sensor_info->hw_plat) != 8)
++		return -ENODATA;
++	return sysfs_emit(buf, "MTP\n");
++}
++static DEVICE_ATTR_RO(hw_platform);
++
++static ssize_t platform_subtype_show(struct device *dev,
++				    struct device_attribute *attr, char *buf)
++{
++	struct qcom_socinfo *qs = dev_get_drvdata(dev);
++
++	if (le32_to_cpu(qs->sensor_info->hw_plat_subtype) != 0)
++		return -ENODATA;
++	return sysfs_emit(buf, "Unknown\n");
++}
++static DEVICE_ATTR_RO(platform_subtype);
++
++static ssize_t platform_subtype_id_show(struct device *dev,
++				       struct device_attribute *attr, char *buf)
++{
++	struct qcom_socinfo *qs = dev_get_drvdata(dev);
++
++	return sysfs_emit(buf, "%u\n", le32_to_cpu(qs->sensor_info->hw_plat_subtype));
++}
++static DEVICE_ATTR_RO(platform_subtype_id);
++
++static ssize_t platform_version_show(struct device *dev,
++				    struct device_attribute *attr, char *buf)
++{
++	struct qcom_socinfo *qs = dev_get_drvdata(dev);
++
++	return sysfs_emit(buf, "%u\n", le32_to_cpu(qs->sensor_info->plat_ver));
++}
++static DEVICE_ATTR_RO(platform_version);
++
++static struct attribute *uke_sensor_attrs[] = {
++	&dev_attr_hw_platform.attr,
++	&dev_attr_platform_subtype.attr,
++	&dev_attr_platform_subtype_id.attr,
++	&dev_attr_platform_version.attr,
++	NULL,
++};
++static const struct attribute_group uke_sensor_attr_group = {
++	.attrs = uke_sensor_attrs,
++};
++
+ static int qcom_socinfo_probe(struct platform_device *pdev)
+ {
+ 	struct qcom_socinfo *qs;
+ 	struct socinfo *info;
+ 	size_t item_size;
++	int ret;
+ 
+ 	info = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_HW_SW_BUILD_ID,
+ 			      &item_size);
+@@ -931,6 +987,21 @@
+ 	if (IS_ERR(qs->soc_dev))
+ 		return PTR_ERR(qs->soc_dev);
+ 
++	if (of_machine_is_compatible("xiaomi,uke") &&
++	    offsetofend(struct socinfo, hw_plat_subtype) <= item_size &&
++	    SOCINFO_MAJOR(le32_to_cpu(info->fmt)) == 0 &&
++	    SOCINFO_MINOR(le32_to_cpu(info->fmt)) >= 6) {
++		qs->sensor_info = info;
++		dev_set_drvdata(soc_device_to_device(qs->soc_dev), qs);
++		ret = sysfs_create_group(&soc_device_to_device(qs->soc_dev)->kobj,
++					 &uke_sensor_attr_group);
++		if (ret) {
++			soc_device_unregister(qs->soc_dev);
++			return ret;
++		}
++		qs->sensor_attrs = true;
++	}
++
+ 	socinfo_debugfs_init(qs, info, item_size);
+ 
+ 	/* Feed the soc specific unique data into entropy pool */
+@@ -945,6 +1016,9 @@
+ {
+ 	struct qcom_socinfo *qs = platform_get_drvdata(pdev);
+ 
++	if (qs->sensor_attrs)
++		sysfs_remove_group(&soc_device_to_device(qs->soc_dev)->kobj,
++				   &uke_sensor_attr_group);
+ 	soc_device_unregister(qs->soc_dev);
+ 
+ 	socinfo_debugfs_exit(qs);
+--- a/drivers/base/soc.c
++++ b/drivers/base/soc.c
+@@ -46,6 +46,7 @@
+ {
+ 	return &soc_dev->dev;
+ }
++EXPORT_SYMBOL_GPL(soc_device_to_device);
+ 
+ static umode_t soc_attribute_mode(struct kobject *kobj,
+ 				struct attribute *attr,

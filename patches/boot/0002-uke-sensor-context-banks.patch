@@ -1,0 +1,33 @@
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -756,1 +756,21 @@
++static bool qcom_uke_sensor_cb(struct device *dev)
++{
++	struct iommu_fwspec *spec = dev_iommu_fwspec_get(dev);
++	struct device_node *node;
++	bool match;
++
++	if (!dev->of_node || !of_device_is_compatible(dev->of_node, "qcom,fastrpc-compute-cb") ||
++	    !spec || spec->num_ids != 2)
++		return false;
++	node = of_find_node_by_path("/soc/remoteproc-adsp@03000000/glink-edge/qcom,msm_fastrpc_rpmsg/compute-cb@3");
++	match = dev->of_node == node && spec->ids[0] == 0x801003 && spec->ids[1] == 0x201043;
++	of_node_put(node);
++	if (match)
++		return true;
++	node = of_find_node_by_path("/soc/remoteproc-adsp@03000000/glink-edge/qcom,msm_fastrpc_rpmsg/compute-cb@5");
++	match = dev->of_node == node && spec->ids[0] == 0x801005 && spec->ids[1] == 0x201045;
++	of_node_put(node);
++	return match;
++}
++
+ static int qcom_uke_smmu_cfg_probe(struct arm_smmu_device *smmu)
+@@ -825,7 +845,7 @@
+ 		u32 sid = fwspec->ids[i];
+ 
+ 		if (sid != 0x40 && sid != 0xb6 &&
+-		    !((sid == 0x60 || sid == 0xa3 || sid == 0x423 ||
++		    !((qcom_uke_sensor_cb(dev) || sid == 0x60 || sid == 0xa3 || sid == 0x423 ||
+ 		       sid == 0x436 || sid == 0x11400) &&
+ 		      of_device_is_compatible(smmu->dev->of_node, "qcom,sm7675-boot-smmu")))
+ 			return dev_err_probe(dev, -EOPNOTSUPP, "outside Uke boot SMMU scope\n");

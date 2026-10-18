@@ -1,0 +1,116 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/* Experimental render-only translation of the inspected Uke GPU graph.
+ * Addresses, clocks and IRQs come from Uke OEM evidence. The nine SM7675
+ * OPPs agree with the pinned Lamma table and Uke frequency/corner/bus data.
+ * Keep the firmware display and its reserved mappings intact.
+ */
+#include <dt-bindings/clock/qcom,gpucc-cliffs.h>
+
+&{/soc/clock-controller@3d90000} {
+	#power-domain-cells = <1>;
+};
+
+&{/soc/qcom,gdsc@3d99108} { status = "disabled"; };
+&{/soc/qcom,gdsc@3d9905c} { status = "disabled"; };
+&{/soc/qcom,gdsc@3d68024} { status = "disabled"; };
+&{/soc/qcom,kgsl-iommu@3da0000} { status = "disabled"; };
+&{/soc/kgsl-smmu@3da0000/gpu_qtb@3de8000} { status = "disabled"; };
+
+&{/soc/kgsl-smmu@3da0000} {
+	compatible = "qcom,adreno-smmu", "qcom,smmu-500", "arm,mmu-500";
+	reg = <0x3da0000 0x40000>;
+	clock-names = "hlos", "bus", "iface", "ahb";
+	power-domains = <&gpucc GPU_CC_CX_GDSC>;
+	status = "okay";
+};
+
+&{/soc/qcom,kgsl-3d0@3d00000} {
+	compatible = "qcom,adreno-43030b00", "qcom,adreno";
+	reg = <0x3d00000 0x40000>, <0x3d9e000 0x1000>, <0x3d61000 0x800>;
+	reg-names = "kgsl_3d0_reg_memory", "cx_mem", "cx_dbgc";
+	interrupt-names = "gpu";
+	/* Drop the legacy APB debug-clock argument on the zero-cell AOSS clock. */
+	clocks = <&gcc GCC_GPU_MEMNOC_GFX_CLK>, <&gcc GCC_GPU_SNOC_DVM_GFX_CLK>,
+		 <&gpucc GPU_CC_AHB_CLK>;
+	clock-names = "memnoc", "snoc", "ahb";
+	/* Uke exposes user SID 0; the gen7_11_0 core has no LPAC feature. */
+	iommus = <&kgsl_smmu 0 0>;
+	qcom,gmu = <&gmu>;
+	interconnect-names = "gfx-mem";
+	operating-points-v2 = <&uke_gpu_lab_opp>;
+	status = "okay";
+
+	uke_gpu_lab_opp: opp-table {
+		compatible = "operating-points-v2";
+		/* The common Cliffs 1000/1100 MHz bins belong outside this 732 table. */
+		opp-255000000 {
+			opp-hz = /bits/ 64 <255000000>;
+			opp-level = <56>;
+			opp-peak-kBps = <2136718>;
+		};
+		opp-353000000 {
+			opp-hz = /bits/ 64 <353000000>;
+			opp-level = <64>;
+			opp-peak-kBps = <6074218>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-level = <128>;
+			opp-peak-kBps = <6671875>;
+		};
+		opp-633000000 {
+			opp-hz = /bits/ 64 <633000000>;
+			opp-level = <192>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-684000000 {
+			opp-hz = /bits/ 64 <684000000>;
+			opp-level = <224>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-736000000 {
+			opp-hz = /bits/ 64 <736000000>;
+			opp-level = <256>;
+			opp-peak-kBps = <12449218>;
+		};
+		opp-835000000 {
+			opp-hz = /bits/ 64 <835000000>;
+			opp-level = <320>;
+			opp-peak-kBps = <14398437>;
+		};
+		opp-900000000 {
+			opp-hz = /bits/ 64 <900000000>;
+			opp-level = <384>;
+			opp-peak-kBps = <16500000>;
+		};
+		opp-950000000 {
+			opp-hz = /bits/ 64 <950000000>;
+			opp-level = <400>;
+			opp-peak-kBps = <16500000>;
+		};
+	};
+};
+
+&{/soc/qcom,gmu@3d69000} {
+	compatible = "qcom,adreno-gmu-732", "qcom,adreno-gmu";
+	reg = <0x3d68000 0x37000>, <0x3d50000 0x10000>, <0xb280000 0x10000>;
+	reg-names = "gmu", "rscc", "gmu_pdc";
+	clock-names = "gmu", "cxo", "axi", "memnoc", "ahb", "hub";
+	power-domains = <&gpucc GPU_CC_CX_GDSC>, <&gpucc GPU_CC_GX_GDSC>;
+	power-domain-names = "cx", "gx";
+	qcom,qmp = <&aoss_qmp>;
+	operating-points-v2 = <&uke_gmu_lab_opp>;
+	status = "okay";
+
+	uke_gmu_lab_opp: opp-table {
+		compatible = "operating-points-v2";
+		opp-220000000 {
+			opp-hz = /bits/ 64 <220000000>;
+			opp-level = <64>;
+		};
+		opp-550000000 {
+			opp-hz = /bits/ 64 <550000000>;
+			opp-level = <128>;
+		};
+	};
+};

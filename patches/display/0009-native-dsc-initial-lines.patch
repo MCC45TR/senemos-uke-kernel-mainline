@@ -1,0 +1,114 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dpu: calculate MDSS 10 DSC input latency
+
+Xiaomi's Uke display source calculates DSC initial lines from the actual
+active soft slices, output-buffer width and compressed chunk size. The
+upstream encoder calculation instead uses an older pipeline model and
+derives soft slices from encoder input width. For O82's two 800-pixel
+soft slices, 10 bpc and 8 bpp, the OEM model produces three initial lines
+instead of two.
+
+Use the exact OEM model in the DSC 1.2 register writer, which already knows
+the active soft slices after applying the multiplex mode. Scope it to
+the MDSS >= 10 capability admitted by the isolated SM7675 catalog; all
+other catalogs keep the existing encoder calculation. Reject invalid
+divisors or a result which cannot fit the initial-lines register field.
+
+Source: Xiaomi display-drivers, commit
+44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/sde/sde_encoder_dce.c, _dce_dsc_initial_line_calc().
+The file is GPL-2.0-only, copyright The Linux Foundation and Qualcomm
+Innovation Center, Inc. Its Hardent core constants describe the encoder
+pipeline, not panel geometry. No panel timing or rate-control field
+changes.
+This remains an isolated display candidate without physical qualification.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c | 65 +++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+@@ -84,6 +84,64 @@ static void dpu_hw_dsc_disable_1_2(struct dpu_hw_dsc *hw_dsc)
+ 	DPU_REG_WRITE(hw, sblk->enc.base + DSC_MAIN_CONF, 0);
+ }
+ 
++static u32 dpu_hw_dsc_initial_lines_1_2(const struct drm_dsc_config *dsc,
++				     u32 num_active_slices, u32 mode)
++{
++	/* Hardent core configuration from the matching Uke OEM DSC driver. */
++	const u32 rtl_max_bpc = 10, rtl_output_data_width = 64;
++	const u32 pipeline_latency = 28;
++	u32 max_muxword_size, max_ssm_delay, mux_word_size;
++	u32 compress_bpp_group, input_ssm_out_latency, obuf_latency;
++	u32 ob_data_width, ob_data_width_4comps, ob_data_width_3comps;
++	u32 base_hs_latency, chunk_bits, output_rate_extra_budget_bits;
++	u32 multi_hs_extra_budget_bits, multi_hs_extra_latency;
++	u32 bpp, container_slice_width;
++	bool split_mux, multi_slice;
++
++	if (!dsc || !num_active_slices)
++		return 0;
++
++	bpp = drm_dsc_get_bpp_int(dsc);
++	container_slice_width = dsc->native_422 ?
++			dsc->slice_width / 2 : dsc->slice_width;
++	compress_bpp_group = dsc->native_422 ? 2 * bpp : bpp;
++	if (!container_slice_width || !compress_bpp_group)
++		return 0;
++
++	max_muxword_size = rtl_max_bpc >= 12 ? 64 : 48;
++	max_ssm_delay = 4 * (rtl_max_bpc + 1) + max_muxword_size - 1;
++	mux_word_size = dsc->bits_per_component >= 12 ? 64 : 48;
++	input_ssm_out_latency = pipeline_latency +
++			3 * (max_ssm_delay + 2) * num_active_slices;
++	ob_data_width_4comps = rtl_output_data_width >= 2 * max_muxword_size ?
++			rtl_output_data_width : 2 * rtl_output_data_width;
++	ob_data_width_3comps = rtl_output_data_width >= max_muxword_size ?
++			rtl_output_data_width : 2 * rtl_output_data_width;
++	ob_data_width = dsc->native_420 || dsc->native_422 ?
++			ob_data_width_4comps : ob_data_width_3comps;
++	if (compress_bpp_group > ob_data_width)
++		return 0;
++	obuf_latency = DIV_ROUND_UP(9 * ob_data_width + mux_word_size,
++				  compress_bpp_group) + 1;
++	base_hs_latency = dsc->initial_xmit_delay + input_ssm_out_latency +
++			obuf_latency;
++	chunk_bits = 8 * dsc->slice_chunk_size;
++	output_rate_extra_budget_bits =
++			((ob_data_width - compress_bpp_group) * chunk_bits) >>
++			(ob_data_width == 128 ? 7 : 6);
++	split_mux = (mode & DSC_MODE_SPLIT_PANEL) &&
++		    (mode & DSC_MODE_MULTIPLEX);
++	multi_slice = num_active_slices > 1 &&
++		      ob_data_width > compress_bpp_group;
++	multi_hs_extra_budget_bits = split_mux || multi_slice ?
++			chunk_bits : output_rate_extra_budget_bits;
++	multi_hs_extra_latency = DIV_ROUND_UP(multi_hs_extra_budget_bits,
++					   compress_bpp_group);
++
++	return DIV_ROUND_UP(base_hs_latency + multi_hs_extra_latency,
++			    container_slice_width);
++}
++
+ static void dpu_hw_dsc_config_1_2(struct dpu_hw_dsc *hw_dsc,
+ 				  struct drm_dsc_config *dsc,
+ 				  u32 mode,
+@@ -113,6 +171,13 @@ static void dpu_hw_dsc_config_1_2(struct dpu_hw_dsc *hw_dsc,
+ 	if (mode & DSC_MODE_MULTIPLEX)
+ 		num_active_slice_per_enc = dsc->slice_count / 2;
+ 
++	if (hw_dsc->caps->features & BIT(DPU_DSC_FULL_ICH_PREC)) {
++		initial_lines = dpu_hw_dsc_initial_lines_1_2(dsc,
++					 num_active_slice_per_enc, mode);
++		if (!initial_lines || initial_lines > 0xff)
++			return;
++	}
++
+ 	data |= (num_active_slice_per_enc & 0x3) << 7;
+ 
+ 	DPU_REG_WRITE(hw, DSC_CMN_MAIN_CNF, data);
+--
+2.53.0

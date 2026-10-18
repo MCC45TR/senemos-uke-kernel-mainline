@@ -1,90 +1,99 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global __os_install_post %{nil}
-%global _source_filedigest_algorithm 8
-%global _binary_filedigest_algorithm 8
-%global krel %{version}-senemos-uke-kvm
-%global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-%global _uke_out %{_topdir}/kernel-out
+%global _uke_out %{_topdir}/native-kernel-out
+%global uke_boot_userspace %{_topdir}/boot-userspace
+%bcond_with gunyah_exit
+%if %{with gunyah_exit}
+%global kvm_suffix kvm-exit
+%else
+%global kvm_suffix kvm
+%endif
 
-Name: uke-senemos-kernel-mainline-kvm
-Version: 7.2.9
-Release:        1.27%{?dist}
-Summary: Experimental Uke kernel and bounded KVM acceptance probe
-License: GPL-2.0-only AND MIT
+Name: uke-senemos-kernel-mainline-%{kvm_suffix}
+Version: 7.2.11
+%if "%{version}" == "7.2.11"
+%global senemos_build_release 2
+%else
+%global senemos_build_release 1
+%endif
+%global krel %{version}-%{senemos_build_release}-%{kvm_suffix}
+Release: %{senemos_build_release}%{?dist}
+Summary: Experimental Uke KVM kernel with the current native profile
+License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
 Source2: linux-%{version}.tar.sign
 Source3: linux-stable.asc
-Source4: gpr-domain-contract.sh
-Source5: cpucp-mailbox-contract.sh
-Source6: slim-startup-contract.sh
-Source7: battery-protocol-contract.sh
-Source8: firmware-backlight-contract.sh
-Source9: probe.cpp
-Source10: kvm-probe-contract.sh
-Source11: EL2.md
+Source4: senemos-native-profile-%{version}.tar.xz
+Source5: senemos-uke-boot-recipe.tar.xz
+Source6: boot-payload.json
 ExclusiveArch: aarch64
-BuildRequires: bash bc bison flex clang llvm lld make gcc perl
-BuildRequires: gcc-c++
+BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
-BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2
+BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
+BuildRequires: python3
+BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
+Requires: %{name}-boot = %{version}-%{release}
 
 %description
-Experimental channel: firmware still supplies EL1 on the tested Uke. KVM
-configuration and this package do not perform an EL2 takeover or change ABL,
-HYP, TrustZone, slot selection or any boot partition. Only a matching native
-KVM guest result establishes virtualization. Keep the accepted kernel installed.
-
-Uke/SM7675 source-build candidate. Package and compile validation do not
-establish tablet boot or hardware support. Firmware and boot routing are
-managed separately. No Android partition or boot selection is changed.
+Source-built kernel with the reviewed O82 native display profile.
+The boot subpackage contains a source-built initramfs and Android v4 container
+with matching modules. It contains no OEM firmware or device-private data.
+Boot writes require the explicitly enabled native updater. Build success does
+not establish physical tablet acceptance.
 
 %package core
-Summary: Senemos Uke ARM64 kernel Image and build identity
+Summary: Uke kernel Image and source identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
-# Revisions of one upstream version share krel and cannot coexist. Omit the
-# release in the equality so all revisions of this version are replaced;
-# other upstream versions keep their separate installonly fallback paths.
-Obsoletes: %{name}-core = %{version}
 
 %description core
-The EFI-enabled ARM64 Image, configuration and System.map for Senemos Uke.
+Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
-Summary: Modules matching the Senemos Uke kernel
+Summary: Matching Uke kernel modules
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
 Provides: installonlypkg(kernel)
-Obsoletes: %{name}-modules = %{version}
 
 %description modules
-Rebuilt AArch64 modules from the same source and configuration as Image.
+Modules from the same native-profile source and configuration as the raw Image.
 
 %package dtbs
-Summary: Independent Uke compile-stage device tree
+Summary: Uke compile-stage device tree and native overlay
 Requires: %{name}-core = %{version}-%{release}
 Provides: installonlypkg(kernel)
-Obsoletes: %{name}-dtbs = %{version}
 
 %description dtbs
-Uke-specific CPU, interrupt and static reservation description. The future
-UEFI handoff must supply exact-profile RAM and dynamic reservations. This
-device tree is not physically accepted and unreviewed peripherals are disabled.
+Independent compile-stage DTB and exact O82-42 native display overlay. Physical
+boot requires the separately validated dynamic stock-bootloader handoff.
+
+%package boot
+Summary: Matched native-display boot bundle for Uke
+Requires: %{name}-core = %{version}-%{release}
+Requires: %{name}-modules = %{version}-%{release}
+Requires: %{name}-dtbs = %{version}-%{release}
+Provides: installonlypkg(kernel)
+
+%description boot
+Experimental Android v4 container and matching modules for PARTLABEL=linux.
+Installation never invokes the production updater, writes a partition or changes
+the active slot. Firmware ownership and physical EL2 acceptance remain required.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
 test "$(sha256sum %{SOURCE0} | cut -d ' ' -f1)" = "$expected"
 signer=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .signer)
-mkdir -p %{_topdir}/gnupg
-chmod 700 %{_topdir}/gnupg
-gpg --homedir %{_topdir}/gnupg --batch --import %{SOURCE3}
-xz -cd %{SOURCE0} | gpg --homedir %{_topdir}/gnupg --batch --status-fd=1 \
+# GnuPG agent sockets cannot use arbitrarily long RPM build paths.
+keyring=$(mktemp -d)
+trap 'gpgconf --homedir "$keyring" --kill gpg-agent; rm -rf "$keyring"' EXIT
+gpg --homedir "$keyring" --batch --import %{SOURCE3}
+xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
 %setup -q -n linux-%{version}
@@ -113,100 +122,126 @@ while IFS= read -r patch_name; do
 done < senemos-adaptation/patches/series
 cmp senemos-expected-patches.txt senemos-applied-patches.txt
 
-%build
-%if !0%{?uke_package_only}
-export ARCH=arm64 LLVM=1
-export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=uke-builder
-export KBUILD_BUILD_TIMESTAMP='2026-10-03 10:44:10 UTC' KBUILD_BUILD_VERSION=1
-export SOURCE_DATE_EPOCH=1791024250
-# A killed fixdep can leave a partially written .cmd file. Preserve completed
-# objects and discard only dependency records that no longer parse as Make.
-if test -d %{_uke_out}; then
-    find %{_uke_out} -type f -name '.*.cmd' | while IFS= read -r record; do
-        if ! make -s -rR -f "$record" --eval '.PHONY: senemos_parse_check' \
-            --eval 'senemos_parse_check: ; @:' senemos_parse_check >/dev/null 2>&1; then
-            rm -f "$record"
-            echo 'Discarded an incomplete dependency record from an interrupted build'
-        fi
-    done
-fi
-make O=%{_uke_out} defconfig
-scripts/kconfig/merge_config.sh -m -O %{_uke_out} %{_uke_out}/.config \
-    senemos-adaptation/configs/arm64-qcom.config \
-    senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config
-make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm olddefconfig
-# Kconfig can silently drop a requested symbol when its dependencies are absent.
-# Check every enabled/value requirement after dependency resolution.
-for fragment in senemos-adaptation/configs/uke.config senemos-adaptation/configs/fedora.config; do
-    while IFS= read -r item; do
-        case "$item" in CONFIG_*=*) grep -Fx "$item" %{_uke_out}/.config || exit 1;; esac
-    done < "$fragment"
-done
-for item in CONFIG_PINCTRL_CLIFFS=y CONFIG_SM_GCC_CLIFFS=y \
-    CONFIG_QCOM_RPMH_UKE=y CONFIG_INTERCONNECT_QCOM_CLIFFS_USB=y \
-    CONFIG_EFI=y CONFIG_EFI_STUB=y CONFIG_MODULES=y; do
-    grep -Fx "$item" %{_uke_out}/.config || exit 1
-done
-make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm -j%{_uke_jobs} Image dtbs modules
-install -m644 senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm kernelrelease)" = '%{krel}'
-%else
-# A lifecycle-test release repackages the already verified build, without
-# short-circuit RPM dependencies or a second kernel compilation.
-test -s %{_uke_out}/arch/arm64/boot/Image
-test -s %{_uke_out}/Module.symvers
-cmp senemos-applied-patches.txt %{_uke_out}/senemos-applied-patches.txt
-%endif
+tar -xJf %{SOURCE4}
+bash native-profile/prepare.sh "$PWD"
+tar -xJf %{SOURCE5}
+cmp boot-recipe/lock.json %{SOURCE6}
+(cd boot-recipe; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
 
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Wl,--as-needed %{SOURCE9} -o %{_uke_out}/uke-kvm-probe
+%build
+export ARCH=arm64 LLVM=1 LLVM_IAS=1
+export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
+export SOURCE_DATE_EPOCH=1791725270
+export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
+mkdir -p %{_uke_out}
+if test ! -e %{uke_boot_userspace}; then
+    bash boot-recipe/src/boot/make-initramfs-base.sh %{uke_boot_userspace} '%{krel}'
+fi
+test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
+(cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
+jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
+test "$jobs" -le 8 || jobs=8
+bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
+for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_DRM_MSM=m \
+    CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
+    CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m; do
+    grep -Fx "$requirement" %{_uke_out}/.config
+done
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-%{kvm_suffix} kernelrelease)" = '%{krel}'
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Wl,--as-needed native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
 
 %check
-bash %{SOURCE10} %{_uke_out}/uke-kvm-probe
-CXX=clang++ bash %{SOURCE4} "$PWD"
-CC=clang bash %{SOURCE5} "$PWD"
-CC=clang bash %{SOURCE6} "$PWD"
-CC=clang bash %{SOURCE7} "$PWD"
-bash %{SOURCE8} "$PWD/drivers/gpu/drm/sysfb/simpledrm.c" "$PWD/include/linux/backlight.h"
+bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
+CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
+CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native
+CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
+bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
+bash boot-recipe/tests/target-privacy-contract.sh
+CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
+CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
+bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
+bash native-profile/tests/usb-charger-readiness-contract.sh "$PWD"
+CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
+CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
+CC=clang bash native-profile/tests/usb-role-observation-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/ucsi-notification-contract.sh drivers/usb/typec/ucsi/ucsi_glink.c
+CXX=clang++ bash native-profile/tests/altmode-notification-contract.sh drivers/soc/qcom/pmic_glink_altmode.c
+for symbol in FW_LOADER_COMPRESS FW_LOADER_COMPRESS_XZ FW_LOADER_COMPRESS_ZSTD; do
+    grep -Fx "CONFIG_$symbol=y" %{_uke_out}/.config
+done
+CC=clang CXX=clang++ bash native-profile/tests/pmic-adc-contract.sh "$PWD"
+CC=clang bash native-profile/tests/adc5-gen3-units.sh "$PWD"
+CC=clang bash native-profile/tests/adc5-gen3-scalers.sh "$PWD"
+CC=clang CXX=clang++ bash native-profile/tests/hall-contract.sh "$PWD"
+CC=clang bash native-profile/tests/smp2p-restart-contract.sh "$PWD"
+CC=clang bash native-profile/tests/cpucp-mailbox-contract.sh "$PWD"
+CC=clang bash native-profile/tests/empty-oem-nodes-contract.sh "$PWD"
+CC=clang bash native-profile/tests/bluetooth-fdt-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wlan-remove-contract.sh "$PWD"
+CC=clang bash native-profile/tests/bluetooth-power-contract.sh drivers/bluetooth/hci_qca.c
+grep -Fx 'CONFIG_BT_LE=y' %{_uke_out}/.config
+grep -Fx 'CONFIG_BT_BNEP=m' %{_uke_out}/.config
+test -s %{_uke_out}/net/bluetooth/bnep/bnep.ko
+CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
+CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
+CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
+CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
+CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
+CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
+CC=clang bash native-profile/tests/o82-readback-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/o82-refresh-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
+CXX=clang++ bash native-profile/tests/o82-pll-bias-contract.sh "$PWD" %{_uke_out}
+CXX=clang++ bash native-profile/tests/dpu-dsi-timing-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-data.h native-profile/src/display/panel-xiaomi-o82.c
+
+CXX=clang++ bash native-profile/tests/o82-dfps-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
+CC=clang bash native-profile/tests/o82-dfps-atomic-contract.sh drivers/gpu/drm/msm/msm_atomic.c
+CC=clang bash native-profile/tests/o82-dfps-lifetime-contract.sh drivers/gpu/drm/msm/msm_atomic.c drivers/gpu/drm/msm/dsi/dsi_manager.c
+CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h native-profile/src/display/o82-mode.h native-profile/src/display/qcom-uke-display.h
+CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
 %install
 install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
-install -Dm644 %{SOURCE11} %{buildroot}%{_datadir}/doc/%{name}/EL2.md
+install -Dm644 native-profile/EL2.md %{buildroot}%{_datadir}/doc/%{name}/EL2.md
 export ARCH=arm64 LLVM=1
-make O=%{_uke_out} LOCALVERSION=-senemos-uke-kvm modules_install \
-    INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 DEPMOD=true
-module_dir=%{buildroot}/lib/modules/%{krel}
-rm -f "$module_dir/build" "$module_dir/source"
-mkdir -p %{buildroot}%{_prefix}/lib/modules
-mv "$module_dir" %{buildroot}%{_prefix}/lib/modules/
-rm -rf %{buildroot}/lib
-module_dir=%{buildroot}%{_prefix}/lib/modules/%{krel}
-find "$module_dir" -name '*.ko' -type f -exec zstd -q -T1 --rm {} \;
+mkdir -p %{buildroot}/usr/lib/modules
+cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
+module_dir=%{buildroot}/usr/lib/modules/%{krel}
 install -m644 %{_uke_out}/arch/arm64/boot/Image "$module_dir/vmlinuz"
 install -m644 %{_uke_out}/.config "$module_dir/config"
 install -m644 %{_uke_out}/System.map "$module_dir/System.map"
-mkdir -p "$module_dir/dtb/qcom"
+mkdir -p "$module_dir/dtb/qcom" "$module_dir/dtb/overlays"
 install -m644 %{_uke_out}/arch/arm64/boot/dts/qcom/sm7675-xiaomi-uke.dtb "$module_dir/dtb/qcom/"
+install -m644 native-generated/display.dtbo "$module_dir/dtb/overlays/uke-o82-oem-modes.dtbo"
 depmod -b %{buildroot} -m /usr/lib/modules -a %{krel}
-mkdir -p %{buildroot}%{_datadir}/senemos/uke/%{krel}
-install -m644 senemos-adaptation/source-lock.json \
-    %{buildroot}%{_datadir}/senemos/uke/%{krel}/source-lock.json
-install -m644 %{_uke_out}/senemos-applied-patches.txt \
-    %{buildroot}%{_datadir}/senemos/uke/%{krel}/applied-patches.txt
-
-%post modules -p /bin/sh
-if command -v depmod >/dev/null 2>&1; then depmod -a %{krel}; fi
-
-%postun modules -p /bin/sh
-# Reindex only when another release of this module package remains installed.
-# On the last removal, regenerating indexes would leave unowned kernel files.
-if test "$1" -gt 0 && command -v depmod >/dev/null 2>&1 && test -d /usr/lib/modules/%{krel}; then
-    depmod -a %{krel}
-fi
+identity=%{buildroot}/usr/share/senemos/uke/%{krel}
+mkdir -p "$identity"
+install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
+install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
+test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
+bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
+mkdir -p "$bundle"
+install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
+install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
+install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
+install -m644 %{SOURCE6} "$bundle/source-lock.json"
+install -m644 %{uke_boot_userspace}/build-rpms.tsv "$bundle/build-rpms.tsv"
+mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
+cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
+cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %files
 %{_bindir}/uke-kvm-probe
 %{_datadir}/doc/%{name}/EL2.md
-%doc senemos-adaptation/README.md
+%doc native-profile/README.md
 %license COPYING
 
 %files core
@@ -214,77 +249,100 @@ fi
 /usr/lib/modules/%{krel}/vmlinuz
 /usr/lib/modules/%{krel}/config
 /usr/lib/modules/%{krel}/System.map
-/usr/lib/modules/%{krel}/modules.builtin
-/usr/lib/modules/%{krel}/modules.builtin.modinfo
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.builtin*.bin
+/usr/lib/modules/%{krel}/modules.builtin*
 /usr/lib/modules/%{krel}/modules.order
-/usr/share/senemos/uke/%{krel}/source-lock.json
-/usr/share/senemos/uke/%{krel}/applied-patches.txt
+/usr/share/senemos/uke/%{krel}/
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.alias*
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.dep*
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.devname
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.softdep
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.symbols*
-%verify(not mtime) /usr/lib/modules/%{krel}/modules.weakdep
+/usr/lib/modules/%{krel}/modules.alias*
+/usr/lib/modules/%{krel}/modules.dep*
+/usr/lib/modules/%{krel}/modules.devname
+/usr/lib/modules/%{krel}/modules.softdep
+/usr/lib/modules/%{krel}/modules.symbols*
+/usr/lib/modules/%{krel}/modules.weakdep
 
 %files dtbs
 /usr/lib/modules/%{krel}/dtb/
 
+%files boot
+/usr/lib/senemos/kernel-updates/%{krel}/
+%license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
+
 %changelog
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.27
-- Separate experimental module namespace and native bounded KVM probe; firmware handoff remains EL1.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-29
+- Add an explicit root-only, read-only firmware threshold query without control admission.
+- Bound diagnostic GETs and reject active leases, lifecycle changes and partial results.
 
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.27
-- Link Uke firmware DRM blanking to its paired backlight without changing panel power.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-27
+- Accept observed UCSI type-2 notifications with opcode-specific validation.
+- Exercise the actual callback's reply, notification and lifecycle boundaries.
 
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.26
-- Connect the bounded USB2 SDP budget, reject unsolicited replies and start the exact Uke charger DSP
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-22
+- Retain exact O82 live timing updates while AVR remains enabled.
+- Update both AVR periods before their common timing flush without panel reset.
 
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.25
-- Admit a battery-only upstream Uke GLINK endpoint; retain legacy USB-role containment
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-21
+- Register the single battery diagnostic group with the supported managed API.
+- Remove unused getter snapshots while retaining coordinated generation checks.
 
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.24
-- Translate exact Uke OEM battery telemetry IDs and signed temperature; retain manual ADSP and charging qualification gates
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
+- Remove an unused legacy VA scalar flag that OF misinterprets as a GPIO provider.
 
-* Mon Oct 12 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.23
-- Propagate SLIMbus DMA, power and QMI startup errors before registration.
-- Run the production-function startup fault controls in native RPM checks.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
+- Translate the Uke UART wake IRQ to the falling-edge trigger used by its OEM driver.
+- Enable standard Bluetooth LE and BNEP support required by desktop Bluetooth services.
 
-* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.22
-- Add the exact OEM Uke two-channel CPUCP mailbox with fail-closed resources.
-- Test real resource and I/O paths without changing modern mailbox operations.
-* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.21
-- Add only the five protection domains measured in Uke's pinned OEM registry.
-- Reuse matching mainline services without donor domains or DMA permission changes.
-* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.20
-- Use the actual mainline GPR domain header and constant in the Uke fallback.
-- Require that production header in the native regression instead of a mock value.
-* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.19
-- Read the exact OEM Uke GPR ADSP domain while preserving mainline properties.
-- Test accepted and refused domain paths from the actual prepared APR code.
-* Mon Oct 12 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.18
-- Register the exact Cliffs LPASS interconnect route required by Uke ADSP.
-- Preserve OEM LP0 membership and existing QUP, USB and UFS paths.
-* Sun Oct 11 2026 Mürşit Can Cihan <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.17
-- Use built-in simpledrm and DRM fbdev for the early firmware console.
-- Respect upstream exclusion of simpledrm and the legacy simplefb driver.
-* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.8
-- Preserve OEM Uke WLAN forward rail order and reverse shutdown.
-- Keep partial enable ownership after failed cleanup for balanced retry.
-- Mark Cliffs GPIO functions for strict pinmux and GPIO coexistence.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-14
+- Stop O82 DSI video after both DPU timing engines and preserve panel OFF clocks.
+- Preserve the five-frame watchdog budget at the experimental AVR floor.
+- Correct the captured secondary SPMI resource address and vblank trace refcount.
 
-* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.7
-- Require exact Uke WCN6750 RF supplies and unwind failed firmware starts.
-- Admit only the OEM WLAN SMMU stream/mask while retaining translated DMA.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-13
+- Align host FDT fixtures to libfdt's eight-byte buffer contract on AArch64.
 
-* Sun Oct 11 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.6
-- Add exact Cliffs WPSS PAS and required CX/MX ARC proxy regulators.
-- Keep firmware startup manual and require AOP QMP; WLAN admission remains gated.
-* Tue Oct 06 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.4
-- Add attributed SM7675 UFS PHY tuning and EFI framebuffer console configuration.
-- Keep board UFS and physical boot acceptance gated separately.
-* Sun Oct 04 2026 Senemos Maintainers <MCC45TR@users.noreply.github.com> - 7.2.9-1
-- Build the Uke platform adaptations with Fedora Rawhide packaging.
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
+- Latch EVO/OLE PLL settings on reset exit without waiting for an unavailable ACK.
+- Preserve live PLL checks and propagate register-access failures.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
+- Disable the exact empty secondary SPMI bus and zero-length OEM demura placeholders.
+- Preserve populated controllers, nonzero reservations and all phandles.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-7
+- Map OEM paired hall events to standard input switches without physical GPIO ownership.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-6
+- Admit OEM charger and battery ADC conversions with standard current and temperature units.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-5
+- Preserve SMP2P input history until a real remote restart.
+- Test ordinary updates and both restart flag transitions.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-4
+- Exclude PAS from the early module list until root firmware is available.
+
+* Sun Oct 18 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-3
+- Expose admitted PMIC voltage and temperature channels through standard Linux interfaces.
+- Correct ADC5 Gen3 voltage types and processed units.
+
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-2
+- Restore the source-built native boot bundle with versioned matching modules.
+- Use integer releases and expose signed battery power from voltage/current.
+
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-1.4056.1
+- Enable standard Bluetooth LE HID input and RFCOMM facilities.
+- Use the Uke UART speed that completes stock QCA firmware transfer.
+
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1.4054.3
+- Consolidate the complete O82 source profile under the mainline package name.
+- Give each numeric build its own module ABI and preserve installed fallback kernels.
+- Keep boot writes unavailable until the public boot producer is accepted.
+
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-2
+- Build the native54 live-refresh source and all seven-mode contract checks.
+- Retain the compile-only boundary without a flashable boot container.
+
+* Sat Oct 17 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.9-1
+- Build the complete native O82 source profile in an isolated kernel namespace.
+- Keep private initramfs and unreproducible boot containers out of COPR.

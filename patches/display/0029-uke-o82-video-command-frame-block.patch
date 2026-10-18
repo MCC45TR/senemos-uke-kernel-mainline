@@ -1,0 +1,31 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: compare O82 active-video DMA frame blocking
+
+Uke MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl_hw_cmn.c (GPL-2.0-only), and the working O82 controller
+capture leave TRIG_CTRL bit12 clear. Same-SoC OnePlus SM7675 modules/DT
+1138e00fee63582a0cc6a53af3286621786827b7 uses the same trigger policy.
+Upstream sets this legacy block for all 6G>=1.2 hosts. Compare its exclusion
+only on powered/enabled exact O82 initial120 transfers, after link clocks
+are enabled and before command-engine enable. Preserve every other trigger
+bit, scheduling, rates, IRQ masks, packet and DMA quarantine. This remains
+an isolated optical experiment, not a general host fix or proven cause.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -2702,6 +2702,15 @@
+ 		cfg_hnd->ops->link_clk_set_rate(msm_host);
+ 	cfg_hnd->ops->link_clk_enable(msm_host);
+ 
++	/* Exact OEM video transfers leave the legacy within-frame DMA block clear. */
++	if (msm_host->enabled && dsi_uke_o82_initial120(msm_host)) {
++		u32 trigger = dsi_read(msm_host, REG_DSI_TRIG_CTRL);
++
++		if (trigger & DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME)
++			dsi_write(msm_host, REG_DSI_TRIG_CTRL,
++				  trigger & ~DSI_TRIG_CTRL_BLOCK_DMA_WITHIN_FRAME);
++	}
++
+ 	/* TODO: vote for bus bandwidth */
+ 
+ 	if (!(msg->flags & MIPI_DSI_MSG_USE_LPM))

@@ -1,0 +1,18 @@
+[Unit]
+Description=Uke CDC ACM gadget for the explicit Core debug profile
+Documentation=https://docs.kernel.org/usb/gadget_serial.html
+After=systemd-udev-trigger.service
+ConditionKernelCommandLine=senemos.debug=cdc-acm
+ConditionPathExists=/sys/firmware/devicetree/base/compatible
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/uke-boot-status --cdc --wait 15
+ExecCondition=/usr/libexec/senemos-uke/uke-usb-network allow-legacy
+ExecStart=/usr/libexec/senemos-uke/uke-usb-network start-acm
+ExecStop=/usr/libexec/senemos-uke/uke-usb-network stop-acm
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target

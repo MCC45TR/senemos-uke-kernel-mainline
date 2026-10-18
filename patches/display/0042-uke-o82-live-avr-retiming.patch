@@ -1,0 +1,115 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: retain O82 AVR during exact live timing changes
+
+The Uke fixed-mode DFPS path already retains both DSI links, panel reset and
+TDDI firmware. Its initial AVR implementation excludes every VRR modeset,
+forcing a full panel restart for each KDE refresh-rate change. Retain the
+exact scoped live path when VRR policy is unchanged and AVR is healthy.
+
+MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a programs AVR after
+new INTF timing in sde_encoder_phys_vid_setup_timing_engine. Follow that
+ordering for both physical interfaces before their shared CTL timing flush.
+Keep the existing bonded DSI shadow update, panel command ordering and
+real-vblank completion guards. Policy changes and failed AVR retain the
+ordinary full modeset path. Hardware validation remains separate.
+
+--- a/drivers/gpu/drm/msm/msm_atomic.c
++++ b/drivers/gpu/drm/msm/msm_atomic.c
+@@ -210,12 +210,20 @@
+ 
+ 	for_each_oldnew_crtc_in_state(state, crtc, old, new, i) {
+ 		if (!old->active || !new->active || !new->mode_changed ||
+-		    old->vrr_enabled || new->vrr_enabled ||
++		    old->vrr_enabled != new->vrr_enabled ||
+ 		    new->active_changed || new->connectors_changed ||
+ 		    new->color_mgmt_changed || old->encoder_mask != new->encoder_mask ||
+ 		    hweight32(new->encoder_mask) != 1)
+ 			continue;
+ 		drm_for_each_encoder_mask(enc, state->dev, new->encoder_mask) {
++			if (old->vrr_enabled) {
++#if IS_ENABLED(CONFIG_DRM_MSM_DPU)
++				if (!dpu_encoder_uke_avr_active(enc))
++					continue;
++#else
++				continue;
++#endif
++			}
+ 			if (msm_dsi_manager_uke_dfps_prepare(enc, &old->adjusted_mode,
+ 							  &new->adjusted_mode))
+ 				mask |= drm_crtc_mask(crtc);
+@@ -332,6 +340,13 @@
+ 		funcs = enc->helper_private;
+ 		if (funcs && funcs->atomic_mode_set)
+ 			funcs->atomic_mode_set(enc, new, conn_state);
++#if IS_ENABLED(CONFIG_DRM_MSM_DPU)
++		/* OEM timing setup also retimes AVR before the common INTF flush. */
++		if (dpu_encoder_uke_avr_retime(enc, new)) {
++			drm_connector_list_iter_end(&iter);
++			return -EIO;
++		}
++#endif
+ 	}
+ 	drm_connector_list_iter_end(&iter);
+ 	return msm_dsi_manager_uke_dfps_stage();
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -650,6 +650,47 @@
+ 	enc->avr_enabled = false;
+ }
+ 
++bool dpu_encoder_uke_avr_active(struct drm_encoder *encoder)
++{
++	struct dpu_encoder_virt *enc = to_dpu_encoder_virt(encoder);
++
++	return enc->avr_enabled && !enc->avr_failed;
++}
++
++int dpu_encoder_uke_avr_retime(struct drm_encoder *encoder,
++		const struct drm_crtc_state *state)
++{
++	struct dpu_encoder_virt *enc = to_dpu_encoder_virt(encoder);
++	u32 periods[2];
++	unsigned int i;
++	int lines, ret;
++
++	if (!state->vrr_enabled)
++		return 0;
++	if (!dpu_encoder_uke_avr_active(encoder) || enc->num_phys_encs != 2 ||
++	    !dpu_encoder_uke_vrr_check(encoder, state))
++		return -EPIPE;
++	lines = qcom_uke_o82_avr_lines(&state->adjusted_mode, o82_vrr_test_min_hz);
++	if (lines <= 0)
++		return -EINVAL;
++	for (i = 0; i < enc->num_phys_encs; i++)
++		if (!enc->phys_encs[i] || !enc->phys_encs[i]->hw_intf ||
++		    !enc->phys_encs[i]->hw_intf->ops.setup_avr)
++			return -EPIPE;
++	/* Both timing generators already contain the new shadow timing. The
++	 * shared CTL flush latches timing and AVR without disabling either DSI.
++	 * Keep AVR enabled: no panel reset or touch firmware reload is needed.
++	 */
++	for (i = 0; i < enc->num_phys_encs; i++) {
++		struct dpu_encoder_phys *phys = enc->phys_encs[i];
++
++		ret = phys->hw_intf->ops.setup_avr(phys->hw_intf, lines, &periods[i]);
++		if (ret)
++			return ret;
++	}
++	return periods[0] == periods[1] ? 0 : -EINVAL;
++}
++
+ static void dpu_encoder_uke_avr_update(struct dpu_encoder_virt *enc)
+ {
+ 	struct drm_crtc_state *state = enc->crtc ? enc->crtc->state : NULL;
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
+@@ -75,6 +75,9 @@
+ 
+ bool dpu_encoder_is_widebus_enabled(const struct drm_encoder *drm_enc);
+ 
++bool dpu_encoder_uke_avr_active(struct drm_encoder *encoder);
++int dpu_encoder_uke_avr_retime(struct drm_encoder *encoder,
++		const struct drm_crtc_state *state);
+ bool dpu_encoder_uke_vrr_check(struct drm_encoder *drm_enc,
+ 		const struct drm_crtc_state *state);
+ 

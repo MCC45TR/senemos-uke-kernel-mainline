@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "source_date_epoch": 1792058622,
+  "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
+  "firmware_included": false,
+  "device_private_data_included": false,
+  "python_target_payload": false,
+  "source_assets": [
+    {
+      "path": "packaging/native/native.config",
+      "sha256": "e57e48e15b13473cfa26be447974b0e491115f5e0950126cec445c8a23cdbeb9"
+    },
+    {
+      "path": "src/audit/check-target-payload.sh",
+      "sha256": "e1f249804a3bbd35f33cc6941f7d41feeccfb3fed87b4733ac49eb7390a1c2f0"
+    },
+    {
+      "path": "src/audit/check-target-privacy.sh",
+      "sha256": "f581cdc9d1cbb174a5c80300242a6a43b4231392876c3ba9690d0ecba36576d3"
+    },
+    {
+      "path": "src/boot/boot-image.cpp",
+      "sha256": "72b9f4962707b1338cdc99bc5cb9041802aac3919e56805eb57ba14baed69330"
+    },
+    {
+      "path": "src/boot/boot-status.cpp",
+      "sha256": "c93f67ff842c64e5d3103a03bbde9d0a168ea723119d6b81a26dd609ba646d14"
+    },
+    {
+      "path": "src/boot/build-payload.sh",
+      "sha256": "5dc909be93175d2d2ffb58da9ae72a6dc5b7e1f6295573ecb4b2847ad3f0aa83"
+    },
+    {
+      "path": "src/boot/dracut/module-setup.sh",
+      "sha256": "2eee54db21a95c0dd3825666e5a7fbdf613f3cc9094c73d1e507e7137ccb0442"
+    },
+    {
+      "path": "src/boot/dracut/root-guard.sh",
+      "sha256": "548ddc31cfb7f3d5862ee29b13bd3910b0e723aa8dad915ddcf158c556fe82db"
+    },
+    {
+      "path": "src/boot/dracut/uke-cdc-acm.service",
+      "sha256": "186cb6d66275d4e1c9cf932ed1fc4e48ff021b59f73aab7b207fac6c88d874d2"
+    },
+    {
+      "path": "src/boot/dracut/uke-cdc-shell.service",
+      "sha256": "457f758988ed0b5c5b9a5994ea01ce7c01803bf6ca2f77645458bc7dc315526f"
+    },
+    {
+      "path": "src/boot/dracut/uke-coresight-bringup.conf",
+      "sha256": "2277a5a61ce7b330d7e0d9d03f9b2de190561efa5dad7966d1225dd8881db058"
+    },
+    {
+      "path": "src/boot/dracut/uke-initrd-screen.service",
+      "sha256": "f7afe389be42b8213c49fe06983a216a43aac86e6e93ed77175c82b8290608cc"
+    },
+    {
+      "path": "src/boot/dracut/uke-root-guard.service",
+      "sha256": "212c5a8be087e6a8f798b83838267cd8cf130a4468b9086aa5422c75c919f83c"
+    },
+    {
+      "path": "src/boot/early-modules.list",
+      "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
+    },
+    {
+      "path": "src/boot/licenses/builder-MIT",
+      "sha256": "3261559b7f050f1691b0001544b8497469dea818a3b03136fc5cca0478b595ee"
+    },
+    {
+      "path": "src/boot/licenses/hardware-MIT",
+      "sha256": "6d5638a97949e3de3b964b6f71bf0f27645500275bb202d91eaa93ff5b98a704"
+    },
+    {
+      "path": "src/boot/make-initramfs-base.sh",
+      "sha256": "9aa4348ea960ae17eab610b409e60cceb49aa8922f91f4da46a53d334ddbd6cc"
+    },
+    {
+      "path": "tests/boot-image-contract.sh",
+      "sha256": "06cd230930a348dc17b1088409b8fed187971ea59d9f9b3b1809a89049dbf541"
+    },
+    {
+      "path": "tests/target-privacy-contract.sh",
+      "sha256": "c44de51c157afc233915075d31d5458707cdb0b2edb75ae9f90c580c7ff1b637"
+    },
+    {
+      "path": "src/boot/dracut/uke-usb-network",
+      "sha256": "1bc170168cfbd6c82cc7e9019f31f0ec385b7400ad685a75b384c2162529c344"
+    },
+    {
+      "path": "src/boot/offline-switch-root.cpp",
+      "sha256": "a56fb778646f472b46e74e8d5c2be344b68f7d73aec5e1a42c91c31bdc905a64"
+    },
+    {
+      "path": "src/boot/offline/boot-mode.hpp",
+      "sha256": "e9bc5ea7e7cf05e0e7946dd243a6c868d33c948b396d77343b05bb8f00c2d004"
+    },
+    {
+      "path": "src/boot/offline/io.hpp",
+      "sha256": "a237d32ebb451c8abcaeebea2531a95ed8b93126274b20911ab07ae487e01766"
+    },
+    {
+      "path": "tests/offline-boot-contract.sh",
+      "sha256": "5fbad47d511aff9cad2a04e3e93040a34469250b6e9b584ba31b85281d6d3dad"
+    }
+  ]
+}

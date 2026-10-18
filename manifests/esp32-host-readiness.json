@@ -49,7 +49,7 @@
     "power_role_source_must_be_verified_separately_from_data_role": true
   },
   "required_validation": [
-    "Match the owner installed firmware and live FDT before selecting a hardware profile",
+    "Match the installed device firmware and live FDT before selecting a hardware profile",
     "Implement explicit legacy PHY host-role propagation, exact host tuning and failure rollback",
     "Qualify WCD role notification, register initialization and connect/disconnect ordering",
     "Admit the actual Uke Type-C power/VBUS backend and its firmware/channel dependencies",

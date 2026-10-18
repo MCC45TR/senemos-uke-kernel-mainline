@@ -34,13 +34,24 @@ int main(int argc, char **) {
         std::puts("{\"status\":\"blocked-no-kvm\",\"guest_ran\":false}");
         return 2;
     }
-    if (ioctl(kvm, KVM_GET_API_VERSION, 0) != KVM_API_VERSION) {
+    const int api = ioctl(kvm, KVM_GET_API_VERSION, 0);
+    if (api < 0) return failure("api-version");
+    if (api != KVM_API_VERSION) {
         errno = EPROTO;
         return failure("api-version");
     }
     const int vm = ioctl(kvm, KVM_CREATE_VM, 0);
     if (vm < 0) return failure("create-vm");
-    void *memory = mmap(nullptr, 4096, PROT_READ | PROT_WRITE,
+    const long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size != 4096 && page_size != 16384 && page_size != 65536) {
+        errno = EINVAL;
+        return failure("host-page-size");
+    }
+    if (ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY) <= 0) {
+        errno = ENOTSUP;
+        return failure("user-memory-capability");
+    }
+    void *memory = mmap(nullptr, static_cast<std::size_t>(page_size), PROT_READ | PROT_WRITE,
                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (memory == MAP_FAILED) return failure("guest-memory");
     // Write UKE2 to an unmapped MMIO address, then stop; no guest devices or disks.
@@ -48,9 +59,10 @@ int main(int argc, char **) {
         0xd2a00400, 0x5288a641, 0x72aaa961, 0xb9000001, 0xd503207f, 0x14000000
     };
     std::memcpy(memory, code, sizeof(code));
+    __builtin___clear_cache(static_cast<char *>(memory), static_cast<char *>(memory) + sizeof(code));
     kvm_userspace_memory_region region{};
     region.guest_phys_addr = 0x100000;
-    region.memory_size = 4096;
+    region.memory_size = static_cast<std::uint64_t>(page_size);
     region.userspace_addr = reinterpret_cast<std::uintptr_t>(memory);
     if (ioctl(vm, KVM_SET_USER_MEMORY_REGION, &region) < 0) return failure("memory-slot");
     kvm_vcpu_init target{};
@@ -69,6 +81,7 @@ int main(int argc, char **) {
     reg.addr = reinterpret_cast<std::uintptr_t>(&pstate);
     if (ioctl(vcpu, KVM_SET_ONE_REG, &reg) < 0) return failure("set-pstate");
     const int bytes = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, 0);
+    if (bytes < 0) return failure("run-size");
     if (bytes < static_cast<int>(sizeof(kvm_run))) {
         errno = EPROTO;
         return failure("run-size");

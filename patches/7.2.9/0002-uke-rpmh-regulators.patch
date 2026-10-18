@@ -5593,7 +5593,7 @@ index 000000000000..b53f3c6962c1
 +EXPORT_SYMBOL(rpmh_drv_stop);
 diff --git a/drivers/soc/qcom/trace-rpmh-uke.h b/drivers/soc/qcom/trace-rpmh-uke.h
 new file mode 100644
-index 000000000000..74b5e90ab509
+index 000000000000..cce0c74e609f
 --- /dev/null
 +++ b/drivers/soc/qcom/trace-rpmh-uke.h
 @@ -0,0 +1,143 @@
@@ -5625,7 +5625,7 @@ index 000000000000..74b5e90ab509
 +	),
 +
 +	TP_fast_assign(
-+		       __assign_str(name, d->name);
++		       __assign_str(name);
 +		       __entry->m = m;
 +		       __entry->addr = r->cmds[0].addr;
 +		       __entry->data = r->cmds[0].data;
@@ -5653,7 +5653,7 @@ index 000000000000..74b5e90ab509
 +	),
 +
 +	TP_fast_assign(
-+		       __assign_str(name, d->name);
++		       __assign_str(name);
 +		       __entry->m = m;
 +		       __entry->n = n;
 +		       __entry->hdr = h;
@@ -5679,7 +5679,7 @@ index 000000000000..74b5e90ab509
 +	),
 +
 +	TP_fast_assign(
-+		       __assign_str(name, d->name);
++		       __assign_str(name);
 +		       __entry->set = set;
 +	),
 +
@@ -5700,7 +5700,7 @@ index 000000000000..74b5e90ab509
 +	),
 +
 +	TP_fast_assign(
-+		       __assign_str(name, d->name);
++		       __assign_str(name);
 +		       __entry->ch = ch;
 +		       __entry->ret = ret;
 +	),
@@ -5722,7 +5722,7 @@ index 000000000000..74b5e90ab509
 +	),
 +
 +	TP_fast_assign(
-+		       __assign_str(name, d->name);
++		       __assign_str(name);
 +		       __entry->enable = enable;
 +		       __entry->ret = ret;
 +	),

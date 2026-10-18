@@ -1,0 +1,104 @@
+From: MCC45TR <mcc45tr@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dsi: schedule Uke O82 video commands in the OEM porch
+
+Follow MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dsi/dsi_ctrl.c and dsi_ctrl_hw_2_2.c (GPL-2.0-only).
+Admit the measured bonded DSI 2.8 120 Hz group only. Preserve other
+modes, trigger bit12, staged DMA, paired completion and abort quarantine.
+This source trial does not establish visible output or panel acceptance.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -41,6 +41,10 @@
+ /* DSI6G command DMA role, documented by the Uke OEM controller writer. */
+ #define DSI_CMD_DMA_CTRL_BROADCAST_MASTER BIT(30)
+ 
++/* MiCode DSI 2.8 scheduling offsets, relative to shifted ctrl_base. */
++#define UKE_DSI_DMA_SCHEDULE_CTRL (0x100 - DSI_6G_REG_SHIFT)
++#define UKE_DSI_DMA_SCHEDULE_CTRL2 (0x104 - DSI_6G_REG_SHIFT)
++
+ /* OEM DSI 2.8 MDP MISR offsets, relative to the shifted native ctrl_base. */
+ #define UKE_DSI_MISR_CTRL (0x364 - DSI_6G_REG_SHIFT)
+ #define UKE_DSI_MISR_SIGNATURE (0x368 - DSI_6G_REG_SHIFT)
+@@ -1721,13 +1725,55 @@
+ 	return 0;
+ }
+ 
++/* The only caller already admits the Uke O82 bonded DSI 2.8 pair. */
++static int dsi_uke_dma_schedule(struct msm_dsi_host *master,
++			      struct msm_dsi_host *slave)
++{
++	struct msm_dsi_host *hosts[] = { master, slave };
++	u32 total[2], active_v[2], line;
++	int i;
++
++	if (!master->enabled && !slave->enabled)
++		return 0;
++	if (master->enabled != slave->enabled)
++		return -EBUSY;
++	for (i = 0; i < ARRAY_SIZE(hosts); i++)
++		total[i] = dsi_read(hosts[i], REG_DSI_TOTAL);
++	/* Other O82 timing groups retain their existing command policy. */
++	if (total[0] != 0x0905023b && total[1] != 0x0905023b)
++		return 0;
++	for (i = 0; i < ARRAY_SIZE(hosts); i++) {
++		active_v[i] = dsi_read(hosts[i], REG_DSI_ACTIVE_V);
++		if (total[i] != 0x0905023b || active_v[i] != 0x08ec0094 ||
++		    (dsi_read(hosts[i], REG_DSI_CTRL) &
++		     (DSI_CTRL_ENABLE | DSI_CTRL_VID_MODE_EN)) !=
++		    (DSI_CTRL_ENABLE | DSI_CTRL_VID_MODE_EN))
++			return -EINVAL;
++		if (dsi_read(hosts[i], UKE_DSI_DMA_SCHEDULE_CTRL) ||
++		    dsi_read(hosts[i], UKE_DSI_DMA_SCHEDULE_CTRL2) ||
++		    (dsi_read(hosts[i], REG_DSI_STATUS0) & DSI_STATUS0_CMD_MODE_DMA_BUSY))
++			return -EBUSY;
++	}
++	/* OEM default line1 after VBP + VSA + active; 120 Hz gives line2285. */
++	line = (active_v[0] >> 16) + 1;
++	for (i = 0; i < ARRAY_SIZE(hosts); i++)
++		dsi_write(hosts[i], UKE_DSI_DMA_SCHEDULE_CTRL, BIT(28) | line);
++	wmb();
++	return 1;
++}
++
+ static int dsi_cmd_dma_broadcast(struct msm_dsi_host *master,
+ 			       struct msm_dsi_host *slave, u32 dma_base, int len)
+ {
+ 	u32 master_ctrl, slave_ctrl;
+ 	unsigned long master_done, slave_done;
++	int scheduled, ret = len;
+ 
+-	dsi_wait4video_eng_busy(slave);
++	scheduled = dsi_uke_dma_schedule(master, slave);
++	if (scheduled < 0)
++		return scheduled;
++	if (!scheduled)
++		dsi_wait4video_eng_busy(slave);
+ 	master_ctrl = dsi_read(master, REG_DSI_CMD_DMA_CTRL);
+ 	slave_ctrl = dsi_read(slave, REG_DSI_CMD_DMA_CTRL);
+ 	reinit_completion(&master->dma_comp);
+@@ -1759,14 +1805,20 @@
+ 		       __func__, master_done, slave_done);
+ 		if (dsi_cmd_dma_abort_broadcast(master, slave))
+ 			return -EIO;
+-		dsi_write(slave, REG_DSI_CMD_DMA_CTRL, slave_ctrl);
+-		dsi_write(master, REG_DSI_CMD_DMA_CTRL, master_ctrl);
+-		return -ETIMEDOUT;
++		ret = -ETIMEDOUT;
++	}
++	if (scheduled) {
++		dsi_write(slave, UKE_DSI_DMA_SCHEDULE_CTRL, 0);
++		dsi_write(master, UKE_DSI_DMA_SCHEDULE_CTRL, 0);
++		wmb();
+ 	}
+ 	dsi_write(slave, REG_DSI_CMD_DMA_CTRL, slave_ctrl);
+ 	dsi_write(master, REG_DSI_CMD_DMA_CTRL, master_ctrl);
++	if (scheduled && ret == len)
++		dev_info_once(&master->pdev->dev,
++			      "Uke O82 video commands completed at scheduled line2285\n");
+ 
+-	return len;
++	return ret;
+ }
+ 
+ static int dsi_cmd_dma_tx(struct msm_dsi_host *msm_host, int len, bool is_read,
