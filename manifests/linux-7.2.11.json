@@ -331,7 +331,7 @@
     },
     {
       "path": "patches/7.2.11/0081-scmi-cached-protocol-discovery.patch",
-      "sha256": "2606c5a8c51006771ecd7101946f3cf71be3a52d0f6376df115f3b9acd38a306"
+      "sha256": "f2970405e9a026a387aee2e407a4fc61a13ca9462a6cb17aaffe2570b551bc22"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

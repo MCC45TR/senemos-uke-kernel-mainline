@@ -10,9 +10,15 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
 ---
 --- a/drivers/firmware/arm_scmi/base.c
 +++ b/drivers/firmware/arm_scmi/base.c
-@@ -203,12 +203,16 @@
+@@ -202,13 +202,22 @@
+ 		if (ret)
  			break;
  
++		if (t->rx.len < sizeof(*num_ret)) {
++			ret = -EPROTO;
++			break;
++		}
++
  		loop_num_ret = le32_to_cpu(*num_ret);
 -		if (!loop_num_ret)
 +		if (!loop_num_ret) {
@@ -28,7 +34,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  			break;
  		}
  
-@@ -406,9 +410,9 @@
+@@ -406,9 +415,9 @@
  	scmi_base_vendor_id_get(ph, false);
  	scmi_base_vendor_id_get(ph, true);
  	scmi_base_implementation_version_get(ph);

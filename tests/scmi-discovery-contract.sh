@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Exercise the actual cached reader and protocol-list parser without firmware.
 set -Eeuo pipefail
+ulimit -c 0
 kernel=${1:?Pass the prepared kernel source directory}
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
@@ -78,6 +79,7 @@ int main(void) {
  setup(2);counts[0]=1;lengths[0]=8;counts[1]=1;lengths[1]=8;
  assert(!scmi_base_implementation_list_get(&ph,protocols) && calls==2 && resets==2 && put_count==1);
  setup(0);lengths[0]=4;assert(!scmi_base_implementation_list_get(&ph,protocols) && put_count==1);
+ setup(0);lengths[0]=0;assert(scmi_base_implementation_list_get(&ph,protocols)==-EPROTO && put_count==1);
  setup(2);lengths[0]=4;assert(scmi_base_implementation_list_get(&ph,protocols)==-EPROTO && put_count==1);
  setup(2);counts[0]=1;lengths[0]=8;lengths[1]=4;
  assert(scmi_base_implementation_list_get(&ph,protocols)==-EPROTO && calls==2 && put_count==1);

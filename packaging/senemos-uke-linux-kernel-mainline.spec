@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 7
+%global senemos_build_release 8
 %else
 %global senemos_build_release 1
 %endif
@@ -272,6 +272,9 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Mon Oct 19 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-8
+- Validate the fixed SCMI list header before reading its count, including empty lists.
+
 * Mon Oct 19 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-7
 - Expose error-qualified cached SCMI protocol discovery without new firmware requests.
 - Reject incomplete lists in diagnostic results and retain existing consumer behavior.

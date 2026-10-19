@@ -61,3 +61,8 @@ implemented_protocols. Failed, truncated, excessive and incomplete discovery
 remain errors; a valid empty list is distinct. Reads issue no firmware request.
 Internal consumer matching is preserved. This admits no vendor algorithm or
 performance policy. Native compile, package and tablet results remain separate.
+
+Release 8 also validates the four-byte discovery header before reading the
+returned count. A zero-byte response cannot qualify as an empty list. The
+regression fails on release 7 source and passes after the correction; normal
+consumer matching and base initialization behavior remain unchanged.
