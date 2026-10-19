@@ -7,6 +7,7 @@ output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
 bash "$profile/tests/wcd939x-status-contract.sh"
+bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac

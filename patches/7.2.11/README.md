@@ -49,3 +49,9 @@ The7.2.11-3 candidate adds patches0078/0079: an offline fixed existing-band
 application probe and the separately reviewed AudioReach response/readiness
 changes. The native audio profile remains disabled. No battery bypass, physical
 charge-stop, speaker or microphone acceptance is established by these sources.
+
+The 7.2.11-6 candidate adds patch 0080: cumulative hardware-timestamped GPU
+execution time for a separate native desktop sensor plugin. Reads do not wake
+hardware or change governor sampling. This prepares monitoring for platform
+Adreno hardware without modifying original KDE applications or proc security.
+Device and desktop presentation acceptance are separate from source/build checks.

@@ -324,6 +324,10 @@
     {
       "path": "patches/7.2.11/0079-audioreach-readiness-and-response-bounds.patch",
       "sha256": "f8910718a99425f076a8739adc7e25dd6e85bb5618cf8b3955d1b3e1db6744a8"
+    },
+    {
+      "path": "patches/7.2.11/0080-msm-global-engine-time.patch",
+      "sha256": "7662c75130c5b8435ec7ad6745c60cf874d9ca7eecce5723fd16bb27c89f1904"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
