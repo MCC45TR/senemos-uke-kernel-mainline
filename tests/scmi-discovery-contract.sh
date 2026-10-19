@@ -74,7 +74,7 @@ int main(void) {
  struct scmi_info info={0};struct device dev={&info};
  const struct scmi_protocol_handle ph={&dev,&ops,get_priv};u8 protocols[255]={0};char buf[4096];
  setup(2);counts[0]=2;lengths[0]=8;
- assert(scmi_base_implementation_list_get(&ph,protocols)==0 && put_count==1 && calls==1);
+ assert(scmi_base_implementation_list_get(&ph,protocols)==0 && gets==1 && put_count==1 && calls==1);
  assert(protocols[0]==0xa5 && protocols[1]==0xa5);
  setup(2);counts[0]=1;lengths[0]=8;counts[1]=1;lengths[1]=8;
  assert(!scmi_base_implementation_list_get(&ph,protocols) && calls==2 && resets==2 && put_count==1);
@@ -90,7 +90,7 @@ int main(void) {
  setup(2);alloc_error=-ENOMEM;assert(scmi_base_implementation_list_get(&ph,protocols)==-ENOMEM && !put_count && !calls);
  setup(2);transfer_error=-ETIMEDOUT;assert(scmi_base_implementation_list_get(&ph,protocols)==-ETIMEDOUT && put_count==1);
  setup(2);info.protocols_imp=protocols;info.version.num_protocols=2;protocols[0]=0x80;protocols[1]=0x13;
- assert(implemented_protocols_show(&dev,NULL,buf)==10 && !strcmp(buf,"0x80 0x13\n") && !calls);
+ assert(implemented_protocols_show(&dev,NULL,buf)==10 && !strcmp(buf,"0x80 0x13\n") && !gets && !calls);
  info.protocols_discovery_status=-EPROTO;assert(implemented_protocols_show(&dev,NULL,buf)==-EPROTO && !calls);
  info.protocols_discovery_status=-ENODATA;assert(implemented_protocols_show(&dev,NULL,buf)==-ENODATA && !calls);
  info.protocols_discovery_status=0;info.version.num_protocols=0;
