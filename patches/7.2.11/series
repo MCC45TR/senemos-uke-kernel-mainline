@@ -80,3 +80,4 @@
 0080-msm-global-engine-time.patch
 0081-scmi-cached-protocol-discovery.patch
 0082-uke-moisture-and-thermal-protection.patch
+0083-usb-ucsi-cached-transport-state.patch

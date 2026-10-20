@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 10
+%global senemos_build_release 11
 %else
 %global senemos_build_release 1
 %endif
@@ -171,6 +171,7 @@ CC=clang bash native-profile/tests/usb-qmp-tables.sh "$PWD"
 CC=clang bash native-profile/tests/usb-utmi-resume-contract.sh "$PWD"
 CC=clang bash native-profile/tests/usb-role-observation-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/ucsi-notification-contract.sh drivers/usb/typec/ucsi/ucsi_glink.c
+CC=clang bash native-profile/tests/ucsi-transport-contract.sh drivers/usb/typec/ucsi/ucsi_glink.c
 CXX=clang++ bash native-profile/tests/altmode-notification-contract.sh drivers/soc/qcom/pmic_glink_altmode.c
 for symbol in FW_LOADER_COMPRESS FW_LOADER_COMPRESS_XZ FW_LOADER_COMPRESS_ZSTD; do
     grep -Fx "CONFIG_$symbol=y" %{_uke_out}/.config
@@ -273,6 +274,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
+- Expose cached UCSI GLINK request results, service epochs and event timestamps.
+- Validate error/refusal bookkeeping without changing transport or routing policy.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-10
 - Gate Uke charging on qualified moisture, thermal and periodic fault checks.
 - Add fixed owned input suspension and preserve unqualified physical status.

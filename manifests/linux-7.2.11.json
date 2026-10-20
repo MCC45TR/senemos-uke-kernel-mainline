@@ -336,6 +336,10 @@
     {
       "path": "patches/7.2.11/0082-uke-moisture-and-thermal-protection.patch",
       "sha256": "c6ed51e70662003a478f43f79a95c7f4e5d13978184136c1e16c2ce7e1c1f473"
+    },
+    {
+      "path": "patches/7.2.11/0083-usb-ucsi-cached-transport-state.patch",
+      "sha256": "dd5926821cfc3dfdcc405f0de66581aa902c4aac351b1efe70def5d13b72e82a"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
