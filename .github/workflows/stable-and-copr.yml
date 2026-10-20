@@ -1,59 +1,84 @@
-name: Stable source and COPR tracking
+name: Verified upstream candidates and matched COPR profiles
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'patches/**'
-      - 'configs/**'
-      - 'manifests/**'
-      - 'packaging/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'Makefile'
-      - 'senemos.sh'
-      - '.copr/**'
-      - '.github/workflows/stable-and-copr.yml'
   pull_request:
   workflow_dispatch:
   schedule:
     - cron: '23 5 * * *'
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: kernel-stable-tracking
   cancel-in-progress: false
 jobs:
-  source:
+  check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Install host source-verification tools
-        run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils
-      - name: Validate reviewed Uke inputs and standalone entry
-        run: make validate && ./senemos.sh --self-test && ./senemos.sh --build 7.2.9 --distro=fedora --dry-run
-      - name: Request one validated mainline build
-        if: github.event_name == 'push'
+      - run: sudo apt-get update && sudo apt-get install -y jq
+      - run: bash -n scripts/prepare-upstream-candidate.sh && bash tests/upstream-candidate-contract.sh
+  common:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - role: common
+            branch: copr/mainline
+            package: senemos-uke-linux-kernel-mainline
+            metadata_branch: copr/mainline-singleboot
+            metadata_role: singleboot
+          - role: kvm
+            branch: copr/mainline-kvm
+            package: senemos-uke-kernel-mainline-kvm
+            metadata_branch: copr/mainline-kvm-singleboot
+            metadata_role: kvm-singleboot
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: automation
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ matrix.branch }}
+          path: source
+      - run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils gcc g++ make device-tree-compiler libfdt-dev
+      - name: Verify upstream and prepare the actual source queue
+        id: candidate
         env:
-          COPR_BUILD_HOOK: ${{ secrets.COPR_KERNEL_BUILD_HOOK }}
+          ROLE: ${{ matrix.role }}
         run: |
           set -Eeuo pipefail
-          test -n "$COPR_BUILD_HOOK"
-          # A lost POST response must be investigated, never retried blindly.
-          curl -fsS -X POST "$COPR_BUILD_HOOK" >/dev/null
-      - name: Track latest stable without generic fallback
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+          curl -fsSL --connect-timeout 20 https://www.kernel.org/releases.json > "$GITHUB_WORKSPACE/releases.json"
+          bash automation/scripts/prepare-upstream-candidate.sh "$GITHUB_WORKSPACE/source" "$ROLE" "$GITHUB_WORKSPACE/releases.json" | tee "$GITHUB_WORKSPACE/candidate.log"
+          result=$(tail -1 "$GITHUB_WORKSPACE/candidate.log")
+          test "${result%%$'\t'*}" = prepared -o "${result%%$'\t'*}" = unchanged
+          printf 'evr=%s\n' "${result#*$'\t'}" >> "$GITHUB_OUTPUT"
+          if [[ $result == prepared$'\t'* ]]; then cd source; git push origin HEAD; fi
+      - name: Wait for the matching successful common build
         env:
-          COPR_BUILD_HOOK: ${{ secrets.COPR_KERNEL_BUILD_HOOK }}
+          PACKAGE: ${{ matrix.package }}
+          EVR: ${{ steps.candidate.outputs.evr }}
         run: |
           set -Eeuo pipefail
-          latest=$(curl -fsSL https://www.kernel.org/releases.json | jq -er .latest_stable.version)
-          profile="manifests/linux-$latest.json"
-          test -f "$profile" || { echo "::error::Linux $latest requires a reviewed Uke port; automatic generic fallback is disabled"; exit 1; }
-          make_version=$(make -s --eval='print-version: ; @echo $(version)' print-version)
-          test "$latest" = "$make_version"
-          # Push webhooks handle source changes. Daily polling builds a reviewed
-          # stable version only when no matching accepted or active build exists.
-          builds=$(curl -fsSL 'https://copr.fedorainfracloud.org/api_3/build/list?ownername=mcc45tr&projectname=uke-linux-test&packagename=senemos-uke-linux-kernel-mainline&limit=20')
-          if jq -e --arg v "$latest-" 'any(.items[]; (.state == "succeeded" or .state == "running" or .state == "pending" or .state == "starting" or .state == "importing" or .state == "waiting") and ((.source_package.version // "") | startswith($v)))' <<< "$builds" >/dev/null; then exit 0; fi
-          test -n "$COPR_BUILD_HOOK"
-          curl -fsS -X POST "$COPR_BUILD_HOOK" >/dev/null
+          # COPR auto-rebuild webhooks own submission. Never race a second POST.
+          for attempt in $(seq 1 90); do
+            builds=$(curl -fsSL --connect-timeout 20 "https://copr.fedorainfracloud.org/api_3/build/list?ownername=mcc45tr&projectname=uke-linux-test&packagename=$PACKAGE&limit=30")
+            state=$(jq -r --arg evr "$EVR" '[.items[]|select(.source_package.version==$evr)]|sort_by(.id)|last|.state // "absent"' <<< "$builds")
+            case $state in succeeded) exit 0;; failed|canceled|skipped) echo "Matching common build is $state" >&2; exit 1;; esac
+            sleep 60
+          done
+          echo 'Matching common build or COPR webhook is unavailable' >&2; exit 1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ matrix.metadata_branch }}
+          path: metadata
+      - name: Advance metadata only after the matching common build
+        env:
+          ROLE: ${{ matrix.metadata_role }}
+          EVR: ${{ steps.candidate.outputs.evr }}
+        run: |
+          set -Eeuo pipefail
+          bash automation/scripts/prepare-upstream-candidate.sh "$GITHUB_WORKSPACE/metadata" "$ROLE" "$EVR" | tee "$GITHUB_WORKSPACE/metadata.log"
+          if [[ $(tail -1 "$GITHUB_WORKSPACE/metadata.log") == prepared$'\t'* ]]; then cd metadata; git push origin HEAD; fi
