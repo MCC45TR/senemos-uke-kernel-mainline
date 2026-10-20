@@ -11,11 +11,11 @@ validate:
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
-	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .kernel_release_changed == false and (.patches | length == 2)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .kernel_release_changed == false and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
-	bash -n src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh
+	bash -n src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh
 	bash tests/mainline-package-contract.sh
 srpm: validate
 	cache="$(CURDIR)/referances/releases"

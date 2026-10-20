@@ -1,5 +1,5 @@
 From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
-Subject: [PATCH 2/2] soc: qcom: describe Cliffs7 LLCC policy and resources
+Subject: [PATCH 2/3] soc: qcom: describe Cliffs7 LLCC policy and resources
 
 Translate the exact Cliffs7 policy to native LLCC use-case names.
 Require the OEM bank/broadcast windows, four hardware banks and the v5

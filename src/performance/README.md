@@ -1,8 +1,8 @@
 # Cliffs7 LLCC source candidate
 
 20 October 2026. Native Linux 7.2.11 source and host-only Fedora fixtures.
-Two inactive patches describe the exact Cliffs7 slice policy and a native
-five-window binding. The existing 94-patch series and kernel release remain
+Three inactive patches describe the exact Cliffs7 policy, native five-window
+binding and GPU supplier ordering. The existing 94-patch series and release remain
 unchanged. No target package or boot result is established.
 
 The source uses MiCode Uke kernel `5712080a4b0c0b1a879e6d145c601c649ddaddfd`,
@@ -18,12 +18,13 @@ use-case IDs. EDAC creation is disabled pending its exact access/IRQ contract.
 Native Adreno already has the A7xx cache-field path; no Android GPU driver,
 frequency lock or performance table is imported.
 
-Apply the two patches in numeric order to a matching prepared source tree.
+Apply the three patches in numeric order to a matching prepared source tree.
 The following commands exercise the actual probe, configuration and A7xx
 cache-field source, followed by the synthetic DT/binding cases:
 
 ```bash
 bash tests/llcc-sm7675-contract.sh "$kernel"
+bash tests/llcc-gpu-startup-contract.sh "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
 CC=clang LLCC_TEST_CFLAGS='-O1 -fsanitize=address,undefined -fno-omit-frame-pointer' \
     bash tests/llcc-sm7675-contract.sh "$kernel"
 dt-doc-validate "$kernel/Documentation/devicetree/bindings/cache/qcom,llcc.yaml"
@@ -46,8 +47,15 @@ and preserves the remaining graph. It is host-only and is not called by the
 normal boot producer. Never substitute its output for an accepted boot DT
 without the separate matched-package and recovery checks.
 
-Next work is the normal boot producer integration and GPU/provider startup
-and lifetime checks, followed by a matched package. Four-bank/v5 admission,
+The GPU platform probe now requires the enabled native Cliffs7 supplier to
+bind before component registration. A managed device link is created before
+the readiness check; legacy GPU/DT paths retain their existing behavior.
+The actual baseline fails this requirement, and corrected GCC/Clang sanitizer
+fixtures and the Adreno AArch64 object pass. These tests do not emulate the
+driver core's managed-link cleanup or validate physical supplier removal.
+
+Next work is normal boot-producer integration, followed by a matched package.
+Actual GPU/provider ordering and lifetime, four-bank/v5 admission,
 partial-programming recovery, cache coherency, suspend and performance still
 require a recoverable device test. Source fixtures do not establish any of
 those results. Preserve the accepted rollback, charging and thermal policy.
