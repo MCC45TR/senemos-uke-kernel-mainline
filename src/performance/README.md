@@ -1,9 +1,9 @@
 # Cliffs7 LLCC source candidate
 
 20 October 2026. Native Linux 7.2.11 source and host-only Fedora fixtures.
-Three inactive patches describe the exact Cliffs7 policy, native five-window
-binding and GPU supplier ordering. The existing 94-patch series and release remain
-unchanged. No target package or boot result is established.
+Patches 0095–0097 add the exact Cliffs7 policy, native five-window binding
+and GPU supplier ordering to the 97-patch release-15 candidate. The first 94
+patches retain their release-14 hashes. No tablet boot result is established.
 
 The source uses MiCode Uke kernel `5712080a4b0c0b1a879e6d145c601c649ddaddfd`,
 DT `94c84aeb9e517dbde546fc732033c184094c8e57`, the matching Nord 4 policy
@@ -18,7 +18,7 @@ use-case IDs. EDAC creation is disabled pending its exact access/IRQ contract.
 Native Adreno already has the A7xx cache-field path; no Android GPU driver,
 frequency lock or performance table is imported.
 
-Apply the three patches in numeric order to a matching prepared source tree.
+The source producer applies the three patches after the release-14 queue.
 The following commands exercise the actual probe, configuration and A7xx
 cache-field source, followed by the synthetic DT/binding cases:
 
@@ -62,7 +62,9 @@ source fixtures before installing the enabled helper. The caller validates
 the stock Uke tuple, admits the original cache graph before copying, then
 transforms only its private DT copy. Generated profile selection and helper
 hashes are recorded. An unknown profile or mismatched/disabled cache graph
-is refused. The ordinary package recipe does not select native-v1.
+is refused. The release-15 package selects native-v1 through the hashed
+`packaging/native/llcc-profile` asset; the standalone helper still defaults
+to disabled. Audio remains disabled.
 
 ```bash
 bash tests/llcc-boot-fdt-contract.sh "$kernel"
@@ -76,7 +78,7 @@ profile enabled and disabled; the final prepared tree is restored to disabled.
 The default host translation is byte-identical after preprocessing. These
 checks do not constitute a fresh full native-source preparation or package.
 
-Next work is an explicitly selected, matched source/package profile.
+Fresh matched source/package preparation is the next acceptance gate.
 Actual GPU/provider ordering and lifetime, four-bank/v5 admission,
 partial-programming recovery, cache coherency, suspend and performance still
 require a recoverable device test. Source fixtures do not establish any of

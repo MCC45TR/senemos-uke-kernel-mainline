@@ -30,5 +30,8 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
 fi
 grep -F 'git archive HEAD src/display src/boot src/usb src/audio patches/$(version) patches/display patches/boot tests' "$root/Makefile"
 grep -Fx 'disabled' "$root/packaging/native/audio-profile"
+grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
+grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
+grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"
 [[ ! -e $root/packaging/native/senemos-uke-linux-kernel-mainline-native.spec ]]
 echo 'One mainline tuple, integer module ABI, matched boot and explicitly gated updater passed'

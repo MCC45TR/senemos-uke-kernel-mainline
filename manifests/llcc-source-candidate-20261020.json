@@ -2,23 +2,23 @@
   "schema_version": 1,
   "date": "2026-10-20",
   "base_commit": "68e08a3cb3d61d79cd90128fa35e94c751ca8153",
-  "status": "inactive-four-bank-cliffs7-llcc-source-candidate",
-  "active_series": false,
-  "dt_enabled": false,
-  "kernel_release_changed": false,
+  "status": "selected-four-bank-cliffs7-llcc-package-candidate",
+  "active_series": true,
+  "dt_enabled": true,
+  "kernel_release_changed": true,
   "tablet_tested": false,
   "performance_improvement_measured": false,
   "patches": [
     {
-      "path": "patches/performance/0001-bindings-sm7675-llcc.patch",
+      "path": "patches/7.2.11/0095-bindings-sm7675-llcc.patch",
       "sha256": "ef8c4eb4c8b042cea2beeffceb42aa2eff945b5fa85ad075f58f4a94d88725f0"
     },
     {
-      "path": "patches/performance/0002-sm7675-llcc-policy-and-resource-guards.patch",
+      "path": "patches/7.2.11/0096-sm7675-llcc-policy-and-resource-guards.patch",
       "sha256": "fcd5d5c4251f9b2e8e22a6dceb90662f5f991333745ea40730921ef97d951b6e"
     },
     {
-      "path": "patches/performance/0003-adreno-order-native-llcc-supplier.patch",
+      "path": "patches/7.2.11/0097-adreno-order-native-llcc-supplier.patch",
       "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
     }
   ],
@@ -164,7 +164,7 @@
     "The source candidate admits four hardware banks and v5 only; the tablet bank count and hardware version have not been read through this driver",
     "Resource and version mismatches stop before configuration writes; later I/O failures can leave partial cache programming and require physical recovery qualification",
     "GPU field tests use actual source with simulated register writes; cache hits, coherency, counters and real GPU activation are untested",
-    "Host DT and early boot helpers preserve their input contract; the source profile is unselected in normal packaging and still needs a fresh matched source/package preparation",
+    "The early boot helper transforms only the selected native-v1 private DT copy; fresh matched source/package preparation and tablet acceptance remain separate gates",
     "EDAC, PMU/AMU, MEMLAT, BWMON, frequency limits and firmware policy are unchanged",
     "No target kernel installation, boot, suspend, cache actuation or measured speedup occurred",
     "Managed supplier links and deferred platform probe are source-tested; actual driver-core cleanup, supplier unbind and device PM remain unqualified"
@@ -173,7 +173,9 @@
     "default": "disabled",
     "candidate": "native-v1",
     "selection": "UKE_LLCC_PROFILE",
-    "normal_package_selected": false,
-    "requires_three_candidate_patches_preapplied": true
-  }
+    "normal_package_selected": true,
+    "requires_three_candidate_patches_preapplied": true,
+    "package_selector": "packaging/native/llcc-profile"
+  },
+  "kernel_release": "7.2.11-15"
 }

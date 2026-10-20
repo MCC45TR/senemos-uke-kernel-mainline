@@ -384,6 +384,18 @@
     {
       "path": "patches/7.2.11/0094-gpr-quiesce-native-audio-services-before-teardown.patch",
       "sha256": "897991df8cb126124f8928689b23b08bbf453598211adfb6a60573d8aeede07b"
+    },
+    {
+      "path": "patches/7.2.11/0095-bindings-sm7675-llcc.patch",
+      "sha256": "ef8c4eb4c8b042cea2beeffceb42aa2eff945b5fa85ad075f58f4a94d88725f0"
+    },
+    {
+      "path": "patches/7.2.11/0096-sm7675-llcc-policy-and-resource-guards.patch",
+      "sha256": "fcd5d5c4251f9b2e8e22a6dceb90662f5f991333745ea40730921ef97d951b6e"
+    },
+    {
+      "path": "patches/7.2.11/0097-adreno-order-native-llcc-supplier.patch",
+      "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

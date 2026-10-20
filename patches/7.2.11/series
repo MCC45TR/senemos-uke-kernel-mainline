@@ -92,3 +92,6 @@
 0092-q6apm-validate-dma-completion-results.patch
 0093-q6apm-qualify-graph-publication-and-references.patch
 0094-gpr-quiesce-native-audio-services-before-teardown.patch
+0095-bindings-sm7675-llcc.patch
+0096-sm7675-llcc-policy-and-resource-guards.patch
+0097-adreno-order-native-llcc-supplier.patch

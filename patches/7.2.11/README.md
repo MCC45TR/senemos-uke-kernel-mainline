@@ -95,3 +95,10 @@ changing OEM trips. Unknown or ambiguous outcomes do not release the latch.
 No raw XM selector, pack defaults or new JEITA/CV/PD writer is exposed.
 Host fixtures and an AArch64 driver object are separate from full package,
 matched boot and physical moisture/electrical acceptance.
+
+**20 October 2026, release 15 source candidate:** patches 0095–0097 add the
+four-bank/v5 Cliffs7 LLCC policy, five-window binding and managed Adreno supplier
+ordering. Native source preparation selects the admitted private-DT conversion.
+The first 94 patch hashes and existing charging, thermal and recovery policies
+are preserved. Host source checks do not qualify cache coherency, supplier
+lifetime, recovery after partial programming, suspend or a performance gain.

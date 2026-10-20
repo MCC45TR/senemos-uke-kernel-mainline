@@ -202,3 +202,18 @@ linux/EXT4 and userdata/F2FS root selector from source87eadc3. F2FS and its
 security labels are built in; a userdata boot container carries only the bounded
 root-profile selector. The current USB/offline-charge paths remain present.
 Source tests and package builds do not establish userdata boot acceptance.
+
+## Cliffs7 cache package candidate, 20 October 2026
+
+Release 15 retains release 14's first 94 patch hashes, root selector, Type-C,
+charging and thermal paths. Patches 0095–0097 add the four-bank/v5 Cliffs7
+cache provider, five-window binding and managed GPU supplier ordering.
+The hashed `llcc-profile` selects `native-v1` during native source preparation;
+the generated boot helper transforms only its private admitted DT copy.
+Unknown profiles and source/graph mismatches are refused. Audio stays disabled.
+
+Source fixtures and object compilation are separate from a fresh matched
+source RPM, full kernel/package build and tablet acceptance. Actual bank/version
+admission, partial-programming recovery, GPU lifetime, cache coherency,
+suspend and any performance gain remain unqualified. Keep the accepted kernel
+and its matched modules available for recovery.

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 14
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -285,6 +285,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
+- Select the matched Cliffs7 cache source profile and defer GPU probe until its supplier binds.
+- Preserve the release-14 root selector, charging policy and disabled audio profile.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
 - Bound APM basic replies and propagate readiness and PRM firmware errors
 - Preserve APM unmap status and separate data/position buffer handles
