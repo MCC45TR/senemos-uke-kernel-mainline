@@ -339,7 +339,7 @@
     },
     {
       "path": "patches/7.2.11/0083-usb-ucsi-cached-transport-state.patch",
-      "sha256": "dd5926821cfc3dfdcc405f0de66581aa902c4aac351b1efe70def5d13b72e82a"
+      "sha256": "3edeed88d61aea35060b2e378d1ae695e75e042399190ede0e7d5da825ac4383"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

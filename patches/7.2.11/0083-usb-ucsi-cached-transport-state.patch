@@ -127,6 +127,7 @@ diff --git a/drivers/usb/typec/ucsi/ucsi_glink.c b/drivers/usb/typec/ucsi/ucsi_g
  module_auxiliary_driver(pmic_glink_ucsi_driver);
 
 diff --git a/Documentation/ABI/testing/sysfs-driver-ucsi-glink-uke b/Documentation/ABI/testing/sysfs-driver-ucsi-glink-uke
+new file mode 100644
 --- /dev/null
 +++ b/Documentation/ABI/testing/sysfs-driver-ucsi-glink-uke
 @@ -0,0 +1,37 @@
