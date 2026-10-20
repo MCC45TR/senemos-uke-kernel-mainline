@@ -218,8 +218,9 @@ Duplicates, malformed values, forced-argument conflicts and insufficient space
 are rejected before command-line mutation. Other bootloader arguments remain
 excluded. The standard Linux container does not enable the VRR experiment.
 
-Source fixtures and object compilation are separate from a fresh matched
-source RPM, full kernel/package build and tablet acceptance. Actual bank/version
+The local source RPM passes fresh 97-patch preparation and three native
+AArch64 objects with KCFLAGS=-Werror. These results remain separate from a
+full kernel/package build and tablet acceptance. Actual bank/version
 admission, partial-programming recovery, GPU lifetime, cache coherency,
 suspend and any performance gain remain unqualified. Keep the accepted kernel
 and its matched modules available for recovery.

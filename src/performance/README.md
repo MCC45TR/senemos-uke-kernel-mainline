@@ -73,12 +73,15 @@ UKE_LLCC_PROFILE=native-v1 bash src/boot/prepare-abl-source.sh "$kernel" "$outpu
 
 The actual boot helper passes eight admission faults, seven write faults,
 space-exhaustion and input-preservation fixtures against bundled libfdt.
-GCC and Clang ASan/UBSan pass. The ARM64 boot object compiles with the source
-profile enabled and disabled; the final prepared tree is restored to disabled.
-The default host translation is byte-identical after preprocessing. These
-checks do not constitute a fresh full native-source preparation or package.
+GCC and Clang ASan/UBSan pass. The earlier isolated ARM64 boot-object checks
+covered the source profile enabled and disabled and restored that test tree
+to disabled. The default host translation was byte-identical after preprocessing.
 
-Fresh matched source/package preparation is the next acceptance gate.
+The release-15 local source RPM now passes fresh 97-patch native preparation
+and LLCC/Adreno/boot AArch64 objects with KCFLAGS=-Werror. Fresh preparation
+exposed a fixture dependency on Linux's omitted fdt_check.c; the fixture now
+uses the same pinned, attributed DTC validator directly. Full binary packaging
+is the next acceptance gate.
 Actual GPU/provider ordering and lifetime, four-bank/v5 admission,
 partial-programming recovery, cache coherency, suspend and performance still
 require a recoverable device test. Source fixtures do not establish any of

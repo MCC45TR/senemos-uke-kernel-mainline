@@ -58,6 +58,22 @@
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
       "sha256": "177056612d45fcd41450fcafce1688c74f17e9dc488ddb232ac25788176630ee"
+    },
+    {
+      "path": "src/boot/uke-root-selector.h",
+      "sha256": "2722173940ed7751ec3a055f6d98fd5af61c486b4c1b20041ed063d417694a87"
+    },
+    {
+      "path": "tests/root-selector-contract.cpp",
+      "sha256": "79495a42c320d2f0c55650c904b0f14b07523ca2bb2ea9f825fe25624cff5cb2"
+    },
+    {
+      "path": "packaging/native/prepare.sh",
+      "sha256": "52c77a8ba10c6db7c95b5d103016a93cf9064bf4c85986a853ef4d5c0a1b483a"
+    },
+    {
+      "path": "packaging/native/llcc-profile",
+      "sha256": "264857412f434201eb6eb7642da71970e5ea68b90a78a7abd6c02ad2d1c193c4"
     }
   ],
   "baseline_files": [
@@ -157,14 +173,17 @@
     "default_profile_preprocessed_identity": true,
     "arm64_abl_profile_on_off_werror": true,
     "unknown_source_profile_refusal": true,
-    "fresh_native_source_preparation": false,
-    "source_lock_before_native_fixture": true
+    "fresh_native_source_preparation": true,
+    "source_lock_before_native_fixture": true,
+    "fresh_native_source_preparation_commit": "037eb38c8d3870a0c5bd1c9b5c9cf59c245f7603",
+    "local_source_rpm_composed": true,
+    "fresh_release15_aarch64_objects_werror": true
   },
   "limits": [
     "The source candidate admits four hardware banks and v5 only; the tablet bank count and hardware version have not been read through this driver",
     "Resource and version mismatches stop before configuration writes; later I/O failures can leave partial cache programming and require physical recovery qualification",
     "GPU field tests use actual source with simulated register writes; cache hits, coherency, counters and real GPU activation are untested",
-    "The early boot helper transforms only the selected native-v1 private DT copy; fresh matched source/package preparation and tablet acceptance remain separate gates",
+    "The selected native-v1 profile passes fresh 97-patch source preparation and three AArch64 objects; full binary packaging and tablet acceptance remain separate gates",
     "EDAC, PMU/AMU, MEMLAT, BWMON, frequency limits and firmware policy are unchanged",
     "No target kernel installation, boot, suspend, cache actuation or measured speedup occurred",
     "Managed supplier links and deferred platform probe are source-tested; actual driver-core cleanup, supplier unbind and device PM remain unqualified"
@@ -177,5 +196,19 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.11-15"
+  "kernel_release": "7.2.11-15",
+  "boot_argument_handoff": {
+    "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
+    "integrated_commit": "3d78e6c",
+    "slot_suffix": [
+      "_a",
+      "_b"
+    ],
+    "userdata_vrr_min_hz": [
+      0,
+      30
+    ],
+    "normal_linux_vrr_experiment_enabled": false,
+    "physical_tested": false
+  }
 }
