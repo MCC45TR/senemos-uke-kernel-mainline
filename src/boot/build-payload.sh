@@ -5,7 +5,7 @@ trap 'printf "Boot payload failed at line %s\n" "$LINENO" >&2' ERR
 [[ $# == 5 ]] || exit 2
 kernel=$(realpath "$1") out=$(realpath -m "$2")
 base=$(realpath "$3") release=$4 jobs=$5
-[[ $release =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ && $jobs =~ ^[1-9][0-9]*$ ]]
+[[ $release =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*(-kvm)?$ && $jobs =~ ^[1-9][0-9]*$ ]]
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
 cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"

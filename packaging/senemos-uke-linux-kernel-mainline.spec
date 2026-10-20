@@ -4,17 +4,17 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline
+Name: senemos-uke-kernel-mainline-kvm
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
 %global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}
+%global krel %{version}-%{senemos_build_release}-kvm
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Uke kernel with the O82 display profile
-License: GPL-2.0-only
+Summary: Experimental Uke KVM kernel with the current native hardware profile
+License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -39,8 +39,8 @@ Requires: %{name}-boot = %{version}-%{release}
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+This package performs no boot activation. Build success does not establish
+EL2 ownership, available KVM or physical tablet acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -73,13 +73,12 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 0.1.0-15
 Provides: installonlypkg(kernel)
 
 %description boot
-Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
-checks package identities, module digests, physical storage and power, preserves
-the previous image, and verifies write readback. Android A is not an update target.
+Matched Android v4 containers for the EXT4 Linux and F2FS userdata profiles.
+This package performs no activation, partition write, slot change or reboot.
+Firmware ownership and physical EL2 acceptance remain separate requirements.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
@@ -144,9 +143,13 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-kvm kernelrelease)" = '%{krel}'
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
 
 %check
+bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/tests/kvm-probe-abi.cpp -o %{_uke_out}/kvm-probe-abi
+%{_uke_out}/kvm-probe-abi
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -229,6 +232,8 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 
 %install
 export ARCH=arm64 LLVM=1
+install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
+install -Dm644 native-profile/KVM.md %{buildroot}%{_datadir}/doc/%{name}/KVM.md
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
 module_dir=%{buildroot}/usr/lib/modules/%{krel}
@@ -256,14 +261,12 @@ mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
-%posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
-
 %files
+%{_bindir}/uke-kvm-probe
+%doc %{_datadir}/doc/%{name}/KVM.md
 %doc native-profile/README.md
 %license COPYING
+%license native-profile/LICENSE
 
 %files core
 %dir /usr/lib/modules/%{krel}
@@ -291,6 +294,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
+- Publish the requested KVM namespace with matched Linux and userdata containers.
+- Retain the current 97-patch profile and explicit activation/firmware boundaries.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
 - Restore the kernel primitives required by the original nftables firewall backend.
 - Select one root filesystem type and a bounded userdata panic restart policy.

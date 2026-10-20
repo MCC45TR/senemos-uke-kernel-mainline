@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "7c38cd5c965c93ffe15ff8be1c6c1bb3dcb0ee7bae4c886f82de110ee9f10e5a"
+      "sha256": "e539b44fefe2115936e35ec1babae91b2b46d06690aa66abf260859b7d6d6314"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "a084268b9538ba045a5c86e52ec3dbe71f6612e7b3c4c8bf68240698664a2b3a"
+      "sha256": "d93c507d188a21ec6176b53eddfc66d1e3f6a57d98a04ab98dcbb58bac47e84e"
     },
     {
       "path": "tests/boot-image-contract.sh",
