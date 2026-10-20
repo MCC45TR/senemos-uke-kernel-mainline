@@ -61,11 +61,11 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "2722173940ed7751ec3a055f6d98fd5af61c486b4c1b20041ed063d417694a87"
+      "sha256": "71c96a2b17a8285c44d719aeb56e403d56f92cf7fbdfaa18c2c69150d4164fef"
     },
     {
       "path": "tests/root-selector-contract.cpp",
-      "sha256": "79495a42c320d2f0c55650c904b0f14b07523ca2bb2ea9f825fe25624cff5cb2"
+      "sha256": "9b24a39f8d7def20e7af0deda6fff13dcf4c6c73c52d7838c954341cfd399207"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -196,7 +196,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.11-15",
+  "kernel_release": "7.2.11-16",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

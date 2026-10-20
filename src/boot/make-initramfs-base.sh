@@ -16,6 +16,8 @@ command_line=$(sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' "$here/../../packaging/
 [[ $command_line == *'root=PARTLABEL=linux '* ]]
 # Root comes from the running kernel command line, including its admitted override.
 dracut_line=${command_line/root=PARTLABEL=linux /}
+dracut_line=${dracut_line/rootfstype=ext4,f2fs /}
+dracut_line=${dracut_line/panic=0 /}
 dracutbasedir="$work/dracut" dracut --conf /dev/null --confdir "$work/empty-config" \
     --tmpdir "$work" --no-hostonly --no-hostonly-cmdline --no-early-microcode --no-kernel --gzip \
     --add uke-abl --kernel-cmdline "$dracut_line" \
@@ -23,8 +25,8 @@ dracutbasedir="$work/dracut" dracut --conf /dev/null --confdir "$work/empty-conf
     --filesystems 'ext4 f2fs' --omit 'network plymouth crypt systemd-cryptsetup syslog lvm mdraid btrfs i18n' \
     "$work/base.cpio.gz" "$release"
 (cd "$work/base"; gzip -cd ../base.cpio.gz | cpio -idm --quiet --no-absolute-filenames)
-if grep -rE '(^|[[:space:]])root=' "$work/base/etc/cmdline.d"; then
-    echo 'Embedded dracut defaults must not add a second root selector' >&2; exit 1
+if grep -rE '(^|[[:space:]])(root|rootfstype|panic)=' "$work/base/etc/cmdline.d"; then
+    echo 'Embedded dracut defaults must not override the selected root policy' >&2; exit 1
 fi
 [[ ! -e $work/base/usr/lib/modules && ! -e $work/base/usr/lib/firmware ]]
 [[ ! -s $work/base/etc/machine-id && ! -e $work/base/etc/shadow ]]

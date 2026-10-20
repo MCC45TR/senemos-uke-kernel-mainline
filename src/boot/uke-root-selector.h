@@ -15,9 +15,12 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 	static const char prefix[] = "senemos.root=";
 	static const char standard[] = "root=PARTLABEL=linux";
 	static const char userdata[] = "root=PARTLABEL=userdata";
+	static const char fstypes[] = "rootfstype=ext4,f2fs";
+	static const char panic[] = "panic=0";
 	size_t pos = 0, length = 0, root = 0, roots = 0;
+	size_t fstype = 0, fstype_count = 0, panic_pos = 0, panic_count = 0;
 	const char *slot = NULL, *vrr = NULL;
-	size_t slot_bytes = 0, vrr_bytes = 0, extra;
+	size_t slot_bytes = 0, vrr_bytes = 0, extra, shrink = sizeof(",f2fs") - 1;
 	int selected = 0;
 
 	if (!cmdline || !capacity || bytes > 8192 || (!handoff && bytes))
@@ -87,6 +90,22 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		while (pos < length && !uke_cmdline_space(cmdline[pos]))
 			pos++;
 		count = pos - start;
+		if (count >= sizeof("rootfstype=") - 1 &&
+		    !memcmp(cmdline + start, "rootfstype=", sizeof("rootfstype=") - 1)) {
+			if (++fstype_count != 1 || count != sizeof(fstypes) - 1 ||
+			    memcmp(cmdline + start, fstypes, count))
+				return -1;
+			fstype = start;
+			continue;
+		}
+		if (count >= sizeof("panic=") - 1 &&
+		    !memcmp(cmdline + start, "panic=", sizeof("panic=") - 1)) {
+			if (++panic_count != 1 || count != sizeof(panic) - 1 ||
+			    memcmp(cmdline + start, panic, count))
+				return -1;
+			panic_pos = start;
+			continue;
+		}
 		if ((count >= sizeof("androidboot.slot_suffix=") - 1 &&
 		     !memcmp(cmdline + start, "androidboot.slot_suffix=",
 			     sizeof("androidboot.slot_suffix=") - 1)) ||
@@ -101,18 +120,36 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 			return -1;
 		root = start;
 	}
-	if (roots != 1)
+	if (roots != 1 || fstype_count != 1 || panic_count != 1)
 		return -1;
-	extra = (selected == 2 ? sizeof(userdata) - sizeof(standard) : 0) +
+	extra = (selected == 2 ? sizeof(userdata) - sizeof(standard) + 1 : 0) +
 		(slot ? 1 + slot_bytes : 0) + (vrr ? 1 + vrr_bytes : 0);
-	if (capacity - length <= extra)
+	if (extra >= shrink && capacity - length <= extra - shrink)
 		return -1;
+	/* Shrink first so every intermediate write also fits the final capacity. */
+	memcpy(cmdline + fstype + sizeof("rootfstype=") - 1,
+	       selected == 2 ? "f2fs" : "ext4", 4);
+	memmove(cmdline + fstype + sizeof(fstypes) - 1 - shrink,
+		cmdline + fstype + sizeof(fstypes) - 1,
+		length - fstype - (sizeof(fstypes) - 1) + 1);
+	length -= shrink;
+	if (root > fstype)
+		root -= shrink;
+	if (panic_pos > fstype)
+		panic_pos -= shrink;
 	if (selected == 2) {
 		memmove(cmdline + root + sizeof(userdata) - 1,
 			cmdline + root + sizeof(standard) - 1,
 			length - root - (sizeof(standard) - 1) + 1);
 		memcpy(cmdline + root, userdata, sizeof(userdata) - 1);
 		length += sizeof(userdata) - sizeof(standard);
+		if (panic_pos > root)
+			panic_pos += sizeof(userdata) - sizeof(standard);
+		memmove(cmdline + panic_pos + sizeof(panic),
+			cmdline + panic_pos + sizeof(panic) - 1,
+			length - panic_pos - (sizeof(panic) - 1) + 1);
+		memcpy(cmdline + panic_pos, "panic=10", sizeof("panic=10") - 1);
+		length++;
 	}
 	if (slot) {
 		cmdline[length++] = ' ';

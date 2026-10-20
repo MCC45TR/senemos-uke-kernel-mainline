@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 15
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -147,6 +147,7 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
 CC=clang bash native-profile/tests/llcc-boot-fdt-contract.sh "$PWD"
@@ -290,6 +291,11 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
+- Restore the kernel primitives required by the original nftables firewall backend.
+- Select one root filesystem type and a bounded userdata panic restart policy.
+- Exclude conflicting root policy from embedded dracut defaults.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
 - Select the matched Cliffs7 cache source profile and defer GPU probe until its supplier binds.
 - Forward exact slot identity and private userdata VRR arguments through the forced command line.

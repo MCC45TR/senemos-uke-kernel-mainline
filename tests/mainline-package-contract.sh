@@ -24,6 +24,7 @@ fi
 grep -Fx "if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then" "$spec"
 grep -Fx 'Source4: senemos-native-profile-7.2.11.tar.xz' <<< "$parsed"
 grep -F 'CONFIG_INITRAMFS_SOURCE=""' "$root/packaging/native/native.config"
+bash "$root/tests/native-firewall-contract.sh"
 if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1

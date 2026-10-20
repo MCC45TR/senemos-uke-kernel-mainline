@@ -224,3 +224,21 @@ full kernel/package build and tablet acceptance. Actual bank/version
 admission, partial-programming recovery, GPU lifetime, cache coherency,
 suspend and any performance gain remain unqualified. Keep the accepted kernel
 and its matched modules available for recovery.
+
+## Native firewall and root policy candidate, 20 October 2026
+
+Release 16 retains the 97-patch hardware queue and adds the modules required
+by the original firewalld nftables backend: mixed IPv4/IPv6 tables, connection
+tracking, NAT, masquerading, redirection, rejection, rate limits, logging and
+FIB lookup. Source and resolved-configuration checks pass; package checks also
+require the corresponding built modules. This does not establish a running
+tablet firewall or change network rules during an SSH session.
+
+The forced command-line parser selects only `rootfstype=ext4` for the Linux
+profile or `rootfstype=f2fs` for userdata. Userdata changes `panic=0` to
+`panic=10`; Linux retains its bring-up setting. Duplicate or changed forced
+defaults are refused before mutation. Embedded dracut defaults exclude these
+fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
+fixtures cover both profiles, all field orders, rejected input and capacity
+boundaries. A panic restart is separate from hard-hang recovery or physical
+A/B rollback qualification. No tablet installation or reboot is implied.

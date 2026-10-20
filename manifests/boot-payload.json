@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-20",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "35880d467a9e75c055271c0cd0fa20b26636013c397de3d98969e0b7a69e7c70"
+      "sha256": "2470a3e23a16eb25c93aa26027e4d06cc662c9c2601074fbc6e77a7c23fe49ea"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "3237e0aa66c949b126fe66f26abbac33e5d34c24a24d882034ab83e307f53ad4"
+      "sha256": "a084268b9538ba045a5c86e52ec3dbe71f6612e7b3c4c8bf68240698664a2b3a"
     },
     {
       "path": "tests/boot-image-contract.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "2722173940ed7751ec3a055f6d98fd5af61c486b4c1b20041ed063d417694a87"
+      "sha256": "71c96a2b17a8285c44d719aeb56e403d56f92cf7fbdfaa18c2c69150d4164fef"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",

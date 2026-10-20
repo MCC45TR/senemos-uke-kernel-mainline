@@ -3,16 +3,21 @@
 #include <cassert>
 #include <cstring>
 #include <string>
+#include <vector>
 #define UKE_INIT
 #include "../src/boot/uke-root-selector.h"
 
-static constexpr char base[] = "rdinit=/usr/lib/systemd/systemd root=PARTLABEL=linux rw console=tty0";
+static constexpr char base[] = "rdinit=/usr/lib/systemd/systemd root=PARTLABEL=linux rw rootfstype=ext4,f2fs panic=0 console=tty0";
 static void check(const std::string &args, int expected, const char *initial = base, const char *suffix = "") {
     char buffer[2048];
     std::strcpy(buffer, initial);
     assert(uke_select_root(buffer, sizeof(buffer), args.c_str(), args.size() + 1) == expected);
     auto wanted = std::string(initial);
-    if (expected == 1) wanted.replace(wanted.find("root=PARTLABEL=linux"), std::strlen("root=PARTLABEL=linux"), "root=PARTLABEL=userdata");
+    if (expected >= 0) wanted.replace(wanted.find("rootfstype=ext4,f2fs"), std::strlen("rootfstype=ext4,f2fs"), expected == 1 ? "rootfstype=f2fs" : "rootfstype=ext4");
+    if (expected == 1) {
+        wanted.replace(wanted.find("root=PARTLABEL=linux"), std::strlen("root=PARTLABEL=linux"), "root=PARTLABEL=userdata");
+        wanted.replace(wanted.find("panic=0"), std::strlen("panic=0"), "panic=10");
+    }
     wanted += suffix;
     assert(buffer == wanted);
 }
@@ -38,21 +43,34 @@ int main() {
     check("senemos.root=userdata", -1, "root=PARTLABEL=linux root=PARTLABEL=linux");
     check("senemos.root=userdata", -1, "root=UUID=invalid");
     check("senemos.root=userdata", -1, "console=tty0");
-    check("senemos.root=userdata", 1, "root=PARTLABEL=linux");
-    char bounded[24] = "root=PARTLABEL=linux";
-    const auto original = std::string(bounded);
+    check("senemos.root=userdata", -1, "root=PARTLABEL=linux");
+    for (const auto *initial : {"root=PARTLABEL=linux rootfstype=ext4,f2fs", "root=PARTLABEL=linux panic=0",
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs rootfstype=f2fs panic=0",
+                               "root=PARTLABEL=linux rootfstype=f2fs panic=0",
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs panic=10",
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs panic=0 panic=0"}) check("senemos.root=userdata", -1, initial);
+    // All token orders share the same bounds and profile rules.
+    for (const auto *initial : {"rootfstype=ext4,f2fs panic=0 root=PARTLABEL=linux",
+                               "rootfstype=ext4,f2fs root=PARTLABEL=linux panic=0",
+                               "panic=0 rootfstype=ext4,f2fs root=PARTLABEL=linux",
+                               "panic=0 root=PARTLABEL=linux rootfstype=ext4,f2fs",
+                               "root=PARTLABEL=linux panic=0 rootfstype=ext4,f2fs"}) {
+        check("senemos.root=userdata", 1, initial);
+        check("senemos.root=linux", 0, initial);
+    }
     const char args[] = "senemos.root=userdata";
+    char bounded[sizeof(base)]; std::strcpy(bounded, base);
     assert(uke_select_root(bounded, sizeof(bounded) - 1, args, sizeof(args)) == -1);
-    assert(bounded == original);
+    assert(!std::strcmp(bounded, base));
     assert(uke_select_root(bounded, sizeof(bounded), args, sizeof(args)) == 1);
-    assert(!std::strcmp(bounded, "root=PARTLABEL=userdata"));
-    char short_line[51] = "root=PARTLABEL=linux";
     const char slot_args[] = "senemos.root=userdata androidboot.slot_suffix=_b";
-    const auto before = std::string(short_line);
-    assert(uke_select_root(short_line, 50, slot_args, sizeof(slot_args)) == -1);
-    assert(short_line == before);
-    assert(uke_select_root(short_line, sizeof(short_line), slot_args, sizeof(slot_args)) == 1);
-    assert(!std::strcmp(short_line, "root=PARTLABEL=userdata androidboot.slot_suffix=_b"));
+    const std::string wanted = std::string(bounded) + " androidboot.slot_suffix=_b";
+    std::vector<char> short_line(wanted.size() + 1);
+    std::strcpy(short_line.data(), base);
+    assert(uke_select_root(short_line.data(), short_line.size() - 1, slot_args, sizeof(slot_args)) == -1);
+    assert(!std::strcmp(short_line.data(), base));
+    assert(uke_select_root(short_line.data(), short_line.size(), slot_args, sizeof(slot_args)) == 1);
+    assert(short_line.data() == wanted);
     char unterminated[32]; std::memset(unterminated, 'X', sizeof(unterminated));
     assert(uke_select_root(unterminated, sizeof(unterminated), args, sizeof(args)) == -1);
     char buffer[2048]; std::strcpy(buffer, base);
@@ -60,7 +78,8 @@ int main() {
     assert(uke_select_root(buffer, sizeof(buffer), embedded, sizeof(embedded)) == -1);
     assert(uke_select_root(buffer, sizeof(buffer), args, sizeof(args) - 1) == -1);
     assert(uke_select_root(buffer, sizeof(buffer), nullptr, 1) == -1);
-    assert(uke_select_root(buffer, sizeof(buffer), nullptr, 0) == 0);
     assert(uke_select_root(buffer, sizeof(buffer), args, 8193) == -1);
     assert(!std::strcmp(buffer, base));
+    assert(uke_select_root(buffer, sizeof(buffer), nullptr, 0) == 0);
+    assert(std::string(buffer).find("rootfstype=ext4 ") != std::string::npos);
 }
