@@ -34,6 +34,7 @@ struct gpr_pkt{gpr_hdr hdr;};
 struct gpr_resp_pkt{gpr_hdr hdr;void *payload;int payload_size;};
 struct gpr_ibasic_rsp_result_t{u32 opcode,status;};
 struct q6apm{device *dev{};gpr_device_t *gdev{};mutex lock,state_lock,cmd_lock;
+ bool removing=false;
  int wait=0,widget_list=0,graph_idr=0,graph_info_idr=0,sub_graphs_idr=0,containers_idr=0,modules_idr=0;
  u32 state=0,state_token=0;gpr_ibasic_rsp_result_t result{};};
 static q6apm *g_apm;
@@ -93,6 +94,7 @@ static int q6apm_audio_component;
 static int snd_soc_register_component(device*,int*,void*,int){registrations++;return register_result;}
 static void snd_soc_unregister_component(device*){unregistrations++;}
 static void q6apm_purge_failed_graphs(q6apm*){}
+static void gpr_quiesce_service(gpr_device_t *gdev){gdev->svc.callback=nullptr;}
 static int of_platform_populate(void*,void*,void*,device*){return populate_result;}
 static void of_platform_depopulate(device*){depopulations++;}
 #define dev_err(...) ((void)0)
@@ -121,7 +123,7 @@ int main(){
  mode=1;assert(q6apm_is_adsp_ready());
  assert(apm_probe(&second)==-EBUSY&&g_apm==first.dev.data);
  apm_remove(&second);assert(g_apm==first.dev.data);
- apm_remove(&first);assert(!g_apm&&!q6apm_is_adsp_ready());
+ apm_remove(&first);assert(!g_apm&&!q6apm_is_adsp_ready()&&!first.svc.callback&&static_cast<q6apm*>(first.dev.data)->removing);
 }
 CPP
 ${CXX:-c++} -std=c++20 -Wall -Wextra -Werror -Wno-sign-compare -include initializer_list -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.cpp" -o "$work/check"

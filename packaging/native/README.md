@@ -188,3 +188,10 @@ provider instance and cleans that local metadata at removal. First publication
 and final release use the existing provider command mutex; lookups cannot
 resurrect a zero reference. This does not establish remote cleanup after a
 timeout or a new firmware epoch after manual driver rebind.
+
+Patch 0094 adds the native service quiesce boundary and serialized callback
+publication/removal. APM blocks new opens and drains service callbacks before
+topology release. PRM releases its children and drains the serialized request
+before rejecting further work and disabling callbacks. Process-context and
+driver-order fixtures pass; transport/PDR teardown, remote ownership and full
+DMA/XRUN recovery remain separate gates. No sound card or route is enabled.

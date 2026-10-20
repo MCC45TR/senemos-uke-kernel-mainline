@@ -41,7 +41,7 @@ static int idr_alloc(struct idr *id,void *p,uint32_t start,uint32_t end,int flag
 static void *idr_remove(struct idr *id,uint32_t key){assert(key<16);void *p=id->slots[key];id->slots[key]=NULL;return p;}
 #define idr_for_each_entry(id,p,key) for((key)=0;(key)<16;(key)++)if(((p)=(id)->slots[key]))
 struct audioreach_graph_info{int unused;};
-struct q6apm{void *dev;struct mutex lock,cmd_lock;struct idr graph_idr,graph_info_idr;};
+struct q6apm{void *dev;struct mutex lock,cmd_lock;struct idr graph_idr,graph_info_idr;bool removing;};
 struct audioreach_graph{struct audioreach_graph_info *info;uint32_t id;int state,start_count;void *graph;struct kref refcount;struct q6apm *apm;};
 static int allocations,allocation_error,packet_error,send_error,sends,closes;
 static bool send_locked;
@@ -71,6 +71,7 @@ int main(void){
 #endif
  g=q6apm_get_audioreach_graph(&apm,3);assert(!IS_ERR(g) && g->refcount.count==1 && send_locked);
  struct audioreach_graph *same=q6apm_get_audioreach_graph(&apm,3);assert(same==g && g->refcount.count==2);
+ apm.removing=true;before=sends;assert(PTR_ERR(q6apm_get_audioreach_graph(&apm,3))==-ENODEV && sends==before && g->refcount.count==2);apm.removing=false;
  kref_put(&g->refcount,q6apm_put_audioreach_graph);assert(g->refcount.count==1 && !closes);
  g->refcount.count=0;before=sends;same=q6apm_get_audioreach_graph(&apm,3);
  assert(IS_ERR(same) && PTR_ERR(same)==-EBUSY && sends==before);

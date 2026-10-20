@@ -44,6 +44,9 @@ awk '/^struct q6prm \{/ {emit=1} emit {print} emit && /^};/ {emit=0}
  /^#define (PRM_CMD_(RSP_)?(REQUEST|RELEASE)_HW_RSC|PARAM_ID_RSC_(HW_CORE|AUDIO_HW_CLK))[[:space:]]/ {print}' "$prm" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static int prm_callback(const struct gpr_resp_pkt *, void *, int);
+static int depopulations,quiesces;
+static void devm_of_platform_depopulate(struct device *dev){(void)dev;depopulations++;}
+static void gpr_quiesce_service(gpr_device_t *gdev){struct q6prm *p=gdev->dev.data;assert(p->removing && !p->lock.held && !p->token);quiesces++;}
 static gpr_device_t *active_device;
 static struct gpr_resp_pkt replies[3];
 static struct gpr_ibasic_rsp_result_t results[3];
@@ -73,7 +76,8 @@ static int wait_for_completion_timeout(struct completion *c,unsigned timeout)
  c->done--;return 1;
 }
 C
-awk '/^static int (q6prm_send_cmd_sync|prm_callback)\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$prm" >> "$work/check.c"
+awk '/^static int (q6prm_send_cmd_sync|prm_callback)\(/ {emit=1}
+ /^static void prm_remove\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$prm" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static void response(int i,u32 opcode,u32 word,u32 status)
 {
@@ -141,6 +145,8 @@ int main(void)
  response(0,rsps[0],params[0],7);current_token[0]=false;replies[0].hdr.token=sent_token;
  response(1,rsps[0],params[0],0);reply_count=2;
  assert(request(&reprobe,cmds[0],rsps[0],params[0])==0 && reply_next==2 && sent_token==2);
+ prm_remove(&gdev);assert(depopulations==1 && quiesces==1);int sent=sends;
+ assert(request(&reprobe,cmds[0],rsps[0],params[0])==-ENODEV && sends==sent);
 }
 C
 ${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter \

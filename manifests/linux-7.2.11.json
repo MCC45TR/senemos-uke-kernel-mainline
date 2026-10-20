@@ -380,6 +380,10 @@
     {
       "path": "patches/7.2.11/0093-q6apm-qualify-graph-publication-and-references.patch",
       "sha256": "56a64a38fd961be8601c9f3dbc5260ca4b638b50c0b82bcf26a8ca41d5fe03d1"
+    },
+    {
+      "path": "patches/7.2.11/0094-gpr-quiesce-native-audio-services-before-teardown.patch",
+      "sha256": "897991df8cb126124f8928689b23b08bbf453598211adfb6a60573d8aeede07b"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
