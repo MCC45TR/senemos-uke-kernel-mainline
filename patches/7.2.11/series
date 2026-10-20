@@ -87,3 +87,4 @@
 0087-q6apm-bound-graph-events-and-buffer-tokens.patch
 0088-gpr-drain-dynamic-port-callbacks-before-free.patch
 0089-apr-detach-rx-batch-under-queue-lock.patch
+0090-q6apm-use-sleepable-compressed-stream-lock.patch

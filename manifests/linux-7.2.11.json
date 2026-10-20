@@ -364,6 +364,10 @@
     {
       "path": "patches/7.2.11/0089-apr-detach-rx-batch-under-queue-lock.patch",
       "sha256": "6e191a09de60391f9e8d924a2ab0fceecb3f450d412fcb1ca690eeaad95aa891"
+    },
+    {
+      "path": "patches/7.2.11/0090-q6apm-use-sleepable-compressed-stream-lock.patch",
+      "sha256": "c903bd888bcba2d29ee36f19dfb697dc7085012adf48daa249b74e2585d08dd5"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
