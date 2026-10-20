@@ -1,0 +1,33 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: ice: reject failed HWKM self-test state
+
+Keep the existing status interpretation but return -EIO on a mismatch.
+Clear initialization on mismatches and polling failures so wrapped-key
+programming cannot treat the failed engine as initialized. Keep the
+selected key type; do not silently fall back to raw keys.
+
+diff --git a/drivers/soc/qcom/ice.c b/drivers/soc/qcom/ice.c
+index 3f628c0..f6ac430 100644
+--- a/drivers/soc/qcom/ice.c
++++ b/drivers/soc/qcom/ice.c
+@@ -237,6 +237,7 @@ static int qcom_ice_wait_bist_status(struct qcom_ice *ice)
+ 				 50, 5000);
+ 	if (err) {
+ 		dev_err(ice->dev, "Timed out waiting for ICE self-test to complete\n");
++		ice->hwkm_init_complete = false;
+ 		return err;
+ 	}
+ 
+@@ -248,10 +249,8 @@ static int qcom_ice_wait_bist_status(struct qcom_ice *ice)
+ 	     QCOM_ICE_HWKM_CRYPTO_BIST_DONE(ice->hwkm_version) |
+ 	     QCOM_ICE_HWKM_BIST_DONE(ice->hwkm_version))) {
+ 		dev_err(ice->dev, "HWKM self-test error!\n");
+-		/*
+-		 * Too late to revoke use_hwkm here, as it was already
+-		 * propagated up the stack into the crypto capabilities.
+-		 */
++		ice->hwkm_init_complete = false;
++		return -EIO;
+ 	}
+ 	return 0;
+ }
