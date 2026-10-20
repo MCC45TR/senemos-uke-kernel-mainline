@@ -159,3 +159,10 @@ are separate. PRM stale-response correlation and graph/DMA lifetime remain open.
 Patch 0085 also preserves unmap opcode/status, carries the existing buffer-type
 token bit and clears only the selected mapping after firmware success. Host
 callback checks do not qualify caller-side DMA recovery or graph lifetime.
+
+Patch 0086 serializes PRM transactions with a completion and spinlock. Only
+the pending nonzero token, expected opcode and resource parameter can complete
+a request. Late/duplicate/unrelated replies cannot overwrite its result.
+The module-wide 32-bit sequence survives device reprobe; wire wrap and module
+reload are not an unlimited epoch guarantee. Exact firmware token echo and
+callback teardown remain separate admission gates. Audio stays disabled.

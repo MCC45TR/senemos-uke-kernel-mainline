@@ -279,6 +279,7 @@ fi
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
 - Bound APM basic replies and propagate readiness and PRM firmware errors
 - Preserve APM unmap status and separate data/position buffer handles
+- Correlate PRM replies with one pending token, opcode and parameter
 - Keep audio disabled; add actual-source response regression fixtures
 
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11

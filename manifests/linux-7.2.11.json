@@ -348,6 +348,10 @@
     {
       "path": "patches/7.2.11/0085-q6apm-preserve-unmap-result-and-buffer-type.patch",
       "sha256": "d16c1823ea21bc4b0f78c11d6594c4aad7b7c9953ae3bfcc1432bcaa6adca520"
+    },
+    {
+      "path": "patches/7.2.11/0086-q6prm-correlate-resource-transactions.patch",
+      "sha256": "3a18ca0bbbe26bacf5867e3112696a6a411b0cb39e47a867fecd65170d6bb339"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
