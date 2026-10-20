@@ -100,6 +100,10 @@
     {
       "path": "patches/video/0010-iris-native-split-pixel-dma.patch",
       "sha256": "91ae7b813e06e7ff90c522ca770ab7631eb44f1bb1ae091c9248b8a8f5022b98"
+    },
+    {
+      "path": "patches/video/0011-iris-recovery-and-pm-rollback-ownership.patch",
+      "sha256": "34beded9c02cd5f696b6beb9bc26feda1684448a2d0c039437171efd031322b8"
     }
   ],
   "sources": [
@@ -263,5 +267,30 @@
     "upstream_buffer_sha256": "800862e3d6ef4ec444df0f0393a45c74eacf5e15a14661de5e3521a31acf3815",
     "upstream_probe_sha256": "a91a59cefe13480633e6f17fa3013a63d85bb3b00a2da8e292c5c51db8ec7a86",
     "upstream_vidc_sha256": "ff88255cb6e0a3830fdc15eb55ce6197b8129590d8f110367dcacb360802f02b"
+  },
+  "runtime_lifecycle": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "f78ca888320669169cfac4bfca79d0123d5fdf07",
+    "shared_hfi_error_handler": true,
+    "removal_blocks_new_work_and_commands": true,
+    "recovery_cancellation_outside_core_mutex": true,
+    "completion_reset_per_initialization": true,
+    "all_initializers_wait_for_response": true,
+    "post_wait_error_and_removal_checks": true,
+    "negative_pm_get_not_put": true,
+    "remote_resume_rollback_checked": true,
+    "failed_remote_stop_preserves_power": true,
+    "original_resume_error_preserved": true,
+    "forced_removal_safe": false,
+    "open_sessions_drained": false,
+    "irq_teardown_qualified": false,
+    "lowlevel_poweroff_errors_qualified": false,
+    "tablet_tested": false,
+    "upstream_commit": "4a8bdffce502d70405391a7ac38bac6dcef94749",
+    "upstream_core_sha256": "0732db166f19e386cedbe5e111dca5d7ffa247112df1110226006c4af553bd43",
+    "upstream_common_sha256": "0bdceedd006deb40ea6ff78772555d89094399e39c78d14d950c606c57d1ae62",
+    "upstream_queue_sha256": "42b1687d106f61ba48e05552715de41ca6994aee6ca80316bc25707ef7001ef8",
+    "upstream_gen1_response_sha256": "fc631eecdafed4f6027a1f7c6a03438328805508a8d031bd81299d9838ea08dc",
+    "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61"
   }
 }

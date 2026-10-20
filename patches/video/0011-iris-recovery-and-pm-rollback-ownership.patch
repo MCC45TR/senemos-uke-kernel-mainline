@@ -1,0 +1,324 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: stop recovery and retain failed PM rollback
+
+Serialize both HFI error paths with teardown. Mark removal and wake init
+waiters before cancelling delayed recovery outside the core mutex. Refuse
+new initialization, video registration and HFI writes after that boundary.
+Do not restart firmware from a recovery worker during removal.
+
+Reset the completion for each initialization and make every opener wait
+for a response. Recheck removal and firmware errors after waking. Do not
+consume stale success or bypass the first initializer's pending response.
+
+Do not drop a runtime-PM reference when acquisition failed. On resume
+failure, check remote suspend before cutting power and preserve the
+original error. Retain power and mark the core failed if rollback fails;
+also mark an uncertain ordinary remote suspend as failed.
+
+Compare Uke OEM5712080a/DT94c84aeb, OnePlus SM7675 modules/DT1138e00f
+and upstream4a8bdffce502d70405391a7ac38bac6dcef94749 separately. The
+native framework changes import no firmware, board values or donor code.
+Open-file/DMA-BUF lifetime, IRQ teardown and low-level power-off failures
+still require completion before enabling the native core match.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+diff --git a/drivers/media/platform/qcom/iris/iris_core.c b/drivers/media/platform/qcom/iris/iris_core.c
+index 1fbf5f2..486cfae 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.c
++++ b/drivers/media/platform/qcom/iris/iris_core.c
+@@ -7,9 +7,35 @@
+ 
+ #include "iris_core.h"
+ #include "iris_firmware.h"
++#include "iris_instance.h"
+ #include "iris_state.h"
+ #include "iris_vpu_common.h"
+ 
++void iris_core_sys_error(struct iris_core *core)
++{
++	struct iris_inst *inst;
++
++	mutex_lock(&core->lock);
++	if (!core->removing) {
++		core->state = IRIS_CORE_ERROR;
++		list_for_each_entry(inst, &core->instances, list)
++			iris_inst_change_state(inst, IRIS_INST_ERROR);
++		complete_all(&core->core_init_done);
++		schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
++	}
++	mutex_unlock(&core->lock);
++}
++
++void iris_core_stop_recovery(struct iris_core *core)
++{
++	mutex_lock(&core->lock);
++	WRITE_ONCE(core->removing, true);
++	complete_all(&core->core_init_done);
++	mutex_unlock(&core->lock);
++
++	cancel_delayed_work_sync(&core->sys_error_handler);
++}
++
+ int iris_core_deinit(struct iris_core *core)
+ {
+ 	int pm_ret, ret = 0;
+@@ -47,17 +73,28 @@ static int iris_wait_for_system_response(struct iris_core *core)
+ {
+ 	int ret;
+ 
+-	if (core->state == IRIS_CORE_ERROR)
++	if (READ_ONCE(core->removing))
++		return -ENODEV;
++	if (READ_ONCE(core->state) != IRIS_CORE_INIT)
+ 		return -EIO;
+ 
+ 	ret = wait_for_completion_timeout(&core->core_init_done,
+ 					  msecs_to_jiffies(HW_RESPONSE_TIMEOUT_VALUE));
+-	if (!ret) {
++	mutex_lock(&core->lock);
++	if (core->removing) {
++		ret = -ENODEV;
++	} else if (core->state != IRIS_CORE_INIT) {
++		ret = -EIO;
++	} else if (!ret) {
+ 		core->state = IRIS_CORE_ERROR;
+-		return -ETIMEDOUT;
++		complete_all(&core->core_init_done);
++		ret = -ETIMEDOUT;
++	} else {
++		ret = 0;
+ 	}
++	mutex_unlock(&core->lock);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ int iris_core_init(struct iris_core *core)
+@@ -65,9 +102,12 @@ int iris_core_init(struct iris_core *core)
+ 	int ret;
+ 
+ 	mutex_lock(&core->lock);
+-	if (core->state == IRIS_CORE_INIT) {
+-		ret = 0;
++	if (core->removing) {
++		ret = -ENODEV;
+ 		goto exit;
++	}
++	if (core->state == IRIS_CORE_INIT) {
++		goto wait_for_response;
+ 	} else if (core->state == IRIS_CORE_ERROR) {
+ 		ret = -EINVAL;
+ 		goto exit;
+@@ -76,6 +116,7 @@ int iris_core_init(struct iris_core *core)
+ 		goto exit;
+ 	}
+ 
++	reinit_completion(&core->core_init_done);
+ 	core->state = IRIS_CORE_INIT;
+ 
+ 	ret = iris_hfi_queues_init(core);
+@@ -104,6 +145,7 @@ int iris_core_init(struct iris_core *core)
+ 	if (ret)
+ 		goto error_unload_fw;
+ 
++wait_for_response:
+ 	mutex_unlock(&core->lock);
+ 
+ 	return iris_wait_for_system_response(core);
+diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
+index b9f4e80..1761f14 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -61,6 +61,7 @@ struct qcom_ubwc_cfg_data;
+  * @ubwc_cfg: UBWC configuration for the platform
+  * @state: current state of core
+  * @fw_owned: PAS may own the image until a successful shutdown
++ * @removing: prevent new initialization, commands and recovery during teardown
+  * @fw_mmap: shared memory and device mappings for the Iris33 mmap protocol
+  * @iface_q_table_daddr: device address for interface queue table memory
+  * @sfr_daddr: device address for SFR (Sub System Failure Reason) register memory
+@@ -109,6 +110,7 @@ struct iris_core {
+ 	const struct qcom_ubwc_cfg_data		*ubwc_cfg;
+ 	enum iris_core_state			state;
+ 	bool					fw_owned;
++	bool					removing;
+ 	struct iris_fw_mmap			fw_mmap;
+ 	dma_addr_t				iface_q_table_daddr;
+ 	dma_addr_t				sfr_daddr;
+@@ -134,6 +136,8 @@ struct iris_core {
+ 
+ int iris_core_init(struct iris_core *core);
+ int iris_core_deinit(struct iris_core *core);
++void iris_core_sys_error(struct iris_core *core);
++void iris_core_stop_recovery(struct iris_core *core);
+ int iris_register_video_devices(struct iris_core *core);
+ void iris_unregister_video_devices(struct iris_core *core);
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_common.c b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+index ec2ea35..21fb548 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_common.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+@@ -129,8 +129,10 @@ int iris_hfi_pm_suspend(struct iris_core *core)
+ 	}
+ 
+ 	ret = iris_set_hw_state(core, false);
+-	if (ret)
++	if (ret) {
++		core->state = IRIS_CORE_ERROR;
+ 		goto error;
++	}
+ 
+ 	iris_vpu_power_off(core);
+ 
+@@ -145,7 +147,7 @@ error:
+ int iris_hfi_pm_resume(struct iris_core *core)
+ {
+ 	const struct iris_hfi_sys_ops *ops = core->hfi_sys_ops;
+-	int ret;
++	int ret, suspend_ret;
+ 
+ 	ret = iris_vpu_power_on(core);
+ 	if (ret)
+@@ -153,7 +155,7 @@ int iris_hfi_pm_resume(struct iris_core *core)
+ 
+ 	ret = iris_set_hw_state(core, true);
+ 	if (ret)
+-		goto err_power_off;
++		goto err_suspend_hw;
+ 
+ 	ret = iris_vpu_boot_firmware(core);
+ 	if (ret)
+@@ -170,8 +172,13 @@ int iris_hfi_pm_resume(struct iris_core *core)
+ 	return 0;
+ 
+ err_suspend_hw:
+-	iris_set_hw_state(core, false);
+-err_power_off:
++	suspend_ret = iris_set_hw_state(core, false);
++	if (suspend_ret) {
++		core->state = IRIS_CORE_ERROR;
++		dev_err(core->dev, "resume rollback failed: %d (original error %d)\n",
++			suspend_ret, ret);
++		goto error;
++	}
+ 	iris_vpu_power_off(core);
+ error:
+ 	dev_err(core->dev, "failed to resume\n");
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c b/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
+index bfd7495..4d6c442 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
+@@ -218,21 +218,13 @@ static void
+ iris_hfi_gen1_sys_event_notify(struct iris_core *core, void *packet)
+ {
+ 	struct hfi_msg_event_notify_pkt *pkt = packet;
+-	struct iris_inst *instance;
+ 
+ 	if (pkt->event_id == HFI_EVENT_SYS_ERROR)
+ 		dev_err(core->dev, "sys error (type: %x, session id:%x, data1:%x, data2:%x)\n",
+ 			pkt->event_id, pkt->shdr.session_id, pkt->event_data1,
+ 			pkt->event_data2);
+ 
+-	core->state = IRIS_CORE_ERROR;
+-
+-	mutex_lock(&core->lock);
+-	list_for_each_entry(instance, &core->instances, list)
+-		iris_inst_change_state(instance, IRIS_INST_ERROR);
+-	mutex_unlock(&core->lock);
+-
+-	schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
++	iris_core_sys_error(core);
+ }
+ 
+ static void
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+index 25162ae..59ac180 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+@@ -275,19 +275,10 @@ static int iris_hfi_gen2_handle_session_error(struct iris_inst *inst,
+ static int iris_hfi_gen2_handle_system_error(struct iris_core *core,
+ 					     struct iris_hfi_packet *pkt)
+ {
+-	struct iris_inst *instance;
+-
+ 	if (pkt)
+ 		dev_err(core->dev, "received system error of type %#x\n", pkt->type);
+ 
+-	core->state = IRIS_CORE_ERROR;
+-
+-	mutex_lock(&core->lock);
+-	list_for_each_entry(instance, &core->instances, list)
+-		iris_inst_change_state(instance, IRIS_INST_ERROR);
+-	mutex_unlock(&core->lock);
+-
+-	schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
++	iris_core_sys_error(core);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_queue.c b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+index 33b151e..e8bf3d5 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_queue.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+@@ -113,6 +113,8 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
+ {
+ 	struct iris_iface_q_info *q_info = &core->command_queue;
+ 
++	if (core->removing)
++		return -ENODEV;
+ 	if (core->state == IRIS_CORE_ERROR || core->state == IRIS_CORE_DEINIT)
+ 		return -EINVAL;
+ 
+@@ -130,9 +132,11 @@ int iris_hfi_queue_cmd_write(struct iris_core *core, void *pkt, u32 pkt_size)
+ {
+ 	int ret;
+ 
++	if (READ_ONCE(core->removing))
++		return -ENODEV;
+ 	ret = pm_runtime_resume_and_get(core->dev);
+ 	if (ret < 0)
+-		goto exit;
++		return ret;
+ 
+ 	mutex_lock(&core->lock);
+ 	ret = iris_hfi_queue_cmd_write_locked(core, pkt, pkt_size);
+diff --git a/drivers/media/platform/qcom/iris/iris_probe.c b/drivers/media/platform/qcom/iris/iris_probe.c
+index f9a15b7..34fe193 100644
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -200,6 +200,8 @@ int iris_register_video_devices(struct iris_core *core)
+ {
+ 	int ret;
+ 
++	if (READ_ONCE(core->removing))
++		return -ENODEV;
+ 	ret = v4l2_device_register(core->dev, &core->v4l2_dev);
+ 	if (ret)
+ 		return ret;
+@@ -226,6 +228,7 @@ void iris_unregister_video_devices(struct iris_core *core)
+ {
+ 	int ret;
+ 
++	iris_core_stop_recovery(core);
+ 	ret = iris_core_deinit(core);
+ 	if (ret)
+ 		dev_err(core->dev, "firmware ownership unresolved at removal: %d\n", ret);
+@@ -244,6 +247,7 @@ static void iris_remove(struct platform_device *pdev)
+ 
+ 	if (!core)
+ 		return;
++	iris_core_stop_recovery(core);
+ 	if (core->iris_platform_data->split_dma)
+ 		iris_pixel_master_del(core);
+ 	else
+@@ -256,7 +260,7 @@ static void iris_sys_error_handler(struct work_struct *work)
+ 	struct iris_core *core =
+ 			container_of(work, struct iris_core, sys_error_handler.work);
+ 
+-	if (!iris_core_deinit(core))
++	if (!READ_ONCE(core->removing) && !iris_core_deinit(core))
+ 		iris_core_init(core);
+ }
+ 

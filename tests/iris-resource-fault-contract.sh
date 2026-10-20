@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2129
 # Actual source functions with host-only resource fault injection.
 set -Eeuo pipefail
 iris=${1:?Pass the prepared Iris directory}
@@ -13,6 +14,7 @@ cat > "$work/check.cpp" <<'CPP'
 #include <string>
 #include <vector>
 using u32 = unsigned;
+constexpr int IRIS_CORE_INIT = 0, IRIS_CORE_ERROR = 1;
 struct iris_core;
 struct vpu_ops {
     int (*power_on_controller)(iris_core *);
@@ -33,6 +35,7 @@ struct iris_core {
     int irq;
     unsigned intr_status;
     const iris_hfi_sys_ops *hfi_sys_ops;
+    int state = IRIS_CORE_INIT;
 };
 static std::vector<std::string> events;
 static int fault, bulk_calls;
@@ -62,13 +65,19 @@ CPP
 awk '/^int iris_vpu_power_on\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
     "$iris/iris_vpu_common.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
-static int iris_set_hw_state(iris_core *, bool resume) { return record(resume ? "resume" : "suspend", resume ? 5 : 0); }
+static int suspend_error, prepare_error;
+static int iris_set_hw_state(iris_core *, bool resume) {
+    const int ret = record(resume ? "resume" : "suspend", resume ? 5 : 0);
+    return resume ? ret : suspend_error;
+}
+static int iris_vpu_prepare_pc(iris_core *) { record("prepare", 0); return prepare_error; }
+static void pm_runtime_mark_last_busy(void *) { record("busy", 0); }
 static int iris_vpu_boot_firmware(iris_core *) { return record("boot", 6); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return record("hwmode", 7); }
 static int powercollapse(iris_core *) { return record("pc", 8); }
 static void iris_vpu_power_off(iris_core *) { record("power-off", 0); }
 CPP
-awk '/^int iris_hfi_pm_resume\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
+awk '/^int iris_hfi_pm_(suspend|resume)\(/ { emit=1 } emit { print } emit && /^}/ { emit=0 }' \
     "$iris/iris_hfi_common.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 int main() {
@@ -101,9 +110,25 @@ int main() {
     }
     fault = 0; core.power.icc_bw = 0;
     assert(iris_hfi_pm_resume(&core) == 0);
+    for (int stage = 5; stage <= 8; ++stage) {
+        fault = stage; suspend_error = -ETIMEDOUT; core.state = IRIS_CORE_INIT;
+        events.clear(); core.power.icc_bw = 0;
+        assert(iris_hfi_pm_resume(&core) == -EREMOTEIO);
+        assert(core.state == IRIS_CORE_ERROR && events.back() == "suspend");
+        assert(std::find(events.begin(), events.end(), "power-off") == events.end());
+    }
+    fault = 0; suspend_error = 0; prepare_error = -EREMOTEIO;
+    core.state = IRIS_CORE_INIT; events.clear();
+    assert(iris_hfi_pm_suspend(&core) == -EAGAIN && core.state == IRIS_CORE_INIT);
+    assert((events == std::vector<std::string>{"prepare", "busy"}));
+    prepare_error = 0; suspend_error = -ETIMEDOUT; events.clear();
+    assert(iris_hfi_pm_suspend(&core) == -ETIMEDOUT && core.state == IRIS_CORE_ERROR);
+    assert(events.back() == "suspend");
+    suspend_error = 0; core.state = IRIS_CORE_INIT; events.clear();
+    assert(iris_hfi_pm_suspend(&core) == 0 && events.back() == "power-off");
 }
 CPP
 "${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror \
     "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Actual Iris ICC cache, OPP failure/unwind and resume errno: passed\n'
+printf 'Actual Iris ICC/OPP faults, suspend/resume rollback ownership and original errno: passed\n'
