@@ -1,0 +1,225 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] thermal: qcom: tsens: preserve PM and wake-reference errors
+
+Reject failed wake setup and unwind only references acquired by TSENS.
+Retain failed releases for a later cleanup attempt and reject duplicate
+arming. Cleanup uses owned references rather than the current wake policy.
+Restore custom hardware after a failed suspend setup and release wake
+references even when a custom resume fails.
+
+Share the existing watchdog/interrupt setup error checks between initial
+setup and resume, and preserve the first error while attempting cleanup.
+No threshold, calibration, DT, cooling policy or board value is changed.
+This inactive candidate does not qualify physical thermal protection or
+suspend residency/drain.
+
+diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
+index 6e3714e..ba4c53c 100644
+--- a/drivers/thermal/qcom/tsens.c
++++ b/drivers/thermal/qcom/tsens.c
+@@ -796,6 +796,15 @@ static int tsens_enable_irq(struct tsens_priv *priv)
+ 	int ret;
+ 	int val = tsens_version(priv) >= VER_2_X ? 7 : 1;
+ 
++	if (priv->feat->has_watchdog) {
++		ret = regmap_field_write(priv->rf[WDOG_BARK_MASK], 0);
++		if (ret)
++			return ret;
++		ret = regmap_field_write(priv->rf[CC_MON_MASK], 1);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = regmap_field_write(priv->rf[INT_EN], val);
+ 	if (ret < 0)
+ 		dev_err(priv->dev, "%s: failed to enable interrupts\n",
+@@ -1100,19 +1109,13 @@ int __init init_common(struct tsens_priv *priv)
+ 				goto err_put_device;
+ 			}
+ 		}
+-		/*
+-		 * Watchdog is already enabled, unmask the bark.
+-		 * Disable cycle completion monitoring
+-		 */
+-		regmap_field_write(priv->rf[WDOG_BARK_MASK], 0);
+-		regmap_field_write(priv->rf[CC_MON_MASK], 1);
+ 	}
+ 
+ 	spin_lock_init(&priv->ul_lock);
+ 
+ 	/* VER_0 interrupt doesn't need to be enabled */
+ 	if (tsens_version(priv) >= VER_0_1)
+-		tsens_enable_irq(priv);
++		ret = tsens_enable_irq(priv);
+ 
+ err_put_device:
+ 	put_device(&op->dev);
+@@ -1127,6 +1130,29 @@ static int tsens_get_temp(struct thermal_zone_device *tz, int *temp)
+ 	return priv->ops->get_temp(s, temp);
+ }
+ 
++#define TSENS_WAKE_PRIMARY BIT(0)
++#define TSENS_WAKE_CRITICAL BIT(1)
++
++static int tsens_release_irq_wake(struct tsens_priv *priv)
++{
++	int ret = 0, err;
++	int irq = priv->feat->combo_int ? priv->combined_irq : priv->uplow_irq;
++
++	if (priv->irq_wake_mask & TSENS_WAKE_CRITICAL) {
++		ret = disable_irq_wake(priv->crit_irq);
++		if (!ret)
++			priv->irq_wake_mask &= ~TSENS_WAKE_CRITICAL;
++	}
++	if (priv->irq_wake_mask & TSENS_WAKE_PRIMARY) {
++		err = disable_irq_wake(irq);
++		if (!err)
++			priv->irq_wake_mask &= ~TSENS_WAKE_PRIMARY;
++		if (!ret)
++			ret = err;
++	}
++	return ret;
++}
++
+ static int  __maybe_unused tsens_suspend(struct device *dev)
+ {
+ 	int ret = 0;
+@@ -1138,7 +1164,12 @@ static int  __maybe_unused tsens_suspend(struct device *dev)
+ 			return ret;
+ 	}
+ 
+-	return tsens_suspend_common(priv);
++	ret = tsens_suspend_common(priv);
++	if (ret && priv->ops && priv->ops->suspend && priv->ops->resume) {
++		if (priv->ops->resume(priv))
++			dev_err(dev, "failed to restore TSENS after suspend failure\n");
++	}
++	return ret;
+ }
+ 
+ static int __maybe_unused tsens_resume(struct device *dev)
+@@ -1148,8 +1179,11 @@ static int __maybe_unused tsens_resume(struct device *dev)
+ 
+ 	if (priv->ops && priv->ops->resume) {
+ 		ret = priv->ops->resume(priv);
+-		if (ret)
++		if (ret) {
++			if (tsens_release_irq_wake(priv))
++				dev_err(dev, "failed to release TSENS wake references\n");
+ 			return ret;
++		}
+ 	}
+ 
+ 	return tsens_resume_common(priv);
+@@ -1234,6 +1268,7 @@ static int tsens_register_irq(struct tsens_priv *priv, char *irqname,
+ 	struct platform_device *pdev;
+ 	int ret, irq;
+ 
++	*irq_num = -1;
+ 	pdev = of_find_device_by_node(priv->dev->of_node);
+ 	if (!pdev)
+ 		return -ENODEV;
+@@ -1272,34 +1307,37 @@ static int tsens_register_irq(struct tsens_priv *priv, char *irqname,
+ #ifdef CONFIG_SUSPEND
+ static int tsens_reinit(struct tsens_priv *priv)
+ {
+-	if (tsens_version(priv) >= VER_2_X) {
+-		/*
+-		 * Re-enable the watchdog, unmask the bark.
+-		 * Disable cycle completion monitoring
+-		 */
+-		if (priv->feat->has_watchdog) {
+-			regmap_field_write(priv->rf[WDOG_BARK_MASK], 0);
+-			regmap_field_write(priv->rf[CC_MON_MASK], 1);
+-		}
+-
+-		/* Re-enable interrupts */
+-		tsens_enable_irq(priv);
+-	}
++	if (tsens_version(priv) >= VER_2_X)
++		return tsens_enable_irq(priv);
+ 
+ 	return 0;
+ }
+ 
+ int tsens_suspend_common(struct tsens_priv *priv)
+ {
++	int ret;
++	int irq = priv->feat->combo_int ? priv->combined_irq : priv->uplow_irq;
++
++	if (priv->irq_wake_mask)
++		return -EBUSY;
+ 	if (!device_may_wakeup(priv->dev))
+ 		return 0;
+ 
+-	if (priv->feat->combo_int)
+-		enable_irq_wake(priv->combined_irq);
+-	else {
+-		enable_irq_wake(priv->uplow_irq);
+-		if (priv->feat->crit_int)
+-			enable_irq_wake(priv->crit_irq);
++	if (irq >= 0) {
++		ret = enable_irq_wake(irq);
++		if (ret)
++			return ret;
++		priv->irq_wake_mask |= TSENS_WAKE_PRIMARY;
++	}
++
++	if (!priv->feat->combo_int && priv->feat->crit_int && priv->crit_irq >= 0) {
++		ret = enable_irq_wake(priv->crit_irq);
++		if (ret) {
++			if (tsens_release_irq_wake(priv))
++				dev_err(priv->dev, "failed to unwind TSENS wake references\n");
++			return ret;
++		}
++		priv->irq_wake_mask |= TSENS_WAKE_CRITICAL;
+ 	}
+ 
+ 	return 0;
+@@ -1307,21 +1345,13 @@ int tsens_suspend_common(struct tsens_priv *priv)
+ 
+ int tsens_resume_common(struct tsens_priv *priv)
+ {
+-	if (pm_suspend_target_state == PM_SUSPEND_MEM)
+-		tsens_reinit(priv);
+-
+-	if (!device_may_wakeup(priv->dev))
+-		return 0;
++	int ret = 0, err;
+ 
+-	if (priv->feat->combo_int)
+-		disable_irq_wake(priv->combined_irq);
+-	else {
+-		disable_irq_wake(priv->uplow_irq);
+-		if (priv->feat->crit_int)
+-			disable_irq_wake(priv->crit_irq);
+-	}
++	if (pm_suspend_target_state == PM_SUSPEND_MEM)
++		ret = tsens_reinit(priv);
+ 
+-	return 0;
++	err = tsens_release_irq_wake(priv);
++	return ret ? ret : err;
+ }
+ 
+ #endif /* !CONFIG_SUSPEND */
+diff --git a/drivers/thermal/qcom/tsens.h b/drivers/thermal/qcom/tsens.h
+index e8376ac..f64a5b7 100644
+--- a/drivers/thermal/qcom/tsens.h
++++ b/drivers/thermal/qcom/tsens.h
+@@ -573,6 +573,7 @@ struct tsens_context {
+  * @uplow_irq: IRQ number for uplow (upper/lower) threshold interrupts
+  * @crit_irq: IRQ number for critical threshold interrupts
+  * @combined_irq: IRQ number for combined threshold interrupts
++ * @irq_wake_mask: wake references owned by the last suspend, retained on release error
+  * @sensor: list of sensors attached to this device
+  */
+ struct tsens_priv {
+@@ -597,6 +598,7 @@ struct tsens_priv {
+ 	int				uplow_irq;
+ 	int				crit_irq;
+ 	int				combined_irq;
++	unsigned int			irq_wake_mask;
+ 
+ 	struct tsens_sensor		sensor[] __counted_by(num_sensors);
+ };

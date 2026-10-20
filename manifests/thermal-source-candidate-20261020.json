@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "0c805d142a1b916b344810ca65e93c368a94c708",
+  "status": "inactive-tsens-pm-fault-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "thermal_policy_changed": false,
+  "calibration_changed": false,
+  "tablet_tested": false,
+  "kernel_release_changed": false,
+  "patches": [
+    {
+      "path": "patches/thermal/0001-tsens-preserve-pm-wake-errors.patch",
+      "sha256": "1f395633ac869c28e390daced6fb919db4a47f67fbf3e92f4cb512748459c348"
+    }
+  ],
+  "baseline_files": [
+    {
+      "path": "drivers/thermal/qcom/tsens.c",
+      "sha256": "5329403145b2526c76af89855ee81f518e882fb73bac62c7051b33f0703c4b93"
+    },
+    {
+      "path": "drivers/thermal/qcom/tsens.h",
+      "sha256": "c00f742c808d44161d17d284034649694be3a8eb2706ff2144a92cadf5062721"
+    }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "files": [
+        "drivers/thermal/qcom/tsens.c",
+        "drivers/thermal/qcom/tsens2xxx.c",
+        "drivers/thermal/qcom/bcl_pmic5.c"
+      ]
+    },
+    {
+      "id": "uke-oem-dt",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "files": [
+        "qcom/pm7550ba.dtsi",
+        "qcom/cliffs-pm7550ba.dtsi",
+        "qcom/cliffs-thermal.dtsi"
+      ]
+    },
+    {
+      "id": "same-soc-kernel",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "files": [
+        "drivers/thermal/qcom/tsens.c",
+        "drivers/thermal/qcom/qti_bcl_pmic5.c"
+      ]
+    },
+    {
+      "id": "current-upstream",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "files": [
+        {
+          "path": "drivers/thermal/qcom/tsens.c",
+          "sha256": "088f0e3a1a6a81a44f52203f3e7f47dc3650628937d48d05e06ac4b197b77dcc"
+        },
+        {
+          "path": "drivers/thermal/qcom/tsens.h",
+          "sha256": "c00f742c808d44161d17d284034649694be3a8eb2706ff2144a92cadf5062721"
+        }
+      ],
+      "difference_from_native_baseline": "C only removes a redundant IRQ request error log; header is byte-identical"
+    }
+  ],
+  "checks": {
+    "actual_before_failure": 134,
+    "actual_pm_irq_regmap_fixture": true,
+    "actual_irq_registration_fixture": true,
+    "gcc_fixture": true,
+    "clang_asan_ubsan_fixture": true,
+    "aarch64_all_five_tsens_objects": true,
+    "config_suspend_on": true,
+    "config_suspend_off": true,
+    "original_config_restored": true,
+    "kcflags": "-Werror",
+    "checkpatch_errors": 0,
+    "checkpatch_warnings": 0,
+    "full_probe_fault_fixture": false,
+    "full_kernel": false,
+    "rpm": false,
+    "physical_suspend": false,
+    "thermal_protection": false
+  },
+  "limits": [
+    "Fault tests cover actual PM, IRQ registration and interrupt-register helpers; the full probe and real interrupt controller are not emulated",
+    "Successful wake acquisition is tracked and failed release remains owned; hardware failure may leave monitoring unavailable and needs separate physical recovery qualification",
+    "Missing IRQs in legacy DT are distinguished from valid IRQ zero; absent IRQs provide no physical wake capability",
+    "No PMIC BCL, board threshold, calibration, cooling policy, sensor scale or charging cutoff is admitted by this TSENS source result",
+    "Deep residency, suspend drain, repeated resume and thermal/charging fault response remain unqualified"
+  ]
+}

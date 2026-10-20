@@ -4,7 +4,17 @@ SHELL := /bin/bash
 .PHONY: validate srpm
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
-validate: validate-video validate-ufs validate-cpucp validate-accessories
+validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal
+validate-thermal:
+	jq -e '.active_series == false and .dt_enabled == false and .thermal_policy_changed == false and .calibration_changed == false and .tablet_tested == false and (.patches | length == 1)' manifests/thermal-source-candidate-20261020.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
+	done < <(jq -r '.patches[] | [.path,.sha256] | @tsv' manifests/thermal-source-candidate-20261020.json)
+.PHONY: validate-thermal test-thermal
+test-thermal: validate-thermal
+	test -n "$(thermal_source)"
+	bash tests/tsens-pm-fault-contract.sh "$(thermal_source)/drivers/thermal/qcom/tsens.c"
 validate-accessories:
 	jq -e '.active_series == false and .dt_enabled == false and .compatibility_alias_added == false and .nfc_driver_added == false and (.patches | length == 1)' manifests/accessory-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
