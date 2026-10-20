@@ -53,6 +53,12 @@ int main(void){
  for(int len=-1;len<(int)sizeof(wr);len++){r.payload_size=len;assert(graph_callback(&r,&g,0)==-EINVAL && !calls);}
  r.payload_size=sizeof(wr);r.payload=NULL;assert(graph_callback(&r,&g,0)==-EINVAL);
  r.payload=&wr;r.hdr.token=0;wr.buf_addr_lsw=lower_32_bits(buffers[0].phys);wr.buf_addr_msw=upper_32_bits(buffers[0].phys);
+ wr.buf_addr_lsw^=1;
+ assert(graph_callback(&r,&g,0)==-EINVAL && !calls && !g.rx_data.hw_ptr);
+ wr.buf_addr_lsw^=1;wr.status=7;
+ assert(graph_callback(&r,&g,0)==-EIO && !calls && !g.rx_data.hw_ptr);wr.status=0;
+ r.hdr.token=4097U<<APM_WRITE_TOKEN_LEN_SHIFT;
+ assert(graph_callback(&r,&g,0)==-EINVAL && !calls && !g.rx_data.hw_ptr);r.hdr.token=0;
  assert(graph_callback(&r,&g,0)==0 && calls==1 && g.rx_data.hw_ptr==1);
  r.hdr.token=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1);
  g.rx_data.buf=NULL;r.hdr.token=0;assert(graph_callback(&r,&g,0)==0 && calls==1);g.rx_data.buf=buffers;
@@ -62,7 +68,13 @@ int main(void){
  for(int len=-1;len<(int)sizeof(rd);len++){r.payload_size=len;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1);}
  r.payload_size=sizeof(rd);r.payload=NULL;assert(graph_callback(&r,&g,0)==-EINVAL);
  r.payload=&rd;r.hdr.token=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL);
- r.hdr.token=0;assert(graph_callback(&r,&g,0)==0 && calls==2 && g.tx_data.hw_ptr==1);
+ r.hdr.token=0;rd.buf_addr_lsw^=1;
+ assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);rd.buf_addr_lsw^=1;
+ rd.status=7;assert(graph_callback(&r,&g,0)==-EIO && calls==1 && !g.tx_data.hw_ptr);rd.status=0;
+ rd.data_size=4097;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);
+ rd.data_size=1;rd.offset=4096;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);
+ rd.offset=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);rd.offset=0;rd.data_size=4096;
+ assert(graph_callback(&r,&g,0)==0 && calls==2 && g.tx_data.hw_ptr==1);
  g.tx_data.num_periods=0;assert(graph_callback(&r,&g,0)==-EINVAL && calls==2);g.tx_data.num_periods=1;
  struct {struct apm_module_event event;u32 word;} event={{EVENT_ID_SH_MEM_PULL_PUSH_MODE_WATERMARK,4},0};
  r=(struct gpr_resp_pkt){.hdr={APM_EVENT_MODULE_TO_CLIENT,0},.payload=&event,.payload_size=sizeof(event.event)};

@@ -290,6 +290,7 @@ fi
 - Detach APR receive batches under the IRQ-safe queue lock
 - Use a sleepable lock around compressed stream command submission
 - Preserve 128 KiB token lengths and validate fragment submissions
+- Reject failed or mismatched DMA completions without false progress
 - Keep audio disabled; add actual-source response regression fixtures
 
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11

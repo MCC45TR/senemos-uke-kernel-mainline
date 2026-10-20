@@ -372,6 +372,10 @@
     {
       "path": "patches/7.2.11/0091-q6apm-bound-and-serialize-buffer-submissions.patch",
       "sha256": "0b11401e75101b3bac81117ae8fcce41dc3a8c6384d54e3ba0bface787b21bea"
+    },
+    {
+      "path": "patches/7.2.11/0092-q6apm-validate-dma-completion-results.patch",
+      "sha256": "dd7b0a7ce6c2d769990e97801192e175e0805f90915613075519b781b32f3ed4"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
