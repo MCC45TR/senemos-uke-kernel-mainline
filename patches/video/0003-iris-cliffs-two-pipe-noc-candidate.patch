@@ -1,0 +1,349 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: stage Cliffs two-pipe NoC lifecycle and platform data
+
+Adapt Qualcomm Iris33_2P logic from OnePlus SM7675 commit
+1138e00fee63582a0cc6a53af3286621786827b7, variant/iris33 and platform/cliffs.
+Cross-check the preset table and key quiesce offsets/retry limits against
+the exact Uke OS3.0.304.0 msm_video.ko (private SHA256
+2976535e5523521d953bdc762fc446e02bd5b564b28db34789d066b6070406df).
+
+Keep existing platforms unchanged. Add a specific preset hook, masked
+Cliffs QoS setup, two-pipe NoC error registers, bounded LPI/sideband
+quiesce and a separate ops/platform table. Do not reset bridges when
+idle or sideband polling times out. The wrapper retains the native
+forced-shutdown policy; fault recovery remains unqualified.
+
+No Iris OF match or DT enablement is added. The exact private VPU
+filename is selected, but PAS trust, firmware mmap/device regions,
+regulator/genpd/OPP ownership and controller retention remain open.
+This is source-only preparation; no build or hardware pass is claimed.
+
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_common.h b/drivers/media/platform/qcom/iris/iris_platform_common.h
+index ff48333..d714ed7 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_common.h
++++ b/drivers/media/platform/qcom/iris/iris_platform_common.h
+@@ -58,6 +58,7 @@ extern const struct iris_platform_data sc7280_data;
+ extern const struct iris_platform_data sm8250_data;
+ extern const struct iris_platform_data sm8550_data;
+ extern const struct iris_platform_data sm8650_data;
++extern const struct iris_platform_data sm7675_data;
+ extern const struct iris_platform_data sm8750_data;
+ extern const struct iris_platform_data x1p42100_data;
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_sm7675.h b/drivers/media/platform/qcom/iris/iris_platform_sm7675.h
+new file mode 100644
+index 0000000..e095e5b
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_platform_sm7675.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. */
++#ifndef __IRIS_PLATFORM_SM7675_H__
++#define __IRIS_PLATFORM_SM7675_H__
++
++/* Native startup names: GCC AXI reset and MVS0C clock ARES, not OEM IDs. */
++static const char * const sm7675_clk_reset_table[] = { "bus", "core" };
++static const char * const sm7675_controller_reset_table[] = { "xo" };
++
++/* Common non-AV1 decoder limits across the inspected Cliffs SKU tables. */
++static struct platform_inst_caps platform_inst_cap_sm7675 = {
++	.min_frame_width = 96,
++	.max_frame_width = 4096,
++	.min_frame_height = 96,
++	.max_frame_height = 4096,
++	.max_mbpf = (4096 * 2160) / 256,
++	.mb_cycles_vsp = 60,
++	.mb_cycles_vpp = 200,
++	.mb_cycles_fw = 489583,
++	.mb_cycles_fw_vpp = 66234,
++	.max_frame_rate = 180,
++	.max_operating_rate = 180,
++};
++
++#endif
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+index 2c63adb..26fec1c 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
++++ b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+@@ -13,6 +13,7 @@
+ #include "iris_vpu_common.h"
+ 
+ #include "iris_platform_qcs8300.h"
++#include "iris_platform_sm7675.h"
+ #include "iris_platform_sm8550.h"
+ #include "iris_platform_sm8650.h"
+ #include "iris_platform_sm8750.h"
+@@ -42,6 +43,12 @@ static const struct iris_firmware_desc iris_vpu33_p4_gen2_desc = {
+ 	.fwname = "qcom/vpu/vpu33_p4.mbn",
+ };
+ 
++static const struct iris_firmware_desc iris_vpu33_2p_gen2_desc = {
++	.firmware_data = &iris_hfi_gen2_data,
++	.get_vpu_buffer_size = iris_vpu33_buf_size,
++	.fwname = "qcom/uke/vpu30_2v.mbn",
++};
++
+ static const struct iris_firmware_desc iris_vpu35_p4_gen2_desc = {
+ 	.firmware_data = &iris_hfi_gen2_data,
+ 	.get_vpu_buffer_size = iris_vpu33_buf_size,
+@@ -55,6 +62,12 @@ static const u32 iris_fmts_vpu3x_dec[] = {
+ 	[IRIS_FMT_AV1] = V4L2_PIX_FMT_AV1,
+ };
+ 
++static const u32 iris_fmts_sm7675_dec[] = {
++	[IRIS_FMT_H264] = V4L2_PIX_FMT_H264,
++	[IRIS_FMT_HEVC] = V4L2_PIX_FMT_HEVC,
++	[IRIS_FMT_VP9] = V4L2_PIX_FMT_VP9,
++};
++
+ static const struct icc_info iris_icc_info_vpu3x[] = {
+ 	{ "cpu-cfg",    1000, 1000     },
+ 	{ "video-mem",  1000, 15000000 },
+@@ -184,6 +197,37 @@ const struct iris_platform_data sm8650_data = {
+ 	.max_core_mbps = ((7680 * 4320) / 256) * 60,
+ };
+ 
++/* Dormant until firmware mapping, providers and controller retention are closed. */
++const struct iris_platform_data sm7675_data = {
++	.firmware_desc = &iris_vpu33_2p_gen2_desc,
++	.vpu_ops = &iris_vpu33_2p_ops,
++	.icc_tbl = iris_icc_info_vpu3x,
++	.icc_tbl_size = ARRAY_SIZE(iris_icc_info_vpu3x),
++	.clk_rst_tbl = sm7675_clk_reset_table,
++	.clk_rst_tbl_size = ARRAY_SIZE(sm7675_clk_reset_table),
++	.controller_rst_tbl = sm7675_controller_reset_table,
++	.controller_rst_tbl_size = ARRAY_SIZE(sm7675_controller_reset_table),
++	.bw_tbl_dec = iris_bw_table_dec_vpu3x,
++	.bw_tbl_dec_size = ARRAY_SIZE(iris_bw_table_dec_vpu3x),
++	.pmdomain_tbl = iris_pmdomain_table_vpu3x,
++	.pmdomain_tbl_size = ARRAY_SIZE(iris_pmdomain_table_vpu3x),
++	.opp_pd_tbl = iris_opp_pd_table_vpu3x,
++	.opp_pd_tbl_size = ARRAY_SIZE(iris_opp_pd_table_vpu3x),
++	.clk_tbl = sm8550_clk_table,
++	.clk_tbl_size = ARRAY_SIZE(sm8550_clk_table),
++	.opp_clk_tbl = iris_opp_clk_table_vpu3x,
++	.dma_mask = 0xe0000000 - 1,
++	.inst_iris_fmts = iris_fmts_sm7675_dec,
++	.inst_iris_fmts_size = ARRAY_SIZE(iris_fmts_sm7675_dec),
++	.inst_caps = &platform_inst_cap_sm7675,
++	.tz_cp_config_data = tz_cp_config_vpu3,
++	.tz_cp_config_data_size = ARRAY_SIZE(tz_cp_config_vpu3),
++	.num_vpp_pipe = 2,
++	.max_session_count = 16,
++	.max_core_mbpf = 104448,
++	.max_core_mbps = 2203200,
++};
++
+ const struct iris_platform_data sm8750_data = {
+ 	.firmware_desc = &iris_vpu35_p4_gen2_desc,
+ 	.vpu_ops = &iris_vpu35_ops,
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu33_2p.h b/drivers/media/platform/qcom/iris/iris_vpu33_2p.h
+new file mode 100644
+index 0000000..647f852
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_vpu33_2p.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. */
++#ifndef __IRIS_VPU33_2P_H__
++#define __IRIS_VPU33_2P_H__
++
++#include <linux/io.h>
++
++#define IRIS33_2P_NOC_MAINCTL	0x13508
++#define IRIS33_2P_NOC_ERRCLR	0x13518
++#define IRIS33_2P_NOC_FAULTINEN	0x13240
++#define IRIS33_2P_NOC_SENSE0_LO	0x13300
++#define IRIS33_2P_NOC_SENSE0_HI	0x13304
++#define IRIS33_2P_NOC_SENSE1_HI	0x1330c
++#define IRIS33_2P_NOC_SENSE2_LO	0x13310
++#define IRIS33_2P_DMA_SPARE3	0x087b8
++
++/* Caller holds the XO reset and has enabled controller/hardware clocks. */
++static inline void iris_vpu33_2p_noc_init(u8 __iomem *base)
++{
++	writel(1, base + IRIS33_2P_NOC_ERRCLR);
++	writel(3, base + IRIS33_2P_NOC_MAINCTL);
++	writel(1, base + IRIS33_2P_NOC_FAULTINEN);
++}
++
++static inline void iris_vpu33_2p_write_presets(u8 __iomem *base)
++{
++	u32 value = readl(base + 0xb0088);
++
++	writel(value & ~0x11, base + 0xb0088);
++	writel(0x33332222, base + 0x10830);
++	writel(0x44444444, base + 0x10834);
++	writel(0x00001022, base + 0x10838);
++	writel(0x99, base + 0xa013c);
++	iris_vpu33_2p_noc_init(base);
++}
++
++static inline u32 iris_vpu33_2p_noc_busy(u8 __iomem *base)
++{
++	u32 busy;
++
++	busy = readl(base + IRIS33_2P_NOC_SENSE0_LO) & 0x00008000;
++	busy |= readl(base + IRIS33_2P_NOC_SENSE0_HI) & 0x00000800;
++	busy |= readl(base + IRIS33_2P_NOC_SENSE1_HI) & 0x00800000;
++	busy |= readl(base + IRIS33_2P_NOC_SENSE2_LO) & 0x00002000;
++
++	return busy;
++}
++
++#endif
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu3x.c b/drivers/media/platform/qcom/iris/iris_vpu3x.c
+index 3dad47b..02c3950 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu3x.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu3x.c
+@@ -5,11 +5,13 @@
+  */
+ 
+ #include <linux/iopoll.h>
++#include <linux/pm_domain.h>
+ #include <linux/reset.h>
+ 
+ #include "iris_instance.h"
+ #include "iris_vpu_common.h"
+ #include "iris_vpu_register_defines.h"
++#include "iris_vpu33_2p.h"
+ 
+ #define AON_WRAPPER_MVP_NOC_CORE_SW_RESET	(AON_BASE_OFFS + 0x18)
+ #define SW_RESET				BIT(0)
+@@ -134,6 +136,84 @@ disable_power:
+ 	iris_vpu_power_off_hw(core);
+ }
+ 
++static int iris_vpu33_2p_quiesce(struct iris_core *core)
++{
++	u32 value, i, count, busy;
++	void __iomem *control = core->reg_base + AON_WRAPPER_MVP_NOC_LPI_CONTROL;
++
++	value = readl(core->reg_base + WRAPPER_CORE_CLOCK_CONFIG);
++	if (value)
++		writel(CORE_CLK_RUN, core->reg_base + WRAPPER_CORE_CLOCK_CONFIG);
++
++	value = readl(core->reg_base + IRIS33_2P_DMA_SPARE3);
++	writel(value | BIT(0), core->reg_base + IRIS33_2P_DMA_SPARE3);
++
++	for (i = 0; i < 2; i++) {
++		int ret;
++
++		ret = readl_poll_timeout(core->reg_base + VCODEC_SS_IDLE_STATUSN + 4 * i,
++					value, value & BIT(22), 2000, 20000);
++		if (ret)
++			return ret;
++	}
++
++	for (count = 0; count < 1000; count++) {
++		value = readl(control);
++		writel(value | REQ_POWER_DOWN_PREP, control);
++		usleep_range(10, 20);
++		value = readl(core->reg_base + AON_WRAPPER_MVP_NOC_LPI_STATUS);
++		if ((value & NOC_LPI_STATUS_DONE) ||
++		    !(value & (NOC_LPI_STATUS_DENY | NOC_LPI_STATUS_ACTIVE)))
++			break;
++		value = readl(control);
++		writel(value & ~REQ_POWER_DOWN_PREP, control);
++		usleep_range(10, 20);
++	}
++	value = readl(control);
++	writel(value & ~REQ_POWER_DOWN_PREP, control);
++	if (count == 1000)
++		return -ETIMEDOUT;
++
++	for (count = 0; count < 101; count++) {
++		busy = iris_vpu33_2p_noc_busy(core->reg_base);
++		usleep_range(10, 20);
++		if (!busy)
++			break;
++	}
++	if (count == 101)
++		return -ETIMEDOUT;
++
++	writel(CORE_BRIDGE_SW_RESET | CORE_BRIDGE_HW_RESET_DISABLE,
++	       core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
++	writel(CORE_BRIDGE_HW_RESET_DISABLE, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
++	writel(0, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
++
++	return 0;
++}
++
++static void iris_vpu33_2p_power_off_hardware(struct iris_core *core)
++{
++	int ret;
++
++	if (iris_vpu3x_hw_power_collapsed(core))
++		goto disable_power;
++
++	ret = dev_pm_genpd_set_hwmode(core->pmdomain_tbl->pd_devs[IRIS_HW_POWER_DOMAIN], false);
++	if (!ret)
++		ret = iris_vpu33_2p_quiesce(core);
++	if (ret)
++		dev_err(core->dev, "Iris33 2P quiesce failed: %d\n", ret);
++
++disable_power:
++	/* Keep the native forced-shutdown policy; runtime fault handling is unqualified. */
++	iris_vpu_power_off_hw(core);
++}
++
++static void iris_vpu33_2p_set_preset_registers(struct iris_core *core)
++{
++	iris_vpu33_2p_write_presets(core->reg_base);
++}
++
+ static int iris_vpu33_power_off_controller(struct iris_core *core)
+ {
+ 	u32 xo_rst_tbl_size = core->iris_platform_data->controller_rst_tbl_size;
+@@ -272,6 +352,16 @@ const struct vpu_ops iris_vpu33_ops = {
+ 	.set_hwmode = iris_vpu_set_hwmode,
+ };
+ 
++const struct vpu_ops iris_vpu33_2p_ops = {
++	.power_off_hw = iris_vpu33_2p_power_off_hardware,
++	.power_on_hw = iris_vpu_power_on_hw,
++	.power_off_controller = iris_vpu33_power_off_controller,
++	.power_on_controller = iris_vpu_power_on_controller,
++	.set_preset_registers = iris_vpu33_2p_set_preset_registers,
++	.calc_freq = iris_vpu3x_vpu4x_calculate_frequency,
++	.set_hwmode = iris_vpu_set_hwmode,
++};
++
+ const struct vpu_ops iris_vpu35_ops = {
+ 	.power_off_hw = iris_vpu35_power_off_hw,
+ 	.power_on_hw = iris_vpu35_power_on_hw,
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.c b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+index e4847c1..56f54fe 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+@@ -503,5 +503,10 @@ err:
+ 
+ void iris_vpu_set_preset_registers(struct iris_core *core)
+ {
++	if (core->iris_platform_data->vpu_ops->set_preset_registers) {
++		core->iris_platform_data->vpu_ops->set_preset_registers(core);
++		return;
++	}
++
+ 	writel(0x0, core->reg_base + 0xb0088);
+ }
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.h b/drivers/media/platform/qcom/iris/iris_vpu_common.h
+index 09799a3..bcc5d57 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.h
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.h
+@@ -11,6 +11,7 @@ struct iris_core;
+ extern const struct vpu_ops iris_vpu2_ops;
+ extern const struct vpu_ops iris_vpu3_ops;
+ extern const struct vpu_ops iris_vpu33_ops;
++extern const struct vpu_ops iris_vpu33_2p_ops;
+ extern const struct vpu_ops iris_vpu35_ops;
+ extern const struct vpu_ops iris_vpu4x_ops;
+ 
+@@ -20,6 +21,7 @@ struct vpu_ops {
+ 	int (*power_off_controller)(struct iris_core *core);
+ 	int (*power_on_controller)(struct iris_core *core);
+ 	void (*program_bootup_registers)(struct iris_core *core);
++	void (*set_preset_registers)(struct iris_core *core);
+ 	u64 (*calc_freq)(struct iris_inst *inst, size_t data_size);
+ 	int (*set_hwmode)(struct iris_core *core);
+ };

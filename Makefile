@@ -4,6 +4,18 @@ SHELL := /bin/bash
 .PHONY: validate srpm
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
+validate: validate-video
+validate-video:
+	jq -e '.active_series == false and .dt_enabled == false and .iris_match_added == false and (.patches | length == 4)' manifests/iris-source-candidate-20261020.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
+	done < <(jq -r '.patches[] | [.path,.sha256] | @tsv' manifests/iris-source-candidate-20261020.json)
+.PHONY: validate-video test-video
+test-video: validate-video
+	test -n "$(video_source)"
+	bash tests/iris-2p-lifecycle-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
+	bash tests/iris-boot-status-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
 validate:
 	test "$(version)" = 7.2.11
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 83) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null

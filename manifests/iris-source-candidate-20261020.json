@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "3b9b61a5f1d82dbd7a69d81fb3a60d2a659f68fa",
+  "upstream": {
+    "version": "7.2.11",
+    "source_sha256": "fd0fc479f983a8c05313f13e9c36330fe6651cf725396748c40d5cd93fa1e6a4"
+  },
+  "prior_candidate_commit": "e344c7b",
+  "status": "host-compiled-inactive-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "iris_match_added": false,
+  "firmware_packaged": false,
+  "kernel_release_changed": false,
+  "tablet_tested": false,
+  "baseline_files": [
+    {
+      "path": "Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml",
+      "sha256": "b53216dc8e32c7042b10e2b05a7d4d378e85ac112a067edc813ce4742bf9e683"
+    },
+    {
+      "path": "drivers/clk/qcom/videocc-sm8550.c",
+      "sha256": "b52d7940a8260347b786ab54c7fdf4cc50990bad110de3db25b5dd73ab921d8a"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_platform_common.h",
+      "sha256": "f058d756dea4c2bd2f8b32fac207ea424bd1ed046bb5373eda056751d84cba55"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_platform_vpu3x.c",
+      "sha256": "0d983ecdf084732b23f066844accc8a2380c48ae76e24c9f172a0daf7a4d9e16"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_vpu3x.c",
+      "sha256": "f0c17bc41ec68daa070a7249af54e387ff3c4f24e3a4d2282c2c96761498b68a"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_vpu_common.c",
+      "sha256": "980874f20f364d1569af80e3cdc2196e18a9709e03ddb6d4b415e0ac2b1201a2"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_vpu_common.h",
+      "sha256": "86c3595dcc8a84c326ee957cf1f36cae5627cce0aec662327dcc894ae2232387"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_vpu_register_defines.h",
+      "sha256": "bb38f4f66061349f93637dccb14c9b4436edb1a373d0a934b49ac80e7e386314"
+    }
+  ],
+  "patches": [
+    {
+      "path": "patches/video/0001-cliffs-videocc-source-candidate.patch",
+      "sha256": "d6118fd3790f51a9bdcc5cb98928d334d77a46114e47b8a011a4166979a5e54d"
+    },
+    {
+      "path": "patches/video/0002-cliffs-videocc-native-reset-map.patch",
+      "sha256": "5198e3b8f97ecaf7c6f05febf55dd801e1337ab4cdf142002d24c33d87e9abfc"
+    },
+    {
+      "path": "patches/video/0003-iris-cliffs-two-pipe-noc-candidate.patch",
+      "sha256": "a44b697105fa4f75938bd42b62d33489f72e1a40024296adaaecfc145c475fde"
+    },
+    {
+      "path": "patches/video/0004-iris-reject-firmware-boot-error-status.patch",
+      "sha256": "a1a1b7c7b6b1376e761a94763cc1378afd090de1c79a07fcc9d3de2e26cea25a"
+    }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "files": [
+        "drivers/clk/qcom/videocc-pineapple.c"
+      ]
+    },
+    {
+      "id": "uke-oem-dt",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "files": [
+        "qcom/cliffs.dtsi",
+        "qcom/cliffs-reserved-memory.dtsi"
+      ]
+    },
+    {
+      "id": "same-soc-video",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "url": "https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "files": [
+        "vendor/qcom/opensource/video-driver/driver/platform/cliffs/src/msm_vidc_cliffs.c",
+        "vendor/qcom/opensource/video-driver/driver/variant/iris33/src/msm_vidc_iris33.c",
+        "vendor/qcom/proprietary/video-devicetree/cliffs-vidc.dtsi"
+      ]
+    },
+    {
+      "id": "palawan",
+      "commit": "0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95",
+      "url": "https://codeberg.org/palawan-mainline/linux"
+    },
+    {
+      "id": "current-upstream",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "files": [
+        "drivers/media/platform/qcom/iris/iris_probe.c",
+        "drivers/media/platform/qcom/iris/iris_vpu_common.c"
+      ],
+      "sha256": "a91a59cefe13480633e6f17fa3013a63d85bb3b00a2da8e292c5c51db8ec7a86",
+      "sm7675_match_found": false,
+      "common_source_sha256": "980874f20f364d1569af80e3cdc2196e18a9709e03ddb6d4b415e0ac2b1201a2"
+    }
+  ],
+  "firmware": {
+    "source_release": "OS3.0.304.0.WOZMIXM",
+    "filename": "vpu30_2v.mbn",
+    "sha256": "2ad782a1eace4556f13178c82480e672bb2063818f438864f45067347ccdeb2a",
+    "pas_authentication_tested": false,
+    "redistribution_approved": false
+  },
+  "checks": {
+    "actual_lifecycle_fixture": true,
+    "aarch64_clock_object": true,
+    "aarch64_iris_composite": true,
+    "kcflags": "-Werror",
+    "full_kernel": false,
+    "rpm": false,
+    "physical_decode": false,
+    "boot_status_fixture": true,
+    "binding_schema_and_example": true,
+    "sm7675_synthetic_example": true,
+    "missing_required_opps_rejected": true
+  },
+  "blockers": [
+    "Native provider/consumer clock, reset and regulator/genpd/OPP conversion is not admitted",
+    "Controller retention, extra VCODEC reset sequence and fault propagation remain incomplete",
+    "Exact firmware mmap, device-region lifetime and split pixel/non-pixel IOMMU ownership remain unresolved",
+    "PAS authentication, decoded-frame equivalence, drain/EOS, resolution changes and teardown require target validation",
+    "GStreamer/VA-API/browser consumers require separate native V4L2 acceptance; FastCV/CDSP remain disabled"
+  ],
+  "host_tools": {
+    "clang": "23.1.3",
+    "dt_schema": "2026.09-1.fc46",
+    "python_scope": "unmodified upstream build tools in isolated host SDK only"
+  }
+}

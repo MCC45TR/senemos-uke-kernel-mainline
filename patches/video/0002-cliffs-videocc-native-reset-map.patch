@@ -1,0 +1,102 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] clk: qcom: add the Cliffs native VCODEC clock reset
+
+Follow the dormant SM7675 VIDEOCC candidate. Translate the OEM reset at
+0x80b8 bit2 to a new native ID8. Keep original reset maps and descriptors
+for every existing SoC; only SM7675 uses the additional mapping.
+
+OEM evidence: MiCode Uke 5712080a4b0c0b1a879e6d145c601c649ddaddfd,
+drivers/clk/qcom/videocc-pineapple.c. The 400us pulse floor comes from
+the same-SoC Iris33 reset sequence at OnePlus commit
+1138e00fee63582a0cc6a53af3286621786827b7.
+
+No OEM compatible alias or DT activation is added. Source-only candidate;
+hardware reset sequencing and retention remain unqualified.
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+--- a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+@@ -16,6 +16,7 @@ description: |
+   See also:
+     include/dt-bindings/clock/qcom,glymur-videocc.h
+     include/dt-bindings/clock/qcom,kaanapali-videocc.h
++    include/dt-bindings/clock/qcom,sm7675-videocc.h
+     include/dt-bindings/clock/qcom,sm8450-videocc.h
+     include/dt-bindings/clock/qcom,sm8650-videocc.h
+     include/dt-bindings/clock/qcom,sm8750-videocc.h
+diff --git a/drivers/clk/qcom/videocc-sm8550.c b/drivers/clk/qcom/videocc-sm8550.c
+index 5e52937..18d93df 100644
+--- a/drivers/clk/qcom/videocc-sm8550.c
++++ b/drivers/clk/qcom/videocc-sm8550.c
+@@ -9,7 +9,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+ 
+-#include <dt-bindings/clock/qcom,sm8650-videocc.h>
++#include <dt-bindings/clock/qcom,sm7675-videocc.h>
+ 
+ #include "clk-alpha-pll.h"
+ #include "clk-branch.h"
+@@ -543,6 +543,18 @@ static const struct qcom_reset_map video_cc_sm8550_resets[] = {
+ 	[VIDEO_CC_XO_CLK_ARES] = { .reg = 0x8124, .bit = 2, .udelay = 100 },
+ };
+ 
++static const struct qcom_reset_map video_cc_sm7675_resets[] = {
++	[CVP_VIDEO_CC_INTERFACE_BCR] = { 0x80f0 },
++	[CVP_VIDEO_CC_MVS0_BCR] = { 0x80a0 },
++	[CVP_VIDEO_CC_MVS0C_BCR] = { 0x8048 },
++	[CVP_VIDEO_CC_MVS1_BCR] = { 0x80c8 },
++	[CVP_VIDEO_CC_MVS1C_BCR] = { 0x8074 },
++	[VIDEO_CC_MVS0C_CLK_ARES] = { .reg = 0x8064, .bit = 2, .udelay = 1000 },
++	[VIDEO_CC_MVS1C_CLK_ARES] = { .reg = 0x8090, .bit = 2, .udelay = 1000 },
++	[VIDEO_CC_XO_CLK_ARES] = { .reg = 0x8124, .bit = 2, .udelay = 100 },
++	[VIDEO_CC_MVS0_CLK_ARES] = { .reg = 0x80b8, .bit = 2, .udelay = 400 },
++};
++
+ static struct clk_alpha_pll *video_cc_sm8550_plls[] = {
+ 	&video_cc_pll0,
+ 	&video_cc_pll1,
+@@ -587,6 +599,18 @@ static const struct qcom_cc_desc video_cc_sm8550_desc = {
+ 	.driver_data = &video_cc_sm8550_driver_data,
+ };
+ 
++static const struct qcom_cc_desc video_cc_sm7675_desc = {
++	.config = &video_cc_sm8550_regmap_config,
++	.clks = video_cc_sm8550_clocks,
++	.num_clks = ARRAY_SIZE(video_cc_sm8550_clocks),
++	.resets = video_cc_sm7675_resets,
++	.num_resets = ARRAY_SIZE(video_cc_sm7675_resets),
++	.gdscs = video_cc_sm8550_gdscs,
++	.num_gdscs = ARRAY_SIZE(video_cc_sm8550_gdscs),
++	.use_rpm = true,
++	.driver_data = &video_cc_sm8550_driver_data,
++};
++
+ static const struct of_device_id video_cc_sm8550_match_table[] = {
+ 	{ .compatible = "qcom,sm7675-videocc" },
+ 	{ .compatible = "qcom,sm8550-videocc" },
+@@ -645,7 +669,7 @@ static int video_cc_sm8550_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	return qcom_cc_probe(pdev, &video_cc_sm8550_desc);
++	return qcom_cc_probe(pdev, is_sm7675 ? &video_cc_sm7675_desc : &video_cc_sm8550_desc);
+ }
+ 
+ static struct platform_driver video_cc_sm8550_driver = {
+diff --git a/include/dt-bindings/clock/qcom,sm7675-videocc.h b/include/dt-bindings/clock/qcom,sm7675-videocc.h
+new file mode 100644
+index 0000000..cd4e7b8
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,sm7675-videocc.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++#ifndef _DT_BINDINGS_CLK_QCOM_VIDEO_CC_SM7675_H
++#define _DT_BINDINGS_CLK_QCOM_VIDEO_CC_SM7675_H
++
++#include "qcom,sm8650-videocc.h"
++
++/* Additional Cliffs VCODEC clock reset; not the OEM numeric reset ABI. */
++#define VIDEO_CC_MVS0_CLK_ARES					8
++
++#endif

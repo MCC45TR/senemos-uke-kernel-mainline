@@ -1,0 +1,133 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] clk: qcom: prepare dormant SM7675 VIDEOCC variant
+
+Adapt Palawan VIDEOCC commit 60647fdca59abd5bca202c8379839f34833e7549
+to accepted23 Linux 7.2.10 qcom_cc_driver_data. Cross-check frequencies,
+PLL settings and Cliffs branch offsets against MiCode Uke kernel
+5712080a4b0c0b1a879e6d145c601c649ddaddfd, videocc-pineapple.c.
+
+Keep the OEM qcom,cliffs-videocc ABI unmatched: native consumers use
+different clock/reset IDs and need a separately reviewed DT conversion.
+MVS1 uses the existing table whose rates match OEM Cliffs, rather than
+Palawan/SM8650 1110 MHz. Retain the Cliffs sleep CBCR at 0x8140.
+
+Based on Alexandr Zubtsov and Qualcomm source under GPL-2.0-only.
+This patch is outside the build series and does not enable a DT node.
+No build or hardware qualification is claimed.
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+index 5d77029..7d44ec6 100644
+--- a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+@@ -27,6 +27,7 @@ properties:
+     enum:
+       - qcom,glymur-videocc
+       - qcom,kaanapali-videocc
++      - qcom,sm7675-videocc
+       - qcom,sm8450-videocc
+       - qcom,sm8475-videocc
+       - qcom,sm8550-videocc
+@@ -69,6 +70,7 @@ allOf:
+             enum:
+               - qcom,glymur-videocc
+               - qcom,kaanapali-videocc
++              - qcom,sm7675-videocc
+               - qcom,sm8450-videocc
+               - qcom,sm8550-videocc
+               - qcom,sm8750-videocc
+diff --git a/drivers/clk/qcom/videocc-sm8550.c b/drivers/clk/qcom/videocc-sm8550.c
+index c2f1148..5e52937 100644
+--- a/drivers/clk/qcom/videocc-sm8550.c
++++ b/drivers/clk/qcom/videocc-sm8550.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+  * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ * SM7675 variant adapted from Alexandr Zubtsov's Palawan support.
+  */
+ 
+ #include <linux/clk-provider.h>
+@@ -144,6 +145,18 @@ static const struct freq_tbl ftbl_video_cc_mvs0_clk_src_sm8650[] = {
+ 	{ }
+ };
+ 
++static const struct freq_tbl ftbl_video_cc_mvs0_clk_src_sm7675[] = {
++	F(576000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(633000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(720000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(1014000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(1098000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(1113000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(1332000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	F(1600000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
++	{ }
++};
++
+ static const struct freq_tbl ftbl_video_cc_mvs0_clk_src_x1e80100[] = {
+ 	F(576000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
+ 	F(720000000, P_VIDEO_CC_PLL0_OUT_MAIN, 1, 0, 0),
+@@ -575,6 +588,7 @@ static const struct qcom_cc_desc video_cc_sm8550_desc = {
+ };
+ 
+ static const struct of_device_id video_cc_sm8550_match_table[] = {
++	{ .compatible = "qcom,sm7675-videocc" },
+ 	{ .compatible = "qcom,sm8550-videocc" },
+ 	{ .compatible = "qcom,sm8650-videocc" },
+ 	{ .compatible = "qcom,x1e80100-videocc" },
+@@ -584,6 +598,8 @@ MODULE_DEVICE_TABLE(of, video_cc_sm8550_match_table);
+ 
+ static int video_cc_sm8550_probe(struct platform_device *pdev)
+ {
++	bool is_sm7675 = of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-videocc");
++
+ 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,x1e80100-videocc")) {
+ 		video_cc_pll0_config.l = 0x1e;
+ 		video_cc_pll0_config.alpha = 0x0000;
+@@ -593,22 +609,40 @@ static int video_cc_sm8550_probe(struct platform_device *pdev)
+ 		video_cc_mvs1_clk_src.freq_tbl = ftbl_video_cc_mvs1_clk_src_x1e80100;
+ 	}
+ 
+-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm8650-videocc")) {
++	if (is_sm7675 || of_device_is_compatible(pdev->dev.of_node, "qcom,sm8650-videocc")) {
+ 		video_cc_pll0_config.l = 0x1e;
+-		video_cc_pll0_config.alpha = 0xa000;
++		video_cc_pll0_config.alpha = is_sm7675 ? 0x0 : 0xa000;
+ 		video_cc_pll1_config.l = 0x2b;
+ 		video_cc_pll1_config.alpha = 0xc000;
+-		video_cc_mvs0_clk_src.freq_tbl = ftbl_video_cc_mvs0_clk_src_sm8650;
+-		video_cc_mvs1_clk_src.freq_tbl = ftbl_video_cc_mvs1_clk_src_sm8650;
++		video_cc_mvs0_clk_src.freq_tbl = is_sm7675 ?
++			ftbl_video_cc_mvs0_clk_src_sm7675 : ftbl_video_cc_mvs0_clk_src_sm8650;
++		video_cc_mvs1_clk_src.freq_tbl = is_sm7675 ?
++			ftbl_video_cc_mvs1_clk_src_x1e80100 : ftbl_video_cc_mvs1_clk_src_sm8650;
+ 		video_cc_sm8550_clocks[VIDEO_CC_MVS0_SHIFT_CLK] = &video_cc_mvs0_shift_clk.clkr;
+ 		video_cc_sm8550_clocks[VIDEO_CC_MVS0C_SHIFT_CLK] = &video_cc_mvs0c_shift_clk.clkr;
+ 		video_cc_sm8550_clocks[VIDEO_CC_MVS1_SHIFT_CLK] = &video_cc_mvs1_shift_clk.clkr;
+ 		video_cc_sm8550_clocks[VIDEO_CC_MVS1C_SHIFT_CLK] = &video_cc_mvs1c_shift_clk.clkr;
+ 		video_cc_sm8550_clocks[VIDEO_CC_XO_CLK_SRC] = &video_cc_xo_clk_src.clkr;
+ 
+-		video_cc_sm8550_driver_data.clk_cbcrs = video_cc_sm8650_critical_cbcrs;
+-		video_cc_sm8550_driver_data.num_clk_cbcrs =
+-							ARRAY_SIZE(video_cc_sm8650_critical_cbcrs);
++		if (is_sm7675) {
++			/* Cliffs sleep is at 0x8140; 0x8150 is the MVS1C shift branch. */
++			video_cc_mvs0_shift_clk.halt_reg = 0x8144;
++			video_cc_mvs0_shift_clk.hwcg_reg = 0x8144;
++			video_cc_mvs0_shift_clk.clkr.enable_reg = 0x8144;
++			video_cc_mvs0c_shift_clk.halt_reg = 0x8148;
++			video_cc_mvs0c_shift_clk.hwcg_reg = 0x8148;
++			video_cc_mvs0c_shift_clk.clkr.enable_reg = 0x8148;
++			video_cc_mvs1_shift_clk.halt_reg = 0x814c;
++			video_cc_mvs1_shift_clk.hwcg_reg = 0x814c;
++			video_cc_mvs1_shift_clk.clkr.enable_reg = 0x814c;
++			video_cc_mvs1c_shift_clk.halt_reg = 0x8150;
++			video_cc_mvs1c_shift_clk.hwcg_reg = 0x8150;
++			video_cc_mvs1c_shift_clk.clkr.enable_reg = 0x8150;
++		} else {
++			video_cc_sm8550_driver_data.clk_cbcrs = video_cc_sm8650_critical_cbcrs;
++			video_cc_sm8550_driver_data.num_clk_cbcrs =
++				ARRAY_SIZE(video_cc_sm8650_critical_cbcrs);
++		}
+ 	}
+ 
+ 	return qcom_cc_probe(pdev, &video_cc_sm8550_desc);

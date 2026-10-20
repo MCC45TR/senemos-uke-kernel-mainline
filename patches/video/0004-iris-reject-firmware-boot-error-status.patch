@@ -1,0 +1,37 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: reject firmware boot errors before enabling commands
+
+The common boot loop treats any nonzero status as completion. An invalid
+UC-region status logs an error and breaks into the success path; fatal,
+fence and pending-only statuses also proceed without a ready indication.
+
+Check the existing error mask before ready, return -EIO on errors and
+continue bounded polling until the ready bit is present. Preserve the
+existing timeout and both callers' firmware/power unwind paths. Compare
+the Iris33 boot status contract against OnePlus SM7675 source revision
+1138e00fee63582a0cc6a53af3286621786827b7, variant/iris33.
+
+This inactive candidate does not enable an OF match or execute firmware.
+
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.c b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+@@ -80,12 +80,14 @@ int iris_vpu_boot_firmware(struct iris_core *core)
+ 	writel(ctrl_init, core->reg_base + CTRL_INIT);
+ 	writel(0x1, core->reg_base + CPU_CS_SCIACMDARG3);
+ 
+-	while (!ctrl_status && count < max_tries) {
++	while (count < max_tries) {
+ 		ctrl_status = readl(core->reg_base + CTRL_STATUS);
+-		if ((ctrl_status & CTRL_ERROR_STATUS__M) == 0x4) {
+-			dev_err(core->dev, "invalid setting for uc_region\n");
+-			break;
++		if (ctrl_status & CTRL_ERROR_STATUS__M) {
++			dev_err(core->dev, "firmware boot failed: status %#x\n", ctrl_status);
++			return -EIO;
+ 		}
++		if (ctrl_status & BIT(0))
++			break;
+ 
+ 		usleep_range(50, 100);
+ 		count++;
