@@ -4,7 +4,18 @@ SHELL := /bin/bash
 .PHONY: validate srpm
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
-validate: validate-video validate-ufs
+validate: validate-video validate-ufs validate-cpucp
+validate-cpucp:
+	jq -e '.active_series == false and .protocol_registered == false and .consumer_added == false and .state_changing_messages == false and (.patches | length == 1)' manifests/cpucp-read-candidate-20261020.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
+	done < <(jq -r '.patches[] | [.path,.sha256] | @tsv' manifests/cpucp-read-candidate-20261020.json)
+	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/cpucp-read-candidate-20261020.json | sha256sum -c -
+.PHONY: validate-cpucp test-cpucp
+test-cpucp: validate-cpucp
+	test -n "$(cpucp_source)"
+	bash tests/cpucp-memlat-read-contract.sh "$(cpucp_source)/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c" "$(cpucp_source)/include/linux/scmi_qcom_memlat.h"
 validate-ufs:
 	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .crypto_enabled == false and (.patches | length == 6)' manifests/ufs-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do

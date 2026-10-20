@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "f5885acfd7fa011bec79edb9bfdb1dae67dcbc70",
+  "status": "inactive-wire-foundation",
+  "active_series": false,
+  "parent_kbuild_added": false,
+  "kconfig_added": false,
+  "protocol_registered": false,
+  "consumer_added": false,
+  "tablet_tested": false,
+  "firmware_protocol_revision": null,
+  "firmware_algorithm_admitted": false,
+  "state_changing_messages": false,
+  "kernel_release_changed": false,
+  "patches": [
+    {
+      "path": "patches/cpucp/0001-uke-memlat-typed-read-foundation.patch",
+      "sha256": "cec153c881fd57ef173b0cb1be694c453eab083dc492b0190d12114f1ac50c99"
+    }
+  ],
+  "source_assets": [
+    {
+      "path": "src/cpucp/qcom-memlat.c",
+      "kernel_path": "drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c",
+      "sha256": "7955dbba7865e7650354845a5c0beeda5772a6f378ab872122735b581575a26f"
+    },
+    {
+      "path": "src/cpucp/scmi_qcom_memlat.h",
+      "kernel_path": "include/linux/scmi_qcom_memlat.h",
+      "sha256": "bec00e78ec5526e1cf33dcaa5420dd3295d6c98718213c59b28d8bfdb9d2fa9c"
+    },
+    {
+      "path": "src/cpucp/Makefile",
+      "kernel_path": "drivers/firmware/arm_scmi/vendors/qcom/Makefile",
+      "sha256": "b8e0eaf7a2f66f9c12509e077cce08e21bca8f879b38216765ce1b4982d2869e"
+    }
+  ],
+  "unchanged_parent_files": [
+    {
+      "path": "drivers/firmware/arm_scmi/Makefile",
+      "sha256": "b36e911fedcd09c25e318fd655dc38599d2082017b013d4c037a8b4961612603"
+    },
+    {
+      "path": "drivers/firmware/arm_scmi/Kconfig",
+      "sha256": "10ebc4ea4a1d17ab2c843fce464ea749431a171e00783f39e9cd5221bb0ee2ca"
+    }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "files": [
+        "drivers/firmware/arm_scmi/qcom_scmi_vendor.c",
+        "drivers/soc/qcom/dcvs/memlat.c"
+      ]
+    },
+    {
+      "id": "same-soc-kernel",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "file": "drivers/firmware/arm_scmi/qcom_scmi_vendor.c",
+      "oem_helper_byte_equal": true
+    },
+    {
+      "id": "current-upstream",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "file": "drivers/firmware/arm_scmi/protocols.h",
+      "sha256": "79e8d88750c1c40fa9f0fbb8e5930560a5f17ad8851809b9ebc4017edfdba0d5",
+      "vendor_directory_entries": [
+        "imx"
+      ],
+      "qcom_vendor_provider_found": false
+    }
+  ],
+  "wire": {
+    "protocol": 128,
+    "message": 17,
+    "algorithm": "0x4d454d4c4154",
+    "parameters": [
+      22,
+      35,
+      38
+    ],
+    "tx_bytes": [
+      28,
+      28,
+      16
+    ],
+    "rx_bytes": [
+      4,
+      4,
+      8
+    ],
+    "units_admitted": false,
+    "monitor_ownership_admitted": false
+  },
+  "checks": {
+    "actual_gcc_fixture": true,
+    "actual_clang_asan_ubsan_fixture": true,
+    "short_reply_mutation_rejected": true,
+    "missing_put_mutation_rejected": true,
+    "failed_copy_mutation_rejected": true,
+    "aarch64_object": true,
+    "kcflags": "-Werror",
+    "full_kernel": false,
+    "rpm": false,
+    "physical_read": false,
+    "inactive_guard_refusals": true,
+    "independent_application": true,
+    "checkpatch_errors": 0,
+    "checkpatch_advisories": 1
+  },
+  "limits": [
+    "This is three typed wire operations only; no registered protocol, live consumer, sysfs endpoint, sampling worker or policy",
+    "Actual vendor protocol revision and algorithm acceptance are unknown; base SCMI revision and firmware implementation version are different fields",
+    "Native framework version negotiation and best-effort fallback require exact admission before registering a vendor provider",
+    "Hardware/monitor identity, PMU/AMU ownership, frequency units, timestamp epoch/wrap and suspend/reset remain unqualified",
+    "No SET/START/STOP, PLH, performance lock, table upload or enlarged transport buffer is implemented"
+  ]
+}
