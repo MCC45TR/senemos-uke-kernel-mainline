@@ -6,7 +6,7 @@ Clang **23.1.3**, `KCFLAGS=-Werror`. The actual two-pipe lifecycle fixture passe
 on the host. These are object/fixture results, without a full kernel, RPM,
 firmware authentication or tablet decode result.
 
-Three project patches from candidate `e344c7b` and three integration fixes
+Three project patches from candidate `e344c7b` and four integration fixes
 are retained outside the active series. The native clock header is also
 referenced by its binding. The
 [manifest](../../manifests/iris-source-candidate-20261020.json) records exact
@@ -70,6 +70,23 @@ an isolated ARM64 defconfig with `VIDEO_QCOM_IRIS=m` and `SM_VIDEOCC_8550=y`,
 and build `drivers/media/platform/qcom/iris/` plus
 `drivers/clk/qcom/videocc-sm8550.o` with `KCFLAGS=-Werror`. It does not produce
 an installable module bundle or boot image.
+
+## PAS ownership follow-up, 21 October 2026
+
+The seventh inactive patch retains possible secure-world ownership from the
+MDT load attempt until PAS shutdown succeeds. Failed load/auth/protection
+cleanup preserves its original errno. A failed stop keeps DMA queues and power
+votes, blocks automatic restart and refuses PM transitions until cleanup can
+complete. The actual-function GCC/Clang fixture covers all startup stages,
+failed-stop retry, response timeout, PM accounting and recovery.
+
+The original deinit function is independently reproduced freeing queues after
+a failed PAS stop. Current upstream `f47d2236` retains that core path, although
+its firmware detection and PAS API have advanced. This patch retains the
+7.2.11 SCM API. Forced platform removal and delayed-work teardown still require
+separate lifetime work; logging a removal failure cannot veto driver detach.
+No MMIO mapping, split context-bank admission or physical result follows from
+these host checks.
 
 ## Activation remains blocked
 

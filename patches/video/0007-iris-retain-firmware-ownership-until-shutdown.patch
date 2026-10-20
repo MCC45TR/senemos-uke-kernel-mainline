@@ -1,0 +1,247 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: retain PAS ownership until shutdown succeeds
+
+A failed secure-world stop does not prove that firmware has stopped using
+its DMA queues. Track possible PAS ownership from the MDT load attempt,
+clear it only after a successful shutdown and retain queues and power votes
+when cleanup fails. Preserve the original load/auth/protection errno.
+
+Keep an errored core blocked until cleanup succeeds. Propagate deinit
+failure to recovery, reject PM transitions while ownership is unresolved
+and report the failure at removal. Forced platform removal still needs a
+separate lifetime solution; this patch does not make unbinding safe.
+
+Uke OEM Venus propagates shutdown errno. Same-SoC VIDC and upstream Iris
+f47d223627f80cb7a1eb14c585fe6cb35de5e984 retain unchecked core cleanup.
+Upstream now uses qcom_pas_* and firmware detection; this 7.2.11 candidate
+retains its original SCM API and firmware selection. No board values,
+firmware, DT match or activation are added.
+
+diff --git a/drivers/media/platform/qcom/iris/iris_core.c b/drivers/media/platform/qcom/iris/iris_core.c
+index 8c335db..1fbf5f2 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.c
++++ b/drivers/media/platform/qcom/iris/iris_core.c
+@@ -10,26 +10,37 @@
+ #include "iris_state.h"
+ #include "iris_vpu_common.h"
+ 
+-void iris_core_deinit(struct iris_core *core)
++int iris_core_deinit(struct iris_core *core)
+ {
+-	int ret;
++	int pm_ret, ret = 0;
+ 
+-	ret = pm_runtime_resume_and_get(core->dev);
++	pm_ret = pm_runtime_resume_and_get(core->dev);
+ 
+ 	mutex_lock(&core->lock);
+-	if (core->state != IRIS_CORE_DEINIT) {
+-		iris_fw_unload(core);
+-
+-		if (!ret)
++	if (core->state != IRIS_CORE_DEINIT || core->fw_owned) {
++		ret = iris_fw_unload(core);
++		if (ret) {
++			core->state = IRIS_CORE_ERROR;
++			goto unlock;
++		}
++
++		if (pm_ret >= 0)
+ 			iris_vpu_power_off(core);
+ 
+ 		iris_hfi_queues_deinit(core);
+ 		core->state = IRIS_CORE_DEINIT;
+ 	}
++unlock:
+ 	mutex_unlock(&core->lock);
+ 
+-	if (!ret)
+-		pm_runtime_put_sync(core->dev);
++	if (pm_ret >= 0) {
++		if (ret)
++			pm_runtime_put_noidle(core->dev);
++		else
++			pm_runtime_put_sync(core->dev);
++	}
++
++	return ret;
+ }
+ 
+ static int iris_wait_for_system_response(struct iris_core *core)
+@@ -59,7 +70,10 @@ int iris_core_init(struct iris_core *core)
+ 		goto exit;
+ 	} else if (core->state == IRIS_CORE_ERROR) {
+ 		ret = -EINVAL;
+-		goto error;
++		goto exit;
++	} else if (core->fw_owned) {
++		ret = -EBUSY;
++		goto exit;
+ 	}
+ 
+ 	core->state = IRIS_CORE_INIT;
+@@ -97,6 +111,11 @@ int iris_core_init(struct iris_core *core)
+ error_unload_fw:
+ 	iris_fw_unload(core);
+ error_power_off:
++	/* Do not release DMA queues while PAS ownership is uncertain. */
++	if (core->fw_owned) {
++		core->state = IRIS_CORE_ERROR;
++		goto exit;
++	}
+ 	iris_vpu_power_off(core);
+ error_queue_deinit:
+ 	iris_hfi_queues_deinit(core);
+diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
+index 24da604..44f4225 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -58,6 +58,7 @@ struct qcom_ubwc_cfg_data;
+  * @iris_firmware_desc: a pointer to the firmware-specific descriptive data
+  * @ubwc_cfg: UBWC configuration for the platform
+  * @state: current state of core
++ * @fw_owned: PAS may own the image until a successful shutdown
+  * @iface_q_table_daddr: device address for interface queue table memory
+  * @sfr_daddr: device address for SFR (Sub System Failure Reason) register memory
+  * @iface_q_table_vaddr: virtual address for interface queue table memory
+@@ -103,6 +104,7 @@ struct iris_core {
+ 	const struct iris_firmware_desc		*iris_firmware_desc;
+ 	const struct qcom_ubwc_cfg_data		*ubwc_cfg;
+ 	enum iris_core_state			state;
++	bool					fw_owned;
+ 	dma_addr_t				iface_q_table_daddr;
+ 	dma_addr_t				sfr_daddr;
+ 	void					*iface_q_table_vaddr;
+@@ -126,6 +128,6 @@ struct iris_core {
+ };
+ 
+ int iris_core_init(struct iris_core *core);
+-void iris_core_deinit(struct iris_core *core);
++int iris_core_deinit(struct iris_core *core);
+ 
+ #endif
+diff --git a/drivers/media/platform/qcom/iris/iris_firmware.c b/drivers/media/platform/qcom/iris/iris_firmware.c
+index 1a47614..94a9471 100644
+--- a/drivers/media/platform/qcom/iris/iris_firmware.c
++++ b/drivers/media/platform/qcom/iris/iris_firmware.c
+@@ -53,6 +53,8 @@ static int iris_load_fw_to_memory(struct iris_core *core, const char *fw_name)
+ 		goto err_release_fw;
+ 	}
+ 
++	/* A failed PAS load may still require secure-world cleanup. */
++	core->fw_owned = true;
+ 	ret = qcom_mdt_load(dev, firmware, fw_name,
+ 			    IRIS_PAS_ID, mem_virt, mem_phys, res_size, NULL);
+ 
+@@ -67,7 +69,11 @@ int iris_fw_load(struct iris_core *core)
+ {
+ 	const struct tz_cp_config *cp_config;
+ 	const char *fwpath = NULL;
+-	int i, ret;
++	u32 i;
++	int ret;
++
++	if (core->fw_owned)
++		return -EBUSY;
+ 
+ 	ret = of_property_read_string_index(core->dev->of_node, "firmware-name", 0,
+ 					    &fwpath);
+@@ -77,12 +83,14 @@ int iris_fw_load(struct iris_core *core)
+ 	ret = iris_load_fw_to_memory(core, fwpath);
+ 	if (ret) {
+ 		dev_err(core->dev, "firmware download failed\n");
+-		return -ENOMEM;
++		iris_fw_unload(core);
++		return ret;
+ 	}
+ 
+ 	ret = qcom_scm_pas_auth_and_reset(IRIS_PAS_ID);
+ 	if (ret)  {
+ 		dev_err(core->dev, "auth and reset failed: %d\n", ret);
++		iris_fw_unload(core);
+ 		return ret;
+ 	}
+ 
+@@ -94,7 +102,7 @@ int iris_fw_load(struct iris_core *core)
+ 						     cp_config->cp_nonpixel_size);
+ 		if (ret) {
+ 			dev_err(core->dev, "qcom_scm_mem_protect_video_var failed: %d\n", ret);
+-			qcom_scm_pas_shutdown(IRIS_PAS_ID);
++			iris_fw_unload(core);
+ 			return ret;
+ 		}
+ 	}
+@@ -104,7 +112,18 @@ int iris_fw_load(struct iris_core *core)
+ 
+ int iris_fw_unload(struct iris_core *core)
+ {
+-	return qcom_scm_pas_shutdown(IRIS_PAS_ID);
++	int ret;
++
++	if (!core->fw_owned)
++		return 0;
++
++	ret = qcom_scm_pas_shutdown(IRIS_PAS_ID);
++	if (ret)
++		dev_err(core->dev, "firmware shutdown failed: %d\n", ret);
++	else
++		core->fw_owned = false;
++
++	return ret;
+ }
+ 
+ int iris_set_hw_state(struct iris_core *core, bool resume)
+diff --git a/drivers/media/platform/qcom/iris/iris_probe.c b/drivers/media/platform/qcom/iris/iris_probe.c
+index a545bd5..9478167 100644
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -198,12 +198,15 @@ err_vdev_release:
+ static void iris_remove(struct platform_device *pdev)
+ {
+ 	struct iris_core *core;
++	int ret;
+ 
+ 	core = platform_get_drvdata(pdev);
+ 	if (!core)
+ 		return;
+ 
+-	iris_core_deinit(core);
++	ret = iris_core_deinit(core);
++	if (ret)
++		dev_err(core->dev, "firmware ownership unresolved at removal: %d\n", ret);
+ 
+ 	video_unregister_device(core->vdev_dec);
+ 	video_unregister_device(core->vdev_enc);
+@@ -218,8 +221,8 @@ static void iris_sys_error_handler(struct work_struct *work)
+ 	struct iris_core *core =
+ 			container_of(work, struct iris_core, sys_error_handler.work);
+ 
+-	iris_core_deinit(core);
+-	iris_core_init(core);
++	if (!iris_core_deinit(core))
++		iris_core_init(core);
+ }
+ 
+ static int iris_probe(struct platform_device *pdev)
+@@ -325,6 +328,10 @@ static int __maybe_unused iris_pm_suspend(struct device *dev)
+ 	core = dev_get_drvdata(dev);
+ 
+ 	mutex_lock(&core->lock);
++	if (core->fw_owned && core->state != IRIS_CORE_INIT) {
++		ret = -EBUSY;
++		goto exit;
++	}
+ 	if (core->state != IRIS_CORE_INIT)
+ 		goto exit;
+ 
+@@ -344,6 +351,10 @@ static int __maybe_unused iris_pm_resume(struct device *dev)
+ 	core = dev_get_drvdata(dev);
+ 
+ 	mutex_lock(&core->lock);
++	if (core->fw_owned && core->state != IRIS_CORE_INIT) {
++		ret = -EBUSY;
++		goto exit;
++	}
+ 	if (core->state != IRIS_CORE_INIT)
+ 		goto exit;
+ 

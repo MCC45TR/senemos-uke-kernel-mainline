@@ -84,6 +84,10 @@
     {
       "path": "patches/video/0006-sm7675-videocc-regulator-owned-voltage-votes.patch",
       "sha256": "9797df529b1d1ca5086c1d6042037a53fda4769e21a807f6fa7b4ba170d43ea5"
+    },
+    {
+      "path": "patches/video/0007-iris-retain-firmware-ownership-until-shutdown.patch",
+      "sha256": "486c5992add58ed1b74b38186951648ca17e338432fdb48d2ac21411c995cbfe"
     }
   ],
   "sources": [
@@ -154,14 +158,17 @@
     "actual_resource_fault_fixture": true,
     "clock_regulator_fault_fixture": true,
     "opp_domain_fault_fixture": true,
-    "regulator_binding_five_refusals": true
+    "regulator_binding_five_refusals": true,
+    "firmware_ownership_gcc_clang_fixture": true,
+    "firmware_ownership_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
     "Controller retention, extra VCODEC reset sequence and fault propagation remain incomplete",
     "Exact firmware mmap, device-region lifetime and split pixel/non-pixel IOMMU ownership remain unresolved",
     "PAS authentication, decoded-frame equivalence, drain/EOS, resolution changes and teardown require target validation",
-    "GStreamer/VA-API/browser consumers require separate native V4L2 acceptance; FastCV/CDSP remain disabled"
+    "GStreamer/VA-API/browser consumers require separate native V4L2 acceptance; FastCV/CDSP remain disabled",
+    "Forced platform removal, delayed-work teardown and persistent failed-stop recovery require separate lifetime admission before activation"
   ],
   "host_tools": {
     "clang": "23.1.3",
@@ -173,5 +180,19 @@
       "path": "src/video/uke-videocc-votes.c",
       "sha256": "0b146856594ff594110566c93758923d4725a76054d41810765984f2b1fac08b"
     }
-  ]
+  ],
+  "firmware_ownership": {
+    "date": "2026-10-21",
+    "pas_may_own_after_mdt_attempt": true,
+    "clear_only_after_successful_shutdown": true,
+    "failed_stop_retains_queues_and_votes": true,
+    "recovery_and_pm_refused_until_cleanup": true,
+    "forced_removal_qualified": false,
+    "tablet_tested": false,
+    "upstream_commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+    "upstream_core_sha256": "0732db166f19e386cedbe5e111dca5d7ffa247112df1110226006c4af553bd43",
+    "upstream_firmware_sha256": "ff594d01bdd4a005a52c4cec4ba77806a0f82ded5e1ec676025ceedf47a9e37a",
+    "active_baseline": "bfe93de225e97d1d8f18b63b410f04bd5ccd069d",
+    "active_patch_count": 97
+  }
 }
