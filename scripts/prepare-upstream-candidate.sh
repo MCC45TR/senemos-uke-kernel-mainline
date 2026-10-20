@@ -50,7 +50,7 @@ prepare_metadata() {
         spec=packaging/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec; json=packaging/kvm-singleboot.json;
     }
     old=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
-    old_release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
+    old_release=$(rpmspec --define 'dist %{nil}' -q --srpm --qf '%{RELEASE}' "$spec")
     [[ $old-$old_release != "$evr" ]] || { printf 'unchanged\t%s\n' "$evr"; return; }
     [[ $(printf '%s\n' "$old-$old_release" "$evr" | sort -V | tail -1) == "$evr" ]] || {
         echo 'Refusing an automatic metadata downgrade' >&2; return 1;
@@ -64,6 +64,10 @@ prepare_metadata() {
     jq --arg abi "$abi" '.kernel_release=$abi | .boot_image=("/usr/lib/senemos/kernel-updates/"+$abi+"/userdata.img")' "$json" > "$json.tmp"
     mv "$json.tmp" "$json"
     replace_version tests/singleboot-package-contract.sh "$old" "$version" "$old_release" "$release"
+    # Keep future SCM metadata checks independent of COPR's stacked dist macros.
+    for contract in tests/singleboot-package-contract.sh tests/kvm-singleboot-package-contract.sh; do
+        [[ ! -f $contract ]] || sed -i "s/rpmspec --undefine dist/rpmspec --define 'dist %{nil}'/" "$contract"
+    done
     if [[ $role == singleboot ]]; then
         sed -i '/^Release [0-9].*requires the exact/,$d' packaging/SINGLEBOOT.md
         printf '\nThe exact current tuple is recorded in the installed JSON descriptor.\nThe common kernel and physical acceptance retain their separate evidence.\n' >> packaging/SINGLEBOOT.md
@@ -71,7 +75,10 @@ prepare_metadata() {
     else
         make kvm-singleboot-srpm
     fi
-    git add "$spec" "$json" tests/singleboot-package-contract.sh packaging/SINGLEBOOT.md 2>/dev/null || git add "$spec" "$json"
+    git add "$spec" "$json"
+    for contract in tests/singleboot-package-contract.sh tests/kvm-singleboot-package-contract.sh packaging/SINGLEBOOT.md; do
+        [[ ! -f $contract ]] || git add "$contract"
+    done
     git -c core.hooksPath=/dev/null -c commit.gpgsign=false -c user.name='Senemos Automation' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Select matched $role kernel $evr"
     printf 'prepared\t%s\n' "$evr"
 }
@@ -83,7 +90,7 @@ prepare_common() {
     [[ $next == *.*.* ]] || next=$next.0
     spec=packaging/senemos-uke-linux-kernel-mainline.spec
     current=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
-    release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
+    release=$(rpmspec --define 'dist %{nil}' -q --srpm --qf '%{RELEASE}' "$spec")
     if [[ $(printf '%s\n' "$current" "$next" | sort -V | tail -1) == "$current" ]]; then
         printf 'unchanged\t%s-%s\n' "$current" "$release"; return;
     fi

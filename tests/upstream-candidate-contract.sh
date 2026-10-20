@@ -41,4 +41,24 @@ for change in '.items[0].chroots=["fedora-rawhide-x86_64"]' \
 done
 jq '.items += [.items[0]|.id=43|.state="failed"]' "$work/builds.json" > "$work/latest-builds.json"
 [[ $(matching_build "$work/latest-builds.json" senemos-uke-linux-kernel-mainline 7.3.0-1 | jq -r .state) == failed ]]
+mkdir -p "$work/source/packaging" "$work/bin"
+cat > "$work/source/packaging/senemos-uke-linux-kernel-mainline.spec" <<'SPEC'
+Name: source-fixture
+Version: 7.2.11
+Release: 16%{?dist}
+Summary: Source query fixture
+License: MIT
+%description
+Source query fixture.
+%files
+SPEC
+cp "$work/source/packaging/senemos-uke-linux-kernel-mainline.spec" "$work/source/packaging/senemos-uke-linux-kernel-mainline-singleboot.spec"
+real_rpmspec=$(command -v rpmspec)
+printf '#!/usr/bin/env bash\nexec %q --define %q --define %q "$@"\n' "$real_rpmspec" 'dist .fc44' 'dist %{nil}' > "$work/bin/rpmspec"
+chmod 755 "$work/bin/rpmspec"
+jq '.latest_stable.version="7.2.11" | .releases[0].version="7.2.11" |
+ .releases[0].source="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.11.tar.xz" |
+ .releases[0].pgp="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.11.tar.sign"' "$work/release.json" > "$work/current-release.json"
+[[ $(cd "$work/source"; PATH="$work/bin:$PATH" prepare_metadata singleboot 7.2.11-16) == unchanged$'\t'7.2.11-16 ]]
+[[ $(cd "$work/source"; PATH="$work/bin:$PATH" prepare_common "$work/current-release.json") == unchanged$'\t'7.2.11-16 ]]
 echo 'Exact release, timestamp, version, package, repository, architecture and newest-build selection passed'
