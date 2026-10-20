@@ -10,7 +10,7 @@
 %global kvm_suffix kvm
 %endif
 
-Name: uke-senemos-kernel-mainline-%{kvm_suffix}
+Name: senemos-uke-linux-kernel-mainline-%{kvm_suffix}
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
 %global senemos_build_release 2
@@ -19,6 +19,7 @@ Version: 7.2.11
 %endif
 %global krel %{version}-%{senemos_build_release}-%{kvm_suffix}
 Release: %{senemos_build_release}%{?dist}
+Provides: uke-senemos-kernel-mainline-%{kvm_suffix} = %{version}-%{release}
 Summary: Experimental Uke KVM kernel with the current native profile
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -48,6 +49,7 @@ Boot writes require the explicitly enabled native updater. Build success does
 not establish physical tablet acceptance.
 
 %package core
+Provides: uke-senemos-kernel-mainline-%{kvm_suffix}-core = %{version}-%{release}
 Summary: Uke kernel Image and source identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
@@ -56,6 +58,7 @@ Provides: kernel-uname-r(%{krel})
 Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
+Provides: uke-senemos-kernel-mainline-%{kvm_suffix}-modules = %{version}-%{release}
 Summary: Matching Uke kernel modules
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
@@ -65,6 +68,7 @@ Provides: installonlypkg(kernel)
 Modules from the same native-profile source and configuration as the raw Image.
 
 %package dtbs
+Provides: uke-senemos-kernel-mainline-%{kvm_suffix}-dtbs = %{version}-%{release}
 Summary: Uke compile-stage device tree and native overlay
 Requires: %{name}-core = %{version}-%{release}
 Provides: installonlypkg(kernel)
@@ -74,6 +78,7 @@ Independent compile-stage DTB and exact O82-42 native display overlay. Physical
 boot requires the separately validated dynamic stock-bootloader handoff.
 
 %package boot
+Provides: uke-senemos-kernel-mainline-%{kvm_suffix}-boot = %{version}-%{release}
 Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
