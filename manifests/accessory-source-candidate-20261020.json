@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "8a29c815eb7cc44cf6115cac34fc56355e0173d8",
+  "status": "inactive-native-ir-admission-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "compatibility_alias_added": false,
+  "nfc_driver_added": false,
+  "tablet_tested": false,
+  "kernel_release_changed": false,
+  "patches": [
+    {
+      "path": "patches/accessories/0001-ir-spi-validate-native-admission.patch",
+      "sha256": "fc31965ff1250878f68b5c1059da4e4d5f9f23dea92cd6b81c0e03bcae8f2325"
+    }
+  ],
+  "baseline_files": [
+    {
+      "path": "drivers/media/rc/ir-spi.c",
+      "sha256": "617ba6aedca7d6b46bf30d6feb51c72ef6c04ee18dfefcc7a1a0c04d171016ed"
+    }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "files": [
+        "drivers/media/rc/ir-spi.c",
+        "drivers/ntag/fm19511/ntag_common.c",
+        "drivers/ntag/fm19511/ntag_i2c_drv.c"
+      ]
+    },
+    {
+      "id": "uke-oem-dt",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "file": "qcom/uke-sm8635.dtsi"
+    },
+    {
+      "id": "same-soc-kernel",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "file": "drivers/media/rc/ir-spi.c",
+      "note": "Older native 16-bit LIRC driver; no applicable FM19511 ntag directory in inspected checkout"
+    },
+    {
+      "id": "current-upstream",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "file": "drivers/media/rc/ir-spi.c",
+      "sha256": "617ba6aedca7d6b46bf30d6feb51c72ef6c04ee18dfefcc7a1a0c04d171016ed"
+    }
+  ],
+  "checks": {
+    "actual_before_failure": 134,
+    "actual_probe_duty_carrier_fixture": true,
+    "gcc_fixture": true,
+    "clang_asan_ubsan_fixture": true,
+    "aarch64_object": true,
+    "kcflags": "-Werror",
+    "checkpatch_errors": 0,
+    "checkpatch_warnings": 0,
+    "full_kernel": false,
+    "rpm": false,
+    "physical_ir": false,
+    "nfc_i2c": false
+  },
+  "limits": [
+    "Uke native IR supply, polarity, controller transfer/word-format equivalence and physical waveform/receiver acceptance remain unqualified",
+    "Existing legacy supply lookup is retained only when the standard power-supply property is absent; no Uke dummy rail or compatible alias is added",
+    "FM19511 OEM initialization writes EEPROM configuration and reset state; it is not a passive discovery helper",
+    "Exact FM19511 capacity, protection/lock layout, read side effects and tag-data role require evidence before a native consumer; no general NFC reader capability is inferred"
+  ]
+}

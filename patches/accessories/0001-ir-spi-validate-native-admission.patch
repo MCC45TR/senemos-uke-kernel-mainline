@@ -1,0 +1,73 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: rc: ir-spi: validate probe defaults and standard supply
+
+Use the power-supply declared by the existing binding when present, and
+retain the legacy regulator name only when it is absent. Preserve an
+error on the declared supply instead of silently selecting another one.
+
+Validate the duty range in the shared callback before computing a mask.
+Propagate malformed duty properties and callback failures from probe;
+validate the default carrier against the SPI limit before registration.
+
+This inactive source fix adds no board compatible, DT, dummy supply,
+polarity or word-format conversion, and does not qualify Uke IR output.
+
+diff --git a/drivers/media/rc/ir-spi.c b/drivers/media/rc/ir-spi.c
+index 31eb58b..6bf1156 100644
+--- a/drivers/media/rc/ir-spi.c
++++ b/drivers/media/rc/ir-spi.c
+@@ -110,7 +110,11 @@ static int ir_spi_set_tx_carrier(struct rc_dev *dev, u32 carrier)
+ static int ir_spi_set_duty_cycle(struct rc_dev *dev, u32 duty_cycle)
+ {
+ 	struct ir_spi_data *idata = dev->priv;
+-	int bits = (duty_cycle * 15) / 100;
++	int bits;
++
++	if (!duty_cycle || duty_cycle >= 100)
++		return -EINVAL;
++	bits = (duty_cycle * 15) / 100;
+ 
+ 	idata->pulse = GENMASK(bits, 0);
+ 
+@@ -135,7 +139,10 @@ static int ir_spi_probe(struct spi_device *spi)
+ 	if (!idata)
+ 		return -ENOMEM;
+ 
+-	idata->regulator = devm_regulator_get(dev, "irda_regulator");
++	if (device_property_present(dev, "power-supply"))
++		idata->regulator = devm_regulator_get(dev, "power");
++	else
++		idata->regulator = devm_regulator_get(dev, "irda_regulator");
+ 	if (IS_ERR(idata->regulator))
+ 		return PTR_ERR(idata->regulator);
+ 
+@@ -152,17 +159,21 @@ static int ir_spi_probe(struct spi_device *spi)
+ 	idata->spi                 = spi;
+ 
+ 	idata->negated = device_property_read_bool(dev, "led-active-low");
+-	ret = device_property_read_u8(dev, "duty-cycle", &dc);
+-	if (ret)
++	if (device_property_present(dev, "duty-cycle")) {
++		ret = device_property_read_u8(dev, "duty-cycle", &dc);
++		if (ret)
++			return ret;
++	} else {
+ 		dc = 50;
++	}
+ 
+-	/*
+-	 * ir_spi_set_duty_cycle() cannot fail, it returns int
+-	 * to be compatible with the rc->s_tx_duty_cycle function.
+-	 */
+-	ir_spi_set_duty_cycle(idata->rc, dc);
++	ret = ir_spi_set_duty_cycle(idata->rc, dc);
++	if (ret)
++		return ret;
+ 
+-	idata->freq = IR_SPI_DEFAULT_FREQUENCY;
++	ret = ir_spi_set_tx_carrier(idata->rc, IR_SPI_DEFAULT_FREQUENCY);
++	if (ret)
++		return ret;
+ 
+ 	return devm_rc_register_device(dev, idata->rc);
+ }
