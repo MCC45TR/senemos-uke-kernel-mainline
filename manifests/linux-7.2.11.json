@@ -388,6 +388,10 @@
     {
       "path": "patches/7.2.11/0095-q6apm-preserve-shared-graph-run-accounting.patch",
       "sha256": "ef3f439a25aeeb826b55ae36f29ae3037e4317f232fd5b2b0779316274dc5b95"
+    },
+    {
+      "path": "patches/7.2.11/0096-apr-unwind-failed-service-publication.patch",
+      "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

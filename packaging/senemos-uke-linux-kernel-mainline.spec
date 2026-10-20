@@ -171,6 +171,7 @@ CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-run-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh

@@ -102,3 +102,9 @@ refuses count overflow and rejects new starts during removal. Actual-source
 host fixtures exercise failures, retry and two shared callers. Release12 COPR
 11177997 remains a separate signed candidate. Native audio stays disabled;
 caller/DMA teardown and physical firmware acceptance remain open.
+
+Patch0096 corrects APR/GPR service registration cleanup: device/name references
+and IDR entries unwind on failed naming, malformed DT, allocation or publication.
+Failed GPR publication drains callback lookup before releasing the service.
+Both legacy APR and native GPR success paths retain optional protection domains.
+Host failure fixtures do not establish complete PDR or physical audio recovery.

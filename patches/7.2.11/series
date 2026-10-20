@@ -93,3 +93,4 @@
 0093-q6apm-qualify-graph-publication-and-references.patch
 0094-gpr-quiesce-native-audio-services-before-teardown.patch
 0095-q6apm-preserve-shared-graph-run-accounting.patch
+0096-apr-unwind-failed-service-publication.patch
