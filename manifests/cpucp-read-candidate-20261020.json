@@ -16,14 +16,14 @@
   "patches": [
     {
       "path": "patches/cpucp/0001-uke-memlat-typed-read-foundation.patch",
-      "sha256": "cec153c881fd57ef173b0cb1be694c453eab083dc492b0190d12114f1ac50c99"
+      "sha256": "d304d58eb562c00e872b04552a02caca192adf1feaedd846aa74c67004d9bf49"
     }
   ],
   "source_assets": [
     {
       "path": "src/cpucp/qcom-memlat.c",
       "kernel_path": "drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c",
-      "sha256": "7955dbba7865e7650354845a5c0beeda5772a6f378ab872122735b581575a26f"
+      "sha256": "040fea2d39509107ba53878e6f96cb7735d839f799704ffe62e75998bf63df71"
     },
     {
       "path": "src/cpucp/scmi_qcom_memlat.h",
@@ -44,6 +44,10 @@
     {
       "path": "drivers/firmware/arm_scmi/Kconfig",
       "sha256": "10ebc4ea4a1d17ab2c843fce464ea749431a171e00783f39e9cd5221bb0ee2ca"
+    },
+    {
+      "path": "drivers/firmware/arm_scmi/shmem.c",
+      "sha256": "048945220ecea9433b93f3761247b4fab6522f209da6bb1ada70247c1f3ec00b"
     }
   ],
   "sources": [
@@ -95,7 +99,12 @@
       8
     ],
     "units_admitted": false,
-    "monitor_ownership_admitted": false
+    "monitor_ownership_admitted": false,
+    "rx_capacity_bytes": [
+      8,
+      8,
+      12
+    ]
   },
   "checks": {
     "actual_gcc_fixture": true,
@@ -111,13 +120,16 @@
     "inactive_guard_refusals": true,
     "independent_application": true,
     "checkpatch_errors": 0,
-    "checkpatch_advisories": 1
+    "checkpatch_advisories": 1,
+    "actual_shmem_clipping_fixture": true,
+    "original_clipped_oversize_failure": 134
   },
   "limits": [
     "This is three typed wire operations only; no registered protocol, live consumer, sysfs endpoint, sampling worker or policy",
     "Actual vendor protocol revision and algorithm acceptance are unknown; base SCMI revision and firmware implementation version are different fields",
     "Native framework version negotiation and best-effort fallback require exact admission before registering a vendor provider",
     "Hardware/monitor identity, PMU/AMU ownership, frequency units, timestamp epoch/wrap and suspend/reset remain unqualified",
-    "No SET/START/STOP, PLH, performance lock, table upload or enlarged transport buffer is implemented"
+    "No SET/START/STOP, PLH, performance lock, table upload or enlarged transport buffer is implemented",
+    "The expected 4/8-byte reply is allocated an extra response word so native shared-memory length clipping cannot hide an oversized reply"
   ]
 }

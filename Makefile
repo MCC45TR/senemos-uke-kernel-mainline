@@ -15,7 +15,7 @@ validate-cpucp:
 .PHONY: validate-cpucp test-cpucp
 test-cpucp: validate-cpucp
 	test -n "$(cpucp_source)"
-	bash tests/cpucp-memlat-read-contract.sh "$(cpucp_source)/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c" "$(cpucp_source)/include/linux/scmi_qcom_memlat.h"
+	bash tests/cpucp-memlat-read-contract.sh "$(cpucp_source)/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c" "$(cpucp_source)/include/linux/scmi_qcom_memlat.h" "$(cpucp_source)/drivers/firmware/arm_scmi/shmem.c"
 validate-ufs:
 	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .crypto_enabled == false and (.patches | length == 6)' manifests/ufs-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do

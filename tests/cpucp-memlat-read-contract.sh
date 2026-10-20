@@ -3,6 +3,7 @@
 set -Eeuo pipefail
 source_file=${1:?Pass qcom-memlat.c}
 header=${2:?Pass scmi_qcom_memlat.h}
+shmem_file=${3:-}
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/source/drivers/firmware/arm_scmi/vendors/qcom" "$work/include/linux"
@@ -21,6 +22,7 @@ cat > "$work/source/drivers/firmware/arm_scmi/protocols.h" <<'C'
 #include <endian.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #undef static_assert
@@ -30,7 +32,7 @@ cat > "$work/source/drivers/firmware/arm_scmi/protocols.h" <<'C'
 #define cpu_to_le32(x) htole32(x)
 #define le32_to_cpu(x) le32toh(x)
 #define le64_to_cpu(x) le64toh(x)
-struct scmi_xfer { struct { void *buf; size_t len; } tx, rx; };
+struct scmi_xfer { struct { int status; } hdr; struct { void *buf; size_t len; } tx, rx; };
 struct scmi_xfer_ops {
     int (*xfer_get_init)(const struct scmi_protocol_handle *, u8, size_t, size_t, struct scmi_xfer **);
     int (*do_xfer)(const struct scmi_protocol_handle *, struct scmi_xfer *);
@@ -40,6 +42,22 @@ struct scmi_protocol_handle { const struct scmi_xfer_ops *xops; };
 C
 cat > "$work/check.c" <<'C'
 #include "source/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c"
+C
+if [[ -n $shmem_file ]]; then
+    cat >> "$work/check.c" <<'C'
+#define CPUCP_TEST_NATIVE_SHMEM 1
+#define __iomem
+#define BIT(n) (1U << (n))
+#define min_t(type, a, b) ((type)(a) < (type)(b) ? (type)(a) : (type)(b))
+typedef void (*shmem_copy_fromio_t)(void *, const void *, size_t);
+static u32 ioread32(const void *address) { u32 value; memcpy(&value, address, 4); return le32toh(value); }
+static void copy_fromio(void *to, const void *from, size_t count) { memcpy(to, from, count); }
+static bool native_transport;
+C
+    awk '/^struct scmi_shared_mem \{/ { emit=1 } emit { print } emit && /^};/ { exit }' "$shmem_file" >> "$work/check.c"
+    awk '/^static void shmem_fetch_response\(/ { emit=1 } emit { print } emit && /^}/ { exit }' "$shmem_file" >> "$work/check.c"
+fi
+cat >> "$work/check.c" <<'C'
 static unsigned char tx[104], rx[104], captured[104];
 static struct scmi_xfer transfer;
 static size_t tx_size, rx_size, reply_length;
@@ -58,7 +76,17 @@ static int send(const struct scmi_protocol_handle *ph, struct scmi_xfer *t) {
     (void)ph; assert(t == &transfer); sends++;
     memcpy(captured, tx, tx_size);
     for (unsigned int i = 0; i < sizeof(rx); i++) rx[i] = i + 1;
-    t->rx.len = reply_length; return transfer_error;
+#ifdef CPUCP_TEST_NATIVE_SHMEM
+    if (native_transport) {
+        _Alignas(8) unsigned char area[sizeof(struct scmi_shared_mem) + 108] = {0};
+        struct scmi_shared_mem *shared = (void *)area;
+        shared->length = htole32(reply_length > UINT32_MAX - 8 ? UINT32_MAX : reply_length + 8);
+        for (unsigned int i = 0; i < 104; i++) shared->msg_payload[i + 4] = i + 1;
+        shmem_fetch_response(shared, t, copy_fromio);
+    } else
+#endif
+        t->rx.len = reply_length;
+    return transfer_error;
 }
 static void put(const struct scmi_protocol_handle *ph, struct scmi_xfer *t) {
     (void)ph; assert(t == &transfer); put_calls++;
@@ -87,12 +115,18 @@ int main(void) {
     assert(scmi_qcom_memlat_read_ops.adaptive_raw(&ph, 0, NULL) == -EINVAL);
     assert(qcom_memlat_read(&ph, 0xffffffff, 0, 0, &value) == -EINVAL && !gets);
     assert(qcom_memlat_read(&ph, 35, 0, 0, NULL) == -EINVAL && !gets);
+    for (unsigned int path = 0; path < 2; path++) {
+#ifdef CPUCP_TEST_NATIVE_SHMEM
+    native_transport = path;
+#else
+    if (path) break;
+#endif
     for (unsigned int mode = 0; mode < 3; mode++) {
         size_t length = mode ? 4 : 8;
         reset(length); value = 0;
         assert(run(&ph, mode, &value) == 0 && gets == 1 && sends == 1 && put_calls == 1);
         assert(value == (mode ? UINT64_C(0x04030201) : UINT64_C(0x0807060504030201)));
-        assert(tx_size == (mode ? 28 : 16) && rx_size == length);
+        assert(tx_size == (mode ? 28 : 16) && rx_size >= length && rx_size <= length + 4);
         memset(expected + 12, 0, sizeof(expected) - 12);
         expected[12] = mode == 0 ? 38 : mode == 1 ? 35 : 22;
         if (mode) {
@@ -118,6 +152,10 @@ int main(void) {
             assert(run(&ph, mode, &value) == -ETIMEDOUT && value == 0xdeadbeef && put_calls == 1);
         }
     }
+    }
+#ifdef CPUCP_TEST_NATIVE_SHMEM
+    puts("Actual SCMI shared-memory clipping path: short/long replies rejected before output copy");
+#endif
     puts("Actual MEMLAT reads: exact LE envelopes, zero fields, bounded sizes, unchanged failed outputs and transfer cleanup passed");
 }
 C

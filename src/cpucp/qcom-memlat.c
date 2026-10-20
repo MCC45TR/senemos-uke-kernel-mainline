@@ -57,7 +57,9 @@ static int qcom_memlat_read(const struct scmi_protocol_handle *ph, u32 parameter
 		return -EINVAL;
 	}
 
-	ret = ph->xops->xfer_get_init(ph, QCOM_SCMI_GET_PARAM, tx_size, rx_size, &t);
+	/* Shared-memory transport clips replies to the requested capacity. */
+	ret = ph->xops->xfer_get_init(ph, QCOM_SCMI_GET_PARAM, tx_size,
+				    rx_size + sizeof(__le32), &t);
 	if (ret)
 		return ret;
 

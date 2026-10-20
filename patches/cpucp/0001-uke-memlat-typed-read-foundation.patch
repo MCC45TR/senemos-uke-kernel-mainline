@@ -23,10 +23,10 @@ index 0000000..fce7a81
 +obj-y += qcom-memlat.o
 diff --git a/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c b/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c
 new file mode 100644
-index 0000000..fab3ac9
+index 0000000..676e795
 --- /dev/null
 +++ b/drivers/firmware/arm_scmi/vendors/qcom/qcom-memlat.c
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,121 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Qualcomm MEMLAT typed reads; wire contract from the Uke OEM vendor protocol.
@@ -86,7 +86,9 @@ index 0000000..fab3ac9
 +		return -EINVAL;
 +	}
 +
-+	ret = ph->xops->xfer_get_init(ph, QCOM_SCMI_GET_PARAM, tx_size, rx_size, &t);
++	/* Shared-memory transport clips replies to the requested capacity. */
++	ret = ph->xops->xfer_get_init(ph, QCOM_SCMI_GET_PARAM, tx_size,
++				    rx_size + sizeof(__le32), &t);
 +	if (ret)
 +		return ret;
 +
