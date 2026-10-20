@@ -82,3 +82,4 @@
 0082-uke-moisture-and-thermal-protection.patch
 0083-usb-ucsi-cached-transport-state.patch
 0084-audioreach-basic-error-responses.patch
+0085-q6apm-preserve-unmap-result-and-buffer-type.patch

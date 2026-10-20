@@ -344,6 +344,10 @@
     {
       "path": "patches/7.2.11/0084-audioreach-basic-error-responses.patch",
       "sha256": "52d03049b4962d36c33b38d1d3b8982d7dc97688241d1adcf7893e2ac18aa7f0"
+    },
+    {
+      "path": "patches/7.2.11/0085-q6apm-preserve-unmap-result-and-buffer-type.patch",
+      "sha256": "d16c1823ea21bc4b0f78c11d6594c4aad7b7c9953ae3bfcc1432bcaa6adca520"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

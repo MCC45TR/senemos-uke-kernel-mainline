@@ -156,3 +156,6 @@ basic ACK still waits for the service-specific response. Actual-source GCC and
 Clang sanitizer fixtures and AArch64 driver objects pass. The audio profile
 remains disabled; full package, admitted firmware and physical audio validation
 are separate. PRM stale-response correlation and graph/DMA lifetime remain open.
+Patch 0085 also preserves unmap opcode/status, carries the existing buffer-type
+token bit and clears only the selected mapping after firmware success. Host
+callback checks do not qualify caller-side DMA recovery or graph lifetime.
