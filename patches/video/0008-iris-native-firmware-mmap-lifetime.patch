@@ -10,6 +10,7 @@ resource intervals intersecting System RAM before allocating or mapping.
 Use the existing DMA mask and a translated DMA domain. The firmware's
 single device-region interval must contain only the three MMIO pages;
 reject allocator holes, aliases and overlap with the shared DMA region.
+Match the allocator's numeric aperture bound for non-power-of-two limits.
 Populate the reference version1 fields with explicit little-endian words.
 Keep metadata immutable while PAS may own it and verify it before boot.
 Other platforms retain their existing queue allocation and callback path.
@@ -64,7 +65,7 @@ index 44f4225..55691de 100644
  	void					*iface_q_table_vaddr;
 diff --git a/drivers/media/platform/qcom/iris/iris_fw_mmap.c b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
 new file mode 100644
-index 0000000..98c75cb
+index 0000000..c6d4962
 --- /dev/null
 +++ b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
 @@ -0,0 +1,228 @@
@@ -99,11 +100,11 @@ index 0000000..98c75cb
 +static bool iris_fw_dma_range_valid(struct iris_core *core, dma_addr_t addr, size_t size)
 +{
 +	dma_addr_t last;
-+	u64 mask = dma_get_mask(core->dev) & DMA_BIT_MASK(32);
++	u64 limit = min_t(u64, dma_get_mask(core->dev), DMA_BIT_MASK(32));
 +
 +	return addr && size && IS_ALIGNED(addr, SZ_4K) && IS_ALIGNED(size, SZ_4K) &&
 +		!check_add_overflow(addr, (dma_addr_t)size - 1, &last) &&
-+		!((addr | last) & ~mask);
++		last <= limit;
 +}
 +
 +static int iris_fw_mmap_span(struct iris_core *core, u32 *base, u32 *size)

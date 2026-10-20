@@ -91,7 +91,7 @@
     },
     {
       "path": "patches/video/0008-iris-native-firmware-mmap-lifetime.patch",
-      "sha256": "b2c43d6ae095da577e9e43cae18d47ed72c54a717925bda7e9fbbc35bcfd5d5d"
+      "sha256": "21117365b226e92bc51b9aeb0d5e893e9b71cdb9efa459462267d568bf3bb238"
     }
   ],
   "sources": [
@@ -167,7 +167,8 @@
     "firmware_ownership_aarch64_composite": true,
     "native_mmap_gcc_clang_fixture": true,
     "native_mmap_clang_asan_ubsan": true,
-    "native_mmap_aarch64_composite": true
+    "native_mmap_aarch64_composite": true,
+    "legal_lower_dma_apertures": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -227,6 +228,7 @@
     "upstream_commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
     "upstream_queue_sha256": "42b1687d106f61ba48e05552715de41ca6994aee6ca80316bc25707ef7001ef8",
     "upstream_common_sha256": "980874f20f364d1569af80e3cdc2196e18a9709e03ddb6d4b415e0ac2b1201a2",
-    "system_ram_intersection_rejected": true
+    "system_ram_intersection_rejected": true,
+    "numeric_aperture_limit": true
   }
 }

@@ -46,6 +46,7 @@ cat > "$work/check.cpp" <<'CPP'
 #define READ_ONCE(value) (value)
 #define min(a, b) std::min((a), (b))
 #define max(a, b) std::max((a), (b))
+#define min_t(type, a, b) std::min<type>((a), (b))
 struct device { u64 mask; } device;
 struct platform_device {} pdev;
 struct resource { u64 start, end; };
@@ -286,6 +287,12 @@ int main() {
         core.fw_mmap = saved; core.sfr_daddr = sfr; core.fw_owned = false;
         iris_hfi_queues_deinit(&core); empty(core);
     }
+    reset(core); next_buffer = 0x31000000;
+    mapped_addresses = {0xb1002000, 0xb1001000, 0xb1000000};
+    assert(iris_hfi_queues_init(&core) == 0); core.fw_owned = true;
+    assert(iris_vpu_setup_ucregion_memory_map(&core) == 0);
+    assert(device.mask == 0xdfffffff);
+    core.fw_owned = false; iris_hfi_queues_deinit(&core); empty(core);
     reset(core); domain.type = IOMMU_DOMAIN_DMA_FQ;
     assert(iris_hfi_queues_init(&core) == 0); iris_hfi_queues_deinit(&core); empty(core);
     reset(core); core.fw_owned = true;
