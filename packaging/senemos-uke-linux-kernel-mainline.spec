@@ -163,6 +163,7 @@ CC=clang bash native-profile/tests/battery-preconfigured-apply-contract.sh "$PWD
 CC=clang bash native-profile/tests/audio-gpr-bounds-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-prm-response-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-unmap-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-response-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh
@@ -280,6 +281,7 @@ fi
 - Bound APM basic replies and propagate readiness and PRM firmware errors
 - Preserve APM unmap status and separate data/position buffer handles
 - Correlate PRM replies with one pending token, opcode and parameter
+- Bound graph events, DMA response payloads and period indices
 - Keep audio disabled; add actual-source response regression fixtures
 
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
