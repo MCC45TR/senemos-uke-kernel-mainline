@@ -63,7 +63,7 @@ test-entry:
 
 .PHONY: kvm-singleboot-srpm
 kvm-singleboot-srpm:
-	bash tests/kvm-singleboot-package-contract.sh
+	bash -x tests/kvm-singleboot-package-contract.sh
 	top="$$(realpath -m "$(outdir)/kvm-singleboot-rpmbuild")"
 	mkdir -p "$$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS}
 	install -m644 packaging/kvm-singleboot.json packaging/KVM-SINGLEBOOT.md LICENSE "$$top/SOURCES/"
