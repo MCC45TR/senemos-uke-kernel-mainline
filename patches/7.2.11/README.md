@@ -12,6 +12,13 @@ Only a successful reply clears the selected mapping. Source fixtures cover
 success, rejection, missing graph, allocation/send failure and timeout. DMA
 recovery in callers and stale graph-token reuse retain separate limits.
 
+The 20 October source continuation adds patches 0086–0092: PRM transaction
+matching, graph response bounds, dynamic GPR callback draining, receive queue
+ownership, a sleepable compressed-state lock, complete 128 KiB token lengths
+and validated buffer submissions/completions. GCC/Clang fault fixtures and
+AArch64 objects pass. Static service/PDR and full DMA/stream recovery remain
+unqualified. Audio stays disabled and no physical result is promoted.
+
 18 October 2026: carry the complete 77-patch Uke queue from 7.2.10-30 onto
 signed Linux 7.2.11. The native profile also preserves an explicit charger boot
 through standard bootconfig and an initramfs switch-root wrapper. Build, package,

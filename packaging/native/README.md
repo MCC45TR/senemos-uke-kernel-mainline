@@ -166,3 +166,19 @@ a request. Late/duplicate/unrelated replies cannot overwrite its result.
 The module-wide 32-bit sequence survives device reprobe; wire wrap and module
 reload are not an unlimited epoch guarantee. Exact firmware token echo and
 callback teardown remain separate admission gates. Audio stays disabled.
+
+### Transaction and buffer follow-up, 20 October 2026
+
+Patches 0086–0092 extend the source candidate with correlated PRM replies,
+graph payload/period bounds, dynamic-port callback draining, private receive
+batches and a sleepable compressed-stream lock. Buffer producers preserve the
+ring position after failed sends and carry advertised 128 KiB lengths in an
+8-bit index/24-bit length host token. Invalid DMA replies do not publish normal
+period progress. These changes introduce no firmware selector or board value.
+
+Actual-source fault fixtures cover the previous failures and the corrected
+paths under GCC/Clang ASan/UBSan. Full AArch64 driver objects compile with
+`WERROR=1`. Static service/PDR teardown, period reuse/late DMA replies,
+caller-side XRUN/error recovery and complete DMA ownership remain open.
+Firmware token echo, fitted codec/amplifier, calibration/protection and physical
+stream acceptance are separate gates; the native audio profile stays disabled.
