@@ -13,6 +13,10 @@ jq '.releases += [.releases[0]]' "$work/release.json" > "$work/duplicate.json"
 if release_fields "$work/duplicate.json" 2>/dev/null; then exit 1; fi
 jq '.latest_stable.version="7.3/../../foreign"' "$work/release.json" > "$work/path.json"
 if release_fields "$work/path.json" 2>/dev/null; then exit 1; fi
+for invalid in '0' '-1' '1792365298.5' '"1792365298"' '999999999999999'; do
+    jq --argjson epoch "$invalid" '.releases[0].released.timestamp=$epoch' "$work/release.json" > "$work/epoch.json"
+    if release_fields "$work/epoch.json" 2>/dev/null; then exit 1; fi
+done
 cat > "$work/contract" <<'TEXT'
 7.2.11-16-kvm 7\.2\.11-16 7[.]2[.]11-16
 7.2.11 7\.2\.11 7[.]2[.]11
@@ -23,4 +27,18 @@ cat > "$work/expected" <<'TEXT'
 7.3.0 7\.3\.0 7[.]3[.]0
 TEXT
 cmp "$work/contract" "$work/expected"
-echo 'Exact upstream URLs, duplicate/path refusal and plain/regex version identities passed'
+cat > "$work/builds.json" <<'JSON'
+{"items":[{"id":42,"state":"succeeded","source_package":{"name":"senemos-uke-linux-kernel-mainline","version":"7.3.0-1","url":"https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test/srpm-builds/42/kernel.src.rpm"},"chroots":["fedora-rawhide-aarch64"]}]}
+JSON
+[[ $(matching_build "$work/builds.json" senemos-uke-linux-kernel-mainline 7.3.0-1 | jq -r .id) == 42 ]]
+[[ $(matching_build "$work/builds.json" senemos-uke-linux-kernel-mainline-kvm 7.3.0-1 | jq -r .state) == absent ]]
+[[ $(matching_build "$work/builds.json" senemos-uke-linux-kernel-mainline 7.2.11-16 | jq -r .state) == absent ]]
+for change in '.items[0].chroots=["fedora-rawhide-x86_64"]' \
+              '.items[0].source_package.url="https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test:custom:trial/srpm-builds/42/kernel.src.rpm"' \
+              '.items[0].id="42/foreign"'; do
+    jq "$change" "$work/builds.json" > "$work/rejected-builds.json"
+    [[ $(matching_build "$work/rejected-builds.json" senemos-uke-linux-kernel-mainline 7.3.0-1 | jq -r .state) == absent ]]
+done
+jq '.items += [.items[0]|.id=43|.state="failed"]' "$work/builds.json" > "$work/latest-builds.json"
+[[ $(matching_build "$work/latest-builds.json" senemos-uke-linux-kernel-mainline 7.3.0-1 | jq -r .state) == failed ]]
+echo 'Exact release, timestamp, version, package, repository, architecture and newest-build selection passed'

@@ -10,10 +10,19 @@ release_fields() {
         if ($r|length)==1 and ($r[0].moniker|IN("mainline","stable","longterm")) and
            $r[0].source==("https://cdn.kernel.org/pub/linux/kernel/v"+($v|split(".")[0])+".x/linux-"+$v+".tar.xz") and
            $r[0].pgp==("https://cdn.kernel.org/pub/linux/kernel/v"+($v|split(".")[0])+".x/linux-"+$v+".tar.sign") and
-           ($r[0].released.timestamp|type)=="number" then
+           ($r[0].released.timestamp|type)=="number" and
+           ($r[0].released.timestamp|.>0 and .==floor and .<=now) then
           [$v, $r[0].source, $r[0].pgp, ($r[0].released.timestamp|tostring)]|@tsv
         else error("Unadmitted upstream release metadata") end
       else error("Invalid upstream version") end' "$metadata"
+}
+matching_build() {
+    jq -cer --arg package "$2" --arg evr "$3" '
+      [.items[] | select(.source_package.name==$package and .source_package.version==$evr) |
+       select(.source_package.url|startswith("https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test/srpm-builds/")) |
+       select(.chroots|index("fedora-rawhide-aarch64")) |
+       select(.id|type=="number" and .>0 and .==floor)] |
+      sort_by(.id) | last // {state:"absent"}' "$1"
 }
 replace_version() {
     local file=$1 old=$2 next=$3 old_release=$4 next_release=$5 content literal replacement
@@ -43,6 +52,9 @@ prepare_metadata() {
     old=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
     old_release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
     [[ $old-$old_release != "$evr" ]] || { printf 'unchanged\t%s\n' "$evr"; return; }
+    [[ $(printf '%s\n' "$old-$old_release" "$evr" | sort -V | tail -1) == "$evr" ]] || {
+        echo 'Refusing an automatic metadata downgrade' >&2; return 1;
+    }
     version=${evr%-*} release=${evr##*-} abi=$evr
     [[ $role != kvm-singleboot ]] || abi=$evr-kvm
     sed -i "s/^Version: .*/Version: $version/; s/^Release: [0-9][0-9]*/Release: $release/; s/%{version}-$old_release\//%{version}-$release\//g" "$spec"
@@ -82,10 +94,10 @@ prepare_common() {
     curl -fL --connect-timeout 20 --max-time 90 "$signature" -o "$sig.part"
     keyring=$(mktemp -d); chmod 700 "$keyring"
     CANDIDATE_GPG_HOME=$keyring
-    trap 'gpgconf --homedir "$CANDIDATE_GPG_HOME" --kill gpg-agent; rm -rf -- "$CANDIDATE_GPG_HOME"' EXIT
+    trap 'gpgconf --homedir "$CANDIDATE_GPG_HOME" --kill all; rm -rf -- "$CANDIDATE_GPG_HOME"' EXIT
     gpg --homedir "$keyring" --batch --import configs/keys/linux-stable.asc
     # Pinned primary fingerprints published by kernel.org/signature.html.
-    gpg --homedir "$keyring" --batch --auto-key-locate clear,wkd --locate-keys torvalds@kernel.org gregkh@kernel.org
+    timeout 90 gpg --homedir "$keyring" --batch --auto-key-locate clear,wkd --locate-keys torvalds@kernel.org gregkh@kernel.org
     xz -cd "$archive.part" | gpg --homedir "$keyring" --batch --status-fd=1 --verify "$sig.part" - > "$keyring/status"
     status=$(awk '$1=="[GNUPG:]" && $2=="VALIDSIG" {print $3, $NF}' "$keyring/status")
     read -r signer primary <<< "$status"
@@ -109,6 +121,7 @@ prepare_common() {
     replace_version tests/mainline-package-contract.sh "$current" "$next" "$release" 1
     sed -i "s/^Version: .*/Version: $next/; s@^%setup -q -n linux-.*@%setup -q -n $tree@" "$spec"
     # Clean COPR clones must fetch the admitted original URL, including x.y releases.
+    # shellcheck disable=SC2016 # Preserve Make and jq expressions in the recipe.
     sed -i 's@"https://cdn.kernel.org/pub/linux/kernel/v7.x/$$name"@"$$(jq -er --arg n "$$name" '\''if ($n|endswith(".tar.sign")) then .signature_url else .source_url end'\'' manifests/linux-$(version).json)"@' Makefile
     if [[ -f manifests/llcc-source-candidate-20261020.json ]]; then
         value=$next-1
