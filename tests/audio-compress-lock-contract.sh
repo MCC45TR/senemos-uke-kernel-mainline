@@ -26,9 +26,10 @@ struct q6apm_dai_rtd{
  uint32_t pcm_count;int state;bool notify_on_drain;
 C
 awk '/^struct q6apm_dai_rtd \{/ {in_struct=1} in_struct && /^[[:space:]]+(spinlock_t|struct mutex) lock;/ {print} in_struct && /^};/ {in_struct=0}' "$source" >> "$work/check.c"
+awk '/^#define APM_WRITE_TOKEN_LEN_SHIFT[[:space:]]/ {print}' "$kernel/sound/soc/qcom/qdsp6/q6apm.h" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 };
-enum {APM_CLIENT_EVENT_CMD_EOS_DONE=1,APM_CLIENT_EVENT_DATA_WRITE_DONE=2,APM_WRITE_TOKEN_LEN_SHIFT=16,APM_LAST_BUFFER_FLAG=1U<<30,Q6APM_STREAM_STOPPED=1,Q6APM_STREAM_RUNNING=2};
+enum {APM_CLIENT_EVENT_CMD_EOS_DONE=1,APM_CLIENT_EVENT_DATA_WRITE_DONE=2,APM_LAST_BUFFER_FLAG=1U<<30,Q6APM_STREAM_STOPPED=1,Q6APM_STREAM_RUNNING=2};
 static int fragments,drains,writes,eos;static uint32_t sent_bytes,sent_flags;
 static void snd_compr_drain_notify(struct snd_compr_stream *s){(void)s;drains++;}
 static void snd_compr_fragment_elapsed(struct snd_compr_stream *s){(void)s;fragments++;}

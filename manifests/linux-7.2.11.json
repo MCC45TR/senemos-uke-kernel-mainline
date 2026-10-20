@@ -368,6 +368,10 @@
     {
       "path": "patches/7.2.11/0090-q6apm-use-sleepable-compressed-stream-lock.patch",
       "sha256": "c903bd888bcba2d29ee36f19dfb697dc7085012adf48daa249b74e2585d08dd5"
+    },
+    {
+      "path": "patches/7.2.11/0091-q6apm-bound-and-serialize-buffer-submissions.patch",
+      "sha256": "0b11401e75101b3bac81117ae8fcce41dc3a8c6384d54e3ba0bface787b21bea"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

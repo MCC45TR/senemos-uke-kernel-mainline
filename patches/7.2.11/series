@@ -88,3 +88,4 @@
 0088-gpr-drain-dynamic-port-callbacks-before-free.patch
 0089-apr-detach-rx-batch-under-queue-lock.patch
 0090-q6apm-use-sleepable-compressed-stream-lock.patch
+0091-q6apm-bound-and-serialize-buffer-submissions.patch
