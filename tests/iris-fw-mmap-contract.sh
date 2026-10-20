@@ -66,6 +66,8 @@ struct iris_core {
 };
 constexpr int IOMMU_DOMAIN_DMA = 1, IOMMU_DOMAIN_DMA_FQ = 2;
 constexpr unsigned IORESOURCE_MEM = 1, DMA_BIDIRECTIONAL = 0, GFP_KERNEL = 0;
+constexpr unsigned IORESOURCE_SYSTEM_RAM = 2, IORES_DESC_NONE = 0;
+constexpr int REGION_INTERSECTS = 0, REGION_DISJOINT = 1, REGION_MIXED = 2;
 constexpr unsigned DMA_ATTR_WRITE_COMBINE = 1;
 constexpr dma_addr_t DMA_MAPPING_ERROR = ~dma_addr_t{0};
 static std::array<u8, 0xf0000> registers;
@@ -79,6 +81,7 @@ static std::vector<std::pair<unsigned, u32>> writes;
 static unsigned alloc_calls, free_calls, map_calls, barriers, callbacks, warnings;
 static unsigned fail_alloc, fail_map;
 static int missing_resource;
+static int memory_intersection;
 static bool domain_present;
 static dma_addr_t next_buffer;
 static platform_device *to_platform_device(struct device *) { return &pdev; }
@@ -93,6 +96,10 @@ static resource *platform_get_resource_byname(platform_device *, unsigned type, 
     assert(false); return nullptr;
 }
 static u64 resource_size(resource *r) { return r->end-r->start+1; }
+static int region_intersects(u64 start, std::size_t size, unsigned long flags, unsigned long desc) {
+    assert(size == SZ_4K && flags == IORESOURCE_SYSTEM_RAM && desc == IORES_DESC_NONE);
+    return start == resources[1].start ? memory_intersection : REGION_DISJOINT;
+}
 static u64 dma_get_mask(struct device *d) { return d->mask; }
 static void *dma_alloc_attrs(struct device *, std::size_t size, dma_addr_t *addr,
                              unsigned gfp, unsigned attrs) {
@@ -169,6 +176,7 @@ static void reset(iris_core &core) {
     unmapped.clear(); writes.clear();
     alloc_calls = free_calls = map_calls = barriers = callbacks = warnings = 0;
     fail_alloc = fail_map = 0; missing_resource = -1;
+    memory_intersection = REGION_DISJOINT;
     domain_present = true; domain.type = IOMMU_DOMAIN_DMA; next_buffer = 0xc1000000;
 }
 static __le32 *payload(iris_core &core) {
@@ -242,6 +250,11 @@ int main() {
     }
     reset(core); fail_alloc = 1;
     assert(iris_hfi_queues_init(&core) == -ENOMEM && map_calls == 0); empty(core);
+    for (int ram : {REGION_INTERSECTS, REGION_MIXED}) {
+        reset(core); memory_intersection = ram;
+        assert(iris_hfi_queues_init(&core) == -EINVAL && alloc_calls == 0 && map_calls == 0);
+        empty(core);
+    }
     for (unsigned fail = 1; fail <= 3; ++fail) {
         reset(core); fail_map = fail;
         assert(iris_hfi_queues_init(&core) == -EIO && free_calls == 1); empty(core);

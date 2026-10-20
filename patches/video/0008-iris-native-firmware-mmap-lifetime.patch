@@ -4,7 +4,8 @@ Subject: [PATCH] media: iris: own the Iris33 firmware mmap through the DMA API
 Allocate one complete UC region for queues, SFR and the version1 mmap.
 Map named AON, fence and timer resources through the DMA API. Retain all
 mappings until PAS ownership is released, unwind partial maps in reverse
-order and reject invalid ranges before any firmware boot command.
+order and reject invalid ranges before any firmware boot command. Reject
+resource intervals intersecting System RAM before allocating or mapping.
 
 Use the existing DMA mask and a translated DMA domain. The firmware's
 single device-region interval must contain only the three MMIO pages;
@@ -63,12 +64,13 @@ index 44f4225..55691de 100644
  	void					*iface_q_table_vaddr;
 diff --git a/drivers/media/platform/qcom/iris/iris_fw_mmap.c b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
 new file mode 100644
-index 0000000..8d9864a
+index 0000000..98c75cb
 --- /dev/null
 +++ b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,228 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +#include <linux/dma-mapping.h>
++#include <linux/mm.h>
 +#include <linux/iommu.h>
 +#include <linux/overflow.h>
 +#include <linux/platform_device.h>
@@ -221,7 +223,9 @@ index 0000000..8d9864a
 +							    iris_fw_mmap_names[i]);
 +		if (!resources[i] || resources[i]->end < resources[i]->start ||
 +		    resource_size(resources[i]) != SZ_4K ||
-+		    !IS_ALIGNED(resources[i]->start, SZ_4K))
++		    !IS_ALIGNED(resources[i]->start, SZ_4K) ||
++		    region_intersects(resources[i]->start, SZ_4K, IORESOURCE_SYSTEM_RAM,
++				      IORES_DESC_NONE) != REGION_DISJOINT)
 +			return -EINVAL;
 +		for (j = 0; j < i; j++)
 +			if (resources[i]->start <= resources[j]->end &&
