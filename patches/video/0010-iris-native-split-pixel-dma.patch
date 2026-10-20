@@ -1,0 +1,676 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: separate native pixel DMA and gate readiness
+
+Bind the pixel stream as a platform component with a separate DMA domain.
+Wait for both providers before publishing video nodes. Select one buffer
+owner for VB2 queues, internal allocations and HFI context-bank flags.
+Cover encoder input and decoder output. Reference the allocation owner
+until each internal buffer is freed through that same device.
+
+Use the native binding's MMIO pages and pixel child. Preserve the DMA
+aperture and legacy platform paths. Let the platform bus own DMA setup
+and default-domain lifetime. Do not import Android DMA callbacks, manual
+domain ownership or fixed board IOVAs.
+
+Protocol: Qualcomm GPL-2.0-only VIDC memory extension, HFI buffer packet
+and Cliffs context-bank table in OnePlus SM7675 modules/DT revision
+1138e00fee63582a0cc6a53af3286621786827b7. Compare Uke OEM kernel5712080a,
+DT94c84aeb and upstreamf47d2236 separately.
+
+Keep this candidate inactive. It adds no native core match, board DT,
+firmware payload, secure context or physical codec claim. Resolve open
+sessions and failed-PAS forced removal before native activation.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+diff --git a/drivers/media/platform/qcom/iris/Makefile b/drivers/media/platform/qcom/iris/Makefile
+index 7373b61..81f0584 100644
+--- a/drivers/media/platform/qcom/iris/Makefile
++++ b/drivers/media/platform/qcom/iris/Makefile
+@@ -2,6 +2,7 @@ qcom-iris-objs += iris_buffer.o \
+              iris_common.o \
+              iris_core.o \
+              iris_ctrls.o \
++             iris_dma.o \
+              iris_firmware.o \
+              iris_fw_mmap.o \
+              iris_hfi_common.o \
+diff --git a/drivers/media/platform/qcom/iris/iris_buffer.c b/drivers/media/platform/qcom/iris/iris_buffer.c
+index 246ad0a..391bed5 100644
+--- a/drivers/media/platform/qcom/iris/iris_buffer.c
++++ b/drivers/media/platform/qcom/iris/iris_buffer.c
+@@ -7,6 +7,7 @@
+ #include <media/v4l2-mem2mem.h>
+ 
+ #include "iris_buffer.h"
++#include "iris_dma.h"
+ #include "iris_instance.h"
+ #include "iris_power.h"
+ #include "iris_vpu_buffer.h"
+@@ -529,12 +530,15 @@ static int iris_create_internal_buffer(struct iris_inst *inst,
+ 				       enum iris_buffer_type buffer_type, u32 index)
+ {
+ 	struct iris_buffers *buffers = &inst->buffers[buffer_type];
+-	struct iris_core *core = inst->core;
+ 	struct iris_buffer *buffer;
++	struct device *dev;
+ 
+ 	if (!buffers->size)
+ 		return 0;
+ 
++	dev = iris_buffer_dma_device(inst, buffer_type);
++	if (IS_ERR(dev))
++		return PTR_ERR(dev);
+ 	buffer = kzalloc_obj(*buffer);
+ 	if (!buffer)
+ 		return -ENOMEM;
+@@ -544,10 +548,12 @@ static int iris_create_internal_buffer(struct iris_inst *inst,
+ 	buffer->index = index;
+ 	buffer->buffer_size = buffers->size;
+ 	buffer->dma_attrs = DMA_ATTR_WRITE_COMBINE | DMA_ATTR_NO_KERNEL_MAPPING;
++	buffer->dma_dev = get_device(dev);
+ 
+-	buffer->kvaddr = dma_alloc_attrs(core->dev, buffer->buffer_size,
++	buffer->kvaddr = dma_alloc_attrs(buffer->dma_dev, buffer->buffer_size,
+ 					 &buffer->device_addr, GFP_KERNEL, buffer->dma_attrs);
+ 	if (!buffer->kvaddr) {
++		put_device(buffer->dma_dev);
+ 		kfree(buffer);
+ 		return -ENOMEM;
+ 	}
+@@ -682,11 +688,10 @@ int iris_queue_internal_buffers(struct iris_inst *inst, u32 plane)
+ 
+ int iris_destroy_internal_buffer(struct iris_inst *inst, struct iris_buffer *buffer)
+ {
+-	struct iris_core *core = inst->core;
+-
+ 	list_del(&buffer->list);
+-	dma_free_attrs(core->dev, buffer->buffer_size, buffer->kvaddr,
++	dma_free_attrs(buffer->dma_dev, buffer->buffer_size, buffer->kvaddr,
+ 		       buffer->device_addr, buffer->dma_attrs);
++	put_device(buffer->dma_dev);
+ 	kfree(buffer);
+ 
+ 	return 0;
+diff --git a/drivers/media/platform/qcom/iris/iris_buffer.h b/drivers/media/platform/qcom/iris/iris_buffer.h
+index 75bb767..14782d8 100644
+--- a/drivers/media/platform/qcom/iris/iris_buffer.h
++++ b/drivers/media/platform/qcom/iris/iris_buffer.h
+@@ -79,6 +79,7 @@ enum iris_buffer_attributes {
+  * @device_addr: device address of the buffer
+  * @kvaddr: kernel virtual address of the buffer
+  * @dma_attrs: dma attributes
++ * @dma_dev: referenced allocation owner for an internal DMA buffer
+  * @flags: buffer flags. It is represented as bit masks.
+  * @timestamp: timestamp of the buffer in nano seconds (ns)
+  * @attr: enum for iris buffer attributes
+@@ -96,6 +97,7 @@ struct iris_buffer {
+ 	dma_addr_t			device_addr;
+ 	void				*kvaddr;
+ 	unsigned long			dma_attrs;
++	struct device			*dma_dev;
+ 	u32				flags; /* V4L2_BUF_FLAG_* */
+ 	u64				timestamp;
+ 	enum iris_buffer_attributes	attr;
+diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
+index 55691de..b9f4e80 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -37,6 +37,7 @@ struct qcom_ubwc_cfg_data;
+  * struct iris_core - holds core parameters valid for all instances
+  *
+  * @dev: reference to device structure
++ * @pixel_dev: separately bound pixel DMA component, when required
+  * @reg_base: IO memory base address
+  * @irq: iris irq
+  * @v4l2_dev: a holder for v4l2 device structure
+@@ -84,6 +85,7 @@ struct qcom_ubwc_cfg_data;
+ 
+ struct iris_core {
+ 	struct device				*dev;
++	struct device				*pixel_dev;
+ 	void __iomem				*reg_base;
+ 	int					irq;
+ 	struct v4l2_device			v4l2_dev;
+@@ -132,5 +134,7 @@ struct iris_core {
+ 
+ int iris_core_init(struct iris_core *core);
+ int iris_core_deinit(struct iris_core *core);
++int iris_register_video_devices(struct iris_core *core);
++void iris_unregister_video_devices(struct iris_core *core);
+ 
+ #endif
+diff --git a/drivers/media/platform/qcom/iris/iris_dma.c b/drivers/media/platform/qcom/iris/iris_dma.c
+new file mode 100644
+index 0000000..8a22d54
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_dma.c
+@@ -0,0 +1,192 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <linux/component.h>
++#include <linux/dma-mapping.h>
++#include <linux/iommu.h>
++#include <linux/module.h>
++#include <linux/of_platform.h>
++
++#include "iris_core.h"
++#include "iris_dma.h"
++#include "iris_instance.h"
++
++static bool iris_dma_domain_valid(struct iommu_domain *domain)
++{
++	return domain && (domain->type == IOMMU_DOMAIN_DMA || domain->type == IOMMU_DOMAIN_DMA_FQ);
++}
++
++struct device *iris_buffer_dma_device(struct iris_inst *inst, enum iris_buffer_type type)
++{
++	struct iris_core *core = inst->core;
++	bool pixel;
++
++	if (!core->iris_platform_data->split_dma)
++		return core->dev;
++	if (!core->pixel_dev)
++		return ERR_PTR(-ENODEV);
++	if (inst->domain != DECODER && inst->domain != ENCODER)
++		return ERR_PTR(-EINVAL);
++	switch (type) {
++	case BUF_INPUT:
++		pixel = inst->domain == ENCODER;
++		break;
++	case BUF_OUTPUT:
++		pixel = inst->domain == DECODER;
++		break;
++	case BUF_DPB:
++	case BUF_VPSS:
++	case BUF_PARTIAL:
++		pixel = true;
++		break;
++	case BUF_ARP:
++	case BUF_BIN:
++	case BUF_COMV:
++	case BUF_NON_COMV:
++	case BUF_LINE:
++	case BUF_PERSIST:
++		pixel = false;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	return pixel ? core->pixel_dev : core->dev;
++}
++
++static int iris_pixel_bind(struct device *dev, struct device *master, void *data)
++{
++	struct iris_core *core = data;
++	struct iommu_domain *pixel = iommu_get_domain_for_dev(dev);
++	struct iommu_domain *control = iommu_get_domain_for_dev(master);
++
++	if (!iris_dma_domain_valid(pixel) || !iris_dma_domain_valid(control) || pixel == control)
++		return -EINVAL;
++	core->pixel_dev = dev;
++
++	return 0;
++}
++
++static void iris_pixel_unbind(struct device *dev, struct device *master, void *data)
++{
++	struct iris_core *core = data;
++
++	core->pixel_dev = NULL;
++}
++
++static const struct component_ops iris_pixel_ops = {
++	.bind = iris_pixel_bind,
++	.unbind = iris_pixel_unbind,
++};
++
++static int iris_pixel_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct iris_core *core;
++	int ret;
++
++	if (!dev->parent || !of_device_is_compatible(dev->parent->of_node, "qcom,sm7675-iris"))
++		return -EINVAL;
++	core = dev_get_drvdata(dev->parent);
++	if (!core)
++		return -EPROBE_DEFER;
++	if (!iris_dma_domain_valid(iommu_get_domain_for_dev(dev)))
++		return -ENODEV;
++	ret = dma_set_mask_and_coherent(dev, core->iris_platform_data->dma_mask);
++	if (ret)
++		return ret;
++	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
++	dma_set_seg_boundary(dev, DMA_BIT_MASK(32));
++
++	return component_add(dev, &iris_pixel_ops);
++}
++
++static void iris_pixel_remove(struct platform_device *pdev)
++{
++	component_del(&pdev->dev, &iris_pixel_ops);
++}
++
++static int iris_pixel_master_bind(struct device *dev)
++{
++	struct iris_core *core = dev_get_drvdata(dev);
++	int ret;
++
++	ret = component_bind_all(dev, core);
++	if (ret)
++		return ret;
++	ret = iris_register_video_devices(core);
++	if (ret)
++		component_unbind_all(dev, core);
++
++	return ret;
++}
++
++static void iris_pixel_master_unbind(struct device *dev)
++{
++	struct iris_core *core = dev_get_drvdata(dev);
++
++	/* shortcut: open-session removal is unsafe; keep the native match disabled. */
++	iris_unregister_video_devices(core);
++	component_unbind_all(dev, core);
++}
++
++static const struct component_master_ops iris_pixel_master_ops = {
++	.bind = iris_pixel_master_bind,
++	.unbind = iris_pixel_master_unbind,
++};
++
++static void iris_pixel_destroy(void *data)
++{
++	struct platform_device *pdev = data;
++
++	of_platform_device_destroy(&pdev->dev, NULL);
++}
++
++int iris_pixel_master_add(struct iris_core *core)
++{
++	struct component_match *match = NULL;
++	struct platform_device *pdev;
++	struct device_node *node;
++	int ret;
++
++	node = of_get_child_by_name(core->dev->of_node, "pixel");
++	if (!node)
++		return -EINVAL;
++	if (!of_device_is_available(node) ||
++	    !of_device_is_compatible(node, "qcom,sm7675-iris-pixel")) {
++		of_node_put(node);
++		return -EINVAL;
++	}
++	component_match_add_release(core->dev, &match, component_release_of,
++				    component_compare_of, node);
++	if (IS_ERR(match)) {
++		of_node_put(node);
++		return PTR_ERR(match);
++	}
++	pdev = of_platform_device_create(node, NULL, core->dev);
++	if (!pdev)
++		return -ENOMEM;
++	ret = devm_add_action_or_reset(core->dev, iris_pixel_destroy, pdev);
++	if (ret)
++		return ret;
++
++	return component_master_add_with_match(core->dev, &iris_pixel_master_ops, match);
++}
++
++void iris_pixel_master_del(struct iris_core *core)
++{
++	component_master_del(core->dev, &iris_pixel_master_ops);
++}
++
++static const struct of_device_id iris_pixel_match[] = {
++	{ .compatible = "qcom,sm7675-iris-pixel" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, iris_pixel_match);
++
++struct platform_driver iris_pixel_driver = {
++	.probe = iris_pixel_probe,
++	.remove = iris_pixel_remove,
++	.driver = {
++		.name = "qcom-iris-pixel",
++		.of_match_table = iris_pixel_match,
++	},
++};
+diff --git a/drivers/media/platform/qcom/iris/iris_dma.h b/drivers/media/platform/qcom/iris/iris_dma.h
+new file mode 100644
+index 0000000..aba148d
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_dma.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __IRIS_DMA_H__
++#define __IRIS_DMA_H__
++
++#include "iris_buffer.h"
++
++struct device;
++struct iris_core;
++struct platform_driver;
++
++extern struct platform_driver iris_pixel_driver;
++
++struct device *iris_buffer_dma_device(struct iris_inst *inst, enum iris_buffer_type type);
++int iris_pixel_master_add(struct iris_core *core);
++void iris_pixel_master_del(struct iris_core *core);
++
++#endif
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c b/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
+index ee2730c..6d11b3a 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
+@@ -6,6 +6,7 @@
+ #include <linux/bitfield.h>
+ 
+ #include "iris_hfi_gen2.h"
++#include "iris_dma.h"
+ #include "iris_hfi_gen2_packet.h"
+ 
+ #define UNSPECIFIED_COLOR_FORMAT 5
+@@ -1287,24 +1288,35 @@ static int iris_hfi_gen2_set_num_comv(struct iris_inst *inst)
+ 						  &num_comv, sizeof(u32));
+ }
+ 
+-static void iris_hfi_gen2_get_buffer(u32 domain, struct iris_buffer *buffer,
+-				     struct iris_hfi_buffer *buf)
++static int iris_hfi_gen2_get_buffer(struct iris_inst *inst, struct iris_buffer *buffer,
++				    struct iris_hfi_buffer *buf)
+ {
++	struct device *dev = iris_buffer_dma_device(inst, buffer->type);
++
++	if (IS_ERR(dev))
++		return PTR_ERR(dev);
++	if (buffer->dma_dev && buffer->dma_dev != dev)
++		return -EXDEV;
+ 	memset(buf, 0, sizeof(*buf));
+-	buf->type = iris_hfi_gen2_buf_type_from_driver(domain, buffer->type);
++	buf->type = iris_hfi_gen2_buf_type_from_driver(inst->domain, buffer->type);
+ 	buf->index = buffer->index;
+ 	buf->base_address = buffer->device_addr;
+ 	buf->addr_offset = 0;
+ 	buf->buffer_size = buffer->buffer_size;
+ 
+-	if (domain == DECODER && buffer->type == BUF_INPUT)
++	if (inst->domain == DECODER && buffer->type == BUF_INPUT)
+ 		buf->buffer_size = ALIGN(buffer->buffer_size, 256);
+ 	buf->data_offset = buffer->data_offset;
+ 	buf->data_size = buffer->data_size;
+ 	if (buffer->attr & BUF_ATTR_PENDING_RELEASE)
+ 		buf->flags |= HFI_BUF_HOST_FLAG_RELEASE;
+-	buf->flags |= HFI_BUF_HOST_FLAGS_CB_NON_SECURE;
++	if (inst->core->iris_platform_data->split_dma && dev == inst->core->pixel_dev)
++		buf->flags |= HFI_BUF_HOST_FLAGS_CB_NON_SECURE_PIXEL;
++	else
++		buf->flags |= HFI_BUF_HOST_FLAGS_CB_NON_SECURE;
+ 	buf->timestamp = buffer->timestamp;
++
++	return 0;
+ }
+ 
+ static int iris_hfi_gen2_session_queue_buffer(struct iris_inst *inst, struct iris_buffer *buffer)
+@@ -1314,7 +1326,9 @@ static int iris_hfi_gen2_session_queue_buffer(struct iris_inst *inst, struct iri
+ 	u32 port;
+ 	int ret;
+ 
+-	iris_hfi_gen2_get_buffer(inst->domain, buffer, &hfi_buffer);
++	ret = iris_hfi_gen2_get_buffer(inst, buffer, &hfi_buffer);
++	if (ret)
++		return ret;
+ 	if (buffer->type == BUF_COMV) {
+ 		ret = iris_hfi_gen2_set_num_comv(inst);
+ 		if (ret)
+@@ -1340,8 +1354,11 @@ static int iris_hfi_gen2_session_release_buffer(struct iris_inst *inst, struct i
+ 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
+ 	struct iris_hfi_buffer hfi_buffer;
+ 	u32 port;
++	int ret;
+ 
+-	iris_hfi_gen2_get_buffer(inst->domain, buffer, &hfi_buffer);
++	ret = iris_hfi_gen2_get_buffer(inst, buffer, &hfi_buffer);
++	if (ret)
++		return ret;
+ 	hfi_buffer.flags |= HFI_BUF_HOST_FLAG_RELEASE;
+ 	port = iris_hfi_gen2_get_port_from_buf_type(inst, buffer->type);
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_defines.h b/drivers/media/platform/qcom/iris/iris_hfi_gen2_defines.h
+index 776b21c..1ec6727 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_defines.h
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_defines.h
+@@ -219,6 +219,7 @@ enum hfi_buffer_host_flags {
+ 	HFI_BUF_HOST_FLAG_READONLY		= 0x00000010,
+ 	HFI_BUF_HOST_FLAG_CODEC_CONFIG		= 0x00000100,
+ 	HFI_BUF_HOST_FLAGS_CB_NON_SECURE	= 0x00000200,
++	HFI_BUF_HOST_FLAGS_CB_NON_SECURE_PIXEL = 0x00002000,
+ };
+ 
+ enum hfi_buffer_firmware_flags {
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_common.h b/drivers/media/platform/qcom/iris/iris_platform_common.h
+index 13e2619..60b9eb8 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_common.h
++++ b/drivers/media/platform/qcom/iris/iris_platform_common.h
+@@ -320,6 +320,7 @@ struct iris_platform_data {
+ 	u32 num_vpp_pipe;
+ 	bool no_aon;
+ 	bool fw_mmap;
++	bool split_dma;
+ 	u32 max_session_count;
+ 	/* max number of macroblocks per frame supported */
+ 	u32 max_core_mbpf;
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+index 55104a3..da9d9d2 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
++++ b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+@@ -200,6 +200,7 @@ const struct iris_platform_data sm8650_data = {
+ /* Dormant until firmware mapping, providers and controller retention are closed. */
+ const struct iris_platform_data sm7675_data = {
+ 	.fw_mmap = true,
++	.split_dma = true,
+ 	.firmware_desc = &iris_vpu33_2p_gen2_desc,
+ 	.vpu_ops = &iris_vpu33_2p_ops,
+ 	.icc_tbl = iris_icc_info_vpu3x,
+diff --git a/drivers/media/platform/qcom/iris/iris_probe.c b/drivers/media/platform/qcom/iris/iris_probe.c
+index 9478167..f9a15b7 100644
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -14,6 +14,7 @@
+ 
+ #include "iris_core.h"
+ #include "iris_ctrls.h"
++#include "iris_dma.h"
+ #include "iris_vidc.h"
+ 
+ static int iris_init_icc(struct iris_core *core)
+@@ -195,14 +196,35 @@ err_vdev_release:
+ 	return ret;
+ }
+ 
+-static void iris_remove(struct platform_device *pdev)
++int iris_register_video_devices(struct iris_core *core)
+ {
+-	struct iris_core *core;
+ 	int ret;
+ 
+-	core = platform_get_drvdata(pdev);
+-	if (!core)
+-		return;
++	ret = v4l2_device_register(core->dev, &core->v4l2_dev);
++	if (ret)
++		return ret;
++	ret = iris_register_video_device(core, DECODER);
++	if (ret)
++		goto err_v4l2;
++	ret = iris_register_video_device(core, ENCODER);
++	if (ret)
++		goto err_decoder;
++
++	return 0;
++
++err_decoder:
++	video_unregister_device(core->vdev_dec);
++err_v4l2:
++	core->vdev_dec = NULL;
++	core->vdev_enc = NULL;
++	v4l2_device_unregister(&core->v4l2_dev);
++
++	return ret;
++}
++
++void iris_unregister_video_devices(struct iris_core *core)
++{
++	int ret;
+ 
+ 	ret = iris_core_deinit(core);
+ 	if (ret)
+@@ -210,9 +232,22 @@ static void iris_remove(struct platform_device *pdev)
+ 
+ 	video_unregister_device(core->vdev_dec);
+ 	video_unregister_device(core->vdev_enc);
++	core->vdev_dec = NULL;
++	core->vdev_enc = NULL;
+ 
+ 	v4l2_device_unregister(&core->v4l2_dev);
++}
++
++static void iris_remove(struct platform_device *pdev)
++{
++	struct iris_core *core = platform_get_drvdata(pdev);
+ 
++	if (!core)
++		return;
++	if (core->iris_platform_data->split_dma)
++		iris_pixel_master_del(core);
++	else
++		iris_unregister_video_devices(core);
+ 	mutex_destroy(&core->lock);
+ }
+ 
+@@ -279,45 +314,27 @@ static int iris_probe(struct platform_device *pdev)
+ 
+ 	iris_session_init_caps(core);
+ 
+-	ret = v4l2_device_register(dev, &core->v4l2_dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = iris_register_video_device(core, DECODER);
+-	if (ret)
+-		goto err_v4l2_unreg;
+-
+-	ret = iris_register_video_device(core, ENCODER);
+-	if (ret)
+-		goto err_vdev_unreg_dec;
+-
+ 	platform_set_drvdata(pdev, core);
+ 
+ 	dma_mask = core->iris_platform_data->dma_mask;
+ 
+ 	ret = dma_set_mask_and_coherent(dev, dma_mask);
+ 	if (ret)
+-		goto err_vdev_unreg_enc;
++		return ret;
+ 
+-	dma_set_max_seg_size(&pdev->dev, DMA_BIT_MASK(32));
+-	dma_set_seg_boundary(&pdev->dev, DMA_BIT_MASK(32));
++	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
++	dma_set_seg_boundary(dev, DMA_BIT_MASK(32));
+ 
+ 	pm_runtime_set_autosuspend_delay(core->dev, AUTOSUSPEND_DELAY_VALUE);
+ 	pm_runtime_use_autosuspend(core->dev);
+ 	ret = devm_pm_runtime_enable(core->dev);
+ 	if (ret)
+-		goto err_vdev_unreg_enc;
+-
+-	return 0;
++		return ret;
+ 
+-err_vdev_unreg_enc:
+-	video_unregister_device(core->vdev_enc);
+-err_vdev_unreg_dec:
+-	video_unregister_device(core->vdev_dec);
+-err_v4l2_unreg:
+-	v4l2_device_unregister(&core->v4l2_dev);
++	if (core->iris_platform_data->split_dma)
++		return iris_pixel_master_add(core);
+ 
+-	return ret;
++	return iris_register_video_devices(core);
+ }
+ 
+ static int __maybe_unused iris_pm_suspend(struct device *dev)
+@@ -416,6 +433,21 @@ static struct platform_driver qcom_iris_driver = {
+ 	},
+ };
+ 
+-module_platform_driver(qcom_iris_driver);
++static struct platform_driver * const iris_drivers[] = {
++	&iris_pixel_driver,
++	&qcom_iris_driver,
++};
++
++static int __init iris_init(void)
++{
++	return platform_register_drivers(iris_drivers, ARRAY_SIZE(iris_drivers));
++}
++module_init(iris_init);
++
++static void __exit iris_exit(void)
++{
++	platform_unregister_drivers(iris_drivers, ARRAY_SIZE(iris_drivers));
++}
++module_exit(iris_exit);
+ MODULE_DESCRIPTION("Qualcomm iris video driver");
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/media/platform/qcom/iris/iris_vidc.c b/drivers/media/platform/qcom/iris/iris_vidc.c
+index 1c052ca..9062558 100644
+--- a/drivers/media/platform/qcom/iris/iris_vidc.c
++++ b/drivers/media/platform/qcom/iris/iris_vidc.c
+@@ -10,6 +10,7 @@
+ #include <media/videobuf2-dma-contig.h>
+ 
+ #include "iris_vidc.h"
++#include "iris_dma.h"
+ #include "iris_instance.h"
+ #include "iris_vdec.h"
+ #include "iris_venc.h"
+@@ -97,8 +98,15 @@ static int
+ iris_m2m_queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_vq)
+ {
+ 	struct iris_inst *inst = priv;
++	struct device *src_dev, *dst_dev;
+ 	int ret;
+ 
++	src_dev = iris_buffer_dma_device(inst, BUF_INPUT);
++	if (IS_ERR(src_dev))
++		return PTR_ERR(src_dev);
++	dst_dev = iris_buffer_dma_device(inst, BUF_OUTPUT);
++	if (IS_ERR(dst_dev))
++		return PTR_ERR(dst_dev);
+ 	src_vq->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+ 	src_vq->io_modes = VB2_MMAP | VB2_DMABUF;
+ 	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
+@@ -107,7 +115,8 @@ iris_m2m_queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_
+ 	src_vq->drv_priv = inst;
+ 	src_vq->buf_struct_size = sizeof(struct iris_buffer);
+ 	src_vq->min_reqbufs_allocation = MIN_BUFFERS;
+-	src_vq->dev = inst->core->dev;
++	src_vq->dev = src_dev;
++	src_vq->bidirectional = inst->core->iris_platform_data->split_dma;
+ 	src_vq->lock = &inst->ctx_q_lock;
+ 	ret = vb2_queue_init(src_vq);
+ 	if (ret)
+@@ -121,7 +130,8 @@ iris_m2m_queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_
+ 	dst_vq->drv_priv = inst;
+ 	dst_vq->buf_struct_size = sizeof(struct iris_buffer);
+ 	dst_vq->min_reqbufs_allocation = MIN_BUFFERS;
+-	dst_vq->dev = inst->core->dev;
++	dst_vq->dev = dst_dev;
++	dst_vq->bidirectional = inst->core->iris_platform_data->split_dma;
+ 	dst_vq->lock = &inst->ctx_q_lock;
+ 
+ 	return vb2_queue_init(dst_vq);

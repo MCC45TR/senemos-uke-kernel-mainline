@@ -1,0 +1,144 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] dt-bindings: media: describe native SM7675 Iris DMA resources
+
+Describe the control stream, pixel child and four named MMIO resources.
+Keep each device's single translated IOMMU domain explicit. Require the
+clocks, resets, power domains and interconnects consumed by the candidate.
+
+This binding describes an inactive native driver interface. It adds no
+board DT, fixed stream ID or physical-resource claim. Compare Uke OEM
+DT94c84aeb and OnePlus SM7675 modules/DT1138e00f separately.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+diff --git a/Documentation/devicetree/bindings/media/qcom,sm7675-iris.yaml b/Documentation/devicetree/bindings/media/qcom,sm7675-iris.yaml
+new file mode 100644
+index 0000000..a312cc0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/qcom,sm7675-iris.yaml
+@@ -0,0 +1,125 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/media/qcom,sm7675-iris.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Qualcomm SM7675 Iris video accelerator with separate pixel DMA
++
++maintainers:
++  - MCC45TR <75160848+MCC45TR@users.noreply.github.com>
++
++description: |
++  The control device owns firmware, queues and non-pixel buffers. Its pixel
++  child owns raw input for encoding, raw output for decoding and internal
++  picture buffers. Both devices require separate translated DMA domains.
++  The AON, hardware-fence and timer pages are firmware-visible MMIO mappings.
++  This describes the native resource interface, not a board configuration.
++
++properties:
++  compatible:
++    const: qcom,sm7675-iris
++
++  reg:
++    items:
++      - description: Iris register block
++      - description: Firmware AON page
++      - description: Hardware-fence page
++      - description: Architectural timer page
++
++  reg-names:
++    items:
++      - const: iris
++      - const: aon
++      - const: fence
++      - const: qtimer
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    maxItems: 3
++
++  clock-names:
++    items:
++      - const: iface
++      - const: core
++      - const: vcodec0_core
++
++  power-domains:
++    maxItems: 2
++
++  power-domain-names:
++    items:
++      - const: venus
++      - const: vcodec0
++
++  resets:
++    maxItems: 3
++
++  reset-names:
++    items:
++      - const: bus
++      - const: xo
++      - const: core
++
++  interconnects:
++    maxItems: 2
++
++  interconnect-names:
++    items:
++      - const: cpu-cfg
++      - const: video-mem
++
++  iommus:
++    maxItems: 1
++    description: Non-pixel control stream only
++
++  dma-coherent: true
++
++  memory-region:
++    maxItems: 1
++
++  firmware-name:
++    maxItems: 1
++
++  operating-points-v2: true
++
++  opp-table:
++    type: object
++
++  pixel:
++    type: object
++    additionalProperties: false
++    properties:
++      compatible:
++        const: qcom,sm7675-iris-pixel
++      iommus:
++        maxItems: 1
++        description: Non-secure pixel stream in a separate DMA domain
++      dma-coherent: true
++    required:
++      - compatible
++      - iommus
++      - dma-coherent
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - clocks
++  - clock-names
++  - power-domains
++  - power-domain-names
++  - resets
++  - reset-names
++  - interconnects
++  - interconnect-names
++  - iommus
++  - dma-coherent
++  - memory-region
++  - operating-points-v2
++  - pixel
++
++additionalProperties: false
