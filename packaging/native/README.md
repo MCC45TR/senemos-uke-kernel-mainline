@@ -146,3 +146,13 @@ ported to7.2.11 as patch0079. `audio-profile` defaults to `disabled`; optional
 buses remain disabled. It creates no sound card or playback/capture path.
 The host-only preset inspector never ships in the target package. Source and
 software checks do not qualify internal speaker or microphone operation.
+
+## Audio firmware responses, 20 October 2026
+
+The 7.2.11-12 source candidate adds patch 0084. PRM request/release basic errors
+reach the existing synchronous DSP error path. APM basic replies are bounded,
+and readiness errors must match the active nonzero query token. A successful
+basic ACK still waits for the service-specific response. Actual-source GCC and
+Clang sanitizer fixtures and AArch64 driver objects pass. The audio profile
+remains disabled; full package, admitted firmware and physical audio validation
+are separate. PRM stale-response correlation and graph/DMA lifetime remain open.

@@ -15,6 +15,7 @@ typedef uint32_t u32;
 C
 # Header wire layout is copied directly from the kernel under test.
 awk '/^struct gpr_hdr \{/ {emit=1} emit {print} emit && /^} __packed;/ {exit}' "$kernel/include/linux/soc/qcom/apr.h" >> "$work/check.c"
+awk '/^#define GPR_BASIC_RSP_RESULT[[:space:]]/ {print}' "$kernel/include/linux/soc/qcom/apr.h" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 #define GPR_PKT_VER 0
 #define GPR_PKT_HEADER_WORD_SIZE 6
@@ -45,7 +46,7 @@ typedef struct {struct device dev;}gpr_device_t;
 static void *dev_get_drvdata(struct device *d){return d->data;}
 #define wake_up(p) (++*(p))
 C
-awk '/^#define PRM_CMD_RSP_(REQUEST|RELEASE)_HW_RSC/ {print}' "$kernel/sound/soc/qcom/qdsp6/q6prm.c" >> "$work/check.c"
+awk '/^#define PRM_CMD_(RSP_)?(REQUEST|RELEASE)_HW_RSC[[:space:]]/ {print}' "$kernel/sound/soc/qcom/qdsp6/q6prm.c" >> "$work/check.c"
 awk '/^static int prm_callback\(/ {emit=1} emit {print} emit && /^}/ {exit}' "$kernel/sound/soc/qcom/qdsp6/q6prm.c" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct apr_rx_buf *packet(int len){

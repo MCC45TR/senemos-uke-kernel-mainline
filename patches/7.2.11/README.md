@@ -1,5 +1,12 @@
 # Uke Linux 7.2.11 adaptation
 
+**20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
+errors to the existing request/release error path and handles token-matched APM
+readiness errors. It validates APM basic payloads before parsing and preserves
+the specific-response requirement after a successful ACK. Actual-source host
+fixtures and AArch64 objects are separate from package, firmware and physical
+acceptance. The native audio profile remains disabled.
+
 18 October 2026: carry the complete 77-patch Uke queue from 7.2.10-30 onto
 signed Linux 7.2.11. The native profile also preserves an explicit charger boot
 through standard bootconfig and an initramfs switch-root wrapper. Build, package,

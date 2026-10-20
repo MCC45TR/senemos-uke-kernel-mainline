@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 11
+%global senemos_build_release 12
 %else
 %global senemos_build_release 1
 %endif
@@ -161,6 +161,7 @@ CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-apply-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-gpr-bounds-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-prm-response-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh
@@ -274,6 +275,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
+- Bound APM basic replies and propagate readiness and PRM firmware errors
+- Keep audio disabled; add actual-source response regression fixtures
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
 - Expose cached UCSI GLINK request results, service epochs and event timestamps.
 - Validate error/refusal bookkeeping without changing transport or routing policy.
