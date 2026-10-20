@@ -195,3 +195,10 @@ topology release. PRM releases its children and drains the serialized request
 before rejecting further work and disabling callbacks. Process-context and
 driver-order fixtures pass; transport/PDR teardown, remote ownership and full
 DMA/XRUN recovery remain separate gates. No sound card or route is enabled.
+
+20 October 2026 userdata image refresh: release14 retains source12's94-patch
+hardware queue and disabled native audio profile. It restores the explicit
+linux/EXT4 and userdata/F2FS root selector from source87eadc3. F2FS and its
+security labels are built in; a userdata boot container carries only the bounded
+root-profile selector. The current USB/offline-charge paths remain present.
+Source tests and package builds do not establish userdata boot acceptance.

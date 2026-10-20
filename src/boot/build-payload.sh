@@ -8,6 +8,10 @@ base=$(realpath "$3") release=$4 jobs=$5
 [[ $release =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ && $jobs =~ ^[1-9][0-9]*$ ]]
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
+cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
+if grep -rE '(^|[[:space:]])root=' "$base/etc/cmdline.d"; then
+    echo 'Stale root-specific dracut base refused; regenerate the common base' >&2; exit 1
+fi
 [[ ! -e $base/usr/lib/modules && ! -e $base/usr/lib/firmware ]]
 [[ ! -s $base/etc/machine-id && ! -e $base/etc/shadow && ! -e $base/root/.ssh ]]
 [[ -z $(find "$base" -type f \( -name '*.py' -o -name '*.pyc' -o -iname '*python*' -o -iname '*pypy*' \) -print -quit) ]]
@@ -85,12 +89,16 @@ make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
+"$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
 "$out/boot-image" inspect "$out/linux.img" > "$out/boot-header.json"
 "$out/boot-image" extract "$out/linux.img" "$out/boot-readback-Image"
 cmp "$out/arch/arm64/boot/Image" "$out/boot-readback-Image"
+"$out/boot-image" extract "$out/userdata.img" "$out/userdata-readback-Image"
+cmp "$out/arch/arm64/boot/Image" "$out/userdata-readback-Image"
 (cd "$source_modules"; find kernel -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "$out/modules.sha256"
 image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
+userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=unsupported\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=unsupported\nmodules_sha256=%s\n' \
-    "$release" "$image" "$raw" "$inventory" > "$out/boot-manifest"
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\n' \
+    "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"

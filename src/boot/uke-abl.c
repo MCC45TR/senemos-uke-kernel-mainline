@@ -17,6 +17,8 @@
 #include <asm/processor.h>
 #define UKE_INIT __init
 void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity);
 #else
 #include <libfdt.h>
 #include <stddef.h>
@@ -35,6 +37,10 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
 /* Nominal active dimensions from the 11.2-inch, 3200x2136 panel specification. */
 #define UKE_PANEL_WIDTH_MM 237U
 #define UKE_PANEL_HEIGHT_MM 158U
+
+#ifdef __KERNEL__
+#include "uke-root-selector.h"
+#endif
 
 static int UKE_INIT uke_path_reg(const void *fdt, const char *path,
 				unsigned int address, unsigned int bytes)
@@ -1045,5 +1051,24 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 	*physical = __pa_symbol(uke_fdt);
 	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
 	return uke_fdt;
+}
+
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity)
+{
+	const char *handoff;
+	int chosen, bytes = 0;
+
+	if (fdt != uke_fdt)
+		return;
+	chosen = fdt_path_offset(fdt, "/chosen");
+	handoff = fdt_getprop(fdt, chosen, "bootargs", &bytes);
+	if (!handoff && bytes == -FDT_ERR_NOTFOUND)
+		bytes = 0;
+	if (bytes < 0 || uke_select_root(cmdline, capacity, handoff, bytes) < 0) {
+		pr_crit("Uke root selector rejected; refusing an ambiguous root\n");
+		while (true)
+			cpu_relax();
+	}
 }
 #endif
