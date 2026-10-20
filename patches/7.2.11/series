@@ -86,3 +86,4 @@
 0086-q6prm-correlate-resource-transactions.patch
 0087-q6apm-bound-graph-events-and-buffer-tokens.patch
 0088-gpr-drain-dynamic-port-callbacks-before-free.patch
+0089-apr-detach-rx-batch-under-queue-lock.patch

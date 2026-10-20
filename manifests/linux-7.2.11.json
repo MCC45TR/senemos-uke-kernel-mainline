@@ -360,6 +360,10 @@
     {
       "path": "patches/7.2.11/0088-gpr-drain-dynamic-port-callbacks-before-free.patch",
       "sha256": "4c5e2a1416c0f2c7e84a0cece46c1be7049b2c375443e71174c28755c63d1e0a"
+    },
+    {
+      "path": "patches/7.2.11/0089-apr-detach-rx-batch-under-queue-lock.patch",
+      "sha256": "6e191a09de60391f9e8d924a2ab0fceecb3f450d412fcb1ca690eeaad95aa891"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
