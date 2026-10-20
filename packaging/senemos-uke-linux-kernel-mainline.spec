@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 9
+%global senemos_build_release 10
 %else
 %global senemos_build_release 1
 %endif
@@ -156,6 +156,7 @@ CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
+CC=clang bash native-profile/tests/battery-protection-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-apply-contract.sh "$PWD"
@@ -272,6 +273,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-10
+- Gate Uke charging on qualified moisture, thermal and periodic fault checks.
+- Add fixed owned input suspension and preserve unqualified physical status.
+
 * Mon Oct 19 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-9
 - Assert SCMI transfer allocation counts in the Clang package check.
 

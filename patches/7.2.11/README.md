@@ -66,3 +66,13 @@ Release 8 also validates the four-byte discovery header before reading the
 returned count. A zero-byte response cannot qualify as an empty list. The
 regression fails on release 7 source and passes after the correction; normal
 consumer matching and base initialization behavior remain unchanged.
+
+**20 October 2026, release 10 source:** patch 0082 adds fixed moisture status,
+an offline enable-only detector request, fresh moisture/three-thermistor guards
+and a qualified wet-input latch using the exact retained OS3.0.304.0 input-suspend
+contract. Version-2 leases require independent external thermal ranges. The boot
+ADC graph supplies those fixed consumers and periodic thermal updates without
+changing OEM trips. Unknown or ambiguous outcomes do not release the latch.
+No raw XM selector, pack defaults or new JEITA/CV/PD writer is exposed.
+Host fixtures and an AArch64 driver object are separate from full package,
+matched boot and physical moisture/electrical acceptance.

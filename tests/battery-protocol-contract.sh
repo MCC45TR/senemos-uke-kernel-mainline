@@ -211,6 +211,9 @@ int main(void) {
  assert(b.error==-ENODATA && b.ack.done==0);
  reply(&b,BATTMGR_USB_PROPERTY_GET,0,1,0); assert(b.usb.online);
  reply(&b,BATTMGR_USB_PROPERTY_GET,0,2,0); assert(b.error==-ENODATA && b.usb.online);
+ reply(&b,BATTMGR_USB_PROPERTY_GET,USB_MOISTURE_EN,1,0);assert(!b.error&&b.usb.moisture_enabled==1);
+ reply(&b,BATTMGR_USB_PROPERTY_GET,USB_MOISTURE_STATUS,1,0);assert(!b.error&&b.usb.moisture_status==1);
+ reply(&b,BATTMGR_USB_PROPERTY_GET,USB_MOISTURE_STATUS,2,0);assert(b.error==-ENODATA&&b.usb.moisture_status==1);
  b.transaction.receipt_ns=42; b.transaction.generation=7;
  b.transaction.firmware_generation=2; b.transaction.source_generation=3;
  for (u32 raw=0;raw<=8;raw++) {
