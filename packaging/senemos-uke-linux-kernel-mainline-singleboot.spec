@@ -7,6 +7,7 @@ License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: singleboot.json
 Source1: SINGLEBOOT.md
+Source2: LICENSE
 ExclusiveArch: aarch64
 Requires: senemos-uke-linux-kernel-mainline-core = %{version}-%{release}
 Requires: senemos-uke-linux-kernel-mainline-modules = %{version}-%{release}
@@ -28,6 +29,8 @@ updates and fallback remain unqualified and must stay disabled.
 %build
 %install
 install -Dm644 %{SOURCE0} %{buildroot}%{_datadir}/senemos/uke/singleboot.json
+install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/doc/%{name}/SINGLEBOOT.md
+install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/licenses/%{name}/LICENSE
 install -d %{buildroot}%{_prefix}/lib/senemos
 ln -s kernel-updates/%{version}-14/userdata.img %{buildroot}%{_prefix}/lib/senemos/default-boot.img
 
@@ -35,7 +38,8 @@ ln -s kernel-updates/%{version}-14/userdata.img %{buildroot}%{_prefix}/lib/senem
 test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-updates/%{version}-14/userdata.img
 
 %files
-%doc %{SOURCE1}
+%doc %{_datadir}/doc/%{name}/SINGLEBOOT.md
+%license %{_datadir}/licenses/%{name}/LICENSE
 %{_datadir}/senemos/uke/singleboot.json
 %{_prefix}/lib/senemos/default-boot.img
 

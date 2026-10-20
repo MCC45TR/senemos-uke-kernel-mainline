@@ -56,7 +56,7 @@ singleboot-srpm:
 	bash tests/singleboot-package-contract.sh
 	top="$$(realpath -m "$(outdir)/singleboot-rpmbuild")"
 	mkdir -p "$$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS}
-	install -m644 packaging/singleboot.json packaging/SINGLEBOOT.md "$$top/SOURCES/"
+	install -m644 packaging/singleboot.json packaging/SINGLEBOOT.md LICENSE "$$top/SOURCES/"
 	install -m644 packaging/senemos-uke-linux-kernel-mainline-singleboot.spec "$$top/SPECS/"
 	rpmbuild -bs --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline-singleboot.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
