@@ -1,0 +1,288 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: drain IRQ before firmware and queue release
+
+Use threaded ONESHOT masking and balanced driver enable-depth ownership.
+Mask without waiting under the core mutex, before power-off or teardown.
+A late IRQ thread must not read registers once masked, and HFI commands
+must not raise a hardware interrupt while the driver IRQ is disabled.
+
+Serialize initialization and deinitialization across the unlocked IRQ
+barrier. Drain the threaded handler outside the core mutex before PAS
+cleanup, queue release or a new firmware initialization. Preserve the
+existing failed-PAS retention and startup error ordering. Remove the
+redundant unlocked watchdog state write before shared error handling.
+
+Uke OEM Venus already uses threaded ONESHOT; this is a framework
+comparison, not an Iris33 hardware result. Compare the pinned OnePlus
+modules/DT and current upstream separately. No board values, firmware
+or active profile is added. Open-file/DMA-BUF ownership and
+checked low-level power-off still gate native core activation.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+Link: https://github.com/torvalds/linux/tree/4cbdd58dfa7aaad679bf62f81cdbc96a6cb7c6ae
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+diff --git a/drivers/media/platform/qcom/iris/iris_core.c b/drivers/media/platform/qcom/iris/iris_core.c
+index bc503c8..1b2ecb4 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.c
++++ b/drivers/media/platform/qcom/iris/iris_core.c
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
++#include <linux/interrupt.h>
+ #include <linux/pm_runtime.h>
+ 
+ #include "iris_core.h"
+@@ -47,14 +48,27 @@ void iris_core_stop_recovery(struct iris_core *core)
+ 	cancel_delayed_work_sync(&core->sys_error_handler);
+ }
+ 
++static void iris_core_drain_irq(struct iris_core *core)
++{
++	lockdep_assert_held(&core->lifecycle_lock);
++	lockdep_assert_held(&core->lock);
++	core->state = IRIS_CORE_ERROR;
++	iris_hfi_irq_disable(core);
++	mutex_unlock(&core->lock);
++	synchronize_irq(core->irq);
++	mutex_lock(&core->lock);
++}
++
+ int iris_core_deinit(struct iris_core *core)
+ {
+ 	int pm_ret, ret = 0;
+ 
++	mutex_lock(&core->lifecycle_lock);
+ 	pm_ret = pm_runtime_resume_and_get(core->dev);
+ 
+ 	mutex_lock(&core->lock);
+ 	if (core->state != IRIS_CORE_DEINIT || core->fw_owned) {
++		iris_core_drain_irq(core);
+ 		ret = iris_fw_unload(core);
+ 		if (ret) {
+ 			core->state = IRIS_CORE_ERROR;
+@@ -77,6 +91,8 @@ unlock:
+ 			pm_runtime_put_sync(core->dev);
+ 	}
+ 
++	mutex_unlock(&core->lifecycle_lock);
++
+ 	return ret;
+ }
+ 
+@@ -112,6 +128,7 @@ int iris_core_init(struct iris_core *core)
+ {
+ 	int ret;
+ 
++	mutex_lock(&core->lifecycle_lock);
+ 	mutex_lock(&core->lock);
+ 	if (core->removing) {
+ 		ret = -ENODEV;
+@@ -159,11 +176,16 @@ int iris_core_init(struct iris_core *core)
+ wait_for_response:
+ 	mutex_unlock(&core->lock);
+ 
+-	return iris_wait_for_system_response(core);
++	ret = iris_wait_for_system_response(core);
++	goto unlock_lifecycle;
+ 
+ error_unload_fw:
++	iris_core_drain_irq(core);
+ 	iris_fw_unload(core);
++	goto error_power_off_drained;
+ error_power_off:
++	iris_core_drain_irq(core);
++error_power_off_drained:
+ 	/* Do not release DMA queues while PAS ownership is uncertain. */
+ 	if (core->fw_owned) {
+ 		core->state = IRIS_CORE_ERROR;
+@@ -176,6 +198,8 @@ error:
+ 	core->state = IRIS_CORE_DEINIT;
+ exit:
+ 	mutex_unlock(&core->lock);
++unlock_lifecycle:
++	mutex_unlock(&core->lifecycle_lock);
+ 
+ 	return ret;
+ }
+diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
+index 97411e7..d86d98a 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -40,6 +40,8 @@ struct qcom_ubwc_cfg_data;
+  * @pixel_dev: separately bound pixel DMA component, when required
+  * @reg_base: IO memory base address
+  * @irq: iris irq
++ * @irq_enabled: balanced driver ownership of the IRQ enable depth
++ * @lifecycle_lock: serialize initialization and deinitialization across IRQ drains
+  * @v4l2_dev: a holder for v4l2 device structure
+  * @vdev_dec: iris video device structure for decoder
+  * @vdev_enc: iris video device structure for encoder
+@@ -111,6 +113,7 @@ struct iris_core {
+ 	enum iris_core_state			state;
+ 	bool					fw_owned;
+ 	bool					removing;
++	bool					irq_enabled;
+ 	struct iris_fw_mmap			fw_mmap;
+ 	dma_addr_t				iface_q_table_daddr;
+ 	dma_addr_t				sfr_daddr;
+@@ -120,6 +123,7 @@ struct iris_core {
+ 	struct iris_iface_q_info		message_queue;
+ 	struct iris_iface_q_info		debug_queue;
+ 	struct mutex				lock; /* lock for core related operations */
++	struct mutex				lifecycle_lock;
+ 	u8					*response_packet;
+ 	u32					header_id;
+ 	u32					packet_id;
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_common.c b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+index 21fb548..3e7c824 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_common.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+@@ -90,10 +90,26 @@ int iris_hfi_core_init(struct iris_core *core)
+ 	return hfi_ops->sys_interframe_powercollapse(core);
+ }
+ 
+-irqreturn_t iris_hfi_isr(int irq, void *data)
++void iris_hfi_irq_enable(struct iris_core *core)
+ {
+-	disable_irq_nosync(irq);
++	lockdep_assert_held(&core->lock);
++	if (!core->irq_enabled) {
++		core->irq_enabled = true;
++		enable_irq(core->irq);
++	}
++}
+ 
++void iris_hfi_irq_disable(struct iris_core *core)
++{
++	lockdep_assert_held(&core->lock);
++	if (core->irq_enabled) {
++		core->irq_enabled = false;
++		disable_irq_nosync(core->irq);
++	}
++}
++
++irqreturn_t iris_hfi_isr(int irq, void *data)
++{
+ 	return IRQ_WAKE_THREAD;
+ }
+ 
+@@ -105,15 +121,18 @@ irqreturn_t iris_hfi_isr_handler(int irq, void *data)
+ 		return IRQ_NONE;
+ 
+ 	mutex_lock(&core->lock);
++	if (!core->irq_enabled) {
++		mutex_unlock(&core->lock);
++		return IRQ_HANDLED;
++	}
+ 	pm_runtime_mark_last_busy(core->dev);
+ 	iris_vpu_clear_interrupt(core);
++	if (iris_vpu_watchdog(core, core->intr_status))
++		iris_hfi_irq_disable(core);
+ 	mutex_unlock(&core->lock);
+ 
+ 	core->hfi_sys_ops->sys_hfi_response_handler(core);
+ 
+-	if (!iris_vpu_watchdog(core, core->intr_status))
+-		enable_irq(irq);
+-
+ 	return IRQ_HANDLED;
+ }
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_common.h b/drivers/media/platform/qcom/iris/iris_hfi_common.h
+index a27447e..8474782 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_common.h
++++ b/drivers/media/platform/qcom/iris/iris_hfi_common.h
+@@ -155,6 +155,8 @@ u32 iris_hfi_get_v4l2_matrix_coefficients(u32 hfi_coefficients);
+ int iris_hfi_core_init(struct iris_core *core);
+ int iris_hfi_pm_suspend(struct iris_core *core);
+ int iris_hfi_pm_resume(struct iris_core *core);
++void iris_hfi_irq_enable(struct iris_core *core);
++void iris_hfi_irq_disable(struct iris_core *core);
+ 
+ irqreturn_t iris_hfi_isr(int irq, void *data);
+ irqreturn_t iris_hfi_isr_handler(int irq, void *data);
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+index 51d1261..7283927 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+@@ -998,7 +998,6 @@ void iris_hfi_gen2_response_handler(struct iris_core *core)
+ 		struct iris_hfi_packet pkt = {.type = HFI_SYS_ERROR_WD_TIMEOUT};
+ 
+ 		dev_err(core->dev, "cpu watchdog error received\n");
+-		core->state = IRIS_CORE_ERROR;
+ 		iris_hfi_gen2_handle_system_error(core, &pkt);
+ 
+ 		return;
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_queue.c b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+index e8bf3d5..631c9e5 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_queue.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+@@ -117,6 +117,8 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
+ 		return -ENODEV;
+ 	if (core->state == IRIS_CORE_ERROR || core->state == IRIS_CORE_DEINIT)
+ 		return -EINVAL;
++	if (!core->irq_enabled)
++		return -EAGAIN;
+ 
+ 	if (!iris_hfi_queue_write(q_info, pkt, pkt_size)) {
+ 		iris_vpu_raise_interrupt(core);
+diff --git a/drivers/media/platform/qcom/iris/iris_probe.c b/drivers/media/platform/qcom/iris/iris_probe.c
+index 34fe193..e6744d7 100644
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -253,6 +253,7 @@ static void iris_remove(struct platform_device *pdev)
+ 	else
+ 		iris_unregister_video_devices(core);
+ 	mutex_destroy(&core->lock);
++	mutex_destroy(&core->lifecycle_lock);
+ }
+ 
+ static void iris_sys_error_handler(struct work_struct *work)
+@@ -278,6 +279,7 @@ static int iris_probe(struct platform_device *pdev)
+ 
+ 	core->state = IRIS_CORE_DEINIT;
+ 	mutex_init(&core->lock);
++	mutex_init(&core->lifecycle_lock);
+ 	init_completion(&core->core_init_done);
+ 
+ 	core->response_packet = devm_kzalloc(core->dev, IFACEQ_CORE_PKT_SIZE, GFP_KERNEL);
+@@ -305,7 +307,7 @@ static int iris_probe(struct platform_device *pdev)
+ 
+ 	ret = devm_request_threaded_irq(core->dev, core->irq, iris_hfi_isr,
+ 					iris_hfi_isr_handler,
+-					IRQF_TRIGGER_HIGH | IRQF_NO_AUTOEN,
++					IRQF_TRIGGER_HIGH | IRQF_NO_AUTOEN | IRQF_ONESHOT,
+ 					"iris", core);
+ 	if (ret)
+ 		return ret;
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.c b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+index 05a58b0..6ca4d41 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+@@ -240,13 +240,11 @@ void iris_vpu_power_off_hw(struct iris_core *core)
+ 
+ void iris_vpu_power_off(struct iris_core *core)
+ {
++	iris_hfi_irq_disable(core);
+ 	iris_opp_set_rate(core->dev, 0);
+ 	core->iris_platform_data->vpu_ops->power_off_hw(core);
+ 	core->iris_platform_data->vpu_ops->power_off_controller(core);
+ 	iris_unset_icc_bw(core);
+-
+-	if (!iris_vpu_watchdog(core, core->intr_status))
+-		disable_irq(core->irq);
+ }
+ 
+ int iris_vpu_power_on_controller(struct iris_core *core)
+@@ -498,7 +496,7 @@ int iris_vpu_power_on(struct iris_core *core)
+ 
+ 	iris_vpu_interrupt_init(core);
+ 	core->intr_status = 0;
+-	enable_irq(core->irq);
++	iris_hfi_irq_enable(core);
+ 
+ 	return 0;
+ 

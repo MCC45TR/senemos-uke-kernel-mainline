@@ -33,10 +33,12 @@ struct iris_core {
     iris_core_state state;
     bool fw_owned;
     bool removing;
+    bool irq_enabled;
+    int irq;
     const platform_data *iris_platform_data;
     const firmware_desc *iris_firmware_desc;
     const firmware_data *iris_firmware_data;
-    int lock, core_init_done;
+    int lock, lifecycle_lock, core_init_done;
     delayed_work sys_error_handler;
     std::vector<iris_inst *> instances;
     iris_iface_q_info command_queue;
@@ -47,7 +49,9 @@ static unsigned allocs, frees, power_offs, shuts, sync_puts, idle_puts, pm_calls
 static bool queues_live;
 static unsigned response;
 static unsigned reinits, waits, cancellations, schedules, auto_puts, queue_writes, irq_raises;
-static int lock_depth, wait_action, queue_result;
+static int lock_depth, lifecycle_depth, wait_action, queue_result;
+static unsigned irq_depth, irq_drains;
+static bool irq_needs_drain;
 static bool work_pending;
 static bool remove_during_pm;
 static unsigned pm_gets;
@@ -113,14 +117,44 @@ static int pm_runtime_resume_and_get(struct device *) {
     if (remove_during_pm) wait_core->removing = true;
     return pm_result;
 }
-static void mutex_lock(int *) { assert(lock_depth++ == 0); }
-static void mutex_unlock(int *) { assert(--lock_depth == 0); }
+static void mutex_lock(int *lock) {
+    if (lock == &wait_core->lifecycle_lock) {
+        assert(!lock_depth && lifecycle_depth++ == 0);
+    } else {
+        assert(lock == &wait_core->lock && lock_depth++ == 0);
+    }
+}
+static void mutex_unlock(int *lock) {
+    if (lock == &wait_core->lifecycle_lock) {
+        assert(!lock_depth && --lifecycle_depth == 0);
+    } else {
+        assert(lock == &wait_core->lock && --lock_depth == 0);
+    }
+}
+#define lockdep_assert_held(held_mutex) \
+    assert((held_mutex) == &wait_core->lifecycle_lock ? lifecycle_depth == 1 : \
+           (held_mutex) == &wait_core->lock && lock_depth == 1)
+static void enable_irq(int) { assert(lock_depth == 1 && irq_depth == 1); --irq_depth; irq_needs_drain = true; }
+static void disable_irq_nosync(int) { assert(lock_depth == 1); ++irq_depth; }
+static void synchronize_irq(int) {
+    assert(!lock_depth && lifecycle_depth == 1 && !wait_core->irq_enabled && irq_depth == 1);
+    ++irq_drains; irq_needs_drain = false; events.emplace_back("sync-irq");
+}
+CPP
+for name in iris_hfi_irq_enable iris_hfi_irq_disable; do
+    awk -v name="$name" '$0 ~ "^void " name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
+        "$iris/iris_hfi_common.c" >> "$work/check.cpp"
+done
+cat >> "$work/check.cpp" <<'CPP'
 static void pm_runtime_put_sync(struct device *) { ++sync_puts; }
 static void pm_runtime_put_noidle(struct device *) { ++idle_puts; }
 static void pm_runtime_put_autosuspend(struct device *) { ++auto_puts; }
-static void iris_vpu_power_off(iris_core *) { ++power_offs; events.emplace_back("power-off"); }
+static void iris_vpu_power_off(iris_core *core) {
+    assert(!core->irq_enabled && !irq_needs_drain && irq_drains>0);
+    ++power_offs; events.emplace_back("power-off");
+}
 static void iris_hfi_queues_deinit(iris_core *) {
-    assert(queues_live); queues_live = false; ++frees; events.emplace_back("free");
+    assert(queues_live && !irq_needs_drain); queues_live = false; ++frees; events.emplace_back("free");
 }
 static unsigned msecs_to_jiffies(unsigned value) { return value; }
 static void reinit_completion(int *done) { *done = 0; ++reinits; }
@@ -158,14 +192,16 @@ static bool cancel_delayed_work_sync(delayed_work *work) {
 static int iris_hfi_queues_init(iris_core *) {
     ++allocs; const int ret = step("queues", 9); queues_live = !ret; return ret;
 }
-static int iris_vpu_power_on(iris_core *) { return step("power-on", 10); }
+static int iris_vpu_power_on(iris_core *core) {
+    const int ret = step("power-on", 10); if (!ret) iris_hfi_irq_enable(core); return ret;
+}
 static int iris_vpu_boot_firmware(iris_core *) { return step("boot", 11); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return step("hwmode", 12); }
 static int iris_hfi_core_init(iris_core *) {
     const int ret = step("hfi-init", 13); response_pending = !ret; return ret;
 }
 CPP
-for name in iris_core_init_done iris_core_sys_error iris_core_stop_recovery iris_core_deinit iris_wait_for_system_response iris_core_init; do
+for name in iris_core_init_done iris_core_sys_error iris_core_stop_recovery iris_core_drain_irq iris_core_deinit iris_wait_for_system_response iris_core_init; do
     awk -v name="$name" '$0 ~ "^(static )?(int|void) " name "\\(" { emit=1 } emit { print } emit && /^}/ { exit }' \
         "$iris/iris_core.c" >> "$work/check.cpp"
 done
@@ -213,6 +249,7 @@ static void reset(iris_core &core) {
     queues_live = false; response = 1;
     reinits = waits = cancellations = schedules = auto_puts = queue_writes = irq_raises = 0;
     lock_depth = wait_action = queue_result = 0; work_pending = false; wait_core = &core;
+    lifecycle_depth = 0; irq_depth = 1; irq_drains = 0; irq_needs_drain = false;
     remove_during_pm = false; pm_gets = 0;
     response_pending = false; response_generation = 2; responses_delivered = 0;
 }
@@ -336,6 +373,7 @@ int main() {
     assert(iris_core_deinit(&core) == 0);
 
     reset(core); core.state = IRIS_CORE_INIT; unsigned packet{};
+    mutex_lock(&core.lock); iris_hfi_irq_enable(&core); mutex_unlock(&core.lock);
     pm_result = -EIO;
     assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -EIO);
     assert(sync_puts == 0 && auto_puts == 0 && queue_writes == 0);
@@ -345,15 +383,19 @@ int main() {
     queue_result = -ENOSPC;
     assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -ENODATA);
     assert(sync_puts == 1 && queue_writes == 2 && irq_raises == 1);
+    mutex_lock(&core.lock); iris_hfi_irq_disable(&core); mutex_unlock(&core.lock);
+    assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -EAGAIN);
+    assert(sync_puts == 2 && queue_writes == 2 && irq_raises == 1);
+    mutex_lock(&core.lock); iris_hfi_irq_enable(&core); mutex_unlock(&core.lock);
     core.removing = true;
     assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -ENODEV);
-    assert(sync_puts == 1 && pm_gets == 3 && queue_writes == 2 && irq_raises == 1);
+    assert(sync_puts == 2 && pm_gets == 4 && queue_writes == 2 && irq_raises == 1);
     core.removing = false; remove_during_pm = true;
     assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -ENODEV);
-    assert(sync_puts == 2 && queue_writes == 2 && irq_raises == 1);
+    assert(sync_puts == 3 && queue_writes == 2 && irq_raises == 1);
     core.removing = false; remove_during_pm = false; core.state = IRIS_CORE_ERROR;
     assert(iris_hfi_queue_cmd_write(&core, &packet, sizeof(packet)) == -EINVAL);
-    assert(sync_puts == 3 && queue_writes == 2 && irq_raises == 1 && !lock_depth);
+    assert(sync_puts == 4 && queue_writes == 2 && irq_raises == 1 && !lock_depth && !lifecycle_depth);
 
     reset(core); assert(iris_pm_suspend(&device) == 0 && iris_pm_resume(&device) == 0);
     assert(pm_calls == 0); core.fw_owned = true;
@@ -367,4 +409,4 @@ CPP
 "${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$work"=. \
     "$work/check.cpp" -o "$work/check"
 "$work/check"
-printf 'Actual Iris PAS ownership, recovery teardown, readiness, command PM references and errno fixtures passed; no firmware execution\n'
+printf 'Actual Iris PAS ownership, IRQ drain ordering, recovery/readiness and command PM references passed; no firmware execution\n'

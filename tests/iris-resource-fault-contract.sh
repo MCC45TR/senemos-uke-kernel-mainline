@@ -36,6 +36,7 @@ struct iris_core {
     unsigned intr_status;
     const iris_hfi_sys_ops *hfi_sys_ops;
     int state = IRIS_CORE_INIT;
+    bool irq_enabled = false;
 };
 static std::vector<std::string> events;
 static int fault, bulk_calls;
@@ -60,6 +61,7 @@ static int iris_opp_set_rate(void *, unsigned long) { return record("rate", 4); 
 static void iris_vpu_set_preset_registers(iris_core *) { record("presets", 0); }
 static void iris_vpu_interrupt_init(iris_core *) { record("interrupt-init", 0); }
 static void enable_irq(int) { record("irq-on", 0); }
+static void iris_hfi_irq_enable(iris_core *core) { core->irq_enabled = true; enable_irq(core->irq); }
 #define dev_err(...) ((void)0)
 CPP
 awk '/^int iris_vpu_power_on\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \

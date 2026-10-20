@@ -104,6 +104,10 @@
     {
       "path": "patches/video/0011-iris-recovery-and-pm-rollback-ownership.patch",
       "sha256": "367292e39c35a4bfbf8fc7c7aaad3e9e92d8283c0da601123d750ca476765ba5"
+    },
+    {
+      "path": "patches/video/0012-iris-drain-irq-before-firmware-and-queue-release.patch",
+      "sha256": "33807b93f7a42eb42db4e61b1faac9861ae65657caffd77a959db83f618a6701"
     }
   ],
   "sources": [
@@ -294,5 +298,28 @@
     "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61",
     "initialization_result_broadcast": true,
     "initialization_reply_helper_serialized": true
+  },
+  "irq_lifecycle": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "a823ba6d101c39085de84b8d4f2423372969c4b8",
+    "threaded_oneshot": true,
+    "driver_enable_depth_balanced": true,
+    "irq_masked_before_poweroff": true,
+    "late_thread_register_access_refused": true,
+    "command_interrupt_write_refused_while_masked": true,
+    "irq_drained_outside_core_mutex": true,
+    "init_and_deinit_serialized_across_drain": true,
+    "queue_release_after_irq_drain": true,
+    "unlocked_watchdog_state_write_removed": true,
+    "full_forced_removal_safe": false,
+    "lowlevel_poweroff_errors_qualified": false,
+    "physical_irq_tested": false,
+    "upstream_commit": "4cbdd58dfa7aaad679bf62f81cdbc96a6cb7c6ae",
+    "upstream_core_sha256": "0732db166f19e386cedbe5e111dca5d7ffa247112df1110226006c4af553bd43",
+    "upstream_common_sha256": "0bdceedd006deb40ea6ff78772555d89094399e39c78d14d950c606c57d1ae62",
+    "upstream_probe_sha256": "a91a59cefe13480633e6f17fa3013a63d85bb3b00a2da8e292c5c51db8ec7a86",
+    "upstream_queue_sha256": "42b1687d106f61ba48e05552715de41ca6994aee6ca80316bc25707ef7001ef8",
+    "upstream_vpu_common_sha256": "980874f20f364d1569af80e3cdc2196e18a9709e03ddb6d4b415e0ac2b1201a2",
+    "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61"
   }
 }
