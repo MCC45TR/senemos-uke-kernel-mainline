@@ -32,7 +32,7 @@ jobs:
             metadata_role: singleboot
           - role: kvm
             branch: copr/mainline-kvm
-            package: senemos-uke-kernel-mainline-kvm
+            package: senemos-uke-linux-kernel-mainline-kvm
             metadata_branch: copr/mainline-kvm-singleboot
             metadata_role: kvm-singleboot
     steps:

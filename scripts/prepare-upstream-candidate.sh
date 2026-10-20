@@ -38,7 +38,7 @@ prepare_metadata() {
     [[ $evr =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || return 2
     spec=packaging/senemos-uke-linux-kernel-mainline-singleboot.spec json=packaging/singleboot.json
     [[ $role != kvm-singleboot ]] || {
-        spec=packaging/senemos-uke-kernel-mainline-kvm-singleboot.spec; json=packaging/kvm-singleboot.json;
+        spec=packaging/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec; json=packaging/kvm-singleboot.json;
     }
     old=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
     old_release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
