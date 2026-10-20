@@ -16,6 +16,14 @@
     {
       "path": "patches/ufs/0002-sm7675-validate-split-mcq-resources.patch",
       "sha256": "83185622f47edd4fa09503fd4e0ccab8ffe76378bc27838b8acecb13da990afe"
+    },
+    {
+      "path": "patches/ufs/0003-qcom-ice-unwind-resume-clock-failures.patch",
+      "sha256": "baa322dfbf42ecc69c9b8ec25a4fe98f650254dd0dc6821ea204a5cfc2534b65"
+    },
+    {
+      "path": "patches/ufs/0004-qcom-ice-bound-register-mappings.patch",
+      "sha256": "3fecffc12faa93e3b9208eb5a561530e4afdd81ae46f61be3e27b06bd451f9ce"
     }
   ],
   "baseline_files": [
@@ -30,6 +38,10 @@
     {
       "path": "Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml",
       "sha256": "2c444c6f5d842bf3f99cd98ad09a1f42dd89054d9b02332b80b3d096d9283d82"
+    },
+    {
+      "path": "drivers/soc/qcom/ice.c",
+      "sha256": "83a893db662728a9e3ca0d34f97cdbe40b22a55e64ba083958b319d2d207fdc9"
     }
   ],
   "sources": [
@@ -64,6 +76,13 @@
       "url": "https://github.com/torvalds/linux",
       "file": "drivers/ufs/host/ufs-qcom.c",
       "sha256": "62f51ce37757b74eb410e0345ad5eb8dbf19df31e39f8819a8943f8e1b2d0414"
+    },
+    {
+      "id": "current-upstream-ice",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "file": "drivers/soc/qcom/ice.c",
+      "sha256": "797951bf3ab0770b9f0d12afbf71261b631720e2037898576102f1a96fca71d3"
     }
   ],
   "checks": {
@@ -77,12 +96,19 @@
     "rejected_synthetic_cases": 5,
     "full_kernel": false,
     "rpm": false,
-    "physical_io": false
+    "physical_io": false,
+    "ice_resume_before_failure": 134,
+    "ice_mapping_before_failure": 134,
+    "actual_ice_resume_fixture": true,
+    "actual_ice_mapping_fixture": true,
+    "aarch64_ice_object": true,
+    "ice_bist_mismatch_policy_fixed": false
   },
   "limits": [
     "Existing single-window behavior is retained for other compatibles; it is not validated for arbitrary foreign MMIO ranges",
     "No storage DT, queue mode, MSI parent, crypto provider, clock, key or root filesystem change is admitted",
     "MCQ QCFGPTR, IRQ routing, reset/recovery and suspend need exact target validation before enabling the native compatible",
-    "Shared ICE policy, secure key capability and round-trip encrypted regular-file validation remain separate"
+    "Shared ICE policy, secure key capability and round-trip encrypted regular-file validation remain separate",
+    "HWKM self-test mismatch still logs success, and enable errors are ignored by existing UFS/MMC wrappers and UFS core callbacks; this candidate does not qualify the crypto failure path"
   ]
 }

@@ -1,0 +1,71 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: ice: validate raw and HWKM register window sizes
+
+Pass the mapped resource size from both dedicated and legacy providers.
+Reject a truncated base window before version reads or clock setup, and
+reject a truncated HWKM window before exposing a wrapped-key engine.
+The bounds follow the highest fixed register accessed by each mode.
+
+This inactive candidate does not activate a provider or program a key.
+
+diff --git a/drivers/soc/qcom/ice.c b/drivers/soc/qcom/ice.c
+index f2d6767..3f628c0 100644
+--- a/drivers/soc/qcom/ice.c
++++ b/drivers/soc/qcom/ice.c
+@@ -569,10 +569,13 @@ int qcom_ice_import_key(struct qcom_ice *ice,
+ EXPORT_SYMBOL_GPL(qcom_ice_import_key);
+ 
+ static struct qcom_ice *qcom_ice_create(struct device *dev,
+-					void __iomem *base)
++					void __iomem *base, resource_size_t size)
+ {
+ 	struct qcom_ice *engine;
+ 
++	if (size < QCOM_ICE_REG_ADVANCED_CONTROL + sizeof(u32))
++		return ERR_PTR(-EINVAL);
++
+ 	if (!qcom_scm_is_available())
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 
+@@ -612,6 +615,9 @@ static struct qcom_ice *qcom_ice_create(struct device *dev,
+ 	if (!qcom_ice_check_supported(engine))
+ 		return ERR_PTR(-EOPNOTSUPP);
+ 
++	if (engine->use_hwkm && size < QCOM_ICE_REG_HWKM_BANK0_BBAC_4 + sizeof(u32))
++		return ERR_PTR(-EINVAL);
++
+ 	dev_dbg(dev, "Registered Qualcomm Inline Crypto Engine\n");
+ 
+ 	return engine;
+@@ -653,7 +659,7 @@ static struct qcom_ice *of_qcom_ice_get(struct device *dev)
+ 			return ERR_CAST(base);
+ 
+ 		/* create ICE instance using consumer dev */
+-		return qcom_ice_create(&pdev->dev, base);
++		return qcom_ice_create(&pdev->dev, base, resource_size(res));
+ 	}
+ 
+ 	guard(mutex)(&ice_mutex);
+@@ -745,11 +751,12 @@ static int qcom_ice_probe(struct platform_device *pdev)
+ {
+ 	unsigned long phandle = pdev->dev.of_node->phandle;
+ 	struct qcom_ice *engine;
++	struct resource *res;
+ 	void __iomem *base;
+ 
+ 	guard(mutex)(&ice_mutex);
+ 
+-	base = devm_platform_ioremap_resource(pdev, 0);
++	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
+ 	if (IS_ERR(base)) {
+ 		dev_warn(&pdev->dev, "ICE registers not found\n");
+ 		/* Store the error pointer for devm_of_qcom_ice_get() */
+@@ -757,7 +764,7 @@ static int qcom_ice_probe(struct platform_device *pdev)
+ 		return PTR_ERR(base);
+ 	}
+ 
+-	engine = qcom_ice_create(&pdev->dev, base);
++	engine = qcom_ice_create(&pdev->dev, base, resource_size(res));
+ 	if (IS_ERR(engine)) {
+ 		/* Store the error pointer for devm_of_qcom_ice_get() */
+ 		xa_store(&ice_handles, phandle, engine, GFP_KERNEL);

@@ -1,0 +1,35 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: ice: unwind clock ownership on resume failures
+
+An interface-clock failure retains the newly enabled core clock, and a
+BIST timeout retains both clocks and the HWKM initialized flag. Unwind
+only the references acquired by this resume and preserve the error.
+
+This inactive source fix does not enable ICE or change the existing
+HWKM self-test mismatch policy and enable-callers' error handling.
+
+diff --git a/drivers/soc/qcom/ice.c b/drivers/soc/qcom/ice.c
+index 5f20108..f2d6767 100644
+--- a/drivers/soc/qcom/ice.c
++++ b/drivers/soc/qcom/ice.c
+@@ -324,10 +324,18 @@ int qcom_ice_resume(struct qcom_ice *ice)
+ 	err = clk_prepare_enable(ice->iface_clk);
+ 	if (err) {
+ 		dev_err(dev, "Failed to enable iface clock: %d\n", err);
+-		return err;
++		goto disable_core;
+ 	}
+ 	qcom_ice_hwkm_init(ice);
+-	return qcom_ice_wait_bist_status(ice);
++	err = qcom_ice_wait_bist_status(ice);
++	if (!err)
++		return 0;
++
++	ice->hwkm_init_complete = false;
++	clk_disable_unprepare(ice->iface_clk);
++disable_core:
++	clk_disable_unprepare(ice->core_clk);
++	return err;
+ }
+ EXPORT_SYMBOL_GPL(qcom_ice_resume);
+ 

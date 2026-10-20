@@ -6,7 +6,7 @@ version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate: validate-video validate-ufs
 validate-ufs:
-	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .crypto_enabled == false and (.patches | length == 2)' manifests/ufs-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .crypto_enabled == false and (.patches | length == 4)' manifests/ufs-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
@@ -15,6 +15,8 @@ validate-ufs:
 test-ufs: validate-ufs
 	test -n "$(ufs_source)"
 	bash tests/ufs-mcq-resource-contract.sh "$(ufs_source)"
+	bash tests/ice-resume-fault-contract.sh "$(ufs_source)"
+	bash tests/ice-mapping-size-contract.sh "$(ufs_source)"
 validate-video:
 	jq -e '.active_series == false and .dt_enabled == false and .iris_match_added == false and (.patches | length == 6)' manifests/iris-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
