@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 16
+%global senemos_build_release 17
 %else
 %global senemos_build_release 1
 %endif
@@ -147,6 +147,8 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/firmware-source-package-contract.sh native-profile %{version}
+bash native-profile/tests/firmware-source-package-rejection.sh native-profile %{version}
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -291,6 +293,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-17
+- Carry the reviewed inactive firmware patches, assets and manifests in the source RPM.
+- Verify candidate hashes and reject accidental activation without changing device policy.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
 - Restore the kernel primitives required by the original nftables firewall backend.
 - Select one root filesystem type and a bounded userdata panic restart policy.
