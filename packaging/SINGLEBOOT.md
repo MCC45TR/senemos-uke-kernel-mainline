@@ -16,3 +16,11 @@ name. No package script writes storage, changes the active slot or reboots.
 Automatic userdata kernel activation remains held. The existing A/B state model
 does not implement a qualified alternating slot writer. Physical first boot,
 selector forwarding and interrupted-update fallback remain separate tests.
+
+Release 15 requires the exact `7.2.11-15` shared tuple from COPR 11179488.
+The profile contains metadata and its default-container link; Image, modules
+and DTBs retain their common build identity. Signed common-package and payload
+checks pass on the host. Tablet cache, boot and fallback acceptance remain
+unqualified. The common release-15 configuration also omits nftables; Fedora
+firewall restoration needs a later kernel configuration correction. This
+profile does not enable automatic activation or the private VRR experiment.
