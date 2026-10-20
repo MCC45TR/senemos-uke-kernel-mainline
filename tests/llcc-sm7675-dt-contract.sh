@@ -44,11 +44,18 @@ cp "$work/native.dtb" "$work/legacy.dtb"
 fdtput -t s "$work/legacy.dtb" /soc/cache-controller@25000000 compatible qcom,sdm845-llcc
 dt-validate -s "$schema" -l qcom,llcc "$work/legacy.dtb" > "$work/legacy.log" 2>&1
 test ! -s "$work/legacy.log"
+cp "$work/base.dtb" "$work/no-metadata.dtb"
+fdtput -r "$work/no-metadata.dtb" /soc/cache-controller@25000000/llcc-perfmon
+fdtput -d "$work/no-metadata.dtb" /soc/cache-controller@25000000 label
+fdtput -d "$work/no-metadata.dtb" /soc/cache-controller@25000000 cap-based-alloc-and-pwr-collapse
+bash "$project/src/performance/prepare-llcc-dt.sh" "$work/no-metadata.dtb" "$work/no-metadata-native.dtb"
+dt-validate -s "$schema" -l qcom,llcc "$work/no-metadata-native.dtb" > "$work/no-metadata.log" 2>&1
+test ! -s "$work/no-metadata.log"
 node=/soc/cache-controller@25000000
 [[ $(fdtget -t s "$work/native.dtb" /chosen bootargs) == preserved-fixture ]]
 [[ $(fdtget -t x "$work/native.dtb" /memory@80000000 reg) == '0 80000000 0 10000000' ]]
 [[ $(fdtget -t x "$work/native.dtb" "$node" phandle) == "$(fdtget -t x "$work/base.dtb" "$node" phandle)" ]]
-for mode in foreign-soc generic-cliffs wrong-cells wrong-base wrong-irq; do
+for mode in foreign-soc generic-cliffs wrong-cells wrong-base wrong-irq disabled extra-child; do
     cp "$work/base.dtb" "$work/$mode.dtb"
     case $mode in
         foreign-soc) fdtput -t s "$work/$mode.dtb" / compatible xiaomi,uke qcom,sm8650;;
@@ -56,6 +63,8 @@ for mode in foreign-soc generic-cliffs wrong-cells wrong-base wrong-irq; do
         wrong-cells) fdtput -t x "$work/$mode.dtb" /soc '#address-cells' 2;;
         wrong-base) fdtput -t x "$work/$mode.dtb" "$node" reg 25000004 800000 25800000 200000;;
         wrong-irq) fdtput -t x "$work/$mode.dtb" "$node" interrupts 0 10b 4;;
+        disabled) fdtput -t s "$work/$mode.dtb" "$node" status disabled;;
+        extra-child) fdtput -c "$work/$mode.dtb" "$node/unreviewed";;
     esac
     before=$(sha256sum "$work/$mode.dtb")
     if bash "$project/src/performance/prepare-llcc-dt.sh" "$work/$mode.dtb" "$work/$mode-output.dtb"; then
@@ -83,4 +92,4 @@ if bash "$project/src/performance/prepare-llcc-dt.sh" "$work/base.dtb" "$work/na
 ln -s "$work/unused.dtb" "$work/linked.dtb"
 if bash "$project/src/performance/prepare-llcc-dt.sh" "$work/base.dtb" "$work/linked.dtb"; then exit 1; fi
 [[ ! -e $work/unused.dtb && $(sha256sum "$work/base.dtb") == "$original" ]]
-echo 'LLCC DT: exact translation, source/sentinels preserved, five admission/two size/three schema refusals, no-clobber passed'
+echo 'LLCC DT: exact translation, source/sentinels preserved, seven admission/two size/three schema refusals, no-clobber passed'

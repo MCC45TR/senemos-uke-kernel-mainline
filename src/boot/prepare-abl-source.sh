@@ -6,6 +6,17 @@ kernel=$(realpath "$1") output=$(realpath "$2")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 usb_profile=${UKE_USB_PROFILE:-peripheral}
 case $usb_profile in peripheral|typec-v1) ;; *) echo 'Unknown USB source profile' >&2; exit 2;; esac
+llcc_profile=${UKE_LLCC_PROFILE:-disabled}
+case $llcc_profile in
+    disabled) llcc_native=0;;
+    native-v1) llcc_native=1;;
+    *) echo 'Unknown LLCC source profile' >&2; exit 2;;
+esac
+if [[ $llcc_native == 1 ]]; then
+    bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
+    bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
+    bash "$here/../../tests/llcc-boot-fdt-contract.sh" "$kernel"
+fi
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
 case $version in 7.2.9|7.2.10|7.2.11) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
@@ -31,6 +42,8 @@ git -C "$kernel" apply "$here/../../patches/boot/0004-uke-bluetooth-power.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0005-uke-root-selector.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0005-uke-root-selector.patch"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
+install -m644 "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc.h"
+printf '#define UKE_LLCC_NATIVE_PROFILE %s\n' "$llcc_native" > "$kernel/arch/arm64/kernel/uke-llcc-profile.h"
 install -m644 "$here/uke-root-selector.h" "$kernel/arch/arm64/kernel/uke-root-selector.h"
 install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h"
 install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
@@ -66,6 +79,7 @@ for name in ufs usb; do
     } >> "$header"
 done
 printf '%s\n' "$usb_profile" > "$output/usb-profile"
+printf '%s\n' "$llcc_profile" > "$output/llcc-profile"
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
     "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" \
@@ -78,3 +92,5 @@ sha256sum "$here/uke-abl.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
+    "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"

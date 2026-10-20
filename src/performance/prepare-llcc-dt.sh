@@ -19,11 +19,20 @@ compat=" $(fdtget -t s "$input" / compatible) "
 [[ $(fdtget -t x "$input" "$node" reg) == '25000000 800000 25800000 200000' ]]
 [[ $(fdtget -t s "$input" "$node" reg-names) == 'llcc_base llcc_broadcast_base' ]]
 [[ $(fdtget -t x "$input" "$node" interrupts) == '0 10a 4' ]]
+if fdtget -p "$input" "$node" | grep -Fxq status; then
+    status=$(fdtget -t s "$input" "$node" status)
+    [[ $status == okay || $status == ok ]]
+fi
+children=$(fdtget -l "$input" "$node")
+if [[ -n $children ]]; then
+    while IFS= read -r child; do [[ $child == llcc-perfmon ]]; done <<< "$children"
+fi
 work=$(mktemp -d "$(dirname -- "$output")/.llcc-dt.XXXXXXXX")
 trap 'rm -rf -- "$work"' EXIT
 cp -- "$input" "$work/candidate.dtb"
 chmod 600 "$work/candidate.dtb"
 fdtput -t s "$work/candidate.dtb" "$node" compatible qcom,sm7675-llcc
+fdtput -t s "$work/candidate.dtb" "$node" status okay
 fdtput -t x "$work/candidate.dtb" "$node" reg \
     25000000 200000 25200000 200000 25400000 200000 \
     25600000 200000 25800000 200000

@@ -44,8 +44,9 @@ exact OEM Cliffs7 node. It writes a new mode-0600 candidate, preserves its
 input and refuses an existing output, including a symlink. It converts only
 the cache-controller resources, removes legacy configuration/debug metadata
 and preserves the remaining graph. It is host-only and is not called by the
-normal boot producer. Never substitute its output for an accepted boot DT
-without the separate matched-package and recovery checks.
+boot producer. The kernel boot helper performs the equivalent operation
+under a separately selected source profile. Never substitute a candidate
+for an accepted boot DT without matched-package and recovery checks.
 
 The GPU platform probe now requires the enabled native Cliffs7 supplier to
 bind before component registration. A managed device link is created before
@@ -54,7 +55,28 @@ The actual baseline fails this requirement, and corrected GCC/Clang sanitizer
 fixtures and the Adreno AArch64 object pass. These tests do not emulate the
 driver core's managed-link cleanup or validate physical supplier removal.
 
-Next work is normal boot-producer integration, followed by a matched package.
+The source boot producer accepts `UKE_LLCC_PROFILE=disabled|native-v1` and
+defaults to disabled. On a fresh source tree with the ordinary adaptation
+and all three candidate patches applied, native-v1 runs the LLCC/GPU/boot
+source fixtures before installing the enabled helper. The caller validates
+the stock Uke tuple, admits the original cache graph before copying, then
+transforms only its private DT copy. Generated profile selection and helper
+hashes are recorded. An unknown profile or mismatched/disabled cache graph
+is refused. The ordinary package recipe does not select native-v1.
+
+```bash
+bash tests/llcc-boot-fdt-contract.sh "$kernel"
+UKE_LLCC_PROFILE=native-v1 bash src/boot/prepare-abl-source.sh "$kernel" "$output"
+```
+
+The actual boot helper passes eight admission faults, seven write faults,
+space-exhaustion and input-preservation fixtures against bundled libfdt.
+GCC and Clang ASan/UBSan pass. The ARM64 boot object compiles with the source
+profile enabled and disabled; the final prepared tree is restored to disabled.
+The default host translation is byte-identical after preprocessing. These
+checks do not constitute a fresh full native-source preparation or package.
+
+Next work is an explicitly selected, matched source/package profile.
 Actual GPU/provider ordering and lifetime, four-bank/v5 admission,
 partial-programming recovery, cache coherency, suspend and performance still
 require a recoverable device test. Source fixtures do not establish any of

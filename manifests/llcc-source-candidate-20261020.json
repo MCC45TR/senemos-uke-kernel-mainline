@@ -25,7 +25,7 @@
   "files": [
     {
       "path": "src/performance/prepare-llcc-dt.sh",
-      "sha256": "c94acbbf5dfcc8a31d500bb22ccdbe7af4369a518ad579899b04c334b7f1065a"
+      "sha256": "2867ff6710f1530ecb9c9a1ae7846c25efdbc9e08533cadaf177b1dda7fd04b7"
     },
     {
       "path": "tests/llcc-sm7675-contract.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "tests/llcc-sm7675-dt-contract.sh",
-      "sha256": "7f065032d9c62d8f79f3a373148e6aec07a78b80bc1a57eee038f4d3af56ae39"
+      "sha256": "313898c6ba25a99dad9fd5b4935865faf5583c956356692608f7f94cda447da3"
     },
     {
       "path": "tests/fixtures/llcc-sm7675-policy.inc",
@@ -42,6 +42,22 @@
     {
       "path": "tests/llcc-gpu-startup-contract.sh",
       "sha256": "44bbcebcf4773afd9b3550c45382159cff10cab2c33df9cc67782f3f20af75c9"
+    },
+    {
+      "path": "src/boot/uke-llcc.h",
+      "sha256": "23c68712181a817ede3d03aca3838f9bee62084fe2da8c6a504d899878f9771a"
+    },
+    {
+      "path": "src/boot/uke-abl.c",
+      "sha256": "b8174f6eeee81a25c7ea7e720509a38367ace4d014f24b1c1a26457f5e0726bc"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "2735cf232ce38c5a99708b8c8ef98db28a9b9f121e2ccb1b4128f249e5f91f2e"
+    },
+    {
+      "path": "tests/llcc-boot-fdt-contract.sh",
+      "sha256": "0c745bbc1e10d493150993a33ddfa4adbec76d1bd530676b7b2dbea1de50a8ec"
     }
   ],
   "baseline_files": [
@@ -134,15 +150,29 @@
     "gpu_startup_baseline_failure": 134,
     "gpu_startup_two_runtime_mutation_refusals": true,
     "aarch64_adreno_device_object_werror": true,
-    "physical_supplier_unbind": false
+    "physical_supplier_unbind": false,
+    "boot_fdt_actual_helper_fixture": true,
+    "boot_fdt_seven_write_faults": true,
+    "boot_fdt_bounded_space_fixture": true,
+    "default_profile_preprocessed_identity": true,
+    "arm64_abl_profile_on_off_werror": true,
+    "unknown_source_profile_refusal": true,
+    "fresh_native_source_preparation": false
   },
   "limits": [
     "The source candidate admits four hardware banks and v5 only; the tablet bank count and hardware version have not been read through this driver",
     "Resource and version mismatches stop before configuration writes; later I/O failures can leave partial cache programming and require physical recovery qualification",
     "GPU field tests use actual source with simulated register writes; cache hits, coherency, counters and real GPU activation are untested",
-    "The host DT producer preserves its input and refuses mismatches; it is not wired into the normal boot producer or package",
+    "Host DT and early boot helpers preserve their input contract; the source profile is unselected in normal packaging and still needs a fresh matched source/package preparation",
     "EDAC, PMU/AMU, MEMLAT, BWMON, frequency limits and firmware policy are unchanged",
     "No target kernel installation, boot, suspend, cache actuation or measured speedup occurred",
     "Managed supplier links and deferred platform probe are source-tested; actual driver-core cleanup, supplier unbind and device PM remain unqualified"
-  ]
+  ],
+  "source_profile": {
+    "default": "disabled",
+    "candidate": "native-v1",
+    "selection": "UKE_LLCC_PROFILE",
+    "normal_package_selected": false,
+    "requires_three_candidate_patches_preapplied": true
+  }
 }

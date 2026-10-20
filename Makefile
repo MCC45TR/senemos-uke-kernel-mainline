@@ -15,7 +15,7 @@ validate:
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
-	bash -n src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh
+	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
 	bash tests/mainline-package-contract.sh
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
