@@ -104,6 +104,13 @@ int main(void) {
     state.service_generation=9;
     assert(uke_transport_state_show(&dev,NULL,output)>0);
     assert(strstr(output,"service_generation=9") && strstr(output,"request_generation=8"));
+    state.quarantined=false;now=200;decoded_error=0;decoded_firmware=0;
+    assert(!pmic_glink_ucsi_begin(&state,0x11));
+    packet[sizeof(struct pmic_glink_hdr)]=0x5a;
+    pmic_glink_ucsi_ack(&state,0x11,packet,sizeof(packet));
+    assert(state.firmware_error_known && !state.firmware_error && state.read_buf[0]==0x5a);
+    now=210;assert(!pmic_glink_ucsi_wait(&state,0) && !state.quarantined);
+    assert(state.completed_ns==210 && !state.pending_opcode && !state.result_error);
     puts("Actual UCSI transport errors, unknown firmware status, epochs and non-mutating cached read: passed");
 }
 C
