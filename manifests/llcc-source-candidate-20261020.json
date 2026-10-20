@@ -57,7 +57,7 @@
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
-      "sha256": "09593e994d3a102d4fe76ba97e87b52749c3c7f9ac7610dec3a82a7a61e11dbb"
+      "sha256": "177056612d45fcd41450fcafce1688c74f17e9dc488ddb232ac25788176630ee"
     }
   ],
   "baseline_files": [

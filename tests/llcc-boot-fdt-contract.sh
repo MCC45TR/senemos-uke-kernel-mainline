@@ -134,8 +134,12 @@ int main(void) {
 }
 C
 lib=$kernel/scripts/dtc/libfdt
-sources=(fdt.c fdt_ro.c fdt_wip.c fdt_sw.c fdt_rw.c fdt_strerror.c fdt_empty_tree.c fdt_addresses.c fdt_check.c)
+sources=(fdt.c fdt_ro.c fdt_wip.c fdt_sw.c fdt_rw.c fdt_strerror.c fdt_empty_tree.c fdt_addresses.c)
 for i in "${!sources[@]}"; do sources[i]=$lib/${sources[i]}; done
+# Linux omits this matching DTC validator until native source preparation.
+grep -Fq 'DTC 1.7.2-g53373d13' "$kernel/scripts/dtc/version_gen.h"
+[[ $(sha256sum "$project/src/boot/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$project/src/boot/vendor/source.json")" ]]
+sources+=("$project/src/boot/vendor/fdt_check.c")
 "${CC:-gcc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare \
     ${LLCC_TEST_CFLAGS:-} -I "$lib" -I "$project/src/boot" "$work/check.c" "${sources[@]}" -o "$work/check"
 "$work/check"
