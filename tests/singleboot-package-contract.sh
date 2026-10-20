@@ -9,7 +9,7 @@ requires=$(rpmspec -q --requires --target aarch64 "$spec")
 for part in core modules dtbs boot; do
     grep -Eq "^senemos-uke-linux-kernel-mainline-$part = 7[.]2[.]11-14([.]|$)" <<< "$requires"
 done
-if grep -Eq '^%(pre|post|trigger)' "$spec"; then exit 1; fi
+if grep -Eq '^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)([[:space:]]|$)' "$spec"; then exit 1; fi
 jq -e '.package=="senemos-uke-linux-kernel-mainline-singleboot" and
     .kernel_release=="7.2.11-14" and .root_partition=="userdata" and
     .root_filesystem=="f2fs" and .boot_selector=="senemos.root=userdata" and
