@@ -13,6 +13,13 @@ result=$?
 set -e
 [[ $result == 2 && -z $(find "$work/output" -mindepth 1 -print -quit) ]]
 grep -Fxq 'Unknown LLCC source profile' "$work/profile.log"
+set +e
+UKE_LLCC_PROFILE=native-v1 bash "$project/src/boot/prepare-abl-source.sh" \
+    "$work/kernel" "$work/output" > "$work/source-lock.log" 2>&1
+result=$?
+set -e
+[[ $result != 0 && -z $(find "$work/output" -mindepth 1 -print -quit) ]]
+grep -q 'source-lock.json' "$work/source-lock.log"
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <stdint.h>

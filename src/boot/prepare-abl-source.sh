@@ -12,15 +12,15 @@ case $llcc_profile in
     native-v1) llcc_native=1;;
     *) echo 'Unknown LLCC source profile' >&2; exit 2;;
 esac
+version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
+case $version in 7.2.9|7.2.10|7.2.11) ;; *) exit 1;; esac
+[[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
+cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 if [[ $llcc_native == 1 ]]; then
     bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
     bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
     bash "$here/../../tests/llcc-boot-fdt-contract.sh" "$kernel"
 fi
-version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
-case $version in 7.2.9|7.2.10|7.2.11) ;; *) exit 1;; esac
-[[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
-cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 # Wi-Fi requires the package-owned RF/GENI/SMMU contract; older pairs keep their frozen recipe.
 grep -Fxq 0015-uke-wlan-supplies-and-dma.patch "$kernel/senemos-applied-patches.txt"
 grep -Fxq 0016-uke-wlan-ordered-rails.patch "$kernel/senemos-applied-patches.txt"

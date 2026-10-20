@@ -53,11 +53,11 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "2735cf232ce38c5a99708b8c8ef98db28a9b9f121e2ccb1b4128f249e5f91f2e"
+      "sha256": "5d00fe5557e633cf93c7881706d5753686804f0857affef806a6c331cf66bc6a"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
-      "sha256": "0c745bbc1e10d493150993a33ddfa4adbec76d1bd530676b7b2dbea1de50a8ec"
+      "sha256": "09593e994d3a102d4fe76ba97e87b52749c3c7f9ac7610dec3a82a7a61e11dbb"
     }
   ],
   "baseline_files": [
@@ -157,7 +157,8 @@
     "default_profile_preprocessed_identity": true,
     "arm64_abl_profile_on_off_werror": true,
     "unknown_source_profile_refusal": true,
-    "fresh_native_source_preparation": false
+    "fresh_native_source_preparation": false,
+    "source_lock_before_native_fixture": true
   },
   "limits": [
     "The source candidate admits four hardware banks and v5 only; the tablet bank count and hardware version have not been read through this driver",
