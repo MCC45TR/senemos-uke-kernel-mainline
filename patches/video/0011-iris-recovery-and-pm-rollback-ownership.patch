@@ -9,6 +9,7 @@ Do not restart firmware from a recovery worker during removal.
 Reset the completion for each initialization and make every opener wait
 for a response. Recheck removal and firmware errors after waking. Do not
 consume stale success or bypass the first initializer's pending response.
+Broadcast both HFI generations' initialization results to all waiters.
 
 Do not drop a runtime-PM reference when acquisition failed. On resume
 failure, check remote suspend before cutting power and preserve the
@@ -24,10 +25,10 @@ still require completion before enabling the native core match.
 Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
 
 diff --git a/drivers/media/platform/qcom/iris/iris_core.c b/drivers/media/platform/qcom/iris/iris_core.c
-index 1fbf5f2..486cfae 100644
+index 1fbf5f2..bc503c8 100644
 --- a/drivers/media/platform/qcom/iris/iris_core.c
 +++ b/drivers/media/platform/qcom/iris/iris_core.c
-@@ -7,9 +7,35 @@
+@@ -7,9 +7,46 @@
  
  #include "iris_core.h"
  #include "iris_firmware.h"
@@ -35,6 +36,17 @@ index 1fbf5f2..486cfae 100644
  #include "iris_state.h"
  #include "iris_vpu_common.h"
  
++void iris_core_init_done(struct iris_core *core, bool success)
++{
++	mutex_lock(&core->lock);
++	if (!core->removing && core->state == IRIS_CORE_INIT) {
++		if (!success)
++			core->state = IRIS_CORE_ERROR;
++		complete_all(&core->core_init_done);
++	}
++	mutex_unlock(&core->lock);
++}
++
 +void iris_core_sys_error(struct iris_core *core)
 +{
 +	struct iris_inst *inst;
@@ -63,7 +75,7 @@ index 1fbf5f2..486cfae 100644
  int iris_core_deinit(struct iris_core *core)
  {
  	int pm_ret, ret = 0;
-@@ -47,17 +73,28 @@ static int iris_wait_for_system_response(struct iris_core *core)
+@@ -47,17 +84,28 @@ static int iris_wait_for_system_response(struct iris_core *core)
  {
  	int ret;
  
@@ -96,7 +108,7 @@ index 1fbf5f2..486cfae 100644
  }
  
  int iris_core_init(struct iris_core *core)
-@@ -65,9 +102,12 @@ int iris_core_init(struct iris_core *core)
+@@ -65,9 +113,12 @@ int iris_core_init(struct iris_core *core)
  	int ret;
  
  	mutex_lock(&core->lock);
@@ -111,7 +123,7 @@ index 1fbf5f2..486cfae 100644
  	} else if (core->state == IRIS_CORE_ERROR) {
  		ret = -EINVAL;
  		goto exit;
-@@ -76,6 +116,7 @@ int iris_core_init(struct iris_core *core)
+@@ -76,6 +127,7 @@ int iris_core_init(struct iris_core *core)
  		goto exit;
  	}
  
@@ -119,7 +131,7 @@ index 1fbf5f2..486cfae 100644
  	core->state = IRIS_CORE_INIT;
  
  	ret = iris_hfi_queues_init(core);
-@@ -104,6 +145,7 @@ int iris_core_init(struct iris_core *core)
+@@ -104,6 +156,7 @@ int iris_core_init(struct iris_core *core)
  	if (ret)
  		goto error_unload_fw;
  
@@ -128,7 +140,7 @@ index 1fbf5f2..486cfae 100644
  
  	return iris_wait_for_system_response(core);
 diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
-index b9f4e80..1761f14 100644
+index b9f4e80..97411e7 100644
 --- a/drivers/media/platform/qcom/iris/iris_core.h
 +++ b/drivers/media/platform/qcom/iris/iris_core.h
 @@ -61,6 +61,7 @@ struct qcom_ubwc_cfg_data;
@@ -147,10 +159,11 @@ index b9f4e80..1761f14 100644
  	struct iris_fw_mmap			fw_mmap;
  	dma_addr_t				iface_q_table_daddr;
  	dma_addr_t				sfr_daddr;
-@@ -134,6 +136,8 @@ struct iris_core {
+@@ -134,6 +136,9 @@ struct iris_core {
  
  int iris_core_init(struct iris_core *core);
  int iris_core_deinit(struct iris_core *core);
++void iris_core_init_done(struct iris_core *core, bool success);
 +void iris_core_sys_error(struct iris_core *core);
 +void iris_core_stop_recovery(struct iris_core *core);
  int iris_register_video_devices(struct iris_core *core);
@@ -207,7 +220,7 @@ index ec2ea35..21fb548 100644
  error:
  	dev_err(core->dev, "failed to resume\n");
 diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c b/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
-index bfd7495..4d6c442 100644
+index bfd7495..91bbd44 100644
 --- a/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
 +++ b/drivers/media/platform/qcom/iris/iris_hfi_gen1_response.c
 @@ -218,21 +218,13 @@ static void
@@ -233,8 +246,22 @@ index bfd7495..4d6c442 100644
  }
  
  static void
+@@ -283,12 +275,7 @@ static void iris_hfi_gen1_sys_init_done(struct iris_core *core, void *packet)
+ {
+ 	struct hfi_msg_sys_init_done_pkt *pkt = packet;
+ 
+-	if (pkt->error_type != HFI_ERR_NONE) {
+-		core->state = IRIS_CORE_ERROR;
+-		return;
+-	}
+-
+-	complete(&core->core_init_done);
++	iris_core_init_done(core, pkt->error_type == HFI_ERR_NONE);
+ }
+ 
+ static void
 diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
-index 25162ae..59ac180 100644
+index 25162ae..51d1261 100644
 --- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
 +++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
 @@ -275,19 +275,10 @@ static int iris_hfi_gen2_handle_session_error(struct iris_inst *inst,
@@ -255,6 +282,20 @@ index 25162ae..59ac180 100644
 -
 -	schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
 +	iris_core_sys_error(core);
+ 
+ 	return 0;
+ }
+@@ -295,12 +286,7 @@ static int iris_hfi_gen2_handle_system_error(struct iris_core *core,
+ static int iris_hfi_gen2_handle_system_init(struct iris_core *core,
+ 					    struct iris_hfi_packet *pkt)
+ {
+-	if (!(pkt->flags & HFI_FW_FLAGS_SUCCESS)) {
+-		core->state = IRIS_CORE_ERROR;
+-		return 0;
+-	}
+-
+-	complete(&core->core_init_done);
++	iris_core_init_done(core, pkt->flags & HFI_FW_FLAGS_SUCCESS);
  
  	return 0;
  }

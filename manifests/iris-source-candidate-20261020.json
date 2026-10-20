@@ -103,7 +103,7 @@
     },
     {
       "path": "patches/video/0011-iris-recovery-and-pm-rollback-ownership.patch",
-      "sha256": "34beded9c02cd5f696b6beb9bc26feda1684448a2d0c039437171efd031322b8"
+      "sha256": "367292e39c35a4bfbf8fc7c7aaad3e9e92d8283c0da601123d750ca476765ba5"
     }
   ],
   "sources": [
@@ -291,6 +291,8 @@
     "upstream_common_sha256": "0bdceedd006deb40ea6ff78772555d89094399e39c78d14d950c606c57d1ae62",
     "upstream_queue_sha256": "42b1687d106f61ba48e05552715de41ca6994aee6ca80316bc25707ef7001ef8",
     "upstream_gen1_response_sha256": "fc631eecdafed4f6027a1f7c6a03438328805508a8d031bd81299d9838ea08dc",
-    "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61"
+    "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61",
+    "initialization_result_broadcast": true,
+    "initialization_reply_helper_serialized": true
   }
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2129
 # Actual firmware/core/PM functions with host-only PAS and DMA ownership faults.
 set -Eeuo pipefail
 iris=${1:?Pass the prepared Iris directory}
@@ -51,6 +52,14 @@ static bool work_pending;
 static bool remove_during_pm;
 static unsigned pm_gets;
 static iris_core *wait_core;
+static bool response_pending;
+static int response_generation;
+static unsigned responses_delivered;
+struct hfi_msg_sys_init_done_pkt { u32 error_type; };
+struct iris_hfi_packet { u32 flags; };
+static void iris_hfi_gen1_sys_init_done(iris_core *, void *);
+static int iris_hfi_gen2_handle_system_init(iris_core *, iris_hfi_packet *);
+void iris_core_init_done(iris_core *, bool);
 #define READ_ONCE(value) (value)
 #define WRITE_ONCE(value, next) ((value) = (next))
 #define list_for_each_entry(pos, head, member) \
@@ -91,6 +100,9 @@ static int qcom_scm_pas_shutdown(int id) {
 #define dev_err(...) ((void)0)
 int iris_fw_unload(iris_core *);
 CPP
+awk '/^#define HFI_ERR_NONE/ {print}' "$iris/iris_hfi_gen1_defines.h" >> "$work/check.cpp"
+awk '/^enum hfi_packet_firmware_flags \{/ {emit=1} emit {print} emit && /^};/ {exit}' \
+    "$iris/iris_hfi_gen2_defines.h" >> "$work/check.cpp"
 for name in iris_load_fw_to_memory iris_fw_load iris_fw_unload; do
     awk -v name="$name" '$0 ~ "^(static )?int " name "\\(" { emit=1 } emit { print } emit && /^}/ { exit }' \
         "$iris/iris_firmware.c" >> "$work/check.cpp"
@@ -112,13 +124,26 @@ static void iris_hfi_queues_deinit(iris_core *) {
 }
 static unsigned msecs_to_jiffies(unsigned value) { return value; }
 static void reinit_completion(int *done) { *done = 0; ++reinits; }
-static void complete_all(int *done) { assert(lock_depth == 1); *done = 1; }
+static void complete(int *done) { assert(*done >= 0); ++*done; }
+static void complete_all(int *done) { assert(lock_depth == 1); *done = -1; }
 static unsigned wait_for_completion_timeout(int *done, unsigned) {
     assert(!lock_depth); ++waits;
+    if (response_pending && response) {
+        response_pending = false; ++responses_delivered;
+        if (response_generation == 1) {
+            hfi_msg_sys_init_done_pkt reply{response == 1 ? HFI_ERR_NONE : 1U};
+            iris_hfi_gen1_sys_init_done(wait_core, &reply);
+        } else {
+            iris_hfi_packet reply{response == 1 ? static_cast<u32>(HFI_FW_FLAGS_SUCCESS) : 0U};
+            assert(iris_hfi_gen2_handle_system_init(wait_core, &reply) == 0);
+        }
+    }
     if (wait_action == 1) wait_core->removing = true;
     if (wait_action == 2) wait_core->state = IRIS_CORE_ERROR;
     if (wait_action == 3) wait_core->state = IRIS_CORE_DEINIT;
-    return response ? response : *done;
+    const bool ready = *done != 0;
+    if (*done > 0) --*done;
+    return ready;
 }
 static void iris_inst_change_state(iris_inst *inst, int state) {
     assert(lock_depth == 1); inst->state = state;
@@ -136,12 +161,20 @@ static int iris_hfi_queues_init(iris_core *) {
 static int iris_vpu_power_on(iris_core *) { return step("power-on", 10); }
 static int iris_vpu_boot_firmware(iris_core *) { return step("boot", 11); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return step("hwmode", 12); }
-static int iris_hfi_core_init(iris_core *) { return step("hfi-init", 13); }
+static int iris_hfi_core_init(iris_core *) {
+    const int ret = step("hfi-init", 13); response_pending = !ret; return ret;
+}
 CPP
-for name in iris_core_sys_error iris_core_stop_recovery iris_core_deinit iris_wait_for_system_response iris_core_init; do
+for name in iris_core_init_done iris_core_sys_error iris_core_stop_recovery iris_core_deinit iris_wait_for_system_response iris_core_init; do
     awk -v name="$name" '$0 ~ "^(static )?(int|void) " name "\\(" { emit=1 } emit { print } emit && /^}/ { exit }' \
         "$iris/iris_core.c" >> "$work/check.cpp"
 done
+# Only the generated C++ copy needs the unchanged C void-pointer conversion.
+awk '/^static void iris_hfi_gen1_sys_init_done\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
+    "$iris/iris_hfi_gen1_response.c" |
+    sed 's/struct hfi_msg_sys_init_done_pkt \*pkt = packet;/struct hfi_msg_sys_init_done_pkt *pkt = (struct hfi_msg_sys_init_done_pkt *)packet;/' >> "$work/check.cpp"
+awk '/^static int iris_hfi_gen2_handle_system_init\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
+    "$iris/iris_hfi_gen2_response.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 static int iris_hfi_queue_write(iris_iface_q_info *, void *, u32) {
     assert(lock_depth == 1); ++queue_writes; return queue_result;
@@ -181,6 +214,7 @@ static void reset(iris_core &core) {
     reinits = waits = cancellations = schedules = auto_puts = queue_writes = irq_raises = 0;
     lock_depth = wait_action = queue_result = 0; work_pending = false; wait_core = &core;
     remove_during_pm = false; pm_gets = 0;
+    response_pending = false; response_generation = 2; responses_delivered = 0;
 }
 int main() {
     iris_core core;
@@ -257,6 +291,30 @@ int main() {
     reset(core); assert(iris_core_init(&core) == 0 && reinits == 1 && waits == 1);
     assert(iris_core_init(&core) == 0 && reinits == 1 && waits == 2 && allocs == 1);
     assert(iris_core_deinit(&core) == 0);
+    for (int generation : {1, 2}) {
+        reset(core); response_generation = generation;
+        for (unsigned opener = 0; opener < 4; ++opener)
+            assert(iris_core_init(&core) == 0);
+        assert(reinits == 1 && waits == 4 && responses_delivered == 1 && core.core_init_done == -1);
+        assert(iris_core_deinit(&core) == 0);
+        reset(core); response_generation = generation; response = 2;
+        assert(iris_core_init(&core) == -EIO && responses_delivered == 1 && core.core_init_done == -1);
+        assert(core.state == IRIS_CORE_ERROR && iris_core_deinit(&core) == 0);
+        for (auto state : {IRIS_CORE_DEINIT, IRIS_CORE_ERROR, IRIS_CORE_INIT}) {
+            reset(core); core.state = state; core.removing = state == IRIS_CORE_INIT;
+            hfi_msg_sys_init_done_pkt reply1{HFI_ERR_NONE};
+            iris_hfi_packet reply2{HFI_FW_FLAGS_SUCCESS};
+            if (generation == 1)
+                iris_hfi_gen1_sys_init_done(&core, &reply1);
+            else
+                assert(iris_hfi_gen2_handle_system_init(&core, &reply2) == 0);
+            assert(core.state == state && core.core_init_done == 0 && !lock_depth);
+        }
+    }
+    reset(core); response = 0; core.state = IRIS_CORE_INIT;
+    complete(&core.core_init_done);
+    assert(iris_wait_for_system_response(&core) == 0 && core.core_init_done == 0);
+    assert(iris_wait_for_system_response(&core) == -ETIMEDOUT);
     for (int action : {1, 2, 3}) {
         reset(core); wait_action = action;
         assert(iris_core_init(&core) == (action == 1 ? -ENODEV : -EIO));
@@ -267,7 +325,7 @@ int main() {
     iris_inst instance{}; core.instances.push_back(&instance);
     iris_core_sys_error(&core);
     assert(core.state == IRIS_CORE_ERROR && instance.state == IRIS_INST_ERROR);
-    assert(work_pending && schedules == 1 && core.core_init_done == 1);
+    assert(work_pending && schedules == 1 && core.core_init_done == -1);
     iris_core_stop_recovery(&core);
     assert(core.removing && !work_pending && cancellations == 1 && !lock_depth);
     const auto stopped_events = events;
