@@ -205,12 +205,18 @@ Source tests and package builds do not establish userdata boot acceptance.
 
 ## Cliffs7 cache package candidate, 20 October 2026
 
-Release 15 retains release 14's first 94 patch hashes, root selector, Type-C,
+Release 15 retains release 14's first 94 patch hashes, root profiles, Type-C,
 charging and thermal paths. Patches 0095–0097 add the four-bank/v5 Cliffs7
 cache provider, five-window binding and managed GPU supplier ordering.
 The hashed `llcc-profile` selects `native-v1` during native source preparation;
 the generated boot helper transforms only its private admitted DT copy.
 Unknown profiles and source/graph mismatches are refused. Audio stays disabled.
+
+The reviewed root selector also forwards exact `_a`/`_b` boot-slot identity and
+an explicit `msm.o82_vrr_test_min_hz=0|30` only with the userdata root selector.
+Duplicates, malformed values, forced-argument conflicts and insufficient space
+are rejected before command-line mutation. Other bootloader arguments remain
+excluded. The standard Linux container does not enable the VRR experiment.
 
 Source fixtures and object compilation are separate from a fresh matched
 source RPM, full kernel/package build and tablet acceptance. Actual bank/version

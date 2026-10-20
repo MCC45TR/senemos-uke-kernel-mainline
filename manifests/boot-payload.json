@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-18",
+  "date": "2026-10-20",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, integrated with the current native display and sensor profile",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -105,7 +105,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "b566bc096cc25e890df46a5ea6f1e89432edb4cbe649f95c5d63ccb81fd5075b"
+      "sha256": "2722173940ed7751ec3a055f6d98fd5af61c486b4c1b20041ed063d417694a87"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",

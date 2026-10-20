@@ -292,7 +292,8 @@ fi
 %changelog
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
 - Select the matched Cliffs7 cache source profile and defer GPU probe until its supplier binds.
-- Preserve the release-14 root selector, charging policy and disabled audio profile.
+- Forward exact slot identity and private userdata VRR arguments through the forced command line.
+- Preserve the existing root profiles, charging policy and disabled audio profile.
 
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
 - Bound APM basic replies and propagate readiness and PRM firmware errors
