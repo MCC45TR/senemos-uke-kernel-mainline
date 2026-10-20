@@ -67,6 +67,6 @@ kvm-singleboot-srpm:
 	top="$$(realpath -m "$(outdir)/kvm-singleboot-rpmbuild")"
 	mkdir -p "$$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS}
 	install -m644 packaging/kvm-singleboot.json packaging/KVM-SINGLEBOOT.md LICENSE "$$top/SOURCES/"
-	install -m644 packaging/senemos-uke-kernel-mainline-kvm-singleboot.spec "$$top/SPECS/"
-	rpmbuild -bs --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-kernel-mainline-kvm-singleboot.spec"
+	install -m644 packaging/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec "$$top/SPECS/"
+	rpmbuild -bs --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
