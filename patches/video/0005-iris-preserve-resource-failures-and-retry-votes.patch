@@ -1,0 +1,71 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: preserve resource failures and retry failed votes
+
+Do not cache a failed interconnect request as accepted bandwidth. Bulk
+votes may fail after a partial update; invalidate the bandwidth cache so
+the next request always retries. A close request must not skip a retry.
+
+Check the final OPP rate result before presets/interrupt enable and
+unwind hardware, controller and interconnect resources on failure.
+Retain the actual resume errno after the existing cleanup paths instead
+of replacing every failure with EBUSY.
+
+Compared against current upstream f47d223627f80cb7a1eb14c585fe6cb35de5e984,
+which retains these paths. This inactive source candidate does not match
+or activate Uke hardware. Actual-function host fault fixtures cover each
+resource stage and GCC/Clang builds retain existing success behavior.
+
+diff --git a/drivers/media/platform/qcom/iris/iris_resources.c b/drivers/media/platform/qcom/iris/iris_resources.c
+--- a/drivers/media/platform/qcom/iris/iris_resources.c
++++ b/drivers/media/platform/qcom/iris/iris_resources.c
+@@ -37,12 +37,15 @@
+ 
+ 			core->icc_tbl[i].avg_bw = bw_kbps;
+ 
+-			core->power.icc_bw = bw_kbps;
+ 			break;
+ 		}
+ 	}
+ 
+-	return icc_bulk_set_bw(core->icc_count, core->icc_tbl);
++	ret = icc_bulk_set_bw(core->icc_count, core->icc_tbl);
++	/* A failed bulk vote can be partial; force the next request to retry. */
++	core->power.icc_bw = ret ? 0 : bw_kbps;
++
++	return ret;
+ }
+ 
+ int iris_unset_icc_bw(struct iris_core *core)
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.c b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+@@ -483,7 +483,9 @@
+ 	freq = core->power.clk_freq ? core->power.clk_freq :
+ 				      (u32)ULONG_MAX;
+ 
+-	iris_opp_set_rate(core->dev, freq);
++	ret = iris_opp_set_rate(core->dev, freq);
++	if (ret)
++		goto err_power_off_hw;
+ 
+ 	iris_vpu_set_preset_registers(core);
+ 
+@@ -493,6 +495,8 @@
+ 
+ 	return 0;
+ 
++err_power_off_hw:
++	core->iris_platform_data->vpu_ops->power_off_hw(core);
+ err_power_off_ctrl:
+ 	core->iris_platform_data->vpu_ops->power_off_controller(core);
+ err_unvote_icc:
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_common.c b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+--- a/drivers/media/platform/qcom/iris/iris_hfi_common.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_common.c
+@@ -176,5 +176,5 @@
+ error:
+ 	dev_err(core->dev, "failed to resume\n");
+ 
+-	return -EBUSY;
++	return ret;
+ }

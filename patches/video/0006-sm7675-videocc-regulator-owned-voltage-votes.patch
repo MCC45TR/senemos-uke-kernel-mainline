@@ -1,0 +1,277 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] clk: qcom: retain regulator ownership for SM7675 video corners
+
+Reuse the existing Uke regulator aggregator for Cliffs VIDEOCC voltage
+corners. Exact OEM rate ceilings come from MiCode source revision
+5712080a4b0c0b1a879e6d145c601c649ddaddfd, videocc-pineapple.c and its
+Cliffs fixup. PLLs vote MXC; MVS0/1 vote MMCX and MXC. Retain the OEM
+supply names and current driver callbacks with error unwinding and
+proxy-vote removal only after successful consumer clock sync.
+
+No extra RPMh domain writer is introduced. Do not advertise the OEM
+2300 MHz PLL ceiling requiring HIGH_L1 outside its HIGH-class admission;
+the admitted PLL ceiling is 2000 MHz and covers these source tables.
+The SM7675 binding requires both supplies and excludes competing power
+domains/required OPPs; other SoC bindings retain their domain contract.
+
+Allow Iris platforms with clock-owned voltage votes to omit OPP domain
+attachments, without attaching all domains through an empty name list.
+The dormant SM7675 platform retains its two VPU domains and OPP clock.
+No Iris match, consumer DT, firmware or active source-series change.
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+--- a/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,sm8450-videocc.yaml
+@@ -56,10 +56,15 @@
+       - description: MMCX performance point
+       - description: MXC performance point
+ 
++  vdd_mm-supply:
++    description: Aggregated MMCX voltage-corner regulator for SM7675
++
++  vdd_mxc-supply:
++    description: Aggregated MXC voltage-corner regulator for SM7675
++
+ required:
+   - compatible
+   - clocks
+-  - power-domains
+   - '#power-domain-cells'
+ 
+ allOf:
+@@ -71,7 +76,6 @@
+             enum:
+               - qcom,glymur-videocc
+               - qcom,kaanapali-videocc
+-              - qcom,sm7675-videocc
+               - qcom,sm8450-videocc
+               - qcom,sm8550-videocc
+               - qcom,sm8750-videocc
+@@ -80,6 +84,24 @@
+       required:
+         - required-opps
+ 
++  - if:
++      properties:
++        compatible:
++          const: qcom,sm7675-videocc
++    then:
++      required:
++        - vdd_mm-supply
++        - vdd_mxc-supply
++      properties:
++        power-domains: false
++        required-opps: false
++    else:
++      required:
++        - power-domains
++      properties:
++        vdd_mm-supply: false
++        vdd_mxc-supply: false
++
+ unevaluatedProperties: false
+ 
+ examples:
+diff --git a/drivers/clk/qcom/videocc-sm8550.c b/drivers/clk/qcom/videocc-sm8550.c
+--- a/drivers/clk/qcom/videocc-sm8550.c
++++ b/drivers/clk/qcom/videocc-sm8550.c
+@@ -599,7 +599,7 @@
+ 	.driver_data = &video_cc_sm8550_driver_data,
+ };
+ 
+-static const struct qcom_cc_desc video_cc_sm7675_desc = {
++static struct qcom_cc_desc video_cc_sm7675_desc = {
+ 	.config = &video_cc_sm8550_regmap_config,
+ 	.clks = video_cc_sm8550_clocks,
+ 	.num_clks = ARRAY_SIZE(video_cc_sm8550_clocks),
+@@ -611,6 +611,8 @@
+ 	.driver_data = &video_cc_sm8550_driver_data,
+ };
+ 
++#include "uke-videocc-votes.c"
++
+ static const struct of_device_id video_cc_sm8550_match_table[] = {
+ 	{ .compatible = "qcom,sm7675-videocc" },
+ 	{ .compatible = "qcom,sm8550-videocc" },
+@@ -623,6 +625,7 @@
+ static int video_cc_sm8550_probe(struct platform_device *pdev)
+ {
+ 	bool is_sm7675 = of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-videocc");
++	int ret;
+ 
+ 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,x1e80100-videocc")) {
+ 		video_cc_pll0_config.l = 0x1e;
+@@ -669,6 +672,13 @@
+ 		}
+ 	}
+ 
++	if (is_sm7675) {
++		ret = uke_video_voltage_init(&pdev->dev);
++		if (ret)
++			return dev_err_probe(&pdev->dev, ret,
++					     "VIDEOCC voltage votes unavailable\n");
++	}
++
+ 	return qcom_cc_probe(pdev, is_sm7675 ? &video_cc_sm7675_desc : &video_cc_sm8550_desc);
+ }
+ 
+@@ -677,6 +687,7 @@
+ 	.driver = {
+ 		.name = "video_cc-sm8550",
+ 		.of_match_table = video_cc_sm8550_match_table,
++		.sync_state = uke_video_sync_state,
+ 	},
+ };
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+--- a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
++++ b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+@@ -211,8 +211,7 @@
+ 	.bw_tbl_dec_size = ARRAY_SIZE(iris_bw_table_dec_vpu3x),
+ 	.pmdomain_tbl = iris_pmdomain_table_vpu3x,
+ 	.pmdomain_tbl_size = ARRAY_SIZE(iris_pmdomain_table_vpu3x),
+-	.opp_pd_tbl = iris_opp_pd_table_vpu3x,
+-	.opp_pd_tbl_size = ARRAY_SIZE(iris_opp_pd_table_vpu3x),
++	/* Voltage corners are owned by VIDEOCC's existing regulator aggregator. */
+ 	.clk_tbl = sm8550_clk_table,
+ 	.clk_tbl_size = ARRAY_SIZE(sm8550_clk_table),
+ 	.opp_clk_tbl = iris_opp_clk_table_vpu3x,
+diff --git a/drivers/media/platform/qcom/iris/iris_probe.c b/drivers/media/platform/qcom/iris/iris_probe.c
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -64,7 +64,10 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret =  devm_pm_domain_attach_list(core->dev, &iris_opp_pd_data, &core->opp_pmdomain_tbl);
++	ret = 0;
++	if (iris_opp_pd_data.num_pd_names)
++		ret = devm_pm_domain_attach_list(core->dev, &iris_opp_pd_data,
++						&core->opp_pmdomain_tbl);
+ 	/* backwards compatibility for incomplete ABI SM8250 */
+ 	if (ret == -ENODEV &&
+ 	    of_device_is_compatible(core->dev->of_node, "qcom,sm8250-venus")) {
+diff --git a/drivers/clk/qcom/uke-videocc-votes.c b/drivers/clk/qcom/uke-videocc-votes.c
+new file mode 100644
+--- /dev/null
++++ b/drivers/clk/qcom/uke-videocc-votes.c
+@@ -0,0 +1,119 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc.
++ * Cliffs tables from MiCode 5712080a, videocc-pineapple.c.
++ * Include in videocc-sm8550.c; use the existing regulator aggregator.
++ */
++#include "vdd-level.h"
++
++static DEFINE_VDD_REGULATORS(uke_video_mm, VDD_HIGH + 1, 1, vdd_corner);
++static DEFINE_VDD_REGULATORS(uke_video_mxc, VDD_HIGH + 1, 1, vdd_corner);
++static struct clk_vdd_class *uke_video_regulators[] = {
++	&uke_video_mm, &uke_video_mxc,
++};
++static unsigned long uke_video_pll_rates[VDD_NUM] = {
++	[VDD_LOWER_D1] = 615000000, [VDD_LOW] = 1100000000,
++	[VDD_LOW_L1] = 1600000000, [VDD_NOMINAL] = 2000000000,
++};
++static unsigned long uke_video_mvs0_rates[VDD_NUM] = {
++	[VDD_LOWER_D1] = 576000000, [VDD_LOWER] = 720000000,
++	[VDD_LOW] = 1014000000, [VDD_LOW_L1] = 1098000000,
++	[VDD_NOMINAL] = 1332000000, [VDD_HIGH] = 1600000000,
++};
++static unsigned long uke_video_mvs1_rates[VDD_NUM] = {
++	[VDD_LOWER_D1] = 840000000, [VDD_LOWER] = 1050000000,
++	[VDD_LOW] = 1350000000, [VDD_LOW_L1] = 1500000000,
++	[VDD_NOMINAL] = 1650000000,
++};
++static struct clk_ops uke_video_pll_ops, uke_video_rcg_ops;
++static struct clk_init_data uke_video_inits[4];
++static bool uke_video_proxy_active;
++
++static int uke_video_pll_prepare(struct clk_hw *hw)
++{
++	int ret = clk_prepare_regmap(hw);
++
++	if (ret)
++		return ret;
++	ret = clk_alpha_pll_lucid_evo_ops.prepare(hw);
++	if (ret)
++		clk_unprepare_regmap(hw);
++	return ret;
++}
++
++static void uke_video_add_votes(struct clk_regmap *clock, unsigned long *rates,
++				const struct clk_ops *ops, bool pll, unsigned int index)
++{
++	clock->vdd_data = (struct clk_vdd_class_data) {
++		.num_rate_max = VDD_NUM, .rate_max = rates,
++	};
++	if (pll) {
++		clock->vdd_data.vdd_class = &uke_video_mxc;
++	} else {
++		clock->vdd_data.vdd_classes = uke_video_regulators;
++		clock->vdd_data.num_vdd_classes = ARRAY_SIZE(uke_video_regulators);
++	}
++	uke_video_inits[index] = *clock->hw.init;
++	uke_video_inits[index].ops = ops;
++	clock->hw.init = &uke_video_inits[index];
++}
++
++static void uke_video_voltage_release(void *data)
++{
++	if (uke_video_proxy_active) {
++		if (clk_vdd_proxy_unvote(data, &video_cc_sm7675_desc))
++			return;
++		uke_video_proxy_active = false;
++	}
++	clk_regulator_deinit(&video_cc_sm7675_desc);
++}
++
++static int uke_video_voltage_init(struct device *dev)
++{
++	int ret;
++
++	uke_video_mm.class_name = "vdd_mm";
++	uke_video_mxc.class_name = "vdd_mxc";
++	uke_video_mm.regulator_names[0] = "vdd_mm";
++	uke_video_mxc.regulator_names[0] = "vdd_mxc";
++	uke_video_pll_ops = clk_alpha_pll_lucid_evo_ops;
++	uke_video_rcg_ops = clk_rcg2_shared_ops;
++	uke_video_pll_ops.prepare = uke_video_pll_prepare;
++	uke_video_rcg_ops.prepare = clk_prepare_regmap;
++	uke_video_pll_ops.unprepare = clk_unprepare_regmap;
++	uke_video_rcg_ops.unprepare = clk_unprepare_regmap;
++	uke_video_pll_ops.pre_rate_change = clk_pre_change_regmap;
++	uke_video_rcg_ops.pre_rate_change = clk_pre_change_regmap;
++	uke_video_pll_ops.post_rate_change = clk_post_change_regmap;
++	uke_video_rcg_ops.post_rate_change = clk_post_change_regmap;
++	uke_video_add_votes(&video_cc_pll0.clkr, uke_video_pll_rates,
++			    &uke_video_pll_ops, true, 0);
++	uke_video_add_votes(&video_cc_pll1.clkr, uke_video_pll_rates,
++			    &uke_video_pll_ops, true, 1);
++	uke_video_add_votes(&video_cc_mvs0_clk_src.clkr, uke_video_mvs0_rates,
++			    &uke_video_rcg_ops, false, 2);
++	uke_video_add_votes(&video_cc_mvs1_clk_src.clkr, uke_video_mvs1_rates,
++			    &uke_video_rcg_ops, false, 3);
++	video_cc_sm7675_desc.clk_regulators = uke_video_regulators;
++	video_cc_sm7675_desc.num_clk_regulators = ARRAY_SIZE(uke_video_regulators);
++	ret = clk_regulator_init(dev, &video_cc_sm7675_desc);
++	if (ret)
++		return ret;
++	ret = devm_add_action_or_reset(dev, uke_video_voltage_release, dev);
++	if (ret)
++		return ret;
++	ret = clk_vdd_proxy_vote(dev, &video_cc_sm7675_desc);
++	if (!ret)
++		uke_video_proxy_active = true;
++	return ret;
++}
++
++static void uke_video_sync_state(struct device *dev)
++{
++	if (!of_device_is_compatible(dev->of_node, "qcom,sm7675-videocc"))
++		return;
++	if (clk_sync_state(dev))
++		return;
++	if (uke_video_proxy_active && !clk_vdd_proxy_unvote(dev, &video_cc_sm7675_desc))
++		uke_video_proxy_active = false;
++}

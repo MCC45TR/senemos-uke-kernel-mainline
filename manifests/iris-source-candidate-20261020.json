@@ -46,6 +46,18 @@
     {
       "path": "drivers/media/platform/qcom/iris/iris_vpu_register_defines.h",
       "sha256": "bb38f4f66061349f93637dccb14c9b4436edb1a373d0a934b49ac80e7e386314"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_resources.c",
+      "sha256": "b2d7471f886b03bf4d6302374c6da31fcbf80ee4d005b977311dcff7d2646e84"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_hfi_common.c",
+      "sha256": "0bdceedd006deb40ea6ff78772555d89094399e39c78d14d950c606c57d1ae62"
+    },
+    {
+      "path": "drivers/media/platform/qcom/iris/iris_probe.c",
+      "sha256": "69b263f17fffd206b2f56cddf0895c024690f7bb52009c57d481c7c158da9f12"
     }
   ],
   "patches": [
@@ -64,6 +76,14 @@
     {
       "path": "patches/video/0004-iris-reject-firmware-boot-error-status.patch",
       "sha256": "a1a1b7c7b6b1376e761a94763cc1378afd090de1c79a07fcc9d3de2e26cea25a"
+    },
+    {
+      "path": "patches/video/0005-iris-preserve-resource-failures-and-retry-votes.patch",
+      "sha256": "de2ce38062a58bf827c6d45f50c10bb3bca9eb2cece44394352f00c254b96d25"
+    },
+    {
+      "path": "patches/video/0006-sm7675-videocc-regulator-owned-voltage-votes.patch",
+      "sha256": "9797df529b1d1ca5086c1d6042037a53fda4769e21a807f6fa7b4ba170d43ea5"
     }
   ],
   "sources": [
@@ -130,10 +150,14 @@
     "boot_status_fixture": true,
     "binding_schema_and_example": true,
     "sm7675_synthetic_example": true,
-    "missing_required_opps_rejected": true
+    "missing_required_opps_rejected": true,
+    "actual_resource_fault_fixture": true,
+    "clock_regulator_fault_fixture": true,
+    "opp_domain_fault_fixture": true,
+    "regulator_binding_five_refusals": true
   },
   "blockers": [
-    "Native provider/consumer clock, reset and regulator/genpd/OPP conversion is not admitted",
+    "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
     "Controller retention, extra VCODEC reset sequence and fault propagation remain incomplete",
     "Exact firmware mmap, device-region lifetime and split pixel/non-pixel IOMMU ownership remain unresolved",
     "PAS authentication, decoded-frame equivalence, drain/EOS, resolution changes and teardown require target validation",
@@ -143,5 +167,11 @@
     "clang": "23.1.3",
     "dt_schema": "2026.09-1.fc46",
     "python_scope": "unmodified upstream build tools in isolated host SDK only"
-  }
+  },
+  "source_assets": [
+    {
+      "path": "src/video/uke-videocc-votes.c",
+      "sha256": "0b146856594ff594110566c93758923d4725a76054d41810765984f2b1fac08b"
+    }
+  ]
 }

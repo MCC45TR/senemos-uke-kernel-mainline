@@ -6,7 +6,7 @@ Clang **23.1.3**, `KCFLAGS=-Werror`. The actual two-pipe lifecycle fixture passe
 on the host. These are object/fixture results, without a full kernel, RPM,
 firmware authentication or tablet decode result.
 
-Three project patches from candidate `e344c7b` and a new firmware-status fix
+Three project patches from candidate `e344c7b` and three integration fixes
 are retained outside the active series. The native clock header is also
 referenced by its binding. The
 [manifest](../../manifests/iris-source-candidate-20261020.json) records exact
@@ -50,7 +50,20 @@ returns `-EIO` for firmware errors and keeps polling pending-only status within
 the existing timeout. Tests cover immediate/delayed/last-attempt ready, no
 response, pending-only timeout, every error-mask bit and ready/error mixtures.
 The initial/resume callers already unwind on a nonzero boot result; their
-cleanup paths are retained. This does not complete Cliffs firmware mapping.
+cleanup paths are retained. Patch0005 also checks OPP errors before enabling
+interrupts, preserves resume errno and invalidates a failed interconnect cache
+so subsequent requests retry. Actual-function tests cover each resource stage.
+
+Patch0006 connects the exact Cliffs clock voltage ceilings to the existing
+regulator aggregator. PLLs vote MXC; MVS0/1 vote MMCX and MXC. The native
+SM7675 binding requires both regulator supplies and rejects competing power
+domains/required OPPs. Other platforms keep their domain contract. Iris skips
+an empty OPP-domain list rather than attaching every domain again. The
+2000 MHz admitted PLL ceiling covers these clock tables; the OEM 2300 MHz
+HIGH_L1 entry is outside the admitted HIGH-class supply and is not exposed.
+Actual helper fixtures cover regulator acquisition, PLL/proxy failures,
+cleanup and retry; the synthetic binding accepts the regulator node and
+rejects five missing/mixed/foreign cases. Firmware mapping remains incomplete.
 
 For the separate AArch64 object check, use the normal LLVM kernel toolchain,
 an isolated ARM64 defconfig with `VIDEO_QCOM_IRIS=m` and `SM_VIDEOCC_8550=y`,
