@@ -376,6 +376,10 @@
     {
       "path": "patches/7.2.11/0092-q6apm-validate-dma-completion-results.patch",
       "sha256": "dd7b0a7ce6c2d769990e97801192e175e0805f90915613075519b781b32f3ed4"
+    },
+    {
+      "path": "patches/7.2.11/0093-q6apm-qualify-graph-publication-and-references.patch",
+      "sha256": "56a64a38fd961be8601c9f3dbc5260ca4b638b50c0b82bcf26a8ca41d5fe03d1"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

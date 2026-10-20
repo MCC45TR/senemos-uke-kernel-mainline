@@ -90,3 +90,4 @@
 0090-q6apm-use-sleepable-compressed-stream-lock.patch
 0091-q6apm-bound-and-serialize-buffer-submissions.patch
 0092-q6apm-validate-dma-completion-results.patch
+0093-q6apm-qualify-graph-publication-and-references.patch

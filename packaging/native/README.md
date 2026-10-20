@@ -182,3 +182,9 @@ paths under GCC/Clang ASan/UBSan. Full AArch64 driver objects compile with
 caller-side XRUN/error recovery and complete DMA ownership remain open.
 Firmware token echo, fitted codec/amplifier, calibration/protection and physical
 stream acceptance are separate gates; the native audio profile stays disabled.
+
+Patch 0093 returns graph OPEN errors, retains failed IDs within the current
+provider instance and cleans that local metadata at removal. First publication
+and final release use the existing provider command mutex; lookups cannot
+resurrect a zero reference. This does not establish remote cleanup after a
+timeout or a new firmware epoch after manual driver rebind.

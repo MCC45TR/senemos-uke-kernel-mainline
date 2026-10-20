@@ -33,7 +33,7 @@ struct gpr_hdr{u32 token=0,opcode=0;};
 struct gpr_pkt{gpr_hdr hdr;};
 struct gpr_resp_pkt{gpr_hdr hdr;void *payload;int payload_size;};
 struct gpr_ibasic_rsp_result_t{u32 opcode,status;};
-struct q6apm{device *dev{};gpr_device_t *gdev{};mutex lock,state_lock;
+struct q6apm{device *dev{};gpr_device_t *gdev{};mutex lock,state_lock,cmd_lock;
  int wait=0,widget_list=0,graph_idr=0,graph_info_idr=0,sub_graphs_idr=0,containers_idr=0,modules_idr=0;
  u32 state=0,state_token=0;gpr_ibasic_rsp_result_t result{};};
 static q6apm *g_apm;
@@ -81,7 +81,7 @@ static int q6apm_send_cmd_sync(q6apm *apm,const gpr_pkt *pkt,u32){
  int ret=state_response(apm,&response);
  return ret?ret:wakes==before?-ETIMEDOUT:apm->result.status?-EINVAL:0;
 }
-static void *dev_get_drvdata(device *d){return d->data;}
+static q6apm *dev_get_drvdata(device *d){return static_cast<q6apm*>(d->data);}
 static void dev_set_drvdata(device *d,void *v){d->data=v;}
 constexpr int GFP_KERNEL=0;
 static q6apm slots[2];static int next_slot,register_result,populate_result;
@@ -92,6 +92,7 @@ static void init_waitqueue_head(int*){}
 static int q6apm_audio_component;
 static int snd_soc_register_component(device*,int*,void*,int){registrations++;return register_result;}
 static void snd_soc_unregister_component(device*){unregistrations++;}
+static void q6apm_purge_failed_graphs(q6apm*){}
 static int of_platform_populate(void*,void*,void*,device*){return populate_result;}
 static void of_platform_depopulate(device*){depopulations++;}
 #define dev_err(...) ((void)0)

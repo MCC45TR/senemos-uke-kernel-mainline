@@ -168,6 +168,7 @@ CC=clang bash native-profile/tests/audio-port-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-rx-queue-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh
@@ -291,6 +292,7 @@ fi
 - Use a sleepable lock around compressed stream command submission
 - Preserve 128 KiB token lengths and validate fragment submissions
 - Reject failed or mismatched DMA completions without false progress
+- Qualify graph OPEN, quarantine failed IDs and guard graph references
 - Keep audio disabled; add actual-source response regression fixtures
 
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
