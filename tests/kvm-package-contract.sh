@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline.spec
-expected=senemos-uke-kernel-mainline-kvm
+expected=senemos-uke-linux-kernel-mainline-kvm
 names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot" ]]
 parsed=$(rpmspec --parse --target aarch64 "$spec")

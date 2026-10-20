@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "package": "senemos-uke-kernel-mainline-kvm-singleboot",
+  "package": "senemos-uke-linux-kernel-mainline-kvm-singleboot",
   "kernel_release": "7.2.11-16-kvm",
   "root_partition": "userdata",
   "root_filesystem": "f2fs",

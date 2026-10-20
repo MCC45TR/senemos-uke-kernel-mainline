@@ -4,7 +4,7 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-kernel-mainline-kvm
+Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
 %global senemos_build_release 16

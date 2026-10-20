@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 %global kernel_abi %{version}-%{senemos_build_release}-kvm
-Name: senemos-uke-kernel-mainline-kvm-singleboot
+Name: senemos-uke-linux-kernel-mainline-kvm-singleboot
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
 %global senemos_build_release 16
@@ -15,11 +15,11 @@ Source0: kvm-singleboot.json
 Source1: KVM-SINGLEBOOT.md
 Source2: LICENSE
 ExclusiveArch: aarch64
-Requires: senemos-uke-kernel-mainline-kvm = %{version}-%{release}
-Requires: senemos-uke-kernel-mainline-kvm-core = %{version}-%{release}
-Requires: senemos-uke-kernel-mainline-kvm-modules = %{version}-%{release}
-Requires: senemos-uke-kernel-mainline-kvm-dtbs = %{version}-%{release}
-Requires: senemos-uke-kernel-mainline-kvm-boot = %{version}-%{release}
+Requires: senemos-uke-linux-kernel-mainline-kvm = %{version}-%{release}
+Requires: senemos-uke-linux-kernel-mainline-kvm-core = %{version}-%{release}
+Requires: senemos-uke-linux-kernel-mainline-kvm-modules = %{version}-%{release}
+Requires: senemos-uke-linux-kernel-mainline-kvm-dtbs = %{version}-%{release}
+Requires: senemos-uke-linux-kernel-mainline-kvm-boot = %{version}-%{release}
 
 %description
 Selects the matching KVM F2FS userdata container through an auditable descriptor.

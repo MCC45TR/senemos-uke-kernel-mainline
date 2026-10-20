@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
-spec=$root/packaging/senemos-uke-kernel-mainline-kvm-singleboot.spec
+spec=$root/packaging/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec
 name=$(rpmspec -q --srpm --qf '%{NAME}' "$spec")
 version=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
 release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
 evr=$(rpmspec -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec")
 requires=$(rpmspec -q --requires "$spec")
-[[ $name == senemos-uke-kernel-mainline-kvm-singleboot ]]
+[[ $name == senemos-uke-linux-kernel-mainline-kvm-singleboot ]]
 for suffix in '' -core -modules -dtbs -boot; do
-    grep -Fxq "senemos-uke-kernel-mainline-kvm$suffix = $evr" <<< "$requires"
+    grep -Fxq "senemos-uke-linux-kernel-mainline-kvm$suffix = $evr" <<< "$requires"
 done
 if grep -Eq '^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)([[:space:]]|$)' "$spec"; then exit 1; fi
 jq -e --arg name "$name" --arg abi "$version-$release-kvm" '

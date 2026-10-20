@@ -2,7 +2,7 @@
 
 20 October 2026. Fedora Rawhide AArch64 source/package profile; no device boot.
 
-`senemos-uke-kernel-mainline-kvm` uses the current 97-patch native hardware
+`senemos-uke-linux-kernel-mainline-kvm` uses the current 97-patch native hardware
 profile, including its upstream CONFIG_KVM selection. The separate `-kvm`
 module ABI prevents mixing its Image and modules with the ordinary kernel.
 Both the EXT4 Linux and F2FS userdata containers contain its same Image.
