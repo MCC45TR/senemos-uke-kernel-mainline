@@ -4,7 +4,8 @@ root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline-kvm-singleboot.spec
 name=$(rpmspec -q --srpm --qf '%{NAME}' "$spec")
 version=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
-release=$(rpmspec --undefine dist -q --srpm --qf '%{RELEASE}' "$spec")
+# Undefining COPR's empty override reveals the worker's underlying distro suffix.
+release=$(rpmspec --define 'dist %{nil}' -q --srpm --qf '%{RELEASE}' "$spec")
 evr=$(rpmspec -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec")
 requires=$(rpmspec -q --requires "$spec")
 [[ $name == senemos-uke-linux-kernel-mainline-kvm-singleboot ]]
