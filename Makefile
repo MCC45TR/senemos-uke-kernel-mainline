@@ -4,7 +4,17 @@ SHELL := /bin/bash
 .PHONY: validate srpm
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
-validate: validate-video
+validate: validate-video validate-ufs
+validate-ufs:
+	jq -e '.active_series == false and .dt_enabled == false and .tablet_tested == false and .crypto_enabled == false and (.patches | length == 2)' manifests/ufs-source-candidate-20261020.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
+	done < <(jq -r '.patches[] | [.path,.sha256] | @tsv' manifests/ufs-source-candidate-20261020.json)
+.PHONY: validate-ufs test-ufs
+test-ufs: validate-ufs
+	test -n "$(ufs_source)"
+	bash tests/ufs-mcq-resource-contract.sh "$(ufs_source)"
 validate-video:
 	jq -e '.active_series == false and .dt_enabled == false and .iris_match_added == false and (.patches | length == 6)' manifests/iris-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do

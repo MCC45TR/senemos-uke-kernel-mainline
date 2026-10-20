@@ -1,0 +1,137 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH 2/2] ufs: qcom: validate and map SM7675 split MCQ resources
+
+Use explicit SQD and vendor mappings for the new SM7675 compatible. Match
+QCFGPTR against the supplied configuration resource, bound queue windows
+and reject missing, overlapping or unrepresentable resources before
+mapping.
+Publish bases only after all mappings succeed; keep the legacy path intact.
+
+Resource semantics follow the Uke OEM and OnePlus SM7675 implementations
+listed in manifests/ufs-source-candidate-20261020.json. This adaptation
+uses native callbacks and devres, without inserting global iomem
+resources. No DT, MSI parent, crypto provider, active patch series or
+kernel release is changed; physical storage validation remains outstanding.
+
+diff --git a/drivers/ufs/host/ufs-qcom.c b/drivers/ufs/host/ufs-qcom.c
+index 291c434..9da224e 100644
+--- a/drivers/ufs/host/ufs-qcom.c
++++ b/drivers/ufs/host/ufs-qcom.c
+@@ -2287,11 +2287,62 @@ static void ufs_qcom_config_scaling_param(struct ufs_hba *hba,
+ 	hba->clk_scaling.suspend_on_no_request = true;
+ }
+ 
++static int ufs_qcom_mcq_config_cliffs(struct ufs_hba *hba)
++{
++	static const char * const names[] = { "std", "mcq", "mcq-sqd", "mcq-vs" };
++	struct platform_device *pdev = to_platform_device(hba->dev);
++	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
++	struct resource *res[ARRAY_SIZE(names)];
++	void __iomem *base[ARRAY_SIZE(names) - 1];
++	resource_size_t offset;
++	unsigned int i, j;
++
++	/* The vendor CQ status is 32 bits and SQD has one 256-byte page per queue. */
++	if (!hba->nr_hw_queues || hba->nr_hw_queues > 32 ||
++	    hba->nr_hw_queues > (hba->mcq_capabilities & GENMASK(7, 0)) + 1)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(names); i++) {
++		res[i] = platform_get_resource_byname(pdev, IORESOURCE_MEM, names[i]);
++		if (!res[i])
++			return -ENODEV;
++		if (res[i]->end < res[i]->start || !resource_size(res[i]))
++			return -EINVAL;
++		for (j = 0; j < i; j++)
++			if (res[i]->start <= res[j]->end && res[j]->start <= res[i]->end)
++				return -EINVAL;
++	}
++
++	offset = MCQ_SQATTR_OFFSET(hba->mcq_capabilities);
++	if (res[1]->start < res[0]->start ||
++	    res[1]->start - res[0]->start != offset ||
++	    resource_size(res[1]) < hba->nr_hw_queues * MCQ_QCFG_SIZE ||
++	    resource_size(res[2]) < hba->nr_hw_queues * UFS_QCOM_MCQ_STRIDE ||
++	    resource_size(res[3]) < 0xc || res[2]->start < res[0]->start ||
++	    res[2]->start - res[0]->start > U32_MAX - 0xc0)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(base); i++) {
++		base[i] = devm_ioremap_resource(hba->dev, res[i + 1]);
++		if (IS_ERR(base[i]))
++			return PTR_ERR(base[i]);
++	}
++
++	hba->mcq_base = base[0];
++	host->mcq_sqd_base = base[1];
++	host->mcq_vs_base = base[2];
++	host->mcq_sqd_offset = res[2]->start - res[0]->start;
++	return 0;
++}
++
+ static int ufs_qcom_mcq_config_resource(struct ufs_hba *hba)
+ {
+ 	struct platform_device *pdev = to_platform_device(hba->dev);
+ 	struct resource *res;
+ 
++	if (of_device_is_compatible(hba->dev->of_node, "qcom,sm7675-ufshc"))
++		return ufs_qcom_mcq_config_cliffs(hba);
++
+ 	/* Map the MCQ configuration region */
+ 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mcq");
+ 	if (!res) {
+@@ -2311,10 +2362,24 @@ static int ufs_qcom_mcq_config_resource(struct ufs_hba *hba)
+ 
+ static int ufs_qcom_op_runtime_config(struct ufs_hba *hba)
+ {
++	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
+ 	struct ufshcd_mcq_opr_info_t *opr;
+ 	int i;
+ 	u32 doorbell_offsets[OPR_MAX];
+ 
++	if (of_device_is_compatible(hba->dev->of_node, "qcom,sm7675-ufshc")) {
++		if (!hba->mcq_base || !host->mcq_sqd_base || !host->mcq_vs_base)
++			return -EINVAL;
++
++		for (i = 0; i < OPR_MAX; i++) {
++			opr = &hba->mcq_opr[i];
++			opr->offset = host->mcq_sqd_offset + 0x40 * i;
++			opr->stride = UFS_QCOM_MCQ_STRIDE;
++			opr->base = host->mcq_sqd_base + 0x40 * i;
++		}
++		return 0;
++	}
++
+ 	/*
+ 	 * Configure doorbell address offsets in MCQ configuration registers.
+ 	 * These values are offsets relative to mmio_base (UFS_HCI_BASE).
+@@ -2363,6 +2428,15 @@ static int ufs_qcom_get_hba_mac(struct ufs_hba *hba)
+ static int ufs_qcom_get_outstanding_cqs(struct ufs_hba *hba,
+ 					unsigned long *ocqs)
+ {
++	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
++
++	if (of_device_is_compatible(hba->dev->of_node, "qcom,sm7675-ufshc")) {
++		if (!host->mcq_vs_base)
++			return -EINVAL;
++		*ocqs = readl(host->mcq_vs_base + 0x8);
++		return 0;
++	}
++
+ 	/* Read from MCQ vendor-specific register in MCQ region */
+ 	*ocqs = readl(hba->mcq_base + UFS_MEM_CQIS_VS);
+ 
+diff --git a/drivers/ufs/host/ufs-qcom.h b/drivers/ufs/host/ufs-qcom.h
+index e20b3ca..5e44df6 100644
+--- a/drivers/ufs/host/ufs-qcom.h
++++ b/drivers/ufs/host/ufs-qcom.h
+@@ -359,6 +359,9 @@ struct ufs_qcom_host {
+ 	u32 phy_gear;
+ 
+ 	bool esi_enabled;
++	void __iomem *mcq_sqd_base;
++	void __iomem *mcq_vs_base;
++	u32 mcq_sqd_offset;
+ 
+ 	u32 saved_tx_eq_g1_setting;
+ };

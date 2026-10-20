@@ -1,0 +1,70 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH 1/2] dt-bindings: ufs: describe SM7675 split MCQ windows
+
+Model the distinct configuration, operational and vendor windows from Uke
+OEM DT94c84aeb9e51. Retain the one/two-window contract for other SoCs.
+This source candidate does not change an active DT or enable MCQ.
+
+diff --git a/Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml b/Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml
+index b441f0d..1797abd 100644
+--- a/Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml
++++ b/Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml
+@@ -19,6 +19,7 @@ select:
+           - qcom,hawi-ufshc
+           - qcom,kaanapali-ufshc
+           - qcom,nord-ufshc
++          - qcom,sm7675-ufshc
+           - qcom,sm8650-ufshc
+           - qcom,sm8750-ufshc
+   required:
+@@ -32,6 +33,7 @@ properties:
+           - qcom,hawi-ufshc
+           - qcom,kaanapali-ufshc
+           - qcom,nord-ufshc
++          - qcom,sm7675-ufshc
+           - qcom,sm8650-ufshc
+           - qcom,sm8750-ufshc
+       - const: qcom,ufshc
+@@ -39,13 +41,15 @@ properties:
+ 
+   reg:
+     minItems: 1
+-    maxItems: 2
++    maxItems: 4
+ 
+   reg-names:
+     minItems: 1
+     items:
+       - const: std
+       - const: mcq
++      - const: mcq-sqd
++      - const: mcq-vs
+ 
+   clocks:
+     minItems: 8
+@@ -72,6 +76,25 @@ required:
+ 
+ allOf:
+   - $ref: qcom,ufs-common.yaml
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: qcom,sm7675-ufshc
++    then:
++      properties:
++        reg:
++          minItems: 4
++        reg-names:
++          minItems: 4
++      required:
++        - reg-names
++    else:
++      properties:
++        reg:
++          maxItems: 2
++        reg-names:
++          maxItems: 2
+   - if:
+       properties:
+         compatible:

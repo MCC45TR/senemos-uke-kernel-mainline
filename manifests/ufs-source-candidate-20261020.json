@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "88678b53e8a792ed7a87d0833386086642e181c5",
+  "status": "host-compiled-inactive-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "tablet_tested": false,
+  "crypto_enabled": false,
+  "kernel_release_changed": false,
+  "patches": [
+    {
+      "path": "patches/ufs/0001-sm7675-split-mcq-binding.patch",
+      "sha256": "a1fd710934d47bf6695a16a5e6e054db566ac6f71749c6d3a038b40b24699a18"
+    },
+    {
+      "path": "patches/ufs/0002-sm7675-validate-split-mcq-resources.patch",
+      "sha256": "83185622f47edd4fa09503fd4e0ccab8ffe76378bc27838b8acecb13da990afe"
+    }
+  ],
+  "baseline_files": [
+    {
+      "path": "drivers/ufs/host/ufs-qcom.c",
+      "sha256": "daefd6f0d3616ffa5e9d031e1b2be31d77ee2464e7ba66b9a1d0e64f04fc8bfe"
+    },
+    {
+      "path": "drivers/ufs/host/ufs-qcom.h",
+      "sha256": "3fdaf00c036d7f2a847263d2ec0ec8ff4c827bb532044a2210bca24661a2cf88"
+    },
+    {
+      "path": "Documentation/devicetree/bindings/ufs/qcom,sm8650-ufshc.yaml",
+      "sha256": "2c444c6f5d842bf3f99cd98ad09a1f42dd89054d9b02332b80b3d096d9283d82"
+    }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "files": [
+        "drivers/ufs/host/ufs-qcom.c",
+        "drivers/ufs/host/ufs-qcom-ice.c"
+      ]
+    },
+    {
+      "id": "uke-oem-dt",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "files": [
+        "qcom/cliffs.dtsi"
+      ]
+    },
+    {
+      "id": "same-soc-kernel",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "files": [
+        "drivers/ufs/host/ufs-qcom.c"
+      ]
+    },
+    {
+      "id": "current-upstream",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "url": "https://github.com/torvalds/linux",
+      "file": "drivers/ufs/host/ufs-qcom.c",
+      "sha256": "62f51ce37757b74eb410e0345ad5eb8dbf19df31e39f8819a8943f8e1b2d0414"
+    }
+  ],
+  "checks": {
+    "actual_before_failure": 134,
+    "gcc_fixture": true,
+    "clang_asan_ubsan_fixture": true,
+    "aarch64_ufs_object": true,
+    "kcflags": "-Werror",
+    "binding_schema_example": true,
+    "accepted_synthetic_cases": 2,
+    "rejected_synthetic_cases": 5,
+    "full_kernel": false,
+    "rpm": false,
+    "physical_io": false
+  },
+  "limits": [
+    "Existing single-window behavior is retained for other compatibles; it is not validated for arbitrary foreign MMIO ranges",
+    "No storage DT, queue mode, MSI parent, crypto provider, clock, key or root filesystem change is admitted",
+    "MCQ QCFGPTR, IRQ routing, reset/recovery and suspend need exact target validation before enabling the native compatible",
+    "Shared ICE policy, secure key capability and round-trip encrypted regular-file validation remain separate"
+  ]
+}
