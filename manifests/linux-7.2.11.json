@@ -356,6 +356,10 @@
     {
       "path": "patches/7.2.11/0087-q6apm-bound-graph-events-and-buffer-tokens.patch",
       "sha256": "503c06d7b2442ae9405630124d7074e435fd095ca39f63d1a85f882a77816ada"
+    },
+    {
+      "path": "patches/7.2.11/0088-gpr-drain-dynamic-port-callbacks-before-free.patch",
+      "sha256": "4c5e2a1416c0f2c7e84a0cece46c1be7049b2c375443e71174c28755c63d1e0a"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

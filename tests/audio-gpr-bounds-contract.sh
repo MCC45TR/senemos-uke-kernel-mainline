@@ -22,7 +22,9 @@ cat >> "$work/check.c" <<'C'
 struct gpr_resp_pkt{struct gpr_hdr hdr;void *payload;int payload_size;};
 struct apr_rx_buf{int len;unsigned char buf[];};
 struct pkt_router_svc{int (*callback)(const struct gpr_resp_pkt*,void*,int);void *priv;};
-struct packet_router{int svcs_lock,svcs_idr;void *dev;};
+struct packet_router{int svcs_lock,svcs_idr,callback_lock;void *dev;};
+static void mutex_lock(int *p){assert(!*p);*p=1;}
+static void mutex_unlock(int *p){assert(*p==1);*p=0;}
 static int calls;
 static int expected_size;
 static void *expected_payload;
@@ -55,6 +57,7 @@ int main(void){
  b=packet(32);h=(void*)b->buf;h->hdr_size=7;
  expected_size=4;expected_payload=b->buf+28;assert(gpr_do_rx_callback(&router,b)==0&&calls==2);
  h->dest_port=2;assert(gpr_do_rx_callback(&router,b)==-EINVAL);free(b);
+ assert(!router.callback_lock);
 }
 C
 ${CC:-cc} -std=c11 -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
