@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "base_commit": "68e08a3cb3d61d79cd90128fa35e94c751ca8153",
+  "status": "inactive-four-bank-cliffs7-llcc-source-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "kernel_release_changed": false,
+  "tablet_tested": false,
+  "performance_improvement_measured": false,
+  "patches": [
+    { "path": "patches/performance/0001-bindings-sm7675-llcc.patch", "sha256": "e038fd973eff63a978e242c216c606e7109daaad8b3ec8c60a4a8a6a4d66b0cc" },
+    { "path": "patches/performance/0002-sm7675-llcc-policy-and-resource-guards.patch", "sha256": "436fde3c1f43301ebb7ca3daa0783a6fc605b7673865a8d2356f7ba54c6ff0b2" }
+  ],
+  "files": [
+    { "path": "src/performance/prepare-llcc-dt.sh", "sha256": "c94acbbf5dfcc8a31d500bb22ccdbe7af4369a518ad579899b04c334b7f1065a" },
+    { "path": "tests/llcc-sm7675-contract.sh", "sha256": "0a8f0edea24702582279d03c21e47912fc1bde43ad5e8f21611355d9aadaf2b7" },
+    { "path": "tests/llcc-sm7675-dt-contract.sh", "sha256": "7f065032d9c62d8f79f3a373148e6aec07a78b80bc1a57eee038f4d3af56ae39" },
+    { "path": "tests/fixtures/llcc-sm7675-policy.inc", "sha256": "0fec1f62be4719c8da2937d8072f1d546470da4111c863600da107ee9f70bdf4" }
+  ],
+  "baseline_files": [
+    { "path": "drivers/soc/qcom/llcc-qcom.c", "sha256": "9bec28c4a58fac87fe0a24918f01c9a62724fa3fb93c4c60be54464a4656f85e" },
+    { "path": "Documentation/devicetree/bindings/cache/qcom,llcc.yaml", "sha256": "1994fabd0b63cb635a17348888a67336dfe0a938f9b230af4c5ed1db9f72dbcd" }
+  ],
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "files": ["drivers/soc/qcom/llcc-qcom.c", "include/linux/soc/qcom/llcc-qcom.h"],
+      "policy": "cliffs7_data; MDMVPE and WRTCH retain numeric identities under native MODPE and WRCACHE names"
+    },
+    {
+      "id": "uke-oem-dt",
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "files": ["qcom/cliffs.dtsi", "qcom/cliffs7.dtsi"]
+    },
+    {
+      "id": "same-soc-kernel",
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "files": ["drivers/soc/qcom/llcc-qcom.c"],
+      "comparison": "cliffs7_data byte-identical to the OEM policy"
+    },
+    {
+      "id": "shared-gpu",
+      "url": "https://github.com/LineageOS/android_kernel_xiaomi_sm8635-modules",
+      "commit": "ed4ad0d1ad00b755af2fe61387dcc5397ad20b8f",
+      "files": ["qcom/opensource/graphics-kernel/adreno.c", "qcom/opensource/graphics-kernel/adreno_gen7.c", "qcom/opensource/graphics-kernel/adreno-gpulist.h", "qcom/opensource/graphics-kernel/Makefile"],
+      "comparison": "Native A7xx already implements the six SCID fields and GPUHTW activation; no Android driver is imported"
+    },
+    {
+      "id": "current-upstream",
+      "url": "https://github.com/torvalds/linux",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "files": ["drivers/soc/qcom/llcc-qcom.c", "drivers/gpu/drm/msm/adreno/a6xx_gpu.c"],
+      "comparison": "No SM7675 provider; LLCC differences from native baseline only add Shikra data; A7xx cache function byte-identical"
+    }
+  ],
+  "checks": {
+    "actual_probe_and_configuration_fixture": true,
+    "all_17_oem_slice_fields": true,
+    "actual_a7xx_cache_field_fixture": true,
+    "gcc_o0": true,
+    "clang_o1_asan_ubsan": true,
+    "all_238_configuration_write_faults": true,
+    "three_runtime_mutation_refusals": true,
+    "dt_source_and_binding_fixtures": true,
+    "dt_schema_host_version": "2026.09",
+    "aarch64_llcc_object_werror": true,
+    "independent_patch_application": true,
+    "checkpatch_errors": 0,
+    "checkpatch_warnings": 0,
+    "full_kernel": false,
+    "rpm": false,
+    "gpu_probe_order_qualified": false,
+    "physical_cache_coherency": false,
+    "physical_suspend": false
+  },
+  "limits": [
+    "The source candidate admits four hardware banks and v5 only; the tablet bank count and hardware version have not been read through this driver",
+    "Resource and version mismatches stop before configuration writes; later I/O failures can leave partial cache programming and require physical recovery qualification",
+    "GPU field tests use actual source with simulated register writes; cache hits, coherency, counters and real GPU activation are untested",
+    "The host DT producer preserves its input and refuses mismatches; it is not wired into the normal boot producer or package",
+    "EDAC, PMU/AMU, MEMLAT, BWMON, frequency limits and firmware policy are unchanged",
+    "No target kernel installation, boot, suspend, cache actuation or measured speedup occurred"
+  ]
+}
