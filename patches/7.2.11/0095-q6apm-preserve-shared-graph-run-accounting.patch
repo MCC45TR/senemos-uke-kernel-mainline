@@ -1,0 +1,54 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: q6apm: preserve shared graph run accounting on errors
+
+Serialize the shared start count with the existing graph lifetime mutex.
+Do not consume the last active reference before a successful firmware STOP:
+otherwise a failed STOP turns its retry into a false successful no-op.
+Reject counter overflow and new starts during supplier removal while still
+allowing child teardown to stop existing graphs.
+
+This retains the existing caller-counting API. It does not establish remote
+ownership after timeout, per-client ownership or complete DMA recovery.
+No audio profile, firmware selector or physical route is enabled.
+
+---
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -904,6 +904,12 @@
+ 	struct audioreach_graph *ar_graph = graph->ar_graph;
+ 	int ret;
+ 
++	guard(mutex)(&ar_graph->apm->cmd_lock);
++	if (ar_graph->apm->removing)
++		return -ENODEV;
++	if (ar_graph->start_count == INT_MAX)
++		return -EOVERFLOW;
++
+ 	if (ar_graph->start_count == 0) {
+ 		ret = audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_START);
+ 		if (ret)
+@@ -919,14 +925,22 @@
+ int q6apm_graph_stop(struct q6apm_graph *graph)
+ {
+ 	struct audioreach_graph *ar_graph = graph->ar_graph;
++	int ret;
+ 
++	guard(mutex)(&ar_graph->apm->cmd_lock);
+ 	if (ar_graph->start_count == 0)
+ 		return 0;
+ 
+-	if (--ar_graph->start_count > 0)
++	if (ar_graph->start_count > 1) {
++		ar_graph->start_count--;
+ 		return 0;
++	}
++
++	ret = audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
++	if (!ret)
++		ar_graph->start_count--;
+ 
+-	return audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(q6apm_graph_stop);
+ 

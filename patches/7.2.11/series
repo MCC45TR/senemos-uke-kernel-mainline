@@ -92,3 +92,4 @@
 0092-q6apm-validate-dma-completion-results.patch
 0093-q6apm-qualify-graph-publication-and-references.patch
 0094-gpr-quiesce-native-audio-services-before-teardown.patch
+0095-q6apm-preserve-shared-graph-run-accounting.patch

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 12
+%global senemos_build_release 13
 %else
 %global senemos_build_release 1
 %endif
@@ -169,6 +169,7 @@ CC=clang bash native-profile/tests/audio-rx-queue-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-run-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh

@@ -384,6 +384,10 @@
     {
       "path": "patches/7.2.11/0094-gpr-quiesce-native-audio-services-before-teardown.patch",
       "sha256": "897991df8cb126124f8928689b23b08bbf453598211adfb6a60573d8aeede07b"
+    },
+    {
+      "path": "patches/7.2.11/0095-q6apm-preserve-shared-graph-run-accounting.patch",
+      "sha256": "ef3f439a25aeeb826b55ae36f29ae3037e4317f232fd5b2b0779316274dc5b95"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

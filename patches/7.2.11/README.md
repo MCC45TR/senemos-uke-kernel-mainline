@@ -95,3 +95,10 @@ changing OEM trips. Unknown or ambiguous outcomes do not release the latch.
 No raw XM selector, pack defaults or new JEITA/CV/PD writer is exposed.
 Host fixtures and an AArch64 driver object are separate from full package,
 matched boot and physical moisture/electrical acceptance.
+
+**20 October 2026, release 13 source:** patch 0095 serializes shared native audio
+START/STOP accounting, preserves the last reference after firmware STOP failure,
+refuses count overflow and rejects new starts during removal. Actual-source
+host fixtures exercise failures, retry and two shared callers. Release12 COPR
+11177997 remains a separate signed candidate. Native audio stays disabled;
+caller/DMA teardown and physical firmware acceptance remain open.
