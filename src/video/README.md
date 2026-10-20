@@ -6,7 +6,7 @@ Clang **23.1.3**, `KCFLAGS=-Werror`. The actual two-pipe lifecycle fixture passe
 on the host. These are object/fixture results, without a full kernel, RPM,
 firmware authentication or tablet decode result.
 
-Three project patches from candidate `e344c7b` and four integration fixes
+Three project patches from candidate `e344c7b` and five integration fixes
 are retained outside the active series. The native clock header is also
 referenced by its binding. The
 [manifest](../../manifests/iris-source-candidate-20261020.json) records exact
@@ -87,6 +87,28 @@ its firmware detection and PAS API have advanced. This patch retains the
 separate lifetime work; logging a removal failure cannot veto driver detach.
 No MMIO mapping, split context-bank admission or physical result follows from
 these host checks.
+
+## Native firmware mmap, 21 October 2026
+
+Patch0008 implements a single 4 MiB DMA allocation containing the real queue,
+SFR and 4 KiB version1 mmap regions. It maps three named MMIO resources,
+`aon`, `fence` and `qtimer`, through the DMA API with the existing mask and a
+translated DMA domain. The single MMIO interval rejects gaps, aliases and
+overlap with the shared buffer. Partial mappings unwind in reverse order;
+PAS ownership retains the entire allocation and MMIO mappings.
+
+The table is initialized once before PAS loading and checked before boot;
+it is never rewritten while PAS may own it. Invalid address ranges, metadata
+or SFR layout fail before boot register writes. The exact version1 fields
+use little-endian words; optional/unimplemented entries remain zero. Legacy
+platforms retain their separate allocation and callback path.
+
+GCC/Clang actual-function fixtures, Clang ASan/UBSan and the full AArch64 Iris
+composite with `-Werror` pass on the current 97-patch baseline. This candidate
+still has no OF match, native resource binding or physical mapping result.
+The parent non-pixel and separate pixel DMA consumers, provider graph and
+teardown must be completed before activation. Dynamic MMIO addresses are not
+proof that this firmware accepts the resulting mapping.
 
 ## Activation remains blocked
 

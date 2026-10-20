@@ -88,6 +88,10 @@
     {
       "path": "patches/video/0007-iris-retain-firmware-ownership-until-shutdown.patch",
       "sha256": "486c5992add58ed1b74b38186951648ca17e338432fdb48d2ac21411c995cbfe"
+    },
+    {
+      "path": "patches/video/0008-iris-native-firmware-mmap-lifetime.patch",
+      "sha256": "a0485beb8788bf7947f7e9294ff12b2b092aff09282aaa556a2afec2e1c48bf3"
     }
   ],
   "sources": [
@@ -160,12 +164,15 @@
     "opp_domain_fault_fixture": true,
     "regulator_binding_five_refusals": true,
     "firmware_ownership_gcc_clang_fixture": true,
-    "firmware_ownership_aarch64_composite": true
+    "firmware_ownership_aarch64_composite": true,
+    "native_mmap_gcc_clang_fixture": true,
+    "native_mmap_clang_asan_ubsan": true,
+    "native_mmap_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
     "Controller retention, extra VCODEC reset sequence and fault propagation remain incomplete",
-    "Exact firmware mmap, device-region lifetime and split pixel/non-pixel IOMMU ownership remain unresolved",
+    "Native mmap allocation/device-region/boot setup is host-checked; exact Uke resource binding, split pixel/non-pixel IOMMU consumers and physical lifetime remain unqualified",
     "PAS authentication, decoded-frame equivalence, drain/EOS, resolution changes and teardown require target validation",
     "GStreamer/VA-API/browser consumers require separate native V4L2 acceptance; FastCV/CDSP remain disabled",
     "Forced platform removal, delayed-work teardown and persistent failed-stop recovery require separate lifetime admission before activation"
@@ -194,5 +201,31 @@
     "upstream_firmware_sha256": "ff594d01bdd4a005a52c4cec4ba77806a0f82ded5e1ec676025ceedf47a9e37a",
     "active_baseline": "bfe93de225e97d1d8f18b63b410f04bd5ccd069d",
     "active_patch_count": 97
+  },
+  "native_mmap": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "610074edadcfc0e9912a954c4e2f22f5eb0d9555",
+    "shared_allocation_size": 4194304,
+    "payload_size": 4096,
+    "payload_version": 1,
+    "resource_names": [
+      "aon",
+      "fence",
+      "qtimer"
+    ],
+    "resource_size": 4096,
+    "dma_api": true,
+    "translated_dma_domain_required": true,
+    "adjacent_mmio_iovas_required": true,
+    "dma_mask_changed": false,
+    "table_initialized_before_pas": true,
+    "table_rewritten_while_owned": false,
+    "partial_maps_unwind_in_reverse": true,
+    "native_binding_added": false,
+    "pixel_dma_consumer_added": false,
+    "tablet_tested": false,
+    "upstream_commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+    "upstream_queue_sha256": "42b1687d106f61ba48e05552715de41ca6994aee6ca80316bc25707ef7001ef8",
+    "upstream_common_sha256": "980874f20f364d1569af80e3cdc2196e18a9709e03ddb6d4b415e0ac2b1201a2"
   }
 }

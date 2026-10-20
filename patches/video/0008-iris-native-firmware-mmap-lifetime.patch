@@ -1,0 +1,505 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: own the Iris33 firmware mmap through the DMA API
+
+Allocate one complete UC region for queues, SFR and the version1 mmap.
+Map named AON, fence and timer resources through the DMA API. Retain all
+mappings until PAS ownership is released, unwind partial maps in reverse
+order and reject invalid ranges before any firmware boot command.
+
+Use the existing DMA mask and a translated DMA domain. The firmware's
+single device-region interval must contain only the three MMIO pages;
+reject allocator holes, aliases and overlap with the shared DMA region.
+Populate the reference version1 fields with explicit little-endian words.
+Keep metadata immutable while PAS may own it and verify it before boot.
+Other platforms retain their existing queue allocation and callback path.
+
+Protocol reference: OnePlus SM7675 modules/DT
+1138e00fee63582a0cc6a53af3286621786827b7, Qualcomm GPL-2.0-only
+vidc/src/venus_hfi_queue.c and variant/iris33/src/msm_vidc_iris33.c.
+Uke OEM DT 94c84aeb and current upstream f47d2236 are compared separately.
+No fixed physical address, Android IOVA, DMA-mask widening, firmware or DT
+match is added. Native resource binding, split pixel DMA and removal still
+require separate implementation and qualification before activation.
+
+diff --git a/drivers/media/platform/qcom/iris/Makefile b/drivers/media/platform/qcom/iris/Makefile
+index 48e415c..7373b61 100644
+--- a/drivers/media/platform/qcom/iris/Makefile
++++ b/drivers/media/platform/qcom/iris/Makefile
+@@ -3,6 +3,7 @@ qcom-iris-objs += iris_buffer.o \
+              iris_core.o \
+              iris_ctrls.o \
+              iris_firmware.o \
++             iris_fw_mmap.o \
+              iris_hfi_common.o \
+              iris_hfi_gen1.o \
+              iris_hfi_gen1_command.o \
+diff --git a/drivers/media/platform/qcom/iris/iris_core.h b/drivers/media/platform/qcom/iris/iris_core.h
+index 44f4225..55691de 100644
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -12,6 +12,7 @@
+ 
+ #include "iris_hfi_common.h"
+ #include "iris_hfi_queue.h"
++#include "iris_fw_mmap.h"
+ #include "iris_platform_common.h"
+ #include "iris_resources.h"
+ #include "iris_state.h"
+@@ -59,6 +60,7 @@ struct qcom_ubwc_cfg_data;
+  * @ubwc_cfg: UBWC configuration for the platform
+  * @state: current state of core
+  * @fw_owned: PAS may own the image until a successful shutdown
++ * @fw_mmap: shared memory and device mappings for the Iris33 mmap protocol
+  * @iface_q_table_daddr: device address for interface queue table memory
+  * @sfr_daddr: device address for SFR (Sub System Failure Reason) register memory
+  * @iface_q_table_vaddr: virtual address for interface queue table memory
+@@ -105,6 +107,7 @@ struct iris_core {
+ 	const struct qcom_ubwc_cfg_data		*ubwc_cfg;
+ 	enum iris_core_state			state;
+ 	bool					fw_owned;
++	struct iris_fw_mmap			fw_mmap;
+ 	dma_addr_t				iface_q_table_daddr;
+ 	dma_addr_t				sfr_daddr;
+ 	void					*iface_q_table_vaddr;
+diff --git a/drivers/media/platform/qcom/iris/iris_fw_mmap.c b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
+new file mode 100644
+index 0000000..8d9864a
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_fw_mmap.c
+@@ -0,0 +1,225 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <linux/dma-mapping.h>
++#include <linux/iommu.h>
++#include <linux/overflow.h>
++#include <linux/platform_device.h>
++
++#include "iris_core.h"
++#include "iris_fw_mmap.h"
++#include "iris_vpu_register_defines.h"
++
++#define FW_DEVICE_REGION_ADDR (CPU_CS_BASE_OFFS + 0x24)
++#define FW_DEVICE_REGION_SIZE (CPU_CS_BASE_OFFS + 0x28)
++#define FW_QTBL_INFO          (CPU_CS_BASE_OFFS + 0x50)
++#define FW_QTBL_ADDR          (CPU_CS_BASE_OFFS + 0x54)
++#define FW_SFR_ADDR           (CPU_CS_BASE_OFFS + 0x5c)
++#define FW_MMAP_ADDR          (CPU_CS_BASE_OFFS + 0x60)
++#define FW_UC_REGION_ADDR     (CPU_CS_BASE_OFFS + 0x64)
++#define FW_UC_REGION_SIZE     (CPU_CS_BASE_OFFS + 0x68)
++
++static const char * const iris_fw_mmap_names[] = { "aon", "fence", "qtimer" };
++static const u32 iris_fw_mmap_words[] = { 11, 19, 21 };
++
++static u32 iris_fw_shared_size(void)
++{
++	return ALIGN(iris_hfi_queue_size() + SFR_SIZE + SZ_4K, SZ_1M);
++}
++
++static bool iris_fw_dma_range_valid(struct iris_core *core, dma_addr_t addr, size_t size)
++{
++	dma_addr_t last;
++	u64 mask = dma_get_mask(core->dev) & DMA_BIT_MASK(32);
++
++	return addr && size && IS_ALIGNED(addr, SZ_4K) && IS_ALIGNED(size, SZ_4K) &&
++		!check_add_overflow(addr, (dma_addr_t)size - 1, &last) &&
++		!((addr | last) & ~mask);
++}
++
++static int iris_fw_mmap_span(struct iris_core *core, u32 *base, u32 *size)
++{
++	struct iris_fw_mmap *map = &core->fw_mmap;
++	dma_addr_t low = DMA_BIT_MASK(32), high = 0, end, other_end;
++	u32 i, j;
++
++	if (!core->iface_q_table_vaddr || map->shared_size != iris_fw_shared_size() ||
++	    !iris_fw_dma_range_valid(core, core->iface_q_table_daddr, map->shared_size))
++		return -EINVAL;
++
++	for (i = 0; i < IRIS_FW_MMAP_REGIONS; i++) {
++		struct iris_fw_mmap_region *region = &map->regions[i];
++
++		if (region->size != SZ_4K ||
++		    !iris_fw_dma_range_valid(core, region->daddr, region->size))
++			return -ERANGE;
++		end = region->daddr + region->size;
++		other_end = core->iface_q_table_daddr + map->shared_size;
++		if (region->daddr < other_end && core->iface_q_table_daddr < end)
++			return -EINVAL;
++		for (j = 0; j < i; j++) {
++			other_end = map->regions[j].daddr + map->regions[j].size;
++			if (region->daddr < other_end && map->regions[j].daddr < end)
++				return -EINVAL;
++		}
++		low = min(low, region->daddr);
++		high = max(high, end);
++	}
++	/* The firmware exposes one MMIO interval; do not include allocator holes. */
++	if (high - low != IRIS_FW_MMAP_REGIONS * SZ_4K)
++		return -ERANGE;
++	*base = low;
++	*size = high - low;
++
++	return 0;
++}
++
++static __le32 iris_fw_mmap_word(struct iris_core *core, u32 word)
++{
++	u32 i;
++
++	if (!word)
++		return cpu_to_le32(1);
++	for (i = 0; i < IRIS_FW_MMAP_REGIONS; i++) {
++		if (word == iris_fw_mmap_words[i])
++			return cpu_to_le32(core->fw_mmap.regions[i].daddr);
++		if (word == iris_fw_mmap_words[i] + 1)
++			return cpu_to_le32(SZ_4K);
++	}
++	return 0;
++}
++
++static void iris_fw_mmap_fill(struct iris_core *core)
++{
++	u32 offset = iris_hfi_queue_size() + SFR_SIZE;
++	__le32 *payload = (__le32 *)((u8 *)core->iface_q_table_vaddr + offset);
++	u32 i;
++
++	for (i = 0; i < SZ_4K / sizeof(*payload); i++)
++		payload[i] = iris_fw_mmap_word(core, i);
++	dma_wmb();
++}
++
++static bool iris_fw_mmap_payload_valid(struct iris_core *core)
++{
++	u32 offset = iris_hfi_queue_size() + SFR_SIZE;
++	__le32 *payload = (__le32 *)((u8 *)core->iface_q_table_vaddr + offset);
++	u32 i;
++
++	for (i = 0; i < SZ_4K / sizeof(*payload); i++)
++		if (READ_ONCE(payload[i]) != iris_fw_mmap_word(core, i))
++			return false;
++	return true;
++}
++
++void iris_fw_mmap_deinit(struct iris_core *core)
++{
++	struct iris_fw_mmap *map = &core->fw_mmap;
++	u32 i = IRIS_FW_MMAP_REGIONS;
++
++	if (WARN_ON(core->fw_owned) || !map->shared_size)
++		return;
++	while (i--) {
++		if (map->regions[i].size)
++			dma_unmap_resource(core->dev, map->regions[i].daddr,
++					   map->regions[i].size, DMA_BIDIRECTIONAL, 0);
++	}
++	if (core->iface_q_table_vaddr && map->shared_size)
++		dma_free_attrs(core->dev, map->shared_size, core->iface_q_table_vaddr,
++			       core->iface_q_table_daddr, DMA_ATTR_WRITE_COMBINE);
++	memset(map, 0, sizeof(*map));
++	core->iface_q_table_vaddr = NULL;
++	core->iface_q_table_daddr = 0;
++	core->sfr_vaddr = NULL;
++	core->sfr_daddr = 0;
++}
++
++int iris_fw_mmap_init(struct iris_core *core)
++{
++	struct platform_device *pdev = to_platform_device(core->dev);
++	struct resource *resources[IRIS_FW_MMAP_REGIONS];
++	struct iommu_domain *domain;
++	struct iris_fw_mmap *map = &core->fw_mmap;
++	u32 i, j, base, size;
++	dma_addr_t addr;
++	int ret;
++
++	if (core->fw_owned || core->iface_q_table_vaddr || map->shared_size)
++		return -EBUSY;
++	domain = iommu_get_domain_for_dev(core->dev);
++	if (!domain || (domain->type != IOMMU_DOMAIN_DMA && domain->type != IOMMU_DOMAIN_DMA_FQ))
++		return -ENODEV;
++	for (i = 0; i < IRIS_FW_MMAP_REGIONS; i++) {
++		resources[i] = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++							    iris_fw_mmap_names[i]);
++		if (!resources[i] || resources[i]->end < resources[i]->start ||
++		    resource_size(resources[i]) != SZ_4K ||
++		    !IS_ALIGNED(resources[i]->start, SZ_4K))
++			return -EINVAL;
++		for (j = 0; j < i; j++)
++			if (resources[i]->start <= resources[j]->end &&
++			    resources[j]->start <= resources[i]->end)
++				return -EINVAL;
++	}
++	map->shared_size = iris_fw_shared_size();
++	core->iface_q_table_vaddr = dma_alloc_attrs(core->dev, map->shared_size,
++						    &core->iface_q_table_daddr,
++						    GFP_KERNEL, DMA_ATTR_WRITE_COMBINE);
++	if (!core->iface_q_table_vaddr) {
++		map->shared_size = 0;
++		core->iface_q_table_daddr = 0;
++		return -ENOMEM;
++	}
++	if (!iris_fw_dma_range_valid(core, core->iface_q_table_daddr, map->shared_size)) {
++		ret = -ERANGE;
++		goto fail;
++	}
++	memset(core->iface_q_table_vaddr, 0, map->shared_size);
++	core->sfr_vaddr = (u8 *)core->iface_q_table_vaddr + iris_hfi_queue_size();
++	core->sfr_daddr = core->iface_q_table_daddr + iris_hfi_queue_size();
++	for (i = 0; i < IRIS_FW_MMAP_REGIONS; i++) {
++		addr = dma_map_resource(core->dev, resources[i]->start, SZ_4K,
++					DMA_BIDIRECTIONAL, 0);
++		if (dma_mapping_error(core->dev, addr)) {
++			ret = -EIO;
++			goto fail;
++		}
++		map->regions[i].daddr = addr;
++		map->regions[i].size = SZ_4K;
++	}
++	ret = iris_fw_mmap_span(core, &base, &size);
++	if (ret)
++		goto fail;
++	iris_fw_mmap_fill(core);
++
++	return 0;
++fail:
++	iris_fw_mmap_deinit(core);
++	return ret;
++}
++
++int iris_fw_mmap_program(struct iris_core *core)
++{
++	u32 base, size, offset = iris_hfi_queue_size() + SFR_SIZE;
++	int ret;
++
++	if (!core->fw_owned)
++		return -EINVAL;
++	ret = iris_fw_mmap_span(core, &base, &size);
++	if (ret)
++		return ret;
++	if (core->sfr_daddr != core->iface_q_table_daddr + iris_hfi_queue_size() ||
++	    core->sfr_vaddr != (u8 *)core->iface_q_table_vaddr + iris_hfi_queue_size() ||
++	    core->iris_firmware_data->core_arch >= SZ_4K || !iris_fw_mmap_payload_valid(core))
++		return -EINVAL;
++	/* Never rewrite the table while PAS may still own it. */
++	dma_wmb();
++	writel(core->iface_q_table_daddr, core->reg_base + FW_UC_REGION_ADDR);
++	writel(core->fw_mmap.shared_size, core->reg_base + FW_UC_REGION_SIZE);
++	writel(core->iface_q_table_daddr, core->reg_base + FW_QTBL_ADDR);
++	writel(BIT(0), core->reg_base + FW_QTBL_INFO);
++	writel(core->iface_q_table_daddr + offset, core->reg_base + FW_MMAP_ADDR);
++	writel(base, core->reg_base + FW_DEVICE_REGION_ADDR);
++	writel(size, core->reg_base + FW_DEVICE_REGION_SIZE);
++	writel(core->sfr_daddr + core->iris_firmware_data->core_arch, core->reg_base + FW_SFR_ADDR);
++
++	return 0;
++}
+diff --git a/drivers/media/platform/qcom/iris/iris_fw_mmap.h b/drivers/media/platform/qcom/iris/iris_fw_mmap.h
+new file mode 100644
+index 0000000..f1b68b5
+--- /dev/null
++++ b/drivers/media/platform/qcom/iris/iris_fw_mmap.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __IRIS_FW_MMAP_H__
++#define __IRIS_FW_MMAP_H__
++
++#include <linux/types.h>
++
++#define IRIS_FW_MMAP_REGIONS 3
++
++struct iris_core;
++
++struct iris_fw_mmap_region {
++	dma_addr_t daddr;
++	size_t size;
++};
++
++struct iris_fw_mmap {
++	u32 shared_size;
++	struct iris_fw_mmap_region regions[IRIS_FW_MMAP_REGIONS];
++};
++
++int iris_fw_mmap_init(struct iris_core *core);
++void iris_fw_mmap_deinit(struct iris_core *core);
++int iris_fw_mmap_program(struct iris_core *core);
++
++#endif
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_queue.c b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+index bf6db23..33b151e 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_queue.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_queue.c
+@@ -247,25 +247,34 @@ int iris_hfi_queues_init(struct iris_core *core)
+ {
+ 	struct iris_hfi_queue_table_header *q_tbl_hdr;
+ 	u32 queue_size;
++	int ret;
+ 
+ 	/* Iris hardware requires 4K queue alignment */
+-	queue_size = ALIGN((sizeof(*q_tbl_hdr) + (IFACEQ_QUEUE_SIZE * IFACEQ_NUMQ)), SZ_4K);
+-	core->iface_q_table_vaddr = dma_alloc_attrs(core->dev, queue_size,
+-						    &core->iface_q_table_daddr,
+-						    GFP_KERNEL, DMA_ATTR_WRITE_COMBINE);
+-	if (!core->iface_q_table_vaddr) {
+-		dev_err(core->dev, "queues alloc and map failed\n");
+-		return -ENOMEM;
+-	}
++	queue_size = iris_hfi_queue_size();
++	if (core->iris_platform_data->fw_mmap) {
++		ret = iris_fw_mmap_init(core);
++		if (ret)
++			return ret;
++	} else {
++		core->iface_q_table_vaddr = dma_alloc_attrs(core->dev, queue_size,
++							    &core->iface_q_table_daddr,
++							    GFP_KERNEL, DMA_ATTR_WRITE_COMBINE);
++		if (!core->iface_q_table_vaddr) {
++			dev_err(core->dev, "queues alloc and map failed\n");
++			return -ENOMEM;
++		}
+ 
+-	core->sfr_vaddr = dma_alloc_attrs(core->dev, SFR_SIZE,
+-					  &core->sfr_daddr,
+-					  GFP_KERNEL, DMA_ATTR_WRITE_COMBINE);
+-	if (!core->sfr_vaddr) {
+-		dev_err(core->dev, "sfr alloc and map failed\n");
+-		dma_free_attrs(core->dev, queue_size, core->iface_q_table_vaddr,
+-			       core->iface_q_table_daddr, DMA_ATTR_WRITE_COMBINE);
+-		return -ENOMEM;
++		core->sfr_vaddr = dma_alloc_attrs(core->dev, SFR_SIZE,
++						  &core->sfr_daddr,
++						  GFP_KERNEL, DMA_ATTR_WRITE_COMBINE);
++		if (!core->sfr_vaddr) {
++			dev_err(core->dev, "sfr alloc and map failed\n");
++			dma_free_attrs(core->dev, queue_size, core->iface_q_table_vaddr,
++				       core->iface_q_table_daddr, DMA_ATTR_WRITE_COMBINE);
++			core->iface_q_table_vaddr = NULL;
++			core->iface_q_table_daddr = 0;
++			return -ENOMEM;
++		}
+ 	}
+ 
+ 	iris_hfi_queue_init(core, IFACEQ_CMDQ_ID, &core->command_queue);
+@@ -293,21 +302,25 @@ void iris_hfi_queues_deinit(struct iris_core *core)
+ {
+ 	u32 queue_size;
+ 
+-	if (!core->iface_q_table_vaddr)
++	if (!core->iface_q_table_vaddr || core->fw_owned)
+ 		return;
+ 
+ 	iris_hfi_queue_deinit(&core->debug_queue);
+ 	iris_hfi_queue_deinit(&core->message_queue);
+ 	iris_hfi_queue_deinit(&core->command_queue);
+ 
++	if (core->iris_platform_data->fw_mmap) {
++		iris_fw_mmap_deinit(core);
++		return;
++	}
++
+ 	dma_free_attrs(core->dev, SFR_SIZE, core->sfr_vaddr,
+ 		       core->sfr_daddr, DMA_ATTR_WRITE_COMBINE);
+ 
+ 	core->sfr_vaddr = NULL;
+ 	core->sfr_daddr = 0;
+ 
+-	queue_size = ALIGN(sizeof(struct iris_hfi_queue_table_header) +
+-		(IFACEQ_QUEUE_SIZE * IFACEQ_NUMQ), SZ_4K);
++	queue_size = iris_hfi_queue_size();
+ 
+ 	dma_free_attrs(core->dev, queue_size, core->iface_q_table_vaddr,
+ 		       core->iface_q_table_daddr, DMA_ATTR_WRITE_COMBINE);
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_queue.h b/drivers/media/platform/qcom/iris/iris_hfi_queue.h
+index 2174fc5..e8c543e 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_queue.h
++++ b/drivers/media/platform/qcom/iris/iris_hfi_queue.h
+@@ -6,6 +6,10 @@
+ #ifndef __IRIS_HFI_QUEUE_H__
+ #define __IRIS_HFI_QUEUE_H__
+ 
++#include <linux/align.h>
++#include <linux/sizes.h>
++#include <linux/types.h>
++
+ struct iris_core;
+ 
+ /*
+@@ -171,6 +175,12 @@ struct iris_iface_q_info {
+ 	void		*kernel_vaddr;
+ };
+ 
++static inline u32 iris_hfi_queue_size(void)
++{
++	return ALIGN(sizeof(struct iris_hfi_queue_table_header) +
++		     IFACEQ_QUEUE_SIZE * IFACEQ_NUMQ, SZ_4K);
++}
++
+ int iris_hfi_queues_init(struct iris_core *core);
+ void iris_hfi_queues_deinit(struct iris_core *core);
+ 
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_common.h b/drivers/media/platform/qcom/iris/iris_platform_common.h
+index d714ed7..13e2619 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_common.h
++++ b/drivers/media/platform/qcom/iris/iris_platform_common.h
+@@ -319,6 +319,7 @@ struct iris_platform_data {
+ 	u32 tz_cp_config_data_size;
+ 	u32 num_vpp_pipe;
+ 	bool no_aon;
++	bool fw_mmap;
+ 	u32 max_session_count;
+ 	/* max number of macroblocks per frame supported */
+ 	u32 max_core_mbpf;
+diff --git a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+index 37bb95c..55104a3 100644
+--- a/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
++++ b/drivers/media/platform/qcom/iris/iris_platform_vpu3x.c
+@@ -199,6 +199,7 @@ const struct iris_platform_data sm8650_data = {
+ 
+ /* Dormant until firmware mapping, providers and controller retention are closed. */
+ const struct iris_platform_data sm7675_data = {
++	.fw_mmap = true,
+ 	.firmware_desc = &iris_vpu33_2p_gen2_desc,
+ 	.vpu_ops = &iris_vpu33_2p_ops,
+ 	.icc_tbl = iris_icc_info_vpu3x,
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_common.c b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+index 054d9e7..05a58b0 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu_common.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_common.c
+@@ -41,14 +41,16 @@ static void iris_vpu_interrupt_init(struct iris_core *core)
+ 	writel(mask_val, core->reg_base + WRAPPER_INTR_MASK);
+ }
+ 
+-static void iris_vpu_setup_ucregion_memory_map(struct iris_core *core)
++static int iris_vpu_setup_ucregion_memory_map(struct iris_core *core)
+ {
+ 	u32 queue_size, value;
+ 	const struct vpu_ops *vpu_ops = core->iris_platform_data->vpu_ops;
+ 
++	if (core->iris_platform_data->fw_mmap)
++		return iris_fw_mmap_program(core);
++
+ 	/* Iris hardware requires 4K queue alignment */
+-	queue_size = ALIGN(sizeof(struct iris_hfi_queue_table_header) +
+-		(IFACEQ_QUEUE_SIZE * IFACEQ_NUMQ), SZ_4K);
++	queue_size = iris_hfi_queue_size();
+ 
+ 	value = (u32)core->iface_q_table_daddr;
+ 	writel(value, core->reg_base + UC_REGION_ADDR);
+@@ -69,13 +71,18 @@ static void iris_vpu_setup_ucregion_memory_map(struct iris_core *core)
+ 
+ 	if (vpu_ops->program_bootup_registers)
+ 		vpu_ops->program_bootup_registers(core);
++
++	return 0;
+ }
+ 
+ int iris_vpu_boot_firmware(struct iris_core *core)
+ {
+ 	u32 ctrl_init = BIT(0), ctrl_status = 0, count = 0, max_tries = 1000;
++	int ret;
+ 
+-	iris_vpu_setup_ucregion_memory_map(core);
++	ret = iris_vpu_setup_ucregion_memory_map(core);
++	if (ret)
++		return ret;
+ 
+ 	writel(ctrl_init, core->reg_base + CTRL_INIT);
+ 	writel(0x1, core->reg_base + CPU_CS_SCIACMDARG3);

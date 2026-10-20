@@ -21,8 +21,9 @@ struct iris_core { u8 *reg_base; void *dev; };
 static u8 registers[0xf0000];
 static unsigned reads, sleeps, setup_calls, errors, ready_after;
 static u32 status;
+static int setup_error;
 static std::vector<std::pair<u32, u32>> writes;
-static void iris_vpu_setup_ucregion_memory_map(iris_core *) { ++setup_calls; }
+static int iris_vpu_setup_ucregion_memory_map(iris_core *) { ++setup_calls; return setup_error; }
 static u32 readl(const void *address) {
     assert(address == registers + CTRL_STATUS);
     ++reads;
@@ -47,6 +48,10 @@ static int run(u32 result, unsigned pending = 0) {
     iris_core core{registers, nullptr};
     const int ret = iris_vpu_boot_firmware(&core);
     assert(setup_calls == 1 && reads <= 1000 && sleeps <= 1000);
+    if (setup_error) {
+        assert(writes.empty() && reads == 0 && sleeps == 0 && errors == 0);
+        return ret;
+    }
     assert(writes.size() >= 2);
     assert((writes[0] == std::pair<u32, u32>{CTRL_INIT, 1}));
     assert((writes[1] == std::pair<u32, u32>{CPU_CS_SCIACMDARG3, 1}));
@@ -59,6 +64,11 @@ static int run(u32 result, unsigned pending = 0) {
     return ret;
 }
 int main() {
+    setup_error = -ERANGE;
+    assert(run(1) == -ERANGE);
+    setup_error = -EINVAL;
+    assert(run(1) == -EINVAL);
+    setup_error = 0;
     assert(run(1) == 0 && reads == 1);
     assert(run(1, 5) == 0 && reads == 6);
     assert(run(1, 999) == 0 && reads == 1000);
