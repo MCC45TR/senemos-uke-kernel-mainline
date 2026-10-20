@@ -146,3 +146,99 @@ ported to7.2.11 as patch0079. `audio-profile` defaults to `disabled`; optional
 buses remain disabled. It creates no sound card or playback/capture path.
 The host-only preset inspector never ships in the target package. Source and
 software checks do not qualify internal speaker or microphone operation.
+
+## Audio firmware responses, 20 October 2026
+
+The 7.2.11-12 source candidate adds patch 0084. PRM request/release basic errors
+reach the existing synchronous DSP error path. APM basic replies are bounded,
+and readiness errors must match the active nonzero query token. A successful
+basic ACK still waits for the service-specific response. Actual-source GCC and
+Clang sanitizer fixtures and AArch64 driver objects pass. The audio profile
+remains disabled; full package, admitted firmware and physical audio validation
+are separate. PRM stale-response correlation and graph/DMA lifetime remain open.
+Patch 0085 also preserves unmap opcode/status, carries the existing buffer-type
+token bit and clears only the selected mapping after firmware success. Host
+callback checks do not qualify caller-side DMA recovery or graph lifetime.
+
+Patch 0086 serializes PRM transactions with a completion and spinlock. Only
+the pending nonzero token, expected opcode and resource parameter can complete
+a request. Late/duplicate/unrelated replies cannot overwrite its result.
+The module-wide 32-bit sequence survives device reprobe; wire wrap and module
+reload are not an unlimited epoch guarantee. Exact firmware token echo and
+callback teardown remain separate admission gates. Audio stays disabled.
+
+### Transaction and buffer follow-up, 20 October 2026
+
+Patches 0086–0092 extend the source candidate with correlated PRM replies,
+graph payload/period bounds, dynamic-port callback draining, private receive
+batches and a sleepable compressed-stream lock. Buffer producers preserve the
+ring position after failed sends and carry advertised 128 KiB lengths in an
+8-bit index/24-bit length host token. Invalid DMA replies do not publish normal
+period progress. These changes introduce no firmware selector or board value.
+
+Actual-source fault fixtures cover the previous failures and the corrected
+paths under GCC/Clang ASan/UBSan. Full AArch64 driver objects compile with
+`WERROR=1`. Static service/PDR teardown, period reuse/late DMA replies,
+caller-side XRUN/error recovery and complete DMA ownership remain open.
+Firmware token echo, fitted codec/amplifier, calibration/protection and physical
+stream acceptance are separate gates; the native audio profile stays disabled.
+
+Patch 0093 returns graph OPEN errors, retains failed IDs within the current
+provider instance and cleans that local metadata at removal. First publication
+and final release use the existing provider command mutex; lookups cannot
+resurrect a zero reference. This does not establish remote cleanup after a
+timeout or a new firmware epoch after manual driver rebind.
+
+Patch 0094 adds the native service quiesce boundary and serialized callback
+publication/removal. APM blocks new opens and drains service callbacks before
+topology release. PRM releases its children and drains the serialized request
+before rejecting further work and disabling callbacks. Process-context and
+driver-order fixtures pass; transport/PDR teardown, remote ownership and full
+DMA/XRUN recovery remain separate gates. No sound card or route is enabled.
+
+20 October 2026 userdata image refresh: release14 retains source12's94-patch
+hardware queue and disabled native audio profile. It restores the explicit
+linux/EXT4 and userdata/F2FS root selector from source87eadc3. F2FS and its
+security labels are built in; a userdata boot container carries only the bounded
+root-profile selector. The current USB/offline-charge paths remain present.
+Source tests and package builds do not establish userdata boot acceptance.
+
+## Cliffs7 cache package candidate, 20 October 2026
+
+Release 15 retains release 14's first 94 patch hashes, root profiles, Type-C,
+charging and thermal paths. Patches 0095–0097 add the four-bank/v5 Cliffs7
+cache provider, five-window binding and managed GPU supplier ordering.
+The hashed `llcc-profile` selects `native-v1` during native source preparation;
+the generated boot helper transforms only its private admitted DT copy.
+Unknown profiles and source/graph mismatches are refused. Audio stays disabled.
+
+The reviewed root selector also forwards exact `_a`/`_b` boot-slot identity and
+an explicit `msm.o82_vrr_test_min_hz=0|30` only with the userdata root selector.
+Duplicates, malformed values, forced-argument conflicts and insufficient space
+are rejected before command-line mutation. Other bootloader arguments remain
+excluded. The standard Linux container does not enable the VRR experiment.
+
+The local source RPM passes fresh 97-patch preparation and three native
+AArch64 objects with KCFLAGS=-Werror. These results remain separate from a
+full kernel/package build and tablet acceptance. Actual bank/version
+admission, partial-programming recovery, GPU lifetime, cache coherency,
+suspend and any performance gain remain unqualified. Keep the accepted kernel
+and its matched modules available for recovery.
+
+## Native firewall and root policy candidate, 20 October 2026
+
+Release 16 retains the 97-patch hardware queue and adds the modules required
+by the original firewalld nftables backend: mixed IPv4/IPv6 tables, connection
+tracking, NAT, masquerading, redirection, rejection, rate limits, logging and
+FIB lookup. Source and resolved-configuration checks pass; package checks also
+require the corresponding built modules. This does not establish a running
+tablet firewall or change network rules during an SSH session.
+
+The forced command-line parser selects only `rootfstype=ext4` for the Linux
+profile or `rootfstype=f2fs` for userdata. Userdata changes `panic=0` to
+`panic=10`; Linux retains its bring-up setting. Duplicate or changed forced
+defaults are refused before mutation. Embedded dracut defaults exclude these
+fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
+fixtures cover both profiles, all field orders, rejected input and capacity
+boundaries. A panic restart is separate from hard-hang recovery or physical
+A/B rollback qualification. No tablet installation or reboot is implied.

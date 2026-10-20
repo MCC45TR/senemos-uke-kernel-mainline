@@ -15,8 +15,11 @@
 #include <linux/sizes.h>
 #include <asm/memory.h>
 #include <asm/processor.h>
+#include "uke-llcc-profile.h"
 #define UKE_INIT __init
 void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity);
 #else
 #include <libfdt.h>
 #include <stddef.h>
@@ -35,6 +38,14 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
 /* Nominal active dimensions from the 11.2-inch, 3200x2136 panel specification. */
 #define UKE_PANEL_WIDTH_MM 237U
 #define UKE_PANEL_HEIGHT_MM 158U
+
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+#include "uke-llcc.h"
+#endif
+
+#ifdef __KERNEL__
+#include "uke-root-selector.h"
+#endif
 
 static int UKE_INIT uke_path_reg(const void *fdt, const char *path,
 				unsigned int address, unsigned int bytes)
@@ -908,6 +919,11 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
 	    fdt_check_full(usb_overlay, usb_bytes))
 		return -FDT_ERR_BADVALUE;
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+	ret = uke_llcc_admit(input);
+	if (ret)
+		return ret;
+#endif
 	ret = fdt_open_into(input, output, capacity);
 	if (ret)
 		return ret;
@@ -917,6 +933,11 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	ret = fdt_overlay_apply(output, usb_overlay);
 	if (ret)
 		return ret;
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+	ret = uke_llcc_apply(output);
+	if (ret)
+		return ret;
+#endif
 	/* OEM zero-width bits means the whole byte; upstream rejects bits=<0 0>. */
 	ret = uke_delete_optional(output, "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/ufs_dev@ad", "bits");
 	if (ret)
@@ -1045,5 +1066,24 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 	*physical = __pa_symbol(uke_fdt);
 	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
 	return uke_fdt;
+}
+
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity)
+{
+	const char *handoff;
+	int chosen, bytes = 0;
+
+	if (fdt != uke_fdt)
+		return;
+	chosen = fdt_path_offset(fdt, "/chosen");
+	handoff = fdt_getprop(fdt, chosen, "bootargs", &bytes);
+	if (!handoff && bytes == -FDT_ERR_NOTFOUND)
+		bytes = 0;
+	if (bytes < 0 || uke_select_root(cmdline, capacity, handoff, bytes) < 0) {
+		pr_crit("Uke root selector rejected; refusing an ambiguous root\n");
+		while (true)
+			cpu_relax();
+	}
 }
 #endif

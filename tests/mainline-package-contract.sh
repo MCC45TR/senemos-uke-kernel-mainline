@@ -24,11 +24,15 @@ fi
 grep -Fx "if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then" "$spec"
 grep -Fx 'Source4: senemos-native-profile-7.2.11.tar.xz' <<< "$parsed"
 grep -F 'CONFIG_INITRAMFS_SOURCE=""' "$root/packaging/native/native.config"
+bash "$root/tests/native-firewall-contract.sh"
 if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1
 fi
 grep -F 'git archive HEAD src/display src/boot src/usb src/audio patches/$(version) patches/display patches/boot tests' "$root/Makefile"
 grep -Fx 'disabled' "$root/packaging/native/audio-profile"
+grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
+grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
+grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"
 [[ ! -e $root/packaging/native/senemos-uke-linux-kernel-mainline-native.spec ]]
 echo 'One mainline tuple, integer module ABI, matched boot and explicitly gated updater passed'

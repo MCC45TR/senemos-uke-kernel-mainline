@@ -14,13 +14,20 @@ g++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
 readelf -h "$work/dracut/modules.d/92uke-abl/uke-boot-status" | grep -E 'Machine:.*AArch64' >/dev/null
 command_line=$(sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' "$here/../../packaging/native/native.config")
 [[ $command_line == *'root=PARTLABEL=linux '* ]]
+# Root comes from the running kernel command line, including its admitted override.
+dracut_line=${command_line/root=PARTLABEL=linux /}
+dracut_line=${dracut_line/rootfstype=ext4,f2fs /}
+dracut_line=${dracut_line/panic=0 /}
 dracutbasedir="$work/dracut" dracut --conf /dev/null --confdir "$work/empty-config" \
     --tmpdir "$work" --no-hostonly --no-hostonly-cmdline --no-early-microcode --no-kernel --gzip \
-    --add uke-abl --kernel-cmdline "$command_line" \
+    --add uke-abl --kernel-cmdline "$dracut_line" \
     --force-drivers 'qrtr_smd qcom_pd_mapper ufs_qcom phy_qcom_qmp_ufs qcom_battmgr dwc3_qcom phy_msm_snps_eusb2_uke repeater_qti_pmic_eusb2_uke i2c_qcom_geni gpi ktz8866' \
-    --filesystems ext4 --omit 'network plymouth crypt systemd-cryptsetup syslog lvm mdraid btrfs i18n' \
+    --filesystems 'ext4 f2fs' --omit 'network plymouth crypt systemd-cryptsetup syslog lvm mdraid btrfs i18n' \
     "$work/base.cpio.gz" "$release"
 (cd "$work/base"; gzip -cd ../base.cpio.gz | cpio -idm --quiet --no-absolute-filenames)
+if grep -rE '(^|[[:space:]])(root|rootfstype|panic)=' "$work/base/etc/cmdline.d"; then
+    echo 'Embedded dracut defaults must not override the selected root policy' >&2; exit 1
+fi
 [[ ! -e $work/base/usr/lib/modules && ! -e $work/base/usr/lib/firmware ]]
 [[ ! -s $work/base/etc/machine-id && ! -e $work/base/etc/shadow ]]
 [[ -z $(find "$work/base" -type f \( -name '*.py' -o -name '*.pyc' -o -iname '*python*' -o -iname '*pypy*' \) -print -quit) ]]

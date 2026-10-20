@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 11
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -29,7 +29,7 @@ BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
-BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio
+BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
@@ -147,10 +147,17 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
+CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
+CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
+CC=clang bash native-profile/tests/llcc-boot-fdt-contract.sh "$PWD"
+test "$(cat native-generated/llcc-profile)" = native-v1
+grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native
 CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
+CXX=clang++ bash native-profile/tests/root-selector-contract.sh
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
@@ -161,6 +168,15 @@ CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-cap-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-preconfigured-apply-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-gpr-bounds-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-prm-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-unmap-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-port-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-rx-queue-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh
@@ -231,6 +247,7 @@ test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name '
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
 install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
+install -m644 %{_uke_out}/userdata.img "$bundle/userdata.img"
 install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
 install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
 install -m644 %{SOURCE6} "$bundle/source-lock.json"
@@ -274,6 +291,30 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
+- Restore the kernel primitives required by the original nftables firewall backend.
+- Select one root filesystem type and a bounded userdata panic restart policy.
+- Exclude conflicting root policy from embedded dracut defaults.
+
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
+- Select the matched Cliffs7 cache source profile and defer GPU probe until its supplier binds.
+- Forward exact slot identity and private userdata VRR arguments through the forced command line.
+- Preserve the existing root profiles, charging policy and disabled audio profile.
+
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-12
+- Bound APM basic replies and propagate readiness and PRM firmware errors
+- Preserve APM unmap status and separate data/position buffer handles
+- Correlate PRM replies with one pending token, opcode and parameter
+- Bound graph events, DMA response payloads and period indices
+- Drain dynamic GPR callbacks before port and graph state release
+- Detach APR receive batches under the IRQ-safe queue lock
+- Use a sleepable lock around compressed stream command submission
+- Preserve 128 KiB token lengths and validate fragment submissions
+- Reject failed or mismatched DMA completions without false progress
+- Qualify graph OPEN, quarantine failed IDs and guard graph references
+- Quiesce native audio services before topology and driver-data teardown
+- Keep audio disabled; add actual-source response regression fixtures
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-11
 - Expose cached UCSI GLINK request results, service epochs and event timestamps.
 - Validate error/refusal bookkeeping without changing transport or routing policy.

@@ -6,6 +6,9 @@ profile=$(cd -- "$(dirname -- "$0")" && pwd)
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
+export UKE_LLCC_PROFILE
+UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
+case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
 bash "$profile/tests/wcd939x-status-contract.sh"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
 export UKE_USB_PROFILE
