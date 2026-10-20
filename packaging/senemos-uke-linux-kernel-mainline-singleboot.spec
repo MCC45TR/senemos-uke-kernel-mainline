@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 Name: senemos-uke-linux-kernel-mainline-singleboot
 Version: 7.2.11
-Release: 15%{?dist}
+Release: 16%{?dist}
 Summary: Uke userdata boot profile for the matched mainline kernel
 License: MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -32,10 +32,10 @@ install -Dm644 %{SOURCE0} %{buildroot}%{_datadir}/senemos/uke/singleboot.json
 install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/doc/%{name}/SINGLEBOOT.md
 install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/licenses/%{name}/LICENSE
 install -d %{buildroot}%{_prefix}/lib/senemos
-ln -s kernel-updates/%{version}-15/userdata.img %{buildroot}%{_prefix}/lib/senemos/default-boot.img
+ln -s kernel-updates/%{version}-16/userdata.img %{buildroot}%{_prefix}/lib/senemos/default-boot.img
 
 %check
-test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-updates/%{version}-15/userdata.img
+test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-updates/%{version}-16/userdata.img
 
 %files
 %doc %{_datadir}/doc/%{name}/SINGLEBOOT.md
@@ -44,6 +44,10 @@ test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-
 %{_prefix}/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
+- Select the exact shared release-16 firewall and root-policy bundle.
+- Preserve explicit activation and matched rollback requirements.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-15
 - Select the exact shared release-15 bundle without rebuilding the kernel.
 - Match the metadata package license to its supplied MIT license file.

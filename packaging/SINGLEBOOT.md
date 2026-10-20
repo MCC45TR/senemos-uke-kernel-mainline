@@ -13,14 +13,16 @@ image composer and an auditable profile descriptor. The first-boot classifier
 records the actual mounted physical partition, rather than trusting the package
 name. No package script writes storage, changes the active slot or reboots.
 
-Automatic userdata kernel activation remains held. The existing A/B state model
-does not implement a qualified alternating slot writer. Physical first boot,
-selector forwarding and interrupted-update fallback remain separate tests.
+Automatic alternating-slot activation and interrupted-update fallback remain
+unqualified. The separately packaged current-slot activation path requires its
+own preflight, backup and readback; installing this descriptor performs none
+of those operations.
 
-Release 15 requires the exact `7.2.11-15` shared tuple from COPR 11179488.
+Release 16 requires the exact `7.2.11-16` shared tuple from COPR 11179692.
 The profile contains metadata and its default-container link; Image, modules
-and DTBs retain their common build identity. Signed common-package and payload
-checks pass on the host. Tablet cache, boot and fallback acceptance remain
-unqualified. The common release-15 configuration also omits nftables; Fedora
-firewall restoration needs a later kernel configuration correction. This
-profile does not enable automatic activation or the private VRR experiment.
+and DTBs retain their common build identity. The common build is pending at
+this source checkpoint. Its firewall/root-policy source, objects and fresh
+preparation pass; complete signed artifact and tablet acceptance remain
+separate gates. Automatic full-userdata F2FS growth is not included in this
+kernel release. This profile does not enable automatic activation or the
+private VRR experiment.
