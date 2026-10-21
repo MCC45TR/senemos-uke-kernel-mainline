@@ -53,7 +53,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "021fd8f64a0e62821f455c798ec0dc7af0671be3354d9da818e9d27e2ede59a8"
+      "sha256": "080437619362d8616b85b3b6c1f21acb0629b19f15c268c24c7453056ab30194"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
