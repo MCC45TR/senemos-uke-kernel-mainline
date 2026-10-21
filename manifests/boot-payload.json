@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-21",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "2eee54db21a95c0dd3825666e5a7fbdf613f3cc9094c73d1e507e7137ccb0442"
+      "sha256": "e64db409cd1628c83799dbde32e81a21e82f2f5b86b2423e2c82c1f4f9dee9db"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "a084268b9538ba045a5c86e52ec3dbe71f6612e7b3c4c8bf68240698664a2b3a"
+      "sha256": "ddcdb50624818cb742748a9e270326cadf8a2c455b0e6f7bb69956a622129783"
     },
     {
       "path": "tests/boot-image-contract.sh",
@@ -114,6 +114,22 @@
     {
       "path": "src/boot/check-root-capability.sh",
       "sha256": "94da6aad39c3bd3d5b3b6c910e4e67a1cc0afa6986a9db4d0d417b719ba91d4c"
+    },
+    {
+      "path": "src/boot/userdata-grow.cpp",
+      "sha256": "be32a77fc5da0f4dd09dfed8947cf291fafcaea72ccfca02ed57312bbea5ed2d"
+    },
+    {
+      "path": "src/boot/userdata-grow.hpp",
+      "sha256": "83fc0c69059dd818a2c8c9047ab4192a0514fccdd2d7bf04e7a427bfe8ea5efd"
+    },
+    {
+      "path": "src/boot/dracut/uke-userdata-grow.service",
+      "sha256": "9a85bfd935830c99a33b91cb9172f5a5a73e4996a4996fd909ab6dd01af83c51"
+    },
+    {
+      "path": "tests/userdata-grow-contract.sh",
+      "sha256": "169b99aef7614338b0ae767390cdfe143ed18dddcd4f06af32be41507d39e06c"
     }
   ],
   "root_selector_capability": {
@@ -124,5 +140,16 @@
     "manifest_value": "uke-elfnote-v1",
     "policy_changed": false,
     "physical_vrr_qualified": false
+  },
+  "userdata_expansion": {
+    "stage": "initrd_before_sysroot_mount",
+    "filesystem": "f2fs",
+    "root_partlabel": "userdata",
+    "filesystem_label": "UKE_LINUX",
+    "partition_table_writes": false,
+    "formatting": false,
+    "power_guard": "USB online and battery at least 30 percent; otherwise defer",
+    "hardware_tested": false,
+    "one_time_completion": "Persistent F2FS block count; a read-only ExecCondition skips fsck/resize after expansion"
   }
 }

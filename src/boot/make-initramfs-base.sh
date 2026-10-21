@@ -12,6 +12,9 @@ chmod 755 "$work/dracut/modules.d/92uke-abl/module-setup.sh"
 g++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
     "$here/boot-status.cpp" -o "$work/dracut/modules.d/92uke-abl/uke-boot-status"
 readelf -h "$work/dracut/modules.d/92uke-abl/uke-boot-status" | grep -E 'Machine:.*AArch64' >/dev/null
+g++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
+    "$here/userdata-grow.cpp" -o "$work/dracut/modules.d/92uke-abl/uke-userdata-grow"
+readelf -h "$work/dracut/modules.d/92uke-abl/uke-userdata-grow" | grep -E 'Machine:.*AArch64' >/dev/null
 command_line=$(sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' "$here/../../packaging/native/native.config")
 [[ $command_line == *'root=PARTLABEL=linux '* ]]
 # Root comes from the running kernel command line, including its admitted override.
@@ -30,6 +33,7 @@ if grep -rE '(^|[[:space:]])(root|rootfstype|panic)=' "$work/base/etc/cmdline.d"
 fi
 [[ ! -e $work/base/usr/lib/modules && ! -e $work/base/usr/lib/firmware ]]
 [[ ! -s $work/base/etc/machine-id && ! -e $work/base/etc/shadow ]]
+[[ -x $work/base/usr/libexec/uke-userdata-grow && -x $work/base/usr/sbin/fsck.f2fs && -x $work/base/usr/sbin/resize.f2fs ]]
 [[ -z $(find "$work/base" -type f \( -name '*.py' -o -name '*.pyc' -o -iname '*python*' -o -iname '*pypy*' \) -print -quit) ]]
 [[ -z $(find "$work/base" \( -type b -o -type c -o -type p -o -type s \) -print -quit) ]]
 # Do not expose the disposable build path in the generated tablet payload.
@@ -47,7 +51,7 @@ else
     status=$?
     [[ $status == 1 ]] || { echo 'Dracut path scan failed' >&2; exit 2; }
 fi
-printf 'dracut\n' > "$work/owners.list"
+printf 'dracut\nf2fs-tools\n' > "$work/owners.list"
 while IFS= read -r -d '' file; do
     rpm -qf --qf '%{NAME}\n' "/${file#"$work/base/"}" 2>/dev/null >> "$work/owners.list" || :
 done < <(find "$work/base" -type f -print0)
@@ -61,5 +65,5 @@ LC_ALL=C sort -u "$work/owners.list" | while IFS= read -r package; do
 done > "$work/build-rpms.tsv"
 (cd "$work"; find base licenses -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "$work/base-files.sha256"
 find "$work/base" -type l -printf '%P\t%l\n' | LC_ALL=C sort > "$work/base-links.tsv"
-sha256sum "$here/boot-status.cpp" "$here/make-initramfs-base.sh" "$here/dracut/"* | sed "s|$here/||" > "$work/recipe-files.sha256"
+sha256sum "$here/boot-status.cpp" "$here/userdata-grow.cpp" "$here/userdata-grow.hpp" "$here/make-initramfs-base.sh" "$here/dracut/"* | sed "s|$here/||" > "$work/recipe-files.sha256"
 printf '%s\n' "$release" > "$work/kernel-release"

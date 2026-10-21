@@ -15,6 +15,8 @@ install() {
     inst_simple "$moddir/uke-usb-network" /usr/libexec/senemos-uke/uke-usb-network
     chmod 755 "$initdir/usr/libexec/senemos-uke/uke-usb-network"
     inst_binary "$moddir/uke-boot-status" /usr/bin/uke-boot-status
+    inst_binary "$moddir/uke-userdata-grow" /usr/libexec/uke-userdata-grow
+    inst_multiple /usr/sbin/fsck.f2fs /usr/sbin/resize.f2fs
     inst_simple "$moddir/uke-coresight-bringup.conf" /usr/lib/modprobe.d/uke-coresight-bringup.conf
     inst_simple "$moddir/root-guard.sh" /usr/libexec/uke-root-guard
     chmod 755 "$initdir/usr/libexec/uke-root-guard"
@@ -22,6 +24,8 @@ install() {
     inst_simple "$moddir/uke-initrd-screen.service" "$systemdsystemunitdir/uke-initrd-screen.service"
     mkdir -p "$initdir$systemdsystemunitdir/sysroot.mount.requires"
     ln -s ../uke-root-guard.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-root-guard.service"
+    inst_simple "$moddir/uke-userdata-grow.service" "$systemdsystemunitdir/uke-userdata-grow.service"
+    ln -s ../uke-userdata-grow.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-userdata-grow.service"
     mkdir -p "$initdir$systemdsystemunitdir/initrd.target.wants"
     ln -s ../uke-initrd-screen.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-initrd-screen.service"
     # Keep the existing peripheral debug shell available when UFS/root fails.

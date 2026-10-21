@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 4
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
@@ -332,6 +332,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-5
+- Expand the provisioned F2FS userdata filesystem offline before mounting root.
+- Preserve filesystem identity, the partition table and the selected-root guard.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-4
 - Report the fixed O82 10-bpc transport through the standard connector property.
 - Check connector state allocation, error propagation and foreign-panel exclusion.
