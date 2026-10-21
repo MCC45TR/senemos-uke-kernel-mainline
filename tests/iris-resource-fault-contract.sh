@@ -16,11 +16,19 @@ cat > "$work/check.cpp" <<'CPP'
 using u32 = unsigned;
 constexpr int IRIS_CORE_INIT = 0, IRIS_CORE_ERROR = 1;
 struct iris_core;
+static int iris_vpu_power_off(iris_core *);
 struct vpu_ops {
     int (*power_on_controller)(iris_core *);
     int (*power_on_hw)(iris_core *);
     void (*power_off_hw)(iris_core *);
     int (*power_off_controller)(iris_core *);
+    int (*power_off_checked)(iris_core *) = nullptr;
+};
+struct iris_core_power {
+    unsigned long icc_bw, clk_freq;
+    unsigned long clock_mask=0, domain_mask=0;
+    bool icc_voted=false, opp_voted=false, controller_started=false, hardware_started=false;
+    bool controller_quiesced=false, hardware_quiesced=false;
 };
 struct icc_info { const char *name; unsigned long bw_min_kbps, bw_max_kbps; };
 struct icc_bulk_data { const char *name; unsigned long avg_bw, peak_bw; };
@@ -31,7 +39,7 @@ struct iris_core {
     const platform_data *iris_platform_data;
     icc_bulk_data *icc_tbl;
     int icc_count;
-    struct { unsigned long icc_bw, clk_freq; } power;
+    iris_core_power power;
     int irq;
     unsigned intr_status;
     const iris_hfi_sys_ops *hfi_sys_ops;
@@ -51,6 +59,8 @@ static int icc_bulk_set_bw(int, icc_bulk_data *) { ++bulk_calls; return record("
 CPP
 awk '/^int iris_set_icc_bw\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
     "$iris/iris_resources.c" >> "$work/check.cpp"
+awk '/^bool iris_vpu_power_resources_held\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
+    "$iris/iris_vpu_common.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 static int controller_on(iris_core *) { return record("controller-on", 2); }
 static int hardware_on(iris_core *) { return record("hardware-on", 3); }
@@ -77,7 +87,8 @@ static void pm_runtime_mark_last_busy(void *) { record("busy", 0); }
 static int iris_vpu_boot_firmware(iris_core *) { return record("boot", 6); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return record("hwmode", 7); }
 static int powercollapse(iris_core *) { return record("pc", 8); }
-static void iris_vpu_power_off(iris_core *) { record("power-off", 0); }
+static int power_off_error;
+static int iris_vpu_power_off(iris_core *) { record("power-off", 0); return power_off_error; }
 CPP
 awk '/^int iris_hfi_pm_(suspend|resume)\(/ { emit=1 } emit { print } emit && /^}/ { emit=0 }' \
     "$iris/iris_hfi_common.c" >> "$work/check.cpp"
@@ -105,12 +116,12 @@ int main() {
             assert((events == std::vector<std::string>{"icc", "controller-on", "hardware-on", "rate", "hardware-off", "controller-off", "icc-off"}));
     }
     for (int stage = 1; stage <= 8; ++stage) {
-        fault = stage; events.clear(); core.power.icc_bw = 0;
+        fault = stage; events.clear(); core.power.icc_bw = 0; core.state = IRIS_CORE_INIT;
         assert(iris_hfi_pm_resume(&core) == -EREMOTEIO);
         if (stage >= 6) assert(events[events.size()-2] == "suspend");
         if (stage >= 5) assert(events.back() == "power-off");
     }
-    fault = 0; core.power.icc_bw = 0;
+    fault = 0; core.power.icc_bw = 0; core.state = IRIS_CORE_INIT;
     assert(iris_hfi_pm_resume(&core) == 0);
     for (int stage = 5; stage <= 8; ++stage) {
         fault = stage; suspend_error = -ETIMEDOUT; core.state = IRIS_CORE_INIT;
@@ -128,6 +139,18 @@ int main() {
     assert(events.back() == "suspend");
     suspend_error = 0; core.state = IRIS_CORE_INIT; events.clear();
     assert(iris_hfi_pm_suspend(&core) == 0 && events.back() == "power-off");
+    for (int stop_error : {-ETIMEDOUT, -EBUSY, -EAGAIN}) {
+        power_off_error=stop_error; core.state=IRIS_CORE_INIT;
+        assert(iris_hfi_pm_suspend(&core)==(stop_error==-ETIMEDOUT ? stop_error : -EIO));
+        assert(core.state==IRIS_CORE_ERROR);
+    }
+    power_off_error=0;
+    for (int stop_error : {-EBUSY,-EAGAIN}) {
+        suspend_error=stop_error; core.state=IRIS_CORE_INIT;
+        assert(iris_hfi_pm_suspend(&core)==-EIO && core.state==IRIS_CORE_ERROR);
+    }
+    suspend_error=0; power_off_error=-ETIMEDOUT; fault=6; core.power.icc_bw=0; core.state=IRIS_CORE_INIT;
+    assert(iris_hfi_pm_resume(&core)==-EREMOTEIO && core.state==IRIS_CORE_ERROR);
 }
 CPP
 "${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror \

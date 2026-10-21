@@ -17,7 +17,11 @@ constexpr int IRIS_CORE_INIT=1, IRIS_CORE_ERROR=2, IRIS_CORE_DEINIT=0;
 struct device {};
 struct iris_iface_q_info {};
 struct iris_core;
-struct vpu_ops { void (*power_off_hw)(iris_core *); int (*power_off_controller)(iris_core *); };
+struct vpu_ops {
+    void (*power_off_hw)(iris_core *);
+    int (*power_off_controller)(iris_core *);
+    int (*power_off_checked)(iris_core *) = nullptr;
+};
 struct platform_data { const struct vpu_ops *vpu_ops; };
 struct iris_hfi_sys_ops { void (*sys_hfi_response_handler)(iris_core *); };
 struct iris_core {
@@ -67,7 +71,7 @@ static void iris_vpu_raise_interrupt(iris_core *core) {
     assert(lock_depth==1 && clocks_live && core->irq_enabled && !irq_depth); ++raises;
 }
 #define dev_err(...) ((void)0)
-void iris_vpu_power_off(iris_core *);
+int iris_vpu_power_off(iris_core *);
 int iris_hfi_queue_cmd_write_locked(iris_core *, void *, u32);
 static void response_handler(iris_core *core) {
     assert(!lock_depth); ++responses;
@@ -89,7 +93,7 @@ for name in iris_hfi_irq_enable iris_hfi_irq_disable iris_hfi_isr iris_hfi_isr_h
         "$iris/iris_hfi_common.c" |
         sed 's/struct iris_core \*core = data;/struct iris_core *core = (struct iris_core *)data;/' >> "$work/check.cpp"
 done
-awk '/^void iris_vpu_power_off\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
+awk '/^int iris_vpu_power_off\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
     "$iris/iris_vpu_common.c" >> "$work/check.cpp"
 awk '/^int iris_hfi_queue_cmd_write_locked\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
     "$iris/iris_hfi_queue.c" >> "$work/check.cpp"

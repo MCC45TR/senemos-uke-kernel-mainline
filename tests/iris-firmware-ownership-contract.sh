@@ -55,6 +55,9 @@ static bool irq_needs_drain;
 static bool work_pending;
 static bool remove_during_pm;
 static unsigned pm_gets;
+static unsigned pm_fail_on_get;
+static int power_off_error;
+static bool power_held, partial_power_on;
 static iris_core *wait_core;
 static bool response_pending;
 static int response_generation;
@@ -114,6 +117,7 @@ done
 cat >> "$work/check.cpp" <<'CPP'
 static int pm_runtime_resume_and_get(struct device *) {
     ++pm_gets;
+    if (pm_gets == pm_fail_on_get) return -EIO;
     if (remove_during_pm) wait_core->removing = true;
     return pm_result;
 }
@@ -149,10 +153,12 @@ cat >> "$work/check.cpp" <<'CPP'
 static void pm_runtime_put_sync(struct device *) { ++sync_puts; }
 static void pm_runtime_put_noidle(struct device *) { ++idle_puts; }
 static void pm_runtime_put_autosuspend(struct device *) { ++auto_puts; }
-static void iris_vpu_power_off(iris_core *core) {
+static int iris_vpu_power_off(iris_core *core) {
     assert(!core->irq_enabled && !irq_needs_drain && irq_drains>0);
     ++power_offs; events.emplace_back("power-off");
+    power_held = power_off_error != 0; return power_off_error;
 }
+static bool iris_vpu_power_resources_held(iris_core *) { return power_held; }
 static void iris_hfi_queues_deinit(iris_core *) {
     assert(queues_live && !irq_needs_drain); queues_live = false; ++frees; events.emplace_back("free");
 }
@@ -193,7 +199,10 @@ static int iris_hfi_queues_init(iris_core *) {
     ++allocs; const int ret = step("queues", 9); queues_live = !ret; return ret;
 }
 static int iris_vpu_power_on(iris_core *core) {
-    const int ret = step("power-on", 10); if (!ret) iris_hfi_irq_enable(core); return ret;
+    const int ret = step("power-on", 10);
+    if (!ret) iris_hfi_irq_enable(core);
+    else if (partial_power_on) power_held = true;
+    return ret;
 }
 static int iris_vpu_boot_firmware(iris_core *) { return step("boot", 11); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return step("hwmode", 12); }
@@ -250,8 +259,9 @@ static void reset(iris_core &core) {
     reinits = waits = cancellations = schedules = auto_puts = queue_writes = irq_raises = 0;
     lock_depth = wait_action = queue_result = 0; work_pending = false; wait_core = &core;
     lifecycle_depth = 0; irq_depth = 1; irq_drains = 0; irq_needs_drain = false;
-    remove_during_pm = false; pm_gets = 0;
+    remove_during_pm = false; pm_gets = pm_fail_on_get = 0;
     response_pending = false; response_generation = 2; responses_delivered = 0;
+    power_off_error = 0; power_held = partial_power_on = false;
 }
 int main() {
     iris_core core;
@@ -305,7 +315,7 @@ int main() {
         assert(queues_live && core.fw_owned && frees == 0 && power_offs == 0);
         assert(sync_puts == 0 && idle_puts == (pm >= 0 ? 1U : 0U));
         shutdown_error = 0;
-        assert(iris_core_deinit(&core) == 0 && !queues_live && !core.fw_owned);
+        assert(iris_core_deinit(&core) == (pm < 0 ? pm : 0) && !queues_live && !core.fw_owned);
         assert(frees == 1 && power_offs == (pm >= 0 ? 1U : 0U));
     }
     reset(core); assert(iris_core_init(&core) == 0);
@@ -315,7 +325,32 @@ int main() {
     shutdown_error = 0;
     iris_sys_error_handler(&core.sys_error_handler.work);
     assert(allocs == 2 && frees == 1 && core.state == IRIS_CORE_INIT);
+    assert(pm_gets == 3 && auto_puts == 1 && idle_puts == 1 && sync_puts == 1);
     assert(iris_core_deinit(&core) == 0);
+
+    reset(core); assert(iris_core_init(&core) == 0); pm_fail_on_get = 2;
+    iris_sys_error_handler(&core.sys_error_handler.work);
+    assert(allocs == 1 && frees == 1 && core.state == IRIS_CORE_DEINIT);
+    assert(pm_gets == 2 && !auto_puts && sync_puts == 1);
+    pm_fail_on_get = 0;
+    iris_sys_error_handler(&core.sys_error_handler.work);
+    assert(allocs == 2 && core.state == IRIS_CORE_INIT && auto_puts == 1);
+    assert(iris_core_deinit(&core) == 0);
+
+    reset(core); assert(iris_core_init(&core) == 0); pm_result = -EIO;
+    iris_sys_error_handler(&core.sys_error_handler.work);
+    assert(allocs == 1 && frees == 1 && core.state == IRIS_CORE_DEINIT);
+    assert(pm_gets == 1 && !auto_puts && !sync_puts && !idle_puts);
+
+    reset(core); fault = 11; power_off_error = -ETIMEDOUT;
+    assert(iris_core_init(&core) == failure && !core.fw_owned && queues_live && power_held);
+    assert(core.state == IRIS_CORE_ERROR && !frees);
+    power_off_error = 0; pm_result = -EIO;
+    assert(iris_core_deinit(&core) == -EIO && !queues_live && !power_held && frees == 1);
+    reset(core); fault = 10; partial_power_on = true;
+    assert(iris_core_init(&core) == failure && power_held && queues_live && !frees);
+    assert(core.state == IRIS_CORE_ERROR && !core.fw_owned);
+    fault = 0; assert(iris_core_deinit(&core) == 0 && !power_held && !queues_live);
 
     reset(core); response = 0;
     assert(iris_core_init(&core) == -ETIMEDOUT && core.fw_owned && queues_live);
