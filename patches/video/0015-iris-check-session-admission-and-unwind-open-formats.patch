@@ -1,0 +1,128 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: check session admission and unwind open formats
+
+Do not return a usable file when the session registry rejected its entry.
+Check teardown/readiness/core state, the configured session capacity and
+reserved or aliased response IDs while holding the registry lock. Propagate
+admission failure through the existing open unwind, freeing controls and
+both format allocations before the remaining CPU-only context resources.
+
+Check both decoder format allocations before dereferencing them. Keep
+encoder format ownership with the caller on failure as well, so the one
+open unwind can free partial or complete allocations without leaks or a
+double free. No firmware session has started during this open transaction.
+
+OnePlus SM7675 checks core state and returns a session-capacity error;
+its numerical limits and firmware lifecycle are not imported. OEM Venus
+has a different open/unwind layout. Current upstream retains the unchecked
+Iris admission and decoder allocation paths. Preserve the original error,
+existing format defaults and configured capacities.
+
+The inactive native match remains disabled. These checks do not serialize
+already-admitted operations, pin DMA domains, qualify session-close timeout
+ownership or prevent every response-lookup/close race.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+Link: https://github.com/torvalds/linux/tree/2c455ddca7827ad8fa3a64fdbf5a60efb928b46a
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+--- a/drivers/media/platform/qcom/iris/iris_vdec.c
++++ b/drivers/media/platform/qcom/iris/iris_vdec.c
+@@ -23,6 +23,8 @@
+ 
+ 	inst->fmt_src = kzalloc_obj(*inst->fmt_src);
+ 	inst->fmt_dst = kzalloc_obj(*inst->fmt_dst);
++	if (!inst->fmt_src || !inst->fmt_dst)
++		return -ENOMEM;
+ 
+ 	inst->fw_min_count = 0;
+ 
+--- a/drivers/media/platform/qcom/iris/iris_venc.c
++++ b/drivers/media/platform/qcom/iris/iris_venc.c
+@@ -21,11 +21,8 @@
+ 
+ 	inst->fmt_src = kzalloc_obj(*inst->fmt_src);
+ 	inst->fmt_dst = kzalloc_obj(*inst->fmt_dst);
+-	if (!inst->fmt_src || !inst->fmt_dst) {
+-		kfree(inst->fmt_src);
+-		kfree(inst->fmt_dst);
++	if (!inst->fmt_src || !inst->fmt_dst)
+ 		return -ENOMEM;
+-	}
+ 
+ 	f = inst->fmt_dst;
+ 	f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+--- a/drivers/media/platform/qcom/iris/iris_vidc.c
++++ b/drivers/media/platform/qcom/iris/iris_vidc.c
+@@ -40,21 +40,46 @@
+ 	v4l2_fh_exit(&inst->fh);
+ }
+ 
+-static void iris_add_session(struct iris_inst *inst)
++static int iris_add_session(struct iris_inst *inst)
+ {
+ 	struct iris_core *core = inst->core;
+ 	struct iris_inst *iter;
+ 	u32 count = 0;
++	int ret = 0;
+ 
+ 	mutex_lock(&core->lock);
+ 
+-	list_for_each_entry(iter, &core->instances, list)
++	if (core->removing || !READ_ONCE(core->video_ready)) {
++		ret = -ENODEV;
++		goto unlock;
++	}
++	if (core->state != IRIS_CORE_INIT) {
++		ret = -EIO;
++		goto unlock;
++	}
++	if (!inst->session_id) {
++		ret = -EINVAL;
++		goto unlock;
++	}
++
++	list_for_each_entry(iter, &core->instances, list) {
++		if (iter->session_id == inst->session_id) {
++			ret = -EEXIST;
++			goto unlock;
++		}
+ 		count++;
++	}
+ 
+-	if (count < core->iris_platform_data->max_session_count)
+-		list_add_tail(&inst->list, &core->instances);
++	if (count >= core->iris_platform_data->max_session_count) {
++		ret = -EBUSY;
++		goto unlock;
++	}
++	list_add_tail(&inst->list, &core->instances);
+ 
++unlock:
+ 	mutex_unlock(&core->lock);
++
++	return ret;
+ }
+ 
+ static void iris_remove_session(struct iris_inst *inst)
+@@ -217,13 +242,18 @@
+ 	if (ret)
+ 		goto fail_m2m_ctx_release;
+ 
+-	iris_add_session(inst);
++	ret = iris_add_session(inst);
++	if (ret)
++		goto fail_m2m_ctx_release;
+ 
+ 	inst->fh.m2m_ctx = inst->m2m_ctx;
+ 
+ 	return 0;
+ 
+ fail_m2m_ctx_release:
++	v4l2_ctrl_handler_free(&inst->ctrl_handler);
++	kfree(inst->fmt_dst);
++	kfree(inst->fmt_src);
+ 	v4l2_m2m_ctx_release(inst->m2m_ctx);
+ fail_m2m_release:
+ 	v4l2_m2m_release(inst->m2m_dev);

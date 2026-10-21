@@ -116,6 +116,10 @@
     {
       "path": "patches/video/0014-iris-own-core-through-video-publication-and-release.patch",
       "sha256": "934ec242bfc4547ad932f4bbcf945c08e3e1e112578fbfef4f74cd8fa96ee722"
+    },
+    {
+      "path": "patches/video/0015-iris-check-session-admission-and-unwind-open-formats.patch",
+      "sha256": "3d60d22046a3435db8dc580d31c31ef78f731ced6986f1ae81c9a08f3ba9ebcb"
     }
   ],
   "sources": [
@@ -198,7 +202,10 @@
     "legal_lower_dma_apertures": true,
     "video_publication_gcc_clang_fixture": true,
     "video_publication_asan_ubsan": true,
-    "video_publication_aarch64_composite": true
+    "video_publication_aarch64_composite": true,
+    "video_open_admission_unwind": true,
+    "format_allocation_gcc_clang_asan_ubsan": true,
+    "video_open_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -374,5 +381,25 @@
     "upstream_probe_sha256": "a91a59cefe13480633e6f17fa3013a63d85bb3b00a2da8e292c5c51db8ec7a86",
     "upstream_vidc_sha256": "ff88255cb6e0a3830fdc15eb55ce6197b8129590d8f110367dcacb360802f02b",
     "upstream_v4l2_dev_sha256": "e5e3dbdd6d42631227dabdc88db97db03518bef10fd6a8530137c0c0390a055e"
+  },
+  "video_open": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "2f0cad5de5e319801bca493123920f0db7e3eac4",
+    "registry_admission_returns_error": true,
+    "readiness_rechecked_under_registry_lock": true,
+    "configured_capacity_preserved": true,
+    "zero_and_duplicate_response_ids_rejected": true,
+    "caller_owns_partial_format_allocations": true,
+    "decoder_allocations_checked": true,
+    "control_and_format_unwind_checked": true,
+    "inflight_operations_drained": false,
+    "response_lookup_close_lifetime_safe": false,
+    "dma_quiescence_qualified": false,
+    "native_match_added": false,
+    "tablet_tested": false,
+    "upstream_commit": "2c455ddca7827ad8fa3a64fdbf5a60efb928b46a",
+    "upstream_vdec_sha256": "adcd223c9f2a59271778a7f7d830750c2a462c03ac65ded4569761fcccd8cfb6",
+    "upstream_venc_sha256": "9823dae682f994c082aefc8f2acb53548c5a9cbb143d50f51a2b53a8b712c818",
+    "upstream_vidc_sha256": "ff88255cb6e0a3830fdc15eb55ce6197b8129590d8f110367dcacb360802f02b"
   }
 }
