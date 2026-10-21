@@ -33,7 +33,8 @@ cp "$root/LICENSE" "$work/SOURCES/singleboot-LICENSE"
 if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS" "$work/SPECS/profile.spec" > "$work/build.log" 2>&1; then
     cat "$work/build.log" >&2;exit 1
 fi
-packages=("$work/RPMS/"*/*-singleboot-*.rpm)
+shopt -s nullglob globstar
+packages=("$work"/RPMS/**/*-singleboot-*.rpm)
 if [[ ${#packages[@]} != 1 || ! -s ${packages[0]} ]]; then
     cat "$work/build.log" >&2
     printf 'Unexpected metadata fixture output: %s\n' "${packages[@]}" >&2
