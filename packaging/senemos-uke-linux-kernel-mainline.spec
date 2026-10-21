@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 1
+%global senemos_build_release 2
 %else
 %global senemos_build_release 1
 %endif
@@ -23,6 +23,8 @@ Source3: linux-stable.asc
 Source4: senemos-native-profile-%{version}.tar.xz
 Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
+Source7: SINGLEBOOT.md
+Source8: singleboot-LICENSE
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
@@ -79,6 +81,17 @@ Provides: installonlypkg(kernel)
 Matched Android v4 containers for the EXT4 Linux and F2FS userdata profiles.
 This package performs no activation, partition write, slot change or reboot.
 Firmware ownership and physical EL2 acceptance remain separate requirements.
+
+%package singleboot
+Summary: Matched Uke userdata boot profile
+License: MIT
+Requires: %{name} = %{version}-%{release}
+Requires: uke-installation-profile >= 1.1.4
+
+%description singleboot
+Selects the userdata image from this source family's exact kernel tuple.
+Image, modules, DTBs and both root profiles are built once. Installation
+performs no boot activation, partition write, slot selection or reboot.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
@@ -147,6 +160,9 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-kvm kernelr
 clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
 
 %check
+bash native-profile/tests/identity-contract.sh
+test "$(readlink %{buildroot}/usr/lib/senemos/kvm-default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json
 bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
 clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/tests/kvm-probe-abi.cpp -o %{_uke_out}/kvm-probe-abi
 %{_uke_out}/kvm-probe-abi
@@ -231,6 +247,20 @@ CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
 %install
+install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
+cat > %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json <<'EOF'
+{
+  "schema_version": 1,
+  "package": "%{name}-singleboot",
+  "kernel_release": "%{krel}",
+  "root_partition": "userdata",
+  "root_filesystem": "f2fs",
+  "boot_selector": "senemos.root=userdata",
+  "boot_image": "/usr/lib/senemos/kernel-updates/%{krel}/userdata.img",
+  "automatic_kernel_activation": false
+}
+EOF
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/kvm-default-boot.img
 export ARCH=arm64 LLVM=1
 install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
 install -Dm644 native-profile/KVM.md %{buildroot}%{_datadir}/doc/%{name}/KVM.md
@@ -293,7 +323,16 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/kernel-updates/%{krel}/
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
+%files singleboot
+%doc %{SOURCE7}
+%license %{SOURCE8}
+/usr/share/senemos/uke/kvm-singleboot.json
+/usr/lib/senemos/kvm-default-boot.img
+
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-2
+- Build singleboot metadata in the family and identify the observed POCO SKU.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-1
 - Carry the isolated KVM profile to signed Linux 7.2.12.
 - Preserve its distinct module ABI and metadata-only installation boundary.

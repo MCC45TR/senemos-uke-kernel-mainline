@@ -4,7 +4,7 @@ root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline.spec
 expected=senemos-uke-linux-kernel-mainline-kvm
 names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
-[[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot" ]]
+[[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot"$'\n'"$expected-singleboot" ]]
 parsed=$(rpmspec --parse --target aarch64 "$spec")
 grep -Eq '^Provides: kernel-uname-r\([0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*-kvm\)$' <<< "$parsed"
 if grep -E '^Obsoletes:|^Conflicts:|^%(post|pre|preun|postun|posttrans|pretrans|trigger)($|[[:space:]])|^Requires:.*(python|pypy|uke-kernel-update)' <<< "$parsed"; then

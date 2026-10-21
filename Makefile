@@ -11,12 +11,14 @@ validate:
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
-	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.2.12-1-kvm" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.2.12-2-kvm" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
 	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
 	bash tests/kvm-package-contract.sh
+	bash tests/identity-contract.sh
+	bash tests/kernel-family-contract.sh
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"
@@ -54,6 +56,8 @@ srpm: validate
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	bash scripts/stage-boot-sources.sh "$$top/SOURCES"
+	install -m644 packaging/SINGLEBOOT.md "$$top/SOURCES/SINGLEBOOT.md"
+	install -m644 LICENSE "$$top/SOURCES/singleboot-LICENSE"
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
 # A standalone source clone also owns its host build entry and pinned rules.

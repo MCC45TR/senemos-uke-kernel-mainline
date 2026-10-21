@@ -53,7 +53,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "9ec8c04c58464337449c2634d79bb563f244b77094204b3714da6dc549c30db5"
+      "sha256": "021fd8f64a0e62821f455c798ec0dc7af0671be3354d9da818e9d27e2ede59a8"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -196,7 +196,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-1-kvm",
+  "kernel_release": "7.2.12-2-kvm",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
