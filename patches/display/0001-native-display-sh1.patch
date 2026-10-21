@@ -1,0 +1,19 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] interconnect: retain display SH1 membership on the legacy graph
+
+Split the unchanged display member from the provider patch so newer compute
+graphs can retain both consumers without altering historical package output.
+
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -465,8 +465,8 @@
+ static struct qcom_icc_bcm bcm_sh1 = {
+ 	.name = "SH1",
+ 	.enable_mask = 0x1,
+-	.num_nodes = 4,
+-	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc },
++	.num_nodes = 5,
++	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc, &qnm_mnoc_hf },
+ };
+ 
+ static struct qcom_icc_bcm bcm_sn0 = {

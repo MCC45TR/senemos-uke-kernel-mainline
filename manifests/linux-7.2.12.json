@@ -400,6 +400,14 @@
     {
       "path": "patches/7.2.12/0098-uke-confirm-usb-sdp-adapter.patch",
       "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.2.12/0099-cliffs-cdsp-interconnect.patch",
+      "sha256": "af85b4744c25a92a423f5ad3eaf490ca6611ac2aa32032cec423afbacefdbf2d"
+    },
+    {
+      "path": "patches/7.2.12/0100-llcc-skip-absent-sm7675-and-window.patch",
+      "sha256": "2eec33b09f5f3469717da4e4f7bf1c7e7ddd1a5e549206c12721794aa364ddb6"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

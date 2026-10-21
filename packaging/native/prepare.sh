@@ -11,6 +11,7 @@ UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
 bash "$profile/tests/wcd939x-status-contract.sh"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
+bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
@@ -24,6 +25,7 @@ esac
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1 1
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \

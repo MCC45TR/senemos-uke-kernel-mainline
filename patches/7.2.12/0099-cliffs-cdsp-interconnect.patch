@@ -1,0 +1,190 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] interconnect: qcom: add the Cliffs compute DSP DDR path
+
+Retain the NSP-to-GEM-to-DDR path, exact OEM endpoint IDs, two-port
+GEM QoS and HLOS CO0/SH1 membership. The PCIe branch remains outside
+this partial provider; no dangling edge or foreign board data is added.
+
+Topology and QoS: MiCode Uke 5712080a4b0c0b1a879e6d145c601c649ddaddfd,
+drivers/interconnect/qcom/cliffs.c and include/dt-bindings/interconnect/
+qcom,cliffs.h. OnePlus SM7675 fc892483f1d61f245924681eb5abd563564d9cba
+has the identical interconnect source. Palawan native pointer-link API
+comparison: 0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95.
+
+This supplies a real bandwidth dependency. CDSP PAS authentication,
+reserved-memory ownership, FastRPC and NPU inference remain separate.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/Documentation/devicetree/bindings/interconnect/qcom,cliffs-rpmh.yaml b/Documentation/devicetree/bindings/interconnect/qcom,cliffs-rpmh.yaml
+index b0322eb..330df0b 100644
+--- a/Documentation/devicetree/bindings/interconnect/qcom,cliffs-rpmh.yaml
++++ b/Documentation/devicetree/bindings/interconnect/qcom,cliffs-rpmh.yaml
+@@ -4,7 +4,7 @@
+ $id: http://devicetree.org/schemas/interconnect/qcom,cliffs-rpmh.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: Qualcomm Cliffs RPMh USB interconnects
++title: Qualcomm Cliffs RPMh interconnects
+ 
+ maintainers:
+   - Uke Linux contributors
+@@ -12,6 +12,7 @@ maintainers:
+ description: |
+   The Xiaomi Uke USB2 peripheral path uses these Cliffs Network-on-Chip
+   providers for DWC3 and WCD939x control I2C bandwidth votes.
++  The NSP provider connects the compute DSP to GEM NoC and DDR.
+ 
+ properties:
+   compatible:
+@@ -23,6 +24,7 @@ properties:
+       - qcom,cliffs-cnoc_cfg
+       - qcom,cliffs-gem_noc
+       - qcom,cliffs-mc_virt
++      - qcom,cliffs-nsp_noc
+ 
+ required:
+   - compatible
+diff --git a/drivers/interconnect/qcom/qnoc-cliffs-usb.c b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+index 8665f4c..29a5528 100644
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -25,11 +25,13 @@
+ #define MASTER_LPASS_GEM_NOC	18
+ #define MASTER_LPASS_LPINOC	19
+ #define MASTER_LPIAON_NOC	20
++#define MASTER_COMPUTE_NOC	25
+ #define MASTER_SNOC_SF_MEM_NOC	27
+ #define MASTER_CNOC_CFG	32
+ #define MASTER_QUP_CORE_0	36
+ #define MASTER_QUP_CORE_1	37
+ #define MASTER_LPASS_PROC	40
++#define MASTER_CDSP_PROC	41
+ #define MASTER_UFS_MEM	48
+ #define MASTER_USB3_0	49
+ #define SLAVE_EBI1	512
+@@ -45,6 +47,7 @@
+ #define SLAVE_LPASS_GEM_NOC	556
+ #define SLAVE_LPIAON_NOC_LPASS_AG_NOC	557
+ #define SLAVE_LPICX_NOC_LPIAON_NOC	558
++#define SLAVE_CDSP_MEM_NOC	561
+ #define SLAVE_CNOC_CFG	565
+ #define SLAVE_QUP_CORE_0	572
+ #define SLAVE_QUP_CORE_1	573
+@@ -87,6 +90,9 @@ static struct qcom_icc_node qns_lpi_aon_noc;
+ static struct qcom_icc_node qnm_lpass_lpinoc;
+ static struct qcom_icc_node qns_lpass_aggnoc;
+ static struct qcom_icc_node qnm_lpiaon_noc;
++static struct qcom_icc_node qxm_nsp;
++static struct qcom_icc_node qns_nsp_gemnoc;
++static struct qcom_icc_node qnm_nsp_gemnoc;
+ static struct qcom_icc_node qns_lpass_ag_noc_gemnoc;
+ static struct qcom_icc_node qnm_lpass_gemnoc;
+ 
+@@ -215,6 +221,40 @@ static struct qcom_icc_node qnm_gpu = {
+ 	.link_nodes = { &qns_gem_noc_cnoc, &qns_llcc },
+ };
+ 
++static const struct qcom_icc_qosbox qnm_nsp_gemnoc_qos = {
++	.num_ports = 2,
++	.port_offsets = { 0x37000, 0x77000 },
++	.prio = 0,
++	.urg_fwd = 0,
++	.prio_fwd_disable = 1,
++};
++
++static struct qcom_icc_node qnm_nsp_gemnoc = {
++	.name = "qnm_nsp_gemnoc",
++	.channels = 2,
++	.buswidth = 32,
++	.qosbox = &qnm_nsp_gemnoc_qos,
++	/* shortcut: retain the PCIe edge when its native provider is ported. */
++	.num_links = 2,
++	.link_nodes = { &qns_gem_noc_cnoc, &qns_llcc },
++};
++
++static struct qcom_icc_node qxm_nsp = {
++	.name = "qxm_nsp",
++	.channels = 2,
++	.buswidth = 32,
++	.num_links = 1,
++	.link_nodes = { &qns_nsp_gemnoc },
++};
++
++static struct qcom_icc_node qns_nsp_gemnoc = {
++	.name = "qns_nsp_gemnoc",
++	.channels = 2,
++	.buswidth = 32,
++	.num_links = 1,
++	.link_nodes = { &qnm_nsp_gemnoc },
++};
++
+ static struct qcom_icc_node qnm_snoc_sf = {
+ 	.name = "qnm_snoc_sf",
+ 	.channels = 1,
+@@ -419,6 +459,13 @@ static struct qcom_icc_bcm bcm_acv = {
+ 	.nodes = { &ebi },
+ };
+ 
++static struct qcom_icc_bcm bcm_co0 = {
++	.name = "CO0",
++	.enable_mask = 0x1,
++	.num_nodes = 2,
++	.nodes = { &qxm_nsp, &qns_nsp_gemnoc },
++};
++
+ static struct qcom_icc_bcm bcm_cn0 = {
+ 	.name = "CN0",
+ 	.enable_mask = 0x1,
+@@ -465,8 +512,9 @@ static struct qcom_icc_bcm bcm_sh0 = {
+ static struct qcom_icc_bcm bcm_sh1 = {
+ 	.name = "SH1",
+ 	.enable_mask = 0x1,
+-	.num_nodes = 4,
+-	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc },
++	.num_nodes = 5,
++	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc,
++		   &qnm_nsp_gemnoc },
+ };
+ 
+ static struct qcom_icc_bcm bcm_sn0 = {
+@@ -584,6 +632,7 @@ static struct qcom_icc_node * const gem_noc_nodes[] = {
+ 	[MASTER_APPSS_PROC] = &chm_apps,
+ 	[MASTER_GFX3D] = &qnm_gpu,
+ 	[MASTER_LPASS_GEM_NOC] = &qnm_lpass_gemnoc,
++	[MASTER_COMPUTE_NOC] = &qnm_nsp_gemnoc,
+ 	[MASTER_SNOC_SF_MEM_NOC] = &qnm_snoc_sf,
+ 	[SLAVE_GEM_NOC_CNOC] = &qns_gem_noc_cnoc,
+ 	[SLAVE_LLCC] = &qns_llcc,
+@@ -642,6 +691,23 @@ static const struct qcom_icc_desc cliffs_lpass_lpicx_noc = {
+ 	.num_nodes = ARRAY_SIZE(lpass_lpicx_noc_nodes),
+ };
+ 
++static struct qcom_icc_node * const nsp_noc_nodes[] = {
++	[MASTER_CDSP_PROC] = &qxm_nsp,
++	[SLAVE_CDSP_MEM_NOC] = &qns_nsp_gemnoc,
++};
++
++static struct qcom_icc_bcm * const nsp_noc_bcms[] = {
++	&bcm_co0,
++};
++
++static const struct qcom_icc_desc cliffs_nsp_noc = {
++	.config = &cliffs_icc_regmap_config,
++	.nodes = nsp_noc_nodes,
++	.num_nodes = ARRAY_SIZE(nsp_noc_nodes),
++	.bcms = nsp_noc_bcms,
++	.num_bcms = ARRAY_SIZE(nsp_noc_bcms),
++};
++
+ static struct qcom_icc_node * const mc_virt_nodes[] = {
+ 	[MASTER_LLCC] = &llcc_mc,
+ 	[SLAVE_EBI1] = &ebi,
+@@ -689,6 +755,7 @@ static const struct of_device_id cliffs_usb_of_match[] = {
+ 	{ .compatible = "qcom,cliffs-lpass_lpiaon_noc", .data = &cliffs_lpass_lpiaon_noc },
+ 	{ .compatible = "qcom,cliffs-lpass_lpicx_noc", .data = &cliffs_lpass_lpicx_noc },
+ 	{ .compatible = "qcom,cliffs-mc_virt", .data = &cliffs_mc_virt },
++	{ .compatible = "qcom,cliffs-nsp_noc", .data = &cliffs_nsp_noc },
+ 	{ .compatible = "qcom,cliffs-system_noc", .data = &cliffs_system_noc },
+ 	{ }
+ };

@@ -191,17 +191,6 @@ This experimental patch does not enable a native DT graph.
  };
  
  static struct qcom_icc_bcm bcm_lp0 = {
-@@ -465,8 +467,8 @@
- static struct qcom_icc_bcm bcm_sh1 = {
- 	.name = "SH1",
- 	.enable_mask = 0x1,
--	.num_nodes = 4,
--	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc },
-+	.num_nodes = 5,
-+	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc, &qnm_mnoc_hf },
- };
- 
- static struct qcom_icc_bcm bcm_sn0 = {
 @@ -544,6 +546,7 @@
  };
  
