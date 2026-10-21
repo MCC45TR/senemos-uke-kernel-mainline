@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # RPM graph and payload selection only; no device writes.
 set -Eeuo pipefail
+trap 'printf "Kernel family metadata contract failed at line %s\n" "$LINENO" >&2' ERR
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline.spec
 base=$(rpmspec --target aarch64 -q --srpm --qf '%{NAME}' "$spec")
