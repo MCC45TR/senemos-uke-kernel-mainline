@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # RPM graph and payload selection only; no device writes.
 set -Eeuo pipefail
+trap 'printf "Kernel family metadata contract failed at line %s\n" "$LINENO" >&2' ERR
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline.spec
 base=$(rpmspec --target aarch64 -q --srpm --qf '%{NAME}' "$spec")
@@ -32,8 +33,13 @@ cp "$root/LICENSE" "$work/SOURCES/singleboot-LICENSE"
 if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS" "$work/SPECS/profile.spec" > "$work/build.log" 2>&1; then
     cat "$work/build.log" >&2;exit 1
 fi
-packages=("$work/RPMS/"*/*-singleboot-*.rpm)
-[[ ${#packages[@]} == 1 && -s ${packages[0]} ]]
+shopt -s nullglob globstar
+packages=("$work"/RPMS/**/*-singleboot-*.rpm)
+if [[ ${#packages[@]} != 1 || ! -s ${packages[0]} ]]; then
+    cat "$work/build.log" >&2
+    printf 'Unexpected metadata fixture output: %s\n' "${packages[@]}" >&2
+    exit 1
+fi
 rpm -qpl "${packages[0]}" > "$work/files"
 grep -Fxq "/usr/share/doc/$base-singleboot/SINGLEBOOT.md" "$work/files"
 grep -Fxq "/usr/share/licenses/$base-singleboot/LICENSE" "$work/files"
