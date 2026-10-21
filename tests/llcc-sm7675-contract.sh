@@ -89,7 +89,9 @@ static int qcom_llcc_get_cfg_index(struct platform_device *p, u8 *index, int cou
     (void)p; assert(count == 1); *index=0; return cfg_fault;
 }
 static struct regmap *qcom_llcc_init_mmio(struct platform_device *p, u8 index, const char *name) {
-    (void)p; (void)name; map_calls++;
+    (void)p; (void)name;
+    if (sm7675) assert(index < 5);
+    map_calls++;
     if (map_calls == map_fault) return ERR_PTR(-ENOMEM);
     return index < 5 ? &maps[index] : ERR_PTR(-EINVAL);
 }
@@ -174,7 +176,7 @@ int main(void) {
     for (unsigned int i=1;i<=2;i++) {
         reset(); read_fault=i; assert(qcom_llcc_probe(&p)==-EREMOTEIO && !write_calls);
     }
-    for (unsigned int i=1;i<=6;i++) {
+    for (unsigned int i=1;i<=5;i++) {
         reset(); map_fault=i; assert(qcom_llcc_probe(&p)==-ENOMEM && !write_calls);
     }
     /* Allocations 3..5 are the kernel's temporary bank-name strings. */
@@ -187,6 +189,7 @@ int main(void) {
     }
     reset(); cfg_fault=-EPROBE_DEFER; assert(qcom_llcc_probe(&p)==-EPROBE_DEFER && !write_calls);
     reset(); assert(qcom_llcc_probe(&p)==0 && activated==4 && !edac_calls && drv_data->num_banks==4);
+    assert(map_calls==5 && !drv_data->bcast_and_regmap);
     assert(llcc_slice_getd(LLCC_GPU)->slice_id==9 && llcc_slice_getd(LLCC_GPU)->slice_size==3200);
     assert(llcc_slice_getd(LLCC_GPUHTW)->slice_id==11 && llcc_slice_getd(LLCC_GPUHTW)->slice_size==256);
     assert(maps[4].values[LLCC_TRP_ATTR1_CFGn(9)/4] == ((3200*1024/4/64)<<16 | 1<<4));

@@ -1,0 +1,33 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: llcc: skip the absent Cliffs7 broadcast-AND window
+
+The admitted Cliffs7 profile has exactly four bank apertures and one
+broadcast aperture. Probing a sixth resource emits -EINVAL even though
+the driver already supports polling through the broadcast window.
+
+Skip that optional mapping for the validated SM7675 profile. Keep the
+existing error handling and resource policy for other platforms. The
+host probe test rejects any sixth access and retains write-fault,
+activation-fault, resource, version and unrelated-SCID checks.
+
+Source: MiCode Uke DT 94c84aeb9e517dbde546fc732033c184094c8e57,
+qcom/cliffs.dtsi, cache-controller@25000000; kernel5712080a, LLCC v5
+broadcast fallback. No cache policy or register value changes.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/soc/qcom/llcc-qcom.c b/drivers/soc/qcom/llcc-qcom.c
+index ad23626..0fa936b 100644
+--- a/drivers/soc/qcom/llcc-qcom.c
++++ b/drivers/soc/qcom/llcc-qcom.c
+@@ -5752,8 +5752,8 @@ static int qcom_llcc_probe(struct platform_device *pdev)
+ 		goto err;
+ 	}
+ 
+-	/* Applicable only when drv_data->version >= 4.1 */
+-	if (drv_data->version >= LLCC_VERSION_4_1_0_0) {
++	/* Cliffs7 has no broadcast-AND window; its five resources were checked. */
++	if (drv_data->version >= LLCC_VERSION_4_1_0_0 && !sm7675) {
+ 		drv_data->bcast_and_regmap = qcom_llcc_init_mmio(pdev, i + 1, "llcc_broadcast_and_base");
+ 		if (IS_ERR(drv_data->bcast_and_regmap)) {
+ 			ret = PTR_ERR(drv_data->bcast_and_regmap);

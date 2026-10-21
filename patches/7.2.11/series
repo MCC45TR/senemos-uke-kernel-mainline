@@ -96,3 +96,5 @@
 0096-sm7675-llcc-policy-and-resource-guards.patch
 0097-adreno-order-native-llcc-supplier.patch
 0098-uke-confirm-usb-sdp-adapter.patch
+0099-cliffs-cdsp-interconnect.patch
+0100-llcc-skip-absent-sm7675-and-window.patch

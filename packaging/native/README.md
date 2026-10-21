@@ -1,5 +1,13 @@
 # Mainline display source profile
 
+21 October 2026 source candidate: release 18 adds the exact NSP/GEM/DDR
+bandwidth route and avoids mapping an absent sixth LLCC aperture. All 100
+ordered patches retain the existing boot, firmware and charging policy.
+The native preparation gate checks NSP, GPU, LPASS, QUP, USB and UFS routes.
+[CDSP integration](../../docs/CDSP-BRINGUP-2026-10-21.md) records the remaining
+PAS, memory-ownership, firmware and inference work. This source candidate has
+not been submitted to COPR, installed or booted.
+
 21 October 2026 source follow-up: release 17 retains release 16's nftables,
 root-filesystem and inactive audio policy. It adds the retained root-selector
 capability, a lasting guarded-updater dependency, an independent OEM SDP adapter
@@ -14,7 +22,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The current source RPM contains signed Linux 7.2.11 and 80 ordered Uke patches,
+The current source RPM contains signed Linux 7.2.11 and 100 ordered Uke patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-29`, `7.2.10-30`, then `7.2.11-1` after the

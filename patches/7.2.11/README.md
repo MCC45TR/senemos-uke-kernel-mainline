@@ -102,3 +102,11 @@ ordering. Native source preparation selects the admitted private-DT conversion.
 The first 94 patch hashes and existing charging, thermal and recovery policies
 are preserved. Host source checks do not qualify cache coherency, supplier
 lifetime, recovery after partial programming, suspend or a performance gain.
+
+**21 October 2026, release 18 source candidate:** patch 0099 adds the exact
+Cliffs NSP-to-GEM-to-DDR route, GEM QoS and HLOS CO0/SH1 membership. Patch 0100
+skips the absent optional broadcast-AND aperture for the strictly validated
+five-window LLCC profile. Old source fails each new regression; the corrected
+source passes route and probe/fault checks. AArch64 driver-object compilation
+is separate from package, boot and NPU inference acceptance. CDSP PAS binding,
+global-sync ownership and native FastRPC remain unfinished.
