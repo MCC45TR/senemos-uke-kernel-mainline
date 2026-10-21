@@ -25,22 +25,29 @@ asset=src/video/uke-videocc-votes.c
 printf 'corrupt\n' >> "$fixture/$asset"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
 cp "$root/$asset" "$fixture/$asset"
+bash "$check" "$fixture" "$version" >/dev/null
 mv "$fixture/$asset" "$work/external.c"
 ln -s "$work/external.c" "$fixture/$asset"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
-printf '%s\n' "$(jq -r '.patches[0].path|split("/")|last' "$root/manifests/ufs-source-candidate-20261020.json")" >> "$fixture/patches/$version/series"
 cp "$root/$asset" "$work/repaired.c"
 mv "$work/repaired.c" "$fixture/$asset"
+bash "$check" "$fixture" "$version" >/dev/null
+printf '%s\n' "$(jq -r '.patches[0].path|split("/")|last' "$root/manifests/ufs-source-candidate-20261020.json")" >> "$fixture/patches/$version/series"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
 cp "$root/patches/$version/series" "$fixture/patches/$version/series"
+bash "$check" "$fixture" "$version" >/dev/null
 printf '%s\n' '0001-dt-bindings-eeprom-camera-64k-models.patch' >> "$fixture/patches/$version/series"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
 cp "$root/patches/$version/series" "$fixture/patches/$version/series"
+bash "$check" "$fixture" "$version" >/dev/null
 header=src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h
 printf 'corrupt\n' >> "$fixture/$header"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
 cp "$root/$header" "$fixture/$header"
+bash "$check" "$fixture" "$version" >/dev/null
 jq '.active_config = true' "$fixture/manifests/camcc-source-candidate-20261021.json" > "$work/activated.json"
 cp "$work/activated.json" "$fixture/manifests/camcc-source-candidate-20261021.json"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
+cp "$root/manifests/camcc-source-candidate-20261021.json" "$fixture/manifests/camcc-source-candidate-20261021.json"
+bash "$check" "$fixture" "$version" >/dev/null
 echo 'Firmware/camera hash corruption, escaping symlink, patch activation and active clock configuration refused'
