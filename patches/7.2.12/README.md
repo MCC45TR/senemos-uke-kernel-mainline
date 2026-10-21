@@ -130,3 +130,9 @@ firmware local to MDT loading. SCM metadata has its own copy; both normal
 shutdown cycles and crash-recovery reloads release the request reference.
 Host fault checks retain the core-owned main firmware and cover request/load
 failures and repeated cleanup. DSP recovery remains a physical acceptance gate.
+
+**21 October 2026, release 2 source:** patch 0104 preserves primary/DTB
+shutdown failures before unmapping or releasing Q6 resources. Retry retains
+confirmed primary shutdown and avoids duplicate cleanup after an SMEM failure.
+Start/attach reset the state. Host checks cover failure ordering and retries;
+remoteproc-core GLINK/removal ordering remains an unresolved acceptance gate.

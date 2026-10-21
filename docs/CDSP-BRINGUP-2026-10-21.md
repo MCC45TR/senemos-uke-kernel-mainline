@@ -60,6 +60,16 @@ without that callback. Actual load/unprepare checks pass 128 normal cycles and
 main-image reference. The original source fails this regression. Ordinary and
 non-recovering Clang ASan/UBSan checks pass; this is not DSP recovery validation.
 
+Patch 0104 returns a failed primary or DTB PAS shutdown before unmapping either
+image or unpreparing Q6 resources. A successful primary shutdown is retained
+across a failed DTB attempt. SMEM-lock cleanup can be retried after one resource
+release without duplicate unmap or IRQ/clock cleanup. Both states reset on start
+and attach. Actual callback fault checks cover these cases, the bounded decrypt
+retry, handover and the legacy single-image path; the original source fails.
+Ordinary and non-recovering Clang ASan/UBSan checks pass. The remoteproc core still
+stops GLINK subdevices before this callback and removal ignores shutdown errors.
+Complete FastRPC/DMA teardown remains unresolved and still prevents CDSP binding.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.

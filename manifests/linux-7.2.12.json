@@ -420,6 +420,10 @@
     {
       "path": "patches/7.2.12/0103-pas-release-dtb-firmware-after-load.patch",
       "sha256": "56c13088e9fd0540286b1d1bd54c9942c1e2a6012c2e937f27bee543c94df532"
+    },
+    {
+      "path": "patches/7.2.12/0104-pas-retain-resources-until-checked-shutdown.patch",
+      "sha256": "458501e9f4326f244d7fd0343075715fbe2919e55e1056cbe2a530887d390e0f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
