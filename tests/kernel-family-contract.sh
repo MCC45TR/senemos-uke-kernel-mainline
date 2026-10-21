@@ -34,7 +34,11 @@ if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS
     cat "$work/build.log" >&2;exit 1
 fi
 packages=("$work/RPMS/"*/*-singleboot-*.rpm)
-[[ ${#packages[@]} == 1 && -s ${packages[0]} ]]
+if [[ ${#packages[@]} != 1 || ! -s ${packages[0]} ]]; then
+    cat "$work/build.log" >&2
+    printf 'Unexpected metadata fixture output: %s\n' "${packages[@]}" >&2
+    exit 1
+fi
 rpm -qpl "${packages[0]}" > "$work/files"
 grep -Fxq "/usr/share/doc/$base-singleboot/SINGLEBOOT.md" "$work/files"
 grep -Fxq "/usr/share/licenses/$base-singleboot/LICENSE" "$work/files"
