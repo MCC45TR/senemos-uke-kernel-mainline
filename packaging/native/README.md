@@ -1,5 +1,10 @@
 # Mainline display source profile
 
+21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
+98-patch Uke profile, disabled audio and guarded updater contract. The original
+7.2.11 queue and device records remain historical evidence. Source preparation
+and COPR results do not establish boot or physical acceptance of 7.2.12.
+
 21 October 2026 source follow-up: release 17 retains release 16's nftables,
 root-filesystem and inactive audio policy. It adds the retained root-selector
 capability, a lasting guarded-updater dependency, an independent OEM SDP adapter
