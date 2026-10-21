@@ -136,3 +136,9 @@ shutdown failures before unmapping or releasing Q6 resources. Retry retains
 confirmed primary shutdown and avoids duplicate cleanup after an SMEM failure.
 Start/attach reset the state. Host checks cover failure ordering and retries;
 remoteproc-core GLINK/removal ordering remains an unresolved acceptance gate.
+
+**21 October 2026, release 2 source:** patch 0105 admits MDT memory geometry
+before secure metadata or memory setup. Absolute and relocated spans retain
+their distinct semantics; size queries avoid ELF32 addition wrap. Actual-function
+fixtures require malformed ranges to issue no SCM calls and retain every error.
+No firmware authentication, segment transfer or device result follows.

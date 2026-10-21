@@ -70,6 +70,18 @@ Ordinary and non-recovering Clang ASan/UBSan checks pass. The remoteproc core st
 stops GLINK subdevices before this callback and removal ignores shutdown errors.
 Complete FastRPC/DMA teardown remains unresolved and still prevents CDSP binding.
 
+Patch 0105 checks MDT geometry before metadata initialization or secure memory
+setup. Fixed images retain their absolute load addresses; relocatable setup
+spans include page rounding and must fit the allocation. Empty images, missing
+buffers, invalid file/memory lengths and wrapping physical allocations are
+refused without metadata, SCM or segment-loader calls. ELF32 address/length
+addition is promoted before it can wrap, also in the shared size query.
+Both PAS-context and ordinary MDT APIs retain metadata/SCM/load failures.
+Actual-function fault tests and non-recovering Clang ASan/UBSan pass; the original
+source fails the pre-SCM refusal. Exact local CDSP/DTB MDTs pass this host check,
+and the loader compiles for AArch64 with `-Werror`. Segment loading and secure
+authentication are mocked in these fixtures; no firmware is executed.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.

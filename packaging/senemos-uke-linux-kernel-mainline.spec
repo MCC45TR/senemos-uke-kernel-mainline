@@ -298,6 +298,7 @@ fi
 - Retain its crypto-DDR and NSP ARC suppliers and checked proxy-rail ownership.
 - Balance DTB firmware references on load failures and repeated recovery loads.
 - Retain PAS mappings on failed shutdown and make checked stop cleanup retryable.
+- Check MDT allocation bounds before secure setup and prevent ELF32 size wrap.
 - Skip the absent optional LLCC broadcast-AND window after aperture validation.
 - Keep CDSP authentication, memory ownership and inference qualification separate.
 

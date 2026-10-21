@@ -424,6 +424,10 @@
     {
       "path": "patches/7.2.12/0104-pas-retain-resources-until-checked-shutdown.patch",
       "sha256": "458501e9f4326f244d7fd0343075715fbe2919e55e1056cbe2a530887d390e0f"
+    },
+    {
+      "path": "patches/7.2.12/0105-mdt-check-memory-range-before-secure-setup.patch",
+      "sha256": "19a0650c559bfa7a119fb38037770003889d255a811a91fde638f96fbb096367"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
