@@ -7,14 +7,14 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 1
+%global senemos_build_release 3
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Uke kernel with the O82 display profile
-License: GPL-2.0-only
+License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -23,6 +23,8 @@ Source3: linux-stable.asc
 Source4: senemos-native-profile-%{version}.tar.xz
 Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
+Source7: SINGLEBOOT.md
+Source8: singleboot-LICENSE
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
@@ -81,6 +83,17 @@ Provides: installonlypkg(kernel)
 Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
 checks package identities, module digests, physical storage and power, preserves
 the previous image, and verifies write readback. Android A is not an update target.
+
+%package singleboot
+Summary: Matched Uke userdata boot profile
+License: MIT
+Requires: %{name} = %{version}-%{release}
+Requires: uke-installation-profile >= 1.1.4
+
+%description singleboot
+Selects the userdata image from this source family's exact kernel tuple.
+Image, modules, DTBs and both root profiles are built once. Installation
+performs no boot activation, partition write, slot selection or reboot.
 
 %prep
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
@@ -148,6 +161,9 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/identity-contract.sh
+test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -230,6 +246,20 @@ CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
 %install
+install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
+cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
+{
+  "schema_version": 1,
+  "package": "%{name}-singleboot",
+  "kernel_release": "%{krel}",
+  "root_partition": "userdata",
+  "root_filesystem": "f2fs",
+  "boot_selector": "senemos.root=userdata",
+  "boot_image": "/usr/lib/senemos/kernel-updates/%{krel}/userdata.img",
+  "automatic_kernel_activation": false
+}
+EOF
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
 export ARCH=arm64 LLVM=1
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
@@ -292,7 +322,17 @@ fi
 /usr/lib/senemos/kernel-updates/%{krel}/
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
+%files singleboot
+%doc %{SOURCE7}
+%license %{SOURCE8}
+/usr/share/senemos/uke/singleboot.json
+/usr/lib/senemos/default-boot.img
+
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-3
+- Build singleboot metadata in the kernel family with exact matching dependencies.
+- Identify the observed POCO SKU through the live OF model before userspace.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-1
 - Carry the 98-patch Uke profile to signed Linux 7.2.12.
 - Preserve matched boot payloads, guarded updates and separate device acceptance.

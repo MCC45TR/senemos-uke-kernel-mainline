@@ -11,7 +11,7 @@ future_release=$(rpmspec -q --srpm --qf '%{RELEASE}' --target aarch64 "$future")
 [[ $future_release == 1 || $future_release == 1.* ]]
 expected=senemos-uke-linux-kernel-mainline
 names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
-[[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot" ]]
+[[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot"$'\n'"$expected-singleboot" ]]
 # Query expanded payload paths rather than retaining the old shared module ABI.
 parsed=$(rpmspec --parse "$spec")
 grep -Eq '^Provides: kernel-uname-r\(7\.2\.12-[1-9][0-9]*\)$' <<< "$parsed"
