@@ -87,6 +87,7 @@ find "$init" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
+bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
@@ -100,5 +101,5 @@ image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
 userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\n' \
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v1\n' \
     "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"
