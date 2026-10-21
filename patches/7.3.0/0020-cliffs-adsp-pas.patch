@@ -49,11 +49,10 @@ CDSP's additional NSP and memory-assignment contract remains separate.
  static const struct qcom_pas_data cliffs_wpss_resource = {
  	.crash_reason_smem = 626,
  	.firmware_name = "qca6750/wpss.mdt",
-@@ -1713,6 +1729,7 @@
+@@ -1713,5 +1729,6 @@
  };
  
  static const struct of_device_id qcom_pas_of_match[] = {
 +	{ .compatible = "qcom,cliffs-adsp-pas", .data = &cliffs_adsp_resource },
  	{ .compatible = "qcom,cliffs-wpss-pas", .data = &cliffs_wpss_resource },
  	{ .compatible = "qcom,eliza-adsp-pas", .data = &sm8550_adsp_resource },
- 	{ .compatible = "qcom,milos-adsp-pas", .data = &sm8550_adsp_resource },

@@ -32,6 +32,7 @@
 0032-uke-battery-only-glink.patch
 0033-uke-charger-budget-and-startup.patch
 0034-uke-firmware-backlight-blanking.patch
+0034a-dwc3-power-supply-notifier-compat.patch
 0035-uke-charger-readiness-and-abi.patch
 0036-uke-adreno732-render.patch
 0037-uke-gpu-interconnect.patch

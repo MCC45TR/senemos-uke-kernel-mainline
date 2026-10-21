@@ -33,8 +33,10 @@ retain their existing genpd and optional CX/PX regulator paths.
  
  	const char *dtb_firmware_name;
  	int pas_id;
-@@ -149,12 +153,40 @@
+@@ -149,14 +153,42 @@
  	qcom_minidump(rproc, pas->minidump_id, qcom_pas_segment_dump);
+ 	iounmap(pas->mem_region);
+ 	pas->mem_region = NULL;
  }
  
 -static int qcom_pas_pds_enable(struct qcom_pas *pas, struct device **pds,
@@ -195,11 +197,9 @@ retain their existing genpd and optional CX/PX regulator paths.
  static const struct qcom_pas_data sc7280_wpss_resource = {
  	.crash_reason_smem = 626,
  	.firmware_name = "wpss.mdt",
-@@ -1638,6 +1713,7 @@
+@@ -1638,4 +1713,5 @@
  };
  
  static const struct of_device_id qcom_pas_of_match[] = {
 +	{ .compatible = "qcom,cliffs-wpss-pas", .data = &cliffs_wpss_resource },
  	{ .compatible = "qcom,eliza-adsp-pas", .data = &sm8550_adsp_resource },
- 	{ .compatible = "qcom,milos-adsp-pas", .data = &sm8550_adsp_resource },
- 	{ .compatible = "qcom,milos-cdsp-pas", .data = &milos_cdsp_resource },

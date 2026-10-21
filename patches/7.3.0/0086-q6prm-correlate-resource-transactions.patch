@@ -110,11 +110,11 @@ firmware verification before admitting this disabled audio profile.
  
  static int q6prm_set_hw_core_req(struct device *dev, uint32_t hw_block_id, bool enable)
 @@ -87,7 +134,7 @@
- 
- 	req->hw_clk_id = hw_block_id;
+ 	else
+ 		req->hw_clk_id = hw_block_id;
  
 -	return q6prm_send_cmd_sync(prm, pkt, rsp_opcode);
-+	return q6prm_send_cmd_sync(prm, pkt, rsp_opcode, PARAM_ID_RSC_HW_CORE);
++	return q6prm_send_cmd_sync(prm, pkt, rsp_opcode, param_data->param_id);
  }
  
  int q6prm_vote_lpass_core_hw(struct device *dev, uint32_t hw_block_id,

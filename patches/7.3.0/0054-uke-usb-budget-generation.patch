@@ -170,7 +170,7 @@ Use the explicit per-CPU workqueue for the current upstream API.
   * @usb2_phy: pointer to USB2 PHY
   * @usb3_phy: pointer to USB3 PHY
   * @usb2_generic_phy: pointer to array of USB2 PHYs
-@@ -1271,6 +1275,10 @@
+@@ -1271,8 +1275,12 @@
  	struct delayed_work	vbus_draw_work;
  	unsigned int		current_limit;
  	unsigned int		vbus_draw_retries;
@@ -178,6 +178,8 @@ Use the explicit per-CPU workqueue for the current upstream API.
 +	u32			vbus_draw_generation;
 +	unsigned long		vbus_draw_deadline;
 +	bool			vbus_draw_paused;
+ 
+ #define DWC3_CURRENT_UNSPECIFIED	UINT_MAX
  
  	u32			fladj;
  	u32			ref_clk_per;

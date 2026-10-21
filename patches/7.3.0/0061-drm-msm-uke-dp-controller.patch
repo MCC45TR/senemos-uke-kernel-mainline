@@ -40,11 +40,12 @@ diff --git a/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy
 index 4eff923..ab25d3d 100644
 --- a/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml
 +++ b/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml
-@@ -37,6 +37,7 @@ properties:
+@@ -37,7 +37,8 @@ properties:
            - qcom,sm8250-qmp-usb3-dp-phy
            - qcom,sm8350-qmp-usb3-dp-phy
            - qcom,sm8450-qmp-usb3-dp-phy
 +          - qcom,sm7675-qmp-usb3-dp-phy
+           - qcom,sm8475-qmp-usb3-dp-phy
            - qcom,sm8550-qmp-usb3-dp-phy
            - qcom,sm8650-qmp-usb3-dp-phy
            - qcom,sm8750-qmp-usb3-dp-phy

@@ -139,9 +139,7 @@ outside this candidate; physical charging still needs qualification.
  		battmgr->variant = QCOM_BATTMGR_SM8350;
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -3153,7 +3153,9 @@
- {
- 	struct dwc3		*dwc = gadget_to_dwc(g);
+@@ -3183,5 +3183,7 @@
  
 -	if (dwc->usb2_phy)
 +	if (dwc->usb2_phy && (dwc->usb2_phy->set_power ||
@@ -149,7 +147,7 @@ outside this candidate; physical charging still needs qualification.
 +				     "qcom,usb-snps-eusb2-phy")))
  		return usb_phy_set_power(dwc->usb2_phy, mA);
  
- 	if (!dwc->usb_psy)
+ 	spin_lock_irqsave(&dwc->lock, flags);
 --- a/drivers/remoteproc/qcom_q6v5_pas.c
 +++ b/drivers/remoteproc/qcom_q6v5_pas.c
 @@ -888,6 +888,11 @@

@@ -88,7 +88,7 @@ index 5dcf381..c7fb50f 100644
  
  	/* Keep sink compliance/debug requests within the Uke OEM HBR2 ceiling. */
  	if ((of_machine_is_compatible("xiaomi,uke") ||
-@@ -3923,13 +3946,20 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+@@ -3923,18 +3946,25 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
  	int ret;
  	u32 val;
  
@@ -96,6 +96,11 @@ index 5dcf381..c7fb50f 100644
 +		return qmp->uke_route_error;
  	if (!force && qmp->init_count++)
  		return 0;
+ 
+ 	if (qmp->aon_toggle)
+ 		aon_toggle = qmp->aon_toggle;
+ 	else
+ 		aon_toggle = qmp->pcs_aon;
  
 +	if (qmp->uke_gdsc) {
 +		ret = regulator_enable(qmp->uke_gdsc);

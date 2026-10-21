@@ -316,9 +316,7 @@ index a26bc09..5dcf381 100644
  		return -EINVAL;
  
  	mutex_lock(&qmp->phy_mutex);
-@@ -5006,6 +5290,9 @@ static const struct of_device_id qmp_combo_of_match_table[] = {
- 		.data = &sm8350_usb3dpphy_cfg,
- 	},
+@@ -5006,4 +5290,7 @@ static const struct of_device_id qmp_combo_of_match_table[] = {
  	{
 +		.compatible = "qcom,sm7675-qmp-usb3-dp-phy",
 +		.data = &sm7675_usb3dpphy_cfg,

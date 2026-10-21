@@ -11,7 +11,7 @@
   "patches": [
     {
       "path": "patches/7.3.0/0095-bindings-sm7675-llcc.patch",
-      "sha256": "ef8c4eb4c8b042cea2beeffceb42aa2eff945b5fa85ad075f58f4a94d88725f0"
+      "sha256": "f7cca65930456c5af300881587d4191b86ed1fd54cf84e1c2598ffed0779f939"
     },
     {
       "path": "patches/7.3.0/0096-sm7675-llcc-policy-and-resource-guards.patch",

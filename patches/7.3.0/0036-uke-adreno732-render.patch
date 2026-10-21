@@ -167,28 +167,11 @@ diff --git a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c b/drivers/iommu/arm/arm-
 diff --git a/drivers/soc/qcom/ubwc_config.c b/drivers/soc/qcom/ubwc_config.c
 --- a/drivers/soc/qcom/ubwc_config.c
 +++ b/drivers/soc/qcom/ubwc_config.c
-@@ -207,6 +207,16 @@
- 	.macrotile_mode = true,
- };
- 
-+static const struct qcom_ubwc_cfg_data sm7675_data = {
-+	.ubwc_enc_version = UBWC_4_0,
-+	.ubwc_dec_version = UBWC_4_3,
-+	.ubwc_swizzle = UBWC_SWIZZLE_ENABLE_LVL2 |
-+			UBWC_SWIZZLE_ENABLE_LVL3,
-+	.ubwc_bank_spread = true,
-+	.highest_bank_bit = 16,
-+	.macrotile_mode = true,
-+};
-+
- static const struct qcom_ubwc_cfg_data sm8550_data = {
- 	.ubwc_enc_version = UBWC_4_0,
- 	.ubwc_dec_version = UBWC_4_3,
 @@ -292,6 +302,7 @@
- 	{ .compatible = "qcom,sm8250", .data = &sm8250_data, },
- 	{ .compatible = "qcom,sm8350", .data = &sm8350_data, },
- 	{ .compatible = "qcom,sm8450", .data = &sm8350_data, },
-+	{ .compatible = "qcom,sm7675", .data = &sm7675_data, },
- 	{ .compatible = "qcom,sm8550", .data = &sm8550_data, },
- 	{ .compatible = "qcom,sm8650", .data = &sm8550_data, },
- 	{ .compatible = "qcom,sm8750", .data = &sm8750_data, },
+ 	{ .compatible = "qcom,sm8250", .data = &ubwc_4_0_hbb16, },
+ 	{ .compatible = "qcom,sm8350", .data = &ubwc_4_0_hbb16, },
+ 	{ .compatible = "qcom,sm8450", .data = &ubwc_4_0_hbb16, },
++	{ .compatible = "qcom,sm7675", .data = &ubwc_4_0_hbb16, },
+ 	{ .compatible = "qcom,sm8550", .data = &ubwc_4_0_hbb16, },
+ 	{ .compatible = "qcom,sm8650", .data = &ubwc_4_0_hbb16, },
+ 	{ .compatible = "qcom,sm8750", .data = &ubwc_5_0_hbb16, },

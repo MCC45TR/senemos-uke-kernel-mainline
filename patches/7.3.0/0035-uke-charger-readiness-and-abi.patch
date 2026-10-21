@@ -123,8 +123,11 @@ index 0617fbf..7559795 100644
  	return usb_psy;
  }
  
-@@ -2437,7 +2459,7 @@ void dwc3_core_remove(struct dwc3 *dwc)
+@@ -2437,10 +2459,10 @@ void dwc3_core_remove(struct dwc3 *dwc)
  	dwc3_free_event_buffers(dwc);
+ 
+ 	if (dwc->psy_nb.notifier_call)
+ 		power_supply_unreg_notifier(&dwc->psy_nb);
  
  	if (dwc->usb_psy) {
 -		cancel_work_sync(&dwc->vbus_draw_work);
@@ -136,22 +139,28 @@ diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
 index e0dee9d..bfb9000 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1061,6 +1061,7 @@ struct dwc3_glue_ops {
+@@ -1061,8 +1061,9 @@ struct dwc3_glue_ops {
   * @usb_psy: pointer to power supply interface.
+  * @usb_psy_name: name of the USB power supply
+  * @psy_nb: power supply notifier block
   * @vbus_draw_work: Work to set the vbus drawing limit
   * @current_limit: How much current to draw from vbus, in milliAmperes.
 + * @vbus_draw_retries: Bounded retries while the Uke charger service starts.
   * @usb2_phy: pointer to USB2 PHY
   * @usb3_phy: pointer to USB3 PHY
   * @usb2_generic_phy: pointer to array of USB2 PHYs
-@@ -1251,8 +1252,9 @@ struct dwc3 {
+@@ -1251,12 +1252,13 @@ struct dwc3 {
  	enum usb_dr_mode	role_switch_default_mode;
  
  	struct power_supply	*usb_psy;
+ 	const char		*usb_psy_name;
+ 	struct notifier_block	psy_nb;
 -	struct work_struct	vbus_draw_work;
 +	struct delayed_work	vbus_draw_work;
  	unsigned int		current_limit;
 +	unsigned int		vbus_draw_retries;
+ 
+ #define DWC3_CURRENT_UNSPECIFIED	UINT_MAX
  
  	u32			fladj;
  	u32			ref_clk_per;

@@ -203,7 +203,7 @@ index b1961daac5e2..247e83588882 100644
  #include <kunit/of.h>
  #include <kunit/platform_device.h>
  #include <kunit/test.h>
-@@ -3542,9 +3543,143 @@ static struct kunit_suite clk_hw_get_dev_of_node_test_suite = {
+@@ -3542,10 +3543,144 @@ static struct kunit_suite clk_hw_get_dev_of_node_test_suite = {
  };
  
  
@@ -342,6 +342,7 @@ index b1961daac5e2..247e83588882 100644
 +
  kunit_test_suites(
  	&clk_assigned_rates_suite,
+ 	&clk_assigned_sscs_suite,
  	&clk_hw_get_dev_of_node_test_suite,
 +	&clk_hold_test_suite,
  	&clk_leaf_mux_set_rate_parent_test_suite,
@@ -5729,8 +5730,7 @@ diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
 index b01a38fef8cf..1992a4618c1e 100644
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
-@@ -33,6 +33,11 @@
- /* duty cycle call may be forwarded to the parent clock */
+@@ -33,5 +33,10 @@
  #define CLK_DUTY_CYCLE_PARENT	BIT(13)
  
 +/* Opt-in Xiaomi boot-clock reference, released by provider sync_state. */
