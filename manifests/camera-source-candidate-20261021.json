@@ -104,5 +104,7 @@
       "sha256": "47bf6a3b60d8d8e1c9b7aa4e199990321f6e1f1ec435e2634080886f542dd690"
     }
   ],
-  "existing_prerequisite_commit": "5c641724857dbc91a7480c1be100ff94b9f88bd7"
+  "existing_prerequisite_commit": "5c641724857dbc91a7480c1be100ff94b9f88bd7",
+  "active_series": false,
+  "source4_inventory_changed": true
 }

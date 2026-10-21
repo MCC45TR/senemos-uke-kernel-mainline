@@ -177,6 +177,7 @@ srpm: validate
 	mkdir -p "$$assets"
 	git archive HEAD src/display src/boot src/usb src/audio patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
 	git archive HEAD src/video src/cpucp patches/video patches/ufs patches/cpucp patches/accessories patches/thermal manifests/iris-source-candidate-20261020.json manifests/ufs-source-candidate-20261020.json manifests/cpucp-read-candidate-20261020.json manifests/accessory-source-candidate-20261020.json manifests/thermal-source-candidate-20261020.json | tar -xf - -C "$$assets"
+	git archive HEAD src/camera manifests/camera-source-candidate-20261020.json manifests/camera-source-candidate-20261021.json manifests/camcc-source-candidate-20261021.json manifests/camera-board-candidate-20261021.json | tar -xf - -C "$$assets"
 	bash tests/firmware-source-package-contract.sh "$$assets" "$(version)"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"

@@ -9,8 +9,9 @@ The optional [sensor fragment](sensors.config) selects Linux OV08D10 and
 OV13B10 modules for a separate development build. Both source
 drivers support the OEM-declared 19.2 MHz input clock. The fragment does not
 enter the released configuration, generate a boot image or enable a DT node.
-It is not included in the existing firmware Source4 payload. No camera module,
-firmware, tuning or calibration data is supplied by this candidate.
+The development Source4 producer carries these inactive assets for source
+review; it does not apply them or merge the fragment. Previously published RPMs
+are unchanged. No camera module, firmware, tuning or calibration data is supplied.
 
 The earlier generic OV13B10 binding and OF-match patches from source
 `5c641724857dbc91a7480c1be100ff94b9f88bd7` are retained unchanged. They preserve

@@ -85,6 +85,8 @@ AArch64 objects with Clang 23.1.3 and `-Werror` using `board.config`.
 
 No Image, module bundle, RPM, COPR submission, target write, EEPROM read,
 power/reset change or stream test is produced by these checks. The active
-configuration, patch queue and existing Source4 inventory remain unchanged.
+configuration and patch queue remain unchanged. The combined camera development
+branch includes these inactive assets in its Source4 source inventory; previously
+published RPMs are unchanged.
 See the [board manifest](../../../manifests/camera-board-candidate-20261021.json)
 and the canonical UKE-CAM-L002 record in `uke-linux-docs`.

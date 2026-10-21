@@ -9,7 +9,7 @@
   "active_series": false,
   "dt_enabled": false,
   "kernel_release_changed": false,
-  "source4_inventory_changed": false,
+  "source4_inventory_changed": true,
   "physical_capture": null,
   "eeprom_accessed": false,
   "calibration_included": false,
@@ -170,7 +170,7 @@
       "path": "src/camera/board/board.config"
     },
     {
-      "sha256": "1143fe022ac85a6dae2cc0e42de9483ade94ff40ab4b371c403c83a51a7c7997",
+      "sha256": "e0fdaf21a704e0dea6e9479158197acdcd9ee90751542a157a81ab5c628cb210",
       "path": "src/camera/board/README.md"
     },
     {
@@ -190,5 +190,6 @@
     "CSIPHY/CSID860/VFE860, IOMMU/interrupt/interconnect and connected media graph",
     "Read-only private calibration layout/checksum validation and sensor power sequencing",
     "Matched kernel/module package, recoverable device chip-ID/RAW capture and original Fedora userspace"
-  ]
+  ],
+  "patches": []
 }

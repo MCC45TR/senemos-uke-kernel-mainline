@@ -8,8 +8,11 @@ trap 'rm -rf -- "$work"' EXIT
 fixture=$work/profile
 mkdir -p "$fixture/manifests" "$fixture/patches/$version"
 cp "$root/patches/$version/series" "$fixture/patches/$version/series"
-for name in iris-source ufs-source cpucp-read accessory-source thermal-source; do
-    manifest=manifests/$name-candidate-20261020.json
+for name in iris-source-candidate-20261020 ufs-source-candidate-20261020 \
+    cpucp-read-candidate-20261020 accessory-source-candidate-20261020 \
+    thermal-source-candidate-20261020 camera-source-candidate-20261021 \
+    camcc-source-candidate-20261021 camera-board-candidate-20261021; do
+    manifest=manifests/$name.json
     cp "$root/$manifest" "$fixture/$manifest"
     paths=$(jq -er '.patches[], .source_assets[]? | .path' "$root/$manifest")
     while IFS= read -r path; do
@@ -29,4 +32,15 @@ printf '%s\n' "$(jq -r '.patches[0].path|split("/")|last' "$root/manifests/ufs-s
 cp "$root/$asset" "$work/repaired.c"
 mv "$work/repaired.c" "$fixture/$asset"
 if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
-echo 'Source hash corruption, escaping symlink and accidental activation refused'
+cp "$root/patches/$version/series" "$fixture/patches/$version/series"
+printf '%s\n' '0001-dt-bindings-eeprom-camera-64k-models.patch' >> "$fixture/patches/$version/series"
+if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
+cp "$root/patches/$version/series" "$fixture/patches/$version/series"
+header=src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h
+printf 'corrupt\n' >> "$fixture/$header"
+if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
+cp "$root/$header" "$fixture/$header"
+jq '.active_config = true' "$fixture/manifests/camcc-source-candidate-20261021.json" > "$work/activated.json"
+cp "$work/activated.json" "$fixture/manifests/camcc-source-candidate-20261021.json"
+if bash "$check" "$fixture" "$version" >/dev/null 2>&1; then exit 1; fi
+echo 'Firmware/camera hash corruption, escaping symlink, patch activation and active clock configuration refused'
