@@ -68,4 +68,23 @@ C
 grep -Fq '{ .compatible = "qcom,sm7675", .data = &ubwc_4_0_hbb16, },' "$kernel/drivers/soc/qcom/ubwc_config.c"
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter -I "$work/include" -I "$kernel/include" "$work/ubwc.c" -o "$work/ubwc"
 "$work/ubwc"
-echo 'Actual Uke/upstream gadget dispatch, deferred supplier path and equivalent UBWC defaults passed'
+cat > "$work/rpmh.c" <<'C'
+#include <assert.h>
+#include <errno.h>
+#include <stdint.h>
+struct device { int unused; };
+struct tcs_cmd { uint32_t addr, data; int wait; };
+C
+awk '/^static inline int rpmh_read\(/{emit=1} emit{print} emit&&/^}/{emit=0}' "$kernel/include/soc/qcom/rpmh-uke.h" >> "$work/rpmh.c"
+cat >> "$work/rpmh.c" <<'C'
+int main(void) {
+ struct device dev={0}; struct tcs_cmd cmd={.addr=0x1234,.data=0xdeadbeef,.wait=1};
+ assert(rpmh_read(&dev,&cmd)==-EOPNOTSUPP);
+ assert(cmd.addr==0x1234 && cmd.data==0xdeadbeef && cmd.wait==1);
+ assert(rpmh_read(0,0)==-EOPNOTSUPP);
+ return 0;
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter "$work/rpmh.c" -o "$work/rpmh"
+"$work/rpmh"
+echo 'Actual gadget dispatch, UBWC defaults and unsupported RPMh read refusal passed'

@@ -17,6 +17,13 @@ PRM correlation now uses the actual selected parameter for the new CPU LPR
 request as well as the existing hardware-core request. Actual-source host
 fixtures cover dispatch, supplier refusal, request generations and UBWC defaults.
 
+The Uke RPMh backend predates upstream's new read transaction. Its compatibility
+entry returns `-EOPNOTSUPP` without modifying the request or issuing a command.
+Upstream generic RPMh regulators that need initial-state reads remain unavailable
+under this backend; the separate Uke regulator implementation is retained.
+A read transport requires its own RSC reply validation. No successful state or
+new regulator support is inferred from this refusal or from compilation.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation
