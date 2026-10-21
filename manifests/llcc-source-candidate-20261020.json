@@ -61,7 +61,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "71c96a2b17a8285c44d719aeb56e403d56f92cf7fbdfaa18c2c69150d4164fef"
+      "sha256": "93820397b7ab7f6d19a0222b68af4bd7f5cc96c5d13639830225eab01607c803"
     },
     {
       "path": "tests/root-selector-contract.cpp",

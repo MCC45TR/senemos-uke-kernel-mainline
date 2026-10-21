@@ -5,6 +5,7 @@ SHELL := /bin/bash
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate:
+	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.2.11
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 97) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
@@ -17,6 +18,10 @@ validate:
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
 	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
 	bash tests/mainline-package-contract.sh
+.PHONY: test-root-capability
+test-root-capability:
+	test -n "$(kernel_source)"
+	bash tests/root-selector-note-contract.sh "$(kernel_source)" manifests/boot-payload.json
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"

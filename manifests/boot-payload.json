@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-20",
+  "date": "2026-10-21",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "7c38cd5c965c93ffe15ff8be1c6c1bb3dcb0ee7bae4c886f82de110ee9f10e5a"
+      "sha256": "8a7ff6670ce4d612ae8c3e9f748e149cd173dadf9115bbd5f40e0033c941f57b"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -105,11 +105,24 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "71c96a2b17a8285c44d719aeb56e403d56f92cf7fbdfaa18c2c69150d4164fef"
+      "sha256": "93820397b7ab7f6d19a0222b68af4bd7f5cc96c5d13639830225eab01607c803"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
       "sha256": "8ce4ca41cef4ec0b6dc075d490d761e2633a275b0e167590ba2dc7ada066dca4"
+    },
+    {
+      "path": "src/boot/check-root-capability.sh",
+      "sha256": "94da6aad39c3bd3d5b3b6c910e4e67a1cc0afa6986a9db4d0d417b719ba91d4c"
     }
-  ]
+  ],
+  "root_selector_capability": {
+    "format": "elfnote-v1",
+    "name": "UKE",
+    "type": "0x554b4501",
+    "descriptor": "root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30",
+    "manifest_value": "uke-elfnote-v1",
+    "policy_changed": false,
+    "physical_vrr_qualified": false
+  }
 }

@@ -3,6 +3,14 @@
 #ifndef UKE_ROOT_SELECTOR_H
 #define UKE_ROOT_SELECTOR_H
 
+#ifdef __KERNEL__
+#include <linux/elfnote.h>
+
+/* Compiler emits the note; the kernel NOTES linker rule retains it. */
+ELFNOTE64("UKE", 0x554b4501,
+	  "root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30");
+#endif
+
 static int UKE_INIT uke_cmdline_space(char value)
 {
 	return value == ' ' || value == '\t' || value == '\r' || value == '\n';
