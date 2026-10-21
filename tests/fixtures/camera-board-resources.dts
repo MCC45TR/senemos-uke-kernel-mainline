@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* Host-only phandle fixture. No real sensor addresses, lanes or SoC graph. */
+/dts-v1/;
+/ {
+	model = "Uke camera resource host fixture";
+	compatible = "test,uke-camera-resources";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	tlmm: pinctrl {
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+	camcc: clock-controller {
+		#clock-cells = <1>;
+	};
+	L20B: regulator-io { };
+	L6E: regulator-rear-core { };
+	L3C: regulator-front-core { };
+	uke_camera_rear_sensor: rear-camera { };
+	uke_camera_front_sensor: front-camera { };
+	qupv3_se8_i2c: i2c {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		eeprom_front: legacy-eeprom@51 {
+			compatible = "qcom,cam-i2c-eeprom";
+			reg = <0x51>;
+			status = "okay";
+		};
+	};
+};
+#include "uke-camera-resources.dtsi"
+#include "uke-camera-front-eeprom.dtsi"
