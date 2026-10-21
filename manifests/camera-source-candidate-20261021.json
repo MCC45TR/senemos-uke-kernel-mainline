@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "device": "uke",
+  "soc": "SM7675",
+  "kernel_version": "7.2.11",
+  "base_commit": "a81b202671d6f36370964af8dced964a975fea2d",
+  "status": "optional-original-sensor-modules-platform-port-required",
+  "active_config": false,
+  "dt_enabled": false,
+  "kernel_release_changed": false,
+  "camera_capture_tested": false,
+  "firmware_included": false,
+  "calibration_included": false,
+  "source_assets": [
+    {
+      "path": "src/camera/sensors.config",
+      "sha256": "1d7d6547f3e24c8bc00ab3a037fe7013e065b1be20b494585aa9137d7d462300"
+    },
+    {
+      "path": "tests/camera-source-contract.sh",
+      "sha256": "363bb9240c4bbafac5688b3b3ccbf687e3cb873c8ab4695be29e3a2932b64019"
+    },
+    {
+      "path": "tests/camera-binding-contract.sh",
+      "sha256": "742ed8b4350a24189d54ab9cae8e24566056e2e9bc35b4f1c841a43f9feee59f"
+    },
+    {
+      "path": "manifests/camera-source-candidate-20261020.json",
+      "sha256": "e465dc5d9ab3221f8f213bc70be3ebe9843b1fda6b661d9a34ea7f5a91060766"
+    }
+  ],
+  "baseline_files": [
+    {
+      "path": "drivers/media/i2c/ov08d10.c",
+      "sha256": "dea565800781f428397acd082c4cb76af2aee63eb51dc006b02000b13777a1ad",
+      "license": "GPL-2.0"
+    },
+    {
+      "path": "drivers/media/i2c/ov13b10.c",
+      "sha256": "f3ea8784ee3a5cccda14e2b9f727eba4bd974b52c6656962f3c9ab6f82b447f6",
+      "license": "GPL-2.0"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://github.com/MiCode/vendor_qcom_proprietary_camera-devicetree",
+      "commit": "57d2135ee6909ffb7d288a7dc4d82c85d95fc10d",
+      "files": [
+        "uke-sm8635-camera-sensor.dtsi",
+        "cliffs-camera.dtsi"
+      ],
+      "scope": "Uke wiring and Cliffs camera resource declarations"
+    },
+    {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "files": [
+        "drivers/clk/qcom/camcc-cliffs.c"
+      ],
+      "scope": "OEM clock registers, CRM and voltage ownership"
+    },
+    {
+      "url": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "files": [
+        "drivers/clk/qcom/camcc-cliffs.c"
+      ],
+      "scope": "Same-SoC clock driver matches the Uke OEM file"
+    },
+    {
+      "url": "https://codeberg.org/palawan-mainline/linux",
+      "commit": "0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95",
+      "files": [
+        "drivers/clk/qcom/camcc-palawan.c"
+      ],
+      "scope": "209 named clock register fields match OEM; native PM/voltage and CRM differences remain unqualified"
+    },
+    {
+      "url": "https://github.com/torvalds/linux",
+      "commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
+      "files": [
+        "drivers/media/i2c/ov08d10.c",
+        "drivers/media/i2c/ov13b10.c",
+        "drivers/media/platform/qcom/camss/camss.c"
+      ],
+      "scope": "Both sensor files match the prepared source; no SM7675 CAMSS match"
+    }
+  ],
+  "remaining_gates": [
+    "Native CAMCC voltage, CRM and power-domain ownership",
+    "CCI and Cliffs CSIPHY/CSID860/VFE860 resource and register compatibility",
+    "IOMMU, interrupt and interconnect graph",
+    "Exact sensor address, lane mode and controlled live chip-ID check",
+    "RAW capture, image validation and original Fedora libcamera integration"
+  ],
+  "patches": [
+    {
+      "path": "src/camera/0001-dt-bindings-media-ov13b10.patch",
+      "sha256": "4dbdd01cfb748d19b3173e176b0defb319c279b6f28ea6399233fe8259342928"
+    },
+    {
+      "path": "src/camera/0002-media-i2c-ov13b10-of-match.patch",
+      "sha256": "47bf6a3b60d8d8e1c9b7aa4e199990321f6e1f1ec435e2634080886f542dd690"
+    }
+  ],
+  "existing_prerequisite_commit": "5c641724857dbc91a7480c1be100ff94b9f88bd7"
+}

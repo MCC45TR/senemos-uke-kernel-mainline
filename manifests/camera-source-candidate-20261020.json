@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "device": "uke",
+  "soc": "SM7675",
+  "status": "inactive-source-prerequisite",
+  "active_series": false,
+  "board_nodes_added": false,
+  "kernel_image_built": false,
+  "device_activated": false,
+  "physical_capture": null,
+  "sources": [
+    {
+      "id": "uke-camera-dt",
+      "commit": "57d2135ee6909ffb7d288a7dc4d82c85d95fc10d",
+      "path": "referances/xiaomi/xiaomi-camera-dt/uke-sm8635-camera-sensor.dtsi",
+      "scope": "OEM board declarations; fitted sensor and selected graph unqualified"
+    },
+    {
+      "id": "upstream-linux",
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "files": [
+        {
+          "path": "drivers/media/i2c/ov13b10.c",
+          "sha256": "f3ea8784ee3a5cccda14e2b9f727eba4bd974b52c6656962f3c9ab6f82b447f6"
+        },
+        {
+          "path": "drivers/media/platform/qcom/camss/camss.c",
+          "sha256": "287ebdd3f21862358be76150915339ac3598fbeb7552d7d1731b9127e5720b34"
+        }
+      ],
+      "scope": "Generic driver and platform table comparison; no SM7675 CAMSS entry at this pin"
+    }
+  ],
+  "patches": [
+    {
+      "path": "src/camera/0001-dt-bindings-media-ov13b10.patch",
+      "sha256": "4dbdd01cfb748d19b3173e176b0defb319c279b6f28ea6399233fe8259342928"
+    },
+    {
+      "path": "src/camera/0002-media-i2c-ov13b10-of-match.patch",
+      "sha256": "47bf6a3b60d8d8e1c9b7aa4e199990321f6e1f1ec435e2634080886f542dd690"
+    }
+  ],
+  "checks": {
+    "fresh_git_application": "pass",
+    "aarch64_driver_object": "pass_clang23_werror",
+    "binding_producer": "pass_dt_binding_check",
+    "binding_examples_accepted": 2,
+    "binding_cases_rejected": 8,
+    "checkpatch": "zero_errors_zero_warnings_no_signoff",
+    "physical_result": null
+  },
+  "remaining": [
+    "Fitted rear and front sensor identities",
+    "Exact native CCI/CSI/CAMSS/clock and shared power graph",
+    "Board lane map and link timing",
+    "IOMMU/RAW capture and safe power-off",
+    "Private per-module calibration and original userspace pipeline"
+  ]
+}

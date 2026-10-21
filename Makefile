@@ -4,7 +4,41 @@ SHELL := /bin/bash
 .PHONY: validate srpm
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
-validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal
+validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal validate-camera
+validate-camera:
+	jq -e '.active_config == false and .dt_enabled == false and .camera_capture_tested == false and .kernel_release_changed == false' manifests/camera-source-candidate-20261021.json >/dev/null
+	jq -r '.patches[], .source_assets[] | .sha256 + "  " + .path' manifests/camera-source-candidate-20261021.json | sha256sum -c -
+	! grep -Eq '^CONFIG_VIDEO_OV(08D10|13B10)=' configs/{arm64-qcom,uke,fedora}.config
+.PHONY: validate-camera
+test-camera: validate-camera
+	test -n "$(camera_source)" && test -n "$(camera_output)"
+	test "$$(realpath -m "$(camera_output)")" = "$(camera_output)"
+	test ! -e "$(camera_output)"
+	bash tests/camera-source-contract.sh "$(camera_source)"
+	cd "$(camera_source)"
+	jq -r '.baseline_files[] | .sha256 + "  " + .path' "$(CURDIR)/manifests/camera-source-candidate-20261021.json" | sha256sum -c -
+	$(MAKE) ARCH=arm64 LLVM=1 O="$(camera_output)" defconfig
+	scripts/kconfig/merge_config.sh -m -O "$(camera_output)" "$(camera_output)/.config" "$(CURDIR)/src/camera/sensors.config"
+	$(MAKE) ARCH=arm64 LLVM=1 O="$(camera_output)" olddefconfig
+	$(MAKE) ARCH=arm64 LLVM=1 O="$(camera_output)" -j4 modules_prepare
+	grep -Fx 'CONFIG_VIDEO_OV08D10=m' "$(camera_output)/.config"
+	grep -Fx 'CONFIG_VIDEO_OV13B10=m' "$(camera_output)/.config"
+	mkdir -p "$(camera_output)/sensor-source/drivers/media/i2c"
+	cp drivers/media/i2c/{ov08d10,ov13b10}.c "$(camera_output)/sensor-source/drivers/media/i2c/"
+	cp MAINTAINERS "$(camera_output)/sensor-source/"
+	git -C "$(camera_output)/sensor-source" init -q
+	for patch in "$(CURDIR)"/src/camera/*.patch; do
+		git -C "$(camera_output)/sensor-source" apply --check "$$patch"
+		git -C "$(camera_output)/sensor-source" apply "$$patch"
+	done
+	printf '%s\n' 'obj-m += ov08d10.o ov13b10.o' > "$(camera_output)/sensor-source/drivers/media/i2c/Makefile"
+	$(MAKE) ARCH=arm64 LLVM=1 O="$(camera_output)" M="$(camera_output)/sensor-source/drivers/media/i2c" KCFLAGS=-Werror -j4 ov08d10.o ov13b10.o
+	for sensor in ov08d10 ov13b10; do
+		readelf -h "$(camera_output)/sensor-source/drivers/media/i2c/$$sensor.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
+		readelf --wide -s "$(camera_output)/sensor-source/drivers/media/i2c/$$sensor.o" | grep -F "__mod_device_table__kmod_$${sensor}__of__$${sensor}_of_match"
+	done
+	readelf --wide -s "$(camera_output)/sensor-source/drivers/media/i2c/ov13b10.o" | grep -F '__mod_device_table__kmod_ov13b10__acpi__ov13b10_acpi_ids'
+.PHONY: test-camera
 validate-thermal:
 	jq -e '.active_series == false and .dt_enabled == false and .thermal_policy_changed == false and .calibration_changed == false and .tablet_tested == false and (.patches | length == 1)' manifests/thermal-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
