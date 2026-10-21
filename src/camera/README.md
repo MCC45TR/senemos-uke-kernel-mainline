@@ -31,6 +31,32 @@ Fedora libcamera pipeline be qualified on the tablet.
 
 See [the pinned source record](../../manifests/camera-source-candidate-20261021.json).
 
+## Camera clock data
+
+The [SM7675 clock catalog](camcc-sm7675-data.h) combines attributed native
+register data with all 44 exact Cliffs voltage policies. Tests compare 209
+register fields, 86 frequency rows and 147 clock/reset IDs with the OEM source.
+PLL HIGH_L1 entries outside the declared supply-class ceiling are omitted;
+the valid OEM frequency/voltage points remain. These are symbolic RPMh levels,
+not measured rail voltages.
+
+The proposed `qcom,sm7675-camcc.h` retains 137 clock IDs and 10 reset IDs and
+adds the native donor's eight power-domain IDs. This remains a source ABI for
+disabled board work. No driver, OF match, kernel configuration or boot producer
+registers this catalog. Controller and GDSC PM ownership, interface clock/MMIO,
+CRM/shared-RCG behavior and live voltage-vote callbacks must be completed before
+activation. The catalog cannot make the existing OEM nodes usable on its own.
+
+With the sensor test's prepared ARM64 output and the exact OEM checkout, run:
+
+```bash
+make test-camcc-data camcc_source=/path/to/linux-7.2.11 camcc_oem=/path/to/oem/drivers/clk/qcom/camcc-cliffs.c camcc_output=/path/to/camera-output
+```
+
+The check imports the real kernel voltage lookup, compares every legal OEM
+policy and compiles the complete catalog as an AArch64 object. It models rail
+metadata; it makes no regulator, register or firmware request.
+
 With a prepared Linux 7.2.11 source and an AArch64 LLVM build environment, run
 the object check in a new disposable output directory:
 

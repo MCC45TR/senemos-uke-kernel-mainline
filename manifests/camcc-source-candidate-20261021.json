@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "device": "uke",
+  "soc": "SM7675",
+  "kernel_version": "7.2.11",
+  "status": "native-clock-data-and-voltage-prerequisite",
+  "driver_registered": false,
+  "dt_enabled": false,
+  "tablet_tested": false,
+  "active_config": false,
+  "kernel_release_changed": false,
+  "voltage_clock_count": 44,
+  "clock_ids": 137,
+  "reset_ids": 10,
+  "power_domain_ids": 8,
+  "matched_register_fields": 209,
+  "matched_frequency_rows": 86,
+  "source_assets": [
+    {
+      "path": "src/camera/camcc-sm7675-data.h",
+      "sha256": "7517b93b08cf46be865d7ebed56ac0b970708b6150ec6f96ba02be7e07f99acc"
+    },
+    {
+      "path": "src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h",
+      "sha256": "046fb1f198076896493e5af3071df908a1366280912724cf9f3b643199ee8796"
+    },
+    {
+      "path": "tests/camcc-source-contract.sh",
+      "sha256": "195ff30cdbd3d17526f25c1120a3c1d0005b953a44c6ea14b64eb51b8bd5a0cf"
+    },
+    {
+      "path": "tests/fixtures/camcc-data-check.c",
+      "sha256": "54b2467c1456f943ea2aa3a9130c198d16401da259e438175144c8f0877cda21"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/camcc-cliffs.c",
+      "sha256": "1a76c029c51710af6684a6d4f87e1486c125cd25badfce7b80ba642d820affe6",
+      "role": "Exact OEM register/frequency/voltage constraints"
+    },
+    {
+      "url": "https://codeberg.org/palawan-mainline/linux",
+      "commit": "0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95",
+      "path": "drivers/clk/qcom/camcc-palawan.c",
+      "sha256": "3910a9e959a4f37f268b045f8ae78295e991faf22d0c4e2e307765f20a1c8fda",
+      "role": "Attributed native register catalog; power policy not accepted"
+    }
+  ],
+  "prepared_helpers": [
+    {
+      "path": "drivers/clk/qcom/vdd-class.c",
+      "sha256": "58333db1f02cd0d39d7b96d71ff828d35734eae67165c4b6aa573a1b61d815eb"
+    },
+    {
+      "path": "drivers/clk/qcom/vdd-level.h",
+      "sha256": "5d9ac761527a5fa82aa540305690b2b6f4a9a091dcd4a956dae02960b5d95edf"
+    }
+  ],
+  "voltage_policy": {
+    "mm": "up to VDD_NOMINAL",
+    "mx": "up to VDD_LOW_L1",
+    "mxc": "up to VDD_NOMINAL",
+    "unadmitted_pll_high_l1_removed": true,
+    "physical_voltage_measured": false
+  },
+  "remaining": [
+    "Native controller PM and GDSC lifetime ownership",
+    "Interface clock, checked MMIO and CRM/shared-RCG ownership",
+    "Runtime voltage vote and clock callback integration",
+    "Native binding and boot producer",
+    "Full kernel/package and physical clock/camera validation"
+  ]
+}

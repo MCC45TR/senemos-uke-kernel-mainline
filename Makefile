@@ -5,11 +5,27 @@ SHELL := /bin/bash
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal validate-camera
-validate-camera:
+validate-camera: validate-camcc-data
 	jq -e '.active_config == false and .dt_enabled == false and .camera_capture_tested == false and .kernel_release_changed == false' manifests/camera-source-candidate-20261021.json >/dev/null
 	jq -r '.patches[], .source_assets[] | .sha256 + "  " + .path' manifests/camera-source-candidate-20261021.json | sha256sum -c -
 	! grep -Eq '^CONFIG_VIDEO_OV(08D10|13B10)=' configs/{arm64-qcom,uke,fedora}.config
 .PHONY: validate-camera
+validate-camcc-data:
+	jq -e '.driver_registered == false and .dt_enabled == false and .tablet_tested == false and .active_config == false and .voltage_clock_count == 44' manifests/camcc-source-candidate-20261021.json >/dev/null
+	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/camcc-source-candidate-20261021.json | sha256sum -c -
+	! grep -Eq 'module_platform_driver|platform_driver_register|of_device_id|module_init|subsys_initcall' src/camera/camcc-sm7675-data.h
+test-camcc-data: validate-camcc-data
+	test -n "$(camcc_source)" && test -n "$(camcc_oem)" && test -n "$(camcc_output)"
+	test "$$(realpath "$(camcc_output)")" != "$$(realpath "$(camcc_source)")"
+	bash tests/camcc-source-contract.sh "$(camcc_source)" "$(camcc_oem)"
+	test -f "$(camcc_output)/include/generated/asm-offsets.h"
+	grep -Fx 'CONFIG_ARM64=y' "$(camcc_output)/.config"
+	mkdir -p "$(camcc_output)/camcc-contract"
+	cp tests/fixtures/camcc-data-check.c "$(camcc_output)/camcc-contract/"
+	printf '%s\n' 'obj-m += camcc-data-check.o' 'ccflags-y += -I$(CURDIR)/src/camera -I$(CURDIR)/src/camera/include -I$(camcc_source)/drivers/clk/qcom' > "$(camcc_output)/camcc-contract/Makefile"
+	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-contract" KCFLAGS=-Werror -j4 camcc-data-check.o
+	readelf -h "$(camcc_output)/camcc-contract/camcc-data-check.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
+.PHONY: validate-camcc-data test-camcc-data
 test-camera: validate-camera
 	test -n "$(camera_source)" && test -n "$(camera_output)"
 	test "$$(realpath -m "$(camera_output)")" = "$(camera_output)"
