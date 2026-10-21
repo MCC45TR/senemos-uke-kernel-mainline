@@ -52,6 +52,14 @@ All three modified drivers compile for AArch64 with warnings as errors using
 the current native configuration; the complete affected-file patch order also
 applies to the exact upstream 7.2.12 source. These checks do not add a CDSP match.
 
+Patch 0103 balances the DTB firmware request immediately after MDT loading.
+The SCM metadata is a separate copy; retaining the original firmware reference
+until device unprepare would still leak during crash recovery, which reloads
+without that callback. Actual load/unprepare checks pass 128 normal cycles and
+128 recovery reloads, request/load failures, repeated cleanup and the borrowed
+main-image reference. The original source fails this regression. Ordinary and
+non-recovering Clang ASan/UBSan checks pass; this is not DSP recovery validation.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.
@@ -82,8 +90,9 @@ Qualcomm attribution. Reference code is inspected as text, not executed.
 
 ## Remaining integration and acceptance
 
-1. Resolve the exact owner CDSP/DTB firmware and Linux AArch64 userspace ABI.
-   An Android library or another SoC's firmware is not an admissible substitute.
+1. Admit the exact extracted CDSP/DTB firmware through the local firmware
+   package boundary and resolve the Linux AArch64 userspace ABI. An Android
+   library or another SoC's firmware is not an admissible substitute.
 2. Connect the exact PAS 18/DTB 0x25 and AOP load-state lifecycle to the prepared
    CX/MXC/NSP proxy and DDR/crypto suppliers. Existing ADSP/WPSS consumers retain
    their two-supply behavior; a CDSP match is not added before complete ownership

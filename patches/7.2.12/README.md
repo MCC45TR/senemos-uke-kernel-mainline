@@ -124,3 +124,9 @@ This queue carries the 98 patches from source `cf7d17f` without changing their
 contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
+
+**21 October 2026, release 2 source:** patch 0103 keeps the requested DTB
+firmware local to MDT loading. SCM metadata has its own copy; both normal
+shutdown cycles and crash-recovery reloads release the request reference.
+Host fault checks retain the core-owned main firmware and cover request/load
+failures and repeated cleanup. DSP recovery remains a physical acceptance gate.

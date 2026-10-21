@@ -416,6 +416,10 @@
     {
       "path": "patches/7.2.12/0102-cliffs-proxy-rail-ownership.patch",
       "sha256": "882be161746ff90e9b910b46da1e7513a13d0a83ea03d66f0b6f1f1e6e66eea9"
+    },
+    {
+      "path": "patches/7.2.12/0103-pas-release-dtb-firmware-after-load.patch",
+      "sha256": "56c13088e9fd0540286b1d1bd54c9942c1e2a6012c2e937f27bee543c94df532"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

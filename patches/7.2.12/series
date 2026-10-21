@@ -100,3 +100,4 @@
 0100-llcc-skip-absent-sm7675-and-window.patch
 0101-cliffs-cdsp-crypto-and-nsp-suppliers.patch
 0102-cliffs-proxy-rail-ownership.patch
+0103-pas-release-dtb-firmware-after-load.patch
