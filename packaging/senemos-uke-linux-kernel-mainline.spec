@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 3
+%global senemos_build_release 4
 %else
 %global senemos_build_release 1
 %endif
@@ -231,6 +231,7 @@ CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
+CXX=clang++ bash native-profile/tests/dsi-color-depth-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
@@ -331,6 +332,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-4
+- Report the fixed O82 10-bpc transport through the standard connector property.
+- Check connector state allocation, error propagation and foreign-panel exclusion.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-3
 - Build singleboot metadata in the kernel family with exact matching dependencies.
 - Identify the observed POCO SKU through the live OF model before userspace.
