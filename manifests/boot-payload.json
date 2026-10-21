@@ -117,7 +117,7 @@
     },
     {
       "path": "src/boot/userdata-grow.cpp",
-      "sha256": "be32a77fc5da0f4dd09dfed8947cf291fafcaea72ccfca02ed57312bbea5ed2d"
+      "sha256": "f82fedb5234fe8139e6d5c70127a26732844c673e279828bdc06923d95da243e"
     },
     {
       "path": "src/boot/userdata-grow.hpp",
@@ -125,11 +125,11 @@
     },
     {
       "path": "src/boot/dracut/uke-userdata-grow.service",
-      "sha256": "9a85bfd935830c99a33b91cb9172f5a5a73e4996a4996fd909ab6dd01af83c51"
+      "sha256": "b96a4e4c342df8e4d2d2cd623c8b2a716ae1c675c6b6eeee44789258bd0ec144"
     },
     {
       "path": "tests/userdata-grow-contract.sh",
-      "sha256": "169b99aef7614338b0ae767390cdfe143ed18dddcd4f06af32be41507d39e06c"
+      "sha256": "9f4a95f8e5be8f78941b77c7663c5cd7e4a05b2d3c71babd029d2b9325683730"
     }
   ],
   "root_selector_capability": {
@@ -148,8 +148,8 @@
     "filesystem_label": "UKE_LINUX",
     "partition_table_writes": false,
     "formatting": false,
-    "power_guard": "USB online and battery at least 30 percent; otherwise defer",
+    "power_guard": "Packaged updater checks headroom before staging; no post-root battery RPC dependency in initrd",
     "hardware_tested": false,
-    "one_time_completion": "Persistent F2FS block count; a read-only ExecCondition skips fsck/resize after expansion"
+    "one_time_completion": "Persistent F2FS block count; completed oneshot remains active and subsequent boots skip fsck/resize"
   }
 }

@@ -51,8 +51,7 @@ static void unmounted(const std::string &number) {
 }
 int main(int argc, char **argv) {
     try {
-        const bool check = argc == 3 && std::string_view(argv[1]) == "--needed";
-        require((argc == 2 || check) && geteuid() == 0 && fs::exists("/etc/initrd-release"), "requires the native initrd as root");
+        require(argc == 2 && geteuid() == 0 && fs::exists("/etc/initrd-release"), "requires the native initrd as root");
         require(uke::offline::compatible(read("/sys/firmware/devicetree/base/compatible")), "foreign board refused");
         unsigned roots = 0;
         std::istringstream arguments(read("/proc/cmdline"));
@@ -60,7 +59,7 @@ int main(int argc, char **argv) {
             require(argument == "root=PARTLABEL=userdata", "wrong root selector"); ++roots;
         }
         require(roots == 1, "ambiguous root selector");
-        const auto device = fs::canonical(argv[check ? 2 : 1]).string();
+        const auto device = fs::canonical(argv[1]).string();
         require(device == fs::canonical("/dev/disk/by-partlabel/userdata").string(), "wrong userdata link");
         const int fd = open(device.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
         require(fd >= 0, "cannot open userdata");
@@ -79,18 +78,9 @@ int main(int argc, char **argv) {
         unmounted(number);
         const auto before = header(fd, 1024), copy = header(fd, 5120);
         if (!uke::userdata::needs_growth(before, copy, bytes)) {
-            if (check) return 1; // The persistent filesystem size records completed expansion.
             std::cout << "UKE_USERDATA_GROW: filesystem already fills the partition\n"; return 0;
         }
-        const auto capacity = read("/sys/class/power_supply/qcom-battmgr-bat/capacity");
-        unsigned percent = 0;
-        std::istringstream battery(capacity);
-        if (!(battery >> percent) || percent < 30 || percent > 100 ||
-            read("/sys/class/power_supply/qcom-battmgr-usb/online") != "1\n") {
-            if (check) return 1;
-            std::cout << "UKE_USERDATA_GROW: deferred until USB power and at least 30% battery are available\n"; return 0;
-        }
-        if (check) return 0;
+        // Battery RPC needs post-root DSP firmware; the packaged updater checks power before reboot.
         std::cout << "UKE_USERDATA_GROW: checking the unmounted F2FS filesystem\n" << std::flush;
         run("/usr/sbin/fsck.f2fs", "-f", device);
         unmounted(number);

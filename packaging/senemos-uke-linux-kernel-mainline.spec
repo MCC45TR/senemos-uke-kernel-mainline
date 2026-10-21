@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 5
+%global senemos_build_release 6
 %else
 %global senemos_build_release 1
 %endif
@@ -332,6 +332,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-6
+- Complete offline userdata expansion without post-root battery RPC dependencies.
+- Keep the completed initrd check active and skip repeated filesystem tools.
+- Report the Uke SM7675 SoC name without changing native CPU core identities.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-5
 - Expand the provisioned F2FS userdata filesystem offline before mounting root.
 - Preserve filesystem identity, the partition table and the selected-root guard.

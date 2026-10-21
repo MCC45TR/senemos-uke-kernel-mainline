@@ -54,5 +54,6 @@ for mode in run condition; do
     [[ $status == 255 ]] || { echo 'Invalid initrd invocation was not a hard failure' >&2; exit 1; }
     grep -Fq UKE_USERDATA_GROW_REJECTED "$work/refusal"
 done
-grep -Fxq 'ExecCondition=/usr/libexec/uke-userdata-grow --needed /dev/disk/by-partlabel/userdata' "$root/src/boot/dracut/uke-userdata-grow.service"
-printf '%s\n' 'F2FS copy/identity/size, completed-growth skip and condition/refusal fixtures passed; no storage write.'
+grep -Fxq 'RemainAfterExit=yes' "$root/src/boot/dracut/uke-userdata-grow.service"
+! grep -q '^ExecCondition=' "$root/src/boot/dracut/uke-userdata-grow.service"
+printf '%s\n' 'F2FS copy/identity/size, completed-growth skip and native refusal fixtures passed; no storage write.'

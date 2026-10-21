@@ -9,7 +9,6 @@ OnFailure=emergency.target
 
 [Service]
 Type=oneshot
-ExecCondition=/usr/libexec/uke-userdata-grow --needed /dev/disk/by-partlabel/userdata
 ExecStart=/usr/libexec/uke-userdata-grow /dev/disk/by-partlabel/userdata
 # Do not kill a filesystem metadata operation in progress.
 TimeoutStartSec=infinity
