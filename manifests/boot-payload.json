@@ -25,11 +25,11 @@
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "4fda981ed240a081257ff9336afd3d6d8d41876204a2e454a305a79a6cbfb1ee"
+      "sha256": "aba006b739372a79a0f0cbf0cfeb8ccdd9b91e8f630219aa601354f39788bd9e"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "8a7ff6670ce4d612ae8c3e9f748e149cd173dadf9115bbd5f40e0033c941f57b"
+      "sha256": "3dffd2aefdcf0e5aef79f2fb44329e6c4b07b4d06cac5707abe6c0dd8bbddd62"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "a084268b9538ba045a5c86e52ec3dbe71f6612e7b3c4c8bf68240698664a2b3a"
+      "sha256": "42a60f71d63d0fc4d2c6d03d5d17eb8db74b7e375b9c65c941d84aae93df45df"
     },
     {
       "path": "tests/boot-image-contract.sh",

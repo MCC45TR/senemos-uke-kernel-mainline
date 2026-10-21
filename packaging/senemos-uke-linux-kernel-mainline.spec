@@ -4,16 +4,16 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.12
-%if "%{version}" == "7.2.12"
+Name: senemos-uke-linux-kernel-mainline-unstable
+Version: 7.3.0
+%if "%{version}" == "7.3.0"
 %global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}
+%global krel %{version}-%{senemos_build_release}-unstable
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Uke kernel with the O82 display profile
+Summary: Unstable Linux 7.3 Uke kernel with the O82 display profile
 License: GPL-2.0-only
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
@@ -39,8 +39,8 @@ Requires: %{name}-boot = %{version}-%{release}
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+Installation performs no boot activation. Build success does not establish
+physical tablet acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -73,8 +73,6 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.1.2
-Requires: uke-kernel-update(guarded-automatic) >= 1
 Provides: installonlypkg(kernel)
 
 %description boot
@@ -93,7 +91,7 @@ gpg --homedir "$keyring" --batch --import %{SOURCE3}
 xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
-%setup -q -n linux-%{version}
+%setup -q -n linux-7.3
 tar -xJf %{SOURCE1}
 jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
 cmp senemos-expected-patches.txt senemos-adaptation/patches/series
@@ -145,7 +143,7 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
 
 %check
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
@@ -258,10 +256,6 @@ mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
-%posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
 
 %files
 %doc native-profile/README.md
@@ -293,6 +287,10 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
+- Add the requested Linux 7.3 unstable family with a distinct module namespace.
+- Keep installation free of boot activation and retain separate device acceptance.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-1
 - Carry the 98-patch Uke profile to signed Linux 7.2.12.
 - Preserve matched boot payloads, guarded updates and separate device acceptance.

@@ -1,5 +1,11 @@
 # Mainline display source profile
 
+21 October 2026 unstable source: Linux 7.3 is packaged as 7.3.0 with the
+distinct `7.3.0-1-unstable` module and boot namespace. The source archive retains
+the upstream `linux-7.3` tree name and signed Kernel.org URL. Package installation
+does not activate a boot image. Existing tablet results below do not qualify
+this kernel; native COPR, matched artifacts and device acceptance are separate.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation

@@ -10,15 +10,15 @@
   "performance_improvement_measured": false,
   "patches": [
     {
-      "path": "patches/7.2.12/0095-bindings-sm7675-llcc.patch",
+      "path": "patches/7.3.0/0095-bindings-sm7675-llcc.patch",
       "sha256": "ef8c4eb4c8b042cea2beeffceb42aa2eff945b5fa85ad075f58f4a94d88725f0"
     },
     {
-      "path": "patches/7.2.12/0096-sm7675-llcc-policy-and-resource-guards.patch",
+      "path": "patches/7.3.0/0096-sm7675-llcc-policy-and-resource-guards.patch",
       "sha256": "fcd5d5c4251f9b2e8e22a6dceb90662f5f991333745ea40730921ef97d951b6e"
     },
     {
-      "path": "patches/7.2.12/0097-adreno-order-native-llcc-supplier.patch",
+      "path": "patches/7.3.0/0097-adreno-order-native-llcc-supplier.patch",
       "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
     }
   ],
@@ -53,7 +53,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "9ec8c04c58464337449c2634d79bb563f244b77094204b3714da6dc549c30db5"
+      "sha256": "6f8d4b66b03b98256a2f0b1dc2f435b95a90b7351be364c0a8bbec0a5a8c443b"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -196,7 +196,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-1",
+  "kernel_release": "7.3.0-1-unstable",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
