@@ -1,9 +1,9 @@
 %global debug_package %{nil}
 %global kernel_abi %{version}-%{senemos_build_release}-kvm
 Name: senemos-uke-linux-kernel-mainline-kvm-singleboot
-Version: 7.2.11
+Version: 7.2.12
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 16
+%global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
