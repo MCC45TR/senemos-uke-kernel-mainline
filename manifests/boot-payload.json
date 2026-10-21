@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-21",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; Linux 7.3 early inventory follows the unchanged QCOM RNG driver move, keeps GF128 built in, and preserves the upstream QCE broken gate",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "2470a3e23a16eb25c93aa26027e4d06cc662c9c2601074fbc6e77a7c23fe49ea"
+      "sha256": "a072e690100dc4d9132e7de5d37f5736f039f808e60bb1f352d47e54895ef6e4"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -29,7 +29,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "3dffd2aefdcf0e5aef79f2fb44329e6c4b07b4d06cac5707abe6c0dd8bbddd62"
+      "sha256": "2d0288648c1cbc88930d64fe90d9ab9a65d1ab9a87fdc4b769cd5333525c040c"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -61,7 +61,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
+      "sha256": "1408cdb9c204b6488a786b1992e57e8152b9d3ec445d5d739f70972bd4814f13"
     },
     {
       "path": "src/boot/licenses/builder-MIT",

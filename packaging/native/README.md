@@ -6,6 +6,12 @@ the upstream `linux-7.3` tree name and signed Kernel.org URL. Package installati
 does not activate a boot image. Existing tablet results below do not qualify
 this kernel; native COPR, matched artifacts and device acceptance are separate.
 
+Linux 7.3 moves the unchanged Qualcomm RNG driver to `drivers/char/hw_random`
+and `CONFIG_HW_RANDOM_QCOM`. The early module list follows that move and omits
+GF128 hashing because the selected configuration builds it into the Image.
+Upstream marks QCE broken due to races with secure-world access; its driver
+remains disabled and is not forced into the early module list.
+
 The active Linux 7.3 adaptation contains 99 patches. Version-specific rebases
 retain upstream clock tests, remoteproc mapping cleanup, mailbox error handling,
 DSI atomic callbacks and DisplayPort mode programming. Uke's synchronous DWC3
