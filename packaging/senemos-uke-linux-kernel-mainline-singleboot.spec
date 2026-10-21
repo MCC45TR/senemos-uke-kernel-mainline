@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 Name: senemos-uke-linux-kernel-mainline-singleboot
-Version: 7.2.11
-Release: 17%{?dist}
+Version: 7.2.12
+Release: 1%{?dist}
 Summary: Uke userdata boot profile for the matched mainline kernel
 License: MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -32,10 +32,10 @@ install -Dm644 %{SOURCE0} %{buildroot}%{_datadir}/senemos/uke/singleboot.json
 install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/doc/%{name}/SINGLEBOOT.md
 install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/licenses/%{name}/LICENSE
 install -d %{buildroot}%{_prefix}/lib/senemos
-ln -s kernel-updates/%{version}-17/userdata.img %{buildroot}%{_prefix}/lib/senemos/default-boot.img
+ln -s kernel-updates/%{version}-1/userdata.img %{buildroot}%{_prefix}/lib/senemos/default-boot.img
 
 %check
-test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-updates/%{version}-17/userdata.img
+test "$(readlink %{buildroot}%{_prefix}/lib/senemos/default-boot.img)" = kernel-updates/%{version}-1/userdata.img
 
 %files
 %doc %{_datadir}/doc/%{name}/SINGLEBOOT.md
