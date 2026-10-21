@@ -339,7 +339,7 @@
     },
     {
       "path": "patches/7.3.0/0082-uke-moisture-and-thermal-protection.patch",
-      "sha256": "9716daa834f6d17429826885e224fbf7d993dd16bd19132233cd0bc3da3e9b99"
+      "sha256": "f00d1b868d95dfd727d19d3c5812f5eabd4045012fe7e2fcdff984d6606a7809"
     },
     {
       "path": "patches/7.3.0/0083-usb-ucsi-cached-transport-state.patch",

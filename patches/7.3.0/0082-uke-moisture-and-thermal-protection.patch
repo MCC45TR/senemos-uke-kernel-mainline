@@ -195,6 +195,10 @@ Firmware readback does not establish electrical or wet-port acceptance.
  	&dev_attr_uke_battmgr_state.attr,
  	&dev_attr_uke_usb_source_state.attr,
  	&dev_attr_uke_charge_state.attr,
+@@ -2559,2 +2632,3 @@
+ MODULE_DESCRIPTION("Qualcomm PMIC GLINK battery manager driver");
+ MODULE_LICENSE("GPL");
++MODULE_IMPORT_NS("IIO_CONSUMER");
 --- a/drivers/power/supply/qcom_battmgr_uke_control.h
 +++ b/drivers/power/supply/qcom_battmgr_uke_control.h
 @@ -52,6 +52,425 @@
@@ -687,7 +691,3 @@ Firmware readback does not establish electrical or wet-port acceptance.
  		strscpy(battmgr->control.evidence, word[16], sizeof(battmgr->control.evidence));
  	}
  	spin_unlock_irqrestore(&tx->lock, flags);
-@@ -2300,2 +2731,3 @@
- MODULE_DESCRIPTION("Qualcomm PMIC GLINK battery manager driver");
- MODULE_LICENSE("GPL");
-+MODULE_IMPORT_NS("IIO_CONSUMER");
