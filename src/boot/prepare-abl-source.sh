@@ -41,6 +41,9 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0004-uke-bluetooth-powe
 git -C "$kernel" apply "$here/../../patches/boot/0004-uke-bluetooth-power.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0005-uke-root-selector.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0005-uke-root-selector.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0006-uke-uart-wake-order.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0006-uke-uart-wake-order.patch"
+bash "$here/../../tests/uart-wake-contract.sh" "$kernel/drivers/tty/serial/qcom_geni_serial.c"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 install -m644 "$here/uke-identity.c" "$kernel/arch/arm64/kernel/uke-identity.c"
 install -m644 "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc.h"
@@ -93,5 +96,6 @@ sha256sum "$here/uke-abl.c" "$here/uke-identity.c" "$here/uke-bluetooth.h" "$her
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
     "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"
