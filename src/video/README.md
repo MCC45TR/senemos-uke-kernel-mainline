@@ -6,7 +6,7 @@ Clang **23.1.3**, `KCFLAGS=-Werror`. The actual two-pipe lifecycle fixture passe
 on the host. These are object/fixture results, without a full kernel, RPM,
 firmware authentication or tablet decode result.
 
-Eighteen source patches are retained outside the active series. Their earlier
+Nineteen source patches are retained outside the active series. Their earlier
 candidate identities remain in the manifest. The native clock header is also
 referenced by its binding. The
 [manifest](../../manifests/iris-source-candidate-20261020.json) records exact
@@ -118,6 +118,10 @@ waiter, and stop errors remain available across VB2 callbacks. Actual-function
 GCC/Clang, sanitizer and AArch64 object checks pass. Repeated commands on the
 same port and physical DMA ownership after a failed stop remain unqualified;
 see the [session response record](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/testing/UKE-IRIS-COMMAND-COMPLETION-2026-10-21.md).
+
+Internal buffers returned at STOP are retained for reuse unless release was
+requested. BUFFER payloads are checked before interpreting their structure;
+see the [buffer return record](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/testing/UKE-IRIS-BUFFER-RETURN-2026-10-21.md).
 
 The native provider/consumer conversion must resolve regulator/genpd/OPP
 ownership, controller retention, the extra VCODEC reset and PM error handling.

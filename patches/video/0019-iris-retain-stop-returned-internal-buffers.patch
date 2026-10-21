@@ -1,0 +1,82 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: retain returned internal buffers until release
+
+Firmware returns internal buffers at STOP as well as after an explicit
+release request. Clear QUEUED in both cases, but destroy only when the
+local PENDING_RELEASE flag authorizes destruction. Retain unrequested
+returns for reuse, as in the exact same-SoC source.
+
+Admit the NONE control port for PERSIST and ARP, matching the existing
+sender. Preserve previous RAW/BITSTREAM acceptance. Require STRUCTURE for
+every nonempty BUFFER payload before treating it as an hfi_buffer, and
+reject noninternal mapped types before accessing an internal list. Keep
+the empty NONE payload as a no-op and propagate malformed-packet errors.
+
+No opcode, packet layout, timeout, key or board resource
+changes. Failed-stop DMA isolation, response generations and forced
+platform removal remain unqualified; the native match stays disabled.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+
+Link: https://github.com/torvalds/linux/tree/a804c5742bff224d4cb4d25dd383554d598be32b
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+@@ -85,8 +85,8 @@
+ 
+ static bool iris_hfi_gen2_is_valid_hfi_port(u32 port, u32 buffer_type)
+ {
+-	if (port == HFI_PORT_NONE && buffer_type != HFI_BUFFER_PERSIST)
+-		return false;
++	if (port == HFI_PORT_NONE)
++		return buffer_type == HFI_BUFFER_PERSIST || buffer_type == HFI_BUFFER_ARP;
+ 
+ 	if (port != HFI_PORT_BITSTREAM && port != HFI_PORT_RAW)
+ 		return false;
+@@ -415,10 +415,14 @@
+ 							struct iris_hfi_buffer *buffer)
+ {
+ 	u32 buf_type = iris_hfi_gen2_buf_type_to_driver(inst, buffer->type);
+-	struct iris_buffers *buffers = &inst->buffers[buf_type];
++	struct iris_buffers *buffers;
+ 	struct iris_buffer *buf, *iter;
+ 	bool found = false;
+ 
++	if (buf_type < BUF_BIN || buf_type >= BUF_TYPE_MAX)
++		return -EINVAL;
++
++	buffers = &inst->buffers[buf_type];
+ 	list_for_each_entry(iter, &buffers->list, list) {
+ 		if (iter->device_addr == buffer->base_address) {
+ 			found = true;
+@@ -431,7 +435,11 @@
+ 
+ 	buf->attr &= ~BUF_ATTR_QUEUED;
+ 
+-	return iris_destroy_internal_buffer(inst, buf);
++	/* STOP also returns internal buffers, which can be reused. */
++	if (buf->attr & BUF_ATTR_PENDING_RELEASE)
++		return iris_destroy_internal_buffer(inst, buf);
++
++	return 0;
+ }
+ 
+ static int iris_hfi_gen2_handle_session_stop(struct iris_inst *inst,
+@@ -479,9 +487,10 @@
+ 	if (pkt->payload_info == HFI_PAYLOAD_NONE)
+ 		return 0;
+ 
+-	if (!iris_hfi_gen2_validate_packet_payload(pkt)) {
++	if (pkt->payload_info != HFI_PAYLOAD_STRUCTURE ||
++	    !iris_hfi_gen2_validate_packet_payload(pkt)) {
+ 		iris_inst_change_state(inst, IRIS_INST_ERROR);
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	buffer = (struct iris_hfi_buffer *)((u8 *)pkt + sizeof(*pkt));

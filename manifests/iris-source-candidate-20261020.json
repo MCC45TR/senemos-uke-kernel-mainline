@@ -132,6 +132,10 @@
     {
       "path": "patches/video/0018-iris-separate-stop-port-and-close-completions.patch",
       "sha256": "6966b1bba07fde2b3fecaed24fe1ec7202bac66f93d746ae558382211c08e60c"
+    },
+    {
+      "path": "patches/video/0019-iris-retain-stop-returned-internal-buffers.patch",
+      "sha256": "843f75414189ec768b5e4a6ca21e2da338b2e326156511833a614fdd332c6f1c"
     }
   ],
   "sources": [
@@ -225,7 +229,9 @@
     "close_error_threaded_fixture": true,
     "session_result_aarch64_composite": true,
     "command_port_completion_gcc_clang_asan_ubsan": true,
-    "command_port_completion_aarch64_composite": true
+    "command_port_completion_aarch64_composite": true,
+    "buffer_return_gcc_clang_asan_ubsan": true,
+    "buffer_return_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -485,6 +491,24 @@
     "same_port_generation_matching_qualified": false,
     "legacy_gen1_response_typing_qualified": false,
     "dma_quiescence_qualified": false,
+    "native_match_added": false,
+    "tablet_tested": false
+  },
+  "buffer_return_ownership": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "371e86f86ec6d33c042233a3b5cb78eb12266c88",
+    "upstream_commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
+    "upstream_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61",
+    "stop_return_retained_for_reuse": true,
+    "destroy_only_local_pending_release": true,
+    "internal_mapping_checked_before_list": true,
+    "persist_arp_none_port_admitted": true,
+    "raw_bitstream_acceptance_unchanged": true,
+    "nonempty_buffer_requires_structure": true,
+    "empty_payload_remains_noop": true,
+    "malformed_reply_error_forwarded": true,
+    "dma_quiescence_qualified": false,
+    "response_generation_qualified": false,
     "native_match_added": false,
     "tablet_tested": false
   }
