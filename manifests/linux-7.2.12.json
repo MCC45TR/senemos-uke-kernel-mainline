@@ -432,6 +432,10 @@
     {
       "path": "patches/7.2.12/0106-fastrpc-retain-coherent-dma-handle.patch",
       "sha256": "dbd3afa8d36304af64a9f5ad48287a270ea9d8af3a8fd81d8d2776ab1695f398"
+    },
+    {
+      "path": "patches/7.2.12/0107-rproc-retry-transport-stop-without-double-remove.patch",
+      "sha256": "6fb52688484d49334fcd052d513e505530d0abb9ee22985cb2207b2dc2fb8fbd"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -300,6 +300,7 @@ fi
 - Retain PAS mappings on failed shutdown and make checked stop cleanup retryable.
 - Check MDT allocation bounds before secure setup and prevent ELF32 size wrap.
 - Preserve coherent FastRPC handles and device lifetime after creator close.
+- Avoid double GLINK/SMD edge removal when a failed PAS stop is retried.
 - Skip the absent optional LLCC broadcast-AND window after aperture validation.
 - Keep CDSP authentication, memory ownership and inference qualification separate.
 

@@ -92,6 +92,15 @@ and non-recovering Clang ASan/UBSan runs. The original source reproduces a heap
 use-after-free in scatterlist attachment. AArch64 `-Werror` compilation passes.
 This does not prove remote DMA quiescence, context-bank detach or memory revoke.
 
+Patch 0107 completes the immediate transport caller requirement for stop retry.
+The core visits GLINK/SMD stop callbacks again after a failed PAS stop, while
+the first transport removal clears their edge pointers. Both callbacks now
+skip missing/failed edges and remove each registered edge once. Actual callbacks
+pass normal/crash, absent/error-edge and repeat-stop checks, including sanitizers;
+the original source attempts an invalid unregister. Native crash policy is
+retained. This closes the repeated-removal defect, not the DMA teardown ordering
+or remoteproc removal gates.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.

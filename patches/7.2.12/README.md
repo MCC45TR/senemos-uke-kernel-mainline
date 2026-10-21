@@ -148,3 +148,8 @@ and allocating-device references independently of the creating FastRPC file.
 Exported dma-buf attach/mmap/free no longer dereference that borrowed user.
 Host callbacks reproduce the original use-after-free and cover error/refcount
 paths. Remote DMA quiescence and context-bank detach remain separate gates.
+
+**21 October 2026, release 2 source:** patch 0107 makes GLINK/SMD edge stop
+repeatable after a PAS failure without unregistering a cleared or failed edge.
+Actual callbacks retain normal/crash behavior and one removal per registration.
+DMA teardown order and complete failed-shutdown removal remain unqualified.
