@@ -5,6 +5,7 @@ Requires=uke-root-guard.service
 After=uke-root-guard.service
 Before=sysroot.mount
 ConditionKernelCommandLine=root=PARTLABEL=userdata
+ConditionPathExists=/run/uke-userdata-f2fs-root
 OnFailure=emergency.target
 
 [Service]

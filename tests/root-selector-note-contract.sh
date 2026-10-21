@@ -6,7 +6,7 @@ manifest=$2
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
-jq -e '.root_selector_capability.name=="UKE" and .root_selector_capability.type=="0x554b4501" and .root_selector_capability.descriptor=="root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30" and .root_selector_capability.manifest_value=="uke-elfnote-v1" and .root_selector_capability.policy_changed==false and .root_selector_capability.physical_vrr_qualified==false' "$manifest" >/dev/null
+jq -e '.root_selector_capability.name=="UKE" and .root_selector_capability.type=="0x554b4501" and .root_selector_capability.descriptor=="root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30" and .root_selector_capability.manifest_value=="uke-elfnote-v2" and .root_selector_capability.policy_changed==true and .root_selector_capability.physical_vrr_qualified==false' "$manifest" >/dev/null
 mkdir -p "$work/include/linux" "$work/include/uapi/linux"
 cp "$kernel/include/linux/elfnote.h" "$work/include/linux/elfnote.h"
 cat > "$work/include/uapi/linux/elf.h" <<'C'
@@ -27,7 +27,7 @@ cat > "$work/entry.c" <<'C'
 #define UKE_INIT
 #include "uke-root-selector.h"
 int main(void) {
-    char line[128]="root=PARTLABEL=linux rw rootfstype=ext4,f2fs panic=0";
+    char line[128]="root=PARTLABEL=linux rw rootfstype=ext4,f2fs,xfs,btrfs panic=0";
     const char args[]="senemos.root=userdata msm.o82_vrr_test_min_hz=0";
     return uke_select_root(line,sizeof(line),args,sizeof(args))!=1;
 }
@@ -60,10 +60,10 @@ head -c 20 "$work/note" > "$work/truncated"
 reject "$work/truncated"
 { printf x; cat "$work/note"; } > "$work/unaligned"
 reject "$work/unaligned"
-sed 's/root-selector-v1/root-selector-v2/' "$work/note" > "$work/unknown-version"
+sed 's/root-selector-v2/root-selector-v3/' "$work/note" > "$work/unknown-version"
 reject "$work/unknown-version"
 printf 'msm.o82_vrr_test_min_hz=' > "$work/old-literal"
 reject "$work/old-literal"
-printf 'root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30' > "$work/descriptor-only"
+printf 'root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30' > "$work/descriptor-only"
 reject "$work/descriptor-only"
 printf 'Actual ELFNOTE: optimized/LTO/GC retention and eight malformed/absent cases passed\n'

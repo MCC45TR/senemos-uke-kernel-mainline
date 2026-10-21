@@ -7,13 +7,13 @@
 #define UKE_INIT
 #include "../src/boot/uke-root-selector.h"
 
-static constexpr char base[] = "rdinit=/usr/lib/systemd/systemd root=PARTLABEL=linux rw rootfstype=ext4,f2fs panic=0 console=tty0";
+static constexpr char base[] = "rdinit=/usr/lib/systemd/systemd root=PARTLABEL=linux rw rootfstype=ext4,f2fs,xfs,btrfs panic=0 console=tty0";
 static void check(const std::string &args, int expected, const char *initial = base, const char *suffix = "") {
     char buffer[2048];
     std::strcpy(buffer, initial);
     assert(uke_select_root(buffer, sizeof(buffer), args.c_str(), args.size() + 1) == expected);
     auto wanted = std::string(initial);
-    if (expected >= 0) wanted.replace(wanted.find("rootfstype=ext4,f2fs"), std::strlen("rootfstype=ext4,f2fs"), expected == 1 ? "rootfstype=f2fs" : "rootfstype=ext4");
+    if (expected >= 0) wanted.replace(wanted.find("rootfstype=ext4,f2fs,xfs,btrfs"), std::strlen("rootfstype=ext4,f2fs,xfs,btrfs"), expected == 1 ? "rootfstype=ext4,f2fs,xfs,btrfs" : "rootfstype=ext4");
     if (expected == 1) {
         wanted.replace(wanted.find("root=PARTLABEL=linux"), std::strlen("root=PARTLABEL=linux"), "root=PARTLABEL=userdata");
         wanted.replace(wanted.find("panic=0"), std::strlen("panic=0"), "panic=10");
@@ -44,23 +44,23 @@ int main() {
     check("senemos.root=userdata", -1, "root=UUID=invalid");
     check("senemos.root=userdata", -1, "console=tty0");
     check("senemos.root=userdata", -1, "root=PARTLABEL=linux");
-    for (const auto *initial : {"root=PARTLABEL=linux rootfstype=ext4,f2fs", "root=PARTLABEL=linux panic=0",
-                               "root=PARTLABEL=linux rootfstype=ext4,f2fs rootfstype=f2fs panic=0",
+    for (const auto *initial : {"root=PARTLABEL=linux rootfstype=ext4,f2fs,xfs,btrfs", "root=PARTLABEL=linux panic=0",
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs,xfs,btrfs rootfstype=f2fs panic=0",
                                "root=PARTLABEL=linux rootfstype=f2fs panic=0",
-                               "root=PARTLABEL=linux rootfstype=ext4,f2fs panic=10",
-                               "root=PARTLABEL=linux rootfstype=ext4,f2fs panic=0 panic=0"}) check("senemos.root=userdata", -1, initial);
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs,xfs,btrfs panic=10",
+                               "root=PARTLABEL=linux rootfstype=ext4,f2fs,xfs,btrfs panic=0 panic=0"}) check("senemos.root=userdata", -1, initial);
     // All token orders share the same bounds and profile rules.
-    for (const auto *initial : {"rootfstype=ext4,f2fs panic=0 root=PARTLABEL=linux",
-                               "rootfstype=ext4,f2fs root=PARTLABEL=linux panic=0",
-                               "panic=0 rootfstype=ext4,f2fs root=PARTLABEL=linux",
-                               "panic=0 root=PARTLABEL=linux rootfstype=ext4,f2fs",
-                               "root=PARTLABEL=linux panic=0 rootfstype=ext4,f2fs"}) {
+    for (const auto *initial : {"rootfstype=ext4,f2fs,xfs,btrfs panic=0 root=PARTLABEL=linux",
+                               "rootfstype=ext4,f2fs,xfs,btrfs root=PARTLABEL=linux panic=0",
+                               "panic=0 rootfstype=ext4,f2fs,xfs,btrfs root=PARTLABEL=linux",
+                               "panic=0 root=PARTLABEL=linux rootfstype=ext4,f2fs,xfs,btrfs",
+                               "root=PARTLABEL=linux panic=0 rootfstype=ext4,f2fs,xfs,btrfs"}) {
         check("senemos.root=userdata", 1, initial);
         check("senemos.root=linux", 0, initial);
     }
     const char args[] = "senemos.root=userdata";
-    char bounded[sizeof(base)]; std::strcpy(bounded, base);
-    assert(uke_select_root(bounded, sizeof(bounded) - 1, args, sizeof(args)) == -1);
+    char bounded[sizeof(base) + 4]; std::strcpy(bounded, base);
+    assert(uke_select_root(bounded, sizeof(base) - 1, args, sizeof(args)) == -1);
     assert(!std::strcmp(bounded, base));
     assert(uke_select_root(bounded, sizeof(bounded), args, sizeof(args)) == 1);
     const char slot_args[] = "senemos.root=userdata androidboot.slot_suffix=_b";

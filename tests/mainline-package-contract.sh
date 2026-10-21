@@ -18,7 +18,7 @@ grep -Eq '^Provides: kernel-uname-r\(7\.2\.12-[1-9][0-9]*\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
 # Flags 12 are an ordinary >= dependency; scriptlet-only requirements expire.
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
-grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.1.2' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.2.2' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(guarded-automatic)\t12\t1' <<< "$requires"
 if grep -E '^Obsoletes:|^Conflicts:|^%post([[:space:]]|$)|^%pre([[:space:]]|$)|^Requires:.*(python|pypy)|senemos-uke-linux-kernel-mainline-native' <<< "$parsed"; then
     echo 'Mainline source packages must preserve installed boot and fallback kernels' >&2

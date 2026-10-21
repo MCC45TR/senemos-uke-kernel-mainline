@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 6
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
@@ -75,7 +75,7 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.1.2
+Requires: uke-kernel-update >= 1.2.2
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Provides: installonlypkg(kernel)
 
@@ -88,7 +88,8 @@ the previous image, and verifies write readback. Android A is not an update targ
 Summary: Matched Uke userdata boot profile
 License: MIT
 Requires: %{name} = %{version}-%{release}
-Requires: uke-installation-profile >= 1.1.4
+Requires: uke-installation-profile >= 1.3.0
+Requires: uke-kernel-update(root-filesystem-v2) >= 1
 
 %description singleboot
 Selects the userdata image from this source family's exact kernel tuple.
@@ -154,7 +155,8 @@ test "$jobs" -le 8 || jobs=8
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
-    CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m; do
+    CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
+    CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -332,6 +334,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-7
+- Admit explicit F2FS, EXT4, XFS and single-device Btrfs userdata filesystems.
+- Declare root-selector ABI v2 and retain F2FS-only offline growth.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-6
 - Complete offline userdata expansion without post-root battery RPC dependencies.
 - Keep the completed initrd check active and skip repeated filesystem tools.

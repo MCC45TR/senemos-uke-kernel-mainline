@@ -19,7 +19,7 @@ command_line=$(sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' "$here/../../packaging/
 [[ $command_line == *'root=PARTLABEL=linux '* ]]
 # Root comes from the running kernel command line, including its admitted override.
 dracut_line=${command_line/root=PARTLABEL=linux /}
-dracut_line=${dracut_line/rootfstype=ext4,f2fs /}
+dracut_line=${dracut_line/rootfstype=ext4,f2fs,xfs,btrfs /}
 dracut_line=${dracut_line/panic=0 /}
 dracutbasedir="$work/dracut" dracut --conf /dev/null --confdir "$work/empty-config" \
     --tmpdir "$work" --no-hostonly --no-hostonly-cmdline --no-early-microcode --no-kernel --gzip \

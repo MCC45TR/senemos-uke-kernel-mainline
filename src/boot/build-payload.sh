@@ -50,7 +50,8 @@ export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
-for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE; do
+for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
+    EXT4_FS F2FS_FS XFS_FS BTRFS_FS; do
     grep -Fx "CONFIG_${flag}=y" "$out/.config"
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
@@ -101,5 +102,5 @@ image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
 userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v1\n' \
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\n' \
     "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"

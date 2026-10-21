@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-21",
+  "date": "2026-10-22",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "2470a3e23a16eb25c93aa26027e4d06cc662c9c2601074fbc6e77a7c23fe49ea"
+      "sha256": "8a4f71f260692a1a03f03ca7aa1fdb08f1ccf0e621cdc04ad22616a0e79955c9"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -29,15 +29,15 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "8a7ff6670ce4d612ae8c3e9f748e149cd173dadf9115bbd5f40e0033c941f57b"
+      "sha256": "8d2465d0d75885830cb1937c49587858d24abe97e5af10f4af45ac9e20d34045"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "e64db409cd1628c83799dbde32e81a21e82f2f5b86b2423e2c82c1f4f9dee9db"
+      "sha256": "a819ba0b47fddb2a04ba79a3f890ea46cf08817543abd15bc2c17cc63c606c2e"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
-      "sha256": "376277521a0f97d98be8c743f0a018520d16706114efbbd91a0c85d45681b991"
+      "sha256": "36164c87aaf1734248f57c6fbdb8dec7c5d2768526b2551ad3dfc1477e7f83d4"
     },
     {
       "path": "src/boot/dracut/uke-cdc-acm.service",
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "ddcdb50624818cb742748a9e270326cadf8a2c455b0e6f7bb69956a622129783"
+      "sha256": "a00419be859012abc4ab80a3e5def7d160842702df15ce438b014e8be05154d0"
     },
     {
       "path": "tests/boot-image-contract.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "93820397b7ab7f6d19a0222b68af4bd7f5cc96c5d13639830225eab01607c803"
+      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -113,7 +113,7 @@
     },
     {
       "path": "src/boot/check-root-capability.sh",
-      "sha256": "94da6aad39c3bd3d5b3b6c910e4e67a1cc0afa6986a9db4d0d417b719ba91d4c"
+      "sha256": "7468095172c7a770b8d3de266524e209804cbbba23ae0e0dc0a493a2456e7326"
     },
     {
       "path": "src/boot/userdata-grow.cpp",
@@ -125,7 +125,7 @@
     },
     {
       "path": "src/boot/dracut/uke-userdata-grow.service",
-      "sha256": "b96a4e4c342df8e4d2d2cd623c8b2a716ae1c675c6b6eeee44789258bd0ec144"
+      "sha256": "650a6db2a3ea31bae3c8f07fe190df46d6fef97b9006b3b7b7203d9ad620f483"
     },
     {
       "path": "tests/userdata-grow-contract.sh",
@@ -133,12 +133,12 @@
     }
   ],
   "root_selector_capability": {
-    "format": "elfnote-v1",
+    "format": "elfnote-v2",
     "name": "UKE",
     "type": "0x554b4501",
-    "descriptor": "root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30",
-    "manifest_value": "uke-elfnote-v1",
-    "policy_changed": false,
+    "descriptor": "root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30",
+    "manifest_value": "uke-elfnote-v2",
+    "policy_changed": true,
     "physical_vrr_qualified": false
   },
   "userdata_expansion": {
