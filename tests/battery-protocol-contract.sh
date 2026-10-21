@@ -93,7 +93,7 @@ struct usb_gadget { struct dwc3 *dwc; };
 static int scheduled, legacy;
 static struct dwc3 *gadget_to_dwc(struct usb_gadget *g) { return g->dwc; }
 #define WRITE_ONCE(x, v) ((x)=(v))
-static void *system_wq;
+static void *system_percpu_wq;
 static void mod_delayed_work(void *q, struct delayed_work *w, unsigned int delay) { (void)q; (void)w; assert(delay==0); scheduled++; }
 static int usb_phy_set_power(struct usb_phy *p, unsigned int mA) { (void)p; (void)mA; legacy++; return 42; }
 static const struct of_device_id qcom_battmgr_of_variants[]={{0}};
@@ -226,7 +226,9 @@ int main(void) {
   assert(!b.error && b.usb.usb_type==POWER_SUPPLY_USB_TYPE_UNKNOWN && b.usb.type_raw==ambiguous[i]);
   assert(b.usb.type_received_ns==42 && b.usb.type_generation==7 && b.usb.type_firmware==2 && b.usb.type_source==3);
  }
- /* Wire7 remains separate; this fixture never changes the requested ABI. */
+ /* Wire7 independently confirms the adapter; it never replaces wire6. */
+ reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,POWER_SUPPLY_USB_TYPE_SDP,0);
+ assert(!b.error && b.usb.adapter_type==POWER_SUPPLY_USB_TYPE_SDP && b.usb.usb_type==POWER_SUPPLY_USB_TYPE_UNKNOWN);
  struct power_supply usb={.drvdata=&b};
  union power_supply_propval budget={.intval=500000};
  assert(qcom_battmgr_usb_is_writeable(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT));
@@ -234,7 +236,18 @@ int main(void) {
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before);
  b.service_up=true; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; b.usb.current_max=500000;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==0);
- assert(requests==before+4 && sent.hdr.opcode==BATTMGR_USB_PROPERTY_SET && sent.property==5 && sent.value==500000);
+ assert(requests==before+5 && sent.hdr.opcode==BATTMGR_USB_PROPERTY_SET && sent.property==5 && sent.value==500000);
+ const u32 adapters[]={0,2,3,6,8,UINT_MAX};
+ for (unsigned i=0;i<ARRAY_SIZE(adapters);i++) {
+  reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,adapters[i],0);
+  before=requests;
+  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==(adapters[i]?-EINVAL:-EAGAIN));
+  assert(requests==before+4 && sent.hdr.opcode==BATTMGR_USB_PROPERTY_GET && sent.property==USB_CURR_MAX);
+ }
+ reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,POWER_SUPPLY_USB_TYPE_SDP,0);
+ before=requests; request_fail_at=before+3;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-ETIMEDOUT);
+ assert(requests==before+3 && sent.property==USB_ADAP_TYPE && !b.lock.unused);request_fail_at=0;
  for (int invalid=0;invalid<3;invalid++) {
   before=requests; budget.intval=invalid==0?-1:invalid==1?500001:1000000;
   assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL && requests==before);
@@ -243,16 +256,16 @@ int main(void) {
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL);
  b.usb.current_max=500000; b.usb.online=false;
  before=requests;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+4);
  b.usb.online=true; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_UNKNOWN;
  before=requests;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+4);
  b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; b.usb.current_max=0;
  before=requests;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+4);
  b.usb.current_max=500000; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_PD;
  before=requests;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL && requests==before+3);
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL && requests==before+4);
  b.usb.usb_type=POWER_SUPPLY_USB_TYPE_UNKNOWN;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN);
  b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; request_result=-ETIMEDOUT;

@@ -223,7 +223,7 @@
     },
     {
       "path": "patches/7.2.11/0054-uke-usb-budget-generation.patch",
-      "sha256": "aa02f97c0449f924c2acd372f59298a239371895ad82a8c4e941831db6bc1657"
+      "sha256": "6809439941745e1fa7a55f8304565e83094d8beebe5e1a7917847db5c2cb5b2b"
     },
     {
       "path": "patches/7.2.11/0055-usb-ucsi-glink-packet-lifecycle.patch",
@@ -396,6 +396,10 @@
     {
       "path": "patches/7.2.11/0097-adreno-order-native-llcc-supplier.patch",
       "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
+    },
+    {
+      "path": "patches/7.2.11/0098-uke-confirm-usb-sdp-adapter.patch",
+      "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

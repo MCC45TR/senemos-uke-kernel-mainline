@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.11
 %if "%{version}" == "7.2.11"
-%global senemos_build_release 16
+%global senemos_build_release 17
 %else
 %global senemos_build_release 1
 %endif
@@ -293,6 +293,11 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-17
+- Retain a versioned Image capability and require the guarded updater.
+- Confirm the independent OEM SDP adapter before USB budget writes.
+- Use the current per-CPU workqueue API without changing budget semantics.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
 - Restore the kernel primitives required by the original nftables firewall backend.
 - Select one root filesystem type and a bounded userdata panic restart policy.

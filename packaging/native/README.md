@@ -1,5 +1,13 @@
 # Mainline display source profile
 
+21 October 2026 source follow-up: release 17 retains release 16's nftables,
+root-filesystem and inactive audio policy. It adds the retained root-selector
+capability, a lasting guarded-updater dependency, an independent OEM SDP adapter
+check and the current per-CPU USB workqueue API. The active adaptation has 98
+patches. The [USB admission record](../../docs/USB-SDP-ADAPTER-2026-10-21.md)
+keeps zero-current and electrical suspend unqualified. No automatic charging
+profile, boot activation or physical acceptance is introduced by this source.
+
 17 October 2026. The native O82 profile is part of
 `senemos-uke-linux-kernel-mainline`; there is no separate native kernel package.
 The root `make srpm` and `.copr/Makefile` use one specification and source
