@@ -245,6 +245,8 @@ CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
 %install
+install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
+install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
 install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
 cat > %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json <<'EOF'
 {
@@ -318,8 +320,8 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %files singleboot
-%doc %{SOURCE7}
-%license %{SOURCE8}
+%doc %{_docdir}/%{name}-singleboot/SINGLEBOOT.md
+%license %{_licensedir}/%{name}-singleboot/LICENSE
 /usr/share/senemos/uke/unstable-singleboot.json
 /usr/lib/senemos/unstable-default-boot.img
 
