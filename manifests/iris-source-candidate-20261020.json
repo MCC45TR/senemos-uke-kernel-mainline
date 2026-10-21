@@ -120,6 +120,10 @@
     {
       "path": "patches/video/0015-iris-check-session-admission-and-unwind-open-formats.patch",
       "sha256": "3d60d22046a3435db8dc580d31c31ef78f731ced6986f1ae81c9a08f3ba9ebcb"
+    },
+    {
+      "path": "patches/video/0016-iris-drain-response-lookups-before-session-context-release.patch",
+      "sha256": "6d168eba473c4995ba17bc9e709b81e7d955f9ed377503e7a32f08c6f53da628"
     }
   ],
   "sources": [
@@ -205,7 +209,10 @@
     "video_publication_aarch64_composite": true,
     "video_open_admission_unwind": true,
     "format_allocation_gcc_clang_asan_ubsan": true,
-    "video_open_aarch64_composite": true
+    "video_open_aarch64_composite": true,
+    "threaded_response_lifetime_gcc_clang": true,
+    "threaded_response_lifetime_asan_ubsan": true,
+    "response_lifetime_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -401,5 +408,28 @@
     "upstream_vdec_sha256": "adcd223c9f2a59271778a7f7d830750c2a462c03ac65ded4569761fcccd8cfb6",
     "upstream_venc_sha256": "9823dae682f994c082aefc8f2acb53548c5a9cbb143d50f51a2b53a8b712c818",
     "upstream_vidc_sha256": "ff88255cb6e0a3830fdc15eb55ce6197b8129590d8f110367dcacb360802f02b"
+  },
+  "response_lifetime": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "40319b6f8a0d8dbfaa458dd39ea7041afa2556fd",
+    "borrowed_pointer_guard_for_both_hfi_generations": true,
+    "lookup_contract_asserted": true,
+    "removal_drops_instance_lock_before_waiting": true,
+    "capture_output_stop_order_preserved": true,
+    "queues_retained_until_close_and_response_drain": true,
+    "api_stop_errors_logged_and_returned": true,
+    "allocator_cleanup_outside_response_lock": true,
+    "threaded_provider_fixture": true,
+    "firmware_packet_parsing_modeled": true,
+    "dma_quiescence_qualified": false,
+    "session_close_timeout_ownership_safe": false,
+    "platform_removal_safe": false,
+    "exported_dmabuf_domain_lifetime_safe": false,
+    "native_match_added": false,
+    "tablet_tested": false,
+    "upstream_commit": "2c455ddca7827ad8fa3a64fdbf5a60efb928b46a",
+    "upstream_gen1_response_sha256": "fc631eecdafed4f6027a1f7c6a03438328805508a8d031bd81299d9838ea08dc",
+    "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61",
+    "upstream_utils_sha256": "892908b9902b1e1e58001947ceacc05219c8e59741840924cc66893874b4b80e"
   }
 }

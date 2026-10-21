@@ -51,7 +51,7 @@ test-ufs: validate-ufs
 	bash tests/ice-bist-status-contract.sh "$(ufs_source)"
 	bash tests/ufs-hce-error-contract.sh "$(ufs_source)"
 validate-video:
-	jq -e '.active_series == false and .dt_enabled == false and .iris_match_added == false and (.patches | length == 15)' manifests/iris-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == false and .dt_enabled == false and .iris_match_added == false and (.patches | length == 16)' manifests/iris-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 		if grep -Fqx "$${path##*/}" patches/$(version)/series; then exit 1; else test "$$?" -eq 1; fi
@@ -71,6 +71,7 @@ test-video: validate-video
 	bash tests/iris-power-ownership-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
 	bash tests/iris-video-publication-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
 	bash tests/iris-format-allocation-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
+	bash tests/iris-response-lifetime-contract.sh "$(video_source)/drivers/media/platform/qcom/iris"
 	bash tests/videocc-vote-contract.sh src/video/uke-videocc-votes.c
 validate:
 	test "$(version)" = 7.2.11

@@ -47,7 +47,7 @@ struct iris_core {
     kref ref;
     bool video_ready, removing;
     device *dev;
-    int lock, lifecycle_lock;
+    int lock, lifecycle_lock, response_lock;
     v4l2_device v4l2_dev;
     video_device *vdev_dec, *vdev_enc;
     void *iris_v4l2_file_ops, *iris_v4l2_ioctl_ops_dec, *iris_v4l2_ioctl_ops_enc;
@@ -90,6 +90,7 @@ static void mutex_destroy(int *m) { assert(!*m); ++destroyed; }
 static void mutex_init(int *m) { *m=0; }
 static void mutex_lock(int *m) { assert(!*m); *m=1; }
 static void mutex_unlock(int *m) { assert(*m==1); *m=0; }
+#define lockdep_assert_not_held(p) assert(!*(p))
 static void kfree(iris_core *c) { assert(!driver_live); ++core_frees; delete c; }
 [[maybe_unused]] static void kfree(iris_inst *i) { assert(inst_live); --inst_live; ++inst_frees; delete i; }
 static void kfree(int *p) { if (p) { assert(formats_live); --formats_live; delete p; } }
@@ -143,6 +144,7 @@ static m2m_dev *v4l2_m2m_init(int *) { if (fault_m2m) return nullptr; ++m2m_live
 static m2m_ctx *v4l2_m2m_ctx_init(m2m_dev *, iris_inst *, int) { if (fault_ctx) return nullptr; ++ctx_live; return new m2m_ctx; }
 template<class T> static bool IS_ERR_OR_NULL(T *p) { return !p; }
 static void v4l2_m2m_ctx_release(m2m_ctx *p) { assert(ctx_live); --ctx_live; delete p; }
+static int v4l2_m2m_streamoff(file *,m2m_ctx *,unsigned) { return 0; }
 static void v4l2_m2m_release(m2m_dev *p) { assert(m2m_live); --m2m_live; delete p; }
 static int init_formats(iris_inst *i) {
     i->fmt_src=new int{}; i->fmt_dst=new int{}; formats_live+=2;
@@ -195,7 +197,7 @@ static iris_core *reset() {
 }
 static void drop_driver(iris_core *c) { driver_live=false; iris_core_put(c); }
 static void final_check(unsigned videos) {
-    assert(core_frees==1 && destroyed==2+2*inst_frees && video_frees==videos);
+    assert(core_frees==1 && destroyed==3+2*inst_frees && video_frees==videos);
     assert(!inst_live && !formats_live && !ctrls_live && !fh_live && !m2m_live && !ctx_live);
 }
 int main() {
