@@ -5,9 +5,9 @@
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline-kvm
-Version: 7.2.11
-%if "%{version}" == "7.2.11"
-%global senemos_build_release 16
+Version: 7.2.12
+%if "%{version}" == "7.2.12"
+%global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
@@ -294,6 +294,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-1
+- Carry the isolated KVM profile to signed Linux 7.2.12.
+- Preserve its distinct module ABI and metadata-only installation boundary.
+
 * Tue Oct 20 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.11-16
 - Publish the requested KVM namespace with matched Linux and userdata containers.
 - Retain the current 97-patch profile and explicit activation/firmware boundaries.

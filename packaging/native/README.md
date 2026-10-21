@@ -1,5 +1,10 @@
 # Mainline display source profile
 
+21 October 2026 upstream refresh: Linux 7.2.12-1 retains the 97-patch KVM
+profile from source `8bb4d6a`, disabled audio and separate module ABI. It performs
+no boot activation. Source preparation and COPR results do not establish EL2
+ownership, working KVM or physical acceptance on Uke.
+
 17 October 2026. The native O82 profile is part of
 `senemos-uke-linux-kernel-mainline`; there is no separate native kernel package.
 The root `make srpm` and `.copr/Makefile` use one specification and source
