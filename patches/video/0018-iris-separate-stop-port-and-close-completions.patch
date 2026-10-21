@@ -1,0 +1,258 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: separate stop port and close completions
+
+Generation-2 input STOP, output STOP and CLOSE use one completion. A
+receipt for another command or port can notify the wrong waiter.  Keep
+CLOSE on the existing generic completion and initialize two generation-2
+stop completions before publishing the instance. Route STOP receipts and
+waits by their driver plane, independent of encoder/decoder HFI ports.
+Reject an invalid domain or port without completing an unrelated operation.
+
+Pass the selected completion explicitly to the shared wait helper. Legacy
+generation-1 callers retain exactly their previous generic/flush selection;
+its response protocol is unchanged. Preserve the existing mutex handoff,
+error reporting, timeout and wire format. No new command lock is needed.
+
+The same-SoC driver uses distinct close/input-stop/output-stop signals.
+This change does not qualify matching repeated commands or firmware
+response generations. Failed-stop DMA ownership and full platform/domain
+removal remain open. The native match stays disabled.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+Link: https://github.com/torvalds/linux/tree/a804c5742bff224d4cb4d25dd383554d598be32b
+Link: https://docs.kernel.org/scheduler/completion.html
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen1_command.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen1_command.c
+@@ -127,7 +127,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	return iris_wait_for_session_response(inst, false);
++	return iris_wait_for_session_response(inst, &inst->completion);
+ }
+ 
+ static void iris_hfi_gen1_packet_session_cmd(struct iris_inst *inst,
+@@ -167,7 +167,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = iris_wait_for_session_response(inst, false);
++	ret = iris_wait_for_session_response(inst, &inst->completion);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -178,7 +178,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = iris_wait_for_session_response(inst, false);
++	ret = iris_wait_for_session_response(inst, &inst->completion);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -210,21 +210,21 @@
+ 			ret = iris_hfi_queue_cmd_write(core, &flush_pkt, flush_pkt.shdr.hdr.size);
+ 			if (!ret) {
+ 				inst->flush_responses_pending++;
+-				ret = iris_wait_for_session_response(inst, true);
++				ret = iris_wait_for_session_response(inst, &inst->flush_completion);
+ 			}
+ 		} else if (inst->sub_state & IRIS_INST_SUB_LOAD_RESOURCES) {
+ 			reinit_completion(&inst->completion);
+ 			iris_hfi_gen1_packet_session_cmd(inst, &pkt, HFI_CMD_SESSION_STOP);
+ 			ret = iris_hfi_queue_cmd_write(core, &pkt, pkt.shdr.hdr.size);
+ 			if (!ret)
+-				ret = iris_wait_for_session_response(inst, false);
++				ret = iris_wait_for_session_response(inst, &inst->completion);
+ 
+ 			reinit_completion(&inst->completion);
+ 			iris_hfi_gen1_packet_session_cmd(inst, &pkt,
+ 							 HFI_CMD_SESSION_RELEASE_RESOURCES);
+ 			ret = iris_hfi_queue_cmd_write(core, &pkt, pkt.shdr.hdr.size);
+ 			if (!ret)
+-				ret = iris_wait_for_session_response(inst, false);
++				ret = iris_wait_for_session_response(inst, &inst->completion);
+ 
+ 			iris_inst_change_sub_state(inst, IRIS_INST_SUB_LOAD_RESOURCES, 0);
+ 
+@@ -241,14 +241,14 @@
+ 			iris_hfi_gen1_packet_session_cmd(inst, &pkt, HFI_CMD_SESSION_STOP);
+ 			ret = iris_hfi_queue_cmd_write(core, &pkt, pkt.shdr.hdr.size);
+ 			if (!ret)
+-				ret = iris_wait_for_session_response(inst, false);
++				ret = iris_wait_for_session_response(inst, &inst->completion);
+ 
+ 			reinit_completion(&inst->completion);
+ 			iris_hfi_gen1_packet_session_cmd(inst, &pkt,
+ 							 HFI_CMD_SESSION_RELEASE_RESOURCES);
+ 			ret = iris_hfi_queue_cmd_write(core, &pkt, pkt.shdr.hdr.size);
+ 			if (!ret)
+-				ret = iris_wait_for_session_response(inst, false);
++				ret = iris_wait_for_session_response(inst, &inst->completion);
+ 
+ 			iris_inst_change_sub_state(inst, IRIS_INST_SUB_LOAD_RESOURCES, 0);
+ 		}
+@@ -440,7 +440,7 @@
+ 	if (ret)
+ 		goto exit;
+ 
+-	ret = iris_wait_for_session_response(inst, false);
++	ret = iris_wait_for_session_response(inst, &inst->completion);
+ 	if (!ret)
+ 		ret = iris_destroy_internal_buffer(inst, buf);
+ 
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2.h
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2.h
+@@ -18,6 +18,8 @@
+  *
+  * @inst: pointer to iris_instance structure
+  * @packet: HFI packet
++ * @input_stop: input STOP response, independent of output STOP and CLOSE
++ * @output_stop: output STOP response, independent of input STOP and CLOSE
+  * @ipsc_properties_set: boolean to set ipsc properties to fw
+  * @opsc_properties_set: boolean to set opsc properties to fw
+  * @hfi_frame_info: structure of frame info
+@@ -27,6 +29,8 @@
+ struct iris_inst_hfi_gen2 {
+ 	struct iris_inst		inst;
+ 	struct iris_hfi_header		*packet;
++	struct completion		input_stop;
++	struct completion		output_stop;
+ 	bool				ipsc_properties_set;
+ 	bool				opsc_properties_set;
+ 	struct iris_hfi_frame_info	hfi_frame_info;
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
+@@ -1132,12 +1132,20 @@
+ static int iris_hfi_gen2_session_stop(struct iris_inst *inst, u32 plane)
+ {
+ 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
++	struct completion *done;
+ 	int ret = 0;
+ 
+ 	if (!inst_hfi_gen2->packet)
+ 		return -EINVAL;
+ 
+-	reinit_completion(&inst->completion);
++	if (plane == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
++		done = &inst_hfi_gen2->input_stop;
++	else if (plane == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
++		done = &inst_hfi_gen2->output_stop;
++	else
++		return -EINVAL;
++
++	reinit_completion(done);
+ 
+ 	iris_hfi_gen2_packet_session_command(inst,
+ 					     HFI_CMD_STOP,
+@@ -1155,7 +1163,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	return iris_wait_for_session_response(inst, false);
++	return iris_wait_for_session_response(inst, done);
+ }
+ 
+ static int iris_hfi_gen2_session_pause(struct iris_inst *inst, u32 plane)
+@@ -1400,6 +1408,8 @@
+ 	if (!out)
+ 		return NULL;
+ 
++	init_completion(&out->input_stop);
++	init_completion(&out->output_stop);
+ 	out->inst.hfi_session_ops = &iris_hfi_gen2_session_ops;
+ 
+ 	return &out->inst;
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+@@ -437,12 +437,13 @@
+ static int iris_hfi_gen2_handle_session_stop(struct iris_inst *inst,
+ 					     struct iris_hfi_packet *pkt)
+ {
++	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
+ 	u32 plane;
+ 	int ret;
+ 
+ 	if (inst->domain != DECODER && inst->domain != ENCODER) {
+ 		ret = -EINVAL;
+-		goto done;
++		goto error;
+ 	}
+ 	if (pkt->port == HFI_PORT_RAW) {
+ 		plane = inst->domain == DECODER ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE :
+@@ -452,16 +453,22 @@
+ 			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+ 	} else {
+ 		ret = -EINVAL;
+-		goto done;
++		goto error;
+ 	}
+ 	ret = iris_inst_sub_state_change_pause(inst, plane);
+ 
+-done:
+ 	if (ret)
+ 		iris_inst_change_state(inst, IRIS_INST_ERROR);
+-	complete(&inst->completion);
++	if (plane == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
++		complete(&inst_hfi_gen2->input_stop);
++	else
++		complete(&inst_hfi_gen2->output_stop);
+ 
+ 	return ret;
++
++error:
++	iris_inst_change_state(inst, IRIS_INST_ERROR);
++	return ret;
+ }
+ 
+ static int iris_hfi_gen2_handle_session_buffer(struct iris_inst *inst,
+--- a/drivers/media/platform/qcom/iris/iris_utils.c
++++ b/drivers/media/platform/qcom/iris/iris_utils.c
+@@ -67,13 +67,10 @@
+ 	}
+ }
+ 
+-int iris_wait_for_session_response(struct iris_inst *inst, bool is_flush)
++int iris_wait_for_session_response(struct iris_inst *inst, struct completion *done)
+ {
+-	struct completion *done;
+ 	int ret;
+ 
+-	done = is_flush ? &inst->flush_completion : &inst->completion;
+-
+ 	mutex_unlock(&inst->lock);
+ 	ret = wait_for_completion_timeout(done, msecs_to_jiffies(HW_RESPONSE_TIMEOUT_VALUE));
+ 	mutex_lock(&inst->lock);
+--- a/drivers/media/platform/qcom/iris/iris_utils.h
++++ b/drivers/media/platform/qcom/iris/iris_utils.h
+@@ -7,6 +7,7 @@
+ #define __IRIS_UTILS_H__
+ 
+ struct iris_core;
++struct completion;
+ #include "iris_buffer.h"
+ 
+ struct iris_hfi_rect_desc {
+@@ -51,7 +52,7 @@
+ struct iris_inst *iris_get_instance(struct iris_core *core, u32 session_id);
+ void iris_helper_buffers_done(struct iris_inst *inst, unsigned int type,
+ 			      enum vb2_buffer_state state);
+-int iris_wait_for_session_response(struct iris_inst *inst, bool is_flush);
++int iris_wait_for_session_response(struct iris_inst *inst, struct completion *done);
+ int iris_check_core_mbpf(struct iris_inst *inst);
+ int iris_check_core_mbps(struct iris_inst *inst);
+ bool is_rotation_90_or_270(struct iris_inst *inst);
+--- a/drivers/media/platform/qcom/iris/iris_vidc.c
++++ b/drivers/media/platform/qcom/iris/iris_vidc.c
+@@ -284,7 +284,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	return iris_wait_for_session_response(inst, false);
++	return iris_wait_for_session_response(inst, &inst->completion);
+ }
+ 
+ static void iris_check_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)

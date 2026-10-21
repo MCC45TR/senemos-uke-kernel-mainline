@@ -128,6 +128,10 @@
     {
       "path": "patches/video/0017-iris-report-failed-session-results-and-match-stop-ports.patch",
       "sha256": "43c05f2a7c8e45a9fd093f347075b9d1e97bb109fdd70602d93ec185d0809ba8"
+    },
+    {
+      "path": "patches/video/0018-iris-separate-stop-port-and-close-completions.patch",
+      "sha256": "6966b1bba07fde2b3fecaed24fe1ec7202bac66f93d746ae558382211c08e60c"
     }
   ],
   "sources": [
@@ -219,7 +223,9 @@
     "response_lifetime_aarch64_composite": true,
     "session_result_gcc_clang_asan_ubsan": true,
     "close_error_threaded_fixture": true,
-    "session_result_aarch64_composite": true
+    "session_result_aarch64_composite": true,
+    "command_port_completion_gcc_clang_asan_ubsan": true,
+    "command_port_completion_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -461,5 +467,25 @@
     "upstream_commit": "2c455ddca7827ad8fa3a64fdbf5a60efb928b46a",
     "upstream_common_sha256": "b3a29dfdda4a925074657af6097a5444d851f168dd197b16f26060956fdcfb1d",
     "upstream_gen2_command_sha256": "1321ad2099953b2ea76890ef61a349e6e0512c346b68aa7387f61189e6e9b391"
+  },
+  "command_completion_routing": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "d143274e6a61ba6a9dd4fe50a56886ec88378707",
+    "upstream_commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
+    "distinct_gen2_input_output_stop_receipts": true,
+    "close_retains_generic_receipt": true,
+    "allocator_initializes_stop_completions": true,
+    "waiter_selects_explicit_completion": true,
+    "legacy_gen1_generic_flush_selection_unchanged": true,
+    "invalid_stop_has_no_receipt_target": true,
+    "wire_format_changed": false,
+    "timeout_changed": false,
+    "new_command_mutex": false,
+    "wrong_receipt_and_reset_isolation_tested": true,
+    "same_port_generation_matching_qualified": false,
+    "legacy_gen1_response_typing_qualified": false,
+    "dma_quiescence_qualified": false,
+    "native_match_added": false,
+    "tablet_tested": false
   }
 }

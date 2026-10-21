@@ -1,13 +1,13 @@
 # Inactive SM7675 Iris33 source candidate
 
-Date: **20 October 2026**. Base: **7.2.11-11**, source `3b9b61a`.
+Date: **21 October 2026**. Linux **7.2.11**, reviewed 97-patch source baseline.
 The complete Iris composite object and VIDEOCC object compile for AArch64 with
 Clang **23.1.3**, `KCFLAGS=-Werror`. The actual two-pipe lifecycle fixture passes
 on the host. These are object/fixture results, without a full kernel, RPM,
 firmware authentication or tablet decode result.
 
-Three project patches from candidate `e344c7b` and five integration fixes
-are retained outside the active series. The native clock header is also
+Eighteen source patches are retained outside the active series. Their earlier
+candidate identities remain in the manifest. The native clock header is also
 referenced by its binding. The
 [manifest](../../manifests/iris-source-candidate-20261020.json) records exact
 base files, patch hashes, source attribution and remaining admission gaps.
@@ -111,6 +111,13 @@ teardown must be completed before activation. Dynamic MMIO addresses are not
 proof that this firmware accepts the resulting mapping.
 
 ## Activation remains blocked
+
+Session work now separates generation-2 input STOP, output STOP and CLOSE
+receipts. Wrong-command and wrong-port responses cannot satisfy the modeled
+waiter, and stop errors remain available across VB2 callbacks. Actual-function
+GCC/Clang, sanitizer and AArch64 object checks pass. Repeated commands on the
+same port and physical DMA ownership after a failed stop remain unqualified;
+see the [session response record](https://github.com/MCC45TR/uke-linux-docs/blob/main/docs/testing/UKE-IRIS-COMMAND-COMPLETION-2026-10-21.md).
 
 The native provider/consumer conversion must resolve regulator/genpd/OPP
 ownership, controller retention, the extra VCODEC reset and PM error handling.
