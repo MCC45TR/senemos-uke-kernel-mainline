@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * OEM-declared front EEPROM client, not a fitted-device identity result.
+ * Address 0x51: MiCode camera DT 57d2135, uke-sm8635-camera-sensor.dtsi.
+ * Model candidate: static OS3.0.304.0 GT24P64E plugin name.
+ * Native GENI ownership and effective address still require qualification.
+ */
+&eeprom_front {
+	status = "disabled";
+};
+
+&qupv3_se8_i2c {
+	uke_camera_front_eeprom: eeprom@51 {
+		compatible = "giantec,gt24p64e", "atmel,24c64";
+		reg = <0x51>;
+		vcc-supply = <&L20B>;
+		address-width = <16>;
+		size = <8192>;
+		pagesize = <1>;
+		read-only;
+		status = "disabled";
+	};
+};

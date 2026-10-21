@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "device": "uke",
+  "soc": "SM7675",
+  "kernel_version": "7.2.11",
+  "base_commit": "652d638c0c98b9e6ac48622da579d3c01e77aab8",
+  "status": "inactive-board-resource-and-eeprom-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "kernel_release_changed": false,
+  "source4_inventory_changed": false,
+  "physical_capture": null,
+  "eeprom_accessed": false,
+  "calibration_included": false,
+  "front": {
+    "sensor_candidate": "OV08D10",
+    "effective_sensor_address": null,
+    "control_bus": "QUPv3 SE8",
+    "control_gpio": [
+      0,
+      1
+    ],
+    "mclk_gpio": 68,
+    "reset_gpio": 3,
+    "avdd_enable_gpio": 160,
+    "clock_hz": 19200000,
+    "native_core_supply": "L3C",
+    "native_io_supply": "L20B",
+    "oem_declared_csiphy_index": 4,
+    "effective_csi_lanes": null,
+    "eeprom": {
+      "model_candidate": "GT24P64E",
+      "declared_oem_client_address": "0x51",
+      "effective_address": null,
+      "candidate_bytes": 8192,
+      "candidate_address_bits": 16,
+      "read_only": true,
+      "fitted_identity_qualified": false
+    }
+  },
+  "rear": {
+    "sensor_candidate": "OV13B10",
+    "effective_sensor_address": null,
+    "control_bus": "CCI0 master 1",
+    "control_gpio": [
+      72,
+      73
+    ],
+    "mclk_gpio": 64,
+    "reset_gpio": 14,
+    "avdd_enable_gpio": 79,
+    "clock_hz": 19200000,
+    "native_core_supply": "L6E",
+    "native_io_supply": "L20B",
+    "oem_declared_csiphy_index": 1,
+    "oem_csiphy_compatible_override_index": 0,
+    "effective_csi_lanes": null,
+    "eeprom": {
+      "model_candidate": "BL24SA64",
+      "declared_oem_client_address": null,
+      "effective_address": null,
+      "candidate_bytes": 8192,
+      "candidate_address_bits": 16,
+      "board_node_added": false,
+      "fitted_identity_qualified": false
+    }
+  },
+  "sources": [
+    {
+      "url": "https://github.com/MiCode/vendor_qcom_proprietary_camera-devicetree",
+      "commit": "57d2135ee6909ffb7d288a7dc4d82c85d95fc10d",
+      "files": [
+        {
+          "path": "uke-sm8635-camera-sensor.dtsi",
+          "sha256": "a7bd6b5ce49c316ee1380d2de67807cc7e9680e6b89065f039fda22d495ea4f2"
+        },
+        {
+          "path": "cliffs-camera.dtsi",
+          "sha256": "69d36278faf9fd28032556eaa88a85cd0caeb5e0d0b6ea02e1f2c6ef3d6bdd13"
+        }
+      ],
+      "scope": "Exact Uke board declarations, not effective sensor selection or native power ownership"
+    },
+    {
+      "url": "https://github.com/MiCode/vendor_qcom_opensource_camera-kernel",
+      "commit": "699fa15a98abd40fbb94f3a6fc00f91723d29d35",
+      "files": [
+        {
+          "path": "drivers/cam_sensor_module/cam_eeprom/cam_eeprom_dev.c",
+          "sha256": "c5d297d256f92258d36a06d7d5228e2ea736274730aed62d6146fc2d12d4bd35"
+        },
+        {
+          "path": "drivers/cam_sensor_module/cam_eeprom/cam_eeprom_core.c",
+          "sha256": "066923a1be85fed88c2e005f97a7e843c69ed3268203883f3d6040a51269696d"
+        }
+      ],
+      "scope": "Userspace-supplied EEPROM addresses/maps and distinct CCI/I2C address interpretation; no vendor code imported or executed"
+    },
+    {
+      "url": "https://github.com/torvalds/linux",
+      "commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
+      "files": [
+        {
+          "path": "Documentation/devicetree/bindings/eeprom/at24.yaml",
+          "sha256": "98452b4e32c41de9f74608356d2126e0743f7f229391577f0bb451bc180f2e3e"
+        }
+      ],
+      "scope": "Exact binding matches prepared 7.2.11; unchanged native at24 driver and existing 24c64 fallback"
+    },
+    {
+      "url": "https://github.com/coreboot/coreboot",
+      "commit": "07f7c02983b0bae7bfb5abf6954b9ee17b186eb8",
+      "files": [
+        {
+          "path": "src/mainboard/google/brya/variants/telith/overridetree.cb",
+          "sha256": "a9d937e43d5fff15a88d8b7911e02b7aab888d3d6f81026ba8ac6370b3bc4206"
+        }
+      ],
+      "scope": "Shared GT24P64E component protocol only: 8192 bytes, 16-bit addressing, read-only AT24C64; no board values copied"
+    },
+    {
+      "url": "https://www.belling.com.cn/media/file_object/bel_product/BL24SA64/datasheet/BL24SA64-CS_V1.08_en.pdf",
+      "revision": "V1.08",
+      "scope": "BL24SA64 8192-byte array and two-byte address protocol; no protection/address programming implemented"
+    },
+    {
+      "url": "https://www.giantec-semi.com/news/126",
+      "date": "2020-10-28",
+      "scope": "Manufacturer identifies GT24P64E as 64-Kbit EEPROM supporting 1.7-5.5 V; not a Uke fitted-part result"
+    }
+  ],
+  "provider_dependency": {
+    "header": "dt-bindings/clock/qcom,sm7675-camcc.h",
+    "reviewed_header_sha256": "046fb1f198076896493e5af3071df908a1366280912724cf9f3b643199ee8796",
+    "mclk0_id": 105,
+    "mclk4_id": 113,
+    "status": "separate-provisional-native-provider-source-not-a-registered-clock-provider"
+  },
+  "checks": {
+    "sdk_image_sha256": "2ca900c848d9e5fbcfec1f7b5e9cf248f12814d345e27870360b29ad542677f4",
+    "clang_version": "23.1.3",
+    "dt_schema_version": "2026.09",
+    "aarch64_werror_objects": [
+      "drivers/misc/eeprom/at24.o",
+      "drivers/reset/reset-gpio.o",
+      "drivers/regulator/fixed.o"
+    ],
+    "fresh_reverse_binding_application": "pass",
+    "compiled_eeprom_models_accepted": 2,
+    "unsafe_or_missing_topology_cases_rejected": 11,
+    "repository_validation": "pass",
+    "physical_result": null
+  },
+  "source_assets": [
+    {
+      "sha256": "3e33e34f4cf9b9a1fbbbc4a2207a56a28c19f5ac64a092faedbbf696005fa3a3",
+      "path": "src/camera/board/0001-dt-bindings-eeprom-camera-64k-models.patch"
+    },
+    {
+      "sha256": "dd66460e88c9c6f2e9e0990f26a685f3e4df24b6199af42389dce64ea913d5c0",
+      "path": "src/camera/board/uke-camera-resources.dtsi"
+    },
+    {
+      "sha256": "6cce24430871fcf081d48f0208aab4c955b2f12b9c995ccd44be5f5a598dbf85",
+      "path": "src/camera/board/uke-camera-front-eeprom.dtsi"
+    },
+    {
+      "sha256": "8ee89e76149d19e8027188fdc8879e8c7e9cd29e415d76224b0da3942904fb87",
+      "path": "src/camera/board/board.config"
+    },
+    {
+      "sha256": "1143fe022ac85a6dae2cc0e42de9483ade94ff40ab4b371c403c83a51a7c7997",
+      "path": "src/camera/board/README.md"
+    },
+    {
+      "sha256": "549cd80fc54d2452c481e24127d67be68237e896dd6e1133fbec450efaa21fb8",
+      "path": "tests/camera-board-contract.sh"
+    },
+    {
+      "sha256": "c398e8066118314a77233f7d40a18e038bae54eacd53b7c308bf79ffe3796db0",
+      "path": "tests/fixtures/camera-board-resources.dts"
+    }
+  ],
+  "remaining": [
+    "Fitted module identities, both sensor addresses and effective EEPROM addresses",
+    "Native GENI/CCI ownership and removal of competing Android camera consumers",
+    "CAMCC voltage/CRM/GDSC ownership and shared S2B/BOB power contract",
+    "Rear PHY0 override versus sensor PHY1 selection, exact lane maps and link timing",
+    "CSIPHY/CSID860/VFE860, IOMMU/interrupt/interconnect and connected media graph",
+    "Read-only private calibration layout/checksum validation and sensor power sequencing",
+    "Matched kernel/module package, recoverable device chip-ID/RAW capture and original Fedora userspace"
+  ]
+}

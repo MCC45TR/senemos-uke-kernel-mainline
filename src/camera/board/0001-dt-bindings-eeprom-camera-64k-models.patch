@@ -1,0 +1,32 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] dt-bindings: eeprom: add BL24SA64 and GT24P64E
+
+Describe the 64-Kbit Belling BL24SA64 and Giantec GT24P64E with the
+existing AT24C64 fallback. The existing at24 driver supplies the 8-Kbyte,
+16-bit address protocol; no vendor camera ioctl or new driver is needed.
+
+Giantec identifies GT24P64E as a 64-Kbit part. Coreboot's pinned telith
+GT24P64E declaration uses atmel,24c64, size 0x2000, width 0x10 and
+readonly.
+Belling's BL24SA64 V1.08 datasheet specifies the same memory organization
+and two-byte random-read address. This does not select a board supplier,
+slave address, calibration layout or permission to program either part.
+
+Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+---
+ Documentation/devicetree/bindings/eeprom/at24.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/eeprom/at24.yaml b/Documentation/devicetree/bindings/eeprom/at24.yaml
+--- a/Documentation/devicetree/bindings/eeprom/at24.yaml
++++ b/Documentation/devicetree/bindings/eeprom/at24.yaml
+@@ -133,7 +133,9 @@ properties:
+           - const: atmel,24c32
+       - items:
+           - enum:
++              - belling,bl24sa64
+               - belling,bl24s64
+               - giantec,gt24p64a
++              - giantec,gt24p64e
+               - onnn,n24s64b
+               - puya,p24c64f
