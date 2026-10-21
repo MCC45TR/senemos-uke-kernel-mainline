@@ -103,3 +103,4 @@
 0103-pas-release-dtb-firmware-after-load.patch
 0104-pas-retain-resources-until-checked-shutdown.patch
 0105-mdt-check-memory-range-before-secure-setup.patch
+0106-fastrpc-retain-coherent-dma-handle.patch

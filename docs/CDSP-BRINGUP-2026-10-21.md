@@ -82,6 +82,16 @@ source fails the pre-SCM refusal. Exact local CDSP/DTB MDTs pass this host check
 and the loader compiles for AArch64 with `-Werror`. Segment loading and secure
 authentication are mocked in these fixtures; no firmware is executed.
 
+Patch 0106 removes a borrowed FastRPC user pointer from coherent buffers.
+Exported dma-buf descriptors can outlive that user. Buffers retain the original
+DMA API handle for free, scatterlist creation and mmap, separately from the
+SID-encoded DSP address. The allocating device reference and mutex lifetime are
+balanced on success and failure. Actual callbacks pass creator-close, 32/56-bit
+SID, allocation/attach/mmap failure and device-reference checks with ordinary
+and non-recovering Clang ASan/UBSan runs. The original source reproduces a heap
+use-after-free in scatterlist attachment. AArch64 `-Werror` compilation passes.
+This does not prove remote DMA quiescence, context-bank detach or memory revoke.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.

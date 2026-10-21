@@ -142,3 +142,9 @@ before secure metadata or memory setup. Absolute and relocated spans retain
 their distinct semantics; size queries avoid ELF32 addition wrap. Actual-function
 fixtures require malformed ranges to issue no SCM calls and retain every error.
 No firmware authentication, segment transfer or device result follows.
+
+**21 October 2026, release 2 source:** patch 0106 retains coherent DMA handles
+and allocating-device references independently of the creating FastRPC file.
+Exported dma-buf attach/mmap/free no longer dereference that borrowed user.
+Host callbacks reproduce the original use-after-free and cover error/refcount
+paths. Remote DMA quiescence and context-bank detach remain separate gates.

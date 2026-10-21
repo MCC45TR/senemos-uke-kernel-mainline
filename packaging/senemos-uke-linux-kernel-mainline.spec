@@ -299,6 +299,7 @@ fi
 - Balance DTB firmware references on load failures and repeated recovery loads.
 - Retain PAS mappings on failed shutdown and make checked stop cleanup retryable.
 - Check MDT allocation bounds before secure setup and prevent ELF32 size wrap.
+- Preserve coherent FastRPC handles and device lifetime after creator close.
 - Skip the absent optional LLCC broadcast-AND window after aperture validation.
 - Keep CDSP authentication, memory ownership and inference qualification separate.
 

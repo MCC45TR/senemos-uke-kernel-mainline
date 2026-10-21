@@ -16,6 +16,7 @@ bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6
 bash "$profile/tests/pas-firmware-lifetime-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/pas-stop-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/mdt-memory-admission-contract.sh" "$kernel/drivers/soc/qcom/mdt_loader.c"
+bash "$profile/tests/fastrpc-buffer-lifetime-contract.sh" "$kernel/drivers/misc/fastrpc.c"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
