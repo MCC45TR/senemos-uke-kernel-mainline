@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "package": "senemos-uke-linux-kernel-mainline-singleboot",
-  "kernel_release": "7.2.12-1",
+  "package": "senemos-uke-linux-kernel-mainline-unstable-singleboot",
+  "kernel_release": "7.3.0-1-unstable",
   "root_partition": "userdata",
   "root_filesystem": "f2fs",
   "boot_selector": "senemos.root=userdata",
-  "boot_image": "/usr/lib/senemos/kernel-updates/7.2.12-1/userdata.img",
+  "boot_image": "/usr/lib/senemos/kernel-updates/7.3.0-1-unstable/userdata.img",
   "automatic_kernel_activation": false
 }

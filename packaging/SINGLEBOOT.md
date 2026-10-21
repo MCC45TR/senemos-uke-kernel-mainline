@@ -21,3 +21,12 @@ of those operations.
 
 The exact current tuple is recorded in the installed JSON descriptor.
 The common kernel and physical acceptance retain their separate evidence.
+# Unstable Linux 7.3 userdata profile, 21 October 2026
+
+`senemos-uke-linux-kernel-mainline-unstable-singleboot` requires the exact
+7.3.0-1 unstable kernel tuple. Its descriptor is
+`/usr/share/senemos/uke/unstable-singleboot.json`; its separate symlink is
+`/usr/lib/senemos/unstable-default-boot.img`. It preserves the ordinary boot
+default and shares the unstable Image, modules, DTB and userdata boot image.
+Installation performs no activation, partition write, slot selection or reboot.
+Image composition, boot and physical acceptance require separate validation.
