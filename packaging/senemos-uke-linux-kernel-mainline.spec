@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 7
+%global senemos_build_release 8
 %else
 %global senemos_build_release 1
 %endif
@@ -75,7 +75,7 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.2.2
+Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Provides: installonlypkg(kernel)
 
@@ -88,7 +88,7 @@ the previous image, and verifies write readback. Android A is not an update targ
 Summary: Matched Uke userdata boot profile
 License: MIT
 Requires: %{name} = %{version}-%{release}
-Requires: uke-installation-profile >= 1.3.0
+Requires: uke-installation-profile >= 1.3.1
 Requires: uke-kernel-update(root-filesystem-v2) >= 1
 
 %description singleboot
@@ -163,6 +163,7 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash boot-recipe/tests/early-modules-contract.sh
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
 jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
@@ -334,6 +335,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-8
+- Admit required early drivers only from installed modules or the exact built-in inventory.
+- Require the current-slot transaction consumer before manual userdata updates.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-7
 - Admit explicit F2FS, EXT4, XFS and single-device Btrfs userdata filesystems.
 - Declare root-selector ABI v2 and retain F2FS-only offline growth.
