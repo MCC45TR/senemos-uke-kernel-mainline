@@ -33,3 +33,12 @@ lock. It uses the actual Linux ELFNOTE macro, LTO and linker garbage collection,
 plus rejection fixtures. The host and AArch64 object/link fixtures do not qualify
 a complete boot image; the coordinated kernel build must pass the final Image
 check before delivery.
+
+The boot RPM requires both `uke-kernel-update >= 1.1.2` and
+`uke-kernel-update(guarded-automatic) >= 1` as ordinary, lasting dependencies.
+The guarded consumer must be present when the kernel's post-transaction hook
+runs and remain installed afterwards. A `Requires(posttrans)` declaration alone
+does not provide a lasting requirement or order package installation. The
+consumer must apply its global/profile gate without relying on another
+package's post-transaction initialization. This source change is reserved for
+the next coordinated kernel release; published release-16 RPMs are unchanged.
