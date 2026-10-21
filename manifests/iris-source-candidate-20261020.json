@@ -124,6 +124,10 @@
     {
       "path": "patches/video/0016-iris-drain-response-lookups-before-session-context-release.patch",
       "sha256": "6d168eba473c4995ba17bc9e709b81e7d955f9ed377503e7a32f08c6f53da628"
+    },
+    {
+      "path": "patches/video/0017-iris-report-failed-session-results-and-match-stop-ports.patch",
+      "sha256": "43c05f2a7c8e45a9fd093f347075b9d1e97bb109fdd70602d93ec185d0809ba8"
     }
   ],
   "sources": [
@@ -212,7 +216,10 @@
     "video_open_aarch64_composite": true,
     "threaded_response_lifetime_gcc_clang": true,
     "threaded_response_lifetime_asan_ubsan": true,
-    "response_lifetime_aarch64_composite": true
+    "response_lifetime_aarch64_composite": true,
+    "session_result_gcc_clang_asan_ubsan": true,
+    "close_error_threaded_fixture": true,
+    "session_result_aarch64_composite": true
   },
   "blockers": [
     "Clock-owned voltage votes and zero OPP-domain handling are source-checked; complete native provider/consumer DT and VPU-domain supply conversion are not admitted",
@@ -431,5 +438,28 @@
     "upstream_gen1_response_sha256": "fc631eecdafed4f6027a1f7c6a03438328805508a8d031bd81299d9838ea08dc",
     "upstream_gen2_response_sha256": "178ad594ba32f81511bf61f7c2a2e25753420a354bc03a5a3eca58f2a2bf3b61",
     "upstream_utils_sha256": "892908b9902b1e1e58001947ceacc05219c8e59741840924cc66893874b4b80e"
+  },
+  "session_result_reporting": {
+    "date": "2026-10-21",
+    "candidate_base_commit": "cd6a7fc5d12e6834af3a38a684f9d96ab1a47a72",
+    "completed_error_state_returns_eio": true,
+    "missing_response_remains_etimedout": true,
+    "failed_close_ack_wakes_waiter": true,
+    "close_send_and_wait_errors_propagated": true,
+    "stop_ports_inverse_to_sender_for_both_roles": true,
+    "stop_success_flag_new_requirement": false,
+    "invalid_stop_domain_port_rejected": true,
+    "stop_transition_error_propagated": true,
+    "first_streamoff_driver_error_latched": true,
+    "vb2_void_callback_error_recovered": true,
+    "streamon_original_errno_preserved": true,
+    "command_generation_matching_qualified": false,
+    "dma_quiescence_qualified": false,
+    "buffer_retention_after_failed_stop_safe": false,
+    "native_match_added": false,
+    "tablet_tested": false,
+    "upstream_commit": "2c455ddca7827ad8fa3a64fdbf5a60efb928b46a",
+    "upstream_common_sha256": "b3a29dfdda4a925074657af6097a5444d851f168dd197b16f26060956fdcfb1d",
+    "upstream_gen2_command_sha256": "1321ad2099953b2ea76890ef61a349e6e0512c346b68aa7387f61189e6e9b391"
   }
 }

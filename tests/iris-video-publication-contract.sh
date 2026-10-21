@@ -67,7 +67,7 @@ struct iris_inst {
     struct m2m_dev *m2m_dev;
     struct m2m_ctx *m2m_ctx;
     instance_link list;
-    int ctrl_handler;
+    int ctrl_handler, streamoff_error;
     int *fmt_src, *fmt_dst;
 };
 static unsigned alloc_calls, register_calls, video_frees, core_frees, destroyed;
@@ -170,7 +170,7 @@ static void list_del_init(instance_link *l) {
     auto p=std::find(v.begin(),v.end(),l->owner); assert(p!=v.end()); v.erase(p);
 }
 enum { V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE=1, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE=2 };
-static void iris_session_close(iris_inst *i) { assert(i->state==IRIS_INST_DEINIT); }
+static int iris_session_close(iris_inst *i) { assert(i->state==IRIS_INST_DEINIT); return 0; }
 static void iris_inst_change_state(iris_inst *i, u32 state) { i->state=state; }
 static void iris_destroy_all_internal_buffers(iris_inst *, unsigned) {}
 static void iris_check_num_queued_internal_buffers(iris_inst *, unsigned) {}
@@ -181,7 +181,7 @@ for name in iris_core_release iris_core_put iris_video_device_release iris_regis
     awk -v name="$name" '$0 ~ "^(static )?(void|int) " name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
         "$iris/iris_probe.c" | sed 's/struct iris_core \*core = data;/struct iris_core *core = (struct iris_core *)data;/' >> "$work/check.cpp"
 done
-for name in iris_add_session iris_remove_session iris_open iris_close; do
+for name in iris_add_session iris_remove_session iris_open iris_stop_queue iris_close; do
     awk -v name="$name" '$0 ~ "^(static )?(void|int) " name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
         "$iris/iris_vidc.c" >> "$work/check.cpp"
 done

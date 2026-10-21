@@ -1,0 +1,211 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: report session failures and match stop ports
+
+A completion notification is not firmware success. Return EIO when the
+completed session is already in ERROR, while preserving ETIMEDOUT for a
+missing notification. Wake the existing close waiter on a failed close
+acknowledgment instead of making it wait for a timeout. Propagate close
+send/wait errors into the release diagnostic without replacing an earlier
+queue-stop failure.
+
+Match STOP response ports to the existing sender for both decode and
+encode. Reject invalid domains/ports, mark a failed pause transition before
+signalling, and preserve its result through command dispatch. Do not impose
+a new SUCCESS-flag requirement on STOP: the same-SoC source treats that
+flag as optional for stop receipts.
+
+Latch the first driver streamoff failure because VB2's stop callback is
+void. Recover that diagnostic after the framework streamoff API returns,
+including cleanup failures during stream-on unwind. Preserve the original
+stream-on error; do not clear a latched failure after a later successful
+request. Keep all accesses under the instance mutex.
+
+These are result and protocol-direction corrections, not DMA ownership
+admission. Stop/close timeout quiescence, late replies, command-generation
+matching, buffer retention and full domain removal remain unqualified.
+The native match remains disabled and no firmware opcode/layout changes.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+Link: https://github.com/torvalds/linux/tree/2c455ddca7827ad8fa3a64fdbf5a60efb928b46a
+Link: https://docs.kernel.org/scheduler/completion.html
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+--- a/drivers/media/platform/qcom/iris/iris_common.c
++++ b/drivers/media/platform/qcom/iris/iris_common.c
+@@ -204,6 +204,7 @@
+ 	enum iris_buffer_type buffer_type;
+ 	int ret;
+ 
++	lockdep_assert_held(&inst->lock);
+ 	switch (plane) {
+ 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+ 		buffer_type = BUF_INPUT;
+@@ -228,6 +229,8 @@
+ 	return 0;
+ 
+ error:
++	if (!inst->streamoff_error)
++		inst->streamoff_error = ret;
+ 	iris_kill_session(inst);
+ 	iris_flush_deferred_buffers(inst, buffer_type);
+ 
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_response.c
+@@ -294,10 +294,8 @@
+ static void iris_hfi_gen2_handle_session_close(struct iris_inst *inst,
+ 					       struct iris_hfi_packet *pkt)
+ {
+-	if (!(pkt->flags & HFI_FW_FLAGS_SUCCESS)) {
++	if (!(pkt->flags & HFI_FW_FLAGS_SUCCESS))
+ 		iris_inst_change_state(inst, IRIS_INST_ERROR);
+-		return;
+-	}
+ 
+ 	complete(&inst->completion);
+ }
+@@ -439,13 +437,28 @@
+ static int iris_hfi_gen2_handle_session_stop(struct iris_inst *inst,
+ 					     struct iris_hfi_packet *pkt)
+ {
+-	int ret = 0;
++	u32 plane;
++	int ret;
+ 
+-	if (pkt->port == HFI_PORT_RAW)
+-		ret = iris_inst_sub_state_change_pause(inst, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+-	else if (pkt->port == HFI_PORT_BITSTREAM)
+-		ret = iris_inst_sub_state_change_pause(inst, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
++	if (inst->domain != DECODER && inst->domain != ENCODER) {
++		ret = -EINVAL;
++		goto done;
++	}
++	if (pkt->port == HFI_PORT_RAW) {
++		plane = inst->domain == DECODER ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE :
++			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
++	} else if (pkt->port == HFI_PORT_BITSTREAM) {
++		plane = inst->domain == DECODER ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE :
++			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
++	} else {
++		ret = -EINVAL;
++		goto done;
++	}
++	ret = iris_inst_sub_state_change_pause(inst, plane);
+ 
++done:
++	if (ret)
++		iris_inst_change_state(inst, IRIS_INST_ERROR);
+ 	complete(&inst->completion);
+ 
+ 	return ret;
+@@ -676,7 +689,7 @@
+ 		iris_hfi_gen2_handle_session_close(inst, pkt);
+ 		break;
+ 	case HFI_CMD_STOP:
+-		iris_hfi_gen2_handle_session_stop(inst, pkt);
++		ret = iris_hfi_gen2_handle_session_stop(inst, pkt);
+ 		break;
+ 	case HFI_CMD_BUFFER:
+ 		ret = iris_hfi_gen2_handle_session_buffer(inst, pkt);
+--- a/drivers/media/platform/qcom/iris/iris_instance.h
++++ b/drivers/media/platform/qcom/iris/iris_instance.h
+@@ -54,6 +54,7 @@
+  * @buffers: array of different iris buffers
+  * @fw_min_count: minimnum count of buffers needed by fw
+  * @state: instance state
++ * @streamoff_error: first driver stop failure, retained across void VB2 callbacks
+  * @sub_state: instance sub state
+  * @once_per_session_set: boolean to set once per session property
+  * @max_input_data_size: max size of input data
+@@ -101,6 +102,7 @@
+ 	struct iris_buffers		buffers[BUF_TYPE_MAX];
+ 	u32				fw_min_count;
+ 	enum iris_inst_state		state;
++	int				streamoff_error;
+ 	enum iris_inst_sub_state	sub_state;
+ 	bool				once_per_session_set;
+ 	size_t				max_input_data_size;
+--- a/drivers/media/platform/qcom/iris/iris_utils.c
++++ b/drivers/media/platform/qcom/iris/iris_utils.c
+@@ -81,6 +81,8 @@
+ 		iris_inst_change_state(inst, IRIS_INST_ERROR);
+ 		return -ETIMEDOUT;
+ 	}
++	if (inst->state == IRIS_INST_ERROR)
++		return -EIO;
+ 
+ 	return 0;
+ }
+--- a/drivers/media/platform/qcom/iris/iris_vidc.c
++++ b/drivers/media/platform/qcom/iris/iris_vidc.c
+@@ -270,23 +270,21 @@
+ 	return ret;
+ }
+ 
+-static void iris_session_close(struct iris_inst *inst)
++static int iris_session_close(struct iris_inst *inst)
+ {
+ 	const struct iris_hfi_session_ops *hfi_ops = inst->hfi_session_ops;
+-	bool wait_for_response = true;
+ 	int ret;
+ 
+ 	if (inst->state == IRIS_INST_DEINIT)
+-		return;
++		return 0;
+ 
+ 	reinit_completion(&inst->completion);
+ 
+ 	ret = hfi_ops->session_close(inst);
+ 	if (ret)
+-		wait_for_response = false;
++		return ret;
+ 
+-	if (wait_for_response)
+-		iris_wait_for_session_response(inst, false);
++	return iris_wait_for_session_response(inst, false);
+ }
+ 
+ static void iris_check_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)
+@@ -329,21 +327,39 @@
+ 			count, inst->domain == DECODER ? BUF_PERSIST : BUF_ARP);
+ }
+ 
++static int iris_stop_queue(struct file *filp, struct iris_inst *inst, u32 plane)
++{
++	int ret;
++
++	ret = v4l2_m2m_streamoff(filp, inst->m2m_ctx, plane);
++	mutex_lock(&inst->lock);
++	/* VB2's stop_streaming callback cannot return the driver error. */
++	if (!ret)
++		ret = inst->streamoff_error;
++	mutex_unlock(&inst->lock);
++
++	return ret;
++}
++
+ int iris_close(struct file *filp)
+ {
+ 	struct iris_inst *inst = iris_get_inst(filp);
+ 	int ret, err;
+ 
+ 	/* Preserve the framework's capture/output stop order without freeing queues. */
+-	ret = v4l2_m2m_streamoff(filp, inst->m2m_ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+-	err = v4l2_m2m_streamoff(filp, inst->m2m_ctx, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
++	ret = iris_stop_queue(filp, inst, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
++	err = iris_stop_queue(filp, inst, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+ 	if (!ret)
+ 		ret = err;
+ 	if (ret)
+ 		dev_err(inst->core->dev, "queue stop failed at close: %d\n", ret);
+ 
+ 	mutex_lock(&inst->lock);
+-	iris_session_close(inst);
++	err = iris_session_close(inst);
++	if (err)
++		dev_err(inst->core->dev, "session close failed: %d\n", err);
++	if (!ret)
++		ret = err;
+ 	iris_inst_change_state(inst, IRIS_INST_DEINIT);
+ 	mutex_unlock(&inst->lock);
+ 

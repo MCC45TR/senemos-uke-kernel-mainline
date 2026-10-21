@@ -27,7 +27,7 @@ struct iris_inst {
     mutex lock,ctx_q_lock;
     u32 session_id,state;
     struct link list;
-    int ctrl_handler;
+    int ctrl_handler,streamoff_error;
     struct m2m_ctx *m2m_ctx;
     struct m2m_dev *m2m_dev;
     int *fmt_src,*fmt_dst;
@@ -40,7 +40,7 @@ static thread_local std::vector<mutex *> held;
 static thread_local bool closer,late;
 static iris_core *active_core;
 static unsigned generation;
-static int stream_error[2], forwarded_error;
+static int stream_error[2], forwarded_error,close_error;
 static std::atomic<unsigned> readers,alive,responses,destroyed,stops;
 static std::atomic<bool> detached,close_ack,final_phase,announced;
 static std::promise<void> lookup_ready,allow_late,guard_ready;
@@ -104,11 +104,11 @@ static int v4l2_m2m_streamoff(file *f,m2m_ctx *ctx,unsigned type) {
     if (stream_error[type]) return stream_error[type];
     dispatch(f->inst->core,f->inst->session_id); ctx->streaming[type]=false; return 0;
 }
-static void iris_session_close(iris_inst *i) {
+static int iris_session_close(iris_inst *i) {
     assert(is_held(&i->lock) && !is_held(&i->core->response_lock) && stops==2 && alive==6);
     mutex_unlock(&i->lock); dispatch(i->core,i->session_id); mutex_lock(&i->lock); close_ack=true;
     late_thread=std::thread([i] { late=true; dispatch(i->core,i->session_id); assert(held.empty()); });
-    wait(lookup_event); final_phase=true;
+    wait(lookup_event); final_phase=true; return close_error;
 }
 static void iris_inst_change_state(iris_inst *i,u32 state) { assert(is_held(&i->lock)); i->state=state; }
 static void before_free() {
@@ -132,7 +132,7 @@ CPP
 {
     awk '/^struct iris_inst \*iris_get_instance\(/ {emit=1} emit {print} emit && /^}/ {exit}' \
         "$iris/iris_utils.c"
-    for name in iris_remove_session iris_close; do
+    for name in iris_remove_session iris_stop_queue iris_close; do
         awk -v name="$name" '$0 ~ "^(static )?(void|int) " name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
             "$iris/iris_vidc.c"
     done
@@ -143,11 +143,12 @@ CPP
 } >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 int main() {
-    for (unsigned gen : {1U,2U}) for (unsigned errors=0; errors<4; ++errors) {
+    for (unsigned gen : {1U,2U}) for (unsigned errors=0; errors<8; ++errors) {
         iris_core core{}; active_core=&core; generation=gen;
         readers=responses=destroyed=stops=0; alive=6;
         detached=close_ack=final_phase=announced=false;
         stream_error[0]=(errors&1) ? -EIO : 0; stream_error[1]=(errors&2) ? -EREMOTEIO : 0;
+        close_error=(errors&4) ? -EIO : 0;
         lookup_ready=std::promise<void>{}; allow_late=std::promise<void>{}; guard_ready=std::promise<void>{};
         lookup_event=lookup_ready.get_future(); allow_event=allow_late.get_future(); guard_event=guard_ready.get_future();
         auto *i=new iris_inst{}; i->core=&core; i->session_id=42; i->list.owner=i; i->ctrl_handler=1;
@@ -159,7 +160,7 @@ int main() {
         std::thread close_thread([&] { closer=true; result=iris_close(&f); assert(held.empty()); });
         wait(guard_event); assert(!detached && alive==6 && readers==1);
         allow_late.set_value(); close_thread.join(); late_thread.join();
-        assert(result==(stream_error[0] ? stream_error[0] : stream_error[1]));
+        assert(result==(stream_error[0] ? stream_error[0] : (stream_error[1] ? stream_error[1] : close_error)));
         assert(detached && !alive && !readers && destroyed==2 && core.instances.empty() && !f.inst);
         auto previous=responses.load(); dispatch(&core,42); assert(responses==previous && held.empty());
     }
