@@ -112,6 +112,12 @@ display and compute SH1 members while retaining identical legacy output.
 AArch64 driver-object compilation against the exact 7.2.12 preparation is
 separate from package, boot and NPU inference acceptance. CDSP PAS binding,
 global-sync ownership and native FastRPC remain unfinished.
+
+The same unbuilt candidate includes 0101–0102: exact crypto master 38/CE0,
+NSP ARC admission and descriptor-selected two/three proxy rails with retained
+load/voltage/reference ownership. Actual ordinary/sanitized function tests and
+all three AArch64 driver objects pass against the current native configuration.
+No CDSP match, firmware upload, remote start or new physical acceptance follows.
 # Linux 7.2.12 refresh, 21 October 2026
 
 This queue carries the 98 patches from source `cf7d17f` without changing their

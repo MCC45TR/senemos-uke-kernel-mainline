@@ -34,13 +34,38 @@ the host probe regression rejects every sixth mapping attempt and retains all
 The ordinary broadcast polling fallback is unchanged. Other SoCs retain their
 existing mapping/error behavior. No cache policy or voltage value changes.
 
+Patches 0101 and 0102 supply the next dependencies. Crypto master 38 retains
+its OEM AGGRE2 port 0x15000, priority two, disabled urgency forwarding and CE0
+membership. The exact `nsp.lvl` ARC name joins the reviewed resource boundary;
+command-DB validation and native Bluetooth/display preparation are preserved.
+Proxy power supports two or three descriptor-selected supplies and optional
+loads. Existing WPSS/ADSP descriptors keep two supplies and no new load vote.
+Successful voltage/load votes and enabled references are tracked independently.
+Failed disable retains live votes; failed release remains retryable without
+double enabling or disabling a regulator. No userspace power-tuning API is added.
+
+Actual-function checks exercise missing/deferred supplies, load/voltage/bulk
+failures, repeated enable/disable, failed-release retries, descriptor propagation
+and the existing genpd path. Ordinary and non-recovering Clang ASan/UBSan runs
+pass. The original two-rail fixture reproduces the duplicate-enable defect.
+All three modified drivers compile for AArch64 with warnings as errors using
+the current native configuration; the complete affected-file patch order also
+applies to the exact upstream 7.2.12 source. These checks do not add a CDSP match.
+
 The retained Global OS3.0.304.0 extraction includes an ELF32 Qualcomm DSP6 v73
 HTP skeleton and an AArch64 HTP v73 stub. The latter requires Android `libc.so`,
 `liblog.so` and `libcdsprpc.so`; the CDSP daemon requests `/system/bin/linker64`.
 They are ABI evidence, not Fedora binaries. No proprietary component is copied,
 executed, repackaged or qualified for redistribution by this source change.
-The extracted vendor/ODM files contain no named CDSP boot image; the separate
-OTA modem/DSP partitions still require inspection.
+The earlier vendor/ODM-only search is superseded by selected OTA partition
+inspection. The exact Global archive and pinned host-only native Go extractor
+were verified before extracting modem/DSP with payload SHA checks enabled.
+The modem FAT image contains the CDSP and DTB MDTs and every nonempty split
+fragment. The main ELF32 DSP6/v73 image has 14 relocatable LOAD segments spanning
+20 MiB, matching the exact Uke CDSP reservation. The DTB image has one relocatable
+62,952-byte LOAD fitting its 512 KiB reservation. All nonempty fragment lengths
+match their program headers. The downstream `uses_elf64` coredump setting is
+not a declaration of the MDT file's class. No firmware was executed or installed.
 
 ## Source comparison and attribution
 
@@ -59,9 +84,10 @@ Qualcomm attribution. Reference code is inspected as text, not executed.
 
 1. Resolve the exact owner CDSP/DTB firmware and Linux AArch64 userspace ABI.
    An Android library or another SoC's firmware is not an admissible substitute.
-2. Implement the exact PAS 18/DTB 0x25, CX/MXC/NSP proxy and AOP load-state
-   contract, including DDR/crypto votes and failure unwind. Existing ADSP/WPSS
-   consumers must retain their two-supply behavior.
+2. Connect the exact PAS 18/DTB 0x25 and AOP load-state lifecycle to the prepared
+   CX/MXC/NSP proxy and DDR/crypto suppliers. Existing ADSP/WPSS consumers retain
+   their two-supply behavior; a CDSP match is not added before complete ownership
+   and checked shutdown handling.
 3. Validate firmware, DTB and global-sync carveouts, permissions and SCM
    ownership before assignment. Upstream PAS can assign memory during probe;
    `auto_boot=false` alone does not make a new binding harmless.

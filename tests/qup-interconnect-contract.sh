@@ -123,6 +123,17 @@ int main(void) {
     for (unsigned int i = 0; i < bcm_sh1.num_nodes; ++i)
         assert(bcm_sh1.nodes[i] != &qnm_lpass_gemnoc);
 #if EXPECT_NSP
+    assert(aggre2_noc_nodes[38] == &qxm_crypto);
+    assert(qxm_crypto.channels == 1 && qxm_crypto.buswidth == 8);
+    assert(qxm_crypto.qosbox == &qxm_crypto_qos);
+    assert(qxm_crypto_qos.num_ports == 1 && qxm_crypto_qos.port_offsets[0] == 0x15000);
+    assert(qxm_crypto_qos.prio == 2 && !qxm_crypto_qos.urg_fwd && qxm_crypto_qos.prio_fwd_disable == 1);
+    assert(reaches(&qxm_crypto, &ebi, 0));
+    assert(!reaches(&qxm_crypto, &xm_usb3_0, 0));
+    assert(!reaches(&qxm_crypto, &xm_ufs_mem, 0));
+    assert(cliffs_aggre2_noc.num_bcms == 1 && cliffs_aggre2_noc.bcms[0] == &bcm_ce0);
+    assert(!bcm_ce0.keepalive && !bcm_ce0.enable_mask && bcm_ce0.num_nodes == 1);
+    assert(bcm_ce0.nodes[0] == &qxm_crypto);
     assert(nsp_noc_nodes[41] == &qxm_nsp);
     assert(nsp_noc_nodes[561] == &qns_nsp_gemnoc);
     assert(gem_noc_nodes[25] == &qnm_nsp_gemnoc);

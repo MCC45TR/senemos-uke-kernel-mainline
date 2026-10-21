@@ -408,6 +408,14 @@
     {
       "path": "patches/7.2.12/0100-llcc-skip-absent-sm7675-and-window.patch",
       "sha256": "2eec33b09f5f3469717da4e4f7bf1c7e7ddd1a5e549206c12721794aa364ddb6"
+    },
+    {
+      "path": "patches/7.2.12/0101-cliffs-cdsp-crypto-and-nsp-suppliers.patch",
+      "sha256": "00935f2f3ccd65c4f266eac2946a49e17f2ebc1140731937e1353110b41138bf"
+    },
+    {
+      "path": "patches/7.2.12/0102-cliffs-proxy-rail-ownership.patch",
+      "sha256": "882be161746ff90e9b910b46da1e7513a13d0a83ea03d66f0b6f1f1e6e66eea9"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

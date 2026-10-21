@@ -295,6 +295,7 @@ fi
 %changelog
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-2
 - Add the exact Cliffs compute-DSP DDR bandwidth path and native source gate.
+- Retain its crypto-DDR and NSP ARC suppliers and checked proxy-rail ownership.
 - Skip the absent optional LLCC broadcast-AND window after aperture validation.
 - Keep CDSP authentication, memory ownership and inference qualification separate.
 

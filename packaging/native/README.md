@@ -1,12 +1,18 @@
 # Mainline display source profile
 
 21 October 2026 source candidate: Linux 7.2.12-2 adds the exact NSP/GEM/DDR
-bandwidth route and avoids mapping an absent sixth LLCC aperture. All 100
+bandwidth route and avoids mapping an absent sixth LLCC aperture. All 102
 ordered patches retain the existing boot, firmware and charging policy.
 The native preparation gate checks NSP, GPU, LPASS, QUP, USB and UFS routes.
 [CDSP integration](../../docs/CDSP-BRINGUP-2026-10-21.md) records the remaining
 PAS, memory-ownership, firmware and inference work. This source candidate has
 not been submitted to COPR, installed or booted.
+
+The same candidate adds the exact crypto-DDR supplier and NSP ARC admission.
+Proxy power preparation supports the OEM three-rail load contract while retaining
+two-rail descriptors, checked ownership and retry after release failures. The
+native preparation gate executes those actual-function fault checks. It does
+not add a CDSP driver match or start the remote processor.
 
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
@@ -27,7 +33,7 @@ The root `make srpm` and `.copr/Makefile` use one specification and source
 producer. `packaging/native/Makefile` remains a compatibility SCM entry pointing
 to the same producer. EL2 work remains separate.
 
-The current source RPM contains signed Linux 7.2.12 and 100 ordered Uke patches,
+The current source RPM contains signed Linux 7.2.12 and 102 ordered Uke patches,
 the ABL adaptation, native DPU/DSI patches, the exact O82-42 seven-mode overlay,
 configuration, contract checks, source commit and asset hashes. Integer releases
 use separate module paths: `7.2.10-29`, `7.2.10-30`, then `7.2.11-1` after the
