@@ -5,14 +5,14 @@ SHELL := /bin/bash
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal validate-camera
-validate-camera: validate-camcc-data validate-camera-board
+validate-camera: validate-camcc-data validate-camera-board validate-camcc-power
 	jq -e '.active_config == false and .dt_enabled == false and .camera_capture_tested == false and .kernel_release_changed == false' manifests/camera-source-candidate-20261021.json >/dev/null
 	jq -r '.patches[], .source_assets[] | .sha256 + "  " + .path' manifests/camera-source-candidate-20261021.json | sha256sum -c -
 	! grep -Eq '^CONFIG_VIDEO_OV(08D10|13B10)=' configs/{arm64-qcom,uke,fedora}.config
 .PHONY: validate-camera
 validate-camcc-data:
 	jq -e '.driver_registered == false and .dt_enabled == false and .tablet_tested == false and .active_config == false and .voltage_clock_count == 44' manifests/camcc-source-candidate-20261021.json >/dev/null
-	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/camcc-source-candidate-20261021.json | sha256sum -c -
+	jq -r '.patches[], .source_assets[] | .sha256 + "  " + .path' manifests/camcc-source-candidate-20261021.json | sha256sum -c -
 	! grep -Eq 'module_platform_driver|platform_driver_register|of_device_id|module_init|subsys_initcall' src/camera/camcc-sm7675-data.h
 test-camcc-data: validate-camcc-data
 	test -n "$(camcc_source)" && test -n "$(camcc_oem)" && test -n "$(camcc_output)"
@@ -26,6 +26,26 @@ test-camcc-data: validate-camcc-data
 	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-contract" KCFLAGS=-Werror -j4 camcc-data-check.o
 	readelf -h "$(camcc_output)/camcc-contract/camcc-data-check.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
 .PHONY: validate-camcc-data test-camcc-data
+validate-camcc-power: validate-camcc-data
+	jq -e '.active_series == false and .driver_registered == false and .controller_pm_lifetime_qualified == false' manifests/camcc-source-candidate-20261021.json >/dev/null
+	! grep -Fq GDSC_CONTROLLER_PM src/camera/camcc-sm7675-data.h
+test-camcc-power: validate-camcc-power
+	test -n "$(camcc_source)" && test -n "$(camcc_output)"
+	test "$$(realpath "$(camcc_output)")" != "$$(realpath "$(camcc_source)")"
+	bash tests/camcc-power-contract.sh "$(camcc_source)"
+	test -f "$(camcc_output)/include/generated/asm-offsets.h"
+	grep -Fx 'CONFIG_ARM64=y' "$(camcc_output)/.config"
+	mkdir -p "$(camcc_output)/camcc-power"
+	cp "$(camcc_source)/drivers/clk/qcom/"gdsc.{c,h} "$(camcc_output)/camcc-power/"
+	git init -q "$(camcc_output)/camcc-power"
+	for patch in "$(CURDIR)"/src/camera/provider/*.patch; do
+		git -C "$(camcc_output)/camcc-power" apply --check -p4 "$$patch"
+		git -C "$(camcc_output)/camcc-power" apply -p4 "$$patch"
+	done
+	printf '%s\n' 'obj-m += gdsc.o' > "$(camcc_output)/camcc-power/Makefile"
+	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-power" KCFLAGS=-Werror -j4 gdsc.o
+	readelf -h "$(camcc_output)/camcc-power/gdsc.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
+.PHONY: validate-camcc-power test-camcc-power
 validate-camera-board:
 	jq -e '.active_series == false and .dt_enabled == false and .kernel_release_changed == false and .physical_capture == null and .eeprom_accessed == false' manifests/camera-board-candidate-20261021.json >/dev/null
 	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/camera-board-candidate-20261021.json | sha256sum -c -

@@ -4,7 +4,7 @@
   "device": "uke",
   "soc": "SM7675",
   "kernel_version": "7.2.11",
-  "status": "native-clock-data-and-voltage-prerequisite",
+  "status": "native-clock-data-and-power-prerequisites",
   "driver_registered": false,
   "dt_enabled": false,
   "tablet_tested": false,
@@ -32,6 +32,18 @@
     {
       "path": "tests/fixtures/camcc-data-check.c",
       "sha256": "54b2467c1456f943ea2aa3a9130c198d16401da259e438175144c8f0877cda21"
+    },
+    {
+      "path": "tests/camcc-power-contract.sh",
+      "sha256": "5b59f37d09d479b381a12f701510851256a7ae2a43f1d2d21f58835e9770dfbe"
+    },
+    {
+      "path": "tests/fixtures/camcc-power-check.c",
+      "sha256": "647f70bef13979eb6ba510915b9a224c1dcb9ba8021759429e3167e6df70da03"
+    },
+    {
+      "path": "src/camera/provider/README.md",
+      "sha256": "fb79951a2501911b06675cf3769292f2e487b90d76b4263facd509305a356b36"
     }
   ],
   "sources": [
@@ -48,6 +60,13 @@
       "path": "drivers/clk/qcom/camcc-palawan.c",
       "sha256": "3910a9e959a4f37f268b045f8ae78295e991faf22d0c4e2e307765f20a1c8fda",
       "role": "Attributed native register catalog; power policy not accepted"
+    },
+    {
+      "url": "https://github.com/torvalds/linux",
+      "commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
+      "path": "drivers/clk/qcom/gdsc.c",
+      "sha256": "04c66019948835d4b0def6f96d940500a85eb3e9c277f69de06c953f7d6475d2",
+      "role": "Current upstream GDSC comparison; identical prepared preimage"
     }
   ],
   "prepared_helpers": [
@@ -58,6 +77,14 @@
     {
       "path": "drivers/clk/qcom/vdd-level.h",
       "sha256": "5d9ac761527a5fa82aa540305690b2b6f4a9a091dcd4a956dae02960b5d95edf"
+    },
+    {
+      "path": "drivers/clk/qcom/gdsc.c",
+      "sha256": "04c66019948835d4b0def6f96d940500a85eb3e9c277f69de06c953f7d6475d2"
+    },
+    {
+      "path": "drivers/clk/qcom/gdsc.h",
+      "sha256": "bea8e934482c13e1318ebe59bfd881cb91536e32afd9dae2676da9514d140ae9"
     }
   ],
   "voltage_policy": {
@@ -68,7 +95,7 @@
     "physical_voltage_measured": false
   },
   "remaining": [
-    "Native controller PM and GDSC lifetime ownership",
+    "Native controller, normal/forced PM and failed-probe resource lifetime",
     "Interface clock, checked MMIO and CRM/shared-RCG ownership",
     "Runtime voltage vote and clock callback integration",
     "Native binding and boot producer",
@@ -76,5 +103,15 @@
   ],
   "active_series": false,
   "source4_inventory_changed": true,
-  "patches": []
+  "patches": [
+    {
+      "path": "src/camera/provider/0001-clk-qcom-gdsc-collapse-error.patch",
+      "sha256": "9f9328746a9192dbf756f6401714b62648322ddef4315d916209199e84a32f4e"
+    },
+    {
+      "path": "src/camera/provider/0002-clk-qcom-gdsc-controller-pm.patch",
+      "sha256": "75dc00dfcd74e2f5723268f4ffa1bf6c66d49224a116e462fe30a32485e6f6b8"
+    }
+  ],
+  "controller_pm_lifetime_qualified": false
 }

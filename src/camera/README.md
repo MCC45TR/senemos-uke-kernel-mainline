@@ -48,6 +48,11 @@ registers this catalog. Controller and GDSC PM ownership, interface clock/MMIO,
 CRM/shared-RCG behavior and live voltage-vote callbacks must be completed before
 activation. The catalog cannot make the existing OEM nodes usable on its own.
 
+The inactive [power prerequisite](provider/README.md) preserves GDSC write
+errors and tests controller references across ON/OFF, boot-state and failure
+paths. It does not opt any domain in. Native controller callbacks, forced
+suspend and failed-probe resource lifetime remain required before registration.
+
 With the sensor test's prepared ARM64 output and the exact OEM checkout, run:
 
 ```bash
