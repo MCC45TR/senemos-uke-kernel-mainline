@@ -1,0 +1,198 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: own core through video publication and release
+
+Initialize video driver data before publishing either node. Admit opens
+only after both nodes register, and close admission before teardown. Avoid
+starting a firmware session while the encoder registration can still fail.
+Store node pointers only after successful registration.
+
+Give each allocated video device a core kref until its final release. Keep
+the driver reference as the first managed action so it is dropped after
+the managed hardware resources. Destroy the core locks and allocation at
+the final put, not at platform remove. This also preserves the allocation
+for a delayed open that observed a node before registration rollback.
+
+OEM Venus, OnePlus Iris33 and current upstream publish driver data after
+video registration; they do not resolve this race. Reuse the V4L2 lifetime
+and kref contracts without importing donor board values. This fixes the
+control allocation and publication boundary only. In-flight operations,
+active sessions, exported DMA-BUFs and DMA-domain teardown remain open;
+the native core match must remain disabled.
+
+Link: https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd
+Link: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675/tree/1138e00fee63582a0cc6a53af3286621786827b7
+Link: https://github.com/torvalds/linux/tree/2c455ddca7827ad8fa3a64fdbf5a60efb928b46a
+Link: https://docs.kernel.org/driver-api/media/v4l2-dev.html
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+--- a/drivers/media/platform/qcom/iris/iris_core.h
++++ b/drivers/media/platform/qcom/iris/iris_core.h
+@@ -7,6 +7,7 @@
+ #define __IRIS_CORE_H__
+ 
+ #include <linux/types.h>
++#include <linux/kref.h>
+ #include <linux/pm_domain.h>
+ #include <media/v4l2-device.h>
+ 
+@@ -37,6 +38,8 @@
+  * struct iris_core - holds core parameters valid for all instances
+  *
+  * @dev: reference to device structure
++ * @ref: driver and video-device ownership of the core allocation
++ * @video_ready: both video nodes are registered and admit new opens
+  * @pixel_dev: separately bound pixel DMA component, when required
+  * @reg_base: IO memory base address
+  * @irq: iris irq
+@@ -87,6 +90,8 @@
+  */
+ 
+ struct iris_core {
++	struct kref				ref;
++	bool					video_ready;
+ 	struct device				*dev;
+ 	struct device				*pixel_dev;
+ 	void __iomem				*reg_base;
+--- a/drivers/media/platform/qcom/iris/iris_probe.c
++++ b/drivers/media/platform/qcom/iris/iris_probe.c
+@@ -10,6 +10,7 @@
+ #include <linux/pm_opp.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/reset.h>
++#include <linux/slab.h>
+ #include <linux/soc/qcom/ubwc.h>
+ 
+ #include "iris_core.h"
+@@ -154,6 +155,30 @@
+ 	return iris_init_resets(core);
+ }
+ 
++static void iris_core_release(struct kref *ref)
++{
++	struct iris_core *core = container_of(ref, struct iris_core, ref);
++
++	mutex_destroy(&core->lock);
++	mutex_destroy(&core->lifecycle_lock);
++	kfree(core);
++}
++
++static void iris_core_put(void *data)
++{
++	struct iris_core *core = data;
++
++	kref_put(&core->ref, iris_core_release);
++}
++
++static void iris_video_device_release(struct video_device *vdev)
++{
++	struct iris_core *core = video_get_drvdata(vdev);
++
++	video_device_release(vdev);
++	iris_core_put(core);
++}
++
+ static int iris_register_video_device(struct iris_core *core, enum domain_type type)
+ {
+ 	struct video_device *vdev;
+@@ -163,7 +188,9 @@
+ 	if (!vdev)
+ 		return -ENOMEM;
+ 
+-	vdev->release = video_device_release;
++	video_set_drvdata(vdev, core);
++	kref_get(&core->ref);
++	vdev->release = iris_video_device_release;
+ 	vdev->fops = core->iris_v4l2_file_ops;
+ 	vdev->vfl_dir = VFL_DIR_M2M;
+ 	vdev->v4l2_dev = &core->v4l2_dev;
+@@ -172,11 +199,9 @@
+ 	if (type == DECODER) {
+ 		strscpy(vdev->name, "qcom-iris-decoder", sizeof(vdev->name));
+ 		vdev->ioctl_ops = core->iris_v4l2_ioctl_ops_dec;
+-		core->vdev_dec = vdev;
+ 	} else if (type == ENCODER) {
+ 		strscpy(vdev->name, "qcom-iris-encoder", sizeof(vdev->name));
+ 		vdev->ioctl_ops = core->iris_v4l2_ioctl_ops_enc;
+-		core->vdev_enc = vdev;
+ 	} else {
+ 		ret = -EINVAL;
+ 		goto err_vdev_release;
+@@ -186,12 +211,15 @@
+ 	if (ret)
+ 		goto err_vdev_release;
+ 
+-	video_set_drvdata(vdev, core);
++	if (type == DECODER)
++		core->vdev_dec = vdev;
++	else
++		core->vdev_enc = vdev;
+ 
+ 	return 0;
+ 
+ err_vdev_release:
+-	video_device_release(vdev);
++	vdev->release(vdev);
+ 
+ 	return ret;
+ }
+@@ -212,6 +240,9 @@
+ 	if (ret)
+ 		goto err_decoder;
+ 
++	/* Pair with iris_open() before it uses either video node. */
++	smp_store_release(&core->video_ready, true);
++
+ 	return 0;
+ 
+ err_decoder:
+@@ -228,6 +259,7 @@
+ {
+ 	int ret;
+ 
++	WRITE_ONCE(core->video_ready, false);
+ 	iris_core_stop_recovery(core);
+ 	ret = iris_core_deinit(core);
+ 	if (ret)
+@@ -252,8 +284,6 @@
+ 		iris_pixel_master_del(core);
+ 	else
+ 		iris_unregister_video_devices(core);
+-	mutex_destroy(&core->lock);
+-	mutex_destroy(&core->lifecycle_lock);
+ }
+ 
+ static void iris_sys_error_handler(struct work_struct *work)
+@@ -278,7 +308,7 @@
+ 	u64 dma_mask;
+ 	int ret;
+ 
+-	core = devm_kzalloc(&pdev->dev, sizeof(*core), GFP_KERNEL);
++	core = kzalloc_obj(*core);
+ 	if (!core)
+ 		return -ENOMEM;
+ 	core->dev = dev;
+@@ -287,6 +317,11 @@
+ 	mutex_init(&core->lock);
+ 	mutex_init(&core->lifecycle_lock);
+ 	init_completion(&core->core_init_done);
++	kref_init(&core->ref);
++	/* The driver reference is released after its managed resources. */
++	ret = devm_add_action_or_reset(dev, iris_core_put, core);
++	if (ret)
++		return ret;
+ 
+ 	core->response_packet = devm_kzalloc(core->dev, IFACEQ_CORE_PKT_SIZE, GFP_KERNEL);
+ 	if (!core->response_packet)
+--- a/drivers/media/platform/qcom/iris/iris_vidc.c
++++ b/drivers/media/platform/qcom/iris/iris_vidc.c
+@@ -145,6 +145,10 @@
+ 	u32 session_type;
+ 	int ret;
+ 
++	/* Pair with registration before using either video node. */
++	if (!core || !smp_load_acquire(&core->video_ready))
++		return -ENODEV;
++
+ 	vdev = video_devdata(filp);
+ 	if (strcmp(vdev->name, "qcom-iris-decoder") == 0)
+ 		session_type = DECODER;
