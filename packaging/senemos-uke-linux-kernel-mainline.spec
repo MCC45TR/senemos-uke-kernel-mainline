@@ -73,7 +73,8 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 0.1.0-15
+Requires: uke-kernel-update >= 1.1.2
+Requires: uke-kernel-update(guarded-automatic) >= 1
 Provides: installonlypkg(kernel)
 
 %description boot
