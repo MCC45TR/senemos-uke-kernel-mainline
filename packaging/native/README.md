@@ -6,6 +6,17 @@ the upstream `linux-7.3` tree name and signed Kernel.org URL. Package installati
 does not activate a boot image. Existing tablet results below do not qualify
 this kernel; native COPR, matched artifacts and device acceptance are separate.
 
+The active Linux 7.3 adaptation contains 99 patches. Version-specific rebases
+retain upstream clock tests, remoteproc mapping cleanup, mailbox error handling,
+DSI atomic callbacks and DisplayPort mode programming. Uke's synchronous DWC3
+supplier admission remains separate from the new upstream notifier path; both
+use the existing delayed worker lock. The 7.3 UBWC helpers express the earlier
+4.0, bank-bit-16, level-2/3 swizzle and macrotile defaults without a duplicate
+board structure. The upstream SMEM DRAM query may refine the bank bit at runtime.
+PRM correlation now uses the actual selected parameter for the new CPU LPR
+request as well as the existing hardware-core request. Actual-source host
+fixtures cover dispatch, supplier refusal, request generations and UBWC defaults.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation

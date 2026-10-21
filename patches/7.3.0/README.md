@@ -102,9 +102,12 @@ ordering. Native source preparation selects the admitted private-DT conversion.
 The first 94 patch hashes and existing charging, thermal and recovery policies
 are preserved. Host source checks do not qualify cache coherency, supplier
 lifetime, recovery after partial programming, suspend or a performance gain.
-# Linux 7.2.12 refresh, 21 October 2026
+# Linux 7.3 unstable port, 21 October 2026
 
-This queue carries the 98 patches from source `cf7d17f` without changing their
-contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
+This 99-patch queue carries the Uke profile from `cf7d17f` through the reviewed
+7.2.12 source `a510196` onto signed Kernel.org Linux 7.3. Version-specific
+framework changes are described in the native source-profile report. Patch
+0034a preserves upstream deferred power-supply discovery outside the Uke path.
+No board values or physical support claims are added by this port.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
