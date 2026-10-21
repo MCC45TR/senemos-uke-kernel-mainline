@@ -57,6 +57,17 @@ The check imports the real kernel voltage lookup, compares every legal OEM
 policy and compiles the complete catalog as an AArch64 object. It models rail
 metadata; it makes no regulator, register or firmware request.
 
+[Board and EEPROM resources](board/README.md) retain disabled consumers for
+both sensor candidates and read-only EEPROM model definitions. Their DT/schema
+test uses the same proposed clock header:
+
+```bash
+make test-camera-board camera_source=/path/to/linux-7.2.11
+```
+
+Effective sensor addresses, lane maps and the rear EEPROM address remain
+unresolved. These fragments do not provide a complete capture graph.
+
 With a prepared Linux 7.2.11 source and an AArch64 LLVM build environment, run
 the object check in a new disposable output directory:
 

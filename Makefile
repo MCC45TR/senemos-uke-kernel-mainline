@@ -5,7 +5,7 @@ SHELL := /bin/bash
 version := 7.2.11
 outdir ?= $(CURDIR)/build/srpm
 validate: validate-video validate-ufs validate-cpucp validate-accessories validate-thermal validate-camera
-validate-camera: validate-camcc-data
+validate-camera: validate-camcc-data validate-camera-board
 	jq -e '.active_config == false and .dt_enabled == false and .camera_capture_tested == false and .kernel_release_changed == false' manifests/camera-source-candidate-20261021.json >/dev/null
 	jq -r '.patches[], .source_assets[] | .sha256 + "  " + .path' manifests/camera-source-candidate-20261021.json | sha256sum -c -
 	! grep -Eq '^CONFIG_VIDEO_OV(08D10|13B10)=' configs/{arm64-qcom,uke,fedora}.config
@@ -26,6 +26,14 @@ test-camcc-data: validate-camcc-data
 	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-contract" KCFLAGS=-Werror -j4 camcc-data-check.o
 	readelf -h "$(camcc_output)/camcc-contract/camcc-data-check.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
 .PHONY: validate-camcc-data test-camcc-data
+validate-camera-board:
+	jq -e '.active_series == false and .dt_enabled == false and .kernel_release_changed == false and .physical_capture == null and .eeprom_accessed == false' manifests/camera-board-candidate-20261021.json >/dev/null
+	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/camera-board-candidate-20261021.json | sha256sum -c -
+	! grep -Fq '0001-dt-bindings-eeprom-camera-64k-models.patch' patches/$(version)/series
+test-camera-board: validate-camera-board validate-camcc-data
+	test -n "$(camera_source)"
+	bash tests/camera-board-contract.sh "$(camera_source)" "$(CURDIR)/src/camera/include"
+.PHONY: validate-camera-board test-camera-board
 test-camera: validate-camera
 	test -n "$(camera_source)" && test -n "$(camera_output)"
 	test "$$(realpath -m "$(camera_output)")" = "$(camera_output)"
