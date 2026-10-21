@@ -1,0 +1,121 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] remoteproc: qcom: retain mappings on failed PAS shutdown
+
+Return the secure primary or DTB shutdown failure before removing either
+mapping or unpreparing the Q6. Remember successful primary shutdown so a
+retry after DTB failure does not shut down an already stopped primary image.
+
+Track the single resource release separately: an SMEM-lock cleanup failure
+can be retried without repeating IOMMU unmap or IRQ/clock release. Reset both
+states on every start and attach. Retain the bounded decrypt-shutdown retry.
+
+This corrects the PAS stop callback only. The remoteproc core stops subdevices
+before calling it and rproc_del does not propagate shutdown errors; this is
+not a claim of complete DMA/remove safety or permission to bind Cliffs CDSP.
+
+Compared with signed upstream Linux 7.2.12 remoteproc core and qcom_q6v5.c;
+Xiaomi Uke kernel 5712080a4b0c0b1a879e6d145c601c649ddaddfd and Palawan
+0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95, qcom_q6v5_pas.c. No donor
+panic policy or board data is copied. Host fault tests are not device tests.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 80a9151..a873caf 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -102,6 +102,8 @@ struct qcom_pas {
+ 	const char *info_name;
+ 
+ 	const struct firmware *firmware;
++	bool pas_shutdown_done;
++	bool stop_resources_released;
+ 
+ 	phys_addr_t mem_phys;
+ 	phys_addr_t dtb_mem_phys;
+@@ -352,6 +354,9 @@ static int qcom_pas_start(struct rproc *rproc)
+ 	struct qcom_pas *pas = rproc->priv;
+ 	int ret;
+ 
++	pas->pas_shutdown_done = false;
++	pas->stop_resources_released = false;
++
+ 	ret = qcom_q6v5_prepare(&pas->q6v5);
+ 	if (ret)
+ 		return ret;
+@@ -477,35 +482,44 @@ static int qcom_pas_stop(struct rproc *rproc)
+ 	int handover;
+ 	int ret;
+ 
+-	ret = qcom_q6v5_request_stop(&pas->q6v5, pas->sysmon);
+-	if (ret == -ETIMEDOUT)
+-		dev_err(pas->dev, "timed out on wait\n");
++	if (!pas->pas_shutdown_done) {
++		ret = qcom_q6v5_request_stop(&pas->q6v5, pas->sysmon);
++		if (ret == -ETIMEDOUT)
++			dev_err(pas->dev, "timed out on wait\n");
+ 
+-	ret = qcom_scm_pas_shutdown(pas->pas_id);
+-	if (ret && pas->decrypt_shutdown)
+-		ret = qcom_pas_shutdown_poll_decrypt(pas);
++		ret = qcom_scm_pas_shutdown(pas->pas_id);
++		if (ret && pas->decrypt_shutdown)
++			ret = qcom_pas_shutdown_poll_decrypt(pas);
++		if (ret) {
++			dev_err(pas->dev, "failed to shutdown: %d\n", ret);
++			return ret;
++		}
++		pas->pas_shutdown_done = true;
++	}
+ 
+-	if (ret)
+-		dev_err(pas->dev, "failed to shutdown: %d\n", ret);
++	/* A failed shutdown must not release either image's mapping. */
++	if (!pas->stop_resources_released) {
++		if (pas->dtb_pas_id) {
++			ret = qcom_scm_pas_shutdown(pas->dtb_pas_id);
++			if (ret) {
++				dev_err(pas->dev, "failed to shutdown dtb: %d\n", ret);
++				return ret;
++			}
+ 
+-	if (pas->dtb_pas_id) {
+-		ret = qcom_scm_pas_shutdown(pas->dtb_pas_id);
+-		if (ret)
+-			dev_err(pas->dev, "failed to shutdown dtb: %d\n", ret);
++			qcom_pas_unmap_carveout(rproc, pas->dtb_mem_phys, pas->dtb_mem_size);
++		}
++		qcom_pas_unmap_carveout(rproc, pas->mem_phys, pas->mem_size);
+ 
+-		qcom_pas_unmap_carveout(rproc, pas->dtb_mem_phys, pas->dtb_mem_size);
++		handover = qcom_q6v5_unprepare(&pas->q6v5);
++		if (handover)
++			qcom_pas_handover(&pas->q6v5);
++		pas->stop_resources_released = true;
+ 	}
+ 
+-	qcom_pas_unmap_carveout(rproc, pas->mem_phys, pas->mem_size);
+-
+-	handover = qcom_q6v5_unprepare(&pas->q6v5);
+-	if (handover)
+-		qcom_pas_handover(&pas->q6v5);
+-
+ 	if (pas->smem_host_id)
+-		ret = qcom_smem_bust_hwspin_lock_by_host(pas->smem_host_id);
++		return qcom_smem_bust_hwspin_lock_by_host(pas->smem_host_id);
+ 
+-	return ret;
++	return 0;
+ }
+ 
+ static void *qcom_pas_da_to_va(struct rproc *rproc, u64 da, size_t len, bool *is_iomem)
+@@ -593,6 +607,9 @@ static int qcom_pas_attach(struct rproc *rproc)
+ 	bool stop_state;
+ 	int ret;
+ 
++	pas->pas_shutdown_done = false;
++	pas->stop_resources_released = false;
++
+ 	pas->q6v5.handover_issued = true;
+ 	enable_irq(pas->q6v5.handover_irq);
+ 

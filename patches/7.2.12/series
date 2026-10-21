@@ -96,3 +96,12 @@
 0096-sm7675-llcc-policy-and-resource-guards.patch
 0097-adreno-order-native-llcc-supplier.patch
 0098-uke-confirm-usb-sdp-adapter.patch
+0099-cliffs-cdsp-interconnect.patch
+0100-llcc-skip-absent-sm7675-and-window.patch
+0101-cliffs-cdsp-crypto-and-nsp-suppliers.patch
+0102-cliffs-proxy-rail-ownership.patch
+0103-pas-release-dtb-firmware-after-load.patch
+0104-pas-retain-resources-until-checked-shutdown.patch
+0105-mdt-check-memory-range-before-secure-setup.patch
+0106-fastrpc-retain-coherent-dma-handle.patch
+0107-rproc-retry-transport-stop-without-double-remove.patch

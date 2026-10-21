@@ -400,6 +400,42 @@
     {
       "path": "patches/7.2.12/0098-uke-confirm-usb-sdp-adapter.patch",
       "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.2.12/0099-cliffs-cdsp-interconnect.patch",
+      "sha256": "af85b4744c25a92a423f5ad3eaf490ca6611ac2aa32032cec423afbacefdbf2d"
+    },
+    {
+      "path": "patches/7.2.12/0100-llcc-skip-absent-sm7675-and-window.patch",
+      "sha256": "2eec33b09f5f3469717da4e4f7bf1c7e7ddd1a5e549206c12721794aa364ddb6"
+    },
+    {
+      "path": "patches/7.2.12/0101-cliffs-cdsp-crypto-and-nsp-suppliers.patch",
+      "sha256": "00935f2f3ccd65c4f266eac2946a49e17f2ebc1140731937e1353110b41138bf"
+    },
+    {
+      "path": "patches/7.2.12/0102-cliffs-proxy-rail-ownership.patch",
+      "sha256": "882be161746ff90e9b910b46da1e7513a13d0a83ea03d66f0b6f1f1e6e66eea9"
+    },
+    {
+      "path": "patches/7.2.12/0103-pas-release-dtb-firmware-after-load.patch",
+      "sha256": "56c13088e9fd0540286b1d1bd54c9942c1e2a6012c2e937f27bee543c94df532"
+    },
+    {
+      "path": "patches/7.2.12/0104-pas-retain-resources-until-checked-shutdown.patch",
+      "sha256": "458501e9f4326f244d7fd0343075715fbe2919e55e1056cbe2a530887d390e0f"
+    },
+    {
+      "path": "patches/7.2.12/0105-mdt-check-memory-range-before-secure-setup.patch",
+      "sha256": "19a0650c559bfa7a119fb38037770003889d255a811a91fde638f96fbb096367"
+    },
+    {
+      "path": "patches/7.2.12/0106-fastrpc-retain-coherent-dma-handle.patch",
+      "sha256": "dbd3afa8d36304af64a9f5ad48287a270ea9d8af3a8fd81d8d2776ab1695f398"
+    },
+    {
+      "path": "patches/7.2.12/0107-rproc-retry-transport-stop-without-double-remove.patch",
+      "sha256": "6fb52688484d49334fcd052d513e505530d0abb9ee22985cb2207b2dc2fb8fbd"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -102,9 +102,54 @@ ordering. Native source preparation selects the admitted private-DT conversion.
 The first 94 patch hashes and existing charging, thermal and recovery policies
 are preserved. Host source checks do not qualify cache coherency, supplier
 lifetime, recovery after partial programming, suspend or a performance gain.
+
+**21 October 2026, 7.2.12-2 source candidate:** patch 0099 adds the exact
+Cliffs NSP-to-GEM-to-DDR route, GEM QoS and HLOS CO0/SH1 membership. Patch 0100
+skips the absent optional broadcast-AND aperture for the strictly validated
+five-window LLCC profile. Old source fails each new regression; the corrected
+source passes route and probe/fault checks. Native preparation preserves both
+display and compute SH1 members while retaining identical legacy output.
+AArch64 driver-object compilation against the exact 7.2.12 preparation is
+separate from package, boot and NPU inference acceptance. CDSP PAS binding,
+global-sync ownership and native FastRPC remain unfinished.
+
+The same unbuilt candidate includes 0101–0102: exact crypto master 38/CE0,
+NSP ARC admission and descriptor-selected two/three proxy rails with retained
+load/voltage/reference ownership. Actual ordinary/sanitized function tests and
+all three AArch64 driver objects pass against the current native configuration.
+No CDSP match, firmware upload, remote start or new physical acceptance follows.
 # Linux 7.2.12 refresh, 21 October 2026
 
 This queue carries the 98 patches from source `cf7d17f` without changing their
 contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
+
+**21 October 2026, release 2 source:** patch 0103 keeps the requested DTB
+firmware local to MDT loading. SCM metadata has its own copy; both normal
+shutdown cycles and crash-recovery reloads release the request reference.
+Host fault checks retain the core-owned main firmware and cover request/load
+failures and repeated cleanup. DSP recovery remains a physical acceptance gate.
+
+**21 October 2026, release 2 source:** patch 0104 preserves primary/DTB
+shutdown failures before unmapping or releasing Q6 resources. Retry retains
+confirmed primary shutdown and avoids duplicate cleanup after an SMEM failure.
+Start/attach reset the state. Host checks cover failure ordering and retries;
+remoteproc-core GLINK/removal ordering remains an unresolved acceptance gate.
+
+**21 October 2026, release 2 source:** patch 0105 admits MDT memory geometry
+before secure metadata or memory setup. Absolute and relocated spans retain
+their distinct semantics; size queries avoid ELF32 addition wrap. Actual-function
+fixtures require malformed ranges to issue no SCM calls and retain every error.
+No firmware authentication, segment transfer or device result follows.
+
+**21 October 2026, release 2 source:** patch 0106 retains coherent DMA handles
+and allocating-device references independently of the creating FastRPC file.
+Exported dma-buf attach/mmap/free no longer dereference that borrowed user.
+Host callbacks reproduce the original use-after-free and cover error/refcount
+paths. Remote DMA quiescence and context-bank detach remain separate gates.
+
+**21 October 2026, release 2 source:** patch 0107 makes GLINK/SMD edge stop
+repeatable after a PAS failure without unregistering a cleared or failed edge.
+Actual callbacks retain normal/crash behavior and one removal per registration.
+DMA teardown order and complete failed-shutdown removal remain unqualified.

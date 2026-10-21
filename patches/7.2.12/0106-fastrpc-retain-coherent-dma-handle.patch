@@ -1,0 +1,136 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] misc: fastrpc: retain coherent handle independently of user
+
+A dma-buf fd can outlive its creating FastRPC file. Coherent free, scatterlist
+creation and mmap must not dereference the released fastrpc_user to strip SID
+bits from the DSP address. Keep the original DMA API handle in the buffer and
+use it directly. Preserve the DSP-encoded address for remote messages.
+
+Remove the borrowed user pointer and now-unused address reconstruction helper.
+Hold a device reference through the final DMA operation and balance it on
+allocation failure and release. Complete the buffer mutex cleanup as well.
+
+Compared with signed Linux 7.2.12, Palawan
+0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95 and upstream
+4056b3c9d3c92ea45955641dbafeb9b960e146ef. Uke OEM
+5712080a4b0c0b1a879e6d145c601c649ddaddfd and OnePlus
+fc892483f1d61f245924681eb5abd563564d9cba use fixed legacy address masking;
+that board-independent lifetime does not justify copying their 32-bit mask.
+Retaining the DMA API's actual handle avoids either assumption.
+
+This fixes buffer ownership after creator close, not remote DMA quiescence,
+IOMMU-domain detach, SCM memory revocation or failed remoteproc shutdown.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/misc/fastrpc.c b/drivers/misc/fastrpc.c
+index d7a9e12..5069ba8 100644
+--- a/drivers/misc/fastrpc.c
++++ b/drivers/misc/fastrpc.c
+@@ -190,11 +190,11 @@ struct fastrpc_buf_overlap {
+ };
+ 
+ struct fastrpc_buf {
+-	struct fastrpc_user *fl;
+ 	struct dma_buf *dmabuf;
+ 	struct device *dev;
+ 	void *virt;
+ 	dma_addr_t dma_addr;
++	dma_addr_t dma_handle;
+ 	u64 size;
+ 	/* Lock for dma buf attachments */
+ 	struct mutex lock;
+@@ -314,14 +314,6 @@ struct fastrpc_user {
+ 	struct kref refcount;
+ };
+ 
+-/* Extract SMMU PA from consolidated IOVA */
+-static inline dma_addr_t fastrpc_ipa_to_dma_addr(struct fastrpc_channel_ctx *cctx, dma_addr_t iova)
+-{
+-	if (!cctx->soc_data->sid_pos)
+-		return 0;
+-	return iova & GENMASK_ULL(cctx->soc_data->sid_pos - 1, 0);
+-}
+-
+ /*
+  * Prepare the consolidated iova to send to DSP by prepending the SID
+  * to smmu PA at the appropriate position
+@@ -423,11 +415,13 @@ static int fastrpc_map_lookup(struct fastrpc_user *fl, int fd,
+ static void fastrpc_buf_free(struct fastrpc_buf *buf)
+ {
+ 	dma_free_coherent(buf->dev, buf->size, buf->virt,
+-			  fastrpc_ipa_to_dma_addr(buf->fl->cctx, buf->dma_addr));
++			  buf->dma_handle);
++	mutex_destroy(&buf->lock);
++	put_device(buf->dev);
+ 	kfree(buf);
+ }
+ 
+-static int __fastrpc_buf_alloc(struct fastrpc_user *fl, struct device *dev,
++static int __fastrpc_buf_alloc(struct device *dev,
+ 			     u64 size, struct fastrpc_buf **obuf)
+ {
+ 	struct fastrpc_buf *buf;
+@@ -440,21 +434,23 @@ static int __fastrpc_buf_alloc(struct fastrpc_user *fl, struct device *dev,
+ 	INIT_LIST_HEAD(&buf->node);
+ 	mutex_init(&buf->lock);
+ 
+-	buf->fl = fl;
+ 	buf->virt = NULL;
+ 	buf->dma_addr = 0;
+ 	buf->size = size;
+-	buf->dev = dev;
++	buf->dev = get_device(dev);
+ 	buf->raddr = 0;
+ 
+-	buf->virt = dma_alloc_coherent(dev, buf->size, &buf->dma_addr,
++	buf->virt = dma_alloc_coherent(dev, buf->size, &buf->dma_handle,
+ 				       GFP_KERNEL);
+ 	if (!buf->virt) {
+ 		mutex_destroy(&buf->lock);
++		put_device(buf->dev);
+ 		kfree(buf);
+ 		return -ENOMEM;
+ 	}
+ 
++	/* DMA API users must not depend on the creating FastRPC file's lifetime. */
++	buf->dma_addr = buf->dma_handle;
+ 	*obuf = buf;
+ 
+ 	return 0;
+@@ -466,7 +462,7 @@ static int fastrpc_buf_alloc(struct fastrpc_user *fl, struct device *dev,
+ 	int ret;
+ 	struct fastrpc_buf *buf;
+ 
+-	ret = __fastrpc_buf_alloc(fl, dev, size, obuf);
++	ret = __fastrpc_buf_alloc(dev, size, obuf);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -483,7 +479,7 @@ static int fastrpc_remote_heap_alloc(struct fastrpc_user *fl, struct device *dev
+ {
+ 	struct device *rdev = &fl->cctx->rpdev->dev;
+ 
+-	return  __fastrpc_buf_alloc(fl, rdev, size, obuf);
++	return __fastrpc_buf_alloc(rdev, size, obuf);
+ }
+ 
+ static void fastrpc_channel_ctx_free(struct kref *ref)
+@@ -764,7 +760,7 @@ static int fastrpc_dma_buf_attach(struct dma_buf *dmabuf,
+ 		return -ENOMEM;
+ 
+ 	ret = dma_get_sgtable(buffer->dev, &a->sgt, buffer->virt,
+-			      fastrpc_ipa_to_dma_addr(buffer->fl->cctx, buffer->dma_addr),
++			      buffer->dma_handle,
+ 			      buffer->size);
+ 	if (ret < 0) {
+ 		dev_err(buffer->dev, "failed to get scatterlist from DMA API\n");
+@@ -814,7 +810,7 @@ static int fastrpc_mmap(struct dma_buf *dmabuf,
+ 	dma_resv_assert_held(dmabuf->resv);
+ 
+ 	return dma_mmap_coherent(buf->dev, vma, buf->virt,
+-				 fastrpc_ipa_to_dma_addr(buf->fl->cctx, buf->dma_addr), size);
++				 buf->dma_handle, size);
+ }
+ 
+ static const struct dma_buf_ops fastrpc_dma_buf_ops = {

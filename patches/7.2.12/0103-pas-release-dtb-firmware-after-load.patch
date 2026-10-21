@@ -1,0 +1,61 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] remoteproc: qcom: release the DTB firmware after MDT loading
+
+Only the MDT loader consumes the requested DTB firmware. PAS authentication
+uses the separate metadata copy retained by the SCM context. Keep the firmware
+handle local and release it after loading on both success and failure.
+
+Retaining it until device unprepare would still leak across crash recovery,
+which invokes load again without the device-unprepare callback. The main image
+remains a borrowed remoteproc-core reference. No authentication policy changes.
+
+Compared with signed upstream Linux 7.2.12, drivers/remoteproc/qcom_q6v5_pas.c,
+drivers/soc/qcom/mdt_loader.c and drivers/firmware/qcom/qcom_scm.c. Exact Uke
+firmware inputs remain local; no firmware is included or executed here.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 0a703cc..80a9151 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -102,7 +102,6 @@ struct qcom_pas {
+ 	const char *info_name;
+ 
+ 	const struct firmware *firmware;
+-	const struct firmware *dtb_firmware;
+ 
+ 	phys_addr_t mem_phys;
+ 	phys_addr_t dtb_mem_phys;
+@@ -299,6 +298,7 @@ static int qcom_pas_unprepare(struct rproc *rproc)
+ static int qcom_pas_load(struct rproc *rproc, const struct firmware *fw)
+ {
+ 	struct qcom_pas *pas = rproc->priv;
++	const struct firmware *dtb_fw;
+ 	int ret;
+ 
+ 	/* Store firmware handle to be used in qcom_pas_start() */
+@@ -310,19 +310,20 @@ static int qcom_pas_load(struct rproc *rproc, const struct firmware *fw)
+ 		qcom_scm_pas_shutdown(pas->lite_dtb_pas_id);
+ 
+ 	if (pas->dtb_pas_id) {
+-		ret = request_firmware(&pas->dtb_firmware, pas->dtb_firmware_name, pas->dev);
++		ret = request_firmware(&dtb_fw, pas->dtb_firmware_name, pas->dev);
+ 		if (ret) {
+ 			dev_err(pas->dev, "request_firmware failed for %s: %d\n",
+ 				pas->dtb_firmware_name, ret);
+ 			return ret;
+ 		}
+ 
+-		ret = qcom_mdt_pas_load(pas->dtb_pas_ctx, pas->dtb_firmware,
++		ret = qcom_mdt_pas_load(pas->dtb_pas_ctx, dtb_fw,
+ 					pas->dtb_firmware_name, pas->dtb_mem_region,
+ 					&pas->dtb_mem_reloc);
++		/* The SCM context owns a copy of the metadata after loading. */
++		release_firmware(dtb_fw);
+ 		if (ret) {
+ 			qcom_scm_pas_metadata_release(pas->dtb_pas_ctx);
+-			release_firmware(pas->dtb_firmware);
+ 			return ret;
+ 		}
+ 	}

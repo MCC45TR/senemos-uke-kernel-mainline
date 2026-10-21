@@ -20,6 +20,10 @@
     {
       "path": "patches/7.2.12/0097-adreno-order-native-llcc-supplier.patch",
       "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
+    },
+    {
+      "path": "patches/7.2.12/0100-llcc-skip-absent-sm7675-and-window.patch",
+      "sha256": "2eec33b09f5f3469717da4e4f7bf1c7e7ddd1a5e549206c12721794aa364ddb6"
     }
   ],
   "files": [
@@ -29,7 +33,7 @@
     },
     {
       "path": "tests/llcc-sm7675-contract.sh",
-      "sha256": "0a8f0edea24702582279d03c21e47912fc1bde43ad5e8f21611355d9aadaf2b7"
+      "sha256": "97b1763ec3954f95b8b696ba0cb1ef4e6e89e1106b5245b3452f894be84c45f9"
     },
     {
       "path": "tests/llcc-sm7675-dt-contract.sh",
@@ -69,7 +73,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "52c77a8ba10c6db7c95b5d103016a93cf9064bf4c85986a853ef4d5c0a1b483a"
+      "sha256": "f9bcffed180f2932c8d8d3e6663ab7d7799ce2e7369d260519a1256811195528"
     },
     {
       "path": "packaging/native/llcc-profile",
@@ -196,7 +200,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-1",
+  "kernel_release": "7.2.12-2",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

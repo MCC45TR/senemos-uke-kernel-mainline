@@ -1,0 +1,104 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: supply the Cliffs CDSP crypto and NSP prerequisites
+
+Add exact OEM MASTER_CRYPTO 38, its AGGRE2 QoS port, HLOS CE0 membership
+and DDR route. Admit only the named nsp.lvl ARC resource; retain command-DB
+validation and the remaining regulator boundary.
+
+Sources: Xiaomi kernel5712080a4b0c0b1a879e6d145c601c649ddaddfd cliffs.c,
+qcom,cliffs.h; Uke DT94c84aeb9e517dbde546fc732033c184094c8e57
+cliffs-regulators.dtsi. OnePlusfc892483 has identical interconnect source.
+This supplies real dependencies; no CDSP boot or inference is established.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/interconnect/qcom/qnoc-cliffs-usb.c b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+index 29a5528..85b1140 100644
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -30,6 +30,7 @@
+ #define MASTER_CNOC_CFG	32
+ #define MASTER_QUP_CORE_0	36
+ #define MASTER_QUP_CORE_1	37
++#define MASTER_CRYPTO	38
+ #define MASTER_LPASS_PROC	40
+ #define MASTER_CDSP_PROC	41
+ #define MASTER_UFS_MEM	48
+@@ -60,6 +61,7 @@ static const struct regmap_config cliffs_icc_regmap_config = {
+ 
+ static struct qcom_icc_node qhm_qup0;
+ static struct qcom_icc_node qhm_qup1;
++static struct qcom_icc_node qxm_crypto;
+ static struct qcom_icc_node xm_usb3_0;
+ static struct qcom_icc_node xm_ufs_mem;
+ static struct qcom_icc_node qup0_core_master;
+@@ -138,6 +140,23 @@ static const struct qcom_icc_qosbox xm_usb3_0_qos = {
+ 	.prio_fwd_disable = 1,
+ };
+ 
++static const struct qcom_icc_qosbox qxm_crypto_qos = {
++	.num_ports = 1,
++	.port_offsets = { 0x15000 },
++	.prio = 2,
++	.urg_fwd = 0,
++	.prio_fwd_disable = 1,
++};
++
++static struct qcom_icc_node qxm_crypto = {
++	.name = "qxm_crypto",
++	.channels = 1,
++	.buswidth = 8,
++	.qosbox = &qxm_crypto_qos,
++	.num_links = 1,
++	.link_nodes = { &qns_a2noc_snoc },
++};
++
+ static struct qcom_icc_node xm_usb3_0 = {
+ 	.name = "xm_usb3_0",
+ 	.channels = 1,
+@@ -459,6 +478,12 @@ static struct qcom_icc_bcm bcm_acv = {
+ 	.nodes = { &ebi },
+ };
+ 
++static struct qcom_icc_bcm bcm_ce0 = {
++	.name = "CE0",
++	.num_nodes = 1,
++	.nodes = { &qxm_crypto },
++};
++
+ static struct qcom_icc_bcm bcm_co0 = {
+ 	.name = "CO0",
+ 	.enable_mask = 0x1,
+@@ -561,13 +586,20 @@ static const struct qcom_icc_desc cliffs_aggre1_noc = {
+ 
+ static struct qcom_icc_node * const aggre2_noc_nodes[] = {
+ 	[MASTER_QUP_1] = &qhm_qup1,
++	[MASTER_CRYPTO] = &qxm_crypto,
+ 	[SLAVE_A2NOC_SNOC] = &qns_a2noc_snoc,
+ };
+ 
++static struct qcom_icc_bcm * const aggre2_noc_bcms[] = {
++	&bcm_ce0,
++};
++
+ static const struct qcom_icc_desc cliffs_aggre2_noc = {
+ 	.config = &cliffs_icc_regmap_config,
+ 	.nodes = aggre2_noc_nodes,
+ 	.num_nodes = ARRAY_SIZE(aggre2_noc_nodes),
++	.bcms = aggre2_noc_bcms,
++	.num_bcms = ARRAY_SIZE(aggre2_noc_bcms),
+ 	.qos_required = true,
+ 	.qos_requires_clocks = true,
+ };
+diff --git a/drivers/regulator/qcom-rpmh-regulator-uke.c b/drivers/regulator/qcom-rpmh-regulator-uke.c
+index 15411b4..ba6546a 100644
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -2000,6 +2000,7 @@ static int rpmh_regulator_probe(struct platform_device *pdev)
+ 	    strcmp(aggr_vreg->resource_name, "ldob2") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob4") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob7") &&
++	    strcmp(aggr_vreg->resource_name, "nsp.lvl") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob17") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob3") &&
+ 	    strcmp(aggr_vreg->resource_name, "smpb2") &&

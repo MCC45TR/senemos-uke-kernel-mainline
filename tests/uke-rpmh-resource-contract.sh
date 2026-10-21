@@ -24,14 +24,15 @@ CPP
 int main(int argc,char **argv) {
     assert(argc==2);
     const bool native=!strcmp(argv[1],"native");
-    for(auto name : {"cx.lvl","mx.lvl","lcx.lvl","lmx.lvl","mxc.lvl",
+    for(auto name : {"cx.lvl","mx.lvl","lcx.lvl","lmx.lvl","mxc.lvl","nsp.lvl",
                      "ldob2","ldob3","ldob4","ldob7","ldob17","smpb2","smpb1",
                      "smpb3","ldod1","ldob5","ldob12","ldod3"})
         assert(admission(name)==0);
     for(auto name : {"mmcx.lvl","smpe3","ldob8"})
         assert(admission(name)==(native?0:-ENODEV));
     for(auto name : {"","ldob","ldob1","ldob30","ldob3 ","LDOB3","ldoc2",
-                     "lcx","ldob19","ldoc3","anything"}) assert(admission(name)==-ENODEV);
+                     "lcx","nsp","nsp.lvl ","NSP.LVL","nsp.lvlx",
+                     "ldob19","ldoc3","anything"}) assert(admission(name)==-ENODEV);
 }
 CPP
 } > "$work/check.cpp"

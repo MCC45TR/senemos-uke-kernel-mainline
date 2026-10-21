@@ -1,0 +1,20 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] interconnect: retain display and NSP in the Cliffs HLOS SH1 BCM
+
+Preserve both OEM members when the compute graph precedes native display
+preparation. All existing bandwidth consumers retain their original membership.
+
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -515,9 +515,9 @@
+ static struct qcom_icc_bcm bcm_sh1 = {
+ 	.name = "SH1",
+ 	.enable_mask = 0x1,
+-	.num_nodes = 5,
++	.num_nodes = 6,
+ 	.nodes = { &chm_apps, &qnm_gpu, &qnm_snoc_sf, &qns_gem_noc_cnoc,
+-		   &qnm_nsp_gemnoc },
++		   &qnm_nsp_gemnoc, &qnm_mnoc_hf },
+ };
+ 
+ static struct qcom_icc_bcm bcm_sn0 = {

@@ -1,0 +1,187 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] remoteproc: qcom: track ownership of two or three proxy rails
+
+Retain the existing two-supply Cliffs descriptors and allow the exact
+three-supply CDSP contract. Track enabled references and completed load/
+voltage votes so failed releases remain retryable. A repeated enable must
+not acquire a second reference, and failed disable must retain live votes.
+
+The OEM CDSP graph uses CX/MXC/NSP, TURBO and 100000-uA proxy loads.
+These remain descriptor data, not a userspace tuning interface. No CDSP
+match or automatic startup is introduced by this preparation change.
+
+Sources: Xiaomi kernel5712080a4b0c0b1a879e6d145c601c649ddaddfd,
+drivers/remoteproc/qcom_q6v5_pas.c; DT94c84aeb9e517dbde546fc732033c184094c8e57,
+qcom/cliffs.dtsi. Keep generic genpd consumers and their original API.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index f443656..0a703cc 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -51,6 +51,8 @@ struct qcom_pas_data {
+ 
+ 	char **proxy_pd_names;
+ 	unsigned int proxy_regulator_level;
++	unsigned int proxy_regulator_count;
++	unsigned int proxy_regulator_load;
+ 
+ 	const char *load_state;
+ 	const char *ssr_name;
+@@ -81,7 +83,12 @@ struct qcom_pas {
+ 
+ 	int proxy_pd_count;
+ 	unsigned int proxy_regulator_level;
+-	struct regulator_bulk_data proxy_regs[2];
++	unsigned int proxy_regulator_count;
++	unsigned int proxy_regulator_load;
++	struct regulator_bulk_data proxy_regs[3];
++	u8 proxy_voltage_mask;
++	u8 proxy_load_mask;
++	bool proxy_regs_enabled;
+ 
+ 	const char *dtb_firmware_name;
+ 	int pas_id;
+@@ -156,12 +163,24 @@ static void qcom_pas_minidump(struct rproc *rproc)
+ static void qcom_pas_proxy_unvote(struct qcom_pas *pas, int count)
+ {
+ 	while (count--) {
+-		int ret = regulator_set_voltage(pas->proxy_regs[count].consumer,
+-						0, INT_MAX);
+-
+-		if (ret)
+-			dev_err(pas->dev, "failed to release %s proxy vote: %d\n",
+-				pas->proxy_regs[count].supply, ret);
++		int ret;
++
++		if (pas->proxy_voltage_mask & BIT(count)) {
++			ret = regulator_set_voltage(pas->proxy_regs[count].consumer, 0, INT_MAX);
++			if (ret)
++				dev_err(pas->dev, "failed to release %s proxy vote: %d\n",
++					pas->proxy_regs[count].supply, ret);
++			else
++				pas->proxy_voltage_mask &= ~BIT(count);
++		}
++		if (pas->proxy_load_mask & BIT(count)) {
++			ret = regulator_set_load(pas->proxy_regs[count].consumer, 0);
++			if (ret)
++				dev_err(pas->dev, "failed to release %s proxy load: %d\n",
++					pas->proxy_regs[count].supply, ret);
++			else
++				pas->proxy_load_mask &= ~BIT(count);
++		}
+ 	}
+ }
+ 
+@@ -169,22 +188,32 @@ static int qcom_pas_proxy_enable(struct qcom_pas *pas)
+ {
+ 	struct device **pds = pas->proxy_pds;
+ 	int pd_count = pas->proxy_pd_count;
++	unsigned int rail;
+ 	int ret;
+ 	int i;
+ 
+ 	if (pas->proxy_regulator_level) {
+-		for (i = 0; i < ARRAY_SIZE(pas->proxy_regs); i++) {
+-			ret = regulator_set_voltage(pas->proxy_regs[i].consumer,
+-						pas->proxy_regulator_level, INT_MAX);
+-			if (ret) {
+-				qcom_pas_proxy_unvote(pas, i);
+-				return ret;
++		if (pas->proxy_regs_enabled)
++			return 0;
++		for (rail = 0; rail < pas->proxy_regulator_count; rail++) {
++			if (pas->proxy_regulator_load) {
++				ret = regulator_set_load(pas->proxy_regs[rail].consumer,
++							 pas->proxy_regulator_load);
++				if (ret)
++					goto unvote_proxy;
++				pas->proxy_load_mask |= BIT(rail);
+ 			}
++			ret = regulator_set_voltage(pas->proxy_regs[rail].consumer,
++						pas->proxy_regulator_level, INT_MAX);
++			if (ret)
++				goto unvote_proxy;
++			pas->proxy_voltage_mask |= BIT(rail);
+ 		}
+-		ret = regulator_bulk_enable(ARRAY_SIZE(pas->proxy_regs), pas->proxy_regs);
++		ret = regulator_bulk_enable(pas->proxy_regulator_count, pas->proxy_regs);
+ 		if (ret)
+-			qcom_pas_proxy_unvote(pas, ARRAY_SIZE(pas->proxy_regs));
+-		return ret;
++			goto unvote_proxy;
++		pas->proxy_regs_enabled = true;
++		return 0;
+ 	}
+ 
+ 	for (i = 0; i < pd_count; i++) {
+@@ -205,6 +234,9 @@ unroll_pd_votes:
+ 		pm_runtime_put(pds[i]);
+ 	}
+ 
++	return ret;
++unvote_proxy:
++	qcom_pas_proxy_unvote(pas, pas->proxy_regulator_count);
+ 	return ret;
+ };
+ 
+@@ -215,13 +247,16 @@ static void qcom_pas_proxy_disable(struct qcom_pas *pas)
+ 	int i;
+ 
+ 	if (pas->proxy_regulator_level) {
+-		int ret = regulator_bulk_disable(ARRAY_SIZE(pas->proxy_regs), pas->proxy_regs);
++		if (pas->proxy_regs_enabled) {
++			int ret = regulator_bulk_disable(pas->proxy_regulator_count, pas->proxy_regs);
+ 
+-		if (ret) {
+-			dev_err(pas->dev, "failed to disable proxy regulators: %d\n", ret);
+-			return;
++			if (ret) {
++				dev_err(pas->dev, "failed to disable proxy regulators: %d\n", ret);
++				return;
++			}
++			pas->proxy_regs_enabled = false;
+ 		}
+-		qcom_pas_proxy_unvote(pas, ARRAY_SIZE(pas->proxy_regs));
++		qcom_pas_proxy_unvote(pas, pas->proxy_regulator_count);
+ 		return;
+ 	}
+ 
+@@ -650,14 +685,20 @@ static int qcom_pas_init_clock(struct qcom_pas *pas)
+ 
+ static int qcom_pas_init_regulator(struct qcom_pas *pas)
+ {
++	static const char * const supplies[] = { "cx", "mx", "nsp" };
++	static const char * const properties[] = { "cx-supply", "mx-supply", "nsp-supply" };
++	unsigned int i;
++
+ 	if (pas->proxy_regulator_level) {
+-		/* Cliffs votes ARC levels through the OEM CX/MX regulator graph. */
+-		if (!of_property_present(pas->dev->of_node, "cx-supply") ||
+-		    !of_property_present(pas->dev->of_node, "mx-supply"))
+-			return dev_err_probe(pas->dev, -EINVAL, "Cliffs PAS requires CX and MX supplies\n");
+-		pas->proxy_regs[0].supply = "cx";
+-		pas->proxy_regs[1].supply = "mx";
+-		return devm_regulator_bulk_get(pas->dev, ARRAY_SIZE(pas->proxy_regs),
++		if (pas->proxy_regulator_count < 2 || pas->proxy_regulator_count > ARRAY_SIZE(supplies))
++			return dev_err_probe(pas->dev, -EINVAL, "Invalid Cliffs proxy supply count\n");
++		for (i = 0; i < pas->proxy_regulator_count; i++) {
++			if (!of_property_present(pas->dev->of_node, properties[i]))
++				return dev_err_probe(pas->dev, -EINVAL,
++						     "Cliffs PAS requires %s\n", properties[i]);
++			pas->proxy_regs[i].supply = supplies[i];
++		}
++		return devm_regulator_bulk_get(pas->dev, pas->proxy_regulator_count,
+ 					       pas->proxy_regs);
+ 	}
+ 
+@@ -899,6 +940,8 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 	pas->dev = &pdev->dev;
+ 	pas->rproc = rproc;
+ 	pas->proxy_regulator_level = desc->proxy_regulator_level;
++	pas->proxy_regulator_count = desc->proxy_regulator_count ?: 2;
++	pas->proxy_regulator_load = desc->proxy_regulator_load;
+ 	pas->minidump_id = desc->minidump_id;
+ 	pas->pas_id = desc->pas_id;
+ 	pas->lite_pas_id = desc->lite_pas_id;

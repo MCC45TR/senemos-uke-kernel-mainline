@@ -24,6 +24,12 @@ paths=(
 for path in "${paths[@]}"; do [[ ! -e $kernel/$path ]]; done
 git -C "$kernel" apply --check "$patch"
 git -C "$kernel" apply "$patch"
+patch=$here/../../patches/display/0001-native-display-sh1.patch
+if grep -Fxq 0099-cliffs-cdsp-interconnect.patch "$kernel/senemos-applied-patches.txt"; then
+    patch=$here/../../patches/display/0001-native-display-nsp-sh1.patch
+fi
+git -C "$kernel" apply --check "$patch"
+git -C "$kernel" apply "$patch"
 supplies=$here/../../patches/display/0003-native-display-supply-admission.patch
 git -C "$kernel" apply --check "$supplies"
 git -C "$kernel" apply "$supplies"

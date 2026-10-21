@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 1
+%global senemos_build_release 2
 %else
 %global senemos_build_release 1
 %endif
@@ -293,6 +293,17 @@ fi
 %license /usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %changelog
+* Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-2
+- Add the exact Cliffs compute-DSP DDR bandwidth path and native source gate.
+- Retain its crypto-DDR and NSP ARC suppliers and checked proxy-rail ownership.
+- Balance DTB firmware references on load failures and repeated recovery loads.
+- Retain PAS mappings on failed shutdown and make checked stop cleanup retryable.
+- Check MDT allocation bounds before secure setup and prevent ELF32 size wrap.
+- Preserve coherent FastRPC handles and device lifetime after creator close.
+- Avoid double GLINK/SMD edge removal when a failed PAS stop is retried.
+- Skip the absent optional LLCC broadcast-AND window after aperture validation.
+- Keep CDSP authentication, memory ownership and inference qualification separate.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-1
 - Carry the 98-patch Uke profile to signed Linux 7.2.12.
 - Preserve matched boot payloads, guarded updates and separate device acceptance.
