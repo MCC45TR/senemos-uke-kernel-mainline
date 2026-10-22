@@ -13,10 +13,10 @@ cat > "$work/entry.c" <<'C'
 #define UKE_INIT
 #include "uke-root-selector.h"
 int main(void) {
-    char line[128] = "root=PARTLABEL=linux rw rootfstype=ext4,f2fs panic=0";
+    char line[128] = "root=PARTLABEL=linux rw rootfstype=ext4,f2fs,xfs,btrfs panic=0";
     const char args[] = "senemos.root=userdata";
     return uke_select_root(line, sizeof(line), args, sizeof(args)) != 1 ||
-        strcmp(line, "root=PARTLABEL=userdata rw rootfstype=f2fs panic=10");
+        strcmp(line, "root=PARTLABEL=userdata rw rootfstype=ext4,f2fs,xfs,btrfs panic=10");
 }
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -I"$root/src/boot" "$work/entry.c" -o "$work/c-test"

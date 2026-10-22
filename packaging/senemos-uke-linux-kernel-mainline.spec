@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 2
+%global senemos_build_release 3
 %else
 %global senemos_build_release 1
 %endif
@@ -75,10 +75,11 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
+Requires: uke-kernel-update >= 1.3.1
 Provides: installonlypkg(kernel)
 
 %description boot
-Matched Android v4 containers for the EXT4 Linux and F2FS userdata profiles.
+Matched Android v4 containers for EXT4 Linux and guarded F2FS, EXT4, XFS or Btrfs userdata profiles.
 This package performs no activation, partition write, slot change or reboot.
 Firmware ownership and physical EL2 acceptance remain separate requirements.
 
@@ -86,7 +87,8 @@ Firmware ownership and physical EL2 acceptance remain separate requirements.
 Summary: Matched Uke userdata boot profile
 License: MIT
 Requires: %{name} = %{version}-%{release}
-Requires: uke-installation-profile >= 1.1.4
+Requires: uke-installation-profile >= 1.3.1
+Requires: uke-kernel-update(root-filesystem-v2) >= 1
 
 %description singleboot
 Selects the userdata image from this source family's exact kernel tuple.
@@ -160,6 +162,7 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-kvm kernelr
 clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
 
 %check
+bash boot-recipe/tests/early-modules-contract.sh
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/kvm-default-boot.img)" = kernel-updates/%{krel}/userdata.img
 jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json
@@ -177,6 +180,7 @@ CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regu
 CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 CXX=clang++ bash native-profile/tests/root-selector-contract.sh
+CC=clang bash native-profile/tests/root-selector-note-contract.sh "$PWD" "$PWD/boot-recipe/lock.json"
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
@@ -332,6 +336,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/kvm-default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-3
+- Carry the guarded four-filesystem userdata capability and once-only growth.
+- Preserve the distinct KVM ABI and require the current-slot transaction consumer.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-2
 - Build singleboot metadata in the family and identify the observed POCO SKU.
 

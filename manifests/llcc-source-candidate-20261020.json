@@ -53,7 +53,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "080437619362d8616b85b3b6c1f21acb0629b19f15c268c24c7453056ab30194"
+      "sha256": "e2cbc8f2adcfcbf704092868a79e39b9db84d53d7d844359541ef83ddee49172"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -61,11 +61,11 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "71c96a2b17a8285c44d719aeb56e403d56f92cf7fbdfaa18c2c69150d4164fef"
+      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
     },
     {
       "path": "tests/root-selector-contract.cpp",
-      "sha256": "9b24a39f8d7def20e7af0deda6fff13dcf4c6c73c52d7838c954341cfd399207"
+      "sha256": "ba1d6730de0c1f889ace858e6eff5b03c117457642b9e07b91ca907150915261"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -196,7 +196,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-2-kvm",
+  "kernel_release": "7.2.12-3-kvm",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
