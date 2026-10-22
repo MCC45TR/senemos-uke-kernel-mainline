@@ -43,4 +43,11 @@ release=7x3y0-3-unstable
 if (eval "$build_guard") || (set -- fixture "$release"; eval "$base_guard"); then
     echo 'Producer release separators must be literal dots' >&2; exit 1
 fi
+prepare_guard=$(sed -n '/^case \$version in /p' "$root/src/boot/prepare-abl-source.sh")
+version=7.3.0
+eval "$prepare_guard"
+version=7.4.0
+if (eval "$prepare_guard"); then
+    echo 'Unqualified source version accepted' >&2; exit 1
+fi
 echo 'Unstable namespace, isolated module ABI, matched boot and no activation passed'

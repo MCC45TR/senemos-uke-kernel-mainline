@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 3
+%global senemos_build_release 4
 %else
 %global senemos_build_release 1
 %endif
@@ -329,6 +329,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
+- Preserve the qualified 7.3 source admission when sharing filesystem support.
+- Check the actual preparation guard before source publication.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3
 - Carry the guarded four-filesystem userdata capability and once-only growth.
 - Preserve the unstable ABI and require the current-slot transaction consumer.
