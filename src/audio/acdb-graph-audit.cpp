@@ -53,6 +53,8 @@ struct Graph {
         uint32_t instance, parameter;
         Bytes payload;
         std::vector<std::pair<uint32_t, uint32_t>> keys;
+        uint32_t tag;
+        std::vector<uint32_t> selectors;
     };
     std::vector<Transport> transport;
 };
@@ -111,6 +113,34 @@ void subgraphs(View pool, uint32_t offset, Graph &graph) {
     }
     table.end();
 }
+void transport_parameters(const std::map<std::string, View> &tables, Graph &graph,
+                          Cursor def, Cursor dot,
+                          const std::vector<std::pair<uint32_t, uint32_t>> &keys,
+                          uint32_t tag = 0, const std::vector<uint32_t> &selectors = {}) {
+    auto count = def.count(8);
+    require(dot.count(4) == count, "parameter definition/offset count mismatch");
+    for (uint32_t p = 0; p < count; ++p) {
+        auto instance = def.word(), parameter = def.word(), offset = dot.word();
+        if (!graph.modules.contains(instance)) continue;
+        auto module = graph.modules.at(instance);
+        bool tdm = module == 0x0700100e || module == 0x0700100f;
+        bool dma = module == 0x07001023 || module == 0x07001024;
+        if ((!tdm && !dma) ||
+            (parameter != 0x0800101b && parameter != 0x0800106a &&
+             parameter != 0x08001063 && parameter != 0x08001017 &&
+             parameter != 0x0800113c)) continue;
+        auto pool = at(tables.at("POOL"), offset);
+        auto payload_size = pool.word();
+        uint32_t expected = parameter == 0x0800101b ? 28 :
+                            parameter == 0x0800106a ? 4 :
+                            parameter == 0x0800113c ? 16 : 12;
+        require(payload_size == expected, "unreviewed transport parameter size");
+        auto payload = pool.take(payload_size);
+        require(graph.transport.size() < 4096, "too many transport variants");
+        graph.transport.push_back({instance, parameter, Bytes(payload.begin(), payload.end()),
+                                   keys, tag, selectors});
+    }
+}
 void transport_variants(const std::map<std::string, View> &tables, Graph &graph) {
     // AcdbFindModuleCKV / AcdbGetSubgraphCalibration; variants are not active settings.
     for (auto name : {"CSLU", "CAKT", "CDLU", "CDDE", "CDDO"})
@@ -131,37 +161,38 @@ void transport_variants(const std::map<std::string, View> &tables, Graph &graph)
             require(values.word() == key_count, "parameter lookup key count mismatch");
             auto variants = values.count((size_t(key_count) + 3) * 4);
             for (uint32_t variant = 0; variant < variants; ++variant) {
-            std::vector<std::pair<uint32_t, uint32_t>> key_vector;
-            for (auto key : key_ids) key_vector.emplace_back(key, values.word());
-            auto def_offset = values.word(), dot_offset = values.word();
-            values.word(); // global/persistent DOT2 is not read
-            auto def = at(tables.at("CDDE"), def_offset);
-            auto dot = at(tables.at("CDDO"), dot_offset);
-            auto count = def.count(8);
-            require(dot.count(4) == count, "parameter definition/offset count mismatch");
-            for (uint32_t p = 0; p < count; ++p) {
-                auto instance = def.word(), parameter = def.word(), offset = dot.word();
-                if (!graph.modules.contains(instance)) continue;
-                auto module = graph.modules.at(instance);
-                bool tdm = module == 0x0700100e || module == 0x0700100f;
-                bool dma = module == 0x07001023 || module == 0x07001024;
-                if ((!tdm && !dma) ||
-                    (parameter != 0x0800101b && parameter != 0x0800106a &&
-                     parameter != 0x08001063 && parameter != 0x08001017 &&
-                     parameter != 0x0800113c)) continue;
-                auto pool = at(tables.at("POOL"), offset);
-                auto payload_size = pool.word();
-                uint32_t expected = parameter == 0x0800101b ? 28 :
-                                    parameter == 0x0800106a ? 4 :
-                                    parameter == 0x0800113c ? 16 : 12;
-                require(payload_size == expected, "unreviewed transport parameter size");
-                auto payload = pool.take(payload_size);
-                graph.transport.push_back({instance, parameter, Bytes(payload.begin(), payload.end()), key_vector});
-            }
+                std::vector<std::pair<uint32_t, uint32_t>> key_vector;
+                for (auto key : key_ids) key_vector.emplace_back(key, values.word());
+                auto def_offset = values.word(), dot_offset = values.word();
+                values.word(); // global/persistent DOT2 is not read
+                transport_parameters(tables, graph, at(tables.at("CDDE"), def_offset),
+                                     at(tables.at("CDDO"), dot_offset), key_vector);
             }
         }
     }
     subgraphs.end();
+}
+void tagged_transport(const std::map<std::string, View> &tables, Graph &graph) {
+    for (auto name : {"MTKT", "MTLU", "MTDE", "MTDO"})
+        require(tables.contains(name), "required tag table absent");
+    Cursor tags{tables.at("MTKT")};
+    auto count = tags.count(12);
+    for (uint32_t t = 0; t < count; ++t) {
+        auto subgraph = tags.word(), tag = tags.word(), lut_offset = tags.word();
+        if (!graph.subgraph_ids.contains(subgraph)) continue;
+        auto values = at(tables.at("MTLU"), lut_offset);
+        auto key_count = values.word();
+        require(key_count <= 64, "unreviewed tag key count");
+        auto variants = values.count((size_t(key_count) + 2) * 4);
+        for (uint32_t v = 0; v < variants; ++v) {
+            std::vector<uint32_t> selectors;
+            for (uint32_t k = 0; k < key_count; ++k) selectors.push_back(values.word());
+            auto def_offset = values.word(), dot_offset = values.word();
+            transport_parameters(tables, graph, at(tables.at("MTDE"), def_offset),
+                                 at(tables.at("MTDO"), dot_offset), {}, tag, selectors);
+        }
+    }
+    tags.end();
 }
 std::vector<Graph> audit(View bytes) {
     auto tables = chunks(bytes);
@@ -198,6 +229,7 @@ std::vector<Graph> audit(View bytes) {
                     }
                     require(!graph.modules.empty(), "selected graph has no module list");
                     transport_variants(tables, graph);
+                    tagged_transport(tables, graph);
                     result.push_back(std::move(graph));
                 }
             }
@@ -243,6 +275,11 @@ Bytes fixture() {
     chunk(file, "GKVL", lut); chunk(file, "POOL", pool);
     chunk(file, "CSLU", cslu); chunk(file, "CAKT", cakt); chunk(file, "CDLU", cdlu);
     chunk(file, "CDDE", cdde); chunk(file, "CDDO", cddo);
+    Bytes mtkt, mtlu;
+    for (auto v : {1u, 0x4000u, 0xc0000001u, 0u}) append(mtkt, v);
+    for (auto v : {1u, 1u, 0xd0000001u, 0u, 0u}) append(mtlu, v);
+    chunk(file, "MTKT", mtkt); chunk(file, "MTLU", mtlu);
+    chunk(file, "MTDE", cdde); chunk(file, "MTDO", cddo);
     Bytes result; append(result, 0x42444341); append(result, 0); append(result, file.size());
     result.insert(result.end(), file.begin(), file.end());
     return result;
@@ -251,9 +288,12 @@ void self_test() {
     auto good = fixture();
     require(audit(good).at(0).modules.at(0x6000) == 0x0700100e, "module identity mismatch");
     auto graph = audit(good).at(0);
-    require(graph.transport.size() == 2 && graph.transport.at(0).payload.size() == 28 &&
+    require(graph.transport.size() == 4 && graph.transport.at(0).payload.size() == 28 &&
             graph.transport.at(1).payload.size() == 12,
             "allowlisted transport metadata missing");
+    require(graph.transport.at(2).tag == 0xc0000001 &&
+            graph.transport.at(2).selectors == std::vector<uint32_t>{0xd0000001},
+            "tagged transport metadata missing");
     auto reject = [](const Bytes &bad) {
         bool refused = false;
         try { (void)audit(bad); } catch (const std::runtime_error &) { refused = true; }
@@ -266,6 +306,14 @@ void self_test() {
                           good.size() - 12}) {
         auto bad = good;
         for (unsigned i = 0; i < 4; ++i) bad.at(offset + i) = 0xff;
+        reject(bad);
+    }
+    for (auto [name, offset] : {std::pair{"MTKT", 0u}, {"MTKT", 12u},
+                               {"MTLU", 0u}, {"MTLU", 4u}, {"MTLU", 12u},
+                               {"MTLU", 16u}, {"MTDE", 0u}, {"MTDO", 4u}}) {
+        auto position = size_t(chunks(good).at(name).data() - good.data()) + offset;
+        auto bad = good;
+        for (unsigned i = 0; i < 4; ++i) bad.at(position + i) = 0xff;
         reject(bad);
     }
     auto bad = good; bad.push_back(0); reject(bad);
@@ -292,6 +340,10 @@ int main(int argc, char **argv) {
                           << transport.parameter << " bytes=" << std::dec << transport.payload.size();
                 for (auto [key, value] : transport.keys)
                     std::cout << " key[0x" << std::hex << key << "]=0x" << value;
+                if (transport.tag) {
+                    std::cout << " tag=0x" << std::hex << transport.tag << " selectors=";
+                    for (auto value : transport.selectors) std::cout << "0x" << value << ',';
+                }
                 std::cout << std::dec;
                 Cursor payload{transport.payload};
                 if (transport.parameter == 0x0800101b) {
