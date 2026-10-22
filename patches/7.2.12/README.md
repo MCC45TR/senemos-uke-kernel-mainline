@@ -1,5 +1,12 @@
 # Uke Linux 7.2.11 adaptation
 
+**22 October 2026, 7.2.12-15 source:** patch 0101 backports Neil Armstrong's
+upstream c663014e physical AudioReach maps. Patch 0102 clears replaced maps
+and rejects byte truncation before mutation. Patch 0103 carries Joonhoe Kim's
+posted per-channel WCD939x switch fix, following Jonathan Marek's earlier
+proposal. Host callbacks and AArch64 objects are separate from Uke capture;
+the registration-only guard and disabled physical paths remain in place.
+
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM
 readiness errors. It validates APM basic payloads before parsing and preserves

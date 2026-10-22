@@ -1,8 +1,9 @@
 # Uke AudioReach source status, 22 October 2026
 
-Environment: POCO Pad X1, Fedora Rawhide AArch64, Linux 7.2.12-9 baseline
-and 7.2.12-10 service trial on 22 October. No ALSA cards or PCMs are present.
-Internal speaker and microphone support remain unavailable.
+Environment: POCO Pad X1, Fedora Rawhide AArch64. Linux 7.2.12-14 registers
+the card automatically after one normal reboot. Both streams remain disabled;
+internal speaker output and microphone capture remain unavailable. Historical
+service-only observations below retain their original kernel identity.
 
 Patch 0079, ported from project commit `693dfd4`, fixes four reviewed startup/input problems: a request sent before
 APR installed the receive callback; stale readiness after request failure;
@@ -121,3 +122,44 @@ its code is not executed or shipped. Exact stock speaker and VI graphs contain
 legacy TDM sink/source modules and Foursemi RX/TX modules. The newer upstream
 Audio IF implementation uses different modules and is not a drop-in solution.
 No tuning payload or unit calibration is exported or installed by the tool.
+
+## Capture channel-map source candidate
+
+The 7.2.12-15 candidate carries upstream
+[`c663014e452d69d5f34b8b16fecf1590b3696082`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c663014e452d69d5f34b8b16fecf1590b3696082),
+by Neil Armstrong. CODEC DMA masks use occupied physical slots; MFC, PCM,
+shared-memory and VI consumers receive compact logical maps. The stock Uke
+microphone masks 4/6/14/30 can be represented through the existing channel-map
+API without adding a topology token.
+
+A separate correction clears stale slots when explicit or default maps are
+replaced, and rejects explicit values wider than a byte before changing state.
+Without it, a four-channel stream followed by mono can leave other physical
+channels selected. The actual-source fixture fails on release 14's mask,
+then fails on replacement with the upstream backport alone. Both corrections
+pass 162 sparse-mask cases, all four compact-map consumers, TX/RX replacement,
+default 4/2/1 transitions and malformed-input preservation under sanitizers.
+
+This candidate retains the registration-only guard, disabled backend and
+closed amplifier/SLIM paths. It has no tablet capture acceptance. WCD939x,
+LPASS pin/clock ownership, DMA translation, capture graph and physical channel
+mapping remain required before opening a microphone stream.
+
+The same candidate carries Joonhoe Kim's
+[posted WCD939x switch fix](https://lore.kernel.org/all/20261007123954.1709-1-26rote%40gmail.com/),
+which follows Jonathan Marek's earlier read-back proposal. Existing code
+reports a shared port flag for each ADC switch: enabling ADC1 makes ADC2–4
+read as enabled, so a later ALSA save/restore can activate unused channels.
+The actual callback fixture reproduces that incorrect readback and passes
+all 16 independent four-ADC combinations, repeated writes and save/restore
+with the patch. The complete WCD939x translation units compile for AArch64.
+The patch is a posted upstream proposal, absent from reviewed linux-qcom
+`b16a8c2f9fd1f5550efdb3d561183548b3ad6047`; its reported Lenovo test is not
+Uke evidence.
+
+Stock ADC1/2 use device port 1 and ADC3/4 port 2, while the native table puts
+all four on port 1. This identifies a topology difference, not proof that
+either route can be activated safely without its matching SoundWire setup.
+The OEM reset uses LPASS GPIO12 and the TX bus includes GPIO14; its separate
+wakeup register and controller IRQs also require review. No guessed pinctrl
+compatible, raw wakeup write or live codec probe was added.

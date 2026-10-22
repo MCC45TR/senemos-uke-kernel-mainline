@@ -408,6 +408,18 @@
     {
       "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
       "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
+    },
+    {
+      "path": "patches/7.2.12/0101-audioreach-use-physical-channel-maps.patch",
+      "sha256": "4b6e570e80d2531d4fc3cfdeabdf350df6eb1ac0818409d099055b1af2c81d86"
+    },
+    {
+      "path": "patches/7.2.12/0102-audioreach-replace-stale-channel-maps.patch",
+      "sha256": "3413646716f1784dae3b331a8c57c144d5cd01af102b504df00425163ae09600"
+    },
+    {
+      "path": "patches/7.2.12/0103-wcd939x-report-channel-switches-independently.patch",
+      "sha256": "a1535075d5a250c722d16e9ae7c7bfca1441a92c359a19e3bfefc90fb4e37975"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 14
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -207,10 +207,12 @@ CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
-CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-channel-map-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-channel-switch-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -350,6 +352,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-15
+- Backport upstream physical-channel masks and packed AudioReach channel maps.
+- Clear stale slots on replacement and reject byte-field truncation before mutation.
+- Backport the posted WCD939x fix for independent microphone switch readback.
+- Retain closed registration streams and disabled physical audio paths.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-14
 - Omit IOMMU attachment for the closed AudioReach registration profile.
 - Supply the sequencer module required by the original Fedora ALSA load rule.

@@ -296,3 +296,9 @@ description; no donor build script is executed. The output contains no
 calibration, graph endpoint or mixer and is installed below the exact kernel
 release's firmware search directory. The host ACDB metadata inspector and its
 fixtures are source/build tools only and do not enter tablet payloads.
+
+The 7.2.12-15 source candidate adds physical AudioReach channel masks,
+compact DSP maps, stale-slot clearing and independent WCD939x switch readback.
+Actual-source host fixtures and AArch64 objects pass; physical buses and
+registration-only stream guards remain unchanged. This is capture bring-up
+preparation, not microphone availability or a new tablet result.

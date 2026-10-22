@@ -1,0 +1,54 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qcom: replace stale AudioReach channel maps
+
+After physical-slot masks are derived from all eight map entries, reducing
+the channel count must clear slots left by a previous stream. Clear both
+explicit and default replacements. Validate the complete explicit map before
+changing it so a value wider than the DSP's byte field cannot truncate or
+partially replace the previous map.
+
+No Uke route, pin, supply, bias or amplifier is enabled by this change.
+
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -294,6 +294,8 @@
+ 
+ void audioreach_set_default_channel_mapping(u8 *ch_map, int num_channels)
+ {
++	/* Reconfiguration must not retain physical slots from the previous stream. */
++	memset(ch_map, 0, AR_PCM_MAX_NUM_CHANNEL);
+ 	if (num_channels == 1) {
+ 		ch_map[0] =  PCM_CHANNEL_FL;
+ 	} else if (num_channels == 2) {
+--- a/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c
++++ b/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c
+@@ -4,6 +4,7 @@
+ #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+ #include <linux/err.h>
+ #include <linux/init.h>
++#include <linux/limits.h>
+ #include <linux/module.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+@@ -59,6 +60,10 @@
+ 			return -EINVAL;
+ 		}
+ 		for (i = 0; i < tx_num; i++)
++			if (tx_ch_mask[i] > U8_MAX)
++				return -EINVAL;
++		memset(cfg->channel_map, 0, sizeof(cfg->channel_map));
++		for (i = 0; i < tx_num; i++)
+ 			cfg->channel_map[i] = tx_ch_mask[i];
+ 
+ 		break;
+@@ -83,6 +88,10 @@
+ 			return -EINVAL;
+ 		}
+ 		for (i = 0; i < rx_num; i++)
++			if (rx_ch_mask[i] > U8_MAX)
++				return -EINVAL;
++		memset(cfg->channel_map, 0, sizeof(cfg->channel_map));
++		for (i = 0; i < rx_num; i++)
+ 			cfg->channel_map[i] = rx_ch_mask[i];
+ 
+ 		break;
