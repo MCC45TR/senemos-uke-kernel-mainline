@@ -28,7 +28,7 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     exit 1
 fi
 grep -F 'git archive HEAD src/display src/boot src/usb src/audio src/power patches/$(version) patches/display patches/boot tests' "$root/Makefile"
-grep -Fx 'disabled' "$root/packaging/native/audio-profile"
+grep -Fx 'providers-only' "$root/packaging/native/audio-profile"
 grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
 grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
 grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"

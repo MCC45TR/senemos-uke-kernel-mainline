@@ -285,3 +285,68 @@ fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
 fixtures cover both profiles, all field orders, rejected input and capacity
 boundaries. A panic restart is separate from hard-hang recovery or physical
 A/B rollback qualification. No tablet installation or reboot is implied.
+
+## Audio service registration, 22 October 2026
+
+The 7.2.12-10 candidate selects the existing `services-only` audio profile.
+Native APM/PRM services 1/2 can bind and perform the bounded firmware readiness
+query; original clients 3/7 remain present. Both DAI children, amplifier I2C
+and SLIM remain disabled. The package does not create playback/capture paths
+or apply microphone bias, amplifier presets or calibration. The existing
+`disabled` preparation setting remains available for rollback/source comparison.
+Host FDT and actual-source response/lifetime checks precede COPR submission.
+Tablet service binding and physical internal audio remain separate tests.
+
+## Audio card registration, 22 October 2026
+
+The 7.2.12-14 source selects `registration-only`: the native APM and PCM
+components register a Uke card with playback/capture frontend descriptions.
+The displayed names explicitly mark streams disabled. The q6apm component
+refuses both PCM and compressed opens before DSP graph allocation, rather
+than relying on the later machine startup callback. It also skips PCM buffer
+construction and teardown mappings, which source review found unguarded in
+the uninstalled release-12 candidate. No backend, amplifier,
+microphone bias or SLIM path is enabled. Native card visibility and physical
+audio acceptance remain separate results.
+
+Release 13 registered the card after a manual module load on the tablet, but
+cold autoload failed through the original Fedora ALSA rule's missing
+`snd-seq` dependency. Its frontend IOMMU attachment also triggered warnings
+outside the guarded boot scope. Release 14 includes the sequencer module and
+omits that attachment while frontend DMA remains prohibited. The original
+Fedora rule and SMMU guard are retained. COPR 11188183 release 14 was installed
+through DNF and booted on the tablet on 22 October. The card and both disabled
+frontends appeared automatically, without manual module loading. Both
+substreams remained closed and the release-13 IOMMU warnings were absent.
+An earlier SPMI warning remains. This was one normal reboot; power-cycle and
+physical speaker/microphone acceptance remain open.
+
+Original host `alsatplg` from Fedora `alsa-topology-utils` compiles the project frontend
+description; no donor build script is executed. The output contains no
+calibration, graph endpoint or mixer and is installed below the exact kernel
+release's firmware search directory. The host ACDB metadata inspector and its
+fixtures are source/build tools only and do not enter tablet payloads.
+
+The 7.2.12-15 source candidate adds physical AudioReach channel masks,
+compact DSP maps, stale-slot clearing and independent WCD939x switch readback.
+Actual-source host fixtures and AArch64 objects pass; physical buses and
+registration-only stream guards remain unchanged. This is capture bring-up
+preparation, not microphone availability or a new tablet result.
+
+The 7.2.12-16 source candidate selects `providers-only`: native LPASS VA,
+TX, RX and pin controllers register under their exact PRM clock dependencies.
+Only GPIO12 is admitted for GPIO use. The USBSS child exposes a coordinated
+codec reset controller without selecting a default pin state. No SoundWire
+controller, physical WCD codec, mic bias, amplifier or PCM route is enabled.
+Actual-source reset fault fixtures, provider error propagation and clock/pin
+FDT checks are mandatory. Tablet provider binding is a separate acceptance.
+
+### QRTR service discovery, 22 October 2026
+
+The 7.2.12-17 candidate retains that provider profile and adds an Uke-only
+SMD HELLO request after receive-context publication. Existing name-server
+handshakes and ordinary packet flow remain; transient readiness/allocation
+failures are retried and teardown cancels pending work. A failed name-server
+announcement no longer hides later servers or pending lookups. The actual
+worker/probe/name-server host fixtures run in the RPM build. See
+`docs/QRTR-DISCOVERY.md` for attribution and separate tablet acceptance.

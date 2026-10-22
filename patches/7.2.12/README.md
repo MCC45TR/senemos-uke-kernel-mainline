@@ -1,5 +1,12 @@
 # Uke Linux 7.2.11 adaptation
 
+**22 October 2026, 7.2.12-15 source:** patch 0101 backports Neil Armstrong's
+upstream c663014e physical AudioReach maps. Patch 0102 clears replaced maps
+and rejects byte truncation before mutation. Patch 0103 carries Joonhoe Kim's
+posted per-channel WCD939x switch fix, following Jonathan Marek's earlier
+proposal. Host callbacks and AArch64 objects are separate from Uke capture;
+the registration-only guard and disabled physical paths remain in place.
+
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM
 readiness errors. It validates APM basic payloads before parsing and preserves
@@ -108,3 +115,31 @@ This queue carries the 98 patches from source `cf7d17f` without changing their
 contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
+
+## Audio services, 22 October 2026
+
+Patch 0099 ports the already reviewed APR/GPR failed-publication cleanup from
+project commit `e4b196c060de5261c6469ac913622e6b99fc0496` without changing
+the preceding 98 patches. Upstream APR file tip `66ec83627902d2585e14911692b317496731767a`
+still has the affected registration path. The source-extracted fault fixture
+rejects the old path and passes the corrected device-reference/IDR unwind.
+The services-only native profile does not enable physical audio endpoints.
+
+Patch 0100 adds the Uke card Kconfig/Kbuild entry and board-scoped PCM and
+compressed-open refusal before q6apm graph allocation. The native preparation
+copies `src/audio/uke-audio-card.c`; it binds the existing PCM/APM components
+and accepts exactly two frontend runtimes. The registration-only DT enables
+the guarded frontend component, retaining disabled backend and physical paths.
+Neither card registration nor software refusal fixtures qualify speaker or
+microphone operation.
+
+Patches 0104–0106 preserve WCD provider error codes, support a coordinated
+reset controller and backport Alexandr Zubtsov's Palawan LPASS pin driver
+with the exact SM7675 match. The native providers-only profile registers
+macro/clock/pin providers while keeping WCD, SoundWire, bias and PCM closed.
+Reset and provider fixtures do not establish physical capture or playback.
+## QRTR discovery follow-up
+
+22 October 2026: `0107-uke-qrtr-discovery.patch` initiates the Uke SMD HELLO
+after receive-context publication and retains normal name-server packet flow.
+See `docs/QRTR-DISCOVERY.md` for attribution, host checks and tablet limits.

@@ -572,8 +572,11 @@ self_test() {
     bash -n "$ROOT/senemos.sh"
     if command -v shellcheck >/dev/null; then shellcheck -s bash "$ROOT/senemos.sh"; fi
     ok 'shell syntax and available ShellCheck'
-    bash "$KERNEL/tests/mainline-package-contract.sh"
-    ok 'canonical mainline metadata preserves the historical host recipe and installed fallback kernels'
+    case $(rpmspec --target aarch64 -q --srpm --qf '%{NAME}' "$KERNEL/packaging/senemos-uke-linux-kernel-mainline.spec") in
+        *-unstable) bash "$KERNEL/tests/unstable-package-contract.sh";;
+        *) bash "$KERNEL/tests/mainline-package-contract.sh";;
+    esac
+    ok 'active kernel metadata preserves the host recipe and installed fallback kernels'
     fixture_identity() {
         local KERNEL=$temporary/guard-fixture before after
         mkdir -p "$KERNEL/tests"

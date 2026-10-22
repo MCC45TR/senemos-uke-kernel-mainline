@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 5
+%global senemos_build_release 6
 %else
 %global senemos_build_release 1
 %endif
@@ -29,6 +29,7 @@ ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
+BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
 BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
@@ -77,6 +78,7 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
+Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
@@ -158,13 +160,16 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
-    CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y; do
+    CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
+    CONFIG_SND_SEQUENCER=m CONFIG_PINCTRL_PALAWAN_LPASS_LPI=m \
+    CONFIG_RESET_CONTROLLER=y; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
 
 %check
+CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
 bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
@@ -186,6 +191,7 @@ CXX=clang++ bash native-profile/tests/root-selector-contract.sh
 CC=clang bash native-profile/tests/root-selector-note-contract.sh "$PWD" "$PWD/boot-recipe/lock.json"
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang bash native-profile/tests/qrtr-discovery-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
@@ -203,8 +209,18 @@ CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
-CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
+CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
+CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-channel-map-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-channel-switch-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-probe-error-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-reset-consumer-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-reset-contract.sh native-profile/src/usb/wcd939x-uke-typec.c
+bash native-profile/tests/audio-providers-fdt-contract.sh "$PWD"
+test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
 bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
@@ -239,6 +255,7 @@ CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
+CXX=clang++ bash native-profile/tests/dsi-color-depth-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CC=clang bash native-profile/tests/o82-mode-contract.sh native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-mode-valid-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h "$PWD"
@@ -285,6 +302,8 @@ identity=%{buildroot}/usr/share/senemos/uke/%{krel}
 mkdir -p "$identity"
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
+install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -311,6 +330,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/modules/%{krel}/modules.builtin*
 /usr/lib/modules/%{krel}/modules.order
 /usr/share/senemos/uke/%{krel}/
+/usr/lib/firmware/%{krel}/
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/
@@ -335,6 +355,9 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-6
+- Carry current Uke service, wake and QRTR discovery fixes into the isolated 7.3 family.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
 - Add the guarded native Uke platform-profile provider and compatible backend handoff.
 - Preserve this kernel family's module ABI and existing activation policy.

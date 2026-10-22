@@ -1,4 +1,20 @@
-# Uke Linux 7.2.11 adaptation
+# Uke Linux 7.3 adaptation
+
+22 October 2026 candidate: release 6 carries patches 0099–0107 and the matching
+native source from mainline `f142cbe`. The 108-patch queue retains the existing
+7.3 API adaptations, QCOM RNG inventory and QCE/GF128 policy. The added source
+covers APR publication, closed-stream card/provider lifetime, coordinated reset,
+LPASS pin control and post-publication Uke SMD QRTR discovery. Existing release
+16 display assets are carried without additional color-depth changes.
+
+Native host metadata, identity, filesystem, module-inventory and profile
+fixtures passed. The host entry self-test now selects the existing strict
+unstable metadata fixture for this family and passed all eleven groups. Source
+preparation, AArch64 compilation, signed packages and physical 7.3 boot remain
+separate gates. This family has no activation scriptlet; do not infer physical
+acceptance from source preparation or a package transaction.
+
+The inherited adaptation history below describes its original source bases.
 
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM

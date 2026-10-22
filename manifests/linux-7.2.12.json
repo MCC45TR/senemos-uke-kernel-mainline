@@ -400,6 +400,42 @@
     {
       "path": "patches/7.2.12/0098-uke-confirm-usb-sdp-adapter.patch",
       "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.2.12/0099-apr-unwind-failed-service-publication.patch",
+      "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
+    },
+    {
+      "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
+      "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
+    },
+    {
+      "path": "patches/7.2.12/0101-audioreach-use-physical-channel-maps.patch",
+      "sha256": "4b6e570e80d2531d4fc3cfdeabdf350df6eb1ac0818409d099055b1af2c81d86"
+    },
+    {
+      "path": "patches/7.2.12/0102-audioreach-replace-stale-channel-maps.patch",
+      "sha256": "3413646716f1784dae3b331a8c57c144d5cd01af102b504df00425163ae09600"
+    },
+    {
+      "path": "patches/7.2.12/0103-wcd939x-report-channel-switches-independently.patch",
+      "sha256": "a1535075d5a250c722d16e9ae7c7bfca1441a92c359a19e3bfefc90fb4e37975"
+    },
+    {
+      "path": "patches/7.2.12/0104-wcd939x-preserve-provider-probe-errors.patch",
+      "sha256": "f0b8c2368b52263a9be3f63042085e6fc0c0081488c24b6f03cd2677f2d035c3"
+    },
+    {
+      "path": "patches/7.2.12/0105-wcd939x-use-coordinated-reset-controller.patch",
+      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+    },
+    {
+      "path": "patches/7.2.12/0106-sm7675-lpass-pinctrl.patch",
+      "sha256": "7f71e208eb965a536999bfd2377db2f085821c8e64b6161d70331740a8bb203d"
+    },
+    {
+      "path": "patches/7.2.12/0107-uke-qrtr-discovery.patch",
+      "sha256": "0b6a5c61341717ea31aa6da62c29a01d79bfa0aa4edf8f6e2bde904c1be2ac9a"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -411,7 +447,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "5296cbf69279930ad1486c164b87c098ce1bd23bbd1b1dd350ccdbfd774e8bf6"
+      "sha256": "2af274c0d8b1394192a3e32d76a57609bafe0b030701948eec2f0b841159865b"
     },
     {
       "path": "configs/fedora.config",
