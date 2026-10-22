@@ -1,8 +1,8 @@
 # Uke AudioReach source status, 22 October 2026
 
-Environment: Linux 7.2.12; POCO Pad X1 running baseline 7.2.12-9, Fedora
-Rawhide AArch64. No ALSA cards or PCMs were present in the passive check on
-22 October. Internal speaker and microphone support remain unavailable.
+Environment: POCO Pad X1, Fedora Rawhide AArch64, Linux 7.2.12-9 baseline
+and 7.2.12-10 service trial on 22 October. No ALSA cards or PCMs are present.
+Internal speaker and microphone support remain unavailable.
 
 Patch 0079, ported from project commit `693dfd4`, fixes four reviewed startup/input problems: a request sent before
 APR installed the receive callback; stale readiness after request failure;
@@ -62,7 +62,17 @@ top AMIC3/ADC3, sidetop AMIC5/ADC2, sidebottom AMIC1/ADC1 and back AMIC4/ADC4.
 Other multi-mic paths use different ADC assignments. These are route-specific
 source observations, not a tested four-channel capture map.
 
-Remaining work: native APM/PRM binding and firmware handshake on the tablet;
+COPR 11186253 built source `b97c0e12d6e7dbe12ccca990611d0ee2a22ceb68`.
+All six signed packages passed payload checks and were installed through DNF.
+After an authorized same-slot update and one normal reboot, the tablet runs
+7.2.12-10 with native services 1/2 bound to `qcom-apm`/`qcom-prm` and the
+`q6prm-lpass-clock` child bound. PRM probe requires a successful APM SPF state-1
+response before creating that child. The first readiness query timed out at
+boot monotonic 11.232342 seconds; eventual binding does not resolve that startup
+failure. No repeat appears in the three-minute observation. Both DAIs and
+physical buses remain disabled; no playback, capture or calibration was run.
+
+Remaining work: first-readiness timeout and repeated-boot qualification;
 WCD939x/LPASS supplier and wakeup conversion; capture graph and physical mic
 mapping; native amplifier component/protection; calibration validation and
 channel binding; UCM and physical acceptance. Service registration creates no
