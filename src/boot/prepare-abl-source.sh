@@ -47,6 +47,9 @@ bash "$here/../../tests/uart-wake-contract.sh" "$kernel/drivers/tty/serial/qcom_
 git -C "$kernel" apply --check "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch"
 bash "$here/../../tests/cpu-hardware-name-contract.sh" "$kernel/arch/arm64/kernel/cpuinfo.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
+install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 install -m644 "$here/uke-identity.c" "$kernel/arch/arm64/kernel/uke-identity.c"
 install -m644 "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc.h"
@@ -101,5 +104,7 @@ sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0008-uke-platform-profile.patch" \
+    "$here/../power/uke-platform-profile.c" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
     "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"

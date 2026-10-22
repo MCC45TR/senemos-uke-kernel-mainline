@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 4
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
@@ -48,6 +48,7 @@ physical tablet acceptance.
 Summary: Uke kernel Image and source identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
+Provides: uke-kernel(platform-profile-qos-v1) = 1
 
 %description core
 Image with the matching source-built initramfs, configuration and source record.
@@ -76,6 +77,7 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
+Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
 %description boot
@@ -154,7 +156,9 @@ test "$jobs" -le 8 || jobs=8
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
-    CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m; do
+    CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
+    CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
+    CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -162,6 +166,8 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable ke
 
 %check
 bash boot-recipe/tests/early-modules-contract.sh
+CC=clang bash native-profile/tests/platform-profile-contract.sh
+CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/unstable-default-boot.img)" = kernel-updates/%{krel}/userdata.img
 jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json
@@ -329,6 +335,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+- Add the guarded native Uke platform-profile provider and compatible backend handoff.
+- Preserve this kernel family's module ABI and existing activation policy.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
 - Preserve the qualified 7.3 source admission when sharing filesystem support.
 - Check the actual preparation guard before source publication.
