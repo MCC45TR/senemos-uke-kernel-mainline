@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 2
+%global senemos_build_release 3
 %else
 %global senemos_build_release 1
 %endif
@@ -75,6 +75,7 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
+Requires: uke-kernel-update >= 1.3.1
 Provides: installonlypkg(kernel)
 
 %description boot
@@ -86,7 +87,8 @@ the previous image, and verifies write readback. Android A is not an update targ
 Summary: Matched Uke userdata boot profile
 License: MIT
 Requires: %{name} = %{version}-%{release}
-Requires: uke-installation-profile >= 1.1.4
+Requires: uke-installation-profile >= 1.3.1
+Requires: uke-kernel-update(root-filesystem-v2) >= 1
 
 %description singleboot
 Selects the userdata image from this source family's exact kernel tuple.
@@ -159,6 +161,7 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
 
 %check
+bash boot-recipe/tests/early-modules-contract.sh
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/unstable-default-boot.img)" = kernel-updates/%{krel}/userdata.img
 jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json
@@ -326,6 +329,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3
+- Carry the guarded four-filesystem userdata capability and once-only growth.
+- Preserve the unstable ABI and require the current-slot transaction consumer.
+
 * Wed Oct 21 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-2
 - Build singleboot metadata in the family and identify the observed POCO SKU.
 

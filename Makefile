@@ -12,7 +12,7 @@ validate:
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
-	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.3.0-2-unstable" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.3.0-3-unstable" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
@@ -20,6 +20,8 @@ validate:
 	bash tests/unstable-package-contract.sh
 	bash tests/identity-contract.sh
 	bash tests/kernel-family-contract.sh
+	bash tests/userdata-grow-contract.sh
+	bash tests/early-modules-contract.sh
 .PHONY: test-root-capability
 test-root-capability:
 	test -n "$(kernel_source)"

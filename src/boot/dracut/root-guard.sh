@@ -83,15 +83,35 @@ while [ "$attempt" -lt 45 ]; do
         [ "$(readlink -f "$selected")" = "$(readlink -f "$candidate")" ] || {
             echo 'UKE_ROOT_REJECTED: partition-name link points to a different partition' >&2; exit 1;
         }
-        expected=ext4
-        [ "$partlabel" != userdata ] || expected=f2fs
-        [ "$(blkid -p -s TYPE -o value "$candidate")" = "$expected" ] || {
-            echo 'UKE_ROOT_REJECTED: unexpected filesystem identity' >&2; exit 1;
-        }
+        expected=$(blkid -p -s TYPE -o value "$candidate")
+        case "$partlabel:$expected" in
+            linux:ext4|userdata:f2fs|userdata:ext4|userdata:xfs|userdata:btrfs) :;;
+            *) echo 'UKE_ROOT_REJECTED: unexpected filesystem identity' >&2; exit 1;;
+        esac
         if [ "$partlabel" = userdata ]; then
             [ "$(blkid -p -s LABEL -o value "$candidate")" = UKE_LINUX ] || {
                 echo 'UKE_ROOT_REJECTED: userdata is not a provisioned UKE_LINUX filesystem' >&2; exit 1;
             }
+        fi
+        if [ "$expected" = btrfs ]; then
+            # Linux btrfs_super_block: num_devices is LE64 at 64 KiB + 136.
+            members=$(od --endian=little -An -tu8 -j 65672 -N 8 "$candidate" | tr -d ' \n')
+            [ "$members" = 1 ] || { echo 'UKE_ROOT_REJECTED: single-device Btrfs required' >&2; exit 1; }
+            uuid=$(blkid -p -s UUID -o value "$candidate")
+            [ -n "$uuid" ] || { echo 'UKE_ROOT_REJECTED: missing Btrfs UUID' >&2; exit 1; }
+            matches=0
+            for metadata in /sys/class/block/*/uevent; do
+                [ -r "$metadata" ] || continue
+                node=${metadata%/uevent}
+                probe=/dev/${node##*/}
+                [ -b "$probe" ] || continue
+                other_uuid=$(blkid -p -s UUID -o value "$probe" 2>/dev/null || :)
+                [ "$other_uuid" != "$uuid" ] || matches=$((matches + 1))
+            done
+            [ "$matches" = 1 ] || { echo 'UKE_ROOT_REJECTED: ambiguous Btrfs UUID' >&2; exit 1; }
+        fi
+        if [ "$partlabel:$expected" = userdata:f2fs ]; then
+            : > /run/uke-userdata-f2fs-root
         fi
         echo "UKE_ROOT_ADMITTED: unique physical $partlabel partition contains $expected"
         exit 0

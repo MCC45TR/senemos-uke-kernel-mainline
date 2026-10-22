@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 [[ $# == 1 && -s $1 && -f $1 ]] || exit 2
 image=$1
-descriptor='root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30'
+descriptor='root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30'
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 refuse() { echo 'Missing, duplicate or malformed Uke root-selector capability note' >&2; exit 1; }
@@ -30,4 +30,4 @@ offset=$(printf '%s\n' "$matches" | cut -d: -f1)
 size=$(wc -c < "$work/expected")
 dd if="$image" bs=1 skip="$((offset - 16))" count="$size" status=none |
     cmp -s - "$work/expected" || refuse
-printf 'Uke root-selector ELF note v1: passed (declaration only, no VRR qualification)\n'
+printf 'Uke root-selector ELF note v2: passed (declaration only, no VRR qualification)\n'

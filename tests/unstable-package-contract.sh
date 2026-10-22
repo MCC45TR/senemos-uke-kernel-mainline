@@ -16,7 +16,7 @@ names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 parsed=$(rpmspec --parse "$spec")
 grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*-unstable\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
-if grep -E '^Obsoletes:|^Conflicts:|^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)($|[[:space:]])|^Requires:.*(python|pypy|uke-kernel-update)' <<< "$parsed"; then
+if grep -E '^Obsoletes:|^Conflicts:|^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)($|[[:space:]])|^Requires:.*(python|pypy)' <<< "$parsed"; then
     echo 'Unstable packages must coexist without automatic activation' >&2
     exit 1
 fi
@@ -34,4 +34,13 @@ grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
 grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"
 [[ ! -e $root/packaging/native/senemos-uke-linux-kernel-mainline-native.spec ]]
 bash "$root/tests/unstable-boot-status-contract.sh"
+build_guard=$(sed -n '/^\[\[ \$release =~ /p' "$root/src/boot/build-payload.sh")
+base_guard=$(sed -n '/^\[\[ \$# == 2 && \$2 =~ /p' "$root/src/boot/make-initramfs-base.sh")
+release=7.3.0-3-unstable jobs=2
+eval "$build_guard"
+(set -- fixture "$release"; eval "$base_guard")
+release=7x3y0-3-unstable
+if (eval "$build_guard") || (set -- fixture "$release"; eval "$base_guard"); then
+    echo 'Producer release separators must be literal dots' >&2; exit 1
+fi
 echo 'Unstable namespace, isolated module ABI, matched boot and no activation passed'

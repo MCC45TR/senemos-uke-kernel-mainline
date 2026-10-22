@@ -8,7 +8,7 @@
 
 /* Compiler emits the note; the kernel NOTES linker rule retains it. */
 ELFNOTE64("UKE", 0x554b4501,
-	  "root-selector-v1;userdata=f2fs;slot=a,b;vrr-min=0,30");
+	  "root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30");
 #endif
 
 static int UKE_INIT uke_cmdline_space(char value)
@@ -23,12 +23,12 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 	static const char prefix[] = "senemos.root=";
 	static const char standard[] = "root=PARTLABEL=linux";
 	static const char userdata[] = "root=PARTLABEL=userdata";
-	static const char fstypes[] = "rootfstype=ext4,f2fs";
+	static const char fstypes[] = "rootfstype=ext4,f2fs,xfs,btrfs";
 	static const char panic[] = "panic=0";
 	size_t pos = 0, length = 0, root = 0, roots = 0;
 	size_t fstype = 0, fstype_count = 0, panic_pos = 0, panic_count = 0;
 	const char *slot = NULL, *vrr = NULL;
-	size_t slot_bytes = 0, vrr_bytes = 0, extra, shrink = sizeof(",f2fs") - 1;
+	size_t slot_bytes = 0, vrr_bytes = 0, extra, shrink;
 	int selected = 0;
 
 	if (!cmdline || !capacity || bytes > 8192 || (!handoff && bytes))
@@ -130,13 +130,12 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 	}
 	if (roots != 1 || fstype_count != 1 || panic_count != 1)
 		return -1;
+	shrink = selected == 2 ? 0 : sizeof(",f2fs,xfs,btrfs") - 1;
 	extra = (selected == 2 ? sizeof(userdata) - sizeof(standard) + 1 : 0) +
 		(slot ? 1 + slot_bytes : 0) + (vrr ? 1 + vrr_bytes : 0);
 	if (extra >= shrink && capacity - length <= extra - shrink)
 		return -1;
-	/* Shrink first so every intermediate write also fits the final capacity. */
-	memcpy(cmdline + fstype + sizeof("rootfstype=") - 1,
-	       selected == 2 ? "f2fs" : "ext4", 4);
+	/* Keep the admitted probe list for userdata; legacy Linux remains EXT4. */
 	memmove(cmdline + fstype + sizeof(fstypes) - 1 - shrink,
 		cmdline + fstype + sizeof(fstypes) - 1,
 		length - fstype - (sizeof(fstypes) - 1) + 1);

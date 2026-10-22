@@ -5,7 +5,7 @@ trap 'printf "Boot payload failed at line %s\n" "$LINENO" >&2' ERR
 [[ $# == 5 ]] || exit 2
 kernel=$(realpath "$1") out=$(realpath -m "$2")
 base=$(realpath "$3") release=$4 jobs=$5
-[[ $release =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*(-unstable)?$ && $jobs =~ ^[1-9][0-9]*$ ]]
+[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*-unstable$ && $jobs =~ ^[1-9][0-9]*$ ]]
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
 cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
@@ -50,7 +50,8 @@ export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
-for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE; do
+for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
+    EXT4_FS F2FS_FS XFS_FS BTRFS_FS; do
     grep -Fx "CONFIG_${flag}=y" "$out/.config"
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
@@ -64,13 +65,13 @@ find "$source_modules" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
 while IFS= read -r path; do
-    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* ]] || {
-        printf 'Invalid early module path: %s\n' "$path" >&2; exit 1;
-    }
-    [[ -s $source_modules/kernel/$path ]] || {
-        printf 'Missing early module: %s\n' "$path" >&2; exit 1;
-    }
-    install -Dm644 "$source_modules/kernel/$path" "$target/kernel/$path"
+    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* ]]
+    if [[ -s $source_modules/kernel/$path ]]; then
+        install -Dm644 "$source_modules/kernel/$path" "$target/kernel/$path"
+    elif ! grep -Fxq "kernel/${path%.zst}" "$source_modules/modules.builtin"; then
+        printf 'Required early driver is neither a module nor built in: %s\n' "$path" >&2
+        exit 1
+    fi
 done < "$here/early-modules.list"
 for name in modules.builtin modules.builtin.modinfo modules.order; do
     install -m644 "$source_modules/$name" "$target/$name"
@@ -106,5 +107,5 @@ image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
 userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v1\n' \
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\n' \
     "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"
