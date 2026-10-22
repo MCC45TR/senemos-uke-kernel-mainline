@@ -52,3 +52,55 @@ found in the bounded OEM source/profile comparison. The official Xiaomi
 [specifications](https://www.mi.com/in/product/xiaomi-pad-7/specs/) advertise
 12-bit color and four speakers/microphones; they do not describe the transport
 or the internal color expansion mechanism. No new 12-bpc mode is added.
+
+## Source and tablet verification, 22 October 2026
+
+The tablet booted signed COPR 11188183, kernel 7.2.12-14 from source
+`599972cbfe5804eddf96d1a978e818bb0c1793c0`, after DNF installation. Original
+KWin and KScreen 6.8.1 report automatic 10-bit color and the fixed 10–10 range.
+The connector was active. A host-camera observation resolved the login screen
+and current clock during a bounded native-backlight increase; the exact prior
+brightness was restored. This establishes visible output for that observation.
+Active framebuffer format, transmitted PPS and optical precision were not
+independently measured on this boot.
+
+The exact MiCode snapshots above contain 335 display C/H files and 361 display
+DT files. Their normal DSC parser calls `sde_dsc_populate_dsc_config()`, whose
+rate-control lookup accepts listed 8/10-bpc tuples and returns `-EINVAL` for
+12 bpc. A host fixture extracted the actual lookup and verified known 8/10-bpc
+cases plus rejection of 180 tested 12-bpc tuples across DSC versions, SCR,
+formats and integer compressed rates. This is evidence for that published
+software path, not a limit established for every shipped binary or the panel.
+
+Host-only Bash/jq decoding of the two stock OS3.0.304.0 O82 QDCM files confirms:
+
+| Per panel variant | Stored configuration |
+|---|---|
+| 59 GC profiles | `bitsRounding=10`; 1024 entries per channel |
+| 59 IGC profiles | 257 entries per channel, values through 4095; dither settings vary |
+| 59 postblend dither profiles | Disabled; temporal field absent in 21 and zero in 38 |
+| 59 PA dither profiles | Disabled |
+| Gamut profiles | 36 enabled, 23 disabled; fine tables contain 4913 RGB triples |
+
+These are stored profiles, not live Android DRM blobs. Disabled identity gamut
+tables can contain 4096, so their raw values must not be masked directly into
+12-bit hardware fields. Panel-specific calibration curves are not exported or
+installed by this inspection.
+
+Cliffs DT selects VIG IGC v6, DSPP IGC v4 and gamut v4.3. The corresponding OEM
+writers carry 12-bit LUT precision, including 4-bit alignment into 16-bit slots.
+The prepared release-14 native `dpu_crtc.c` already converts its 1024-entry GC
+LUT to 10-bit values and disables 8-bit rounding. Its DSPP implementation does
+not establish parity with the OEM IGCv4/gamut pipeline. Different-block IGCv5
+code and another panel's gamma-dither registers are not interchangeable here.
+
+Static inspection of the stock OS3 dither library identifies IGC-dither methods.
+Its SHA-256 differs from the older OS2 library described in the supplied
+research, despite equal byte length. Their behavior is not assumed identical.
+The OEM MI raw-command ioctl can also send vendor panel commands; DT parse
+logs and static profile files cannot establish its runtime traffic.
+
+The remaining decisive evidence is a selected stock-mode PPS, active color
+property blobs and bounded actual DSI TX records, or exact O82/NT36532E panel
+documentation. No validated 12-bpc receiver mode or panel FRC toggle was found.
+The Linux connector therefore retains its truthful fixed 10-bit capability.

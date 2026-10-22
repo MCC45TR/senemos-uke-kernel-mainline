@@ -78,7 +78,7 @@ mapping; native amplifier component/protection; calibration validation and
 channel binding; UCM and physical acceptance. Service registration creates no
 sound card and must not be advertised as working internal audio.
 
-## Card registration candidate
+## Card registration, 22 October 2026
 
 The 7.2.12-14 `registration-only` profile adds an exact Uke ASoC card and two
 AudioReach frontend PCMs. APM and its PCM component must both bind before card
@@ -102,7 +102,17 @@ Cold autoload failed because the original Fedora ALSA rule also loads
 IOMMU-probe warnings outside the admitted Uke boot SMMU scope. Release 14 adds
 the required sequencer module and omits frontend IOMMU attachment while DMA
 is prohibited. It preserves the SMMU guard and original Fedora configuration.
-Cold autoload, absence of new warnings and physical audio remain to be tested.
+COPR [11188183](https://copr.fedorainfracloud.org/coprs/build/11188183), source
+`599972cbfe5804eddf96d1a978e818bb0c1793c0`, produced the signed release-14
+cohort. After DNF installation and one normal reboot, the tablet automatically
+registered `POCO-Pad-X1-AudioReach` and both explicitly disabled frontends,
+without a manual module load. Both substreams remained closed. The three
+release-13 IOMMU warnings were absent; the earlier SPMI warning remains.
+Network, Bluetooth, power profiles, touch, SSC and the display manager were
+active, with no failed system units at the recorded observation. The updater
+acknowledged release 14 as stable. This establishes automatic registration
+after a normal reboot, not power-cycle qualification, four-speaker output or
+microphone capture. All physical paths remain disabled.
 
 The host-only `acdb-graph-audit` inspects stock ACDB graph/module identities and
 allowlisted hardware-interface metadata. AudioReach graphservices

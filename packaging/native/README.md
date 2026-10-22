@@ -267,7 +267,7 @@ or apply microphone bias, amplifier presets or calibration. The existing
 Host FDT and actual-source response/lifetime checks precede COPR submission.
 Tablet service binding and physical internal audio remain separate tests.
 
-## Audio card registration candidate, 22 October 2026
+## Audio card registration, 22 October 2026
 
 The 7.2.12-14 source selects `registration-only`: the native APM and PCM
 components register a Uke card with playback/capture frontend descriptions.
@@ -284,7 +284,12 @@ cold autoload failed through the original Fedora ALSA rule's missing
 `snd-seq` dependency. Its frontend IOMMU attachment also triggered warnings
 outside the guarded boot scope. Release 14 includes the sequencer module and
 omits that attachment while frontend DMA remains prohibited. The original
-Fedora rule and SMMU guard are retained; cold-boot validation is still required.
+Fedora rule and SMMU guard are retained. COPR 11188183 release 14 was installed
+through DNF and booted on the tablet on 22 October. The card and both disabled
+frontends appeared automatically, without manual module loading. Both
+substreams remained closed and the release-13 IOMMU warnings were absent.
+An earlier SPMI warning remains. This was one normal reboot; power-cycle and
+physical speaker/microphone acceptance remain open.
 
 Original host `alsatplg` from Fedora `alsa-topology-utils` compiles the project frontend
 description; no donor build script is executed. The output contains no
