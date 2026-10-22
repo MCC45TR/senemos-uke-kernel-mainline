@@ -432,6 +432,10 @@
     {
       "path": "patches/7.2.12/0106-sm7675-lpass-pinctrl.patch",
       "sha256": "7f71e208eb965a536999bfd2377db2f085821c8e64b6161d70331740a8bb203d"
+    },
+    {
+      "path": "patches/7.2.12/0107-uke-qrtr-discovery.patch",
+      "sha256": "0b6a5c61341717ea31aa6da62c29a01d79bfa0aa4edf8f6e2bde904c1be2ac9a"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

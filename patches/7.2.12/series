@@ -104,3 +104,4 @@
 0104-wcd939x-preserve-provider-probe-errors.patch
 0105-wcd939x-use-coordinated-reset-controller.patch
 0106-sm7675-lpass-pinctrl.patch
+0107-uke-qrtr-discovery.patch

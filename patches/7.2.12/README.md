@@ -138,3 +138,8 @@ reset controller and backport Alexandr Zubtsov's Palawan LPASS pin driver
 with the exact SM7675 match. The native providers-only profile registers
 macro/clock/pin providers while keeping WCD, SoundWire, bias and PCM closed.
 Reset and provider fixtures do not establish physical capture or playback.
+## QRTR discovery follow-up
+
+22 October 2026: `0107-uke-qrtr-discovery.patch` initiates the Uke SMD HELLO
+after receive-context publication and retains normal name-server packet flow.
+See `docs/QRTR-DISCOVERY.md` for attribution, host checks and tablet limits.

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 16
+%global senemos_build_release 17
 %else
 %global senemos_build_release 1
 %endif
@@ -190,6 +190,7 @@ CXX=clang++ bash native-profile/tests/root-selector-contract.sh
 CC=clang bash native-profile/tests/root-selector-note-contract.sh "$PWD" "$PWD/boot-recipe/lock.json"
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang bash native-profile/tests/qrtr-discovery-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
@@ -357,6 +358,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-17
+- Initiate Uke SMD service discovery after publishing the receive context.
+- Retry transient HELLO startup failures and preserve pending NS notifications.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-16
 - Register native LPASS pin/clock providers with physical PCM and SoundWire paths closed.
 - Preserve codec provider errors and support coordinated USBSS-protected reset.

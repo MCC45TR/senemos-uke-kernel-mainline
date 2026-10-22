@@ -310,3 +310,13 @@ codec reset controller without selecting a default pin state. No SoundWire
 controller, physical WCD codec, mic bias, amplifier or PCM route is enabled.
 Actual-source reset fault fixtures, provider error propagation and clock/pin
 FDT checks are mandatory. Tablet provider binding is a separate acceptance.
+
+### QRTR service discovery, 22 October 2026
+
+The 7.2.12-17 candidate retains that provider profile and adds an Uke-only
+SMD HELLO request after receive-context publication. Existing name-server
+handshakes and ordinary packet flow remain; transient readiness/allocation
+failures are retried and teardown cancels pending work. A failed name-server
+announcement no longer hides later servers or pending lookups. The actual
+worker/probe/name-server host fixtures run in the RPM build. See
+`docs/QRTR-DISCOVERY.md` for attribution and separate tablet acceptance.
