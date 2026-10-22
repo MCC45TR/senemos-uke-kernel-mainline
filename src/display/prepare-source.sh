@@ -18,6 +18,7 @@ paths=(
     drivers/iommu/arm/arm-smmu/uke-display-smmu.c
     drivers/gpu/drm/msm/uke-mdss-handoff.c
     include/linux/qcom-uke-display.h
+    include/linux/uke-o82-touch.h
     include/drm/uke-o82-mode.h
     include/drm/uke-o82-avr.h
 )

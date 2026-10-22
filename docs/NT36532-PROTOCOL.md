@@ -1,6 +1,6 @@
-# NT36532 Uke protocol foundation
+# NT36532 Uke protocol and transport candidate
 
-22 October 2026. Host C fixtures and an AArch64 Linux 7.2.12 translation unit.
+23 October 2026. Host C fixtures and AArch64 Linux 7.2.12/7.3 objects.
 The tablet continues to use the packaged userspace touchscreen implementation.
 
 `src/input/nt36532-uke-protocol.c` contains the GPL-2.0-or-later normal RAM
@@ -53,11 +53,55 @@ image and rejected one changed byte per 1 KiB. GCC ASan/UBSan checks passed.
 The AArch64 object compiled against the prepared project Linux 7.2.12 source
 with Clang 23.1.3 and `KCFLAGS=-Werror`; this is not a linked driver build.
 
+## SPI and capture candidate, 23 October
+
+`nt36532-uke-spi.c` supplies mode-0 SPI, a threaded rising-edge IRQ and a
+V4L2 metadata queue. The page command uses 1 MHz; firmware RAM and complete
+5,434-byte frame transactions use 19.2 MHz. Controllers unable to transfer
+one whole packet are refused. Short transfers, oversized/overflowing addresses,
+state changes and stale generations abort the operation.
+
+The queue uses `V4L2_META_FMT_GENERIC_8`, one 5,432-byte line, through a
+`VFL_TYPE_VIDEO` metadata node. This preserves every packet byte and does not
+mislabel signed raw values as signed deltas. Only host-root credentials may
+open the raw node. The contact processor still owns private reference
+subtraction and uinput. A video-group or seat ACL does not grant raw access.
+
+O82 `.enable` schedules asynchronous first-frame work. The standard panel
+follower's enable notification is therefore too early for firmware download.
+The candidate exports a synchronous notification at the existing actual
+`touch_reset_state` transitions, including an atomic registration snapshot.
+Panel reset invalidates the transport generation, drains IRQ/work/transfers,
+then permits panel power changes. A worker never acquires a panel mutex.
+Suspend, shutdown, stream stop and removal quiesce the same transport. V4L2
+references retain capture storage for file descriptors surviving unbind.
+
+The normal-image hash and four-bank readback remain mandatory. Watchdog
+recovery reloads that same image. Standard `power_supply` notifications apply
+the existing charger-noise command with readback; missing telemetry does not
+invent a charger state or disable touch. No charging-control command is added.
+
+The active OnePlus Pad 2 queue at `127ee601667aa3ac0125138573176f512cb70292`
+selects coordinate driver 0018, but comments out watchdog patch 0021. Lenovo
+TB520FU `972c5ce4d2955bb0382a2101f4e22c5185cea6ba` selects SPI patch 0821
+and panel-ordering patch 0832. Those coordinate firmware/packet contracts
+do not replace Uke THP. Current upstream DRM follower, V4L2 metadata,
+videobuf2 unregister and device-reference APIs supply the lifecycle framework;
+no donor board settings, firmware or contact code are copied.
+
+`make test-touch-transport` executes the production SPI and lifecycle functions
+with short/error transfers, every admission flag, stale IRQ generations,
+charger failures and 100 concurrent in-flight panel resets. It also executes
+the production O82 registration/state/unregistration functions. Clang
+ASan/UBSan and complete source validation passed. Both the composite transport
+object and panel object compile against prepared Linux 7.2.12 and 7.3 with
+Clang 23 and `-Werror`. These are object checks, not full module/modpost builds.
+
 ## Remaining integration
 
-No Kconfig, transport probe, DT binding or packaged tablet payload selects
-this foundation yet. Kernel SPI/IRQ ownership, panel lifecycle, a lossless
-standard capture interface and the existing userspace contact consumer must
+Kconfig and an explicit host-only staging helper exist; normal release
+preparation and configuration do not select this driver. DT binding/selection,
+private firmware-path provisioning and the existing C++ contact consumer must
 be integrated together before replacing the current transport. Suspend,
 resume, generation changes, watchdog recovery and physical touch/VRR
 continuity then require separate tablet tests. The standalone touchscreen

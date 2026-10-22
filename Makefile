@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
-.PHONY: validate srpm test-touch-protocol
+.PHONY: validate srpm test-touch-protocol test-touch-transport
 version := 7.2.12
 outdir ?= $(CURDIR)/build/srpm
-validate: test-touch-protocol
+validate: test-touch-protocol test-touch-transport
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.2.12
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 100) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
@@ -26,6 +26,8 @@ validate: test-touch-protocol
 	bash -n tests/resin-wake-contract.sh
 test-touch-protocol:
 	bash tests/touch-protocol-contract.sh
+test-touch-transport:
+	bash tests/touch-transport-contract.sh
 .PHONY: test-root-capability
 test-root-capability:
 	test -n "$(kernel_source)"
