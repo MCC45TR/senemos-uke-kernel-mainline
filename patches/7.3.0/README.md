@@ -1,11 +1,20 @@
 # Uke Linux 7.3 adaptation
 
-22 October 2026 candidate: release 6 carries patches 0099–0107 and the matching
-native source from mainline `f142cbe`. The 108-patch queue retains the existing
+22 October 2026 candidate: release 6 carries current fixes from patches
+0099–0107 and native source from mainline `f142cbe`. The 107-patch queue retains the existing
 7.3 API adaptations, QCOM RNG inventory and QCE/GF128 policy. The added source
 covers APR publication, closed-stream card/provider lifetime, coordinated reset,
 LPASS pin control and post-publication Uke SMD QRTR discovery. Existing release
 16 display assets are carried without additional color-depth changes.
+
+The fresh source-preparation check refused duplicate patch 0101: the exact
+physical channel-map change is already in signed Linux 7.3 (complete reverse
+application check passed). It is omitted from this queue. Patch 0102 retains
+the new upstream clock/OF include context. Patch 0107 is adapted to 7.3's
+existing global HELLO worker and MHI resume API: it retains that handshake,
+removes the control-packet drop gate, bounds transient retries and cancels work
+before node release. The Uke SMD request still follows receive publication.
+No new control queue is introduced.
 
 Native host metadata, identity, filesystem, module-inventory and profile
 fixtures passed. The host entry self-test now selects the existing strict

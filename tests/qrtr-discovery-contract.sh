@@ -142,8 +142,14 @@ C
 "${CC:-cc}" -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined \
     -fno-omit-frame-pointer "$stage/check.c" -o "$stage/check"
 "$stage/check"
-# Retain the old NS handshake and ungated enqueue; retire work before releasing nodes.
-grep -Fq 'ret = say_hello(sq);' "$ns"
+# Require the existing handshake policy and ungated enqueue for each source base.
+if grep -q '^static int say_hello(' "$ns"; then
+    grep -Fq 'ret = say_hello(sq);' "$ns"
+else
+    awk '/^int qrtr_endpoint_register\(/ {emit=1}
+     emit && /schedule_delayed_work\(&node->say_hello, 0\)/ {found=1}
+     emit && /^}/ {emit=0} END {exit !found}' "$core"
+fi
 if grep -q 'hello_sent\|tx_backlog' "$core"; then exit 1; fi
 awk '/^void qrtr_endpoint_unregister\(/ {emit=1}
  emit && /cancel_delayed_work_sync/ {cancel=1}

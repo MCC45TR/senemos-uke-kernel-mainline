@@ -414,12 +414,8 @@
       "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
     },
     {
-      "path": "patches/7.3.0/0101-audioreach-use-physical-channel-maps.patch",
-      "sha256": "4b6e570e80d2531d4fc3cfdeabdf350df6eb1ac0818409d099055b1af2c81d86"
-    },
-    {
       "path": "patches/7.3.0/0102-audioreach-replace-stale-channel-maps.patch",
-      "sha256": "3413646716f1784dae3b331a8c57c144d5cd01af102b504df00425163ae09600"
+      "sha256": "138705bbd3d37e7e988e30250f444f2c7e4b913cb7f79da43bc05b3ccd72d316"
     },
     {
       "path": "patches/7.3.0/0103-wcd939x-report-channel-switches-independently.patch",
@@ -439,7 +435,7 @@
     },
     {
       "path": "patches/7.3.0/0107-uke-qrtr-discovery.patch",
-      "sha256": "0b6a5c61341717ea31aa6da62c29a01d79bfa0aa4edf8f6e2bde904c1be2ac9a"
+      "sha256": "6dc44ae6eb28b91e452a094506b499c43f5a459cb0fc33aef25c3f3acb0393f4"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

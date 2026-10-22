@@ -99,7 +99,6 @@
 0098-uke-confirm-usb-sdp-adapter.patch
 0099-apr-unwind-failed-service-publication.patch
 0100-uke-audioreach-card-with-closed-streams.patch
-0101-audioreach-use-physical-channel-maps.patch
 0102-audioreach-replace-stale-channel-maps.patch
 0103-wcd939x-report-channel-switches-independently.patch
 0104-wcd939x-preserve-provider-probe-errors.patch

@@ -1,5 +1,13 @@
 # Uke QRTR startup discovery
 
+22 October 2026 Linux 7.3 source adaptation: signed 7.3 already contains the
+global HELLO worker and MHI resume API. Its candidate keeps that initial
+handshake, removes the `hello_sent` packet-drop gate, uses the same bounded
+retry/teardown worker and requests Uke SMD HELLO after publication. It retains
+7.3's name-server response policy, rather than restoring the older responses
+described for 7.2 below. Actual-source host fault fixtures passed on this
+adaptation; full source preparation, AArch64 and device gates remain separate.
+
 22 October 2026. POCO Pad X1, Fedora Rawhide AArch64, kernel 7.2.12-16.
 After one reboot, ADSP was running and its SMD IPCRTR channel was bound, but
 QRTR advertised only the local locator and WPSS services. Battery sysfs reads
