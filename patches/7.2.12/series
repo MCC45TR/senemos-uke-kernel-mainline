@@ -101,3 +101,6 @@
 0101-audioreach-use-physical-channel-maps.patch
 0102-audioreach-replace-stale-channel-maps.patch
 0103-wcd939x-report-channel-switches-independently.patch
+0104-wcd939x-preserve-provider-probe-errors.patch
+0105-wcd939x-use-coordinated-reset-controller.patch
+0106-sm7675-lpass-pinctrl.patch

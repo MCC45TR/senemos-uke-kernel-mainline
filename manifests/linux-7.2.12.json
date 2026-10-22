@@ -420,6 +420,18 @@
     {
       "path": "patches/7.2.12/0103-wcd939x-report-channel-switches-independently.patch",
       "sha256": "a1535075d5a250c722d16e9ae7c7bfca1441a92c359a19e3bfefc90fb4e37975"
+    },
+    {
+      "path": "patches/7.2.12/0104-wcd939x-preserve-provider-probe-errors.patch",
+      "sha256": "f0b8c2368b52263a9be3f63042085e6fc0c0081488c24b6f03cd2677f2d035c3"
+    },
+    {
+      "path": "patches/7.2.12/0105-wcd939x-use-coordinated-reset-controller.patch",
+      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+    },
+    {
+      "path": "patches/7.2.12/0106-sm7675-lpass-pinctrl.patch",
+      "sha256": "7f71e208eb965a536999bfd2377db2f085821c8e64b6161d70331740a8bb203d"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -431,7 +443,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "72f662666fa0e38f3dac0ef223265e20a43e8df0851edbe097a79f097ad2e012"
+      "sha256": "2af274c0d8b1394192a3e32d76a57609bafe0b030701948eec2f0b841159865b"
     },
     {
       "path": "configs/fedora.config",

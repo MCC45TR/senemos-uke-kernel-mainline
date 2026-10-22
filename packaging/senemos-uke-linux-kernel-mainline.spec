@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 15
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -161,7 +161,8 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
-    CONFIG_SND_SEQUENCER=m; do
+    CONFIG_SND_SEQUENCER=m CONFIG_PINCTRL_PALAWAN_LPASS_LPI=m \
+    CONFIG_RESET_CONTROLLER=y; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -213,6 +214,10 @@ CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-channel-map-contract.sh "$PWD"
 CC=clang bash native-profile/tests/wcd939x-channel-switch-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-probe-error-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-reset-consumer-contract.sh "$PWD"
+CC=clang bash native-profile/tests/wcd939x-reset-contract.sh native-profile/src/usb/wcd939x-uke-typec.c
+bash native-profile/tests/audio-providers-fdt-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -352,6 +357,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-16
+- Register native LPASS pin/clock providers with physical PCM and SoundWire paths closed.
+- Preserve codec provider errors and support coordinated USBSS-protected reset.
+- Reuse the attributed Palawan LPASS pin controller with an exact SM7675 match.
+- Validate reset fault paths, clock tuples and GPIO12-only admission before packaging.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-15
 - Backport upstream physical-channel masks and packed AudioReach channel maps.
 - Clear stale slots on replacement and reject byte-field truncation before mutation.

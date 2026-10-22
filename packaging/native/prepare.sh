@@ -20,6 +20,7 @@ case $(cat "$profile/audio-profile") in
     disabled) ;;
     services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
     registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
+    providers-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1 -DUKE_AUDIO_PROVIDERS=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"

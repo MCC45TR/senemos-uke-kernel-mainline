@@ -163,3 +163,31 @@ either route can be activated safely without its matching SoundWire setup.
 The OEM reset uses LPASS GPIO12 and the TX bus includes GPIO14; its separate
 wakeup register and controller IRQs also require review. No guessed pinctrl
 compatible, raw wakeup write or live codec probe was added.
+
+## Native provider source candidate, 22 October 2026
+
+Release 16 selects the `providers-only` profile. It registers VA/TX/RX macros
+at the stock Uke addresses through the existing SM8550 shared-IP drivers,
+with PRM clock IDs 57/64 and votes 102/103. VA supplies the TX/RX frame
+generator; the stock VA DMIC sample setting is 600 kHz. The separately
+attributed Palawan LPASS pin driver has an exact SM7675 match and per-pin
+slew fields. The DT admits only GPIO12 for GPIO use; other pins are reserved.
+
+The stock WCD module additionally clears/restores the USBSS OVP threshold
+fuse override around reset, beyond the threshold writes in published audio
+source. A USBSS child reset controller performs the qualified sequence under
+the routing mutex, checks the initial protection fields and attempts every
+restore on failure. It keeps EQ gating and unrelated routing fields intact.
+WCD939x accepts an explicitly described reset controller, retains its legacy
+sleepable GPIO path and propagates reset/supplier errors. Registration of
+the child alone does not select either pin state or reset the codec.
+
+Source-extracted fixtures cover provider errors, legacy/controller selection,
+all 11 reset fault points, compound failures, reserved bits and malformed
+initial state. Complete changed drivers and all three macro translation
+units compile for AArch64. The provider graph's clock/pin tuples are checked
+on a synthetic host FDT. No physical WCD codec, SoundWire controller, mic
+bias or PCM route is enabled; amplifier/SLIM paths remain closed. Runtime
+provider binding, then protected codec enumeration and independent capture
+remain separate gates. No speaker or microphone success follows from these
+source and build results.

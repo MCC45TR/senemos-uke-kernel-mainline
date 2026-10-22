@@ -32,7 +32,7 @@
 		compatible = "qcom,q6prm";
 		reg = <2>;
 
-		clock-controller {
+		uke_q6prmcc: clock-controller {
 			compatible = "qcom,q6prm-lpass-clocks";
 			#clock-cells = <2>;
 		};

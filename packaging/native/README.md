@@ -302,3 +302,11 @@ compact DSP maps, stale-slot clearing and independent WCD939x switch readback.
 Actual-source host fixtures and AArch64 objects pass; physical buses and
 registration-only stream guards remain unchanged. This is capture bring-up
 preparation, not microphone availability or a new tablet result.
+
+The 7.2.12-16 source candidate selects `providers-only`: native LPASS VA,
+TX, RX and pin controllers register under their exact PRM clock dependencies.
+Only GPIO12 is admitted for GPIO use. The USBSS child exposes a coordinated
+codec reset controller without selecting a default pin state. No SoundWire
+controller, physical WCD codec, mic bias, amplifier or PCM route is enabled.
+Actual-source reset fault fixtures, provider error propagation and clock/pin
+FDT checks are mandatory. Tablet provider binding is a separate acceptance.

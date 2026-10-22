@@ -132,3 +132,9 @@ and accepts exactly two frontend runtimes. The registration-only DT enables
 the guarded frontend component, retaining disabled backend and physical paths.
 Neither card registration nor software refusal fixtures qualify speaker or
 microphone operation.
+
+Patches 0104–0106 preserve WCD provider error codes, support a coordinated
+reset controller and backport Alexandr Zubtsov's Palawan LPASS pin driver
+with the exact SM7675 match. The native providers-only profile registers
+macro/clock/pin providers while keeping WCD, SoundWire, bias and PCM closed.
+Reset and provider fixtures do not establish physical capture or playback.
