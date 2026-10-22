@@ -16,6 +16,7 @@ version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
 case $version in 7.2.9|7.2.10|7.2.11|7.2.12) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
+bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
 if [[ $llcc_native == 1 ]]; then
     bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
     bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"

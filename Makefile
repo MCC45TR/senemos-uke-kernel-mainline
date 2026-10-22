@@ -23,6 +23,7 @@ validate:
 	bash tests/userdata-grow-contract.sh
 	bash tests/early-modules-contract.sh
 	bash tests/platform-profile-contract.sh
+	bash -n tests/resin-wake-contract.sh
 .PHONY: test-root-capability
 test-root-capability:
 	test -n "$(kernel_source)"

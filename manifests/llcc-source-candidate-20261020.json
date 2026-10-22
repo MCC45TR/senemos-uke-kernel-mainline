@@ -49,11 +49,11 @@
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "b8174f6eeee81a25c7ea7e720509a38367ace4d014f24b1c1a26457f5e0726bc"
+      "sha256": "87a0ce40478f335217f9729ba5014a5f532bed5098c92a696cbebaee95477c7d"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "6be8c9b1aa75f2fb213d738c51c4848400286e5c558538b9771840721eea4cc8"
+      "sha256": "c6f7391d1735543bd519d6df7be36f222a204e4632107652d6f5be013428abf7"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -74,6 +74,10 @@
     {
       "path": "packaging/native/llcc-profile",
       "sha256": "264857412f434201eb6eb7642da71970e5ea68b90a78a7abd6c02ad2d1c193c4"
+    },
+    {
+      "path": "tests/resin-wake-contract.sh",
+      "sha256": "6de153a27483d9dec6890c6c244800d8d84267e9424d4e7afde7f083d64d14d7"
     }
   ],
   "baseline_files": [

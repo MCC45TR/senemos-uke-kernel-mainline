@@ -167,6 +167,7 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
 bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
@@ -350,6 +351,10 @@ fi
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-12
 - Register the Uke AudioReach card and frontends with PCM opens denied.
 - Preserve disabled physical audio paths and version the frontend topology.
+
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-11
+- Expose the standard volume-down wake permission on the exact Uke PMIC node.
+- Preserve the accepted audio-service, display and native profile source inputs.
 
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-10
 - Register native APM and PRM services while keeping physical audio paths disabled.
