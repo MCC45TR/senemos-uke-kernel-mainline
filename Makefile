@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
-.PHONY: validate srpm
+.PHONY: validate srpm test-touch-protocol
 version := 7.2.12
 outdir ?= $(CURDIR)/build/srpm
-validate:
+validate: test-touch-protocol
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.2.12
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 100) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
@@ -24,6 +24,8 @@ validate:
 	bash tests/early-modules-contract.sh
 	bash tests/platform-profile-contract.sh
 	bash -n tests/resin-wake-contract.sh
+test-touch-protocol:
+	bash tests/touch-protocol-contract.sh
 .PHONY: test-root-capability
 test-root-capability:
 	test -n "$(kernel_source)"
@@ -55,7 +57,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/display src/boot src/usb src/audio src/power patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
+	git archive HEAD src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
