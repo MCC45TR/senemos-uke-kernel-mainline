@@ -269,7 +269,7 @@ Tablet service binding and physical internal audio remain separate tests.
 
 ## Audio card registration candidate, 22 October 2026
 
-The 7.2.12-13 source selects `registration-only`: the native APM and PCM
+The 7.2.12-14 source selects `registration-only`: the native APM and PCM
 components register a Uke card with playback/capture frontend descriptions.
 The displayed names explicitly mark streams disabled. The q6apm component
 refuses both PCM and compressed opens before DSP graph allocation, rather
@@ -278,6 +278,13 @@ construction and teardown mappings, which source review found unguarded in
 the uninstalled release-12 candidate. No backend, amplifier,
 microphone bias or SLIM path is enabled. Native card visibility and physical
 audio acceptance remain separate results.
+
+Release 13 registered the card after a manual module load on the tablet, but
+cold autoload failed through the original Fedora ALSA rule's missing
+`snd-seq` dependency. Its frontend IOMMU attachment also triggered warnings
+outside the guarded boot scope. Release 14 includes the sequencer module and
+omits that attachment while frontend DMA remains prohibited. The original
+Fedora rule and SMMU guard are retained; cold-boot validation is still required.
 
 Original host `alsatplg` from Fedora `alsa-topology-utils` compiles the project frontend
 description; no donor build script is executed. The output contains no

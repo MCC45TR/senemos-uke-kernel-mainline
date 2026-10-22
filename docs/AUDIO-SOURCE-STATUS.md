@@ -80,7 +80,7 @@ sound card and must not be advertised as working internal audio.
 
 ## Card registration candidate
 
-The 7.2.12-13 `registration-only` profile adds an exact Uke ASoC card and two
+The 7.2.12-14 `registration-only` profile adds an exact Uke ASoC card and two
 AudioReach frontend PCMs. APM and its PCM component must both bind before card
 registration. The native topology contains interface metadata only, with no
 DSP graph, mixer or hardware endpoint. It is installed under a kernel-versioned
@@ -94,6 +94,15 @@ review found those earlier lifecycle paths in the release-12 candidate;
 release 12 is not admitted for tablet installation. Both the backend DAI and physical
 amplifier/SLIM paths remain disabled. This stage can establish native card
 visibility; it cannot establish sound output or microphone capture.
+
+On 22 October 2026, COPR 11187708 release 13 booted on the tablet. A manual
+machine-module load registered both disabled frontends without opening a PCM.
+Cold autoload failed because the original Fedora ALSA rule also loads
+`snd-seq`, which that kernel omitted. The enabled frontend node also caused
+IOMMU-probe warnings outside the admitted Uke boot SMMU scope. Release 14 adds
+the required sequencer module and omits frontend IOMMU attachment while DMA
+is prohibited. It preserves the SMMU guard and original Fedora configuration.
+Cold autoload, absence of new warnings and physical audio remain to be tested.
 
 The host-only `acdb-graph-audit` inspects stock ACDB graph/module identities and
 allowlisted hardware-interface metadata. AudioReach graphservices

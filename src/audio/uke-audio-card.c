@@ -47,7 +47,7 @@ static int uke_audio_probe(struct platform_device *pdev)
 	if (card->num_aux_devs != 2)
 		return -EINVAL;
 
-	/* Probe the PCM component before APM loads its frontend topology. */
+	/* Require both components before ASoC initializes the frontend runtimes. */
 	dais = card->aux_dev[0].dlc.of_node;
 	apm = card->aux_dev[1].dlc.of_node;
 	if (!of_device_is_compatible(dais, "qcom,q6apm-dais") ||
