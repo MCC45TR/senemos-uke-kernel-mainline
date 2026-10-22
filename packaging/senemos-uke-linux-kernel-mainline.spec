@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 8
+%global senemos_build_release 9
 %else
 %global senemos_build_release 1
 %endif
@@ -48,6 +48,7 @@ not establish physical tablet acceptance.
 Summary: Uke kernel Image and source identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
+Provides: uke-kernel(platform-profile-qos-v1) = 1
 
 %description core
 Image with the matching source-built initramfs, configuration and source record.
@@ -77,6 +78,7 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
 %description boot
@@ -156,7 +158,8 @@ bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspa
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
-    CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y; do
+    CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
+    CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -164,6 +167,8 @@ test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelea
 
 %check
 bash boot-recipe/tests/early-modules-contract.sh
+CC=clang bash native-profile/tests/platform-profile-contract.sh
+CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
 jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
@@ -335,6 +340,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-9
+- Add a guarded native Uke CPU/GPU platform-profile QoS provider.
+- Retain the standard legacy profile ABI on DT without enabling ACPI tables.
+- Preserve hardware frequency tables, independent thermal limits and error rollback.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-8
 - Admit required early drivers only from installed modules or the exact built-in inventory.
 - Require the current-slot transaction consumer before manual userdata updates.

@@ -2,14 +2,22 @@
   "schema_version": 1,
   "date": "2026-10-22",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "8a4f71f260692a1a03f03ca7aa1fdb08f1ccf0e621cdc04ad22616a0e79955c9"
+      "sha256": "32ba33648552184dd4301a94fb3bcb18e5308cb38e0102723fe643421e3cb901"
+    },
+    {
+      "path": "patches/boot/0005-uke-root-selector.patch",
+      "sha256": "8ce4ca41cef4ec0b6dc075d490d761e2633a275b0e167590ba2dc7ada066dca4"
+    },
+    {
+      "path": "patches/boot/0008-uke-platform-profile.patch",
+      "sha256": "b972d3f24681607feadf84ca8a41530932390d8e40691d998b150cbb28d64546"
     },
     {
       "path": "src/audit/check-target-payload.sh",
@@ -29,7 +37,11 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "d3ddf58072dfc54edf6343ca22512facd4b25d1b930fc2a9641cac865ea4eba3"
+      "sha256": "e9de9b5290c6f8b6a8c5f0cc363c74d3344af424a89a9ddde8866c174ab64e44"
+    },
+    {
+      "path": "src/boot/check-root-capability.sh",
+      "sha256": "7468095172c7a770b8d3de266524e209804cbbba23ae0e0dc0a493a2456e7326"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
@@ -60,6 +72,14 @@
       "sha256": "f5cfc874f76963518588ecdd7bf3ba85b389b5c07fc4d43ae4d82ffddda68903"
     },
     {
+      "path": "src/boot/dracut/uke-usb-network",
+      "sha256": "1bc170168cfbd6c82cc7e9019f31f0ec385b7400ad685a75b384c2162529c344"
+    },
+    {
+      "path": "src/boot/dracut/uke-userdata-grow.service",
+      "sha256": "650a6db2a3ea31bae3c8f07fe190df46d6fef97b9006b3b7b7203d9ad620f483"
+    },
+    {
       "path": "src/boot/early-modules.list",
       "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
     },
@@ -76,18 +96,6 @@
       "sha256": "a00419be859012abc4ab80a3e5def7d160842702df15ce438b014e8be05154d0"
     },
     {
-      "path": "tests/boot-image-contract.sh",
-      "sha256": "2306956da540e1da1de770ede3fcf39bbed6c4c754e11e593e8b29ac889ddc4f"
-    },
-    {
-      "path": "tests/target-privacy-contract.sh",
-      "sha256": "c44de51c157afc233915075d31d5458707cdb0b2edb75ae9f90c580c7ff1b637"
-    },
-    {
-      "path": "src/boot/dracut/uke-usb-network",
-      "sha256": "1bc170168cfbd6c82cc7e9019f31f0ec385b7400ad685a75b384c2162529c344"
-    },
-    {
       "path": "src/boot/offline-switch-root.cpp",
       "sha256": "a56fb778646f472b46e74e8d5c2be344b68f7d73aec5e1a42c91c31bdc905a64"
     },
@@ -100,20 +108,8 @@
       "sha256": "a237d32ebb451c8abcaeebea2531a95ed8b93126274b20911ab07ae487e01766"
     },
     {
-      "path": "tests/offline-boot-contract.sh",
-      "sha256": "5fbad47d511aff9cad2a04e3e93040a34469250b6e9b584ba31b85281d6d3dad"
-    },
-    {
       "path": "src/boot/uke-root-selector.h",
       "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
-    },
-    {
-      "path": "patches/boot/0005-uke-root-selector.patch",
-      "sha256": "8ce4ca41cef4ec0b6dc075d490d761e2633a275b0e167590ba2dc7ada066dca4"
-    },
-    {
-      "path": "src/boot/check-root-capability.sh",
-      "sha256": "7468095172c7a770b8d3de266524e209804cbbba23ae0e0dc0a493a2456e7326"
     },
     {
       "path": "src/boot/userdata-grow.cpp",
@@ -124,16 +120,36 @@
       "sha256": "83fc0c69059dd818a2c8c9047ab4192a0514fccdd2d7bf04e7a427bfe8ea5efd"
     },
     {
-      "path": "src/boot/dracut/uke-userdata-grow.service",
-      "sha256": "650a6db2a3ea31bae3c8f07fe190df46d6fef97b9006b3b7b7203d9ad620f483"
+      "path": "src/power/uke-platform-profile.c",
+      "sha256": "f56f75f74eeacc2c0b3694feeeef034bab4a0ac62939ffe70fcb493df35bcc4e"
     },
     {
-      "path": "tests/userdata-grow-contract.sh",
-      "sha256": "9f4a95f8e5be8f78941b77c7663c5cd7e4a05b2d3c71babd029d2b9325683730"
+      "path": "tests/boot-image-contract.sh",
+      "sha256": "2306956da540e1da1de770ede3fcf39bbed6c4c754e11e593e8b29ac889ddc4f"
     },
     {
       "path": "tests/early-modules-contract.sh",
       "sha256": "d52454b1a84a82b5d5e6a67aa412663b3c1b8b57307e6ae0c7db0bcf321f7e89"
+    },
+    {
+      "path": "tests/offline-boot-contract.sh",
+      "sha256": "5fbad47d511aff9cad2a04e3e93040a34469250b6e9b584ba31b85281d6d3dad"
+    },
+    {
+      "path": "tests/platform-profile-contract.sh",
+      "sha256": "e63153ca83baffdc13b265aa603951ce7f46352566bb6c7c93c88c8c9f62cf08"
+    },
+    {
+      "path": "tests/platform-profile-framework-contract.sh",
+      "sha256": "ac4c44198d017300cdc355ce06d236ae45796bedc001f6a410013939f4bc1f26"
+    },
+    {
+      "path": "tests/target-privacy-contract.sh",
+      "sha256": "c44de51c157afc233915075d31d5458707cdb0b2edb75ae9f90c580c7ff1b637"
+    },
+    {
+      "path": "tests/userdata-grow-contract.sh",
+      "sha256": "9f4a95f8e5be8f78941b77c7663c5cd7e4a05b2d3c71babd029d2b9325683730"
     }
   ],
   "root_selector_capability": {
@@ -155,5 +171,12 @@
     "power_guard": "Packaged updater checks headroom before staging; no post-root battery RPC dependency in initrd",
     "hardware_tested": false,
     "one_time_completion": "Persistent F2FS block count; completed oneshot remains active and subsequent boots skip fsck/resize"
+  },
+  "native_platform_profile": {
+    "interface": "platform-profile",
+    "provider": "uke-qos",
+    "original_ppd_version": "0.30",
+    "tablet_tested": false,
+    "backend_retired": false
   }
 }
