@@ -80,7 +80,7 @@ sound card and must not be advertised as working internal audio.
 
 ## Card registration candidate
 
-The 7.2.12-12 `registration-only` profile adds an exact Uke ASoC card and two
+The 7.2.12-13 `registration-only` profile adds an exact Uke ASoC card and two
 AudioReach frontend PCMs. APM and its PCM component must both bind before card
 registration. The native topology contains interface metadata only, with no
 DSP graph, mixer or hardware endpoint. It is installed under a kernel-versioned
@@ -88,7 +88,10 @@ firmware directory so rollback kernels retain their own matching data.
 
 PCM and compressed opens return `-EACCES` in the actual q6apm component entry
 before allocation, DSP graph commands or DMA. A machine startup guard alone
-would run too late in the ASoC open sequence. Both the backend DAI and physical
+would run too late in the ASoC open sequence. PCM creation and removal also
+skip buffer allocation and DSP mapping/unmapping for this profile. Source
+review found those earlier lifecycle paths in the release-12 candidate;
+release 12 is not admitted for tablet installation. Both the backend DAI and physical
 amplifier/SLIM paths remain disabled. This stage can establish native card
 visibility; it cannot establish sound output or microphone capture.
 

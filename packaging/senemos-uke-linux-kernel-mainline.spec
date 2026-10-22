@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 12
+%global senemos_build_release 13
 %else
 %global senemos_build_release 1
 %endif
@@ -348,6 +348,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-13
+- Skip PCM construction and teardown mappings in the registration-only profile.
+- Check all four PCM/compressed lifecycle entry guards before packaging.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-12
 - Register the Uke AudioReach card and frontends with PCM opens denied.
 - Preserve disabled physical audio paths and version the frontend topology.

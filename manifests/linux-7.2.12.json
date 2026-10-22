@@ -407,7 +407,7 @@
     },
     {
       "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
-      "sha256": "d4728bc43c2856f64568a3e98f262c822881d3b53f0d5be255a57c9d060d30ce"
+      "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
