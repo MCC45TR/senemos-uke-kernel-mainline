@@ -400,6 +400,10 @@
     {
       "path": "patches/7.2.12/0098-uke-confirm-usb-sdp-adapter.patch",
       "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.2.12/0099-apr-unwind-failed-service-publication.patch",
+      "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

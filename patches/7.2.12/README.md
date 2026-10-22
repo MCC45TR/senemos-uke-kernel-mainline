@@ -108,3 +108,12 @@ This queue carries the 98 patches from source `cf7d17f` without changing their
 contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
+
+## Audio services, 22 October 2026
+
+Patch 0099 ports the already reviewed APR/GPR failed-publication cleanup from
+project commit `e4b196c060de5261c6469ac913622e6b99fc0496` without changing
+the preceding 98 patches. Upstream APR file tip `66ec83627902d2585e14911692b317496731767a`
+still has the affected registration path. The source-extracted fault fixture
+rejects the old path and passes the corrected device-reference/IDR unwind.
+The services-only native profile does not enable physical audio endpoints.

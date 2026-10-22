@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 9
+%global senemos_build_release 10
 %else
 %global senemos_build_release 1
 %endif
@@ -203,6 +203,7 @@ CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 bash native-profile/tests/audio-services-fdt-contract.sh
@@ -340,6 +341,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-10
+- Register native APM and PRM services while keeping physical audio paths disabled.
+- Unwind failed router service publication before releasing the device.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-9
 - Add a guarded native Uke CPU/GPU platform-profile QoS provider.
 - Retain the standard legacy profile ABI on DT without enabling ACPI tables.

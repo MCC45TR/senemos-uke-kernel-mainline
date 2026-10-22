@@ -40,3 +40,15 @@ Advertised 12-bit color does not identify this panel's receiving format or
 internal FRC mechanism. Enabling a 12-bpc property or changing DSC input to
 12 bpc requires exact O82 receiver/TCON evidence and a recoverable physical
 test. No 12-bit optical output, FRC, HDR or gamut calibration is accepted here.
+
+On 22 October, static inspection of Global OS3.0.304.0 ODM QDCM profiles for
+both exact O82 variants found two distinct `PostBlendDither` configurations.
+Both have `enable=false`; the detailed configuration also has
+`temporalEnable=0`. The JSON payload strings require swapping adjacent bytes
+after hex decoding. These profiles do not establish a 10-to-12-bit temporal
+conversion. They cannot rule out a different runtime override or processing
+inside the DDIC. No panel-register description identifying such a mode was
+found in the bounded OEM source/profile comparison. The official Xiaomi
+[specifications](https://www.mi.com/in/product/xiaomi-pad-7/specs/) advertise
+12-bit color and four speakers/microphones; they do not describe the transport
+or the internal color expansion mechanism. No new 12-bpc mode is added.

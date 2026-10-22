@@ -255,3 +255,14 @@ fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
 fixtures cover both profiles, all field orders, rejected input and capacity
 boundaries. A panic restart is separate from hard-hang recovery or physical
 A/B rollback qualification. No tablet installation or reboot is implied.
+
+## Audio service registration, 22 October 2026
+
+The 7.2.12-10 candidate selects the existing `services-only` audio profile.
+Native APM/PRM services 1/2 can bind and perform the bounded firmware readiness
+query; original clients 3/7 remain present. Both DAI children, amplifier I2C
+and SLIM remain disabled. The package does not create playback/capture paths
+or apply microphone bias, amplifier presets or calibration. The existing
+`disabled` preparation setting remains available for rollback/source comparison.
+Host FDT and actual-source response/lifetime checks precede COPR submission.
+Tablet service binding and physical internal audio remain separate tests.

@@ -44,5 +44,5 @@ for node in slim@6C40000 i2c@88c000; do
 done
 profile=$root/audio-profile
 [[ -f $profile ]] || profile=$root/packaging/native/audio-profile
-test "$(cat "$profile")" = disabled
+test "$(cat "$profile")" = services-only
 printf 'Audio service FDT: native 1/2, OEM 3/7 retained, both DAIs and physical buses disabled.\n'
