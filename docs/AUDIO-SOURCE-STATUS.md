@@ -77,3 +77,25 @@ WCD939x/LPASS supplier and wakeup conversion; capture graph and physical mic
 mapping; native amplifier component/protection; calibration validation and
 channel binding; UCM and physical acceptance. Service registration creates no
 sound card and must not be advertised as working internal audio.
+
+## Card registration candidate
+
+The 7.2.12-12 `registration-only` profile adds an exact Uke ASoC card and two
+AudioReach frontend PCMs. APM and its PCM component must both bind before card
+registration. The native topology contains interface metadata only, with no
+DSP graph, mixer or hardware endpoint. It is installed under a kernel-versioned
+firmware directory so rollback kernels retain their own matching data.
+
+PCM and compressed opens return `-EACCES` in the actual q6apm component entry
+before allocation, DSP graph commands or DMA. A machine startup guard alone
+would run too late in the ASoC open sequence. Both the backend DAI and physical
+amplifier/SLIM paths remain disabled. This stage can establish native card
+visibility; it cannot establish sound output or microphone capture.
+
+The host-only `acdb-graph-audit` inspects stock ACDB graph/module identities and
+allowlisted hardware-interface metadata. AudioReach graphservices
+`76d04ffb30caa1fe609b94f9f6081210cb962fc1` provides BSD-3-Clause format evidence;
+its code is not executed or shipped. Exact stock speaker and VI graphs contain
+legacy TDM sink/source modules and Foursemi RX/TX modules. The newer upstream
+Audio IF implementation uses different modules and is not a drop-in solution.
+No tuning payload or unit calibration is exported or installed by the tool.

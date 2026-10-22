@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 10
+%global senemos_build_release 12
 %else
 %global senemos_build_release 1
 %endif
@@ -29,6 +29,7 @@ ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
+BuildRequires: alsa-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
 BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
@@ -206,6 +207,8 @@ CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
+CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
+CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
 bash native-profile/tests/serial-power-budget-contract.sh "$PWD"
@@ -287,6 +290,8 @@ identity=%{buildroot}/usr/share/senemos/uke/%{krel}
 mkdir -p "$identity"
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
+install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -317,6 +322,7 @@ fi
 /usr/lib/modules/%{krel}/modules.builtin*
 /usr/lib/modules/%{krel}/modules.order
 /usr/share/senemos/uke/%{krel}/
+/usr/lib/firmware/%{krel}/
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/
@@ -341,6 +347,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-12
+- Register the Uke AudioReach card and frontends with PCM opens denied.
+- Preserve disabled physical audio paths and version the frontend topology.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-10
 - Register native APM and PRM services while keeping physical audio paths disabled.
 - Unwind failed router service publication before releasing the device.

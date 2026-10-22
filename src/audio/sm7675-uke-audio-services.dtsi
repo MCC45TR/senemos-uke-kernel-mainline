@@ -17,7 +17,7 @@
 			status = "disabled";
 		};
 
-		dais {
+		uke_q6apm_dais: dais {
 			compatible = "qcom,q6apm-dais";
 			/* Exact OEM msm-audio-ion context banks; DAI remains disabled. */
 			iommus = <&apps_smmu 0x1001 0x80>, <&apps_smmu 0x1061 0>;

@@ -404,6 +404,10 @@
     {
       "path": "patches/7.2.12/0099-apr-unwind-failed-service-publication.patch",
       "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
+    },
+    {
+      "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
+      "sha256": "d4728bc43c2856f64568a3e98f262c822881d3b53f0d5be255a57c9d060d30ce"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -415,7 +419,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "5296cbf69279930ad1486c164b87c098ce1bd23bbd1b1dd350ccdbfd774e8bf6"
+      "sha256": "c7addbb0b31cbb1340154441aa2d7769c003b370f7a2c65108158b99c613af5f"
     },
     {
       "path": "configs/fedora.config",

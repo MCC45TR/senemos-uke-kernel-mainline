@@ -266,3 +266,19 @@ or apply microphone bias, amplifier presets or calibration. The existing
 `disabled` preparation setting remains available for rollback/source comparison.
 Host FDT and actual-source response/lifetime checks precede COPR submission.
 Tablet service binding and physical internal audio remain separate tests.
+
+## Audio card registration candidate, 22 October 2026
+
+The 7.2.12-12 source selects `registration-only`: the native APM and PCM
+components register a Uke card with playback/capture frontend descriptions.
+The displayed names explicitly mark streams disabled. The q6apm component
+refuses both PCM and compressed opens before DSP graph allocation, rather
+than relying on the later machine startup callback. No backend, amplifier,
+microphone bias or SLIM path is enabled. Native card visibility and physical
+audio acceptance remain separate results.
+
+Original host `alsatplg` from Fedora alsa-utils compiles the project frontend
+description; no donor build script is executed. The output contains no
+calibration, graph endpoint or mixer and is installed below the exact kernel
+release's firmware search directory. The host ACDB metadata inspector and its
+fixtures are source/build tools only and do not enter tablet payloads.

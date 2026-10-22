@@ -117,3 +117,11 @@ the preceding 98 patches. Upstream APR file tip `66ec83627902d2585e14911692b3174
 still has the affected registration path. The source-extracted fault fixture
 rejects the old path and passes the corrected device-reference/IDR unwind.
 The services-only native profile does not enable physical audio endpoints.
+
+Patch 0100 adds the Uke card Kconfig/Kbuild entry and board-scoped PCM and
+compressed-open refusal before q6apm graph allocation. The native preparation
+copies `src/audio/uke-audio-card.c`; it binds the existing PCM/APM components
+and accepts exactly two frontend runtimes. The registration-only DT enables
+the guarded frontend component, retaining disabled backend and physical paths.
+Neither card registration nor software refusal fixtures qualify speaker or
+microphone operation.

@@ -69,7 +69,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "52c77a8ba10c6db7c95b5d103016a93cf9064bf4c85986a853ef4d5c0a1b483a"
+      "sha256": "8b42544371ece51077502ac2d4c84a419581fc243ace5820c0e9046c17a6dcdd"
     },
     {
       "path": "packaging/native/llcc-profile",
@@ -196,7 +196,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-10",
+  "kernel_release": "7.2.12-12",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
