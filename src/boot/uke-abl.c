@@ -73,6 +73,26 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
 }
 
+static int UKE_INIT uke_volume_down_wake(void *fdt)
+{
+	int node = fdt_path_offset(fdt,
+		"/soc/qcom,spmi@c42d000/qcom,pmk8550@0/pon_hlos@1300/resin"), size;
+	const fdt32_t *value;
+
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,pmk8350-resin"))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, node, "linux,code", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 114)
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, node, "interrupts", &size);
+	if (!value || size != 16 || fdt32_to_cpu(value[0]) != 0 ||
+	    fdt32_to_cpu(value[1]) != 0x13 || fdt32_to_cpu(value[2]) != 6 ||
+	    fdt32_to_cpu(value[3]) != 3)
+		return -FDT_ERR_BADVALUE;
+	/* The existing PMIC driver owns IRQ wake; retain its key/reset contract. */
+	return fdt_setprop(fdt, node, "wakeup-source", NULL, 0);
+}
+
 static int UKE_INIT uke_legacy_va_gpio_flag(void *fdt)
 {
 	int node = fdt_path_offset(fdt, "/soc/spf_core_platform/lpass-cdc/va-macro@6D44000");
@@ -1025,6 +1045,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	if (ret)
 		return ret;
 	ret = uke_pmic_adc(output);
+	if (ret)
+		return ret;
+	ret = uke_volume_down_wake(output);
 	if (ret)
 		return ret;
 	ret = uke_hall(output);
