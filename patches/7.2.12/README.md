@@ -138,3 +138,10 @@ reset controller and backport Alexandr Zubtsov's Palawan LPASS pin driver
 with the exact SM7675 match. The native providers-only profile registers
 macro/clock/pin providers while keeping WCD, SoundWire, bias and PCM closed.
 Reset and provider fixtures do not establish physical capture or playback.
+
+Patch 0107 stops SoundWire probe before register access on iface-clock
+failure, preserves controller/port-read errors and defers a missing wake-IRQ
+supplier. Probe failure synchronizes acquired IRQs before deleting a published
+bus or disabling its clock. The host fixture injects provider and transport
+failures into the actual probe and port parser. The separate runtime-PM/remove
+issue remains under review. Physical controllers and audio streams stay closed.

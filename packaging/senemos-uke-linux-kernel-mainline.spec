@@ -215,6 +215,7 @@ CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-channel-map-contract.sh "$PWD"
 CC=clang bash native-profile/tests/wcd939x-channel-switch-contract.sh "$PWD"
 CC=clang bash native-profile/tests/wcd939x-probe-error-contract.sh "$PWD"
+CC=clang bash native-profile/tests/soundwire-probe-error-contract.sh "$PWD"
 CC=clang bash native-profile/tests/wcd939x-reset-consumer-contract.sh "$PWD"
 CC=clang bash native-profile/tests/wcd939x-reset-contract.sh native-profile/src/usb/wcd939x-uke-typec.c
 bash native-profile/tests/audio-providers-fdt-contract.sh "$PWD"

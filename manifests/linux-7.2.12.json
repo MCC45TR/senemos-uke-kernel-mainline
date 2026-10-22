@@ -432,6 +432,10 @@
     {
       "path": "patches/7.2.12/0106-sm7675-lpass-pinctrl.patch",
       "sha256": "7f71e208eb965a536999bfd2377db2f085821c8e64b6161d70331740a8bb203d"
+    },
+    {
+      "path": "patches/7.2.12/0107-soundwire-preserve-probe-failures.patch",
+      "sha256": "876c5dba4c9c50cd5b73cd75c2c532919f7025dfdd82dd9af8ac27d15cb91637"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
