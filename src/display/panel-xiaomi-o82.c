@@ -787,7 +787,9 @@ void uke_o82_touch_unregister(struct drm_panel *panel, struct notifier_block *nb
 {
 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
 
+	mutex_lock(&ctx->touch_lock);
 	blocking_notifier_chain_unregister(&ctx->touch_notifiers, nb);
+	mutex_unlock(&ctx->touch_lock);
 }
 EXPORT_SYMBOL_GPL(uke_o82_touch_unregister);
 

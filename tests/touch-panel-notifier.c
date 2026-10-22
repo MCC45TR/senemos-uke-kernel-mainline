@@ -44,10 +44,6 @@ static pthread_cond_t barrier_cond = PTHREAD_COND_INITIALIZER;
 static bool wait_callback, entered, proceed, unregister_entered;
 static atomic_bool unregister_done;
 static int blocking_notifier_chain_unregister(struct blocking_notifier_head *h, struct notifier_block *nb) {
-    mutex_lock(&barrier_lock);
-    unregister_entered = true;
-    assert(pthread_cond_broadcast(&barrier_cond) == 0);
-    mutex_unlock(&barrier_lock);
     assert(pthread_rwlock_wrlock(&h->lock) == 0);
     struct notifier_block **p = &h->head;
     while (*p && *p != nb) p = &(*p)->next;
@@ -85,6 +81,10 @@ static int observe(struct notifier_block *nb, unsigned long event, void *data) {
 static struct notifier_block first = { .notifier_call = observe };
 static void *publish(void *unused) { o82_touch_state(&panel, true, false); return NULL; }
 static void *unsubscribe(void *unused) {
+    mutex_lock(&barrier_lock);
+    unregister_entered = true;
+    assert(pthread_cond_broadcast(&barrier_cond) == 0);
+    mutex_unlock(&barrier_lock);
     uke_o82_touch_unregister(&panel.panel, &first);
     atomic_store(&unregister_done, true);
     return NULL;
@@ -120,6 +120,7 @@ int main(void) {
     mutex_lock(&barrier_lock);
     while (!unregister_entered) assert(pthread_cond_wait(&barrier_cond, &barrier_lock) == 0);
     assert(!atomic_load(&unregister_done));
+    assert(pthread_mutex_trylock(&panel.touch_lock) == EBUSY);
     proceed = true;
     assert(pthread_cond_broadcast(&barrier_cond) == 0);
     mutex_unlock(&barrier_lock);
