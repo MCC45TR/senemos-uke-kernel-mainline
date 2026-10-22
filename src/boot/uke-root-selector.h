@@ -130,12 +130,12 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 	}
 	if (roots != 1 || fstype_count != 1 || panic_count != 1)
 		return -1;
-	shrink = selected == 2 ? 0 : sizeof(",f2fs,xfs,btrfs") - 1;
+	shrink = selected ? 0 : sizeof(",f2fs,xfs,btrfs") - 1;
 	extra = (selected == 2 ? sizeof(userdata) - sizeof(standard) + 1 : 0) +
 		(slot ? 1 + slot_bytes : 0) + (vrr ? 1 + vrr_bytes : 0);
 	if (extra >= shrink && capacity - length <= extra - shrink)
 		return -1;
-	/* Keep the admitted probe list for userdata; legacy Linux remains EXT4. */
+	/* Explicit profiles keep all four types; an absent selector retains EXT4. */
 	memmove(cmdline + fstype + sizeof(fstypes) - 1 - shrink,
 		cmdline + fstype + sizeof(fstypes) - 1,
 		length - fstype - (sizeof(fstypes) - 1) + 1);

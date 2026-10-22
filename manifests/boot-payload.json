@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-22",
+  "date": "2026-10-23",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; 2026-10-22 public-build source candidate: explicit linux selector admits the same four provisioned filesystems, absent selector retains EXT4; no native build or physical validation",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -49,7 +49,7 @@
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
-      "sha256": "36164c87aaf1734248f57c6fbdb8dec7c5d2768526b2551ad3dfc1477e7f83d4"
+      "sha256": "69ef12a926d00a215cd952d5ebe3f6540ca9997a5dc174fd5eefd3b4b4e0c09a"
     },
     {
       "path": "src/boot/dracut/uke-cdc-acm.service",
@@ -109,7 +109,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "sha256": "950b71cbbd183ab7c745fd36d76a2d05843ba020b4264f2979502de84ab154b4"
     },
     {
       "path": "src/boot/userdata-grow.cpp",

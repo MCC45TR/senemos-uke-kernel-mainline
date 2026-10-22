@@ -85,12 +85,12 @@ while [ "$attempt" -lt 45 ]; do
         }
         expected=$(blkid -p -s TYPE -o value "$candidate")
         case "$partlabel:$expected" in
-            linux:ext4|userdata:f2fs|userdata:ext4|userdata:xfs|userdata:btrfs) :;;
+            linux:ext4|linux:f2fs|linux:xfs|linux:btrfs|userdata:f2fs|userdata:ext4|userdata:xfs|userdata:btrfs) :;;
             *) echo 'UKE_ROOT_REJECTED: unexpected filesystem identity' >&2; exit 1;;
         esac
-        if [ "$partlabel" = userdata ]; then
+        if [ "$partlabel" = userdata ] || [ "$expected" != ext4 ]; then
             [ "$(blkid -p -s LABEL -o value "$candidate")" = UKE_LINUX ] || {
-                echo 'UKE_ROOT_REJECTED: userdata is not a provisioned UKE_LINUX filesystem' >&2; exit 1;
+                echo 'UKE_ROOT_REJECTED: root is not a provisioned UKE_LINUX filesystem' >&2; exit 1;
             }
         fi
         if [ "$expected" = btrfs ]; then

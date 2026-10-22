@@ -13,7 +13,7 @@ static void check(const std::string &args, int expected, const char *initial = b
     std::strcpy(buffer, initial);
     assert(uke_select_root(buffer, sizeof(buffer), args.c_str(), args.size() + 1) == expected);
     auto wanted = std::string(initial);
-    if (expected >= 0) wanted.replace(wanted.find("rootfstype=ext4,f2fs,xfs,btrfs"), std::strlen("rootfstype=ext4,f2fs,xfs,btrfs"), expected == 1 ? "rootfstype=ext4,f2fs,xfs,btrfs" : "rootfstype=ext4");
+    if (expected >= 0) wanted.replace(wanted.find("rootfstype=ext4,f2fs,xfs,btrfs"), std::strlen("rootfstype=ext4,f2fs,xfs,btrfs"), expected == 1 || args.find("senemos.root=linux") != std::string::npos ? "rootfstype=ext4,f2fs,xfs,btrfs" : "rootfstype=ext4");
     if (expected == 1) {
         wanted.replace(wanted.find("root=PARTLABEL=linux"), std::strlen("root=PARTLABEL=linux"), "root=PARTLABEL=userdata");
         wanted.replace(wanted.find("panic=0"), std::strlen("panic=0"), "panic=10");
@@ -25,6 +25,7 @@ int main() {
     check("", 0);
     check("root=/dev/invalid init=/unsafe androidboot.slot_suffix=_a", 0, base, " androidboot.slot_suffix=_a");
     check("senemos.root=linux", 0);
+    check("senemos.root=linux androidboot.slot_suffix=_b", 0, base, " androidboot.slot_suffix=_b");
     check("senemos.root=userdata", 1);
     check("\tsenemos.root=userdata\nandroidboot.slot_suffix=_b root=/dev/invalid", 1, base, " androidboot.slot_suffix=_b");
     check("senemos.root=userdata msm.o82_vrr_test_min_hz=30 androidboot.slot_suffix=_a", 1, base,

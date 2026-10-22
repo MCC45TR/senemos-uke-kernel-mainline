@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 16
+%global senemos_build_release 17
 %else
 %global senemos_build_release 1
 %endif
@@ -357,6 +357,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-17
+- Admit all four provisioned filesystems for the explicit Linux root profile.
+- Preserve default EXT4, physical partition checks and single-device Btrfs admission.
+- Source change only; native package and tablet validation remain pending.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-16
 - Register native LPASS pin/clock providers with physical PCM and SoundWire paths closed.
 - Preserve codec provider errors and support coordinated USBSS-protected reset.

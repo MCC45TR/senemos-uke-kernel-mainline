@@ -1,5 +1,7 @@
 # Senemos Uke kernel build entry
 
+22 October 2026: use the workspace `./ukelinux.sh --build kernel` for the pinned native spec, matching modules and both stock-ABL boot profiles. See the [public worker guide](https://github.com/MCC45TR/uke-fedora-builder/blob/main/docs/PUBLIC-BUILD.md). That new orchestration has source/shell checks only; no full native build was run for it. The standalone `senemos.sh` instructions below describe the historical revision-1.39 path and do not reproduce the current native boot bundle.
+
 Run this repository's standalone entry, `senemos.sh`, from its
 root. It prepares host prerequisites, verifies the stable source signature,
 builds in an isolated Fedora toolchain and produces AArch64 RPMs and an SRPM.
