@@ -29,7 +29,7 @@ ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
-BuildRequires: alsa-utils
+BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
 BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
@@ -351,6 +351,7 @@ fi
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-12
 - Register the Uke AudioReach card and frontends with PCM opens denied.
 - Preserve disabled physical audio paths and version the frontend topology.
+- Require the Fedora topology compiler subpackage on the build worker.
 
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-11
 - Expose the standard volume-down wake permission on the exact Uke PMIC node.
