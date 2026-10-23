@@ -12,6 +12,6 @@ while IFS=$'\t' read -r path expected; do
     install -Dm644 "$root/$path" "$work/boot-recipe/$path"
 done < <(jq -er '.source_assets[] | [.path,.sha256] | @tsv' "$lock")
 cp "$lock" "$work/boot-recipe/lock.json"
-tar --sort=name --mtime="@$(jq -er .source_date_epoch "$lock")" --owner=0 --group=0 --numeric-owner \
+tar --sort=name --mtime="@$(jq -er .source_date_epoch "$lock")" --owner=0 --group=0 --numeric-owner --mode='a=rX,u+w' \
     -cJf "$destination/senemos-uke-boot-recipe.tar.xz" -C "$work" boot-recipe
 cp "$lock" "$destination/boot-payload.json"

@@ -24,6 +24,7 @@ prefix=uke-linux-hardware-support-$commit
 tar -tzf "$archive" | awk -v p="$prefix/" 'index($0,p)!=1 || /(^|\/)\.\.($|\/)/ {bad=1} END{exit bad}'
 tar -tvzf "$archive" | awk 'substr($0,1,1)!="-" && substr($0,1,1)!="d"{bad=1} END{exit bad}'
 tar -xzf "$archive" -C "$work"
+patch --batch --fuzz=0 -p1 -d "$work/$prefix" < "$root/patches/host/0001-touch-export-drain-cpio.patch"
 inputs=$work/$prefix/uke-sensors/manifests/touch-runtime-source.json
 rpm_source=$cache/uke-touchscreen-source.src.rpm
 if [[ ! -s $rpm_source ]]; then
@@ -38,6 +39,6 @@ bash "$work/$prefix/uke-sensors/src/prepare-touch-runtime.sh" "$rpm_source" "$wo
 install -m644 "$work/$prefix/LICENSE" "$work/touch-runtime/capture/LICENSE.MIT"
 (cd "$work/touch-runtime"; find legacy capture -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SOURCE-SHA256SUMS)
 cp "$lock" "$work/touch-runtime/kernel-source-lock.json"
-tar --sort=name --mtime="@$(jq -er .source_date_epoch "$lock")" --owner=0 --group=0 --numeric-owner \
+tar --sort=name --mtime="@$(jq -er .source_date_epoch "$lock")" --owner=0 --group=0 --numeric-owner --mode='a=rX,u+w' \
     -cJf "$work/senemos-uke-touch-runtime-1.tar.xz" -C "$work" touch-runtime
 install -m644 "$work/senemos-uke-touch-runtime-1.tar.xz" "$destination/"
