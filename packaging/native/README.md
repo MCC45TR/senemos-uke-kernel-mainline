@@ -9,6 +9,11 @@ passes afterward. This does not explain the initial GMU timeout or establish
 tablet recovery, suspend, graphics performance or endurance. Display, touch
 and charging settings are preserved.
 
+The touch source lock advances to existing owner `2b5530f2412a`, which buffers
+the CPIO export and reports service readiness after the first valid frame.
+Its reviewed archive and retained legacy source RPM remain hash-checked. Contact
+processing, calibration, firmware and the kernel transport are unchanged.
+
 24 October 2026 source candidate: release 24 retains the O82 connector range
 when fixed modes fall below the opted-in VRR floor. Opted-in requests from
 30 through 89 Hz now use the observed 90 Hz trial floor consistently for timing,

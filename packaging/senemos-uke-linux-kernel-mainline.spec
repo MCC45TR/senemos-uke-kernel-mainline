@@ -377,6 +377,7 @@ fi
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-25
 - Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
 - Check actual capture and fault-completion lock-cycle behavior before building.
+- Use the buffered touch source exporter and first-valid-frame readiness.
 - Preserve the existing display, touch and charging policies.
 
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-24
