@@ -21,8 +21,7 @@ for role in baseline candidate; do
         done
     fi
     sed '/^#include /d' "$work/drivers/clk/qcom/gdsc.h" > "$work/gdsc-header.h"
-    sed -n '1,/^static int gdsc_add_subdomain_list(/p' "$work/drivers/clk/qcom/gdsc.c" |
-        sed '/^#include /d; /^static int gdsc_add_subdomain_list(/d' > "$work/gdsc-functions.c"
+    sed '/^#include /d' "$work/drivers/clk/qcom/gdsc.c" > "$work/gdsc-functions.c"
     extra=()
     [[ $role != baseline ]] || extra=(-DBASELINE)
     "${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \

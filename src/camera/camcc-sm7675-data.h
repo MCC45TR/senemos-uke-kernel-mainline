@@ -3465,12 +3465,15 @@ static u32 cam_cc_sm7675_critical_cbcrs[] = {
 	0x13318, /* CAM_CC_DRV_AHB_CLK */
 };
 
+#define CAM_CC_SM7675_REGMAP_FORMAT \
+	.reg_bits = 32, \
+	.reg_stride = 4, \
+	.val_bits = 32, \
+	.max_register = 0x1603c, \
+	.fast_io = true
+
 static const struct regmap_config cam_cc_sm7675_regmap_config = {
-	.reg_bits = 32,
-	.reg_stride = 4,
-	.val_bits = 32,
-	.max_register = 0x1603c,
-	.fast_io = true,
+	CAM_CC_SM7675_REGMAP_FORMAT,
 };
 
 static struct qcom_cc_driver_data cam_cc_sm7675_driver_data = {

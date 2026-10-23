@@ -4,7 +4,7 @@
   "device": "uke",
   "soc": "SM7675",
   "kernel_version": "7.2.11",
-  "status": "native-clock-data-and-power-prerequisites",
+  "status": "inactive-clock-power-mmio-and-genpd-registration-prerequisites",
   "driver_registered": false,
   "dt_enabled": false,
   "tablet_tested": false,
@@ -19,7 +19,7 @@
   "source_assets": [
     {
       "path": "src/camera/camcc-sm7675-data.h",
-      "sha256": "7517b93b08cf46be865d7ebed56ac0b970708b6150ec6f96ba02be7e07f99acc"
+      "sha256": "c23795bc9bdc261c909373fcf95b7014841253ca23d43ea203ec389e4fa1fab5"
     },
     {
       "path": "src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h",
@@ -35,15 +35,31 @@
     },
     {
       "path": "tests/camcc-power-contract.sh",
-      "sha256": "5b59f37d09d479b381a12f701510851256a7ae2a43f1d2d21f58835e9770dfbe"
+      "sha256": "3aae6df2fef101debdeb5edf41da0e86e903a2c5ecac3ade48b268b5f02ca598"
     },
     {
       "path": "tests/fixtures/camcc-power-check.c",
-      "sha256": "647f70bef13979eb6ba510915b9a224c1dcb9ba8021759429e3167e6df70da03"
+      "sha256": "0643b7c62c8785e92b5d58346e16e171048765b1d8a9fcabee2a00fa17e51e52"
     },
     {
       "path": "src/camera/provider/README.md",
-      "sha256": "fb79951a2501911b06675cf3769292f2e487b90d76b4263facd509305a356b36"
+      "sha256": "60a9dee6b6f6b1a1243c33a668e2cac1a873ae8a3321e59ffead4f9d3d9c7014"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-power.h",
+      "sha256": "64abce3115d67a21c06598ceb9319f4a5e5cc614f63e88cfa2a7a9f8a1ffd4ee"
+    },
+    {
+      "path": "tests/camcc-provider-contract.sh",
+      "sha256": "bbdf784957290b8e09690fcfb3ef3ea9f7612c95e4ac31f8ed228d2f4d460ced"
+    },
+    {
+      "path": "tests/fixtures/camcc-provider-check.c",
+      "sha256": "39a56e5ca69b3a98e01afc84d05116c2c948df5dd5632b532a23bd5befcdc8af"
+    },
+    {
+      "path": "tests/fixtures/camcc-provider-object.c",
+      "sha256": "59441b9cf8a81647aa6c72d2d59f97a7f87b0a64228b51bfaf878fe2c0f6396a"
     }
   ],
   "sources": [
@@ -66,7 +82,32 @@
       "commit": "a804c5742bff224d4cb4d25dd383554d598be32b",
       "path": "drivers/clk/qcom/gdsc.c",
       "sha256": "04c66019948835d4b0def6f96d940500a85eb3e9c277f69de06c953f7d6475d2",
-      "role": "Current upstream GDSC comparison; identical prepared preimage"
+      "role": "21 October upstream comparison; identical prepared preimage"
+    },
+    {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/common.c",
+      "sha256": "e6d56c307b26cc49566bdc9864276b2bfaf1183c6d27e5752125c104283bbee6",
+      "role": "Exact OEM three-class MIN baseline and iface ordering; byte-identical OnePlus fc892483"
+    },
+    {
+      "url": "https://github.com/MiCode/kernel_devicetree",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "path": "qcom/cliffs.dtsi",
+      "sha256": "1e2fde36d72895ccf0735477de6a56a838d4021ce56ae4539155b63249c89fef",
+      "role": "Exact vdd_mm/vdd_mx/vdd_mxc and iface resource names; no native binding activation"
+    },
+    {
+      "url": "https://github.com/torvalds/linux",
+      "commit": "734bef548a96e8774d6eef5dfa2026c6edc4e80b",
+      "path": "drivers/clk/qcom/gdsc.c",
+      "sha256": "04c66019948835d4b0def6f96d940500a85eb3e9c277f69de06c953f7d6475d2",
+      "role": "23 October upstream comparison; identical registration-failure preimage"
+    },
+    {
+      "url": "https://lore.kernel.org/all/20261014-topic-qc_clk_dvfs-v1-12-3041b788e9f7@oss.qualcomm.com/",
+      "role": "Konrad Dybcio required-domain RFC: initialized-genpd unwind approach only; wider DVFS changes not imported"
     }
   ],
   "prepared_helpers": [
@@ -85,6 +126,22 @@
     {
       "path": "drivers/clk/qcom/gdsc.h",
       "sha256": "bea8e934482c13e1318ebe59bfd881cb91536e32afd9dae2676da9514d140ae9"
+    },
+    {
+      "path": "drivers/clk/qcom/vdd-class.h",
+      "sha256": "63b02af3ee079df0d063c2a2d2720296a97db8f3f958f694c4f9ef28ff1b7cf9"
+    },
+    {
+      "path": "drivers/base/power/runtime.c",
+      "sha256": "86a4ab8982d610b0ff1a1eb998adaf99a5f914833a56e70fb62efda2764af566"
+    },
+    {
+      "path": "drivers/regulator/core.c",
+      "sha256": "9896430492f89adde15547b72780e8e795dcdf2a7b46c87237fa69941172f8fd"
+    },
+    {
+      "path": "include/dt-bindings/regulator/qcom,rpmh-regulator-levels.h",
+      "sha256": "77e3f7970c89c51890982a711ea6fd72803ce00b04a7e03ae0611c5e83b5469b"
     }
   ],
   "voltage_policy": {
@@ -95,9 +152,9 @@
     "physical_voltage_measured": false
   },
   "remaining": [
-    "Native controller, normal/forced PM and failed-probe resource lifetime",
-    "Interface clock, checked MMIO and CRM/shared-RCG ownership",
-    "Runtime voltage vote and clock callback integration",
+    "Native provider probe/publication/removal lifetime and permanent resource retention",
+    "Firmware/proxy handoff and live clock voltage/PLL/CRM integration",
+    "GDSC opt-in and checked-regmap/PM callback wiring",
     "Native binding and boot producer",
     "Full kernel/package and physical clock/camera validation"
   ],
@@ -111,7 +168,17 @@
     {
       "path": "src/camera/provider/0002-clk-qcom-gdsc-controller-pm.patch",
       "sha256": "75dc00dfcd74e2f5723268f4ffa1bf6c66d49224a116e462fe30a32485e6f6b8"
+    },
+    {
+      "path": "src/camera/provider/0003-clk-qcom-gdsc-registration-unwind.patch",
+      "sha256": "9605851ea457c9faa5e370a07820bc9778f4de6d5bb9161d1b13acced9b857d4"
     }
   ],
-  "controller_pm_lifetime_qualified": false
+  "controller_pm_lifetime_qualified": false,
+  "controller_callbacks_implemented": true,
+  "clock_runtime_voltage_integrated": false,
+  "forced_pm_hardware_tested": false,
+  "last_reviewed": "2026-10-23",
+  "registration_unwind_implemented": true,
+  "registration_unwind_host_tested": true
 }

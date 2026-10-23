@@ -50,8 +50,19 @@ activation. The catalog cannot make the existing OEM nodes usable on its own.
 
 The inactive [power prerequisite](provider/README.md) preserves GDSC write
 errors and tests controller references across ON/OFF, boot-state and failure
-paths. It does not opt any domain in. Native controller callbacks, forced
-suspend and failed-probe resource lifetime remain required before registration.
+paths. It does not opt any domain in. Native callback integration, system-sleep
+qualification and failed-probe lifetime remain required before registration.
+
+The follow-up candidate adds three-rail/interface-clock callbacks and checked
+MMIO. Actual voltage and forced-PM functions pass host fault tests, and the
+complete catalog/power/regmap combination compiles for AArch64. Callback wiring,
+boot handoff, clock voltage operations and publication lifetime remain open;
+these sources still do not provide a registered camera controller.
+
+The 23 October follow-up removes initialized genpds when later registration
+fails. Actual-function tests cover sparse arrays, initialization, parent links
+and provider publication. Controller resource retention after a failed probe
+remains separate; the camera source is still inactive.
 
 With the sensor test's prepared ARM64 output and the exact OEM checkout, run:
 

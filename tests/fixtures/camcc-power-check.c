@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define CONFIG_QCOM_GDSC 1
@@ -15,12 +16,19 @@
 #define WARN(condition, ...) ((void)(condition))
 #define GENPD_FLAG_ALWAYS_ON BIT(0)
 #define GENPD_FLAG_IRQ_SAFE BIT(1)
+#define GFP_KERNEL 0
+#define IS_ERR(p) ((uintptr_t)(p) >= (uintptr_t)-4095)
+#define IS_ERR_OR_NULL(p) (!(p) || IS_ERR(p))
+#define PTR_ERR(p) ((intptr_t)(p))
+#define ERR_PTR(e) ((void *)(intptr_t)(e))
+#define EXPORT_SYMBOL_GPL(name)
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef unsigned long long ktime_t;
 
 struct device;
+struct dev_pm_domain { int unused; };
 struct dev_pm_ops {
 	int (*runtime_resume)(struct device *);
 	int (*runtime_suspend)(struct device *);
@@ -34,8 +42,11 @@ struct device {
 	const struct device_driver *driver;
 	bool enabled, active, guard;
 	int references, get_error, gets, puts;
+	struct dev_pm_domain *pm_domain;
+	void *of_node;
 };
 struct generic_pm_domain {
+	struct dev_pm_domain domain;
 	const char *name;
 	unsigned int flags;
 	bool synced_poweroff;
@@ -43,7 +54,11 @@ struct generic_pm_domain {
 	int (*power_off)(struct generic_pm_domain *);
 	int (*set_hwmode_dev)(struct generic_pm_domain *, struct device *, bool);
 	bool (*get_hwmode_dev)(struct generic_pm_domain *, struct device *);
+	bool initialized;
+	int parents, children;
 };
+struct dev_pm_domain_list { int num_pds; struct device **pd_devs; };
+struct genpd_onecell_data { size_t num_domains; struct generic_pm_domain **domains; };
 struct reset_controller_dev;
 struct reset_ops {
 	int (*assert)(struct reset_controller_dev *, unsigned int);
@@ -61,6 +76,10 @@ struct regmap {
 #include "gdsc-header.h"
 
 static int icc_error, icc_calls, init_error, init_calls;
+static bool registration_test, published;
+static int registered, removed, linked, init_fail_at, link_fail_at, provider_error;
+static int registration_inits, registration_links, allocation_fail_at, allocations;
+static void *allocated[2];
 static ktime_t ticks;
 static void udelay(unsigned int us) { (void)us; }
 static ktime_t ktime_get(void) { return ticks += 1000; }
@@ -130,11 +149,141 @@ static int icc_set_bw(struct icc_path *path, int average, int peak)
 static int pm_genpd_init(struct generic_pm_domain *pd, void *governor, bool off)
 {
 	init_calls++;
+	if (registration_test) {
+		if (++registration_inits == init_fail_at)
+			return -ENOMEM;
+		assert(!pd->initialized);
+		pd->initialized = true;
+		registered++;
+	}
 	return init_error;
+}
+static int pm_genpd_remove(struct generic_pm_domain *pd)
+{
+	assert(pd->initialized && !pd->parents && !pd->children);
+	pd->initialized = false;
+	registered--;
+	removed++;
+	return 0;
+}
+static struct generic_pm_domain *pd_to_genpd(struct dev_pm_domain *pd)
+{
+	return container_of(pd, struct generic_pm_domain, domain);
+}
+static int pm_genpd_add_subdomain(struct generic_pm_domain *parent,
+				struct generic_pm_domain *child)
+{
+	assert(parent->initialized && child->initialized);
+	if (++registration_links == link_fail_at)
+		return -EIO;
+	parent->children++;
+	child->parents++;
+	linked++;
+	return 0;
+}
+static int pm_genpd_remove_subdomain(struct generic_pm_domain *parent,
+				   struct generic_pm_domain *child)
+{
+	assert(parent->children > 0 && child->parents > 0);
+	parent->children--;
+	child->parents--;
+	linked--;
+	return 0;
+}
+static void *devm_kcalloc(struct device *dev, size_t n, size_t size, int flags)
+{
+	if (++allocations == allocation_fail_at)
+		return NULL;
+	assert(allocations <= 2);
+	return allocated[allocations - 1] = calloc(n, size);
+}
+static void *devm_kzalloc(struct device *dev, size_t size, int flags)
+{
+	return devm_kcalloc(dev, 1, size, flags);
+}
+static struct icc_path *devm_of_icc_get_by_index(struct device *dev, unsigned int index)
+{
+	return ERR_PTR(-ENODEV);
+}
+static struct regulator *devm_regulator_get_optional(struct device *dev, const char *name)
+{
+	return ERR_PTR(-ENODEV);
+}
+static int of_genpd_add_provider_onecell(void *node, struct genpd_onecell_data *data)
+{
+	assert(!published);
+	if (provider_error)
+		return provider_error;
+	published = true;
+	return 0;
+}
+static void of_genpd_del_provider(void *node)
+{
+	assert(published);
+	published = false;
 }
 #undef assert
 #include "gdsc-functions.c"
 #include <assert.h>
+
+static void registration_failures(void)
+{
+	for (int topology = 0; topology < 4; topology++) {
+		for (int failure = 0; failure < 10; failure++) {
+			struct generic_pm_domain parent = { .initialized = true };
+			struct device parent_dev = { .pm_domain = &parent.domain };
+			struct device *parents[] = { &parent_dev, &parent_dev };
+			struct dev_pm_domain_list list = { .num_pds = 2, .pd_devs = parents };
+			struct device dev = { .pm_domain = topology == 2 ? &parent.domain : NULL };
+			struct regmap map = { .status = BIT(15) };
+			struct gdsc domains[3] = {
+				{ .pwrsts = PWRSTS_OFF_ON, .flags = POLL_CFG_GDSCR },
+				{ .pwrsts = PWRSTS_OFF_ON, .flags = POLL_CFG_GDSCR },
+				{ .pwrsts = PWRSTS_OFF_ON, .flags = POLL_CFG_GDSCR },
+			};
+			struct gdsc *sparse[] = { &domains[0], NULL, &domains[1], &domains[2], NULL };
+			struct gdsc_desc desc = { .dev = &dev, .scs = sparse, .num = 5,
+				.pd_list = topology == 3 ? &list : NULL };
+			int ret;
+
+			registration_test = true;
+			registered = removed = linked = registration_inits = registration_links = 0;
+			allocations = init_error = 0;
+			allocation_fail_at = failure == 1 ? 1 : failure == 2 ? 2 : 0;
+			init_fail_at = failure >= 3 && failure <= 5 ? failure - 2 : 0;
+			link_fail_at = failure >= 6 && failure <= 8 ? failure - 5 : 0;
+			provider_error = failure == 9 ? -EEXIST : 0;
+			memset(allocated, 0, sizeof(allocated));
+			for (int i = 0; i < 3; i++)
+				if (topology == 1) domains[i].parent = &parent;
+
+			ret = gdsc_register(&desc, NULL, &map);
+			if (failure == 0 || (topology == 0 && failure >= 6 && failure <= 8)) {
+				assert(!ret && published && registered == 3);
+				gdsc_unregister(&desc);
+			} else {
+				assert(ret == (allocation_fail_at || init_fail_at ? -ENOMEM :
+					      link_fail_at ? -EIO : -EEXIST));
+#ifdef BASELINE
+				assert(registered == (init_fail_at ? init_fail_at - 1 :
+						      allocation_fail_at ? 0 : 3));
+				/* The old provider-failure path also leaves its parent links. */
+				if (failure == 9) {
+					assert(linked == (topology == 0 ? 0 : topology == 3 ? 6 : 3));
+					gdsc_pm_subdomain_remove(&desc, desc.num);
+				}
+#else
+				assert(!registered);
+#endif
+			}
+			assert(!published && !linked && !parent.children);
+			for (int i = 0; i < 2; i++) free(allocated[i]);
+		}
+	}
+	registration_test = false;
+	init_calls = 0;
+	puts("GDSC: sparse registration, allocation/init/link/provider failures and teardown checked");
+}
 
 static void collapse_errors(void)
 {
@@ -418,6 +567,7 @@ static void legacy_domain(void)
 
 int main(void)
 {
+	registration_failures();
 	collapse_errors();
 #ifndef BASELINE
 	normal_transitions();
