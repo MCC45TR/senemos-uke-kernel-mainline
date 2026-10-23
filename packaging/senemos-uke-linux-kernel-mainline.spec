@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 20
+%global senemos_build_release 21
 %else
 %global senemos_build_release 1
 %endif
@@ -371,6 +371,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-21
+- Preserve early firmware framebuffer scanout until the existing MSM aperture takeover.
+- Keep early simpledrm independent of native panel backlight ownership.
+- Select the O82 laboratory DRM device by its stable platform path.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-20
 - Restrict DT compilation and fixed-board drivers to the Uke source profile.
 - Preserve Uke DISPCC through its actual Cliffs GCC dependency.
