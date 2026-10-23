@@ -31,8 +31,9 @@ it also lists the host-engine and architecture cases that remain untested.
 
 Use `--dry-run` for version/target resolution without installation or compilation,
 `--jobs N` to set concurrency, and `--offline` after caching signed sources,
-release metadata and the exact toolchain image. The default limit is the smaller
-of available CPUs, approximately one worker per 2 GiB available RAM, and four.
+release metadata and the exact toolchain image. Parallelism defaults to the
+available CPU count. `--j4` and `--j16` are equivalent to `--jobs 4` and
+`--jobs 16`; explicit counts are retained without a hidden CPU or RAM clamp.
 At least 25 GiB free space is required. The script holds a workspace build lock,
 queues behind other compilers and pauses its own container if a recovery or
 other native build starts. It never pauses, kills or cleans another build.

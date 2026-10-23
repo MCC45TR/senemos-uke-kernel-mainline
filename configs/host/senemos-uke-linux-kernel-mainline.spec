@@ -4,7 +4,7 @@
 %global _source_filedigest_algorithm 8
 %global _binary_filedigest_algorithm 8
 %global krel %{version}-senemos-uke
-%global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
+%global _uke_jobs %{?_smp_build_ncpus}%{!?_smp_build_ncpus:%(getconf _NPROCESSORS_ONLN)}
 %global _uke_out %{_topdir}/kernel-out
 
 Name: senemos-uke-linux-kernel-mainline

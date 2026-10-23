@@ -4,7 +4,6 @@
   "device": "uke",
   "architecture": "arm64",
   "minimum_free_gib": 25,
-  "default_max_jobs": 4,
   "source_signer": "647F28654894E3BD457199BE38DBBDC86092693E",
   "fedora_rawhide_images": {
     "x86_64": "registry.fedoraproject.org/fedora@sha256:f7d3478d02965da40131211c19fb827b4d6e3de0904e9d582a9354af47949c14",

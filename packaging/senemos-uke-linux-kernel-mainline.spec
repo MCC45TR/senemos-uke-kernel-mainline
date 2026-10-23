@@ -162,8 +162,7 @@ if test ! -e %{uke_boot_userspace}; then
 fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
-jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-test "$jobs" -le 8 || jobs=8
+jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:%(getconf _NPROCESSORS_ONLN)}
 g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
     touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
     -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
