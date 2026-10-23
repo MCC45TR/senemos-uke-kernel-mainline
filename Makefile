@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
-.PHONY: validate srpm test-touch-protocol test-touch-transport
+.PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
 version := 7.2.12
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
@@ -28,6 +28,9 @@ test-touch-protocol:
 	bash tests/touch-protocol-contract.sh
 test-touch-transport:
 	bash tests/touch-transport-contract.sh
+test-touch-dt:
+	test -n "$(kernel_source)" -a -n "$(running_fdt)" -a -n "$(dt_output)"
+	bash tests/touch-dt-contract.sh "$(kernel_source)" "$(running_fdt)" "$(dt_output)"
 .PHONY: test-root-capability
 test-root-capability:
 	test -n "$(kernel_source)"
