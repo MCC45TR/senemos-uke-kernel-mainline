@@ -209,6 +209,13 @@ the embedded specification. The source package supplies Image, matched modules, 
 with an embedded, source-generated initramfs. No OEM firmware or per-device
 calibration is a package source input.
 
+The 23 October 2026 release-20 source candidate builds only the Uke DTB and
+native display overlay. Its configuration removes unrelated fixed-board
+drivers and reduces the early module list while preserving generic USB
+accessories, root filesystems, firewall, virtualization and diagnostics.
+The build checks the retained suppliers and early dependency closure.
+Source/build validation does not establish tablet boot or a measured speedup.
+
 `senemos.sh` retains the historical container build and stock-DT inspection
 tools. Its host specification remains the earlier revision 1.39 profile; it
 does not reproduce the consolidated native boot image. Its `latest` option

@@ -1,5 +1,17 @@
 # Mainline display source profile
 
+23 October 2026 source candidate: release 20 targets only
+`qcom/sm7675-xiaomi-uke.dtb` and the native O82 overlay. The resolved profile
+excludes foreign SoC suppliers, panels, fixed Ethernet, SATA, raw flash and
+unrelated board controllers. It retains USB peripherals, the four root
+filesystems, virtualization, firewall, diagnostics and the existing Uke
+hardware/firmware guards. `NR_CPUS=8` follows Uke's eight-core topology.
+The Uke DISPCC remains in `dispcc-sm8550.c`; its Kconfig dependency now admits
+the existing Cliffs GCC without requiring a foreign GCC. The early module list
+contains Uke providers, generic recovery interfaces and their dependencies;
+the build rejects a missing dependency before creating the initramfs.
+Package and recoverable tablet boot validation remain separate gates.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation

@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-23",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; release-20 retains QRTR discovery and scopes fixed-board drivers, early modules and DT compilation to Uke, with the existing DISPCC admitted through Cliffs GCC; source/build evidence only",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "eb946bde8b177298f87c51484c402144686b5c497d72f0377a4ed5f60d4abc50"
+      "sha256": "6109cc13e539d79a537771e7cb1ea240d8ecb2e446dd1a406bfdf952f0bff086"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "8a71802c63a5b68f93a39057420775b062bbaa380e388965decb5044d7d9b5e5"
+      "sha256": "085723cb4653b15625f34c764360574a817dcf98b0e678aba79fab48b78e38ee"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -81,7 +81,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
+      "sha256": "37f0cbc1dafec2ec6443a49b7f8e8396b067fe0b6a27930edcd20d8bab8182c7"
     },
     {
       "path": "src/boot/licenses/builder-MIT",
@@ -150,6 +150,14 @@
     {
       "path": "tests/userdata-grow-contract.sh",
       "sha256": "9f4a95f8e5be8f78941b77c7663c5cd7e4a05b2d3c71babd029d2b9325683730"
+    },
+    {
+      "path": "tests/uke-build-scope-contract.sh",
+      "sha256": "104d13618997b1fe4352e1f046e299028307e131a580ae6a35733b7d9d092df3"
+    },
+    {
+      "path": "tests/native-firewall-contract.sh",
+      "sha256": "93ea93aa78a770f552635d4bf0a1470885a3af2954b067d55634e7ed7926ddd5"
     }
   ],
   "root_selector_capability": {
