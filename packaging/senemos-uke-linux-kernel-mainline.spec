@@ -372,6 +372,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
 - Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
 - Check actual capture and fault-completion lock-cycle behavior before building.
+- Use the buffered touch source exporter and first-valid-frame readiness.
 - Preserve the existing unstable profile and device policies.
 
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9

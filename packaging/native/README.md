@@ -7,6 +7,10 @@ remain; the actual-function host regression checks completion while recovery
 holds the GPU lock. The original fault, tablet recovery, suspend and Linux 7.3
 boot remain unqualified. Existing device settings are preserved.
 
+The touch source lock uses existing owner `2b5530f2412a` for buffered CPIO
+export and first-valid-frame service readiness. Contact processing, calibration,
+firmware and kernel transport remain unchanged; tablet interaction is untested.
+
 23 October 2026: unstable release `7.3.0-7-unstable` carries the matched
 touch transport, DT and per-release C++ processor from mainline19. The QRTR
 adaptation preserves upstream 7.3 node-ID reads and requests HELLO only after
