@@ -1,5 +1,14 @@
 # Uke Linux 7.2.11 adaptation
 
+**23 October 2026, release 19 source:** patch 0101 moves QRTR HELLO ownership
+to the core, with explicit requests after SMD, MHI and TUN receive publication.
+It removes the name-server broadcast/reply senders and retries transient GLINK
+intent timeouts. Normal packet enqueue remains ungated. The candidate extends
+release 18's accepted-14-based source and paired touch runtime; it excludes
+release 17's additional audio changes. Actual-source sanitizer fixtures and five
+AArch64 translation units pass. Repeated tablet startup and suspend/resume
+remain separate acceptance gates.
+
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM
 readiness errors. It validates APM basic payloads before parsing and preserves

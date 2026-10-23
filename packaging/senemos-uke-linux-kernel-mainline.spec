@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 18
+%global senemos_build_release 19
 %else
 %global senemos_build_release 1
 %endif
@@ -207,6 +207,7 @@ CXX=clang++ bash native-profile/tests/root-selector-contract.sh
 CC=clang bash native-profile/tests/root-selector-note-contract.sh "$PWD" "$PWD/boot-recipe/lock.json"
 bash boot-recipe/tests/target-privacy-contract.sh
 CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
+CC=clang bash native-profile/tests/qrtr-handshake-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
