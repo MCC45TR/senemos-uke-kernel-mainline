@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 20
+%global senemos_build_release 22
 %else
 %global senemos_build_release 1
 %endif
@@ -84,6 +84,8 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: uke-kernel-update(userdata-fallback-v1) >= 1
+Requires: uke-kernel-update(qualified-firmware-cohort-v1) >= 1
 Requires: uke-kernel-update(kernel-touch-client-v1) >= 1
 Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
@@ -92,7 +94,8 @@ Provides: installonlypkg(kernel)
 %description boot
 Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
 checks package identities, module digests, physical storage and power, preserves
-the previous image, and verifies write readback. Android A is not an update target.
+the previous image, and verifies write readback. Linux boot A/B requires both
+boot slots; preserve the Android boot backup before provisioning the other slot.
 
 %package singleboot
 Summary: Matched Uke userdata boot profile
@@ -181,9 +184,11 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+CC=clang bash native-profile/tests/geni-spi-completion-contract.sh "$PWD"
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst | grep -Fx 'spi:nt36532-uke-thp'
 test -x %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
 test "$(sha256sum %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture | cut -d ' ' -f1)" = "$(sed -n 's/^touch_client_sha256=//p' %{_uke_out}/boot-manifest)"
 CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
@@ -371,6 +376,15 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-22
+- Preserve SPI-core length accounting after successful GPI DMA completion.
+- Export the Uke THP SPI alias for normal coldplug module loading.
+
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-21
+- Preserve early firmware framebuffer scanout until the existing MSM aperture takeover.
+- Keep early simpledrm independent of native panel backlight ownership.
+- Select the O82 laboratory DRM device by its stable platform path.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-20
 - Restrict DT compilation and fixed-board drivers to the Uke source profile.
 - Preserve Uke DISPCC through its actual Cliffs GCC dependency.

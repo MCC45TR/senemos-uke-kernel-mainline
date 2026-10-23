@@ -1,5 +1,15 @@
 # Mainline display source profile
 
+23 October 2026 source candidate: release 21 retains the enabled boot-derived
+early framebuffer and stdout until MSM's existing firmware-aperture takeover.
+Its backlight link is removed so simpledrm neither waits for nor blanks the
+native panel backlight. The complete splash reservation and native panel
+supplies/reset remain preserved. Actual FDT fixtures precede packaging; visible
+continuity requires a separate recoverable tablet trial. No physical result is
+inherited from the package build. The optional O82 laboratory tool uses the
+verified stable platform DRM path so early DRM card numbering cannot select
+the GPU by mistake; its experimental display run remains separately gated.
+
 23 October 2026 source candidate: release 20 targets only
 `qcom/sm7675-xiaomi-uke.dtb` and the native O82 overlay. The resolved profile
 excludes foreign SoC suppliers, panels, fixed Ethernet, SATA, raw flash and

@@ -696,6 +696,11 @@ static const struct of_device_id nvt_matches[] = {
 };
 MODULE_DEVICE_TABLE(of, nvt_matches);
 
+static const struct spi_device_id nvt_spi_ids[] = {
+	{ "nt36532-uke-thp" }, { }
+};
+MODULE_DEVICE_TABLE(spi, nvt_spi_ids);
+
 static struct spi_driver nvt_driver = {
 	.driver = {
 		.name = "nt36532-uke-thp",
@@ -705,6 +710,7 @@ static struct spi_driver nvt_driver = {
 	.probe = nvt_probe,
 	.remove = nvt_remove,
 	.shutdown = nvt_shutdown,
+	.id_table = nvt_spi_ids,
 };
 module_spi_driver(nvt_driver);
 MODULE_FIRMWARE(NVT_UKE_FIRMWARE);

@@ -1,0 +1,30 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] spi: geni-qcom: leave successful GPI messages in progress
+
+The SPI core owns successful transfer accounting and stops processing when
+msg->status changes from -EINPROGRESS. Setting zero in the GPI callback skips
+actual_length accounting and any subsequent transfer. Keep successful messages
+in progress; DMA errors and residue still set -EIO before completion.
+
+--- a/drivers/spi/spi-geni-qcom.c
++++ b/drivers/spi/spi-geni-qcom.c
+@@ -383,17 +383,17 @@
+ {
+ 	struct spi_controller *spi = cb;
+ 
+-	spi->cur_msg->status = -EIO;
+ 	if (result->result != DMA_TRANS_NOERROR) {
++		spi->cur_msg->status = -EIO;
+ 		dev_err(&spi->dev, "DMA txn failed: %d\n", result->result);
+ 		spi_finalize_current_transfer(spi);
+ 		return;
+ 	}
+ 
+ 	if (!result->residue) {
+-		spi->cur_msg->status = 0;
+ 		dev_dbg(&spi->dev, "DMA txn completed\n");
+ 	} else {
++		spi->cur_msg->status = -EIO;
+ 		dev_err(&spi->dev, "DMA xfer has pending: %d\n", result->residue);
+ 	}
+ 

@@ -416,6 +416,10 @@
     {
       "path": "patches/7.2.12/0102-uke-clock-kconfig-dependencies.patch",
       "sha256": "4c2f9ab5d776def85fcd7dc7642bf048dad03baba5288361f37ff4554cfed488"
+    },
+    {
+      "path": "patches/7.2.12/0103-spi-geni-gpi-success-accounting.patch",
+      "sha256": "aaf765e1f0b72310dd919d802d5584d7c13782160ce4aa5d9a42c43e81f06094"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
