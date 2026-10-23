@@ -192,8 +192,8 @@ bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
-test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
+test "$(readlink %{buildroot}/usr/lib/senemos/unstable-default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -285,7 +285,7 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
 install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
-cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
+cat > %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json <<'EOF'
 {
   "schema_version": 1,
   "package": "%{name}-singleboot",
@@ -297,7 +297,7 @@ cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
   "automatic_kernel_activation": false
 }
 EOF
-ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/unstable-default-boot.img
 export ARCH=arm64 LLVM=1
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
@@ -363,8 +363,8 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 %files singleboot
 %doc %{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 %license %{_licensedir}/%{name}-singleboot/LICENSE
-/usr/share/senemos/uke/singleboot.json
-/usr/lib/senemos/default-boot.img
+/usr/share/senemos/uke/unstable-singleboot.json
+/usr/lib/senemos/unstable-default-boot.img
 
 %changelog
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
