@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "085723cb4653b15625f34c764360574a817dcf98b0e678aba79fab48b78e38ee"
+      "sha256": "017cd5f955711c837b2d991d99e04e1298a94b7ee22c2c51d4991c0a0a1ead82"
     },
     {
       "path": "src/boot/check-root-capability.sh",

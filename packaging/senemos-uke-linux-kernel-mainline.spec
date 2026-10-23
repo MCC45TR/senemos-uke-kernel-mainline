@@ -163,10 +163,14 @@ fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-test "$jobs" -le 8 || jobs=8
-g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
-    touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
-    -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
+if test -n "${UKE_PREBUILT_TOUCH_CAPTURE:-}" && test -f "$UKE_PREBUILT_TOUCH_CAPTURE" && test ! -L "$UKE_PREBUILT_TOUCH_CAPTURE"; then
+    # Cross builds compile this AArch64 client on the target-architecture worker.
+    install -m755 "$UKE_PREBUILT_TOUCH_CAPTURE" native-generated/uke-touch-capture
+else
+    g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
+        touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
+        -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
+fi
 readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
