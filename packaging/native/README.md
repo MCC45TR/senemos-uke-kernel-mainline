@@ -1,5 +1,12 @@
 # Mainline display source profile
 
+24 October 2026 source candidate: KVM release 9 avoids the GPU recovery/fault-
+capture lock cycle observed on POCO Pad X1 with mainline release 22. Optional
+capture uses a nonblocking GPU lock; normal fault reporting and uncontended
+capture remain. The actual-function host regression checks the lock cycle.
+The original GMU fault, tablet recovery and suspend remain unqualified. KVM,
+display, touch and charging settings are preserved.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation

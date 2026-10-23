@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 8
+%global senemos_build_release 9
 %else
 %global senemos_build_release 1
 %endif
@@ -378,6 +378,11 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/kvm-default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-9
+- Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
+- Check actual capture and fault-completion lock-cycle behavior before building.
+- Preserve the existing KVM and device policies.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-7
 - Export the native touchscreen SPI alias for standard module autoload.
 - Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.
