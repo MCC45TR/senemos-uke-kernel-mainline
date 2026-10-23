@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 10
+%global senemos_build_release 11
 %else
 %global senemos_build_release 1
 %endif
@@ -369,6 +369,11 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
+- Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
+- Check actual capture and fault-completion lock-cycle behavior before building.
+- Preserve the existing unstable profile and device policies.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
 - Export the native touchscreen SPI alias for standard module autoload.
 - Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.

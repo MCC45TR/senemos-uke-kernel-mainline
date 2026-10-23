@@ -1,5 +1,12 @@
 # Mainline display source profile
 
+24 October 2026 source candidate: unstable release 11 carries the nonblocking
+GPU fault-capture correction for the recovery lock cycle observed on POCO Pad
+X1 with mainline release 22. Normal fault reporting and uncontended capture
+remain; the actual-function host regression checks completion while recovery
+holds the GPU lock. The original fault, tablet recovery, suspend and Linux 7.3
+boot remain unqualified. Existing device settings are preserved.
+
 23 October 2026: unstable release `7.3.0-7-unstable` carries the matched
 touch transport, DT and per-release C++ processor from mainline19. The QRTR
 adaptation preserves upstream 7.3 node-ID reads and requests HELLO only after

@@ -428,6 +428,10 @@
     {
       "path": "patches/7.3.0/0104-uke-confirm-sdp-budget-readback.patch",
       "sha256": "9ee8a56d5968923bc51b13efb41860540ccb4413c8540506eb10609c161fffae"
+    },
+    {
+      "path": "patches/7.3.0/0105-msm-fault-capture-nonblocking.patch",
+      "sha256": "1a8d250037e8e54fcaf902ff4e995c3a24c70e1f01d37890e8c3219f4d0d837f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
