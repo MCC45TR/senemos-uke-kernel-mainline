@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 spec=$root/packaging/senemos-uke-linux-kernel-mainline.spec
@@ -10,13 +11,19 @@ grep -Eq '^Provides: kernel-uname-r\([0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*-kvm\)$' 
 if grep -E '^Obsoletes:|^Conflicts:|^%(post|pre|preun|postun|posttrans|pretrans|trigger)($|[[:space:]])|^Requires:.*(python|pypy)' <<< "$parsed"; then
     echo 'KVM candidates must coexist without automatic activation' >&2; exit 1
 fi
-for requirement in CONFIG_KVM=y CONFIG_F2FS_FS=y CONFIG_F2FS_FS_SECURITY=y; do
+for requirement in CONFIG_KVM=y CONFIG_F2FS_FS=y CONFIG_F2FS_FS_SECURITY=y CONFIG_VIDEO_NT36532_UKE_THP=m; do
     grep -Fxq "$requirement" "$root/packaging/native/native.config"
 done
+grep -Fxq 'Requires: uke-kernel-update(kernel-touch-client-v1) >= 1' <<< "$parsed"
+grep -Fxq 'Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1' <<< "$parsed"
+grep -Fxq 'Source9: senemos-uke-touch-runtime-1.tar.xz' <<< "$parsed"
+grep -Fq 'git archive HEAD src/kvm KVM.md LICENSE' "$root/Makefile"
 grep -Fq '"$out/userdata.img"' "$root/src/boot/build-payload.sh"
 bash "$root/tests/native-firewall-contract.sh"
 build_guard=$(sed -n '/^\[\[ \$release =~ /p' "$root/src/boot/build-payload.sh")
 base_guard=$(sed -n '/^\[\[ \$# == 2 && \$2 =~ /p' "$root/src/boot/make-initramfs-base.sh")
+# The extracted producer guard consumes jobs through eval.
+# shellcheck disable=SC2034
 release=7.2.12-3-kvm jobs=2
 eval "$build_guard"
 (set -- fixture "$release"; eval "$base_guard")

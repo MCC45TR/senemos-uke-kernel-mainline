@@ -223,7 +223,7 @@
     },
     {
       "path": "patches/7.2.12/0054-uke-usb-budget-generation.patch",
-      "sha256": "aa02f97c0449f924c2acd372f59298a239371895ad82a8c4e941831db6bc1657"
+      "sha256": "6809439941745e1fa7a55f8304565e83094d8beebe5e1a7917847db5c2cb5b2b"
     },
     {
       "path": "patches/7.2.12/0055-usb-ucsi-glink-packet-lifecycle.patch",
@@ -396,6 +396,22 @@
     {
       "path": "patches/7.2.12/0097-adreno-order-native-llcc-supplier.patch",
       "sha256": "3c04845b4c143bcab0dbd87d9f48fd4cd54abb15818cceae93529fa69bcf8303"
+    },
+    {
+      "path": "patches/7.2.12/0098-uke-confirm-usb-sdp-adapter.patch",
+      "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.2.12/0099-apr-unwind-failed-service-publication.patch",
+      "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
+    },
+    {
+      "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
+      "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
+    },
+    {
+      "path": "patches/7.2.12/0101-qrtr-transport-ready-handshake.patch",
+      "sha256": "2a547749a0a3e3ff571cd64a216d482b0d295b65014379399eb9c341f6d2d589"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -407,7 +423,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "5296cbf69279930ad1486c164b87c098ce1bd23bbd1b1dd350ccdbfd774e8bf6"
+      "sha256": "72f662666fa0e38f3dac0ef223265e20a43e8df0851edbe097a79f097ad2e012"
     },
     {
       "path": "configs/fedora.config",

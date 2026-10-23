@@ -46,11 +46,11 @@ static bool uke=true, link_ok=true, replace_request, property_present=true, supp
 static int response, requests, queued, last_value, puts, links;
 static struct power_supply supply;
 static struct dwc3 *active;
-static void *system_wq;
+static void *system_percpu_wq;
 static struct dwc3 *gadget_to_dwc(struct usb_gadget *g) { (void)g; return active; }
 static bool of_device_is_compatible(void *node,const char *name) { (void)node;(void)name; return true; }
 static int usb_phy_set_power(struct usb_phy *phy,unsigned int ma) { (void)phy;(void)ma; return 0; }
-static bool mod_delayed_work(void *queue,struct delayed_work *work,unsigned long delay) { assert(queue==system_wq && work==&active->vbus_draw_work && !delay); return true; }
+static bool mod_delayed_work(void *queue,struct delayed_work *work,unsigned long delay) { assert(queue==system_percpu_wq && work==&active->vbus_draw_work && !delay); return true; }
 static bool of_machine_is_compatible(const char *s) { assert(!strcmp(s,"xiaomi,uke")); return uke; }
 static void cancel_delayed_work_sync(struct delayed_work *w) { assert(w==&active->vbus_draw_work); }
 static unsigned int msecs_to_jiffies(unsigned int ms) { return ms; }

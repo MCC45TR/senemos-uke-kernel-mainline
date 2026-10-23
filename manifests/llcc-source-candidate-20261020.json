@@ -49,11 +49,11 @@
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "b8174f6eeee81a25c7ea7e720509a38367ace4d014f24b1c1a26457f5e0726bc"
+      "sha256": "87a0ce40478f335217f9729ba5014a5f532bed5098c92a696cbebaee95477c7d"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "6be8c9b1aa75f2fb213d738c51c4848400286e5c558538b9771840721eea4cc8"
+      "sha256": "c6f7391d1735543bd519d6df7be36f222a204e4632107652d6f5be013428abf7"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -69,11 +69,15 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "52c77a8ba10c6db7c95b5d103016a93cf9064bf4c85986a853ef4d5c0a1b483a"
+      "sha256": "3f0355ac532b9e876e530bc51043a56a68549cbd524e1ec8b572f9d56d66fccc"
     },
     {
       "path": "packaging/native/llcc-profile",
       "sha256": "264857412f434201eb6eb7642da71970e5ea68b90a78a7abd6c02ad2d1c193c4"
+    },
+    {
+      "path": "tests/resin-wake-contract.sh",
+      "sha256": "6de153a27483d9dec6890c6c244800d8d84267e9424d4e7afde7f083d64d14d7"
     }
   ],
   "baseline_files": [
@@ -196,7 +200,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.2.12-4-kvm",
+  "kernel_release": "7.2.12-5-kvm",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
@@ -210,5 +214,11 @@
     ],
     "normal_linux_vrr_experiment_enabled": false,
     "physical_tested": false
-  }
+  },
+  "source_maintenance": [
+    {
+      "date": "2026-10-23",
+      "change": "The native preparer also stages the paired touch transport. LLCC policy and the original release-14 selection record are unchanged."
+    }
+  ]
 }

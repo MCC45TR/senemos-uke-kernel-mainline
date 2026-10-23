@@ -12,7 +12,6 @@ grep -Fxq "$base-singleboot" <<< "$names"
 requirements=$(rpmspec --target aarch64 -q --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS:depflags}\t%{REQUIREVERSION}\n]' "$spec")
 grep -Fxq "$base-singleboot"$'\t'"$base"$'\t=\t'"$release" <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-installation-profile\t>=\t1.3.1' <<< "$requirements"
-grep -Fxq "$base-boot"$'\tuke-kernel-update\t>=\t1.3.1' <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-kernel-update(root-filesystem-v2)\t>=\t1' <<< "$requirements"
 parsed=$(rpmspec --target aarch64 --parse "$spec")
 grep -Fq '"automatic_kernel_activation": false' <<< "$parsed"

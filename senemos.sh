@@ -762,7 +762,6 @@ done
 if ((DRY_RUN)); then
     command -v jq >/dev/null || die 'Dry-run needs jq; no dependencies will be installed'
 else
-    [[ ! -f $KERNEL/KVM.md ]] || die 'Use make srpm and the native AArch64 COPR recipe for this KVM profile; the historical host recipe builds the ordinary kernel.'
     bootstrap
     mkdir -p "$KERNEL/referances/releases"
     mkdir -p "$BUILDER/build"

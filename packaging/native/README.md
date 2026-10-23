@@ -1,9 +1,17 @@
 # Mainline display source profile
 
-21 October 2026 upstream refresh: Linux 7.2.12-1 retains the 97-patch KVM
-profile from source `8bb4d6a`, disabled audio and separate module ABI. It performs
-no boot activation. Source preparation and COPR results do not establish EL2
-ownership, working KVM or physical acceptance on Uke.
+21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
+98-patch Uke profile, disabled audio and guarded updater contract. The original
+7.2.11 queue and device records remain historical evidence. Source preparation
+and COPR results do not establish boot or physical acceptance of 7.2.12.
+
+21 October 2026 source follow-up: release 17 retains release 16's nftables,
+root-filesystem and inactive audio policy. It adds the retained root-selector
+capability, a lasting guarded-updater dependency, an independent OEM SDP adapter
+check and the current per-CPU USB workqueue API. The active adaptation has 98
+patches. The [USB admission record](../../docs/USB-SDP-ADAPTER-2026-10-21.md)
+keeps zero-current and electrical suspend unqualified. No automatic charging
+profile, boot activation or physical acceptance is introduced by this source.
 
 17 October 2026. The native O82 profile is part of
 `senemos-uke-linux-kernel-mainline`; there is no separate native kernel package.
@@ -247,3 +255,39 @@ fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
 fixtures cover both profiles, all field orders, rejected input and capacity
 boundaries. A panic restart is separate from hard-hang recovery or physical
 A/B rollback qualification. No tablet installation or reboot is implied.
+
+## Audio service registration, 22 October 2026
+
+The 7.2.12-10 candidate selects the existing `services-only` audio profile.
+Native APM/PRM services 1/2 can bind and perform the bounded firmware readiness
+query; original clients 3/7 remain present. Both DAI children, amplifier I2C
+and SLIM remain disabled. The package does not create playback/capture paths
+or apply microphone bias, amplifier presets or calibration. The existing
+`disabled` preparation setting remains available for rollback/source comparison.
+Host FDT and actual-source response/lifetime checks precede COPR submission.
+Tablet service binding and physical internal audio remain separate tests.
+
+## Audio card registration candidate, 22 October 2026
+
+The 7.2.12-14 source selects `registration-only`: the native APM and PCM
+components register a Uke card with playback/capture frontend descriptions.
+The displayed names explicitly mark streams disabled. The q6apm component
+refuses both PCM and compressed opens before DSP graph allocation, rather
+than relying on the later machine startup callback. It also skips PCM buffer
+construction and teardown mappings, which source review found unguarded in
+the uninstalled release-12 candidate. No backend, amplifier,
+microphone bias or SLIM path is enabled. Native card visibility and physical
+audio acceptance remain separate results.
+
+Release 13 registered the card after a manual module load on the tablet, but
+cold autoload failed through the original Fedora ALSA rule's missing
+`snd-seq` dependency. Its frontend IOMMU attachment also triggered warnings
+outside the guarded boot scope. Release 14 includes the sequencer module and
+omits that attachment while frontend DMA remains prohibited. The original
+Fedora rule and SMMU guard are retained; cold-boot validation is still required.
+
+Original host `alsatplg` from Fedora `alsa-topology-utils` compiles the project frontend
+description; no donor build script is executed. The output contains no
+calibration, graph endpoint or mixer and is installed below the exact kernel
+release's firmware search directory. The host ACDB metadata inspector and its
+fixtures are source/build tools only and do not enter tablet payloads.

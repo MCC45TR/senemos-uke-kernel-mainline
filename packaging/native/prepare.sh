@@ -19,11 +19,16 @@ usb_cpp=()
 case $(cat "$profile/audio-profile") in
     disabled) ;;
     services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
+    registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
+install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
+alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
+    -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \

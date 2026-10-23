@@ -13,10 +13,12 @@
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/of_graph.h>
 #include <linux/qcom-uke-display.h>
 #include <linux/regulator/consumer.h>
+#include <linux/uke-o82-touch.h>
 #include <drm/display/drm_dsc_helper.h>
 #include <drm/drm_connector.h>
 #include <drm/drm_crtc.h>
@@ -71,17 +73,24 @@ struct o82_panel {
 	bool initial_120hz_only;
 	bool oem_refresh_modes;
 	atomic64_t touch_state;
+	struct mutex touch_lock;
+	struct blocking_notifier_head touch_notifiers;
 };
 
 static void o82_touch_state(struct o82_panel *ctx, bool reset, bool ready)
 {
-	u64 state = (u64)atomic64_read(&ctx->touch_state) & ~1ULL;
+	u64 state;
 
-	/* Lifecycle writers are serialized; readers receive one generation/ready pair. */
+	/* First-frame work runs after .enable; followers alone are too early. */
+	mutex_lock(&ctx->touch_lock);
+	state = (u64)atomic64_read(&ctx->touch_state) & ~1ULL;
 	if (reset)
 		state += 2;
-	atomic64_set(&ctx->touch_state, state | ready);
+	state |= ready;
+	atomic64_set(&ctx->touch_state, state);
+	blocking_notifier_call_chain(&ctx->touch_notifiers, 0, &state);
 	sysfs_notify(&ctx->dsi[0]->dev.kobj, NULL, "touch_reset_state");
+	mutex_unlock(&ctx->touch_lock);
 }
 
 static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
@@ -754,6 +763,36 @@ static const struct drm_panel_funcs o82_funcs = {
 	.get_modes = o82_get_modes,
 };
 
+int uke_o82_touch_register(struct drm_panel *panel, struct notifier_block *nb)
+{
+	struct o82_panel *ctx;
+	u64 state;
+	int ret;
+
+	if (!panel || panel->funcs != &o82_funcs || !nb || !nb->notifier_call)
+		return -EINVAL;
+	ctx = container_of(panel, struct o82_panel, panel);
+	mutex_lock(&ctx->touch_lock);
+	ret = blocking_notifier_chain_register(&ctx->touch_notifiers, nb);
+	if (!ret) {
+		state = (u64)atomic64_read(&ctx->touch_state);
+		nb->notifier_call(nb, 0, &state);
+	}
+	mutex_unlock(&ctx->touch_lock);
+	return ret;
+}
+EXPORT_SYMBOL_GPL(uke_o82_touch_register);
+
+void uke_o82_touch_unregister(struct drm_panel *panel, struct notifier_block *nb)
+{
+	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
+
+	mutex_lock(&ctx->touch_lock);
+	blocking_notifier_chain_unregister(&ctx->touch_notifiers, nb);
+	mutex_unlock(&ctx->touch_lock);
+}
+EXPORT_SYMBOL_GPL(uke_o82_touch_unregister);
+
 static ssize_t touch_reset_state_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
@@ -782,6 +821,8 @@ static int o82_probe(struct mipi_dsi_device *dsi)
 	if (IS_ERR(ctx))
 		return PTR_ERR(ctx);
 	mutex_init(&ctx->lock);
+	mutex_init(&ctx->touch_lock);
+	BLOCKING_INIT_NOTIFIER_HEAD(&ctx->touch_notifiers);
 	atomic64_set(&ctx->touch_state, 0);
 	ctx->dsi[0] = dsi;
 	ctx->profiles = of_device_get_match_data(dev);
