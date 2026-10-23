@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 24
+%global senemos_build_release 25
 %else
 %global senemos_build_release 1
 %endif
@@ -374,6 +374,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-25
+- Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
+- Check actual capture and fault-completion lock-cycle behavior before building.
+- Preserve the existing display, touch and charging policies.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-24
 - Retain eligible O82 VRR modes above the requested floor.
 - Normalize opted-in 30-89 Hz requests to the observed 90 Hz touch trial floor.
