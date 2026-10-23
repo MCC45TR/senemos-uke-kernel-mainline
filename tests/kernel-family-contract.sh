@@ -12,7 +12,6 @@ grep -Fxq "$base-singleboot" <<< "$names"
 requirements=$(rpmspec --target aarch64 -q --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS:depflags}\t%{REQUIREVERSION}\n]' "$spec")
 grep -Fxq "$base-singleboot"$'\t'"$base"$'\t=\t'"$release" <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-installation-profile\t>=\t1.3.1' <<< "$requirements"
-grep -Fxq "$base-boot"$'\tuke-kernel-update\t>=\t1.3.1' <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-kernel-update(root-filesystem-v2)\t>=\t1' <<< "$requirements"
 parsed=$(rpmspec --target aarch64 --parse "$spec")
 grep -Fq '"automatic_kernel_activation": false' <<< "$parsed"
@@ -45,4 +44,16 @@ fi
 rpm -qpl "${packages[0]}" > "$work/files"
 grep -Fxq "/usr/share/doc/$base-singleboot/SINGLEBOOT.md" "$work/files"
 grep -Fxq "/usr/share/licenses/$base-singleboot/LICENSE" "$work/files"
+case $base in
+    senemos-uke-linux-kernel-mainline) prefix= ;;
+    senemos-uke-linux-kernel-mainline-kvm) prefix=kvm- ;;
+    senemos-uke-linux-kernel-mainline-unstable) prefix=unstable- ;;
+    *) exit 1 ;;
+esac
+for path in "/usr/share/senemos/uke/${prefix}singleboot.json" "/usr/lib/senemos/${prefix}default-boot.img"; do
+    grep -Fxq "$path" "$work/files" || {
+        echo 'Kernel family owns a conflicting profile namespace' >&2
+        exit 1
+    }
+done
 printf '%s\n' 'One source family, six children, exact singleboot tuple, installed documentation and no activation scriptlet passed.'

@@ -1,4 +1,38 @@
-# Uke Linux 7.2.11 adaptation
+# Uke Linux 7.3 adaptation
+
+23 October 2026 candidate: release 7 uses mainline19's accepted-14-based
+hardware profile, paired SPI/IRQ touch transport/DT/client and transport-ready
+QRTR handshake. Its 102-patch queue retains the reviewed 7.3 API adaptations
+through patch 0100 and replaces the prior QRTR adaptation with patch 0101.
+Release 6's additional audio provider/reset/channel-map changes are excluded
+from this discovery comparison; registration-only audio remains selected.
+The observations below retain their original source identities. Repeated tablet
+startup, touch contacts, sensors and suspend remain unqualified for release 7.
+
+22 October 2026 candidate: release 6 carries current fixes from patches
+0099–0107 and native source from mainline `f142cbe`. The 107-patch queue retains the existing
+7.3 API adaptations, QCOM RNG inventory and QCE/GF128 policy. The added source
+covers APR publication, closed-stream card/provider lifetime, coordinated reset,
+LPASS pin control and post-publication Uke SMD QRTR discovery. Existing release
+16 display assets are carried without additional color-depth changes.
+
+The fresh source-preparation check refused duplicate patch 0101: the exact
+physical channel-map change is already in signed Linux 7.3 (complete reverse
+application check passed). It is omitted from this queue. Patch 0102 retains
+the new upstream clock/OF include context. Patch 0107 is adapted to 7.3's
+existing global HELLO worker and MHI resume API: it retains that handshake,
+removes the control-packet drop gate, bounds transient retries and cancels work
+before node release. The Uke SMD request still follows receive publication.
+No new control queue is introduced.
+
+Native host metadata, identity, filesystem, module-inventory and profile
+fixtures passed. The host entry self-test now selects the existing strict
+unstable metadata fixture for this family and passed all eleven groups. Source
+preparation, AArch64 compilation, signed packages and physical 7.3 boot remain
+separate gates. This family has no activation scriptlet; do not infer physical
+acceptance from source preparation or a package transaction.
+
+The inherited adaptation history below describes its original source bases.
 
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM

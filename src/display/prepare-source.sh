@@ -18,6 +18,7 @@ paths=(
     drivers/iommu/arm/arm-smmu/uke-display-smmu.c
     drivers/gpu/drm/msm/uke-mdss-handoff.c
     include/linux/qcom-uke-display.h
+    include/linux/uke-o82-touch.h
     include/drm/uke-o82-mode.h
     include/drm/uke-o82-avr.h
 )
@@ -66,14 +67,13 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0040-uke-o82-experimental-vrr-capability.patch \
                  0041-dpu-frame-watchdog-lifecycle.patch \
                  0042-uke-o82-live-avr-retiming.patch \
-                 0043-uke-o82-live-avr-disable-modeset.patch; do
+                 0043-uke-o82-live-avr-disable-modeset.patch \
+                 0044-uke-displayport-10bpc-output.patch \
+                 0045-uke-o82-fixed-10bpc-property.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
 done
-patch=$here/../../patches/display/0044-uke-displayport-10bpc-output.patch
-git -C "$kernel" apply --check "$patch"
-git -C "$kernel" apply "$patch"
 for path in "${paths[@]}"; do
     source=${path##*/}
     [[ $source != uke-o82-mode.h ]] || source=o82-mode.h

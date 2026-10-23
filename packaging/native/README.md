@@ -1,34 +1,17 @@
 # Mainline display source profile
 
-21 October 2026 unstable source: Linux 7.3 is packaged as 7.3.0 with the
-distinct `7.3.0-1-unstable` module and boot namespace. The source archive retains
-the upstream `linux-7.3` tree name and signed Kernel.org URL. Package installation
-does not activate a boot image. Existing tablet results below do not qualify
-this kernel; native COPR, matched artifacts and device acceptance are separate.
+23 October 2026: unstable release `7.3.0-7-unstable` carries the matched
+touch transport, DT and per-release C++ processor from mainline19. The QRTR
+adaptation preserves upstream 7.3 node-ID reads and requests HELLO only after
+each transport's receive context is published. Registration-only audio retains
+the accepted release-14 baseline; release 6's extra provider changes are excluded.
+No package script activates this experimental kernel.
 
-Linux 7.3 moves the unchanged Qualcomm RNG driver to `drivers/char/hw_random`
-and `CONFIG_HW_RANDOM_QCOM`. The early module list follows that move and omits
-GF128 hashing because the selected configuration builds it into the Image.
-Upstream marks QCE broken due to races with secure-world access; its driver
-remains disabled and is not forced into the early module list.
-
-The active Linux 7.3 adaptation contains 99 patches. Version-specific rebases
-retain upstream clock tests, remoteproc mapping cleanup, mailbox error handling,
-DSI atomic callbacks and DisplayPort mode programming. Uke's synchronous DWC3
-supplier admission remains separate from the new upstream notifier path; both
-use the existing delayed worker lock. The 7.3 UBWC helpers express the earlier
-4.0, bank-bit-16, level-2/3 swizzle and macrotile defaults without a duplicate
-board structure. The upstream SMEM DRAM query may refine the bank bit at runtime.
-PRM correlation now uses the actual selected parameter for the new CPU LPR
-request as well as the existing hardware-core request. Actual-source host
-fixtures cover dispatch, supplier refusal, request generations and UBWC defaults.
-
-The Uke RPMh backend predates upstream's new read transaction. Its compatibility
-entry returns `-EOPNOTSUPP` without modifying the request or issuing a command.
-Upstream generic RPMh regulators that need initial-state reads remain unavailable
-under this backend; the separate Uke regulator implementation is retained.
-A read transport requires its own RSC reply validation. No successful state or
-new regulator support is inferred from this refusal or from compilation.
+The 102-patch queue retains the signed upstream `linux-7.3` source, DWC3
+notifier compatibility and 7.3 UBWC/RPMh API adaptations. The early inventory
+uses `drivers/char/hw_random/qcom-rng`, GF128 hashing remains built in and QCE
+remains disabled under the upstream broken gate. Source, COPR and physical
+acceptance are separate; the older records below retain their exact identities.
 
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
@@ -285,3 +268,39 @@ fields so they cannot override the selected profile. GCC and Clang ASan/UBSan
 fixtures cover both profiles, all field orders, rejected input and capacity
 boundaries. A panic restart is separate from hard-hang recovery or physical
 A/B rollback qualification. No tablet installation or reboot is implied.
+
+## Audio service registration, 22 October 2026
+
+The 7.2.12-10 candidate selects the existing `services-only` audio profile.
+Native APM/PRM services 1/2 can bind and perform the bounded firmware readiness
+query; original clients 3/7 remain present. Both DAI children, amplifier I2C
+and SLIM remain disabled. The package does not create playback/capture paths
+or apply microphone bias, amplifier presets or calibration. The existing
+`disabled` preparation setting remains available for rollback/source comparison.
+Host FDT and actual-source response/lifetime checks precede COPR submission.
+Tablet service binding and physical internal audio remain separate tests.
+
+## Audio card registration candidate, 22 October 2026
+
+The 7.2.12-14 source selects `registration-only`: the native APM and PCM
+components register a Uke card with playback/capture frontend descriptions.
+The displayed names explicitly mark streams disabled. The q6apm component
+refuses both PCM and compressed opens before DSP graph allocation, rather
+than relying on the later machine startup callback. It also skips PCM buffer
+construction and teardown mappings, which source review found unguarded in
+the uninstalled release-12 candidate. No backend, amplifier,
+microphone bias or SLIM path is enabled. Native card visibility and physical
+audio acceptance remain separate results.
+
+Release 13 registered the card after a manual module load on the tablet, but
+cold autoload failed through the original Fedora ALSA rule's missing
+`snd-seq` dependency. Its frontend IOMMU attachment also triggered warnings
+outside the guarded boot scope. Release 14 includes the sequencer module and
+omits that attachment while frontend DMA remains prohibited. The original
+Fedora rule and SMMU guard are retained; cold-boot validation is still required.
+
+Original host `alsatplg` from Fedora `alsa-topology-utils` compiles the project frontend
+description; no donor build script is executed. The output contains no
+calibration, graph endpoint or mixer and is installed below the exact kernel
+release's firmware search directory. The host ACDB metadata inspector and its
+fixtures are source/build tools only and do not enter tablet payloads.

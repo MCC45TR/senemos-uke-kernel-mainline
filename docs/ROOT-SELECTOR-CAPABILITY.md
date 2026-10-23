@@ -42,10 +42,14 @@ plus rejection fixtures. The host and AArch64 object/link fixtures do not qualif
 a complete boot image; the coordinated kernel build must pass the final Image
 check before delivery.
 
-The boot RPM requires `uke-kernel-update >= 1.3.1` as a lasting dependency for
-the explicit current-slot transaction. This variant has no activation scriptlet;
-installing it does not select a boot image or change a slot. The singleboot child
-additionally requires
+The boot RPM requires both `uke-kernel-update >= 1.3.1` and
+`uke-kernel-update(guarded-automatic) >= 1` as ordinary, lasting dependencies.
+The guarded consumer must be present when the kernel's post-transaction hook
+runs and remain installed afterwards. A `Requires(posttrans)` declaration alone
+does not provide a lasting requirement or order package installation. The
+consumer must apply its global/profile gate without relying on another
+package's post-transaction initialization. This source change is reserved for
+the next coordinated kernel release. The singleboot child additionally requires
 `uke-kernel-update(root-filesystem-v2) >= 1` and installation profile 1.3.1;
 an old consumer must not stage a v2 userdata bundle. Published v1 images remain
 usable with the new consumer on F2FS; they are refused for the other formats.

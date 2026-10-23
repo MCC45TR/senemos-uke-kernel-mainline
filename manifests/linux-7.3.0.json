@@ -404,6 +404,18 @@
     {
       "path": "patches/7.3.0/0098-uke-confirm-usb-sdp-adapter.patch",
       "sha256": "b6562d35915caf0bfd7f3c9304597d12e8caaa7e79012992aac4936d3f6a6650"
+    },
+    {
+      "path": "patches/7.3.0/0099-apr-unwind-failed-service-publication.patch",
+      "sha256": "8f4de16dec04d631f8da1ca0d8e023906c1845560cdddfe1fe732b42f2dba9d1"
+    },
+    {
+      "path": "patches/7.3.0/0100-uke-audioreach-card-with-closed-streams.patch",
+      "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
+    },
+    {
+      "path": "patches/7.3.0/0101-qrtr-transport-ready-handshake.patch",
+      "sha256": "c140b620d8cde695d19044dddf3ba55316e583498cafd34ed89de1b5db2b9375"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -415,7 +427,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "5296cbf69279930ad1486c164b87c098ce1bd23bbd1b1dd350ccdbfd774e8bf6"
+      "sha256": "2af274c0d8b1394192a3e32d76a57609bafe0b030701948eec2f0b841159865b"
     },
     {
       "path": "configs/fedora.config",

@@ -74,6 +74,10 @@ struct device { struct device_node *of_node; int kobj; };
 typedef struct {u64 value;} atomic64_t;
 static u64 atomic64_read(const atomic64_t *state) {return state->value;}
 static void atomic64_set(atomic64_t *state,u64 value) {state->value=value;}
+struct blocking_notifier_head {u64 last; unsigned int calls;};
+static int blocking_notifier_call_chain(struct blocking_notifier_head *head,unsigned long event,void *data) {
+    assert(head && event==0 && data); head->last=*(u64 *)data; ++head->calls; return 0;
+}
 static void sysfs_notify(int *kobj,const char *directory,const char *name) {
     assert(kobj&&!directory&&!strcmp(name,"touch_reset_state"));
 }
@@ -579,6 +583,7 @@ int main(void) {
         first_boundary(&c.first_frame_work);
         assert(c.backlight->on);
         assert(atomic64_read(&c.touch_state)==3); /* all post-frame groups complete */
+        assert(c.touch_notifiers.calls && c.touch_notifiers.last==3);
         assert(post_frame_reads==0);
         assert(settle_ms==before_enable_wait);
         assert(batch_api_calls==batched);

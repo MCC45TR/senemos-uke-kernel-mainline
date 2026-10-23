@@ -16,6 +16,9 @@ names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 parsed=$(rpmspec --parse "$spec")
 grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*-unstable\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
+grep -Fxq 'Requires: uke-kernel-update(kernel-touch-client-v1) >= 1' <<< "$parsed"
+grep -Fxq 'Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1' <<< "$parsed"
+grep -Fxq 'Source9: senemos-uke-touch-runtime-1.tar.xz' <<< "$parsed"
 if grep -E '^Obsoletes:|^Conflicts:|^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)($|[[:space:]])|^Requires:.*(python|pypy)' <<< "$parsed"; then
     echo 'Unstable packages must coexist without automatic activation' >&2
     exit 1
@@ -27,8 +30,8 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1
 fi
-grep -F 'git archive HEAD src/display src/boot src/usb src/audio src/power patches/$(version) patches/display patches/boot tests' "$root/Makefile"
-grep -Fx 'disabled' "$root/packaging/native/audio-profile"
+grep -F 'git archive HEAD src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests' "$root/Makefile"
+grep -Fx 'registration-only' "$root/packaging/native/audio-profile"
 grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
 grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
 grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"

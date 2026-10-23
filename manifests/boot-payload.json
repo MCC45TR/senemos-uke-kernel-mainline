@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-22",
+  "date": "2026-10-23",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; Linux 7.3 early inventory follows the unchanged QCOM RNG driver move, keeps GF128 built in, and preserves the upstream QCE broken gate; guarded four-filesystem userdata ABI v2 and once-only expansion shared from reviewed mainline db59e1a; 7.3 tablet acceptance remains unqualified; candidate native platform-profile QoS and DT compatibility, tablet handoff unqualified",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "2a60eed082b8404305c009e926fe469ec4f6db5654fc8ec098180770017712d9"
+      "sha256": "a00db4e3c8e98537fba3ecbad8266353f8268c3b6f2f499884f5593ec3782bfc"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "6f3a53a071819de827cf89c5904b40a5e223b71e2fc809c34bb439c916cf393c"
+      "sha256": "2b2d8514c672a00b7cad9eeaaf5b41909222c07724cc17979bb4cc0fcff088b7"
     },
     {
       "path": "src/boot/check-root-capability.sh",

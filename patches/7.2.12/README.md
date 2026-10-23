@@ -1,5 +1,14 @@
 # Uke Linux 7.2.11 adaptation
 
+**23 October 2026, release 19 source:** patch 0101 moves QRTR HELLO ownership
+to the core, with explicit requests after SMD, MHI and TUN receive publication.
+It removes the name-server broadcast/reply senders and retries transient GLINK
+intent timeouts. Normal packet enqueue remains ungated. The candidate extends
+release 18's accepted-14-based source and paired touch runtime; it excludes
+release 17's additional audio changes. Actual-source sanitizer fixtures and five
+AArch64 translation units pass. Repeated tablet startup and suspend/resume
+remain separate acceptance gates.
+
 **20 October 2026, release 12 source:** patch 0084 connects PRM basic firmware
 errors to the existing request/release error path and handles token-matched APM
 readiness errors. It validates APM basic payloads before parsing and preserves
@@ -108,3 +117,20 @@ This queue carries the 98 patches from source `cf7d17f` without changing their
 contents. Kernel.org Linux 7.2.12 is pinned in the matching source manifest.
 Earlier source and tablet observations below retain their original scope;
 they do not qualify this upstream update on Uke hardware.
+
+## Audio services, 22 October 2026
+
+Patch 0099 ports the already reviewed APR/GPR failed-publication cleanup from
+project commit `e4b196c060de5261c6469ac913622e6b99fc0496` without changing
+the preceding 98 patches. Upstream APR file tip `66ec83627902d2585e14911692b317496731767a`
+still has the affected registration path. The source-extracted fault fixture
+rejects the old path and passes the corrected device-reference/IDR unwind.
+The services-only native profile does not enable physical audio endpoints.
+
+Patch 0100 adds the Uke card Kconfig/Kbuild entry and board-scoped PCM and
+compressed-open refusal before q6apm graph allocation. The native preparation
+copies `src/audio/uke-audio-card.c`; it binds the existing PCM/APM components
+and accepts exactly two frontend runtimes. The registration-only DT enables
+the guarded frontend component, retaining disabled backend and physical paths.
+Neither card registration nor software refusal fixtures qualify speaker or
+microphone operation.
