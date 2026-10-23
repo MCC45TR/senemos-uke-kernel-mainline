@@ -416,6 +416,10 @@
     {
       "path": "patches/7.3.0/0101-qrtr-transport-ready-handshake.patch",
       "sha256": "c140b620d8cde695d19044dddf3ba55316e583498cafd34ed89de1b5db2b9375"
+    },
+    {
+      "path": "patches/7.3.0/0102-uke-clock-kconfig-dependencies.patch",
+      "sha256": "a5aa37ec3a88072ed83e3b79954fd64480204593ba491265320d6f4a8030cab9"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 7
+%global senemos_build_release 8
 %else
 %global senemos_build_release 1
 %endif
@@ -170,7 +170,7 @@ g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. 
 readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
-    CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
+    CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8550=m \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
@@ -367,6 +367,9 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-8
+- Scope fixed-board drivers and DTB compilation to Uke with explicit clock suppliers.
+- Retain the family boot, touch, QRTR and singleboot contracts with early dependency validation.
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
 - Carry the matched touch runtime and transport-ready QRTR handshake from mainline19.
 - Retain Linux 7.3 compatibility changes and the registration-only audio baseline.
