@@ -84,6 +84,8 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: uke-kernel-update(userdata-fallback-v1) >= 1
+Requires: uke-kernel-update(qualified-firmware-cohort-v1) >= 1
 Requires: uke-kernel-update(kernel-touch-client-v1) >= 1
 Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
@@ -92,7 +94,8 @@ Provides: installonlypkg(kernel)
 %description boot
 Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
 checks package identities, module digests, physical storage and power, preserves
-the previous image, and verifies write readback. Android A is not an update target.
+the previous image, and verifies write readback. Linux boot A/B requires both
+boot slots; preserve the Android boot backup before provisioning the other slot.
 
 %package singleboot
 Summary: Matched Uke userdata boot profile
