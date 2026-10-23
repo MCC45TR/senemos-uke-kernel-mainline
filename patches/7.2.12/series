@@ -98,3 +98,4 @@
 0098-uke-confirm-usb-sdp-adapter.patch
 0099-apr-unwind-failed-service-publication.patch
 0100-uke-audioreach-card-with-closed-streams.patch
+0101-uke-dispcc-cliffs-kconfig.patch

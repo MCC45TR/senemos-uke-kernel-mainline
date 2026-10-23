@@ -49,6 +49,7 @@ localversion=-${release#*-}
 export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
+bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config"
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
 for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
     EXT4_FS F2FS_FS XFS_FS BTRFS_FS QCOM_UKE_PLATFORM_PROFILE ACPI_PLATFORM_PROFILE; do
@@ -56,12 +57,14 @@ for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SI
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
 grep -Fx 'CONFIG_QCOM_Q6V5_PAS=m' "$out/.config"
-make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules dtbs
+make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules qcom/sm7675-xiaomi-uke.dtb
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" modules_install \
     INSTALL_MOD_PATH="$stage" INSTALL_MOD_STRIP=1 DEPMOD=true
 source_modules=$stage/lib/modules/$release
 find "$source_modules" -maxdepth 1 -type l \( -name build -o -name source \) -delete
 find "$source_modules" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
+depmod -b "$stage" "$release"
+bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config" "$source_modules"
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
 while IFS= read -r path; do

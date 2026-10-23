@@ -408,6 +408,10 @@
     {
       "path": "patches/7.2.12/0100-uke-audioreach-card-with-closed-streams.patch",
       "sha256": "dcdc3ce17898fe468541257a1d007b1b287b636ee2ecfc094cd28c84fcea3fdc"
+    },
+    {
+      "path": "patches/7.2.12/0101-uke-dispcc-cliffs-kconfig.patch",
+      "sha256": "4c2f9ab5d776def85fcd7dc7642bf048dad03baba5288361f37ff4554cfed488"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
