@@ -291,3 +291,5 @@ description; no donor build script is executed. The output contains no
 calibration, graph endpoint or mixer and is installed below the exact kernel
 release's firmware search directory. The host ACDB metadata inspector and its
 fixtures are source/build tools only and do not enter tablet payloads.
+
+23 October 2026 source candidate: 7.2.12-6 retains the current touch/QRTR and family-specific boot/API profile while excluding foreign fixed-board drivers and compiling only the Uke DTB. The early dependency check rejects missing suppliers; package and tablet acceptance remain separate.
