@@ -949,8 +949,13 @@ static struct mipi_dsi_driver o82_driver = {
 	.remove = o82_remove,
 	.shutdown = o82_shutdown,
 	.driver = { .name = "panel-xiaomi-o82", .of_match_table = o82_match,
-		    .dev_groups = o82_groups },
+		    .dev_groups = o82_groups, .suppress_bind_attrs = true },
 };
-module_mipi_dsi_driver(o82_driver);
+/* shortcut: no live panel removal until MSM GEM/bridge teardown is safe. */
+static int __init o82_init(void)
+{
+	return mipi_dsi_driver_register(&o82_driver);
+}
+module_init(o82_init);
 MODULE_DESCRIPTION("Xiaomi O82 dual-DSI panel with OEM timing groups");
 MODULE_LICENSE("GPL");
