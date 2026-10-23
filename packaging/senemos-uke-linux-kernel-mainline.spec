@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 8
+%global senemos_build_release 9
 %else
 %global senemos_build_release 1
 %endif
@@ -185,6 +185,8 @@ bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst | grep -Fx 'spi:nt36532-uke-thp'
+CC=clang bash native-profile/tests/spi-geni-completion-contract.sh drivers/spi/spi-geni-qcom.c
 test -x %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
 test "$(sha256sum %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture | cut -d ' ' -f1)" = "$(sed -n 's/^touch_client_sha256=//p' %{_uke_out}/boot-manifest)"
 CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
@@ -367,6 +369,11 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
+- Export the native touchscreen SPI alias for standard module autoload.
+- Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.
+- Check the built alias and actual DMA callback success and failure paths.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-8
 - Scope fixed-board drivers and DTB compilation to Uke with explicit clock suppliers.
 - Retain the family boot, touch, QRTR and singleboot contracts with early dependency validation.
