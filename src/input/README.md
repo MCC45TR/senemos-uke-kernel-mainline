@@ -23,7 +23,14 @@ normal-firmware protocol; OnePlus Pad 2 and Lenovo coordinate-firmware drivers
 are shared-controller lifecycle comparisons, not packet replacements. No donor
 board values or proprietary calibration are included.
 
-Release preparation does not select this driver or candidate overlay. Paired
-kernel/DT packaging, the private firmware path `novatek/uke/nt36532-normal.bin`,
-contact-service migration and recoverable tablet validation remain required
-before retiring the current touchscreen RPM. Gesture wake is not implemented.
+Release 7.2.12-18 selects the driver and overlay. Its module RPM also owns the
+matching C++ processor under `/usr/lib/modules/<release>/uke/`; the boot manifest
+records its digest. Activation requires the updater's client admission and the
+hardware-support dispatch capability. The private firmware alias
+`novatek/uke/nt36532-normal.bin` resolves to the separately retained private RPM.
+No private firmware or calibration is included in the kernel package.
+
+Suspend quiesces the IRQ and workers before invalidating completed buffers with
+the standard [VB2 suspend helper](https://docs.kernel.org/driver-api/media/v4l2-videobuf2.html#c.vb2_discard_done).
+Recoverable tablet/contact validation remains required. Gesture wake is not
+implemented.

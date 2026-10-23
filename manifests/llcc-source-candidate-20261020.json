@@ -69,7 +69,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "8b42544371ece51077502ac2d4c84a419581fc243ace5820c0e9046c17a6dcdd"
+      "sha256": "3f0355ac532b9e876e530bc51043a56a68549cbd524e1ec8b572f9d56d66fccc"
     },
     {
       "path": "packaging/native/llcc-profile",
@@ -214,5 +214,11 @@
     ],
     "normal_linux_vrr_experiment_enabled": false,
     "physical_tested": false
-  }
+  },
+  "source_maintenance": [
+    {
+      "date": "2026-10-23",
+      "change": "The native preparer also stages the paired touch transport. LLCC policy and the original release-14 selection record are unchanged."
+    }
+  ]
 }

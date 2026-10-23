@@ -36,7 +36,7 @@ cmp "$root/src/display/uke-o82-touch.h" "$stage/kernel/include/linux/uke-o82-tou
 if bash "$root/src/input/prepare-source.sh" "$stage/kernel"; then
     echo 'Duplicate staging unexpectedly accepted' >&2; exit 1
 fi
-if grep -Eq 'src/input/prepare-source|CONFIG_VIDEO_NT36532_UKE_THP' "$root/packaging/native/prepare.sh" "$root/packaging/native/native.config"; then
-    echo 'Release profile unexpectedly selects the transport' >&2; exit 1
-fi
-printf 'Explicit staging and disabled release selection: PASS\n'
+grep -Fx 'bash "$profile/src/input/prepare-source.sh" "$kernel"' "$root/packaging/native/prepare.sh"
+grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' "$root/packaging/native/native.config"
+grep -Fx '#include "../input/sm7675-uke-thp.dtsi"' "$root/src/display/sm7675-uke-native-display-oem-modes.dtso"
+printf 'Explicit staging and matched release selection: PASS\n'

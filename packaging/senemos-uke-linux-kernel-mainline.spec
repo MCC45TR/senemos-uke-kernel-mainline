@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 14
+%global senemos_build_release 18
 %else
 %global senemos_build_release 1
 %endif
@@ -15,6 +15,7 @@ Version: 7.2.12
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Uke kernel with the O82 display profile
 License: GPL-2.0-only AND MIT
+SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -25,10 +26,12 @@ Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
 Source7: SINGLEBOOT.md
 Source8: singleboot-LICENSE
+Source9: senemos-uke-touch-runtime-1.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
+BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: python3
@@ -56,12 +59,14 @@ Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
 Summary: Matching Uke kernel modules
+License: GPL-2.0-only AND GPL-3.0-or-later AND MIT AND Apache-2.0
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
 Provides: installonlypkg(kernel)
 
 %description modules
 Modules from the same native-profile source and configuration as the raw Image.
+The separately licensed calibrated touch processor is matched to this release.
 
 %package dtbs
 Summary: Uke compile-stage device tree and native overlay
@@ -79,6 +84,8 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: uke-kernel-update(kernel-touch-client-v1) >= 1
+Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
@@ -141,6 +148,8 @@ bash native-profile/prepare.sh "$PWD"
 tar -xJf %{SOURCE5}
 cmp boot-recipe/lock.json %{SOURCE6}
 (cd boot-recipe; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
+tar -xJf %{SOURCE9}
+(cd touch-runtime; sha256sum --check --strict SOURCE-SHA256SUMS)
 
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
@@ -155,6 +164,10 @@ test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 test "$jobs" -le 8 || jobs=8
+g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
+    touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
+    -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
+readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
@@ -168,6 +181,11 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/touch-runtime-package-contract.sh
+grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
+test -x %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
+test "$(sha256sum %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture | cut -d ' ' -f1)" = "$(sed -n 's/^touch_client_sha256=//p' %{_uke_out}/boot-manifest)"
 CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
 bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
@@ -328,6 +346,8 @@ fi
 /usr/lib/firmware/%{krel}/
 
 %files modules
+%license touch-runtime/capture/LICENSE.GPL-3.0 touch-runtime/capture/LICENSE.MIT touch-runtime/capture/upstream/nt36532-thp/LICENSE
+/usr/lib/modules/%{krel}/uke/
 /usr/lib/modules/%{krel}/kernel/
 /usr/lib/modules/%{krel}/modules.alias*
 /usr/lib/modules/%{krel}/modules.dep*
@@ -350,6 +370,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-18
+- Pair the Uke SPI/IRQ capture driver and DT with its calibrated C++ processor.
+- Validate the versioned processor digest with the matching module RPM.
+- Invalidate completed touch buffers before system suspend.
+
 * Thu Oct 22 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-14
 - Omit IOMMU attachment for the closed AudioReach registration profile.
 - Supply the sequencer module required by the original Fedora ALSA load rule.

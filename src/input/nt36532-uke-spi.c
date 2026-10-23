@@ -661,6 +661,7 @@ static int nvt_suspend(struct device *dev)
 	t->epoch++;
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	nvt_quiesce(t);
+	vb2_discard_done(&t->queue);
 	mutex_unlock(&t->ctrl);
 	return 0;
 }

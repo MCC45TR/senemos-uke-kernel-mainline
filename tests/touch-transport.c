@@ -28,6 +28,7 @@ struct device { struct nvt_uke_touch *touch; };
 struct work_struct { unsigned int pending; struct nvt_uke_touch *touch; };
 struct notifier_block { int unused; };
 struct nvt_uke_io { void *context; };
+struct vb2_queue { unsigned int done, errors; };
 struct nvt_uke_touch {
     struct spi_device *spi;
     mutex_t ctrl, io_lock, irq_lock, state_lock;
@@ -36,6 +37,7 @@ struct nvt_uke_touch {
     struct notifier_block panel_notifier;
     struct notifier_block supply_notifier;
     struct nvt_uke_io io;
+    struct vb2_queue queue;
     u64 epoch, transfer_epoch, panel_state;
     bool streaming, panel_ready, suspended, removed, fault;
     bool irq_enabled, booted, idle_reset;
@@ -93,6 +95,12 @@ static void cancel_work_sync(struct work_struct *w) {
     assert(!w->touch->irq_enabled);
     mock.cancels++; w->pending = 0;
 }
+static void vb2_discard_done(struct vb2_queue *q) {
+    struct nvt_uke_touch *t = container_of(q, struct nvt_uke_touch, queue);
+    assert(t->suspended && !t->irq_enabled);
+    assert(!t->boot_work.pending && !t->charger_work.pending);
+    q->errors += q->done; q->done = 0;
+}
 static void *system_long_wq;
 static void queue_work(void *queue, struct work_struct *w) { mock.queues++; w->pending = 1; }
 static void *dev_get_drvdata(struct device *dev) { return dev->touch; }
@@ -133,6 +141,7 @@ static void reset(void) {
     touch.panel_state = 1; touch.watchdog = 10; touch.idle_reset = true;
     touch.boot_work.pending = 0;
     touch.charger_work.pending = 0;
+    touch.queue = (struct vb2_queue) { 0 };
     mock.calls = mock.fail = mock.short_at = mock.change_epoch = 0;
     mock.enables = mock.disables = mock.cancels = mock.queues = 0;
     mock.charger_calls = mock.psy_gets = mock.warnings = 0;
@@ -212,7 +221,9 @@ int main(void) {
     assert(nvt_panel_changed(&touch.panel_notifier, 0, &state) == NOTIFY_OK);
     assert(mock.cancels == 2 && mock.queues == 1);
     struct device dev = { .touch = &touch };
+    touch.queue.done = 2;
     assert(nvt_suspend(&dev) == 0 && touch.suspended);
+    assert(touch.queue.done == 0 && touch.queue.errors == 2);
     assert(nvt_resume(&dev) == 0 && !touch.suspended && mock.queues == 2);
     state = 4;
     assert(nvt_panel_changed(&touch.panel_notifier, 0, &state) == NOTIFY_OK);

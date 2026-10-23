@@ -4,6 +4,7 @@
 #error OEM refresh modes require the observed O82-42 panel
 #endif
 #include "sm7675-uke-native-display.dtso"
+#include "../input/sm7675-uke-thp.dtsi"
 
 &uke_panel {
 	/delete-property/ xiaomi,initial-60hz-only;
