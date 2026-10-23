@@ -5,7 +5,7 @@ set -Eeuo pipefail
 kernel=$(realpath "$1")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
-case $version in 7.2.9|7.2.10|7.2.11) ;; *) exit 1;; esac
+case $version in 7.2.9|7.2.10|7.2.11|7.2.12) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 patch=$here/../../patches/display/7.2.10/0001-native-display-providers.patch
@@ -18,6 +18,7 @@ paths=(
     drivers/iommu/arm/arm-smmu/uke-display-smmu.c
     drivers/gpu/drm/msm/uke-mdss-handoff.c
     include/linux/qcom-uke-display.h
+    include/linux/uke-o82-touch.h
     include/drm/uke-o82-mode.h
     include/drm/uke-o82-avr.h
 )
@@ -66,14 +67,13 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0040-uke-o82-experimental-vrr-capability.patch \
                  0041-dpu-frame-watchdog-lifecycle.patch \
                  0042-uke-o82-live-avr-retiming.patch \
-                 0043-uke-o82-live-avr-disable-modeset.patch; do
+                 0043-uke-o82-live-avr-disable-modeset.patch \
+                 0044-uke-displayport-10bpc-output.patch \
+                 0045-uke-o82-fixed-10bpc-property.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
 done
-patch=$here/../../patches/display/0044-uke-displayport-10bpc-output.patch
-git -C "$kernel" apply --check "$patch"
-git -C "$kernel" apply "$patch"
 for path in "${paths[@]}"; do
     source=${path##*/}
     [[ $source != uke-o82-mode.h ]] || source=o82-mode.h

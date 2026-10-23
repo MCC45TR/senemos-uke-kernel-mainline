@@ -1,17 +1,41 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
-.PHONY: validate srpm
-version := 7.2.11
+.PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
+version := 7.2.12
 outdir ?= $(CURDIR)/build/srpm
-validate:
-	test "$(version)" = 7.2.11
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 81) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+validate: test-touch-protocol test-touch-transport
+	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
+	test "$(version)" = 7.2.12
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 101) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
+	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.2.12-14" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	while IFS=$$'\t' read -r path expected; do
+		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
+	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
+	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
 	bash tests/mainline-package-contract.sh
+	bash tests/touch-runtime-package-contract.sh
+	bash tests/identity-contract.sh
+	bash tests/kernel-family-contract.sh
+	bash tests/userdata-grow-contract.sh
+	bash tests/early-modules-contract.sh
+	bash tests/platform-profile-contract.sh
+	bash -n tests/resin-wake-contract.sh
+test-touch-protocol:
+	bash tests/touch-protocol-contract.sh
+test-touch-transport:
+	bash tests/touch-transport-contract.sh
+test-touch-dt:
+	test -n "$(kernel_source)" -a -n "$(running_fdt)" -a -n "$(dt_output)"
+	bash tests/touch-dt-contract.sh "$(kernel_source)" "$(running_fdt)" "$(dt_output)"
+.PHONY: test-root-capability
+test-root-capability:
+	test -n "$(kernel_source)"
+	bash tests/root-selector-note-contract.sh "$(kernel_source)" manifests/boot-payload.json
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"
@@ -39,8 +63,8 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/display src/boot src/usb src/audio patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
-	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile "$$assets/"
+	git archive HEAD src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
+	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
 	(cd "$$assets"; find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS)
@@ -48,6 +72,9 @@ srpm: validate
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	bash scripts/stage-boot-sources.sh "$$top/SOURCES"
+	bash scripts/stage-touch-runtime.sh "$$top/SOURCES"
+	install -m644 packaging/SINGLEBOOT.md "$$top/SOURCES/SINGLEBOOT.md"
+	install -m644 LICENSE "$$top/SOURCES/singleboot-LICENSE"
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
 # A standalone source clone also owns its host build entry and pinned rules.

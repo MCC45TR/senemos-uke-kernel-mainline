@@ -35,7 +35,7 @@ evidence and must not be added to the normal release series.
  	if (ret < 0) {
  		pr_crit("Uke ABL DT adaptation rejected (%d); refusing incomplete board graph\n", ret);
  		while (true)
-@@ -830,7 +841,7 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
+@@ -830,6 +841,6 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
  	if (!ret)
  		return input;
  	*physical = __pa_symbol(uke_fdt);
@@ -43,4 +43,3 @@ evidence and must not be added to the normal release series.
 +	pr_info("Uke ABL DT: selected RAM preserved; native display and selected USB profile prepared\n");
  	return uke_fdt;
  }
- #endif

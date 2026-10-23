@@ -8,6 +8,10 @@ base=$(realpath "$3") release=$4 jobs=$5
 [[ $release =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ && $jobs =~ ^[1-9][0-9]*$ ]]
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
+cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
+if grep -rE '(^|[[:space:]])root=' "$base/etc/cmdline.d"; then
+    echo 'Stale root-specific dracut base refused; regenerate the common base' >&2; exit 1
+fi
 [[ ! -e $base/usr/lib/modules && ! -e $base/usr/lib/firmware ]]
 [[ ! -s $base/etc/machine-id && ! -e $base/etc/shadow && ! -e $base/root/.ssh ]]
 [[ -z $(find "$base" -type f \( -name '*.py' -o -name '*.pyc' -o -iname '*python*' -o -iname '*pypy*' \) -print -quit) ]]
@@ -46,7 +50,8 @@ export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
-for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE; do
+for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
+    EXT4_FS F2FS_FS XFS_FS BTRFS_FS QCOM_UKE_PLATFORM_PROFILE ACPI_PLATFORM_PROFILE; do
     grep -Fx "CONFIG_${flag}=y" "$out/.config"
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
@@ -60,8 +65,13 @@ find "$source_modules" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
 while IFS= read -r path; do
-    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* && -s $source_modules/kernel/$path ]]
-    install -Dm644 "$source_modules/kernel/$path" "$target/kernel/$path"
+    [[ $path =~ ^[a-zA-Z0-9_/.-]+\.ko\.zst$ && $path != *..* ]]
+    if [[ -s $source_modules/kernel/$path ]]; then
+        install -Dm644 "$source_modules/kernel/$path" "$target/kernel/$path"
+    elif ! grep -Fxq "kernel/${path%.zst}" "$source_modules/modules.builtin"; then
+        printf 'Required early driver is neither a module nor built in: %s\n' "$path" >&2
+        exit 1
+    fi
 done < "$here/early-modules.list"
 for name in modules.builtin modules.builtin.modinfo modules.order; do
     install -m644 "$source_modules/$name" "$target/$name"
@@ -83,14 +93,22 @@ find "$init" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
+bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
+"$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
 "$out/boot-image" inspect "$out/linux.img" > "$out/boot-header.json"
 "$out/boot-image" extract "$out/linux.img" "$out/boot-readback-Image"
 cmp "$out/arch/arm64/boot/Image" "$out/boot-readback-Image"
+"$out/boot-image" extract "$out/userdata.img" "$out/userdata-readback-Image"
+cmp "$out/arch/arm64/boot/Image" "$out/userdata-readback-Image"
 (cd "$source_modules"; find kernel -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "$out/modules.sha256"
 image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
+userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=unsupported\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=unsupported\nmodules_sha256=%s\n' \
-    "$release" "$image" "$raw" "$inventory" > "$out/boot-manifest"
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\n' \
+    "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"
+[[ -s $source_modules/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst ]]
+install -Dm755 "$kernel/native-generated/uke-touch-capture" "$source_modules/uke/uke-touch-capture"
+printf 'touch_client_sha256=%s\n' "$(sha256sum "$source_modules/uke/uke-touch-capture" | cut -d ' ' -f1)" >> "$out/boot-manifest"

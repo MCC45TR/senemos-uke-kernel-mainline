@@ -15,8 +15,11 @@
 #include <linux/sizes.h>
 #include <asm/memory.h>
 #include <asm/processor.h>
+#include "uke-llcc-profile.h"
 #define UKE_INIT __init
 void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity);
 #else
 #include <libfdt.h>
 #include <stddef.h>
@@ -35,6 +38,14 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical);
 /* Nominal active dimensions from the 11.2-inch, 3200x2136 panel specification. */
 #define UKE_PANEL_WIDTH_MM 237U
 #define UKE_PANEL_HEIGHT_MM 158U
+
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+#include "uke-llcc.h"
+#endif
+
+#ifdef __KERNEL__
+#include "uke-root-selector.h"
+#endif
 
 static int UKE_INIT uke_path_reg(const void *fdt, const char *path,
 				unsigned int address, unsigned int bytes)
@@ -60,6 +71,26 @@ static int UKE_INIT uke_delete_optional(void *fdt, const char *path,
 		return node;
 	ret = fdt_delprop(fdt, node, property);
 	return ret == -FDT_ERR_NOTFOUND ? 0 : ret;
+}
+
+static int UKE_INIT uke_volume_down_wake(void *fdt)
+{
+	int node = fdt_path_offset(fdt,
+		"/soc/qcom,spmi@c42d000/qcom,pmk8550@0/pon_hlos@1300/resin"), size;
+	const fdt32_t *value;
+
+	if (node < 0 || fdt_node_check_compatible(fdt, node, "qcom,pmk8350-resin"))
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, node, "linux,code", &size);
+	if (!value || size != 4 || fdt32_to_cpu(*value) != 114)
+		return -FDT_ERR_BADVALUE;
+	value = fdt_getprop(fdt, node, "interrupts", &size);
+	if (!value || size != 16 || fdt32_to_cpu(value[0]) != 0 ||
+	    fdt32_to_cpu(value[1]) != 0x13 || fdt32_to_cpu(value[2]) != 6 ||
+	    fdt32_to_cpu(value[3]) != 3)
+		return -FDT_ERR_BADVALUE;
+	/* The existing PMIC driver owns IRQ wake; retain its key/reset contract. */
+	return fdt_setprop(fdt, node, "wakeup-source", NULL, 0);
 }
 
 static int UKE_INIT uke_legacy_va_gpio_flag(void *fdt)
@@ -908,6 +939,11 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    fdt_check_full(ufs_overlay, ufs_bytes) ||
 	    fdt_check_full(usb_overlay, usb_bytes))
 		return -FDT_ERR_BADVALUE;
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+	ret = uke_llcc_admit(input);
+	if (ret)
+		return ret;
+#endif
 	ret = fdt_open_into(input, output, capacity);
 	if (ret)
 		return ret;
@@ -917,6 +953,11 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	ret = fdt_overlay_apply(output, usb_overlay);
 	if (ret)
 		return ret;
+#if defined(UKE_LLCC_NATIVE_PROFILE) && UKE_LLCC_NATIVE_PROFILE
+	ret = uke_llcc_apply(output);
+	if (ret)
+		return ret;
+#endif
 	/* OEM zero-width bits means the whole byte; upstream rejects bits=<0 0>. */
 	ret = uke_delete_optional(output, "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/sdam@7000/ufs_dev@ad", "bits");
 	if (ret)
@@ -1006,6 +1047,9 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	ret = uke_pmic_adc(output);
 	if (ret)
 		return ret;
+	ret = uke_volume_down_wake(output);
+	if (ret)
+		return ret;
 	ret = uke_hall(output);
 	if (ret)
 		return ret;
@@ -1045,5 +1089,24 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 	*physical = __pa_symbol(uke_fdt);
 	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
 	return uke_fdt;
+}
+
+void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
+				  size_t capacity)
+{
+	const char *handoff;
+	int chosen, bytes = 0;
+
+	if (fdt != uke_fdt)
+		return;
+	chosen = fdt_path_offset(fdt, "/chosen");
+	handoff = fdt_getprop(fdt, chosen, "bootargs", &bytes);
+	if (!handoff && bytes == -FDT_ERR_NOTFOUND)
+		bytes = 0;
+	if (bytes < 0 || uke_select_root(cmdline, capacity, handoff, bytes) < 0) {
+		pr_crit("Uke root selector rejected; refusing an ambiguous root\n");
+		while (true)
+			cpu_relax();
+	}
 }
 #endif

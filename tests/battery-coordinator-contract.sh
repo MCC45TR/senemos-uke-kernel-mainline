@@ -136,7 +136,7 @@ static void initialize(struct qcom_battmgr *b) {
  active=b; mode=0;
 }
 static int get(struct qcom_battmgr *b, unsigned opcode) {
- struct qcom_battmgr_property_request q={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=opcode},.property=13};
+ struct qcom_battmgr_property_request q={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=opcode},.property=opcode==BATTMGR_USB_PROPERTY_SET?USB_INPUT_CURR_LIMIT:13};
  mutex_lock(&b->lock); int ret=qcom_battmgr_uke_request(b,&q,sizeof(q)); mutex_unlock(&b->lock); return ret;
 }
 static void *reader(void *arg) { for(int i=0;i<20;i++)assert(!get(arg,BATTMGR_BAT_PROPERTY_GET)); return NULL; }
@@ -173,6 +173,11 @@ int main(void) {
  before=sends; assert(get(&g,BATTMGR_USB_PROPERTY_SET)==-EPIPE && sends==before);
  struct qcom_battmgr h; initialize(&h); mode=8;
  assert(!get(&h,BATTMGR_USB_PROPERTY_SET));
+ struct qcom_battmgr_property_request budget={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_USB_PROPERTY_SET},.property=USB_INPUT_CURR_LIMIT,.value=500000};
+ h.protection.wet_latched=true;before=sends;
+ mutex_lock(&h.lock);
+ assert(qcom_battmgr_uke_request(&h,&budget,sizeof(budget))==-EACCES&&sends==before);
+ mutex_unlock(&h.lock);h.protection.wet_latched=false;
  /* An ACK is not effective-current readback; it must not mutate GET data. */
  assert(!h.status.current_now);
  assert(!get(&h,BATTMGR_BAT_PROPERTY_GET) && h.status.current_now==123);
@@ -186,6 +191,8 @@ int main(void) {
  assert(qcom_battmgr_uke_generation(&h)==request_generation+10000u);
  assert(!get(&h,BATTMGR_BAT_PROPERTY_GET));
  before=sends;
+ assert(get(&h,UKE_INPUT_SUSPEND_GET)==-EACCES && sends==before);
+ assert(get(&h,UKE_INPUT_SUSPEND_SET)==-EACCES && sends==before);
  assert(get(&h,0x31)==(IS_ENABLED(CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS)?-EACCES:-EOPNOTSUPP) && sends==before);
 #if CONFIG_BATTERY_QCOM_BATTMGR_UKE_THRESHOLDS
  struct qcom_battmgr pre; initialize(&pre);
@@ -259,6 +266,21 @@ int main(void) {
  set.value=500; set.property=10; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
  set.property=25; set.value=1; assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EOPNOTSUPP && sends==before);
  ctrl.control.may_enable=true; assert(!qcom_battmgr_uke_request(&ctrl,&set,sizeof(set)));
+ struct qcom_battmgr_property_request protection={.hdr={.owner=PMIC_GLINK_OWNER_BATTMGR,.type=PMIC_GLINK_REQ_RESP,.opcode=BATTMGR_USB_PROPERTY_SET},.property=USB_MOISTURE_EN,.value=1};
+ before=sends;assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ ctrl.control.moisture_enabling=true;ctrl.control.moisture_generation=ctrl.transaction.generation;
+ assert(!qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection)));
+ before=sends;protection.value=0;assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ protection.value=1;protection.hdr.owner++;assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ protection.hdr.owner--;ctrl.control.moisture_enabling=false;
+ protection.hdr.opcode=UKE_INPUT_SUSPEND_SET;protection.property=UKE_INPUT_SUSPEND_PROPERTY;
+ assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ ctrl.control.safety_request=true;assert(!qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection)));
+ before=sends;protection.value=2;assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ protection.value=1;protection.property++;assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-EACCES&&sends==before);
+ protection.property--;protection.hdr.opcode=UKE_INPUT_SUSPEND_GET;
+ assert(qcom_battmgr_uke_request(&ctrl,&protection,sizeof(protection))==-ENODATA); // Synthetic 123 is not boolean.
+ ctrl.control.safety_request=false;
  ctrl.control.invalidation_ns=42; before=sends;
  assert(qcom_battmgr_uke_request(&ctrl,&set,sizeof(set))==-EACCES && sends==before);
  ctrl.control.invalidation_ns=0; ctrl.control.measurement_generation++;
