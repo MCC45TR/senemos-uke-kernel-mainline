@@ -2,22 +2,22 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
-version := 7.2.12
+version := 7.3.0
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
-	test "$(version)" = 7.2.12
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 101) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	test "$(version)" = 7.3.0
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 102) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
-	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.2.12-14" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.3.0-7-unstable" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)
 	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
-	bash tests/mainline-package-contract.sh
+	bash tests/unstable-package-contract.sh
 	bash tests/touch-runtime-package-contract.sh
 	bash tests/identity-contract.sh
 	bash tests/kernel-family-contract.sh
@@ -42,7 +42,8 @@ srpm: validate
 	mkdir -p "$$cache" "$$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS}
 	for name in linux-$(version).tar.xz linux-$(version).tar.sign; do
 		if test ! -s "$$cache/$$name"; then
-			curl -fL --retry 3 --connect-timeout 20 "https://cdn.kernel.org/pub/linux/kernel/v7.x/$$name" -o "$$cache/$$name.part"
+			url=$$(jq -er --arg n "$$name" 'if ($$n|endswith(".tar.sign")) then .signature_url else .source_url end' manifests/linux-$(version).json)
+			curl -fL --retry 3 --connect-timeout 20 "$$url" -o "$$cache/$$name.part"
 			mv "$$cache/$$name.part" "$$cache/$$name"
 		fi
 	done

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Native AArch64 build dependency stage; no prebuilt or OEM firmware input.
 set -Eeuo pipefail
-[[ $# == 2 && $2 =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || exit 2
+[[ $# == 2 && $2 =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*-unstable$ ]] || exit 2
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 work=$(realpath -m "$1") release=$2
 [[ ! -e $work ]] || { echo 'Refusing to reuse an unverified dracut base' >&2; exit 1; }

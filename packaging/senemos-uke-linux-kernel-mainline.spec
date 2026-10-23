@@ -4,16 +4,16 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.12
-%if "%{version}" == "7.2.12"
-%global senemos_build_release 19
+Name: senemos-uke-linux-kernel-mainline-unstable
+Version: 7.3.0
+%if "%{version}" == "7.3.0"
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}
+%global krel %{version}-%{senemos_build_release}-unstable
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Uke kernel with the O82 display profile
+Summary: Unstable Linux 7.3 Uke kernel with the O82 display profile
 License: GPL-2.0-only AND MIT
 SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -45,7 +45,7 @@ Requires: %{name}-boot = %{version}-%{release}
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
+No package script activates a kernel or changes a slot. Build success does
 not establish physical tablet acceptance.
 
 %package core
@@ -117,7 +117,7 @@ gpg --homedir "$keyring" --batch --import %{SOURCE3}
 xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
-%setup -q -n linux-%{version}
+%setup -q -n linux-7.3
 tar -xJf %{SOURCE1}
 jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
 cmp senemos-expected-patches.txt senemos-adaptation/patches/series
@@ -178,9 +178,10 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
 
 %check
+bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
@@ -327,11 +328,6 @@ mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
-%posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
-
 %files
 %doc native-profile/README.md
 %license COPYING
@@ -371,6 +367,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
+- Carry the matched touch runtime and transport-ready QRTR handshake from mainline19.
+- Retain Linux 7.3 compatibility changes and the registration-only audio baseline.
+- Preserve the unstable ABI and absence of activation scriptlets.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-18
 - Pair the Uke SPI/IRQ capture driver and DT with its calibrated C++ processor.
 - Validate the versioned processor digest with the matching module RPM.

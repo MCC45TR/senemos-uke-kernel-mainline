@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-23",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "eb946bde8b177298f87c51484c402144686b5c497d72f0377a4ed5f60d4abc50"
+      "sha256": "a00db4e3c8e98537fba3ecbad8266353f8268c3b6f2f499884f5593ec3782bfc"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -33,11 +33,11 @@
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "4fda981ed240a081257ff9336afd3d6d8d41876204a2e454a305a79a6cbfb1ee"
+      "sha256": "aba006b739372a79a0f0cbf0cfeb8ccdd9b91e8f630219aa601354f39788bd9e"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "8a71802c63a5b68f93a39057420775b062bbaa380e388965decb5044d7d9b5e5"
+      "sha256": "2b2d8514c672a00b7cad9eeaaf5b41909222c07724cc17979bb4cc0fcff088b7"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -81,7 +81,7 @@
     },
     {
       "path": "src/boot/early-modules.list",
-      "sha256": "131016c9be6c19cccfa6b5361b9ee8c5edc79c7ecffba849fecae4a26cbfbfd6"
+      "sha256": "1408cdb9c204b6488a786b1992e57e8152b9d3ec445d5d739f70972bd4814f13"
     },
     {
       "path": "src/boot/licenses/builder-MIT",
@@ -93,7 +93,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "a00419be859012abc4ab80a3e5def7d160842702df15ce438b014e8be05154d0"
+      "sha256": "99ff6523bc3725b6a21631b215c8d055e07a54c3e840941f54e49fdf7bd68a05"
     },
     {
       "path": "src/boot/offline-switch-root.cpp",

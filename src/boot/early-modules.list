@@ -110,8 +110,7 @@ drivers/crypto/hisilicon/hisi_qm.ko.zst
 drivers/crypto/hisilicon/hpre/hisi_hpre.ko.zst
 drivers/crypto/hisilicon/sec2/hisi_sec2.ko.zst
 drivers/crypto/hisilicon/zip/hisi_zip.ko.zst
-drivers/crypto/qce/qcrypto.ko.zst
-drivers/crypto/qcom-rng.ko.zst
+drivers/char/hw_random/qcom-rng.ko.zst
 drivers/devfreq/governor_passive.ko.zst
 drivers/dma/bcm-sba-raid.ko.zst
 drivers/dma/dw-edma/dw-edma.ko.zst
@@ -362,7 +361,6 @@ fs/netfs/netfs.ko.zst
 fs/overlayfs/overlay.ko.zst
 lib/crypto/libchacha.ko.zst
 lib/crypto/libdes.ko.zst
-lib/crypto/libgf128hash.ko.zst
 lib/crypto/libmd5.ko.zst
 lib/crypto/libsha3.ko.zst
 lib/crypto/libsm3.ko.zst

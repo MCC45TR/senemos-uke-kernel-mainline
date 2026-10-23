@@ -1,5 +1,18 @@
 # Mainline display source profile
 
+23 October 2026: unstable release `7.3.0-7-unstable` carries the matched
+touch transport, DT and per-release C++ processor from mainline19. The QRTR
+adaptation preserves upstream 7.3 node-ID reads and requests HELLO only after
+each transport's receive context is published. Registration-only audio retains
+the accepted release-14 baseline; release 6's extra provider changes are excluded.
+No package script activates this experimental kernel.
+
+The 102-patch queue retains the signed upstream `linux-7.3` source, DWC3
+notifier compatibility and 7.3 UBWC/RPMh API adaptations. The early inventory
+uses `drivers/char/hw_random/qcom-rng`, GF128 hashing remains built in and QCE
+remains disabled under the upstream broken gate. Source, COPR and physical
+acceptance are separate; the older records below retain their exact identities.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation

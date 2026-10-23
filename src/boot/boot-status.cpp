@@ -9,6 +9,12 @@
 namespace fs = std::filesystem;
 namespace {
 bool selected_kernel(const std::string& release) {
+    const std::string prefix = "7.3.0-", suffix = "-unstable";
+    if (release.size() > prefix.size() + suffix.size() && release.size() < 128 &&
+        release.rfind(prefix, 0) == 0 && release.compare(release.size() - suffix.size(), suffix.size(), suffix) == 0) {
+        const auto revision = release.substr(prefix.size(), release.size() - prefix.size() - suffix.size());
+        if (revision.front() != '0' && revision.find_first_not_of("0123456789") == std::string::npos) return true;
+    }
     const auto dash = release.find('-');
     if (release.size() < 128 && release.rfind("7.2.", 0) == 0 && dash > 4 && dash != std::string::npos) {
         const auto patch = release.substr(4, dash - 4);
