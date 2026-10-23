@@ -9,7 +9,9 @@ zram/zsmalloc with LZ4 and ZSTD backends and an initial LZ4 selection. Writeback
 recompression and memory tracking stay disabled. Production native.config,
 packaging and boot policy do not include this fragment.
 
-The ARM64 Kconfig check resolves control and candidate configurations and
+The ARM64 Kconfig check first requires the resolved control to match the
+committed native configuration byte for byte. Missing Uke symbols or a different
+source/compiler context fail before comparison. It then resolves the candidate and
 rejects changes outside zram/zsmalloc. AArch64 object compilation covers zram,
 zsmalloc and both backends. A complete matched kernel/module RPM and recoverable
 boot qualification remain required before device activation.

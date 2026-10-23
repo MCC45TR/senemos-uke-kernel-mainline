@@ -8,6 +8,7 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir "$work/baseline" "$work/candidate"
 cp "$root/packaging/native/native.config" "$work/baseline/.config"
 make -s -C "$source_tree" ARCH=arm64 LLVM=1 O="$work/baseline" olddefconfig
+diff -u "$root/packaging/native/native.config" "$work/baseline/.config"
 for option in CONFIG_SWAP=y CONFIG_PSI=y '# CONFIG_ZRAM is not set' \
     '# CONFIG_ZSWAP is not set' '# CONFIG_LRU_GEN is not set'; do
     grep -Fx "$option" "$work/baseline/.config"

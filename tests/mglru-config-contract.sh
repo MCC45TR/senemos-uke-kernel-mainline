@@ -8,9 +8,11 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir "$work/baseline" "$work/candidate"
 cp "$root/packaging/native/native.config" "$work/baseline/.config"
 make -s -C "$source_tree" ARCH=arm64 LLVM=1 O="$work/baseline" olddefconfig
+diff -u "$root/packaging/native/native.config" "$work/baseline/.config"
 grep -Fx '# CONFIG_LRU_GEN is not set' "$work/baseline/.config"
-KCONFIG_CONFIG="$work/candidate/.config" bash "$source_tree/scripts/kconfig/merge_config.sh" -m \
-    "$work/baseline/.config" "$root/configs/experiments/mglru.config"
+(cd "$work"; KCONFIG_CONFIG="$work/candidate/.config" \
+    bash "$source_tree/scripts/kconfig/merge_config.sh" -m \
+    "$work/baseline/.config" "$root/configs/experiments/mglru.config")
 make -s -C "$source_tree" ARCH=arm64 LLVM=1 O="$work/candidate" olddefconfig
 for option in CONFIG_LRU_GEN=y CONFIG_LRU_GEN_WALKS_MMU=y \
     '# CONFIG_LRU_GEN_ENABLED is not set' '# CONFIG_LRU_GEN_STATS is not set'; do

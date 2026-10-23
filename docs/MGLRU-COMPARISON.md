@@ -1,8 +1,12 @@
-# MGLRU comparison preparation, 23 October 2026
+# MGLRU comparison preparation, 24 October 2026
 
 Environment: Linux 7.2.12, Uke native configuration from source
-`8b845fc9c01691351f040eff270000b4788529e7` (release 23).
+`4ee3b4be779318bc61885c0287c570ba22cb7442` (release 24).
 This optional laboratory fragment is not selected by a production recipe.
+
+The checker first requires the resolved control to match the committed native
+configuration byte for byte. Missing Uke symbols or a different source/compiler
+context cause failure before the experiment is compared.
 
 Resolve `packaging/native/native.config` with the normal ARM64 Kconfig first.
 Resolve a second output with `configs/experiments/mglru.config` appended. Keep
