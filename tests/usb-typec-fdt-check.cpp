@@ -279,9 +279,14 @@ int main(int argc,char **argv) {
         for(int i=0;i<fdt_num_mem_rsv(input.data());i++) {uint64_t a,as,b,bs;
             need(!fdt_get_mem_rsv(input.data(),i,&a,&as) && !fdt_get_mem_rsv(full.data(),i,&b,&bs) && a==b && as==bs,"Reserve map changed");}
         need(prop(input,node(input,"/chosen"),"bootargs")==prop(full,node(full,"/chosen"),"bootargs"),"Panel selector/boot arguments changed");
-        need(!has(full,"/chosen","stdout-path"),"Native output retained firmware stdout");
         const auto fb=prop(adapted,node(adapted,"/chosen"),"stdout-path"); need(!fb.empty() && fb.back()==0,"Invalid adapted framebuffer path");
-        text(full,reinterpret_cast<const char *>(fb.data()),"status","disabled");
+        need(prop(full,node(full,"/chosen"),"stdout-path")==fb,"Early framebuffer stdout changed");
+        const std::string framebuffer(reinterpret_cast<const char *>(fb.data()));
+        text(full,framebuffer,"status","okay");
+        need(!has(full,framebuffer,"backlight"),"Early framebuffer owns native backlight");
+        for(const char *name : {"compatible","reg","width","height","stride","format","panel"})
+            need(prop(adapted,node(adapted,framebuffer),name)==prop(full,node(full,framebuffer),name),"Early framebuffer metadata changed");
+        need(has(full,"/reserved-memory/splash_region","no-map"),"Splash reservation lost no-map");
         for(const char *name : {"dsi@ae94000","dsi@ae96000","phy@ae95000","phy@ae97000"}) same_display(baseline,full,mdss+"/"+name);
         for(const char *name : {"port@0","port@1"}) same_display(baseline,full,mdss+"/display-controller@ae01000/ports/"+name);
         for(const char *name : {"vddio-supply","vsp-supply","vsn-supply","backlight","reset-gpios"})

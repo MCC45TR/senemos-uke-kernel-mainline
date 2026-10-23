@@ -32,7 +32,12 @@ int main(int argc,char **argv) {
     if(result) std::fprintf(stderr,"Native entry refused: %d\n",result);
     assert(result==0);
     int bytes=0;
-    assert(!fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),"/chosen"),"stdout-path",&bytes));
+    const auto *framebuffer=static_cast<const char *>(fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),"/chosen"),"stdout-path",&bytes));
+    assert(framebuffer && bytes>0 && !framebuffer[bytes-1]);
+    const int fb=fdt_path_offset(fdt.data(),framebuffer);
+    const auto *status=static_cast<const char *>(fdt_getprop(fdt.data(),fb,"status",&bytes));
+    assert(status && bytes==5 && !std::strcmp(status,"okay"));
+    assert(!fdt_getprop(fdt.data(),fb,"backlight",&bytes));
     assert(fdt_path_offset(fdt.data(),"/soc/display-subsystem@ae00000/dsi@ae94000/panel@0")>=0);
     std::ofstream output(argv[3],std::ios::binary);
     output.write(fdt.data(),fdt_totalsize(fdt.data()));

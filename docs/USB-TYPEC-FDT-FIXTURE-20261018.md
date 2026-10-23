@@ -31,7 +31,12 @@ HBR2 OPP ceiling, source marker and disabled legacy GLINK/DWC3/DP/SLIM paths.
 Original input bytes, memory nodes, reservation properties/map and selected
 boot arguments are compared directly. The firmware framebuffer path comes from
 the actual intermediate adaptation, not the OEM UART stdout path. Native entry
-must disable that framebuffer and remove its stdout reference.
+retains the enabled framebuffer and its stdout reference for early scanout.
+Its backlight link is removed so early simpledrm does not defer for, or blank,
+the native panel's backlight. Geometry, visible range, panel metadata and the
+full no-map splash reservation remain unchanged. The existing MSM aperture
+removal supplies the native takeover path; host checks do not establish a
+seamless physical transition.
 
 For internal DSI comparison, the fixture separately compiles the same O82-42
 seven-mode overlay source without the DP option, then applies the actual native
