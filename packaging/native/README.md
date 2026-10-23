@@ -7,6 +7,10 @@ capture remain. The actual-function host regression checks the lock cycle.
 The original GMU fault, tablet recovery and suspend remain unqualified. KVM,
 display, touch and charging settings are preserved.
 
+The touch source lock uses existing owner `2b5530f2412a` for buffered CPIO
+export and first-valid-frame service readiness. Contact processing, calibration,
+firmware and kernel transport remain unchanged; tablet interaction is untested.
+
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
 7.2.11 queue and device records remain historical evidence. Source preparation
