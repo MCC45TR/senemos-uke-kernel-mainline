@@ -1,5 +1,12 @@
 # Uke THP transport candidate
 
+23 October 2026: release 21 reached the Uke login screen in boot A, but its
+touch provider did not autoload. Manual loading exposed a first SPI transfer
+reported as 0/3 bytes. Release 22 adds the SPI module alias and corrects the
+GENI GPI callback's premature successful message status, retaining the exact
+length guard. Host callback controls distinguish successful completion, DMA
+failure and residue; cold boot and physical contacts remain separate tests.
+
 23 October 2026. The candidate captures complete 5432-byte Uke normal-firmware
 packets as root-only V4L2 MET8 metadata. It retains counter, scan type and signed
 raw nodes; contact processing remains in the matching calibrated C++ client.
