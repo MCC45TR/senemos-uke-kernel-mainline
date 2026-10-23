@@ -424,6 +424,10 @@
     {
       "path": "patches/7.3.0/0103-spi-geni-gpi-core-completion.patch",
       "sha256": "d9dcfbfcb6a37df8f0175fe7edb1bff6ce16bbbf711da6c3ac81bd74f585471a"
+    },
+    {
+      "path": "patches/7.3.0/0104-uke-confirm-sdp-budget-readback.patch",
+      "sha256": "9ee8a56d5968923bc51b13efb41860540ccb4413c8540506eb10609c161fffae"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

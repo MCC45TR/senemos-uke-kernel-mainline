@@ -92,6 +92,8 @@ int main(void) {
  response=0; dwc3_vbus_draw_work(&d.vbus_draw_work.work); assert(queued==50);
  d.vbus_draw_retries=0; response=-EINVAL;
  dwc3_vbus_draw_work(&d.vbus_draw_work.work); assert(queued==50);
+ response=-EREMOTEIO;
+ dwc3_vbus_draw_work(&d.vbus_draw_work.work); assert(queued==50);
  response=-EAGAIN; uke=false;
  dwc3_vbus_draw_work(&d.vbus_draw_work.work); assert(queued==50);
  uke=true; replace_request=true;
