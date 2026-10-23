@@ -4,16 +4,16 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline
+Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 19
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}
+%global krel %{version}-%{senemos_build_release}-kvm
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Uke kernel with the O82 display profile
+Summary: Experimental Uke KVM kernel with the current native hardware profile
 License: GPL-2.0-only AND MIT
 SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -45,8 +45,8 @@ Requires: %{name}-boot = %{version}-%{release}
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+No package script activates a kernel or changes a slot. Build success does
+not establish EL2 ownership, available KVM or physical tablet acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -169,7 +169,7 @@ g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. 
     -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
 readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
-for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
+for requirement in CONFIG_KVM=y CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8250=y \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
@@ -178,9 +178,14 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-kvm kernelrelease)" = '%{krel}'
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
+    native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
 
 %check
+bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror native-profile/tests/kvm-probe-abi.cpp -o %{_uke_out}/kvm-probe-abi
+%{_uke_out}/kvm-probe-abi
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
@@ -191,8 +196,8 @@ bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
-test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
+test "$(readlink %{buildroot}/usr/lib/senemos/kvm-default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -284,7 +289,7 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
 install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
-cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
+cat > %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json <<'EOF'
 {
   "schema_version": 1,
   "package": "%{name}-singleboot",
@@ -296,8 +301,10 @@ cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
   "automatic_kernel_activation": false
 }
 EOF
-ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/kvm-default-boot.img
 export ARCH=arm64 LLVM=1
+install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
+install -Dm644 native-profile/KVM.md %{buildroot}%{_datadir}/doc/%{name}/KVM.md
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
 module_dir=%{buildroot}/usr/lib/modules/%{krel}
@@ -327,14 +334,12 @@ mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
-%posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
-
 %files
+%{_bindir}/uke-kvm-probe
+%doc %{_datadir}/doc/%{name}/KVM.md
 %doc native-profile/README.md
 %license COPYING
+%license native-profile/LICENSE
 
 %files core
 %dir /usr/lib/modules/%{krel}
@@ -367,10 +372,14 @@ fi
 %files singleboot
 %doc %{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 %license %{_licensedir}/%{name}-singleboot/LICENSE
-/usr/share/senemos/uke/singleboot.json
-/usr/lib/senemos/default-boot.img
+/usr/share/senemos/uke/kvm-singleboot.json
+/usr/lib/senemos/kvm-default-boot.img
 
 %changelog
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-5
+- Carry the paired touch runtime and transport-ready QRTR handshake from mainline19.
+- Preserve the KVM ABI, explicit native probe and absence of activation scriptlets.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-18
 - Pair the Uke SPI/IRQ capture driver and DT with its calibrated C++ processor.
 - Validate the versioned processor digest with the matching module RPM.
