@@ -1,5 +1,17 @@
 # Mainline display source profile
 
+24 October 2026 source candidate: release 24 retains the O82 connector range
+when fixed modes fall below the opted-in VRR floor. Opted-in requests from
+30 through 89 Hz now use the observed 90 Hz trial floor consistently for timing,
+DRM metadata and module-parameter readback. Zero still disables the experiment;
+fixed modes and the atomic, bonded-host and foreign-hardware checks remain.
+This carries the current diagnostic module's higher-floor behavior into the
+complete matched kernel package without a separate module loader or boot-note
+ABI change. The operator reported reduced Discover movement/resize stutter
+with the diagnostic range correction at 90 Hz; remaining stutter, continuous
+optical cadence, energy and endurance are unqualified. No permanent effect,
+governor, thermal or independent touch-rate change is included.
+
 23 October 2026 source candidate: release 21 retains the enabled boot-derived
 early framebuffer and stdout until MSM's existing firmware-aperture takeover.
 Its backlight link is removed so simpledrm neither waits for nor blanks the
