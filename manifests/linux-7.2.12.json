@@ -451,7 +451,7 @@
     },
     {
       "path": "patches/7.2.12/0111-uke-displayport-audio-dma-admission.patch",
-      "sha256": "fd5b4b6b1fe2d6a3203f204caa4ba4a260270c4c4467f9b8e1069ba02adf88ba"
+      "sha256": "26d47ef2df6d9ec3157cf2426d1a0d162572acd762b14f55d5d6f5c54752dad3"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

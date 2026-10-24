@@ -4,6 +4,7 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
 #include <sound/jack.h>
 #include <sound/pcm_params.h>
@@ -72,7 +73,8 @@ static int uke_hdmi_probe(struct platform_device *pdev)
 	ret = qcom_snd_parse_of(card);
 	if (ret)
 		return ret;
-	if (card->num_links != 1)
+	if (card->num_links != 1 || card->num_aux_devs ||
+	    strcmp(card->name, "POCO-Pad-X1-HDMI"))
 		return -EINVAL;
 	link = card->dai_link;
 	if (!link->no_pcm || link->id != DISPLAY_PORT_RX_0 ||
