@@ -16,10 +16,8 @@ for rail in vsp vsn; do
 done
 fdtoverlay -i "$out/input.dtb" -o "$out/native.dtb" "$overlay"
 fdtput -d "$out/native.dtb" "$framebuffer" backlight
-fdtput -t s "$out/native.dtb" "$framebuffer" status disabled
-fdtput -d "$out/native.dtb" /chosen stdout-path
-[[ $(fdtget -t s "$out/native.dtb" "$framebuffer" status) == disabled ]]
-if fdtget "$out/native.dtb" /chosen stdout-path >/dev/null 2>&1; then exit 1; fi
+[[ $(fdtget -t s "$out/native.dtb" "$framebuffer" status) == okay ]]
+[[ $(fdtget -t s "$out/native.dtb" /chosen stdout-path) == "$framebuffer" ]]
 mdss=/soc/display-subsystem@ae00000
 dpu=$mdss/display-controller@ae01000
 dsi0=$mdss/dsi@ae94000

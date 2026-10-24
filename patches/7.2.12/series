@@ -110,3 +110,4 @@
 0110-dp-aux-preserve-non-edid-i2c-transactions.patch
 0111-uke-displayport-audio-dma-admission.patch
 0112-uke-wlan-regulator-devres-lifetime.patch
+0113-uke-display-boot-observations.patch

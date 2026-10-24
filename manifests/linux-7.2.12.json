@@ -456,6 +456,10 @@
     {
       "path": "patches/7.2.12/0112-uke-wlan-regulator-devres-lifetime.patch",
       "sha256": "355fb6c213de914ceca42eecae7e3cad271b8c88ebd12d9de9fd08579e11a2d2"
+    },
+    {
+      "path": "patches/7.2.12/0113-uke-display-boot-observations.patch",
+      "sha256": "569c93ae9d780bfe29ab33d9d2ea46867c8576875c3e468783a196a6fdaa78fd"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

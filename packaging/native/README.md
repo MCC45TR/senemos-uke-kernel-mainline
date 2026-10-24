@@ -1,14 +1,5 @@
 # Mainline display source profile
 
-24 October 2026: release 37 disables the inherited simple-framebuffer only
-after native graph admission, preserving its reserved memory and pixel data.
-The native KMS fbdev console and original Plymouth take over later; early
-graphical console output waits for native KMS, while serial logging remains.
-The normal firmware-framebuffer recipe is unchanged. Actual FDT transform and
-admission fixtures pass on the host; removal of the reported pale-gray interval
-requires a separate physical boot comparison. Release 36's WLAN lifetime fix
-is retained.
-
 24 October 2026: release 36 retains RF regulator devres independently of the
 manually freed ath11k private allocation. Failed/deferred probe journals from
 releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper
@@ -435,3 +426,11 @@ The Uke-only `uke_dp_lane_limit` sysfs attribute sets a nonpersistent 1/2/4-lane
 training ceiling while no sink or stream is present. Attachment still obeys
 source, sink, LTTPR and USB-C firmware limits. It does not select Type-C pins,
 raise the HBR2 ceiling, or establish four-lane, MST or USB fallback acceptance.
+
+25 October 2026: release 38 restores the inherited-framebuffer console after
+the release-37 experiment retained the pale-gray interval. The WLAN regulator
+lifetime correction remains. Bounded boot messages report existing Uke display
+voltage/sync, SMMU mappings, backlight and MDSS ownership state without new
+register reads, power/clock writes or timing changes. Cliffs interconnect sync
+still invokes the original callback. These are diagnostic observations;
+physical gray-screen and repeated-startup qualification remain open.

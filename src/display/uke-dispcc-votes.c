@@ -110,6 +110,7 @@ static int uke_dispcc_voltage_init(struct device *dev)
 		&uke_pixel_ops, &uke_dp_ops, &uke_aux_ops };
 	int ret;
 
+	dev_info(dev, "Uke display boot: DISPCC voltage admission begins\n");
 	/* Supply names must remain OEM vdd_mm/vdd_mxa, not the private C names. */
 	uke_vdd_mm.class_name = "vdd_mm";
 	uke_vdd_mxa.class_name = "vdd_mxa";
@@ -153,6 +154,7 @@ static int uke_dispcc_voltage_init(struct device *dev)
 	ret = clk_vdd_proxy_vote(dev, &disp_cc_sm8550_desc);
 	if (!ret)
 		uke_dispcc_proxy_active = true;
+	dev_info(dev, "Uke display boot: DISPCC proxy vote result=%d\n", ret);
 	return ret;
 }
 
@@ -160,8 +162,12 @@ static void uke_dispcc_sync_state(struct device *dev)
 {
 	if (!of_device_is_compatible(dev->of_node, "qcom,sm7675-dispcc"))
 		return;
+	dev_info(dev, "Uke display boot: DISPCC sync begins proxy=%d\n",
+		 uke_dispcc_proxy_active);
 	if (clk_sync_state(dev))
 		return;
 	if (uke_dispcc_proxy_active && !clk_vdd_proxy_unvote(dev, &disp_cc_sm8550_desc))
 		uke_dispcc_proxy_active = false;
+	dev_info(dev, "Uke display boot: DISPCC sync ends proxy=%d\n",
+		 uke_dispcc_proxy_active);
 }

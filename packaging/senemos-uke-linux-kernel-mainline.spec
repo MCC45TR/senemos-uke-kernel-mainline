@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 37
+%global senemos_build_release 38
 %else
 %global senemos_build_release 1
 %endif
@@ -31,7 +31,6 @@ ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: libasan libubsan
-BuildRequires: libfdt-devel
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
@@ -380,9 +379,13 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-38
+- Restore the inherited-framebuffer console after the unsuccessful release-37 trial.
+- Observe Uke display boot ownership without changing power or clock sequencing.
+- Retain the WLAN regulator lifetime correction and existing DP capabilities.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-37
-- Preserve firmware scanout until native KMS takes ownership in the native profile.
-- Keep the independent firmware-framebuffer profile and serial diagnostics.
+- Test native takeover without an inherited framebuffer; optical gray interval remained.
 
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-36
 - Keep Uke WLAN regulator devres alive after failed/deferred core probe teardown.
