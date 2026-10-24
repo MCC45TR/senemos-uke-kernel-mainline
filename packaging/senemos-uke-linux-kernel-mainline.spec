@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 22
+%global senemos_build_release 23
 %else
 %global senemos_build_release 1
 %endif
@@ -372,6 +372,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-23
+- Preserve PAN Alt Mode routing across UCSI partner updates and USB EQ across repeated mux requests.
+- Acknowledge PAN events before blocking display work and retain the fixed panel until reboot.
+- Source and host checks passed; tablet validation remains pending.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-22
 - Export the native touchscreen SPI alias for standard module autoload.
 - Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.
