@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "40a967fac3667db1258eddfe38d56c282c7eb40eb7c5f77e01af885c66085218"
+      "sha256": "608202c084f007ee9656f75d2a36c8a86ade47f102bc6e445ecbefe64f6c64bb"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -158,6 +158,10 @@
     {
       "path": "tests/native-firewall-contract.sh",
       "sha256": "93ea93aa78a770f552635d4bf0a1470885a3af2954b067d55634e7ed7926ddd5"
+    },
+    {
+      "path": "tests/module-compress-contract.sh",
+      "sha256": "b95d9152f048be0fe2984e82eafe6ffb5aa4ca16e8d09855b1c166e29e74c947"
     }
   ],
   "root_selector_capability": {

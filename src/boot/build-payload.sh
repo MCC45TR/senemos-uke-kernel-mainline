@@ -57,13 +57,18 @@ for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SI
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
 grep -Fx 'CONFIG_QCOM_Q6V5_PAS=m' "$out/.config"
+uke_stage_start=$SECONDS
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules qcom/sm7675-xiaomi-uke.dtb
-make -C "$kernel" O="$out" LOCALVERSION="$localversion" modules_install \
+printf 'UKE_BUILD_STAGE kernel_compile elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
+uke_stage_start=$SECONDS
+make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" modules_install \
     INSTALL_MOD_PATH="$stage" INSTALL_MOD_STRIP=1 DEPMOD=true
 source_modules=$stage/lib/modules/$release
 find "$source_modules" -maxdepth 1 -type l \( -name build -o -name source \) -delete
-find "$source_modules" -type f -name '*.ko' -exec zstd -q -T1 --rm {} \;
+find "$source_modules" -type f -name '*.ko' -print0 | xargs -0 -r -n 1 -P "$jobs" zstd -q -T1 --rm --
 depmod -b "$stage" "$release"
+printf 'UKE_BUILD_STAGE module_install_compress elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
+uke_stage_start=$SECONDS
 bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config" "$source_modules"
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
@@ -93,9 +98,12 @@ bash "$here/../audit/check-target-payload.sh" "$init"
 bash "$here/../audit/check-target-privacy.sh" "$init"
 find "$init" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 (cd "$init"; find . -print0 | LC_ALL=C sort -z | cpio --null --quiet --reproducible --owner=0:0 -o -H newc) | gzip -n -9 > "$out/boot-initramfs.cpio.gz"
+printf 'UKE_BUILD_STAGE initramfs elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
+uke_stage_start=$SECONDS
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
+printf 'UKE_BUILD_STAGE embedded_image elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
 bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"

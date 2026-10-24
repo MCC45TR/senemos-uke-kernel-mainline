@@ -26,6 +26,7 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/early-modules-contract.sh
 	bash tests/platform-profile-contract.sh
 	bash tests/dispcc-dp-votes-contract.sh src/display/uke-dispcc-votes.c
+	bash tests/module-compress-contract.sh
 	bash -n tests/resin-wake-contract.sh
 	bash -n tests/gpu-fault-capture-contract.sh
 test-touch-protocol:

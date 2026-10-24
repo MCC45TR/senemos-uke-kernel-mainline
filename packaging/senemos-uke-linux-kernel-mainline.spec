@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 12
+%global senemos_build_release 13
 %else
 %global senemos_build_release 1
 %endif
@@ -109,6 +109,7 @@ Image, modules, DTBs and both root profiles are built once. Installation
 performs no boot activation, partition write, slot selection or reboot.
 
 %prep
+uke_prep_start=$SECONDS
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
 test "$(sha256sum %{SOURCE0} | cut -d ' ' -f1)" = "$expected"
 signer=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .signer)
@@ -153,7 +154,10 @@ cmp boot-recipe/lock.json %{SOURCE6}
 tar -xJf %{SOURCE9}
 (cd touch-runtime; sha256sum --check --strict SOURCE-SHA256SUMS)
 
+printf 'UKE_BUILD_STAGE source_prepare elapsed_s=%d\n' "$((SECONDS-uke_prep_start))"
+
 %build
+uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
 export SOURCE_DATE_EPOCH=1791725270
@@ -182,7 +186,10 @@ done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
 
+printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
+
 %check
+uke_check_start=$SECONDS
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
@@ -286,6 +293,8 @@ CC=clang bash native-profile/tests/o82-dfps-lifetime-contract.sh drivers/gpu/drm
 CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h native-profile/src/display/o82-mode.h native-profile/src/display/qcom-uke-display.h
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
+printf 'UKE_BUILD_STAGE package_checks elapsed_s=%d\n' "$((SECONDS-uke_check_start))"
+
 %install
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
@@ -375,6 +384,9 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
+- Parallelize unchanged module packaging and report build-stage elapsed times.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
 - Carry the reviewed USB/DP routing, audio, HDR and lane-ceiling changes from 7.2.12.
 - Retain the WLAN lifetime fix, early console and bounded boot observations.
