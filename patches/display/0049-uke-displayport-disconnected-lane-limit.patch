@@ -107,7 +107,7 @@ diff --git a/drivers/gpu/drm/msm/dp/dp_panel.h b/drivers/gpu/drm/msm/dp/dp_panel
  
  int msm_dp_panel_init_panel_info(struct msm_dp_panel *msm_dp_panel,
 diff --git a/Documentation/ABI/testing/sysfs-platform-uke-dp b/Documentation/ABI/testing/sysfs-platform-uke-dp
---- a/Documentation/ABI/testing/sysfs-platform-uke-dp
+--- /dev/null
 +++ b/Documentation/ABI/testing/sysfs-platform-uke-dp
 @@ -0,0 +1,23 @@
 +What:           /sys/bus/platform/devices/.../uke_dp_lane_limit
