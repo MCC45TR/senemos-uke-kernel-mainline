@@ -1,5 +1,12 @@
 # Mainline display source profile
 
+25 October 2026, release 39: the reviewed Uke PMXR2230 graph uses original
+upstream flash/LPG drivers. Rear channels 1 and 4 share a 20 mA torch-only
+ceiling; flash/strobe is not exposed. RGB and torch register off by default.
+The downstream controller nodes remain disabled. The QCOM flash cleanup is
+bounded for torch-only children and checked with AddressSanitizer. Actual
+light output, electrical measurements and lifecycle acceptance remain open.
+
 24 October 2026: release 36 retains RF regulator devres independently of the
 manually freed ath11k private allocation. Failed/deferred probe journals from
 releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper

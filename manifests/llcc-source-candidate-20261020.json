@@ -49,11 +49,11 @@
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "87a0ce40478f335217f9729ba5014a5f532bed5098c92a696cbebaee95477c7d"
+      "sha256": "80e75958975a3dd01e3454442ee33c78a14604045af55bbee76abd4e9372e03b"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "c6f7391d1735543bd519d6df7be36f222a204e4632107652d6f5be013428abf7"
+      "sha256": "ea94be8e3a7f0e1a76ee481631db5db00de378b884b402f0d5157befdfa187c0"
     },
     {
       "path": "tests/llcc-boot-fdt-contract.sh",
@@ -69,7 +69,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "6e4cd0afdbc933bcb0c10854168a5ae234755721689a8dd842b2fe5999d64ddb"
+      "sha256": "4a84d4d94f81010899e3d5eed2e9a1a74726e3226ad3ffec9c8fae81e57d567a"
     },
     {
       "path": "packaging/native/llcc-profile",
