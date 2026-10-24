@@ -14,7 +14,7 @@ negotiation limited to two lanes cannot be converted to four by this policy.
 diff --git a/drivers/gpu/drm/msm/dp/dp_display.c b/drivers/gpu/drm/msm/dp/dp_display.c
 --- a/drivers/gpu/drm/msm/dp/dp_display.c
 +++ b/drivers/gpu/drm/msm/dp/dp_display.c
-@@ -1168,18 +1168,59 @@
+@@ -1255,18 +1255,59 @@
  	guard(mutex)(&dp->plugged_lock);
  	active = READ_ONCE(dp->msm_dp_display.power_on);
  	return sysfs_emit(buf,
@@ -87,7 +87,7 @@ diff --git a/drivers/gpu/drm/msm/dp/dp_panel.c b/drivers/gpu/drm/msm/dp/dp_panel
  
  	/* Limit data lanes from LTTPR capabilities, if any */
  	if (max_lttpr_lanes && max_lttpr_lanes < link_info->num_lanes)
-@@ -780,6 +781,7 @@
+@@ -750,6 +751,7 @@
  
  	msm_dp_panel = &panel->msm_dp_panel;
  	msm_dp_panel->max_bw_code = DP_LINK_BW_8_1;
@@ -98,17 +98,16 @@ diff --git a/drivers/gpu/drm/msm/dp/dp_panel.c b/drivers/gpu/drm/msm/dp/dp_panel
 diff --git a/drivers/gpu/drm/msm/dp/dp_panel.h b/drivers/gpu/drm/msm/dp/dp_panel.h
 --- a/drivers/gpu/drm/msm/dp/dp_panel.h
 +++ b/drivers/gpu/drm/msm/dp/dp_panel.h
-@@ -43,6 +43,7 @@
+@@ -42,6 +42,7 @@
  	u32 hw_revision;
  
  	u32 max_bw_code;
 +	u32 lane_limit;
  };
  
- int msm_dp_panel_init_panel_info(struct msm_dp_panel *msm_dp_panel);
+ int msm_dp_panel_init_panel_info(struct msm_dp_panel *msm_dp_panel,
 diff --git a/Documentation/ABI/testing/sysfs-platform-uke-dp b/Documentation/ABI/testing/sysfs-platform-uke-dp
-new file mode 100644
---- /dev/null
+--- a/Documentation/ABI/testing/sysfs-platform-uke-dp
 +++ b/Documentation/ABI/testing/sysfs-platform-uke-dp
 @@ -0,0 +1,23 @@
 +What:           /sys/bus/platform/devices/.../uke_dp_lane_limit

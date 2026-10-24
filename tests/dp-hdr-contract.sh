@@ -55,12 +55,11 @@ awk '/^(bool|int) msm_dp_utils_(link_fits|select_bpp|pack_vsc_sdp|pack_hdr_sdp)\
 cat >> "$work/check.cpp" <<'CPP'
 struct phy {};
 struct msm_dp_ctrl {};
-struct TestPanel {u8 dpcd[16];};
+struct msm_dp_panel {u8 dpcd[16];};
 struct TestLink {struct {unsigned num_lanes,rate;} link_params;};
 struct msm_dp_ctrl_private {
     struct msm_dp_ctrl msm_dp_ctrl;
     struct phy* phy;
-    TestPanel* panel;
     TestLink* link;
     struct {struct {unsigned lanes,link_rate;bool ssc;} dp;} phy_opts;
     void *dev{},*drm_dev{};
@@ -132,20 +131,20 @@ int main() {
     assert(msm_dp_utils_pack_hdr_sdp(&state,&sdp)==0);
     const dp_sdp zero{};assert(!memcmp(&sdp,&zero,sizeof(sdp)));
     struct phy phy;msm_dp_ctrl_private ctrl{};
-    TestPanel panel{};
+    struct msm_dp_panel panel{};
     TestLink link{};
-    ctrl.phy=&phy;ctrl.panel=&panel;ctrl.link=&link;
+    ctrl.phy=&phy;ctrl.link=&link;
     link.link_params={2,540000};
-    config_error=-EIO;assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==-EIO&&power_calls==0);
+    config_error=-EIO;assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==-EIO&&power_calls==0);
     config_error=0;power_error=-ERANGE;
-    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==-ERANGE&&!ctrl.phy_powered);
+    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==-ERANGE&&!ctrl.phy_powered);
     power_error=0;opp_error=-EAGAIN;
-    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==-EAGAIN&&!ctrl.phy_powered&&off_calls==1);
+    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==-EAGAIN&&!ctrl.phy_powered&&off_calls==1);
     opp_error=0;clock_error=-ETIMEDOUT;
-    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==-ETIMEDOUT&&!ctrl.phy_powered&&opp_rate==0&&off_calls==2);
-    clock_error=0;assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==0&&ctrl.phy_powered&&ctrl.link_clks_on);
+    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==-ETIMEDOUT&&!ctrl.phy_powered&&opp_rate==0&&off_calls==2);
+    clock_error=0;assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==0&&ctrl.phy_powered&&ctrl.link_clks_on);
     const auto powers=power_calls;
-    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl)==0&&power_calls==powers);
+    assert(msm_dp_ctrl_enable_mainlink_clocks(&ctrl,&panel)==0&&power_calls==powers);
     off_error=-EIO;assert(msm_dp_ctrl_phy_power_off(&ctrl)==-EIO&&ctrl.phy_powered);
     off_error=0;assert(msm_dp_ctrl_phy_power_off(&ctrl)==0&&!ctrl.phy_powered);
     const auto offs=off_calls;assert(msm_dp_ctrl_phy_power_off(&ctrl)==0&&off_calls==offs);
