@@ -1,5 +1,14 @@
 # Mainline display source profile
 
+24 October 2026: release 37 disables the inherited simple-framebuffer only
+after native graph admission, preserving its reserved memory and pixel data.
+The native KMS fbdev console and original Plymouth take over later; early
+graphical console output waits for native KMS, while serial logging remains.
+The normal firmware-framebuffer recipe is unchanged. Actual FDT transform and
+admission fixtures pass on the host; removal of the reported pale-gray interval
+requires a separate physical boot comparison. Release 36's WLAN lifetime fix
+is retained.
+
 24 October 2026: release 36 retains RF regulator devres independently of the
 manually freed ath11k private allocation. Failed/deferred probe journals from
 releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper

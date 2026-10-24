@@ -32,11 +32,18 @@ int main(int argc,char **argv) {
     if(result) std::fprintf(stderr,"Native entry refused: %d\n",result);
     assert(result==0);
     int bytes=0;
-    const auto *framebuffer=static_cast<const char *>(fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),"/chosen"),"stdout-path",&bytes));
+    const auto *framebuffer=static_cast<const char *>(fdt_getprop(original.data(),fdt_path_offset(original.data(),"/chosen"),"stdout-path",&bytes));
     assert(framebuffer && bytes>0 && !framebuffer[bytes-1]);
     const int fb=fdt_path_offset(fdt.data(),framebuffer);
     const auto *status=static_cast<const char *>(fdt_getprop(fdt.data(),fb,"status",&bytes));
-    assert(status && bytes==5 && !std::strcmp(status,"okay"));
+    assert(status && bytes==9 && !std::strcmp(status,"disabled"));
+    assert(!fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),"/chosen"),"stdout-path",&bytes));
+    for(const auto* key:{"reg","width","height","stride","format"}) {
+        int before_bytes=0,after_bytes=0;
+        const auto* before=fdt_getprop(original.data(),fdt_path_offset(original.data(),framebuffer),key,&before_bytes);
+        const auto* after=fdt_getprop(fdt.data(),fb,key,&after_bytes);
+        assert(before&&after&&before_bytes==after_bytes&&!std::memcmp(before,after,before_bytes));
+    }
     assert(!fdt_getprop(fdt.data(),fb,"backlight",&bytes));
     assert(fdt_path_offset(fdt.data(),"/soc/display-subsystem@ae00000/dsi@ae94000/panel@0")>=0);
     std::ofstream output(argv[3],std::ios::binary);

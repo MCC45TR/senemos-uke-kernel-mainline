@@ -55,10 +55,15 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 	if (ret)
 		return ret;
 	node = fdt_path_offset(fdt, framebuffer);
-	ret = fdt_setprop_string(fdt, node, "status", "okay");
+	/* Leave firmware pixels intact until native KMS owns the first frame. */
+	ret = fdt_setprop_string(fdt, node, "status", "disabled");
 	if (ret)
 		return ret;
 	/* Firmware scanout must not wait for or blank the native panel backlight. */
 	ret = fdt_delprop(fdt, node, "backlight");
+	if (ret)
+		return ret;
+	chosen = fdt_path_offset(fdt, "/chosen");
+	ret = fdt_delprop(fdt, chosen, "stdout-path");
 	return ret ? ret : fdt_pack(fdt);
 }

@@ -5,6 +5,7 @@ SHELL := /bin/bash
 version := 7.2.12
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
+	bash -n tests/native-framebuffer-handoff-contract.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.2.12
