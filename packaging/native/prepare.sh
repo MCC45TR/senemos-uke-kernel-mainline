@@ -37,6 +37,7 @@ alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then

@@ -1,5 +1,16 @@
 # Mainline display source profile
 
+**24 October 2026, release 32 candidate:** Uke DisplayPort gains checked
+HDR10/BT.2020 state, full-range RGB VSC and real HDR metadata SDPs. HDR requires
+advertised sink metadata/VSC support, 10-bit depth and enough trained bandwidth;
+insufficient bandwidth refuses the modeset. Stream failures balance clock,
+PHY and PM ownership and report a bad link asynchronously. The read-only
+`uke_dp_stream_state` attribute reports sequential cached lane/rate/bpp/capability
+observations without AUX, MMIO or PM-resume side effects. The source cache does
+not establish a visible HDR image. Original KDE controls remain authoritative.
+Current firmware exposes no manual DP alternate-mode override, and the driver
+has no MST implementation. No four-lane/MST/USB-fallback acceptance is claimed.
+
 **24 October 2026, release 30 candidate:** `audio-profile=hdmi-only` connects
 one stereo 48 kHz/16-bit playback frontend to `DISPLAY_PORT_RX_0` and the native
 MSM DP codec. Juo performs the downstream DP-to-HDMI conversion. Only the exact

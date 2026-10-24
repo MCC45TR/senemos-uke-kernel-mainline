@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 31
+%global senemos_build_release 32
 %else
 %global senemos_build_release 1
 %endif
@@ -378,6 +378,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-32
+- Validate Uke DisplayPort atomic depth, color and HDR metadata before modesetting
+- Send VSC/HDR SDPs with clock and PHY ownership guards; retain DP audio
+- Export read-only cached DP stream parameters for lane-profile diagnostics
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-31
 - Match the DP frontend capability and DSP input stream names for DAPM binding.
 - Recommend the removable digital-only UCM profile for desktop playback.
