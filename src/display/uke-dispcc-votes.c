@@ -46,6 +46,23 @@ static struct clk_ops uke_pll_ops, uke_shared_ops, uke_byte_ops, uke_pixel_ops;
 static struct clk_ops uke_dp_ops, uke_aux_ops;
 static struct clk_init_data uke_clock_inits[11];
 
+static int uke_dp_pre_rate_change(struct clk_hw *hw, unsigned long old_rate,
+				  unsigned long new_rate)
+{
+	/* A stopped bypassed RCG must not veto its PHY parent's initial rate. */
+	if (!clk_hw_is_prepared(hw))
+		return 0;
+	return clk_pre_change_regmap(hw, old_rate, new_rate);
+}
+
+static int uke_dp_post_rate_change(struct clk_hw *hw, unsigned long old_rate,
+				   unsigned long new_rate)
+{
+	if (!clk_hw_is_prepared(hw))
+		return 0;
+	return clk_post_change_regmap(hw, old_rate, new_rate);
+}
+
 static int uke_pll_prepare(struct clk_hw *hw)
 {
 	int ret = clk_prepare_regmap(hw);
@@ -112,6 +129,8 @@ static int uke_dispcc_voltage_init(struct device *dev)
 		ops[i]->pre_rate_change = clk_pre_change_regmap;
 		ops[i]->post_rate_change = clk_post_change_regmap;
 	}
+	uke_dp_ops.pre_rate_change = uke_dp_pre_rate_change;
+	uke_dp_ops.post_rate_change = uke_dp_post_rate_change;
 	uke_dispcc_add_votes(&disp_cc_pll0.clkr, uke_pll_rates, &uke_pll_ops, true, 0);
 	uke_dispcc_add_votes(&disp_cc_pll1.clkr, uke_pll_rates, &uke_pll_ops, true, 1);
 	uke_dispcc_add_votes(&disp_cc_mdss_mdp_clk_src.clkr, uke_mdp_rates, &uke_shared_ops, false, 2);

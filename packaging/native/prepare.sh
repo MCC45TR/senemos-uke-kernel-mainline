@@ -13,6 +13,7 @@ bash "$profile/tests/wcd939x-status-contract.sh"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/ucsi/ucsi.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
+bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
 bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
 export UKE_USB_PROFILE

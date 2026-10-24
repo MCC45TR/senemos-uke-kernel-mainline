@@ -440,6 +440,10 @@
     {
       "path": "patches/7.2.12/0108-typec-dynamic-route-diagnostics.patch",
       "sha256": "44ac8b9c5d3da8c880a116311215b4ee7ac66c9e383bd33a79e46179c33b00a3"
+    },
+    {
+      "path": "patches/7.2.12/0109-pmic-altmode-suppress-duplicate-hpd-levels.patch",
+      "sha256": "64102c1a2efd355d911659056147b65a3531a59c2102b9ef7bc3b85f319736bb"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -17,8 +17,7 @@ using u64=uint64_t;
 #define MUX_CTRL_STATE_NO_CONN 0
 #define MUX_CTRL_STATE_USB3_ONLY 1
 #define MUX_CTRL_STATE_TUNNELING 4
-#define connector_status_connected 1
-#define connector_status_disconnected 2
+enum drm_connector_status { connector_status_connected=1, connector_status_disconnected=2, connector_status_unknown=3 };
 #define spin_lock_irqsave(lock,flags) do {(void)(lock);(flags)=0;} while(0)
 #define spin_unlock_irqrestore(lock,flags) do {(void)(lock);(void)(flags);} while(0)
 #define dev_err_ratelimited(...) do {} while(0)
@@ -32,6 +31,7 @@ struct pmic_glink_altmode_event {
 };
 struct pmic_glink_altmode {
     int dev=0,event_lock=0;
+    bool uke=true;
     bool online=true,stopping=false,quarantined=false;
     u64 generation=1;
 };
@@ -41,6 +41,7 @@ struct pmic_glink_altmode_port {
     pmic_glink_altmode_event events[ALTMODE_EVENT_COUNT];
     unsigned head=0,count=1,index=0;
     bool overflow=false;
+    drm_connector_status hpd_status=connector_status_unknown;
     unsigned orientation=0,svid=0,mode=0,hpd_state=0,hpd_irq=0,mux_ctrl=0,tbt_data=0;
     void *typec_switch=nullptr;
     struct bridge *bridge=&::bridge;
@@ -80,13 +81,25 @@ static void reset() {
     consumed=lose_service_on_ack=false;ack_error=mux_error=0;
 }
 CPP
-awk '/^static void pmic_glink_altmode_worker\(/ {emit=1} emit {print} emit && /^}/ {exit}' "$source_file" >> "$work/check.cpp"
+awk '/^static void pmic_glink_altmode_(hpd_notify|worker)\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$source_file" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 int main() {
     reset();pmic_glink_altmode am;pmic_glink_altmode_port port{&am};
     port.count=2;
     pmic_glink_altmode_worker(&port.work);
-    assert(acks==2 && switches==2 && connected==2 && !disconnected && !safe_calls && !port.count);
+    assert(acks==2 && switches==2 && connected==1 && !disconnected && !safe_calls && !port.count);
+    reset();am={};port={&am};port.count=2;port.events[1].hpd_irq=1;
+    pmic_glink_altmode_worker(&port.work);
+    assert(acks==2 && switches==2 && connected==2 && !disconnected);
+    reset();am={};port={&am};port.count=2;port.events[1].orientation=2;
+    pmic_glink_altmode_worker(&port.work);
+    assert(acks==2 && switches==2 && connected==2 && !disconnected);
+    reset();am={};port={&am};port.count=2;port.events[1].hpd_state=0;
+    pmic_glink_altmode_worker(&port.work);
+    assert(acks==2 && switches==2 && connected==1 && disconnected==1);
+    reset();am={};am.uke=false;port={&am};port.count=2;
+    pmic_glink_altmode_worker(&port.work);
+    assert(acks==2 && switches==2 && connected==2 && !disconnected);
     reset();am={};port={&am};ack_error=-ETIMEDOUT;
     pmic_glink_altmode_worker(&port.work);
     assert(acks==1 && !switches && !connected && disconnected==1 && safe_calls==1 && am.quarantined);
@@ -99,7 +112,10 @@ int main() {
     reset();am={};port={&am};mux_error=-EIO;
     pmic_glink_altmode_worker(&port.work);
     assert(acks==1 && switches==1 && !connected && disconnected==1);
-    puts("Actual PAN worker: consumption before display work, ordered events, ACK loss, stale generation and mux failure passed; no hardware test");
+    mux_error=0;port.count=1;
+    pmic_glink_altmode_worker(&port.work);
+    assert(acks==2 && switches==2 && connected==1 && disconnected==1);
+    puts("Actual PAN worker: every event ACKed/applied, duplicate HPD suppressed, IRQ/route changes, ACK loss, generation and mux errors passed; host only");
 }
 CPP
 "${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror "$work/check.cpp" -o "$work/check"

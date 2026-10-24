@@ -362,3 +362,20 @@ Existing DWC3, hub, UCSI and DP/AUX diagnostics can be selected by file or
 function as needed. Restore the previous flags and DRM mask after capture;
 use `-p` for sites whose print flag was initially disabled. Keep raw traces
 private. These messages describe control state and do not dump USB payloads.
+
+## DP stream source candidate, 24 October 2026
+
+On POCO Pad X1 with signed release 27, Juo JH925 and ViewSonic VA3209-QHD,
+HDMI reattachment produces HPD, EDID and successful HBR2 two-lane training.
+The monitor detects the connection but remains black. Both 2560x1440 at 75 Hz
+and 1920x1080 at 60 Hz fail to prepare the DP pixel clock with `-EINVAL`.
+Clock tracing shows a zero cached pixel-source rate; initial PHY parent setup
+also reports inactive pixel RCGs above their unchanged OEM Fmax limits.
+
+Release 28 defers voltage rate-change callbacks for unprepared DP pixel RCGs
+until their actual output is configured. Prepare-time validation and prepared
+clock voltage votes remain in place; clock tables and DSI behavior are unchanged.
+It also suppresses unchanged HPD-level reports without dropping firmware ACKs,
+route application or IRQs. Source-extracted fixtures pass; native package and
+tablet validation remain required. The settings overlap reported in the same
+trial is not yet causally assigned to the repeated hotplug path.
