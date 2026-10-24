@@ -24,6 +24,7 @@ prefix=uke-linux-hardware-support-$commit
 tar -tzf "$archive" | awk -v p="$prefix/" 'index($0,p)!=1 || /(^|\/)\.\.($|\/)/ {bad=1} END{exit bad}'
 tar -tvzf "$archive" | awk 'substr($0,1,1)!="-" && substr($0,1,1)!="d"{bad=1} END{exit bad}'
 tar -xzf "$archive" -C "$work"
+patch --batch --fuzz=0 -p1 -d "$work/$prefix" < "$root/patches/build/0001-touch-export-materialize-source-cpio.patch"
 inputs=$work/$prefix/uke-sensors/manifests/touch-runtime-source.json
 rpm_source=$cache/uke-touchscreen-source.src.rpm
 if [[ ! -s $rpm_source ]]; then
