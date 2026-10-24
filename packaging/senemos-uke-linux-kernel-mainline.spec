@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 26
+%global senemos_build_release 27
 %else
 %global senemos_build_release 1
 %endif
@@ -374,6 +374,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-27
+- Accept valid DP+USB pin assignments D/F while retaining unknown-mode and power guards.
+- Exercise the actual QMP mux callback before building the matched package family.
+- Keep local source-RPM host metadata generic; physical HDMI validation remains pending.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-26
 - Preserve PAN Alt Mode routing across UCSI partner updates and USB EQ across repeated mux requests.
 - Acknowledge PAN events before blocking display work and retain the fixed panel until reboot.

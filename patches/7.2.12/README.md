@@ -134,3 +134,13 @@ and accepts exactly two frontend runtimes. The registration-only DT enables
 the guarded frontend component, retaining disabled backend and physical paths.
 Neither card registration nor software refusal fixtures qualify speaker or
 microphone operation.
+
+## DP and USB mode admission, 24 October 2026
+
+Patch 0107 separates valid DP assignments D/F from the Uke unknown-mode
+refusal in QMP. The actual mux callback previously rejected these valid
+combined DP+USB modes while the generic mux framework ignored that provider's
+`EOPNOTSUPP`. The new fixture rejects that source and checks C/D/E/F selection,
+invalid-mode refusal, unchanged routes, powered-DP refusal and error handling.
+PHY tables, board values and foreign-device fallback remain unchanged.
+Source regression success does not establish visible HDMI output.
