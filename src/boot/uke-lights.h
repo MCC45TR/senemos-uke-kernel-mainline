@@ -9,7 +9,7 @@ static inline int uke_light_cell(const void *fdt, int node, const char *name,
 				unsigned int expected)
 {
 	int bytes;
-	const fdt32_t *value = fdt_getprop(fdt, node, name, &bytes);
+	const fdt32_t *value = (const fdt32_t *)fdt_getprop(fdt, node, name, &bytes);
 
 	return value && bytes == 4 && fdt32_to_cpu(*value) == expected;
 }
@@ -41,7 +41,7 @@ static inline int uke_lights_admitted(const void *fdt)
 		    !uke_light_cell(fdt, torch[i], "qcom,max-current-ma", 250) ||
 		    !uke_light_cell(fdt, torch[i], "qcom,ires-ua", 5000))
 			return 0;
-	value = fdt_getprop(fdt, camera, "torch-source", &bytes);
+	value = (const fdt32_t *)fdt_getprop(fdt, camera, "torch-source", &bytes);
 	if (!value || bytes != 8 ||
 	    fdt32_to_cpu(value[0]) != fdt_get_phandle(fdt, torch[0]) ||
 	    fdt32_to_cpu(value[1]) != fdt_get_phandle(fdt, torch[1]))
@@ -51,7 +51,7 @@ static inline int uke_lights_admitted(const void *fdt)
 
 		if (child < 0 || !uke_light_cell(fdt, child, "led-sources", i))
 			return 0;
-		value = fdt_getprop(fdt, child, "pwms", &bytes);
+		value = (const fdt32_t *)fdt_getprop(fdt, child, "pwms", &bytes);
 		if (!value || bytes != 12 || !fdt_get_phandle(fdt, pwm) ||
 		    fdt32_to_cpu(value[0]) != fdt_get_phandle(fdt, pwm) ||
 		    fdt32_to_cpu(value[1]) != i || fdt32_to_cpu(value[2]) != 1000000)
