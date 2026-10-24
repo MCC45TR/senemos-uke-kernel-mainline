@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 28
+%global senemos_build_release 29
 %else
 %global senemos_build_release 1
 %endif

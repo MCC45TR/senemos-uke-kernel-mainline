@@ -444,6 +444,10 @@
     {
       "path": "patches/7.2.12/0109-pmic-altmode-suppress-duplicate-hpd-levels.patch",
       "sha256": "64102c1a2efd355d911659056147b65a3531a59c2102b9ef7bc3b85f319736bb"
+    },
+    {
+      "path": "patches/7.2.12/0110-dp-aux-preserve-non-edid-i2c-transactions.patch",
+      "sha256": "0e439462fdee66838f6fc6e881ae123708931d9b22489e5a2adc5cbd53dbec46"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

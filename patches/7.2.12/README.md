@@ -157,3 +157,11 @@ service cleanup remain observable. The actual worker fixture covers duplicate
 events, IRQs, route changes and recovery after a mux error. This addresses the
 repeated hotplug path; its effect on the observed settings overlap still needs
 tablet validation.
+
+Patch 0110 confines the EDID offset workaround to address 0x50. It uses the
+existing DRM `no_zero_sized` contract and preserves the caller's MOT/STOP for
+other I2C protocols. Release-28 DDC tracing records unsolicited one-byte writes
+to DDC/CI address 0x37 and zero-filled brightness replies. The callback also
+acknowledges bare STOP requests without sending them. The source fixture covers
+the actual MSM and generic DRM callbacks against a protocol model; physical
+DDC/CI readback and visible hardware brightness still require tablet testing.

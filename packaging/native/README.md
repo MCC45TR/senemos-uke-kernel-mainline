@@ -379,3 +379,16 @@ It also suppresses unchanged HPD-level reports without dropping firmware ACKs,
 route application or IRQs. Source-extracted fixtures pass; native package and
 tablet validation remain required. The settings overlap reported in the same
 trial is not yet causally assigned to the repeated hotplug path.
+
+On 24 October, signed release 28 produces an operator-confirmed HDMI image and
+mouse input through Juo JH925 on ViewSonic VA3209-QHD at 2560x1440/75 Hz. The
+internal panel remains a separate display. Cover/panel transitions can still
+trigger a firmware-reported disconnect and USB controller removal. HDMI audio
+has no connected PCM backend; the registration-only internal card stays closed.
+
+Release 29 corrects non-EDID I2C transaction handling. The EDID helper must not
+inject offset writes into DDC/CI address 0x37. The existing `no_zero_sized` DRM
+contract marks the final payload so the callback can send its STOP, while EDID
+segment handling remains in place. Actual callback fixtures pass against a host
+protocol model. Native package, physical DDC/CI and brightness readback remain
+separate gates. This change does not claim HDMI audio or USB/lid stability.
