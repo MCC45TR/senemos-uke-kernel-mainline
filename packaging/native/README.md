@@ -413,3 +413,8 @@ contract marks the final payload so the callback can send its STOP, while EDID
 segment handling remains in place. Actual callback fixtures pass against a host
 protocol model. Native package, physical DDC/CI and brightness readback remain
 separate gates. This change does not claim HDMI audio or USB/lid stability.
+
+The Uke-only `uke_dp_lane_limit` sysfs attribute sets a nonpersistent 1/2/4-lane
+training ceiling while no sink or stream is present. Attachment still obeys
+source, sink, LTTPR and USB-C firmware limits. It does not select Type-C pins,
+raise the HBR2 ceiling, or establish four-lane, MST or USB fallback acceptance.

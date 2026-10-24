@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 33
+%global senemos_build_release 34
 %else
 %global senemos_build_release 1
 %endif
@@ -378,6 +378,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-34
+- Add a disconnected-only 1/2/4 lane training ceiling without overriding Type-C negotiation.
+- Retain source, sink and LTTPR limits and expose policy separately from active lanes.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-33
 - Test HDR connector properties and allocation errors before kernel compilation.
 
