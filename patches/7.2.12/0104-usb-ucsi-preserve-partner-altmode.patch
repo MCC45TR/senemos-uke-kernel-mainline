@@ -5,7 +5,7 @@ The connector-status bitmap conversion changed the USB-only partner check
 into a USB-bit check. A partner advertising both USB and Alt Mode therefore
 receives a generic USB-mode write after its Alt Mode handler programs DP.
 
-On Uke, PAN sets DP pin C and UCSI then reports partner_flags=3 before
+On Uke, PAN sets DP pin D and UCSI then reports partner_flags=3 before
 ucsi_partner_change overwrites the route with TYPEC_STATE_USB. Leave that
 route to its Alt Mode handler. Keep normal USB, USB4, accessory modes, data
 roles, PD and disconnect cleanup unchanged.

@@ -423,7 +423,7 @@
     },
     {
       "path": "patches/7.2.12/0104-usb-ucsi-preserve-partner-altmode.patch",
-      "sha256": "011b3c74aef15e59e8ba4a521afa77abfa13376138198918d97e7466643a8df8"
+      "sha256": "088b13cbc6cfda5403b4c2e5379e0396ab583488730221193101abe1bd809df5"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
