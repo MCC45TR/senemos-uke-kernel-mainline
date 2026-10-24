@@ -7,15 +7,15 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 11
+%global senemos_build_release 12
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}-unstable
 Release: %{senemos_build_release}%{?dist}
 Summary: Unstable Linux 7.3 Uke kernel with the O82 display profile
-License: GPL-2.0-only AND MIT
-SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
+License: GPL-2.0-only AND MIT AND BSD-3-Clause
+SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -30,6 +30,7 @@ Source9: senemos-uke-touch-runtime-1.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
+BuildRequires: libasan libubsan
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
@@ -40,6 +41,7 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
+Recommends: uke-displayport-audio >= 0.1.0-2
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -265,6 +267,7 @@ CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-vrr-floor-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
@@ -317,6 +320,8 @@ install -m644 native-profile/SHA256SUMS native-profile/source-commit native-prof
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
 install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-HDMI-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-HDMI-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -333,6 +338,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 %files
 %doc native-profile/README.md
 %license COPYING
+%license native-profile/src/audio/LICENSE.audioreach-topology
 
 %files core
 %dir /usr/lib/modules/%{krel}
@@ -369,6 +375,11 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
+- Carry the reviewed USB/DP routing, audio, HDR and lane-ceiling changes from 7.2.12.
+- Retain the WLAN lifetime fix, early console and bounded boot observations.
+- Preserve Linux 7.3 API adaptations and the non-activating unstable singleboot tuple.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
 - Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
 - Check actual capture and fault-completion lock-cycle behavior before building.

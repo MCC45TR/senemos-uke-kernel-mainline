@@ -1,28 +1,81 @@
 # Mainline display source profile
 
-24 October 2026 source candidate: unstable release 11 carries the nonblocking
-GPU fault-capture correction for the recovery lock cycle observed on POCO Pad
-X1 with mainline release 22. Normal fault reporting and uncontended capture
-remain; the actual-function host regression checks completion while recovery
-holds the GPU lock. The original fault, tablet recovery, suspend and Linux 7.3
-boot remain unqualified. Existing device settings are preserved.
+24 October 2026: release 36 retains RF regulator devres independently of the
+manually freed ath11k private allocation. Failed/deferred probe journals from
+releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper
+passes host address/undefined-sanitizer lifetime and failure fixtures; the
+unmodified baseline reproduces use-after-free. Voltage constraints, RF power
+order and display/USB policy are unchanged. Package and repeated tablet boot
+acceptance remain separate validation gates.
 
-The touch source lock uses existing owner `2b5530f2412a` for buffered CPIO
-export and first-valid-frame service readiness. Contact processing, calibration,
-firmware and kernel transport remain unchanged; tablet interaction is untested.
+**24 October 2026, release 32 candidate:** Uke DisplayPort gains checked
+HDR10/BT.2020 state, full-range RGB VSC and real HDR metadata SDPs. HDR requires
+advertised sink metadata/VSC support, 10-bit depth and enough trained bandwidth;
+insufficient bandwidth refuses the modeset. Stream failures balance clock,
+PHY and PM ownership and report a bad link asynchronously. The read-only
+`uke_dp_stream_state` attribute reports sequential cached lane/rate/bpp/capability
+observations without AUX, MMIO or PM-resume side effects. The source cache does
+not establish a visible HDR image. Original KDE controls remain authoritative.
+Current firmware exposes no manual DP alternate-mode override, and the driver
+has no MST implementation. No four-lane/MST/USB-fallback acceptance is claimed.
 
-23 October 2026: unstable release `7.3.0-7-unstable` carries the matched
-touch transport, DT and per-release C++ processor from mainline19. The QRTR
-adaptation preserves upstream 7.3 node-ID reads and requests HELLO only after
-each transport's receive context is published. Registration-only audio retains
-the accepted release-14 baseline; release 6's extra provider changes are excluded.
-No package script activates this experimental kernel.
+**24 October 2026, release 30 candidate:** `audio-profile=hdmi-only` connects
+one stereo 48 kHz/16-bit playback frontend to `DISPLAY_PORT_RX_0` and the native
+MSM DP codec. Juo performs the downstream DP-to-HDMI conversion. Only the exact
+Uke audio-ion SID pair may acquire a DMA context; frontend registration refuses
+an absent or identity domain before PCM construction can map buffers. The
+topology uses GC containers and four digital modules. Internal amplifier,
+microphone, SoundWire and TDM paths remain disabled. The separate closed
+registration profile is retained. Native build, actual DSP/DMA success,
+monitor playback and unplug/cover lifecycle validation remain required.
 
-The 102-patch queue retains the signed upstream `linux-7.3` source, DWC3
-notifier compatibility and 7.3 UBWC/RPMh API adaptations. The early inventory
-uses `drivers/char/hw_random/qcom-rng`, GF128 hashing remains built in and QCE
-remains disabled under the upstream broken gate. Source, COPR and physical
-acceptance are separate; the older records below retain their exact identities.
+24 October 2026 source candidate: release 25 avoids a GPU recovery/fault-capture
+lock cycle observed on POCO Pad X1 with release 22. Optional SMMU fault capture
+uses a nonblocking GPU lock so its completion can release a waiting GMU
+transaction. Ordinary fault reporting, uncontended capture and existing
+recovery remain. The actual-function host fixture fails before the change and
+passes afterward. This does not explain the initial GMU timeout or establish
+tablet recovery, suspend, graphics performance or endurance. Display, touch
+and charging settings are preserved.
+
+The touch source lock advances to existing owner `2b5530f2412a`, which buffers
+the CPIO export and reports service readiness after the first valid frame.
+Its reviewed archive and retained legacy source RPM remain hash-checked. Contact
+processing, calibration, firmware and the kernel transport are unchanged.
+
+24 October 2026 source candidate: release 24 retains the O82 connector range
+when fixed modes fall below the opted-in VRR floor. Opted-in requests from
+30 through 89 Hz now use the observed 90 Hz trial floor consistently for timing,
+DRM metadata and module-parameter readback. Zero still disables the experiment;
+fixed modes and the atomic, bonded-host and foreign-hardware checks remain.
+This carries the current diagnostic module's higher-floor behavior into the
+complete matched kernel package without a separate module loader or boot-note
+ABI change. The operator reported reduced Discover movement/resize stutter
+with the diagnostic range correction at 90 Hz; remaining stutter, continuous
+optical cadence, energy and endurance are unqualified. No permanent effect,
+governor, thermal or independent touch-rate change is included.
+
+23 October 2026 source candidate: release 21 retains the enabled boot-derived
+early framebuffer and stdout until MSM's existing firmware-aperture takeover.
+Its backlight link is removed so simpledrm neither waits for nor blanks the
+native panel backlight. The complete splash reservation and native panel
+supplies/reset remain preserved. Actual FDT fixtures precede packaging; visible
+continuity requires a separate recoverable tablet trial. No physical result is
+inherited from the package build. The optional O82 laboratory tool uses the
+verified stable platform DRM path so early DRM card numbering cannot select
+the GPU by mistake; its experimental display run remains separately gated.
+
+23 October 2026 source candidate: release 20 targets only
+`qcom/sm7675-xiaomi-uke.dtb` and the native O82 overlay. The resolved profile
+excludes foreign SoC suppliers, panels, fixed Ethernet, SATA, raw flash and
+unrelated board controllers. It retains USB peripherals, the four root
+filesystems, virtualization, firewall, diagnostics and the existing Uke
+hardware/firmware guards. `NR_CPUS=8` follows Uke's eight-core topology.
+The Uke DISPCC remains in `dispcc-sm8550.c`; its Kconfig dependency now admits
+the existing Cliffs GCC without requiring a foreign GCC. The early module list
+contains Uke providers, generic recovery interfaces and their dependencies;
+the build rejects a missing dependency before creating the initramfs.
+Package and recoverable tablet boot validation remain separate gates.
 
 21 October 2026 upstream refresh: Linux 7.2.12-1 carries the release-17
 98-patch Uke profile, disabled audio and guarded updater contract. The original
@@ -316,4 +369,68 @@ calibration, graph endpoint or mixer and is installed below the exact kernel
 release's firmware search directory. The host ACDB metadata inspector and its
 fixtures are source/build tools only and do not enter tablet payloads.
 
-23 October 2026 source candidate: 7.3.0-8 retains the current touch/QRTR and family-specific boot/API profile while excluding foreign fixed-board drivers and compiling only the Uke DTB. The early dependency check rejects missing suppliers; package and tablet acceptance remain separate.
+## USB and display diagnostics, 24 October 2026
+
+The native configuration already enables `CONFIG_DYNAMIC_DEBUG` and debugfs.
+Release 27 adds optional PAN event, QMP request and per-provider mux result
+messages. These sites are silent until enabled; enabling them does not change
+roles, PD policy, routing or power sequencing. Record the existing debug flags
+and `/sys/module/drm/parameters/debug` value before each controlled test.
+
+For example, enable the three routing files during a root diagnostic session:
+
+```sh
+printf '%s\n' \
+  'file drivers/usb/typec/mux.c +p' \
+  'file drivers/phy/qualcomm/phy-qcom-qmp-combo.c +p' \
+  'file drivers/soc/qcom/pmic_glink_altmode.c +p' \
+  | sudo tee /sys/kernel/debug/dynamic_debug/control
+```
+
+Existing DWC3, hub, UCSI and DP/AUX diagnostics can be selected by file or
+function as needed. Restore the previous flags and DRM mask after capture;
+use `-p` for sites whose print flag was initially disabled. Keep raw traces
+private. These messages describe control state and do not dump USB payloads.
+
+## DP stream source candidate, 24 October 2026
+
+On POCO Pad X1 with signed release 27, Juo JH925 and ViewSonic VA3209-QHD,
+HDMI reattachment produces HPD, EDID and successful HBR2 two-lane training.
+The monitor detects the connection but remains black. Both 2560x1440 at 75 Hz
+and 1920x1080 at 60 Hz fail to prepare the DP pixel clock with `-EINVAL`.
+Clock tracing shows a zero cached pixel-source rate; initial PHY parent setup
+also reports inactive pixel RCGs above their unchanged OEM Fmax limits.
+
+Release 28 defers voltage rate-change callbacks for unprepared DP pixel RCGs
+until their actual output is configured. Prepare-time validation and prepared
+clock voltage votes remain in place; clock tables and DSI behavior are unchanged.
+It also suppresses unchanged HPD-level reports without dropping firmware ACKs,
+route application or IRQs. Source-extracted fixtures pass; native package and
+tablet validation remain required. The settings overlap reported in the same
+trial is not yet causally assigned to the repeated hotplug path.
+
+On 24 October, signed release 28 produces an operator-confirmed HDMI image and
+mouse input through Juo JH925 on ViewSonic VA3209-QHD at 2560x1440/75 Hz. The
+internal panel remains a separate display. Cover/panel transitions can still
+trigger a firmware-reported disconnect and USB controller removal. HDMI audio
+has no connected PCM backend; the registration-only internal card stays closed.
+
+Release 29 corrects non-EDID I2C transaction handling. The EDID helper must not
+inject offset writes into DDC/CI address 0x37. The existing `no_zero_sized` DRM
+contract marks the final payload so the callback can send its STOP, while EDID
+segment handling remains in place. Actual callback fixtures pass against a host
+protocol model. Native package, physical DDC/CI and brightness readback remain
+separate gates. This change does not claim HDMI audio or USB/lid stability.
+
+The Uke-only `uke_dp_lane_limit` sysfs attribute sets a nonpersistent 1/2/4-lane
+training ceiling while no sink or stream is present. Attachment still obeys
+source, sink, LTTPR and USB-C firmware limits. It does not select Type-C pins,
+raise the HBR2 ceiling, or establish four-lane, MST or USB fallback acceptance.
+
+25 October 2026: release 38 restores the inherited-framebuffer console after
+the release-37 experiment retained the pale-gray interval. The WLAN regulator
+lifetime correction remains. Bounded boot messages report existing Uke display
+voltage/sync, SMMU mappings, backlight and MDSS ownership state without new
+register reads, power/clock writes or timing changes. Cliffs interconnect sync
+still invokes the original callback. These are diagnostic observations;
+physical gray-screen and repeated-startup qualification remain open.

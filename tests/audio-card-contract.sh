@@ -94,9 +94,14 @@ ${CC:-cc} -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined \
 overlay=$kernel/native-generated/display.dtbo
 node=$(fdtget -t s "$overlay" /__symbols__ uke_q6apm_dais)
 [[ $(fdtget -t s "$overlay" "$node" status) == okay ]]
-fdtget "$overlay" "$node" xiaomi,registration-only >/dev/null
-if fdtget "$overlay" "$node" iommus >/dev/null 2>&1; then
-    echo 'Closed registration profile must not attach an IOMMU' >&2; exit 1
+if fdtget "$overlay" "$node" xiaomi,hdmi-only >/dev/null 2>&1; then
+    fdtget "$overlay" "$node" iommus >/dev/null
+    if fdtget "$overlay" "$node" xiaomi,registration-only >/dev/null 2>&1; then exit 1; fi
+else
+    fdtget "$overlay" "$node" xiaomi,registration-only >/dev/null
+    if fdtget "$overlay" "$node" iommus >/dev/null 2>&1; then
+        echo 'Closed registration profile must not attach an IOMMU' >&2; exit 1
+    fi
 fi
 alsatplg -c "$root/src/audio/POCO-Pad-X1-AudioReach.conf" -o "$work/frontends.bin"
 alsatplg -d "$work/frontends.bin" -o "$work/decoded.conf"

@@ -6,7 +6,7 @@ spec=${1:-$root/packaging/senemos-uke-linux-kernel-mainline.spec}
 command -v rpmspec >/dev/null
 future=$(mktemp)
 trap 'rm -f "$future"' EXIT
-sed 's/^Version: .*/Version: 7.2.13/' "$spec" > "$future"
+sed 's/^Version: .*/Version: 7.3.1/' "$spec" > "$future"
 future_release=$(rpmspec -q --srpm --qf '%{RELEASE}' --target aarch64 "$future")
 [[ $future_release == 1 || $future_release == 1.* ]]
 expected=senemos-uke-linux-kernel-mainline-unstable
@@ -31,7 +31,7 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     exit 1
 fi
 grep -F 'git archive HEAD src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests' "$root/Makefile"
-grep -Fx 'registration-only' "$root/packaging/native/audio-profile"
+grep -Fx 'hdmi-only' "$root/packaging/native/audio-profile"
 grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
 grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
 grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"

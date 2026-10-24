@@ -6,6 +6,8 @@ Queue bounded generation-tagged notifications instead of overwriting shared work
 
 Route asynchronous type-2 notifications separately from type-1 acknowledgements.
 
+Acknowledge consumed events before potentially blocking mux/AUX work; recheck the session after the ACK.
+
 --- a/drivers/soc/qcom/pmic_glink_altmode.c
 +++ b/drivers/soc/qcom/pmic_glink_altmode.c
 @@ -95,6 +95,15 @@
@@ -233,7 +235,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  				    struct pmic_glink_altmode_port *port)
  {
  	int ret;
-@@ -334,63 +376,123 @@
+@@ -334,63 +376,129 @@
  	port->state.mode = TYPEC_STATE_SAFE;
  
  	ret = typec_mux_set(port->typec_mux, &port->state);
@@ -330,6 +332,15 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
 +		spin_unlock_irqrestore(&am->event_lock, flags);
 +		if (!valid)
 +			continue;
++		/* Consume the event before mux I/O or synchronous AUX/EDID work. */
++		if (pmic_glink_altmode_request(am, ALTMODE_PAN_ACK, port->index))
++			continue;
++		spin_lock_irqsave(&am->event_lock, flags);
++		valid = am->online && !am->stopping && !am->quarantined &&
++			event.generation == am->generation;
++		spin_unlock_irqrestore(&am->event_lock, flags);
++		if (!valid)
++			continue;
 +		port->orientation = event.orientation;
 +		port->svid = event.svid;
 +		port->mode = event.mode;
@@ -366,9 +377,6 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
 +			drm_aux_hpd_bridge_notify(&port->bridge->dev, connector_status_disconnected);
 +		if (ret)
 +			dev_err_ratelimited(am->dev, "port %u mux application failed: %d\n", port->index, ret);
-+		/* ACK consumes this notification; it is not a hardware-success report. */
-+		if (valid && pmic_glink_altmode_request(am, ALTMODE_PAN_ACK, port->index))
-+			continue;
  	}
 +}
  
@@ -400,7 +408,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  }
  
  static enum typec_orientation pmic_glink_altmode_orientation(unsigned int orientation)
-@@ -414,6 +516,7 @@
+@@ -414,6 +522,7 @@
  					       const void *data, size_t len)
  {
  	struct pmic_glink_altmode_port *alt_port;
@@ -408,7 +416,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  	const struct usbc_sc8180x_notify *msg;
  	u32 notification;
  	u8 orientation;
-@@ -445,13 +548,16 @@
+@@ -445,13 +554,16 @@
  		return;
  	}
  
@@ -431,7 +439,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  }
  
  #define SC8280XP_DPAM_MASK	0x3f
-@@ -462,6 +568,7 @@
+@@ -462,6 +574,7 @@
  					       u16 svid, const void *data, size_t len)
  {
  	struct pmic_glink_altmode_port *alt_port;
@@ -439,7 +447,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  	const struct usbc_sc8280x_tbt_data *tbt;
  	const struct usbc_sc8280x_dp_data *dp;
  	const struct usbc_notify *notify;
-@@ -475,6 +582,18 @@
+@@ -475,6 +588,18 @@
  	}
  
  	notify = data;
@@ -458,7 +466,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  
  	port = notify->port_idx;
  	orientation = notify->orientation;
-@@ -484,25 +603,33 @@
+@@ -484,25 +609,33 @@
  		return;
  	}
  
@@ -501,7 +509,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  }
  
  static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv)
-@@ -511,18 +638,36 @@
+@@ -511,18 +644,36 @@
  	const struct pmic_glink_hdr *hdr = data;
  	u16 opcode;
  	u16 svid;
@@ -539,7 +547,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  		pmic_glink_altmode_sc8180xp_notify(altmode, data, len);
  		break;
  	}
-@@ -555,10 +700,54 @@
+@@ -555,10 +706,54 @@
  
  static void pmic_glink_altmode_pdr_notify(void *priv, int state)
  {
@@ -598,7 +606,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  }
  
  static const struct of_device_id pmic_glink_altmode_of_quirks[] = {
-@@ -582,6 +771,8 @@
+@@ -582,6 +777,8 @@
  		return -ENOMEM;
  
  	altmode->dev = dev;
@@ -607,7 +615,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  
  	match = of_match_device(pmic_glink_altmode_of_quirks, dev->parent);
  	if (match)
-@@ -592,6 +783,7 @@
+@@ -592,6 +789,7 @@
  	INIT_WORK(&altmode->enable_work, pmic_glink_altmode_enable_worker);
  	init_completion(&altmode->pan_ack);
  	mutex_init(&altmode->lock);
@@ -615,7 +623,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  
  	device_for_each_child_node(dev, fwnode) {
  		ret = fwnode_property_read_u32(fwnode, "reg", &port);
-@@ -632,6 +824,10 @@
+@@ -632,6 +830,10 @@
  		alt_port->tbt_alt.active = 1;
  
  		alt_port->typec_mux = fwnode_typec_mux_get(fwnode);
@@ -626,7 +634,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  		if (IS_ERR(alt_port->typec_mux)) {
  			fwnode_handle_put(fwnode);
  			return dev_err_probe(dev, PTR_ERR(alt_port->typec_mux),
-@@ -662,6 +858,10 @@
+@@ -662,6 +864,10 @@
  		}
  
  		alt_port->typec_switch = fwnode_typec_switch_get(fwnode);
@@ -637,7 +645,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  		if (IS_ERR(alt_port->typec_switch)) {
  			fwnode_handle_put(fwnode);
  			return dev_err_probe(dev, PTR_ERR(alt_port->typec_switch),
-@@ -687,6 +887,10 @@
+@@ -687,6 +893,10 @@
  			return ret;
  	}
  
@@ -648,7 +656,7 @@ Route asynchronous type-2 notifications separately from type-1 acknowledgements.
  	altmode->client = devm_pmic_glink_client_alloc(dev,
  						       altmode->owner_id,
  						       pmic_glink_altmode_callback,
-@@ -706,9 +910,15 @@
+@@ -706,9 +916,15 @@
  };
  MODULE_DEVICE_TABLE(auxiliary, pmic_glink_altmode_id_table);
  

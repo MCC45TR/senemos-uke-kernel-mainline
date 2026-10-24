@@ -8,7 +8,7 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.3.0
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 106) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 114) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
@@ -25,6 +25,7 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/userdata-grow-contract.sh
 	bash tests/early-modules-contract.sh
 	bash tests/platform-profile-contract.sh
+	bash tests/dispcc-dp-votes-contract.sh src/display/uke-dispcc-votes.c
 	bash -n tests/resin-wake-contract.sh
 	bash -n tests/gpu-fault-capture-contract.sh
 test-touch-protocol:

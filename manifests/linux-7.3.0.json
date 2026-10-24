@@ -235,7 +235,7 @@
     },
     {
       "path": "patches/7.3.0/0056-soc-qcom-pmic-altmode-events.patch",
-      "sha256": "2a128a33ab3a71229979ccee73401fefcb5d4a0f2cad7a435280a06da0d897bf"
+      "sha256": "a56b1b532137ec081e1bb46e6ee25cbcb40341599f62ca8570e9e931832c1c2d"
     },
     {
       "path": "patches/7.3.0/0057-drm-msm-uke-dp-hbr2-limit.patch",
@@ -432,6 +432,38 @@
     {
       "path": "patches/7.3.0/0105-msm-fault-capture-nonblocking.patch",
       "sha256": "1a8d250037e8e54fcaf902ff4e995c3a24c70e1f01d37890e8c3219f4d0d837f"
+    },
+    {
+      "path": "patches/7.3.0/0106-usb-ucsi-preserve-partner-altmode.patch",
+      "sha256": "088b13cbc6cfda5403b4c2e5379e0396ab583488730221193101abe1bd809df5"
+    },
+    {
+      "path": "patches/7.3.0/0107-phy-qmp-accept-combined-dp-usb-modes.patch",
+      "sha256": "54fc314824967a2f88fc71178904991ea59ca1ef5cfd184dc7a8a4e787b19e99"
+    },
+    {
+      "path": "patches/7.3.0/0108-typec-dynamic-route-diagnostics.patch",
+      "sha256": "44ac8b9c5d3da8c880a116311215b4ee7ac66c9e383bd33a79e46179c33b00a3"
+    },
+    {
+      "path": "patches/7.3.0/0109-pmic-altmode-suppress-duplicate-hpd-levels.patch",
+      "sha256": "64102c1a2efd355d911659056147b65a3531a59c2102b9ef7bc3b85f319736bb"
+    },
+    {
+      "path": "patches/7.3.0/0110-dp-aux-preserve-non-edid-i2c-transactions.patch",
+      "sha256": "0e439462fdee66838f6fc6e881ae123708931d9b22489e5a2adc5cbd53dbec46"
+    },
+    {
+      "path": "patches/7.3.0/0111-uke-displayport-audio-dma-admission.patch",
+      "sha256": "26d47ef2df6d9ec3157cf2426d1a0d162572acd762b14f55d5d6f5c54752dad3"
+    },
+    {
+      "path": "patches/7.3.0/0112-uke-wlan-regulator-devres-lifetime.patch",
+      "sha256": "355fb6c213de914ceca42eecae7e3cad271b8c88ebd12d9de9fd08579e11a2d2"
+    },
+    {
+      "path": "patches/7.3.0/0113-uke-display-boot-observations.patch",
+      "sha256": "569c93ae9d780bfe29ab33d9d2ea46867c8576875c3e468783a196a6fdaa78fd"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
