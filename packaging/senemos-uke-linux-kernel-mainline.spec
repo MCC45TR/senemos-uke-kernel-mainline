@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 30
+%global senemos_build_release 31
 %else
 %global senemos_build_release 1
 %endif
@@ -40,6 +40,7 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
+Recommends: uke-displayport-audio >= 0.1.0-2
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -377,6 +378,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-31
+- Match the DP frontend capability and DSP input stream names for DAPM binding.
+- Recommend the removable digital-only UCM profile for desktop playback.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-28
 - Let stopped DP pixel clocks follow initial PHY parent setup; retain prepare-time and active voltage guards.
 - Suppress repeated unchanged HPD reports while acknowledging every firmware event and retaining IRQs.
