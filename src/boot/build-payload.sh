@@ -20,8 +20,14 @@ init=$out/boot-initramfs stage=$out/boot-modules
 [[ ! -e $init && ! -e $stage ]] || { echo 'Use an empty boot output for source compilation' >&2; exit 1; }
 cp -a "$base" "$init"
 # Compile a native initramfs handoff; normal boots retain upstream switch-root.
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
-    "$here/offline-switch-root.cpp" -o "$out/uke-offline-switch-root"
+if [[ -n ${UKE_PREBUILT_SWITCH_ROOT:-} ]]; then
+    # Cross builds compile this AArch64 helper on the target-architecture worker.
+    [[ -f $UKE_PREBUILT_SWITCH_ROOT && ! -L $UKE_PREBUILT_SWITCH_ROOT ]]
+    install -m755 "$UKE_PREBUILT_SWITCH_ROOT" "$out/uke-offline-switch-root"
+else
+    clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
+        "$here/offline-switch-root.cpp" -o "$out/uke-offline-switch-root"
+fi
 readelf -h "$out/uke-offline-switch-root" | grep -E 'Machine:.*AArch64' >/dev/null
 install -Dm755 "$out/uke-offline-switch-root" "$init/usr/libexec/uke-offline-switch-root"
 mkdir -p "$init/usr/lib/systemd/system/initrd-switch-root.service.d"
