@@ -38,6 +38,7 @@ cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
 bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
+bash "$profile/tests/dp-connector-state-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_drm.c"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then

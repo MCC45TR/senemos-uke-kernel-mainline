@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 32
+%global senemos_build_release 33
 %else
 %global senemos_build_release 1
 %endif
@@ -378,6 +378,9 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-33
+- Test HDR connector properties and allocation errors before kernel compilation.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-32
 - Validate Uke DisplayPort atomic depth, color and HDR metadata before modesetting
 - Send VSC/HDR SDPs with clock and PHY ownership guards; retain DP audio
