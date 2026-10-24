@@ -144,3 +144,9 @@ combined DP+USB modes while the generic mux framework ignored that provider's
 invalid-mode refusal, unchanged routes, powered-DP refusal and error handling.
 PHY tables, board values and foreign-device fallback remain unchanged.
 Source regression success does not establish visible HDMI output.
+
+Patch 0108 adds dynamic-debug call sites for acknowledged PAN events, QMP
+requests and each Type-C mux provider's result. It does not alter routing,
+power or error handling and does not log USB data payloads. The existing
+`CONFIG_DYNAMIC_DEBUG` configuration lets a test session enable these sites
+and restore its previous flags afterward; the new sites are silent by default.

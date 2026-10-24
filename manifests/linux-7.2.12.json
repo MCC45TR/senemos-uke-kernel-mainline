@@ -436,6 +436,10 @@
     {
       "path": "patches/7.2.12/0107-phy-qmp-accept-combined-dp-usb-modes.patch",
       "sha256": "54fc314824967a2f88fc71178904991ea59ca1ef5cfd184dc7a8a4e787b19e99"
+    },
+    {
+      "path": "patches/7.2.12/0108-typec-dynamic-route-diagnostics.patch",
+      "sha256": "44ac8b9c5d3da8c880a116311215b4ee7ac66c9e383bd33a79e46179c33b00a3"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -377,6 +377,7 @@ fi
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-27
 - Accept valid DP+USB pin assignments D/F while retaining unknown-mode and power guards.
 - Exercise the actual QMP mux callback before building the matched package family.
+- Add opt-in PAN/QMP/mux decision logs through the existing dynamic-debug interface.
 - Keep local source-RPM host metadata generic; physical HDMI validation remains pending.
 
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-26

@@ -22,6 +22,7 @@ using u64=uint64_t;
 #define spin_lock_irqsave(lock,flags) do {(void)(lock);(flags)=0;} while(0)
 #define spin_unlock_irqrestore(lock,flags) do {(void)(lock);(void)(flags);} while(0)
 #define dev_err_ratelimited(...) do {} while(0)
+#define dev_dbg(dev, ...) do { if (0) printf(__VA_ARGS__); } while(0)
 struct work_struct {};
 struct bridge { int dev; } bridge;
 struct pmic_glink_altmode_event {

@@ -339,3 +339,26 @@ description; no donor build script is executed. The output contains no
 calibration, graph endpoint or mixer and is installed below the exact kernel
 release's firmware search directory. The host ACDB metadata inspector and its
 fixtures are source/build tools only and do not enter tablet payloads.
+
+## USB and display diagnostics, 24 October 2026
+
+The native configuration already enables `CONFIG_DYNAMIC_DEBUG` and debugfs.
+Release 27 adds optional PAN event, QMP request and per-provider mux result
+messages. These sites are silent until enabled; enabling them does not change
+roles, PD policy, routing or power sequencing. Record the existing debug flags
+and `/sys/module/drm/parameters/debug` value before each controlled test.
+
+For example, enable the three routing files during a root diagnostic session:
+
+```sh
+printf '%s\n' \
+  'file drivers/usb/typec/mux.c +p' \
+  'file drivers/phy/qualcomm/phy-qcom-qmp-combo.c +p' \
+  'file drivers/soc/qcom/pmic_glink_altmode.c +p' \
+  | sudo tee /sys/kernel/debug/dynamic_debug/control
+```
+
+Existing DWC3, hub, UCSI and DP/AUX diagnostics can be selected by file or
+function as needed. Restore the previous flags and DRM mask after capture;
+use `-p` for sites whose print flag was initially disabled. Keep raw traces
+private. These messages describe control state and do not dump USB payloads.

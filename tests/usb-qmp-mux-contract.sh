@@ -12,7 +12,7 @@ cat > "$mock" <<'C'
 #include <stdio.h>
 #include <errno.h>
 #define guard(type) (void)
-#define dev_dbg(dev, ...) ((void)(dev))
+#define dev_dbg(dev, ...) do { (void)(dev); if (0) printf(__VA_ARGS__); } while(0)
 #define USB_TYPEC_DP_SID 0xff01
 #define QSERDES_DP_PHY_PD_CTL 0
 #define DP_PHY_PD_CTL_PSR_PWRDN 1

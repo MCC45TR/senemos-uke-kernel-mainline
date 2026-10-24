@@ -105,3 +105,4 @@
 0105-msm-fault-capture-nonblocking.patch
 0106-usb-ucsi-preserve-partner-altmode.patch
 0107-phy-qmp-accept-combined-dp-usb-modes.patch
+0108-typec-dynamic-route-diagnostics.patch
