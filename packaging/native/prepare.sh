@@ -15,6 +15,7 @@ bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/u
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
 bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
 bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"
+bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
 bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
 export UKE_USB_PROFILE
@@ -26,11 +27,14 @@ case $(cat "$profile/audio-profile") in
     disabled) ;;
     services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
     registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
+    hdmi-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_HDMI=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
+alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
+    -o "$output/POCO-Pad-X1-HDMI-tplg.bin"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
@@ -48,4 +52,8 @@ dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
     printf '};\n'
 } > "$kernel/arch/arm64/kernel/uke-native-display.h"
 fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
+if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
+    bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
+    bash "$profile/tests/dp-audio-topology-contract.sh"
+fi
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'

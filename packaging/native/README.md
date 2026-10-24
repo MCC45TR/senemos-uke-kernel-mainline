@@ -1,5 +1,15 @@
 # Mainline display source profile
 
+**24 October 2026, release 30 candidate:** `audio-profile=hdmi-only` connects
+one stereo 48 kHz/16-bit playback frontend to `DISPLAY_PORT_RX_0` and the native
+MSM DP codec. Juo performs the downstream DP-to-HDMI conversion. Only the exact
+Uke audio-ion SID pair may acquire a DMA context; frontend registration refuses
+an absent or identity domain before PCM construction can map buffers. The
+topology uses GC containers and four digital modules. Internal amplifier,
+microphone, SoundWire and TDM paths remain disabled. The separate closed
+registration profile is retained. Native build, actual DSP/DMA success,
+monitor playback and unplug/cover lifecycle validation remain required.
+
 24 October 2026 source candidate: release 25 avoids a GPU recovery/fault-capture
 lock cycle observed on POCO Pad X1 with release 22. Optional SMMU fault capture
 uses a nonblocking GPU lock so its completion can release a waiting GMU

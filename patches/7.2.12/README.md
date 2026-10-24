@@ -1,4 +1,14 @@
-# Uke Linux 7.2.11 adaptation
+# Uke Linux 7.2.12 adaptation
+
+**24 October 2026, release 30 source candidate:** the `hdmi-only` profile adds
+one native DisplayPort playback frontend and the existing DP104 backend/codec
+link. Juo converts the tablet's DP stream to HDMI. The graph contains only the
+shared-memory endpoint, PCM decoder/converter and DP sink, with no internal
+speaker, microphone, SoundWire or TDM route. Patch 0111 admits only the owned
+frontend's exact Uke audio SIDs and requires a real DMA domain before PCM
+construction. Registration-only guards and foreign-stream refusals remain.
+Source/protocol/FDT and ARM64 translation-unit checks are separate from native
+packaging, DSP/DMA operation and audible monitor output; none is claimed here.
 
 **23 October 2026, release 19 source:** patch 0101 moves QRTR HELLO ownership
 to the core, with explicit requests after SMD, MHI and TUN receive publication.

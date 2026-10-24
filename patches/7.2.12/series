@@ -108,3 +108,4 @@
 0108-typec-dynamic-route-diagnostics.patch
 0109-pmic-altmode-suppress-duplicate-hpd-levels.patch
 0110-dp-aux-preserve-non-edid-i2c-transactions.patch
+0111-uke-displayport-audio-dma-admission.patch

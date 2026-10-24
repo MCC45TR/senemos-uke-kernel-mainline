@@ -7,15 +7,15 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 29
+%global senemos_build_release 30
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Uke kernel with the O82 display profile
-License: GPL-2.0-only AND MIT
-SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
+License: GPL-2.0-only AND MIT AND BSD-3-Clause
+SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -317,6 +317,8 @@ install -m644 native-profile/SHA256SUMS native-profile/source-commit native-prof
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
 install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-HDMI-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-HDMI-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -338,6 +340,7 @@ fi
 %files
 %doc native-profile/README.md
 %license COPYING
+%license native-profile/src/audio/LICENSE.audioreach-topology
 
 %files core
 %dir /usr/lib/modules/%{krel}

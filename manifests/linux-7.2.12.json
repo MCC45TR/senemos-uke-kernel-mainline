@@ -448,6 +448,10 @@
     {
       "path": "patches/7.2.12/0110-dp-aux-preserve-non-edid-i2c-transactions.patch",
       "sha256": "0e439462fdee66838f6fc6e881ae123708931d9b22489e5a2adc5cbd53dbec46"
+    },
+    {
+      "path": "patches/7.2.12/0111-uke-displayport-audio-dma-admission.patch",
+      "sha256": "fd5b4b6b1fe2d6a3203f204caa4ba4a260270c4c4467f9b8e1069ba02adf88ba"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
