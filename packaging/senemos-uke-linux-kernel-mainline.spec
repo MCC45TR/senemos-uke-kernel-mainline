@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 34
+%global senemos_build_release 36
 %else
 %global senemos_build_release 1
 %endif
@@ -30,6 +30,7 @@ Source9: senemos-uke-touch-runtime-1.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
+BuildRequires: libasan libubsan
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
@@ -378,6 +379,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-36
+- Keep Uke WLAN regulator devres alive after failed/deferred core probe teardown.
+- Test the actual cleanup lifetime with address/undefined sanitizers before build.
+
 * Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-34
 - Add a disconnected-only 1/2/4 lane training ceiling without overriding Type-C negotiation.
 - Retain source, sink and LTTPR limits and expose policy separately from active lanes.

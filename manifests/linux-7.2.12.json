@@ -452,6 +452,10 @@
     {
       "path": "patches/7.2.12/0111-uke-displayport-audio-dma-admission.patch",
       "sha256": "26d47ef2df6d9ec3157cf2426d1a0d162572acd762b14f55d5d6f5c54752dad3"
+    },
+    {
+      "path": "patches/7.2.12/0112-uke-wlan-regulator-devres-lifetime.patch",
+      "sha256": "355fb6c213de914ceca42eecae7e3cad271b8c88ebd12d9de9fd08579e11a2d2"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

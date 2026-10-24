@@ -1,5 +1,13 @@
 # Mainline display source profile
 
+24 October 2026: release 36 retains RF regulator devres independently of the
+manually freed ath11k private allocation. Failed/deferred probe journals from
+releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper
+passes host address/undefined-sanitizer lifetime and failure fixtures; the
+unmodified baseline reproduces use-after-free. Voltage constraints, RF power
+order and display/USB policy are unchanged. Package and repeated tablet boot
+acceptance remain separate validation gates.
+
 **24 October 2026, release 32 candidate:** Uke DisplayPort gains checked
 HDR10/BT.2020 state, full-range RGB VSC and real HDR metadata SDPs. HDR requires
 advertised sink metadata/VSC support, 10-bit depth and enough trained bandwidth;
