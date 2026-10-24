@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-23",
+  "date": "2026-10-24",
   "source_date_epoch": 1792058622,
   "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; release-20 retains QRTR discovery and scopes fixed-board drivers, early modules and DT compilation to Uke, with the existing DISPCC admitted through Cliffs GCC; source/build evidence only",
   "firmware_included": false,
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "085723cb4653b15625f34c764360574a817dcf98b0e678aba79fab48b78e38ee"
+      "sha256": "71396e45456f04ed7c411e57bffddd0b343b1435d902bbb321038bfcf2d80c1a"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -158,6 +158,10 @@
     {
       "path": "tests/native-firewall-contract.sh",
       "sha256": "93ea93aa78a770f552635d4bf0a1470885a3af2954b067d55634e7ed7926ddd5"
+    },
+    {
+      "path": "tests/module-compress-contract.sh",
+      "sha256": "b95d9152f048be0fe2984e82eafe6ffb5aa4ca16e8d09855b1c166e29e74c947"
     }
   ],
   "root_selector_capability": {
