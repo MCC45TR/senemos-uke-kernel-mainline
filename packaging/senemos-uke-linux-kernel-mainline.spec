@@ -163,8 +163,9 @@ fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-if test -n "${UKE_PREBUILT_TOUCH_CAPTURE:-}" && test -f "$UKE_PREBUILT_TOUCH_CAPTURE" && test ! -L "$UKE_PREBUILT_TOUCH_CAPTURE"; then
+if test -n "${UKE_PREBUILT_TOUCH_CAPTURE:-}"; then
     # Cross builds compile this AArch64 client on the target-architecture worker.
+    test -f "$UKE_PREBUILT_TOUCH_CAPTURE" && test ! -L "$UKE_PREBUILT_TOUCH_CAPTURE" || exit 1
     install -m755 "$UKE_PREBUILT_TOUCH_CAPTURE" native-generated/uke-touch-capture
 else
     g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \

@@ -20,6 +20,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n src/boot/prepare-abl-source.sh src/performance/prepare-llcc-dt.sh tests/llcc-sm7675-contract.sh tests/llcc-sm7675-dt-contract.sh tests/llcc-gpu-startup-contract.sh tests/llcc-boot-fdt-contract.sh
 	bash tests/mainline-package-contract.sh
 	bash tests/touch-runtime-package-contract.sh
+	bash tests/prebuilt-helpers-contract.sh
 	bash tests/identity-contract.sh
 	bash tests/kernel-family-contract.sh
 	bash tests/userdata-grow-contract.sh

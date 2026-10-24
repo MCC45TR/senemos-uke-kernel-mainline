@@ -18,6 +18,14 @@ reviewed Uke profile. A future stable release fails explicitly until ported.
 Fedora 45, openSUSE Tumbleweed, Debian/Ubuntu/Armbian/Kubuntu and
 Alpine/postmarketOS target profiles currently report `planned`.
 
+The native-profile RPM producer also accepts `UKE_PREBUILT_SWITCH_ROOT` and
+`UKE_PREBUILT_TOUCH_CAPTURE` from a caller that builds those helpers from the
+selected source in an AArch64 worker. Each supplied path must be a regular,
+non-symlink AArch64 ELF file. An invalid explicit path stops the build; an unset
+variable retains source compilation. These inputs do not select a kernel version
+or replace the `latest`/`lastest` resolution above. Host fixture checks cover both
+selection paths without executing a target program.
+
 Supported host families are Fedora/RHEL, Debian/Ubuntu, openSUSE, Arch and
 Alpine/postmarketOS, on x86_64 or AArch64. Missing prerequisites are installed
 from official repositories with root, sudo or doas. Alpine's POSIX preamble
