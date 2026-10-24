@@ -62,3 +62,18 @@ jq '.latest_stable.version="7.2.11" | .releases[0].version="7.2.11" |
 [[ $(cd "$work/source"; PATH="$work/bin:$PATH" prepare_metadata singleboot 7.2.11-16) == unchanged$'\t'7.2.11-16 ]]
 [[ $(cd "$work/source"; PATH="$work/bin:$PATH" prepare_common "$work/current-release.json") == unchanged$'\t'7.2.11-16 ]]
 echo 'Exact release, timestamp, version, package, repository, architecture and newest-build selection passed'
+normalize_step=$(awk '/^[[:space:]]+latest=\$\(curl /{emit=1} emit{print} emit&&/^[[:space:]]+profile=/{exit}' "$root/.github/workflows/stable-and-copr.yml")
+test -n "$normalize_step"
+normalize_workflow() {
+    curl() { jq -nc --arg version "$advertised" '{latest_stable:{version:$version}}'; }
+    eval "$normalize_step"
+    printf '%s\n' "$latest"
+}
+advertised=7.3
+[[ $(normalize_workflow) == 7.3.0 ]]
+advertised=7.3.1
+[[ $(normalize_workflow) == 7.3.1 ]]
+for advertised in 7.4-rc1 7.3/../../foreign ''; do
+    if (normalize_workflow); then exit 1; fi
+done
+echo 'Actual stable workflow normalizes x.y and rejects release candidates or malformed versions'

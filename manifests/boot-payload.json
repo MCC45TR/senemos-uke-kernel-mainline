@@ -33,11 +33,11 @@
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "aba006b739372a79a0f0cbf0cfeb8ccdd9b91e8f630219aa601354f39788bd9e"
+      "sha256": "273fbb864a6fd5b78abf1d7b8c3d0b53b780c9ebcee075a7574715575b6f2246"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "608202c084f007ee9656f75d2a36c8a86ade47f102bc6e445ecbefe64f6c64bb"
+      "sha256": "d37db53da1a374ffd9f275c155135f49654ae5066e34a7b634a606e2afe6ed27"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -93,7 +93,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "99ff6523bc3725b6a21631b215c8d055e07a54c3e840941f54e49fdf7bd68a05"
+      "sha256": "b9192132b7d5965e644dba4e279582771ba93e498c81842cc19143e3a14b7b4f"
     },
     {
       "path": "src/boot/offline-switch-root.cpp",
@@ -162,6 +162,10 @@
     {
       "path": "tests/module-compress-contract.sh",
       "sha256": "b95d9152f048be0fe2984e82eafe6ffb5aa4ca16e8d09855b1c166e29e74c947"
+    },
+    {
+      "path": "tests/mainline-boot-status-contract.sh",
+      "sha256": "234c8a761f99bf1894349214a333192182f71d5bcbe46166bd6b5404e3ab4c69"
     }
   ],
   "root_selector_capability": {

@@ -4,16 +4,16 @@
 %global _uke_out %{_topdir}/native-kernel-out
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline-unstable
+Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 13
+%global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}-unstable
+%global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
-Summary: Unstable Linux 7.3 Uke kernel with the O82 display profile
+Summary: Mainline Linux 7.3 Uke kernel with the O82 display profile
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
 SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -47,7 +47,7 @@ Recommends: uke-displayport-audio >= 0.1.0-2
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-No package script activates a kernel or changes a slot. Build success does
+Boot writes require the explicitly enabled native updater. Build success does
 not establish physical tablet acceptance.
 
 %package core
@@ -184,13 +184,14 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
 
 %check
 uke_check_start=$SECONDS
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
+bash native-profile/tests/mainline-boot-status-contract.sh
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
@@ -203,8 +204,8 @@ bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
-test "$(readlink %{buildroot}/usr/lib/senemos/unstable-default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json
+test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -299,7 +300,7 @@ printf 'UKE_BUILD_STAGE package_checks elapsed_s=%d\n' "$((SECONDS-uke_check_sta
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
 install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
-cat > %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json <<'EOF'
+cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
 {
   "schema_version": 1,
   "package": "%{name}-singleboot",
@@ -311,7 +312,7 @@ cat > %{buildroot}/usr/share/senemos/uke/unstable-singleboot.json <<'EOF'
   "automatic_kernel_activation": false
 }
 EOF
-ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/unstable-default-boot.img
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
 export ARCH=arm64 LLVM=1
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
@@ -343,6 +344,11 @@ install -m644 %{uke_boot_userspace}/build-rpms.tsv "$bundle/build-rpms.tsv"
 mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
+
+%posttrans boot -p /bin/sh
+if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
+    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
+fi
 
 %files
 %doc native-profile/README.md
@@ -380,12 +386,13 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 %files singleboot
 %doc %{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 %license %{_licensedir}/%{name}-singleboot/LICENSE
-/usr/share/senemos/uke/unstable-singleboot.json
-/usr/lib/senemos/unstable-default-boot.img
+/usr/share/senemos/uke/singleboot.json
+/usr/lib/senemos/default-boot.img
 
 %changelog
-* Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
-- Parallelize unchanged module packaging and report build-stage elapsed times.
+* Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
+- Prepare the matched normal and userdata family from the reviewed Linux 7.3 port.
+- Preserve guarded activation and parallel module packaging.
 
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
 - Carry the reviewed USB/DP routing, audio, HDR and lane-ceiling changes from 7.2.12.
