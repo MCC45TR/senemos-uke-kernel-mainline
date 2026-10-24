@@ -1,5 +1,31 @@
 # Mainline display source profile
 
+24 October 2026 source candidate: release 25 avoids a GPU recovery/fault-capture
+lock cycle observed on POCO Pad X1 with release 22. Optional SMMU fault capture
+uses a nonblocking GPU lock so its completion can release a waiting GMU
+transaction. Ordinary fault reporting, uncontended capture and existing
+recovery remain. The actual-function host fixture fails before the change and
+passes afterward. This does not explain the initial GMU timeout or establish
+tablet recovery, suspend, graphics performance or endurance. Display, touch
+and charging settings are preserved.
+
+The touch source lock advances to existing owner `2b5530f2412a`, which buffers
+the CPIO export and reports service readiness after the first valid frame.
+Its reviewed archive and retained legacy source RPM remain hash-checked. Contact
+processing, calibration, firmware and the kernel transport are unchanged.
+
+24 October 2026 source candidate: release 24 retains the O82 connector range
+when fixed modes fall below the opted-in VRR floor. Opted-in requests from
+30 through 89 Hz now use the observed 90 Hz trial floor consistently for timing,
+DRM metadata and module-parameter readback. Zero still disables the experiment;
+fixed modes and the atomic, bonded-host and foreign-hardware checks remain.
+This carries the current diagnostic module's higher-floor behavior into the
+complete matched kernel package without a separate module loader or boot-note
+ABI change. The operator reported reduced Discover movement/resize stutter
+with the diagnostic range correction at 90 Hz; remaining stutter, continuous
+optical cadence, energy and endurance are unqualified. No permanent effect,
+governor, thermal or independent touch-rate change is included.
+
 23 October 2026 source candidate: release 21 retains the enabled boot-derived
 early framebuffer and stdout until MSM's existing firmware-aperture takeover.
 Its backlight link is removed so simpledrm neither waits for nor blanks the

@@ -101,4 +101,6 @@
 0101-qrtr-transport-ready-handshake.patch
 0102-uke-clock-kconfig-dependencies.patch
 0103-spi-geni-gpi-core-completion.patch
-0104-usb-ucsi-preserve-partner-altmode.patch
+0104-uke-confirm-sdp-budget-readback.patch
+0105-msm-fault-capture-nonblocking.patch
+0106-usb-ucsi-preserve-partner-altmode.patch
