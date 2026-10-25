@@ -7,6 +7,7 @@ outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
+	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh
 	bash tests/rgb-policy.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
@@ -17,7 +18,8 @@ validate: test-touch-protocol test-touch-transport
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
-	jq -e '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == "7.3.0-8-unstable" and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
+	abi="$$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' packaging/senemos-uke-linux-kernel-mainline.spec)"
+	jq -e --arg abi "$$abi" '.active_series == true and .dt_enabled == true and .tablet_tested == false and .kernel_release_changed == true and .kernel_release == $$abi and (.patches | length == 3)' manifests/llcc-source-candidate-20261020.json >/dev/null
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .files[] | [.path,.sha256] | @tsv' manifests/llcc-source-candidate-20261020.json)

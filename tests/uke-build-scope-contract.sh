@@ -28,12 +28,19 @@ for symbol in ARCH_BCM ARCH_MICROCHIP ARCH_NXP MTD ATA SCSI_HISI_SAS SCSI_MPT3SA
         echo "Unrelated board driver enabled: $symbol" >&2; exit 1
     fi
 done
+if grep -Eq '^CONFIG_SM_VIDEOCC_8550=[ym]$' "$config"; then
+    for symbol in SM_VIDEOCC_8550 VIDEO_QCOM_IRIS; do
+        grep -Fxq "CONFIG_$symbol=m" "$config" || {
+            echo 'Native video requires the reviewed modular VIDEOCC/Iris pair' >&2; exit 1;
+        }
+    done
+fi
 while IFS= read -r setting; do
     symbol=${setting%%=*}
     case $symbol in
         CONFIG_SM_*CC_*|CONFIG_CLK_*CC*|CONFIG_IPQ_*|CONFIG_MSM_*CC_*|CONFIG_SC_*CC_*|CONFIG_SDM_*CC_*|CONFIG_PINCTRL_*|CONFIG_INTERCONNECT_QCOM_*)
             case $symbol in
-                CONFIG_SM_GCC_CLIFFS|CONFIG_SM_GPUCC_CLIFFS|CONFIG_SM_DISPCC_8550|\
+                CONFIG_SM_GCC_CLIFFS|CONFIG_SM_GPUCC_CLIFFS|CONFIG_SM_DISPCC_8550|CONFIG_SM_VIDEOCC_8550|\
                 CONFIG_PINCTRL|CONFIG_PINCTRL_MSM|CONFIG_PINCTRL_CLIFFS|CONFIG_PINCTRL_QCOM_SPMI_PMIC|\
                 CONFIG_PINCTRL_LPASS_LPI|CONFIG_PINCTRL_SM8650_LPASS_LPI|CONFIG_PINCTRL_SINGLE|CONFIG_PINCTRL_GENERIC|\
                 CONFIG_INTERCONNECT_QCOM_BCM_VOTER|CONFIG_INTERCONNECT_QCOM_RPMH_POSSIBLE|CONFIG_INTERCONNECT_QCOM_RPMH|CONFIG_INTERCONNECT_QCOM_CLIFFS_USB) ;;
@@ -54,8 +61,8 @@ for path in drivers/clk/qcom/dispcc-sm8550 drivers/clk/qcom/gpucc-cliffs \
     drivers/soc/qcom/pmic_glink_altmode drivers/power/supply/qcom_battmgr; do
     grep -Fxq "$path.ko.zst" "$early" || { echo "Missing early Uke driver: $path" >&2; exit 1; }
 done
-if grep -E 'qcom_q6v5_pas|^drivers/(ata/|pci/|nvme/|platform/chrome/|scsi/mpt3sas/)' "$early"; then
-    echo 'Early modules include PAS or an unrelated board driver' >&2; exit 1
+if grep -E 'qcom_q6v5_pas|videocc-sm8550|^drivers/media/platform/qcom/iris/|^drivers/(ata/|pci/|nvme/|platform/chrome/|scsi/mpt3sas/)' "$early"; then
+    echo 'Early modules include PAS/video or an unrelated board driver' >&2; exit 1
 fi
 if [[ $# == 2 ]]; then
     modules=$2
