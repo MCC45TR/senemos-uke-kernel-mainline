@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 9
+%global senemos_build_release 10
 %else
 %global senemos_build_release 1
 %endif
@@ -391,6 +391,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-10
+- Combine native P010/Main10 encode input with the release-9 video power and DP AUX source.
+- Preserve per-codec format/profile, allocation and HFI stride validation.
+- Reserve a source-only follow-up; native firmware and codec acceptance remain open.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
 - Expose the standard DP AUX interface for receiver capability diagnostics.
 - Retain the video implementation and reviewed OEM video configuration gates.
