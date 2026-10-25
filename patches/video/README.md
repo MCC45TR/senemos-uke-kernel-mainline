@@ -3,8 +3,9 @@
 Date: 25 October 2026. Base: `470d18160dac9f9adf65ee8ff6f86472573504c1`,
 the physical POCO Pad X1 Linux 7.3.0-3 source identity.
 
-This directory remains outside the active source series. No Iris OF match,
-boot change, firmware payload or tablet codec acceptance is included.
+Native preparation applies this series after the display providers. It remains
+outside the base upstream patch list. The source now includes the Iris OF match
+and video graph; firmware and tablet codec acceptance remain separate.
 
 1. `0001`: rebase six earlier dormant VIDEOCC/Iris candidates from `67c9ee7a`
    onto Linux 7.3, including its generation-specific firmware descriptor and
@@ -27,15 +28,20 @@ boot change, firmware payload or tablet codec acceptance is included.
    retryable power teardown, checked PM references and an SM7675 oneshot IRQ.
 10. `0013`: codec/direction-specific dimensions, rate budgets and firmware
     control bounds, safe encoder pipe arithmetic and Q16 frame-rate preservation.
+11. `0014`: native binding for two GDSCs, two streams and four ordered
+    resets, with the existing SM8650 ABI retained.
+12. `0015`: native SM7675 match and a firmware-availability check before
+    resources and codec registration. Missing firmware does not start power.
 
 The offline overlay in `src/video/` resolves against the captured Linux 7.3
-handoff FDT while leaving video nodes disabled. The overlay also disables
+handoff FDT and enables the native clock/codec nodes. The overlay also disables
 the four OEM regulator GDSCs that overlap native VIDEOCC.
 The live baseline reports those old providers and CVP unbound; their `ok`
 DT status does not demonstrate a bound driver. CVP resources are preserved.
 The shared nonsecure IOMMU mapping uses the exact OEM ACTLR and common DMA range;
-equivalence to OEM split ownership still needs firmware/frame tests. The 192 MHz OPP is an initial
-source test point, not a supported performance ceiling.
+equivalence to OEM split ownership still needs firmware/frame tests. The OPPs
+192/240/338/366 MHz match the exact Uke module's SKU1 table and the same-SoC
+source; they are not measured performance results or SKU0-only frequencies.
 
 Sixteen actual-source host fixtures cover the new sequence, partial startup,
 every reset failure, retention/readback failures, teardown retries and IRQ/PM

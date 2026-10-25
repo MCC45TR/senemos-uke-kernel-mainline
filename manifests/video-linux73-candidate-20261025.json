@@ -4,10 +4,10 @@
   "base_commit": "470d18160dac9f9adf65ee8ff6f86472573504c1",
   "upstream_version": "7.3.0",
   "prior_candidate": "67c9ee7a02ad27f76beecd7d2590dffa11575acf",
-  "status": "inactive-arm64-compiled-source-candidate",
+  "status": "native-preparation-integration-candidate",
   "active_series": false,
-  "dt_enabled": false,
-  "iris_match_added": false,
+  "dt_enabled": true,
+  "iris_match_added": true,
   "firmware_packaged": false,
   "tablet_codec_tested": false,
   "patches": [
@@ -62,6 +62,14 @@
     {
       "path": "patches/video/0013-sm7675-codec-caps-and-q16-rates.patch",
       "sha256": "8e3acbccbcd1ecdbfb23615de58914c85a18c61290736c306134c365ddcf6127"
+    },
+    {
+      "path": "patches/video/0014-sm7675-native-iris-binding.patch",
+      "sha256": "32fa81a621aeac84cd9879b0a45c083d4cf7c5bdfe415f7e5e316075fea9c846"
+    },
+    {
+      "path": "patches/video/0015-sm7675-native-match-and-firmware-availability.patch",
+      "sha256": "317591794cb333505f79f7dcb2477206ee0a2d2597f8fddea6eb7b824408e5ab"
     }
   ],
   "checks": {
@@ -92,7 +100,11 @@
     "videocc_enabled_during_compile": true,
     "patch_reapplication_zero_fuzz": true,
     "offline_legacy_gdsc_ownership": true,
-    "codec_caps_q16_fixture": true
+    "codec_caps_q16_fixture": true,
+    "full_native_preparation": false,
+    "iris_binding_four_refusals": true,
+    "iris_legacy_binding_accepted": true,
+    "firmware_availability_fault_fixture": true
   },
   "sources": [
     {
@@ -175,5 +187,6 @@
     "Full kernel/RPM and recoverable native V4L2 validation",
     "Main10 encode, extended controls, lifecycle, performance and application matrix",
     "Failed PAS/power teardown during administrative removal remains unqualified"
-  ]
+  ],
+  "native_prepare_active": true
 }

@@ -9,7 +9,7 @@
 #define UKE_SLAVE_VENUS_CFG 548
 #define UKE_SLAVE_EBI1 512
 
-/* Inactive graph for offline validation against the actual Uke handoff FDT.
+/* Native candidate graph; target firmware and codec acceptance are separate.
  * OEM: MiCode 94c84aeb, cliffs.dtsi and cliffs-reserved-memory.dtsi.
  * Video consumer: OnePlus SM7675 1138e00f, cliffs-vidc.dtsi.
  * Shared nonsecure mapping follows upstream SM8650 Iris; its equivalence to
@@ -26,7 +26,7 @@
             vdd_mxc-supply = <&VDD_MXC_LEVEL>;
             vdd_mm_mxc-supply = <&VDD_MM_MXC_VOTER_LEVEL>;
             #power-domain-cells = <1>;
-            status = "disabled";
+            status = "okay";
         };
     };
     fragment@401 {
@@ -60,11 +60,14 @@
                 iommus = <&apps_smmu 0x1940 0>, <&apps_smmu 0x1947 0>;
                 dma-coherent;
                 operating-points-v2 = <&uke_iris_opps>;
-                status = "disabled";
+                status = "okay";
                 uke_iris_opps: opp-table {
                     compatible = "operating-points-v2";
-                    /* Initial source frequency; higher modes need measured admission. */
+                    /* Exact Uke module SKU1 table, also present in SKU0; no SKU0-only OPP. */
                     opp-192000000 { opp-hz = /bits/ 64 <192000000>; };
+                    opp-240000000 { opp-hz = /bits/ 64 <240000000>; };
+                    opp-338000000 { opp-hz = /bits/ 64 <338000000>; };
+                    opp-366000000 { opp-hz = /bits/ 64 <366000000>; };
                 };
             };
         };

@@ -44,6 +44,7 @@ git -C "$kernel" apply --check "$profile/patches/boot/0011-qcom-flash-torch-step
 git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+bash "$profile/src/video/prepare-source.sh" "$kernel"
 bash "$profile/tests/dpu-color-topology-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c"
 bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/gpu/drm/sysfb/simpledrm.c"
 bash "$profile/tests/output-bits-contract.sh" "$kernel"
@@ -65,6 +66,10 @@ fi
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
     "${usb_cpp[@]}" \
     -I "$kernel/include" "$profile/src/display/sm7675-uke-native-display-oem-modes.dtso" > "$output/display.dts"
+cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" \
+    "$profile/src/video/sm7675-uke-native-video.dtso" > "$output/video.dts"
+# One overlay application keeps the existing display/USB adaptation transaction.
+sed '/^\/dts-v1\/;/d; /^\/plugin\/;/d' "$output/video.dts" >> "$output/display.dts"
 dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
 {
     printf '#define UKE_NATIVE_PANEL_SELECTOR "msm_drm.dsi_display0=qcom,mdss_dsi_o82_42_02_0b_dualdsi_dsc_vid:"\n'

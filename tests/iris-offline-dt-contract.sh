@@ -11,9 +11,9 @@ cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" \
 dtc -q -@ -I dts -O dtb -o "$work/video.dtbo" "$work/video.dts"
 fdtoverlay -i "$baseline" -o "$work/merged.dtb" "$work/video.dtbo"
 iris=/soc/video-codec@aa00000
-test "$(fdtget -t s "$work/merged.dtb" "$iris" status)" = disabled
+test "$(fdtget -t s "$work/merged.dtb" "$iris" status)" = okay
 test "$(fdtget -t s "$work/merged.dtb" /soc/qcom,vidc@aa00000 status)" = disabled
-test "$(fdtget -t s "$work/merged.dtb" /soc/clock-controller@aaf0000 status)" = disabled
+test "$(fdtget -t s "$work/merged.dtb" /soc/clock-controller@aaf0000 status)" = okay
 for suffix in 804c 80a4 8078 80cc; do
     node=/soc/qcom,gdsc@aaf$suffix
     test "$(fdtget -t s "$work/merged.dtb" "$node" status)" = disabled

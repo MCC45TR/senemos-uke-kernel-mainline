@@ -126,12 +126,24 @@ CPP
 cat > "$work/pas.cpp" <<'CPP'
 #include <cassert>
 #include <cerrno>
+#include <cstdint>
 #define IRIS_PAS_ID 9
 struct tz_cp_config { unsigned cp_start, cp_size, cp_nonpixel_start, cp_nonpixel_size; };
 struct platform { unsigned tz_cp_config_data_size; const tz_cp_config *tz_cp_config_data; };
 struct iris_core { void *dev; bool fw_loaded; const platform *iris_platform_data; };
 static int download_error, auth_error, protect_error, shutdown_error;
 static unsigned downloads, auths, protects, stops;
+struct firmware {};
+static const firmware available_firmware{};
+static int available_error;
+static unsigned availability_checks, firmware_releases;
+#define IS_ERR(ptr) (reinterpret_cast<intptr_t>(ptr) < 0)
+#define PTR_ERR(ptr) static_cast<int>(reinterpret_cast<intptr_t>(ptr))
+static const firmware *iris_detect_firmware(iris_core *, const char **) {
+    ++availability_checks;
+    return available_error ? reinterpret_cast<const firmware *>(static_cast<intptr_t>(available_error)) : &available_firmware;
+}
+static void release_firmware(const firmware *fw) { assert(fw==&available_firmware); ++firmware_releases; }
 static int iris_load_fw_to_memory(iris_core *) { ++downloads; return download_error; }
 static int qcom_pas_auth_and_reset(int id) { assert(id == 9); ++auths; return auth_error; }
 static int qcom_scm_mem_protect_video_var(unsigned, unsigned, unsigned, unsigned) {
@@ -140,13 +152,19 @@ static int qcom_scm_mem_protect_video_var(unsigned, unsigned, unsigned, unsigned
 static int qcom_pas_shutdown(int id) { assert(id == 9); ++stops; return shutdown_error; }
 #define dev_err(...) ((void)0)
 CPP
-for function in iris_fw_load iris_fw_unload; do
+for function in iris_fw_check_available iris_fw_load iris_fw_unload; do
     awk -v name="$function" '$0 ~ "^int " name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
         "$iris/iris_firmware.c" >> "$work/pas.cpp"
 done
 cat >> "$work/pas.cpp" <<'CPP'
 int main() {
     tz_cp_config config{}; platform data{1, &config}; iris_core core{nullptr, false, &data};
+    available_error=-ENOENT;
+    assert(iris_fw_check_available(&core)==-ENOENT && availability_checks==1 && !firmware_releases);
+    assert(!downloads && !auths && !protects && !stops && !core.fw_loaded);
+    available_error=0;
+    assert(iris_fw_check_available(&core)==0 && availability_checks==2 && firmware_releases==1);
+    assert(!downloads && !auths && !protects && !stops && !core.fw_loaded);
     assert(iris_fw_unload(&core) == 0 && !stops);
     download_error = -ENOENT;
     assert(iris_fw_load(&core) == -ENOENT && !auths && !core.fw_loaded);
