@@ -7,13 +7,13 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 4
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Linux 7.3 Uke kernel with the O82 display profile
+Summary: Mainline Linux 7.3 Uke kernel with O82 display and Cliffs video
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
 SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -390,6 +390,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+- Integrate the checked native Cliffs Iris, VIDEOCC and shared SMMU path.
+- Preserve the published release-4 display, USB and RGB source changes.
+- Require private firmware before codec registration; target acceptance remains open.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
 - Keep the single internal and external Uke pipelines on separate CRTCs.
 - Prefer the spare color mixer and preserve another stream's DSPP ownership.

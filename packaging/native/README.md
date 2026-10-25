@@ -1,4 +1,14 @@
-# Mainline display source profile
+# Mainline native source profile
+
+25 October 2026, Linux 7.3.0-5 candidate: the native Cliffs Iris path adds
+checked firmware mappings, controller/reset/IRQ ownership and the exact Uke
+VIDEOCC/SMMU graph. It retains the published release-4 display, USB and RGB
+changes. Firmware availability is checked before codec registration; no OEM
+firmware blob is part of this source package. The graph uses the four source
+OPPs shared by the exact Uke module and the inspected Cliffs SKU tables.
+Source fixtures and AArch64 objects pass. Full kernel/RPM and tablet codec,
+power, precision, performance and application acceptance remain open.
+
 
 25 October 2026, Linux 7.3 source release 4: the kernel owns the Uke RGB LED
 through an LED consumer and managed LPG supplier link. Battery capacity comes

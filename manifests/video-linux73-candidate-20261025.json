@@ -189,5 +189,6 @@
     "Failed PAS/power teardown during administrative removal remains unqualified"
   ],
   "native_prepare_active": true,
-  "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11"
+  "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
+  "candidate_kernel_release": "7.3.0-5"
 }
