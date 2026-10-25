@@ -385,6 +385,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 
 %changelog
 * Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
+- Create DSI and DP connector state through the Linux 7.3 factory callback.
 - Parallelize unchanged module packaging and report build-stage elapsed times.
 
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
