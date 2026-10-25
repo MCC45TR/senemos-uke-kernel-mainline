@@ -11,11 +11,15 @@ cat > "$work/check.cpp" <<'CPP'
 #include <cstdio>
 #define ERR_PTR(e) reinterpret_cast<drm_connector *>(static_cast<intptr_t>(e))
 #define IS_ERR(p) (reinterpret_cast<uintptr_t>(p)>=static_cast<uintptr_t>(-4095L))
+#define ERR_CAST(p) reinterpret_cast<drm_connector *>(p)
 #define BIT(n) (1U << (n))
 constexpr unsigned DRM_MODE_COLORIMETRY_BT2020_RGB=9;
 struct drm_connector;
 struct drm_connector_state { unsigned max_requested_bpc=0, max_bpc=0; } state;
-struct drm_connector_funcs { void (*reset)(drm_connector *); };
+struct drm_connector_funcs {
+    void (*reset)(drm_connector *)=nullptr;
+    drm_connector_state* (*atomic_create_state)(drm_connector *);
+};
 struct drm_connector { drm_connector_state *state; drm_connector_funcs *funcs; };
 struct device_node { bool uke; } node;
 struct device { device_node *of_node; };
@@ -26,8 +30,11 @@ struct msm_dp { drm_device *drm_dev; platform_device *pdev; bool is_edp; } dp{&d
 int resets=0,properties=0,subconnectors=0,property_error=0;
 int colorspaces=0,color_attachments=0,hdr_attachments=0,color_error=0;
 bool allocation_failure=false;
-void reset(drm_connector *c) { ++resets; if(!allocation_failure)c->state=&state; }
-drm_connector_funcs funcs{reset};
+drm_connector_state* create_state(drm_connector*) {
+    ++resets;
+    return allocation_failure?reinterpret_cast<drm_connector_state *>(static_cast<intptr_t>(-ENOMEM)):&state;
+}
+drm_connector_funcs funcs{nullptr,create_state};
 drm_connector connector{nullptr,&funcs},*bridge_result=&connector;
 drm_connector *drm_bridge_connector_init(drm_device *,drm_encoder *) { return bridge_result; }
 bool of_device_is_compatible(device_node *n,const char *) { return n->uke; }
