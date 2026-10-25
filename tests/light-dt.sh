@@ -37,6 +37,9 @@ done
 rgb=$pmic/pwm/multi-led
 [[ $(fdtget -t s "$file" "$rgb" default-state) == off ]]
 [[ $(fdtget -t s "$file" "$rgb" label) == uke:rgb:status ]]
+[[ $(fdtget -t s "$file" /rgb-notifications compatible) == senemos,uke-rgb ]]
+[[ $(fdtget -t x "$file" /rgb-notifications leds) == "$(fdtget -t x "$file" "$rgb" phandle)" ]]
+if fdtget "$file" "$rgb" linux,default-trigger >/dev/null 2>&1; then exit 1; fi
 for channel in 1 2 3; do
     [[ $(fdtget -t u "$file" "$rgb/led@$channel" reg) == "$channel" ]]
     [[ $(fdtget -t u "$file" "$rgb/led@$channel" color) == "$channel" ]]

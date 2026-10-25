@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "bc5e6b044e66c5b54bbf7bc2ee5d7ec801e4d03e146147fcfb4ea6ff74dcf6a3"
+      "sha256": "88fb4c18f8bece34746f7907d5912e0260604f31e7093e83f5adb24d560dee7e"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
