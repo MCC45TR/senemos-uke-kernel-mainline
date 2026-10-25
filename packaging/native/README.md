@@ -1,5 +1,23 @@
 # Mainline native source profile
 
+26 October 2026, Linux 7.3.0-14 candidate: opt-in external RGB DSC accepts
+8/10-bit input at 8 compressed bits per pixel, one or two source-bounded slices
+and compatible receiver capabilities. Policy changes require disconnection.
+The driver checks FEC detection and DSC enable responses, uses upstream RC/PPS
+helpers and preserves the downstream HDMI TMDS budget. PPS register writes
+stop at the 88-byte RGB field boundary before the audio register bank.
+Host capability, geometry, failure, parity and atomic-state checks pass.
+Compression is off by default; native packaging, visible DSC output, shared
+DPU resources and reconnect stability remain unqualified. A 1440p monitor
+does not qualify 4K output, and DSC does not increase its HDMI TMDS limit.
+No MST, forced Type-C pin assignment or chroma-conversion path is added.
+
+25 October 2026, release-13 delivery: signed COPR 11206321 installs through DNF
+and boots with matching modules. One RTC-woken s2idle trial preserves valid
+battery properties and synchronized read-only 70/80 charge settings without
+USB reconstruction. This supersedes the pending delivery statement below;
+gesture entry, keyboard wake and complete display resume remain open.
+
 25 October 2026, Linux 7.3.0-13 candidate: release 12 resumes from a physical
 USB mouse wake, but suspending an in-flight battery request permanently latches
 the transport's EPIPE guard. Drain its serialized owner before marking the

@@ -154,6 +154,30 @@
     {
       "path": "patches/display/0058-uke-displayport-downstream-tmds-budget.patch",
       "sha256": "f95aca41aac201e77222191384bc71aead18678584ec57e29a38788734a6ccf6"
+    },
+    {
+      "path": "src/display/prepare-source.sh",
+      "sha256": "72eb81e1ea4c181f529d73ba6673193a81dc712aa4fb4861144b62369d9e88bd"
+    },
+    {
+      "path": "src/display/dp_dsc.c",
+      "sha256": "ff0e048226ec605e2becc440fc48c14ef8493b06e82a2611e4927374d3164e7a"
+    },
+    {
+      "path": "src/display/dp_dsc.h",
+      "sha256": "b38f54d26297ba842a4dd7db9b05d44fe8b2c360fa3ae56509fb1056d884a061"
+    },
+    {
+      "path": "tests/dp-dsc-contract.sh",
+      "sha256": "cb2b94ae2ca0820ebd3b95f7fc6904a24059803b38d523eb5bf72e7dec8b0a3f"
+    },
+    {
+      "path": "patches/display/0059-uke-displayport-rgb-dsc-fec.patch",
+      "sha256": "278e53faf68b3d5ee2746d5df951e5775ee565b706432e7e79e6bed42858f3dd"
+    },
+    {
+      "path": "tests/dp-dsc-state-contract.sh",
+      "sha256": "9992a53bec32610cdc18ff549d01582070559fd4f85234f68013b8e9fcea6b54"
     }
   ],
   "baseline_files": [
@@ -276,7 +300,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-13",
+  "kernel_release": "7.3.0-14",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

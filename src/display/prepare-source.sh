@@ -22,6 +22,9 @@ paths=(
     include/drm/uke-o82-mode.h
     include/drm/uke-o82-avr.h
 )
+if [[ $version == 7.3.0 ]]; then
+    paths+=(drivers/gpu/drm/msm/dp/dp_dsc.c drivers/gpu/drm/msm/dp/dp_dsc.h)
+fi
 for path in "${paths[@]}"; do [[ ! -e $kernel/$path ]]; done
 git -C "$kernel" apply --check "$patch"
 git -C "$kernel" apply "$patch"
@@ -86,6 +89,11 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
 done
+if [[ $version == 7.3.0 ]]; then
+    patch=$here/../../patches/display/0059-uke-displayport-rgb-dsc-fec.patch
+    git -C "$kernel" apply --check "$patch"
+    git -C "$kernel" apply "$patch"
+fi
 for path in "${paths[@]}"; do
     source=${path##*/}
     [[ $source != uke-o82-mode.h ]] || source=o82-mode.h

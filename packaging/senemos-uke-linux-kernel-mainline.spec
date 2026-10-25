@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 13
+%global senemos_build_release 14
 %else
 %global senemos_build_release 1
 %endif
@@ -224,6 +224,8 @@ CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/qrtr-handshake-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
+CC=clang bash native-profile/tests/dp-dsc-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/dp-dsc-state-contract.sh drivers/gpu/drm/msm/dp/dp_display.c
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-protection-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
@@ -391,6 +393,9 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-14
+- Add default-off RGB DSC with checked FEC, bounded PPS registers and atomic resource state.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
 - Drain serialized battery requests before marking the Uke transport suspended.
 - Keep ambiguous delivery blocked and test the in-flight reply during suspend.

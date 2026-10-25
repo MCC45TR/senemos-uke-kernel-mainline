@@ -7,14 +7,16 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.3.0.json)
 
-The 25 October source targets signed Linux 7.3 with the retained Uke display,
-USB, battery and video adaptations. Normal release 12 boots on POCO Pad X1
-with matching modules, active desktop and touchscreen services. A physical
-USB mouse wakes s2idle, but battery queries become unavailable after resume.
-Release 13 drains serialized battery requests before suspending their transport;
-its package and tablet validation remain pending. Double-tap gesture entry,
-external DP DSC/FEC,
-four-lane negotiation and DDC/CI remain open. Historical results below retain
+The 26 October source targets signed Linux 7.3 with the retained Uke display,
+USB, battery and video adaptations. Signed normal release 13 boots on POCO
+Pad X1 through DNF with matching modules, desktop and touchscreen services.
+Battery telemetry remains synchronized after one RTC-woken s2idle trial;
+release 12's physical USB mouse wake is a separate earlier result.
+Candidate 14 adds disconnected, default-off RGB DSC/FEC controls and checked
+receiver negotiation. Host capability, PPS register-boundary, failure and
+atomic-state checks pass; native package and physical compression validation
+remain pending. Double-tap gesture entry, four-lane negotiation, DDC/CI and
+sustained accessory stability remain open. Historical results below retain
 their exact older kernel identities.
 
 ## Status — 18 October 2026
