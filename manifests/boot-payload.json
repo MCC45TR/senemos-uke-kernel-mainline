@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-23",
+  "date": "2026-10-25",
   "source_date_epoch": 1792058622,
   "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance; unstable release-8 scopes fixed-board drivers, early modules and DT compilation to Uke while retaining the current touch, QRTR, display and root contracts; source checks do not establish hardware acceptance",
   "firmware_included": false,
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "104d13618997b1fe4352e1f046e299028307e131a580ae6a35733b7d9d092df3"
+      "sha256": "fadc7c3ba2910e1be2ac4f898b65f7a69afd62ed4bf1141df366411c64544853"
     },
     {
       "path": "tests/native-firewall-contract.sh",
