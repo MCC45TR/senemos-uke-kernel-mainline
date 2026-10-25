@@ -1,5 +1,26 @@
 # Mainline display source profile
 
+25 October 2026, Linux 7.3 source release 4: the kernel owns the Uke RGB LED
+through an LED consumer and managed LPG supplier link. Battery capacity comes
+from `qcom-battmgr-bat`: below 15%, red breathes for three seconds and stays off
+for two; below 5%, red is on for one second and off for two without a fade.
+The fixed `/dev/uke-rgb` ABI accepts bounded HEX/brightness, automatic-mode and
+ten-second color-wheel requests. A trusted future front-camera stream owner
+can request a two-second green breath through `uke_rgb_front_camera_active()`;
+no camera pipeline is connected by this revision. Camera indication takes
+priority over a test, then battery warnings, manual color and off.
+
+Control 1.12.0 is the confined userspace broker. The kernel refuses competing
+brightness, intensity and trigger stores while the consumer is bound. Closing
+the exclusive writer restores automatic battery policy. Full suspend and
+shutdown request off; resume refreshes capacity. No unreviewed SDAM/PBS hardware
+pattern is enabled, so animation during full suspend is not implemented.
+The original LPG driver and low PWM ceiling, 8/511, remain unchanged.
+Host policy, ioctl lifetime, multicolor ownership and ARM64 header/API syntax
+checks pass; this is not a kernel-module/Image/RPM build or tablet result.
+Visible color, timing, electrical/thermal behavior, supplier removal and suspend
+still require validation with the matched kernel and SELinux-enforcing broker.
+
 25 October 2026, Linux 7.3 source release 2: the guarded Uke torch/RGB profile
 and bounded flash-driver cleanup are integrated from the reviewed 7.2.12 work.
 Torch-only devices now expose real 5 mA per-channel steps: the retained 20 mA

@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "169da2cb7157c4b288975110be9e95dd0209154736ee5a7f86e3d2fa2a03c82c"
+      "sha256": "88fb4c18f8bece34746f7907d5912e0260604f31e7093e83f5adb24d560dee7e"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -78,6 +78,30 @@
     {
       "path": "tests/root-selector-contract.cpp",
       "sha256": "ba1d6730de0c1f889ace858e6eff5b03c117457642b9e07b91ca907150915261"
+    },
+    {
+      "path": "patches/display/0054-uke-independent-display-crtcs.patch",
+      "sha256": "dda3aa0a500b4947d905d7bb16654ae4cea6866240d53ff475dcabe8654da544"
+    },
+    {
+      "path": "patches/display/0055-ucsi-debugfs-response-bounds.patch",
+      "sha256": "3ff16724df7522c53c4ad64a00d50ef80f01ffc9f1075ed68b7d95242db57192"
+    },
+    {
+      "path": "tests/dpu-output-affinity-contract.sh",
+      "sha256": "3c8fa906e972470cacee7a8c726314827af81bbeef29330dd2ec6e72c0c84c17"
+    },
+    {
+      "path": "tests/ucsi-debugfs-bounds-contract.sh",
+      "sha256": "09813b84e1e08aadfdd07ace1ab1c6d25a34b73e2df0ad9bf6584d9b795ba5d7"
+    },
+    {
+      "path": "patches/display/0056-uke-preserve-bonded-panel-resources.patch",
+      "sha256": "317151c892b7f92d6690d4e7d5f72425ee6f24d6ea48cd9df2a5315e484475c6"
+    },
+    {
+      "path": "tests/dpu-mixer-reservation-contract.sh",
+      "sha256": "6d26cca722204407fc845c0c9416665f96e2b00bf56fb13451c9610901d8baa8"
     }
   ],
   "baseline_files": [

@@ -5,6 +5,9 @@ SHELL := /bin/bash
 version := 7.3.0
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
+	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
+	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
+	bash tests/rgb-policy.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
@@ -71,7 +74,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
+	git archive HEAD src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
