@@ -1,5 +1,13 @@
 # Mainline display source profile
 
+25 October 2026, source release 42: torch-only LED class devices expose real
+5 mA per-channel steps. The retained Uke 20 mA total ceiling therefore provides
+native levels 0/1/2 (off/10/20 mA total), used by Control 1.11.0 as 0/50/100%.
+Flash-capable devices retain the existing scale and camera API. The new host
+fixture exercises the actual setup and callback; kernel build and tablet
+electrical/thermal/lifecycle validation remain pending. No voltage, current
+ceiling, strobe or RGB peak-current setting is increased.
+
 25 October 2026, release 41: the reviewed Uke PMXR2230 graph uses original
 upstream flash/LPG drivers. Rear channels 1 and 4 share a 20 mA torch-only
 ceiling; flash/strobe is not exposed. RGB and torch register off by default.

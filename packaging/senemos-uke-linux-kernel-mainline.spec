@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 41
+%global senemos_build_release 42
 %else
 %global senemos_build_release 1
 %endif
@@ -379,6 +379,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-42
+- Expose real torch current steps within the retained 20 mA total ceiling.
+- Preserve the flash-capable LED scale and camera interface.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-38
 - Restore the inherited-framebuffer console after the unsuccessful release-37 trial.
 - Observe Uke display boot ownership without changing power or clock sequencing.
