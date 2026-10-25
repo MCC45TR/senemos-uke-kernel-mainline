@@ -70,6 +70,10 @@
     {
       "path": "patches/video/0015-sm7675-native-match-and-firmware-availability.patch",
       "sha256": "317591794cb333505f79f7dcb2477206ee0a2d2597f8fddea6eb7b824408e5ab"
+    },
+    {
+      "path": "patches/video/0017-cliffs-video-config-clocks.patch",
+      "sha256": "c5796ac0342b7a7cb2cae95a130ccd1e0880e28a1cc5aa68f2426a820d6121ca"
     }
   ],
   "checks": {
@@ -104,7 +108,9 @@
     "full_native_preparation": false,
     "iris_binding_four_refusals": true,
     "iris_legacy_binding_accepted": true,
-    "firmware_availability_fault_fixture": true
+    "firmware_availability_fault_fixture": true,
+    "video_config_gate_fault_fixture": true,
+    "aarch64_gcc_video_gate_object": true
   },
   "sources": [
     {
@@ -190,5 +196,5 @@
   ],
   "native_prepare_active": true,
   "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
-  "candidate_kernel_release": "7.3.0-6"
+  "candidate_kernel_release": "7.3.0-8"
 }

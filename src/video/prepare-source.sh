@@ -27,4 +27,5 @@ bash "$root/tests/video-reset-error-contract.sh" "$kernel/drivers/clk/qcom"
 bash "$root/tests/videocc-vote-contract.sh" "$kernel/drivers/clk/qcom/uke-videocc-votes.c"
 bash "$root/tests/videocc-retention-contract.sh" "$kernel/drivers/clk/qcom/videocc-sm8550.c"
 bash "$root/tests/video-icc-topology-contract.sh" "$kernel"
+bash "$root/tests/video-gcc-config-contract.sh" "$kernel/drivers/clk/qcom/gcc-cliffs.c"
 printf 'Native Cliffs source prepared; firmware and target acceptance remain separate\n'
