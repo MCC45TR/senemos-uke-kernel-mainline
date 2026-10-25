@@ -23,16 +23,29 @@ boot change, firmware payload or tablet codec acceptance is included.
 7. `0010`: reject a missing/deferred controller parent rather than allowing
    the generic GDSC optional-supply lookup to omit it.
 8. `0011`: propagate shared Qualcomm reset transport and callback errors.
+9. `0012`: exact ordered controller reset and provider-owned retention,
+   retryable power teardown, checked PM references and an SM7675 oneshot IRQ.
 
 The offline overlay in `src/video/` resolves against the captured Linux 7.3
-handoff FDT while leaving video nodes disabled. The shared nonsecure IOMMU
-mapping now uses the exact OEM ACTLR and the common valid DMA range;
+handoff FDT while leaving video nodes disabled. The overlay also disables
+the four OEM regulator GDSCs that overlap native VIDEOCC.
+The live baseline reports those old providers and CVP unbound; their `ok`
+DT status does not demonstrate a bound driver. CVP resources are preserved.
+The shared nonsecure IOMMU mapping uses the exact OEM ACTLR and common DMA range;
 equivalence to OEM split ownership still needs firmware/frame tests. The 192 MHz OPP is an initial
 source test point, not a supported performance ceiling.
 
-Remaining platform work includes controller retention/reset ordering,
-legacy/native provider ownership, SKU-specific HFI capabilities and target
+Fifteen actual-source host fixtures cover the new sequence, partial startup,
+every reset failure, retention/readback failures, teardown retries and IRQ/PM
+ownership. Iris and VIDEOCC compile with `CONFIG_SM_VIDEOCC_8550=m` and
+`-Werror`; this checks the real exported-helper call rather than its stub.
+
+Remaining platform work includes SKU-specific HFI capabilities and target
 validation of firmware/addressing/teardown. Complete full kernel/RPM validation and a recoverable
 firmware/native V4L2 trial before activating this source series. Main10 encode,
 extended modes, lifecycle, sustained performance and applications remain
 separate required work.
+
+A failed domain `put_sync` consumes its reference and latches an error; the
+candidate retains firmware mappings instead of guessing a safe recovery.
+Administrative unbind after failed PAS or power teardown remains unqualified.

@@ -14,6 +14,18 @@ iris=/soc/video-codec@aa00000
 test "$(fdtget -t s "$work/merged.dtb" "$iris" status)" = disabled
 test "$(fdtget -t s "$work/merged.dtb" /soc/qcom,vidc@aa00000 status)" = disabled
 test "$(fdtget -t s "$work/merged.dtb" /soc/clock-controller@aaf0000 status)" = disabled
+for suffix in 804c 80a4 8078 80cc; do
+    node=/soc/qcom,gdsc@aaf$suffix
+    test "$(fdtget -t s "$work/merged.dtb" "$node" status)" = disabled
+    test "$(fdtget -t x "$work/merged.dtb" "$node" reg)" = \
+         "$(fdtget -t x "$baseline" "$node" reg)"
+done
+test "$(fdtget -t s "$work/merged.dtb" "$iris" reset-names)" = 'bus xo core vcodec'
+videocc=$(fdtget -t x "$baseline" /soc/clock-controller@aaf0000 phandle)
+test "$(fdtget -t x "$work/merged.dtb" "$iris" power-domains)" = "$videocc 0 $videocc 1"
+# CVP remains the baseline unbound node; its shared reset needs separate acceptance.
+test "$(fdtget -t x "$work/merged.dtb" /soc/qcom,cvp@ab00000 resets)" = \
+     "$(fdtget -t x "$baseline" /soc/qcom,cvp@ab00000 resets)"
 test "$(fdtget -t x "$work/merged.dtb" "$iris" reg)" = 'aa00000 f0000'
 test "$(fdtget -t x "$work/merged.dtb" "$iris" interrupts)" = '0 ae 4'
 memory=/reserved-memory/video_region@9899c000
@@ -23,4 +35,4 @@ test "$(fdtget -t x "$work/merged.dtb" "$iris" memory-region)" = \
      "$(fdtget -t x "$baseline" "$memory" phandle)"
 smmu=$(fdtget -t x "$baseline" /soc/apps-smmu@15000000 phandle)
 test "$(fdtget -t x "$work/merged.dtb" "$iris" iommus)" = "$smmu 1940 0 $smmu 1947 0"
-printf 'Live-FDT offline graph: resources resolved, reservation retained, all video nodes disabled\n'
+printf 'Live-FDT offline graph: native domains/resets resolved, OEM GDSCs disabled, reservation/CVP retained\n'

@@ -69,4 +69,21 @@
             };
         };
     };
+    /* Native VIDEOCC owns these same registers; do not bind OEM regulators. */
+    fragment@403 {
+        target = <&video_cc_mvs0_gdsc>;
+        __overlay__ { status = "disabled"; };
+    };
+    fragment@404 {
+        target = <&video_cc_mvs0c_gdsc>;
+        __overlay__ { status = "disabled"; };
+    };
+    fragment@405 {
+        target = <&video_cc_mvs1_gdsc>;
+        __overlay__ { status = "disabled"; };
+    };
+    fragment@406 {
+        target = <&video_cc_mvs1c_gdsc>;
+        __overlay__ { status = "disabled"; };
+    };
 };

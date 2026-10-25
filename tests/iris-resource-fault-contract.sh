@@ -19,6 +19,7 @@ struct vpu_ops {
     int (*power_on_hw)(iris_core *);
     void (*power_off_hw)(iris_core *);
     int (*power_off_controller)(iris_core *);
+    int (*power_off)(iris_core *){};
 };
 struct icc_info { const char *name; unsigned long bw_min_kbps, bw_max_kbps; };
 struct icc_bulk_data { const char *name; unsigned long avg_bw, peak_bw; };
@@ -33,7 +34,9 @@ struct iris_core {
     int irq;
     unsigned intr_status;
     const iris_hfi_sys_ops *hfi_sys_ops;
+    int state{};
 };
+enum { IRIS_CORE_ERROR = 2 };
 static std::vector<std::string> events;
 static int fault, bulk_calls;
 static int record(const char *name, int stage) {
@@ -66,7 +69,9 @@ static int iris_set_hw_state(iris_core *, bool resume) { return record(resume ? 
 static int iris_vpu_boot_firmware(iris_core *) { return record("boot", 6); }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return record("hwmode", 7); }
 static int powercollapse(iris_core *) { return record("pc", 8); }
-static void iris_vpu_power_off(iris_core *) { record("power-off", 0); }
+static int iris_vpu_power_off(iris_core *) { return record("power-off", 9); }
+static void iris_vpu_enable_irq(iris_core *) {}
+static int native_off(iris_core *) { return record("native-off", 10); }
 CPP
 awk '/^int iris_hfi_pm_resume\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
     "$iris/iris_hfi_common.c" >> "$work/check.cpp"
@@ -101,6 +106,20 @@ int main() {
     }
     fault = 0; core.power.icc_bw = 0;
     assert(iris_hfi_pm_resume(&core) == 0);
+    vpu_ops native=ops; native.power_off=native_off;
+    const platform_data native_platform{&native, limits};
+    core.iris_platform_data=&native_platform;
+    for (int stage=2; stage<=4; ++stage) {
+        fault=stage; events.clear(); core.power.icc_bw=0;
+        assert(iris_vpu_power_on(&core)==-EREMOTEIO);
+        assert(std::count(events.begin(),events.end(),"native-off")==1);
+        assert(std::count(events.begin(),events.end(),"hardware-off")==0);
+        assert(std::count(events.begin(),events.end(),"controller-off")==0);
+        assert(events.back()=="icc-off");
+    }
+    fault=0; events.clear(); core.power.icc_bw=0;
+    assert(iris_vpu_power_on(&core)==0);
+    assert(std::count(events.begin(),events.end(),"irq-on")==0);
 }
 CPP
 "${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror \

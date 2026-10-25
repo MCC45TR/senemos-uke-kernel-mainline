@@ -54,6 +54,10 @@
     {
       "path": "patches/video/0011-qcom-reset-error-propagation.patch",
       "sha256": "5849929786893dc56b217d5aff2ade545fdc5b352d3a6d48e0af8205bb4c7cde"
+    },
+    {
+      "path": "patches/video/0012-sm7675-checked-power-and-oneshot-irq.patch",
+      "sha256": "83060fc53740f8e8abc18eb655e6c446eb535ce5a0015b72cb82062d898a5261"
     }
   ],
   "checks": {
@@ -77,7 +81,13 @@
     "video_smmu_actlr_aperture_fixture": true,
     "required_domain_supply_fault_fixture": true,
     "reset_error_propagation_fixture": true,
-    "actual_source_fixture_count": 12
+    "actual_source_fixture_count": 15,
+    "controller_retention_fault_fixture": true,
+    "controller_reset_retry_fixture": true,
+    "oneshot_irq_pm_fixture": true,
+    "videocc_enabled_during_compile": true,
+    "patch_reapplication_zero_fuzz": true,
+    "offline_legacy_gdsc_ownership": true
   },
   "sources": [
     {
@@ -141,13 +151,14 @@
     "python_scope": "unmodified pinned upstream host-only schema tool"
   },
   "remaining": [
-    "Controller retention and ordered reset sequencing",
-    "Legacy regulator GDSC and native provider ownership",
+    "Physical controller retention, ordered reset and PM/error recovery qualification",
+    "Physical native VIDEOCC domain/supply ownership validation",
     "PAS/HFI target boot and firmware UC/mmap/device-region runtime validation",
     "Validate shared nonsecure IOMMU behavior and error teardown on target",
     "Replace inherited capability and scheduler limits with exact SKU/firmware intersection",
     "Complete native graph preparation and gated source activation",
     "Full kernel/RPM and recoverable native V4L2 validation",
-    "Main10 encode, extended controls, lifecycle, performance and application matrix"
+    "Main10 encode, extended controls, lifecycle, performance and application matrix",
+    "Failed PAS/power teardown during administrative removal remains unqualified"
   ]
 }

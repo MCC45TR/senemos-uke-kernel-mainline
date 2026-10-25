@@ -93,7 +93,7 @@ static void writel(u32 value, void *where) {
     ++writes;
 }
 C
-sed '/^#include /d' "$iris/iris_sm7675_memory.c" >> "$work/check.c"
+sed '/^\/\* Native PM references/,$d; /^#include /d' "$iris/iris_sm7675_memory.c" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static struct platform data = {.dma_mask = 0xdfffffff};
 static struct iris_core core;
@@ -145,6 +145,13 @@ int main(void) {
     assert(!payload[1] && !payload[13] && !payload[14] && !payload[1023]);
     assert(iris_sm7675_fw_memory_init(&core) == -EBUSY && allocs == 1 && maps == 3);
     assert(iris_sm7675_program_bootup_registers(&core) == 0 && writes == 3);
+    core.fw_memory->power = 1;
+    assert(iris_sm7675_fw_memory_deinit(&core) == -EBUSY && !unmaps && !dma_frees);
+    core.fw_memory->power = 0; core.fw_memory->off_step = 1;
+    assert(iris_sm7675_fw_memory_deinit(&core) == -EBUSY && !unmaps);
+    core.fw_memory->off_step = 0; core.fw_memory->power_error = -EIO;
+    assert(iris_sm7675_fw_memory_deinit(&core) == -EBUSY && !unmaps);
+    core.fw_memory->power_error = 0;
     assert(iris_sm7675_fw_memory_deinit(&core) == 0 && dma_frees == 1 && frees == 1); clean();
     assert(iris_sm7675_fw_memory_deinit(&core) == 0 && unmaps == 3);
     reset(); map_fault = 3; unmap_fault = 1;

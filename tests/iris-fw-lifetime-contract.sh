@@ -12,12 +12,12 @@ struct iris_core;
 struct firmware_data { void (*init_hfi_ops)(iris_core *); };
 struct iris_core {
     void *dev{}; int lock{}, state{}, core_init_done{};
-    bool fw_loaded{}; void *fw_memory{};
+    bool fw_loaded{}, removing{}; void *fw_memory{};
     const firmware_data *iris_firmware_data{};
 };
 static unsigned queue_inits, queue_deinits, power_ons, power_offs, loads, shutdowns,
                 waits, pm_gets, pm_puts, errors;
-static int fault, shutdown_error, cleanup_error, pm_error, pm_refs;
+static int fault, shutdown_error, cleanup_error, power_error, pm_error, pm_refs;
 static bool held_init_failure, locked;
 static void mutex_lock(int *) { assert(!locked); locked = true; }
 static void mutex_unlock(int *) { assert(locked); locked = false; }
@@ -39,7 +39,9 @@ static int iris_hfi_queues_deinit(iris_core *c) {
     c->fw_memory = nullptr; return 0;
 }
 static int iris_vpu_power_on(iris_core *) { ++power_ons; return fault == 2 ? -EREMOTEIO : 0; }
-static void iris_vpu_power_off(iris_core *c) { assert(!c->fw_loaded); ++power_offs; }
+static int iris_vpu_power_off(iris_core *c) {
+    assert(!c->fw_loaded); ++power_offs; return power_error;
+}
 static int iris_fw_load(iris_core *c) {
     ++loads; if (fault == 3) return -ENOENT;
     c->fw_loaded = true; c->iris_firmware_data = &data;
@@ -53,6 +55,7 @@ static int iris_fw_unload(iris_core *c) {
 }
 static int iris_vpu_boot_firmware(iris_core *) { return fault == 5 ? -ETIMEDOUT : 0; }
 static int iris_vpu_switch_to_hwmode(iris_core *) { return fault == 6 ? -EIO : 0; }
+static void iris_vpu_enable_irq(iris_core *) {}
 static int iris_hfi_core_init(iris_core *) { return fault == 7 ? -EPIPE : 0; }
 static unsigned msecs_to_jiffies(unsigned n) { return n; }
 static unsigned wait_for_completion_timeout(int *, unsigned n) {
@@ -64,7 +67,7 @@ cat >> "$work/core.cpp" <<'CPP'
 static iris_core core;
 static void reset(int selected = 0) {
     assert(!locked && pm_refs == 0);
-    core = {}; fault = selected; shutdown_error = cleanup_error = pm_error = 0;
+    core = {}; fault = selected; shutdown_error = cleanup_error = power_error = pm_error = 0;
     held_init_failure = false;
     queue_inits = queue_deinits = power_ons = power_offs = loads = shutdowns = 0;
     waits = pm_gets = pm_puts = errors = 0;
@@ -80,7 +83,7 @@ int main() {
     reset(1); held_init_failure = true;
     assert(iris_core_init(&core) == -ENOMEM && core.state == IRIS_CORE_ERROR);
     iris_core_deinit(&core);
-    assert(core.state == IRIS_CORE_DEINIT && !core.fw_memory && !power_offs && !pm_refs);
+    assert(core.state == IRIS_CORE_DEINIT && !core.fw_memory && power_offs == 1 && !pm_refs);
     reset(); assert(iris_core_init(&core) == 0 && core.fw_loaded);
     assert(iris_core_init(&core) == 0 && queue_inits == 1);
     iris_core_deinit(&core);
@@ -103,7 +106,14 @@ int main() {
     iris_core_deinit(&core);
     assert(!core.fw_loaded && core.fw_memory && core.state == IRIS_CORE_ERROR && power_offs == 1);
     cleanup_error = 0; iris_core_deinit(&core);
-    assert(!core.fw_memory && power_offs == 1 && shutdowns == 1 && !pm_refs);
+    assert(!core.fw_memory && power_offs == 2 && shutdowns == 1 && !pm_refs);
+    reset(5); power_error = -EREMOTEIO;
+    assert(iris_core_init(&core) == -EREMOTEIO && !core.fw_loaded && core.fw_memory);
+    assert(core.state == IRIS_CORE_ERROR && !queue_deinits && shutdowns == 1);
+    iris_core_deinit(&core);
+    assert(core.fw_memory && !queue_deinits && power_offs == 2 && !pm_refs);
+    power_error = 0; iris_core_deinit(&core);
+    assert(!core.fw_memory && queue_deinits == 1 && power_offs == 3 && shutdowns == 1);
     reset(); assert(iris_core_init(&core) == 0); pm_error = -EREMOTEIO;
     iris_core_deinit(&core);
     assert(core.fw_loaded && core.fw_memory && !shutdowns && !power_offs && !queue_deinits);

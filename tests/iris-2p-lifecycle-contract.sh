@@ -60,7 +60,7 @@ static void usleep_range(unsigned minimum, unsigned maximum) {
     }())
 struct iris_core { u8 *reg_base; };
 CPP
-awk '/^static int iris_vpu33_2p_quiesce\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
+awk '/^int iris_vpu33_2p_quiesce\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
     "$iris/iris_vpu3x.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 static void clear(unsigned selected_fault = 0) {
