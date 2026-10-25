@@ -485,3 +485,10 @@ voltage/sync, SMMU mappings, backlight and MDSS ownership state without new
 register reads, power/clock writes or timing changes. Cliffs interconnect sync
 still invokes the original callback. These are diagnostic observations;
 physical gray-screen and repeated-startup qualification remain open.
+
+25 October 2026: normal 7.3.0-9 enables the standard DRM DP AUX character
+interface for receiver-capability diagnostics. This preserves the release-6
+video implementation, the reviewed OEM video configuration gates and the
+accepted display isolation. It adds no DSC/FEC activation, Type-C pin override
+or display timing change. Verify node permissions and receiver capabilities
+on the tablet before qualifying external DP compression.

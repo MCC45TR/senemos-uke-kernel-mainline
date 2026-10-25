@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 8
+%global senemos_build_release 9
 %else
 %global senemos_build_release 1
 %endif
@@ -391,6 +391,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
+- Expose the standard DP AUX interface for receiver capability diagnostics.
+- Retain the video implementation and reviewed OEM video configuration gates.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-8
 - Restore the exact OEM video configuration gates before GCC registration.
 - Propagate both register-write failures; retain release-6 native video integration.
