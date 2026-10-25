@@ -29,7 +29,7 @@ jobs:
       matrix:
         include:
           - role: common
-            branch: codex/display-stability73-20261025
+            branch: codex/display-isolation73-20261025
             package: senemos-uke-linux-kernel-mainline
             metadata_branch: copr/mainline-singleboot
             metadata_role: singleboot
