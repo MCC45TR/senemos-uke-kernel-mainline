@@ -5,7 +5,7 @@ trap 'printf "Boot payload failed at line %s\n" "$LINENO" >&2' ERR
 [[ $# == 5 ]] || exit 2
 kernel=$(realpath "$1") out=$(realpath -m "$2")
 base=$(realpath "$3") release=$4 jobs=$5
-[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*$ && $jobs =~ ^[1-9][0-9]*$ ]]
+[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm)?$ && $jobs =~ ^[1-9][0-9]*$ ]]
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
 cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
@@ -45,11 +45,18 @@ if [[ $usb_profile == typec-v1 ]]; then
         exit 1
     fi
 fi
+el2_profile=$(cat "$kernel/native-profile/el2-profile")
+case $el2_profile in
+    normal) ;;
+    el2-require)
+        bash "$kernel/scripts/config" --file "$out/.config" --enable QCOM_UKE_EL2_ENTRY --disable QCOM_UKE_GUNYAH_EXIT;;
+    *) echo "Unadmitted EL2 profile: $el2_profile" >&2; exit 2;;
+esac
 localversion=-${release#*-}
 export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
-bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config"
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
 for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
     EXT4_FS F2FS_FS XFS_FS BTRFS_FS QCOM_UKE_PLATFORM_PROFILE ACPI_PLATFORM_PROFILE; do
@@ -57,6 +64,15 @@ for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SI
 done
 grep -F 'root=PARTLABEL=linux ' "$out/.config"
 grep -Fx 'CONFIG_QCOM_Q6V5_PAS=m' "$out/.config"
+case $el2_profile in
+    normal) ! grep -q '^CONFIG_QCOM_UKE_.*EL2.*=y\|^CONFIG_QCOM_UKE_GUNYAH_EXIT=y' "$out/.config";;
+    el2-require)
+        grep -Fx 'CONFIG_QCOM_UKE_EL2_ENTRY=y' "$out/.config"
+        grep -Fx '# CONFIG_QCOM_UKE_GUNYAH_EXIT is not set' "$out/.config";;
+esac
+for flag in KVM ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE NAMESPACES NET_NS USER_NS PID_NS IPC_NS; do
+    grep -Fx "CONFIG_${flag}=y" "$out/.config"
+done
 uke_stage_start=$SECONDS
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules qcom/sm7675-xiaomi-uke.dtb
 printf 'UKE_BUILD_STAGE kernel_compile elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
@@ -69,7 +85,7 @@ find "$source_modules" -type f -name '*.ko' -print0 | xargs -0 -r -n 1 -P "$jobs
 depmod -b "$stage" "$release"
 printf 'UKE_BUILD_STAGE module_install_compress elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
 uke_stage_start=$SECONDS
-bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config" "$source_modules"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config" "$source_modules"
 target=$init/usr/lib/modules/$release
 mkdir -p "$target/kernel"
 while IFS= read -r path; do
@@ -123,3 +139,16 @@ printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha25
 [[ -s $source_modules/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst ]]
 install -Dm755 "$kernel/native-generated/uke-touch-capture" "$source_modules/uke/uke-touch-capture"
 printf 'touch_client_sha256=%s\n' "$(sha256sum "$source_modules/uke/uke-touch-capture" | cut -d ' ' -f1)" >> "$out/boot-manifest"
+
+# Bind the source/profile/config and generated payloads without changing the updater manifest format.
+jq -n --arg source "$(cat "$kernel/native-profile/source-commit")" --arg profile "$el2_profile" \
+    --arg release "$release" --arg config "$(sha256sum "$out/.config" | cut -d ' ' -f1)" \
+    --arg image "$raw" --arg modules "$inventory" \
+    --arg dtb "$(sha256sum "$out/arch/arm64/boot/dts/qcom/sm7675-xiaomi-uke.dtb" | cut -d ' ' -f1)" \
+    --arg initramfs "$(sha256sum "$out/boot-initramfs.cpio.gz" | cut -d ' ' -f1)" \
+    --argjson tests_skipped "${UKE_SKIP_TESTS:-0}" \
+    '{schema_version:1,kernel_source_commit:$source,kernel_release:$release,kernel_family:"senemos-uke-linux-kernel-mainline-kvm",
+      el2_profile:$profile,kernel_config_sha256:$config,image_sha256:$image,modules_inventory_sha256:$modules,
+      dtb_sha256:$dtb,initramfs_sha256:$initramfs,tests_run:($tests_skipped==0),
+      firmware_exit_enabled:false,firmware_service_supported:null,hardware_tested:false,
+      guest_tested:false,waydroid_tested:false,automatic_kernel_activation:false}' > "$out/el2-build.json"

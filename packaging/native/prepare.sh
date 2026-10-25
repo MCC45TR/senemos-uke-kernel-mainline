@@ -3,21 +3,27 @@
 set -Eeuo pipefail
 kernel=$(realpath "${1:?Pass prepared kernel}")
 profile=$(cd -- "$(dirname -- "$0")" && pwd)
+el2_profile=$(cat "$profile/el2-profile")
+case $el2_profile in
+    normal) ;;
+    el2-require) bash "$profile/src/boot/prepare-el2-source.sh" "$kernel";;
+    *) echo "Unadmitted EL2 profile: $el2_profile" >&2; exit 2;;
+esac
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
 export UKE_LLCC_PROFILE
 UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
-bash "$profile/tests/wcd939x-status-contract.sh"
-bash "$profile/tests/wlan-regulator-lifetime-contract.sh" "$kernel"
-bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
-bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/ucsi/ucsi.c"
-bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
-bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
-bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"
-bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
-bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/wcd939x-status-contract.sh"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/wlan-regulator-lifetime-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/ucsi/ucsi.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
@@ -39,30 +45,30 @@ cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 git -C "$kernel" apply --check "$profile/patches/boot/0010-qcom-flash-bounded-cleanup.patch"
 git -C "$kernel" apply "$profile/patches/boot/0010-qcom-flash-bounded-cleanup.patch"
-bash "$profile/tests/light-cleanup.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/light-cleanup.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 git -C "$kernel" apply --check "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
-bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
-bash "$profile/tests/dpu-color-topology-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c"
-bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/gpu/drm/sysfb/simpledrm.c"
-bash "$profile/tests/output-bits-contract.sh" "$kernel"
-bash "$profile/tests/dpu-output-affinity-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
-bash "$profile/tests/ucsi-debugfs-bounds-contract.sh" "$kernel/drivers/usb/typec/ucsi/debugfs.c"
-bash "$profile/tests/dpu-mixer-reservation-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_rm.c"
-bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
-bash "$profile/tests/dsi-connector-state-contract.sh" "$kernel"
-bash "$profile/tests/dsi-color-depth-contract.sh" "$kernel/drivers/gpu/drm/msm/dsi/dsi_manager.c"
-bash "$profile/tests/dp-connector-state-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_drm.c"
-bash "$profile/tests/dp-stream-lifetime-contract.sh" "$kernel"
-bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dpu-color-topology-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/gpu/drm/sysfb/simpledrm.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/output-bits-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dpu-output-affinity-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/ucsi-debugfs-bounds-contract.sh" "$kernel/drivers/usb/typec/ucsi/debugfs.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dpu-mixer-reservation-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_rm.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dsi-connector-state-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dsi-color-depth-contract.sh" "$kernel/drivers/gpu/drm/msm/dsi/dsi_manager.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-connector-state-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_drm.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-stream-lifetime-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
 if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
     git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
-    bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
     sha256sum "$profile/patches/boot/0009-uke-displayport-dma-scope.patch" >> "$output/abl-source-SHA256SUMS"
 fi
 # Replace only the generated graph with the explicit exact seven-mode profile.
@@ -78,7 +84,7 @@ dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
 } > "$kernel/arch/arm64/kernel/uke-native-display.h"
 fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
 if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
-    bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
-    bash "$profile/tests/dp-audio-topology-contract.sh"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$profile/tests/dp-audio-topology-contract.sh"
 fi
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'

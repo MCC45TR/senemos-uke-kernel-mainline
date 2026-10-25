@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "owner_commit": "2b5530f2412a4a1040ecdfafd0820ec51dc4645c",
-  "owner_archive_sha256": "10d2fd6a85abcd3f98eca378c7dd8102475054375a6fd79071437d8e7f28b995",
+  "owner_commit": "3472fd3de88740cdba888c869b3f150e39ef52da",
+  "owner_archive_sha256": "d5df35aff8e65bafa351ab61d79d7526a5756594d3b305188a3b3375b0acfc6b",
   "source_date_epoch": 1792781338,
   "private_inputs": false,
-  "kernel_release": "7.3.0-5",
+  "kernel_release": "7.3.0-1-kvm",
   "device_tested": false,
   "integration": "V4L2 MET8 capture, separately licensed calibrated C++ contact client in the exact module RPM; no firmware or calibration bytes"
 }

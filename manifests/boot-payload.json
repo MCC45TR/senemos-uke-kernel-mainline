@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-23",
+  "date": "2026-10-25",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance; unstable release-8 scopes fixed-board drivers, early modules and DT compilation to Uke while retaining the current touch, QRTR, display and root contracts; source checks do not establish hardware acceptance",
+  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance; unstable release-8 scopes fixed-board drivers, early modules and DT compilation to Uke while retaining the current touch, QRTR, display and root contracts; source checks do not establish hardware acceptance; Linux 7.3 KVM source preparation: explicit all-CPU EL2 requirement, BinderFS and no automatic activation; firmware exit remains unadmitted; tests deliberately deferred",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "b95e08d459dcfb2b07d158c3ec70185836c5cea5eb1d67c272a3b71258c2c8db"
+      "sha256": "53041328987bc2f208285d95052de37eda0d1d34f2aa873b400c6a520b122097"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -33,11 +33,11 @@
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "273fbb864a6fd5b78abf1d7b8c3d0b53b780c9ebcee075a7574715575b6f2246"
+      "sha256": "ab071b245e2c67931bf2164854b5fd9455919bf62889ca4f8b392b31d9583102"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "d37db53da1a374ffd9f275c155135f49654ae5066e34a7b634a606e2afe6ed27"
+      "sha256": "e0e956decea49ed09b3fe5a170f3cb50849ccc1cb830978622af6e4a45e7da0d"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -93,7 +93,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "b9192132b7d5965e644dba4e279582771ba93e498c81842cc19143e3a14b7b4f"
+      "sha256": "e85368a4a9dbf8f452cbacc8d9a51c117d74f56e9a0ef69011a0ad6759741772"
     },
     {
       "path": "src/boot/offline-switch-root.cpp",
@@ -165,7 +165,7 @@
     },
     {
       "path": "tests/mainline-boot-status-contract.sh",
-      "sha256": "234c8a761f99bf1894349214a333192182f71d5bcbe46166bd6b5404e3ab4c69"
+      "sha256": "30261481f37fe7932601cb046549db00a71fa397c4f2d39ed46b4a30500927ab"
     }
   ],
   "root_selector_capability": {
@@ -194,5 +194,10 @@
     "original_ppd_version": "0.30",
     "tablet_tested": false,
     "backend_retired": false
-  }
+  },
+  "el2_profile": "selected explicitly by source producer",
+  "hardware_tested": false,
+  "guest_tested": false,
+  "waydroid_tested": false,
+  "automatic_kernel_activation": false
 }

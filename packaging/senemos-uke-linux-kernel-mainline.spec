@@ -2,18 +2,19 @@
 %global _build_id_links none
 %global __os_install_post %{nil}
 %global _uke_out %{_topdir}/native-kernel-out
+%global uke_skip_tests 0
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
-Name: senemos-uke-linux-kernel-mainline
+Name: senemos-uke-linux-kernel-mainline-kvm
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 5
+%global senemos_build_release 1
 %else
 %global senemos_build_release 1
 %endif
-%global krel %{version}-%{senemos_build_release}
+%global krel %{version}-%{senemos_build_release}-kvm
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Linux 7.3 Uke kernel with the O82 display profile
+Summary: Linux 7.3 Uke KVM candidate with explicit EL2 admission
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
 SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -47,8 +48,8 @@ Recommends: uke-displayport-audio >= 0.1.0-2
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+No package script activates a boot image or changes a slot. EL2-require parks
+at EL1 and never calls firmware. Build success establishes no device acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -109,6 +110,7 @@ Image, modules, DTBs and both root profiles are built once. Installation
 performs no boot activation, partition write, slot selection or reboot.
 
 %prep
+export UKE_SKIP_TESTS=%{uke_skip_tests}
 uke_prep_start=$SECONDS
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
 test "$(sha256sum %{SOURCE0} | cut -d ' ' -f1)" = "$expected"
@@ -157,6 +159,7 @@ tar -xJf %{SOURCE9}
 printf 'UKE_BUILD_STAGE source_prepare elapsed_s=%d\n' "$((SECONDS-uke_prep_start))"
 
 %build
+export UKE_SKIP_TESTS=%{uke_skip_tests}
 uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
@@ -169,7 +172,6 @@ fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-test "$jobs" -le 8 || jobs=8
 g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
     touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
     -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
@@ -184,11 +186,18 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
-test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-kvm kernelrelease)" = '%{krel}'
 
 printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
 
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
+    native-profile/src/kvm/probe.cpp -o %{_uke_out}/uke-kvm-probe
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
+    native-profile/src/kvm/status.cpp -o %{_uke_out}/uke-el2-status
+
 %check
+%if !%{uke_skip_tests}
+bash native-profile/tests/kvm-probe-contract.sh %{_uke_out}/uke-kvm-probe
 uke_check_start=$SECONDS
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/mainline-boot-status-contract.sh
@@ -204,8 +213,8 @@ bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
-test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
+test "$(readlink %{buildroot}/usr/lib/senemos/kvm-default-boot.img)" = kernel-updates/%{krel}/userdata.img
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -296,11 +305,16 @@ CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uk
 
 printf 'UKE_BUILD_STAGE package_checks elapsed_s=%d\n' "$((SECONDS-uke_check_start))"
 
+%endif
+
 %install
+install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
+install -Dm755 %{_uke_out}/uke-el2-status %{buildroot}%{_bindir}/uke-el2-status
+install -Dm644 native-profile/KVM.md %{buildroot}%{_docdir}/%{name}/KVM.md
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 install -Dm644 %{SOURCE8} %{buildroot}%{_licensedir}/%{name}-singleboot/LICENSE
 install -d %{buildroot}/usr/share/senemos/uke %{buildroot}/usr/lib/senemos
-cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
+cat > %{buildroot}/usr/share/senemos/uke/kvm-singleboot.json <<'EOF'
 {
   "schema_version": 1,
   "package": "%{name}-singleboot",
@@ -312,7 +326,7 @@ cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
   "automatic_kernel_activation": false
 }
 EOF
-ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
+ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/kvm-default-boot.img
 export ARCH=arm64 LLVM=1
 mkdir -p %{buildroot}/usr/lib/modules
 cp -a %{_uke_out}/boot-modules/lib/modules/%{krel} %{buildroot}/usr/lib/modules/
@@ -339,18 +353,19 @@ install -m644 %{_uke_out}/linux.img "$bundle/linux.img"
 install -m644 %{_uke_out}/userdata.img "$bundle/userdata.img"
 install -m644 %{_uke_out}/modules.sha256 "$bundle/modules.sha256"
 install -m644 %{_uke_out}/boot-manifest "$bundle/manifest"
+install -m644 %{_uke_out}/el2-build.json "$bundle/el2-build.json"
+install -m644 %{_uke_out}/el2-build.json "$identity/el2-build.json"
 install -m644 %{SOURCE6} "$bundle/source-lock.json"
 install -m644 %{uke_boot_userspace}/build-rpms.tsv "$bundle/build-rpms.tsv"
 mkdir -p %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}
 cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
-%posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
 
 %files
+%{_bindir}/uke-kvm-probe
+%{_bindir}/uke-el2-status
+%doc %{_docdir}/%{name}/KVM.md
 %doc native-profile/README.md
 %license COPYING
 %license native-profile/src/audio/LICENSE.audioreach-topology
@@ -386,10 +401,15 @@ fi
 %files singleboot
 %doc %{_docdir}/%{name}-singleboot/SINGLEBOOT.md
 %license %{_licensedir}/%{name}-singleboot/LICENSE
-/usr/share/senemos/uke/singleboot.json
-/usr/lib/senemos/default-boot.img
+/usr/share/senemos/uke/kvm-singleboot.json
+/usr/lib/senemos/kvm-default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
+- Rebase the isolated KVM family on signed Linux 7.3 and the current native source.
+- Integrate explicit EL2 admission, BinderFS, source receipts and optional test suppression.
+- Keep firmware exit unadmitted and omit all automatic boot activation.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
 - Validate the registered LED device name instead of its optional input name.
 - Cover the RGB supplier probe with NULL-name and identity refusal fixtures.

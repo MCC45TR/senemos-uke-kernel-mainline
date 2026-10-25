@@ -481,5 +481,8 @@
       "path": "configs/fedora.config",
       "sha256": "69208fd016401450f747595c936c98b756f70e8b055677f944e04e274688caad"
     }
-  ]
+  ],
+  "date": "2026-10-25",
+  "kernel_family": "senemos-uke-linux-kernel-mainline-kvm",
+  "kernel_release": "7.3.0-1-kvm"
 }

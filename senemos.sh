@@ -693,6 +693,9 @@ self_test() {
     rm -rf -- "$temporary"; trap - RETURN
 }
 
+if [[ ${1:-} == --internal-build || ${1:-} == --internal-package || ${1:-} == --internal-lifecycle ]]; then
+    die 'KVM uses make srpm and the native RPM producer; the historical host binary recipe is unsupported.'
+fi
 if [[ ${1:-} == --internal-build ]]; then shift; internal_build "$@"; exit; fi
 if [[ ${1:-} == --internal-audit ]]; then shift; internal_audit "$@"; exit; fi
 if [[ ${1:-} == --internal-package ]]; then shift; internal_package "$@"; exit; fi
@@ -762,6 +765,7 @@ done
 if ((DRY_RUN)); then
     command -v jq >/dev/null || die 'Dry-run needs jq; no dependencies will be installed'
 else
+    die 'KVM uses make srpm el2_profile=el2-require or the public builder with --kernel-profile el2-require. The historical host binary recipe is unsupported.'
     bootstrap
     mkdir -p "$KERNEL/referances/releases"
     mkdir -p "$BUILDER/build"

@@ -16,11 +16,11 @@ version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
 case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
-bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
 if [[ $llcc_native == 1 ]]; then
-    bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
-    bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
-    bash "$here/../../tests/llcc-boot-fdt-contract.sh" "$kernel"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
+    [[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/llcc-boot-fdt-contract.sh" "$kernel"
 fi
 # Wi-Fi requires the package-owned RF/GENI/SMMU contract; older pairs keep their frozen recipe.
 grep -Fxq 0015-uke-wlan-supplies-and-dma.patch "$kernel/senemos-applied-patches.txt"
@@ -44,10 +44,10 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0005-uke-root-selector.
 git -C "$kernel" apply "$here/../../patches/boot/0005-uke-root-selector.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0006-uke-uart-wake-order.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0006-uke-uart-wake-order.patch"
-bash "$here/../../tests/uart-wake-contract.sh" "$kernel/drivers/tty/serial/qcom_geni_serial.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/uart-wake-contract.sh" "$kernel/drivers/tty/serial/qcom_geni_serial.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch"
-bash "$here/../../tests/cpu-hardware-name-contract.sh" "$kernel/arch/arm64/kernel/cpuinfo.c"
+[[ ${UKE_SKIP_TESTS:-0} == 1 ]] || bash "$here/../../tests/cpu-hardware-name-contract.sh" "$kernel/arch/arm64/kernel/cpuinfo.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"

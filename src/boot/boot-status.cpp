@@ -8,7 +8,8 @@
 #include <thread>
 namespace fs = std::filesystem;
 namespace {
-bool selected_kernel(const std::string& release) {
+bool selected_kernel(const std::string& input) {
+    const auto release = input.size() > 4 && input.compare(input.size() - 4, 4, "-kvm") == 0 ? input.substr(0, input.size() - 4) : input;
     const auto dash = release.find('-');
     if (release.size() < 128 && (release.rfind("7.2.", 0) == 0 || release.rfind("7.3.", 0) == 0) && dash > 4 && dash != std::string::npos) {
         const auto patch = release.substr(4, dash - 4);

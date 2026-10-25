@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "88fb4c18f8bece34746f7907d5912e0260604f31e7093e83f5adb24d560dee7e"
+      "sha256": "57860809bc2250669fde353dd3780aa93e7088c5a4cbdb11628397436b6d520c"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "709a3ccb4eeae550397cd9b0721f3533f445f064b706d1926957e6ada69ef7e1"
+      "sha256": "7f1b96e228b4c6c4eec331735045049e39efd75891757c74b9d6e2d88722f975"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -224,7 +224,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-8-unstable",
+  "kernel_release": "7.3.0-1-kvm",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
