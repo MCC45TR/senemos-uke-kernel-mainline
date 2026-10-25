@@ -73,6 +73,8 @@ static void reset(int selected = 0) {
     waits = pm_gets = pm_puts = errors = 0;
 }
 int main() {
+    reset(); core.removing = true;
+    assert(iris_core_init(&core) == -ENODEV && !queue_inits && !power_ons);
     const int failures[]{0, -ENOMEM, -EREMOTEIO, -ENOENT, -EACCES, -ETIMEDOUT, -EIO, -EPIPE};
     for (int stage = 1; stage <= 7; ++stage) {
         reset(stage); assert(iris_core_init(&core) == failures[stage]);

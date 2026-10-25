@@ -38,7 +38,7 @@ struct iris_core {
 };
 enum { IRIS_CORE_ERROR = 2 };
 static std::vector<std::string> events;
-static int fault, bulk_calls;
+static int fault, bulk_calls, native_off_error;
 static int record(const char *name, int stage) {
     events.emplace_back(name); return fault == stage ? -EREMOTEIO : 0;
 }
@@ -71,7 +71,7 @@ static int iris_vpu_switch_to_hwmode(iris_core *) { return record("hwmode", 7); 
 static int powercollapse(iris_core *) { return record("pc", 8); }
 static int iris_vpu_power_off(iris_core *) { return record("power-off", 9); }
 static void iris_vpu_enable_irq(iris_core *) {}
-static int native_off(iris_core *) { return record("native-off", 10); }
+static int native_off(iris_core *) { record("native-off", 10); return native_off_error; }
 CPP
 awk '/^int iris_hfi_pm_resume\(/ { emit=1 } emit { print } emit && /^}/ { exit }' \
     "$iris/iris_hfi_common.c" >> "$work/check.cpp"
@@ -117,6 +117,10 @@ int main() {
         assert(std::count(events.begin(),events.end(),"controller-off")==0);
         assert(events.back()=="icc-off");
     }
+    fault=2; native_off_error=-EACCES; events.clear(); core.power.icc_bw=0;
+    assert(iris_vpu_power_on(&core)==-EACCES && events.back()=="native-off");
+    assert(std::count(events.begin(),events.end(),"icc-off")==0);
+    native_off_error=0;
     fault=0; events.clear(); core.power.icc_bw=0;
     assert(iris_vpu_power_on(&core)==0);
     assert(std::count(events.begin(),events.end(),"irq-on")==0);
