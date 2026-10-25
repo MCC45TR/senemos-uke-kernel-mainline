@@ -1,5 +1,25 @@
 # Mainline display source profile
 
+25 October 2026, Linux 7.3 source release 2: the guarded Uke torch/RGB profile
+and bounded flash-driver cleanup are integrated from the reviewed 7.2.12 work.
+Torch-only devices now expose real 5 mA per-channel steps: the retained 20 mA
+total ceiling provides native levels 0/1/2 (off/10/20 mA total), used by Control
+1.11.0 as 0/50/100%. Flash-capable devices retain their existing scale and
+camera API. This revision has no kernel/RPM build or tablet result. No voltage,
+current ceiling, strobe or RGB peak-current setting is increased.
+
+Linux 7.2.12 history, 25 October 2026, release 41: the reviewed Uke PMXR2230 graph uses original
+upstream flash/LPG drivers. Rear channels 1 and 4 share a 20 mA torch-only
+ceiling; flash/strobe is not exposed. RGB and torch register off by default.
+The downstream controller nodes remain disabled. The QCOM flash cleanup is
+bounded for torch-only children and checked with AddressSanitizer. Actual
+light output, electrical measurements and lifecycle acceptance remain open.
+The uninstalled release-39 build was canceled after its C++ admission fixture
+exposed missing explicit C pointer conversions in the shared test header.
+Release 40 stopped during source preparation because the native-display patch
+context had not followed the new admission block. Release 41 refreshes that
+context and requires complete source preparation before submission.
+
 24 October 2026: release 36 retains RF regulator devres independently of the
 manually freed ath11k private allocation. Failed/deferred probe journals from
 releases 22, 31 and 34 show the corresponding cleanup fault. The actual helper

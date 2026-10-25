@@ -60,6 +60,7 @@ install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h
 install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
 install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-thermal.h"
 install -m644 "$here/uke-hall.h" "$kernel/arch/arm64/kernel/uke-hall.h"
+install -m644 "$here/uke-lights.h" "$kernel/arch/arm64/kernel/uke-lights.h"
 install -m644 "$here/../usb/wcd939x-uke-typec.c" "$kernel/drivers/usb/typec/mux/wcd939x-uke-typec.c"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]
 grep -F 'DTC 1.7.2-g53373d13' "$kernel/scripts/dtc/version_gen.h" >/dev/null
@@ -77,9 +78,10 @@ for name in overlay check; do
 done
 header=$kernel/arch/arm64/kernel/uke-abl-overlays.h
 : > "$header"
-for name in ufs usb; do
+for name in ufs usb lights; do
     source=$here/sm7675-uke-ufs.dtso
     [[ $name != usb ]] || source=$here/sm7675-uke-usb2.dtso
+    [[ $name != lights ]] || source=$here/sm7675-uke-lights.dtso
     if [[ $name == usb && $usb_profile == typec-v1 ]]; then source=$here/sm7675-uke-typec.dtso; fi
     cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" "$source" > "$output/$name.dts"
     dtc -q -@ -I dts -O dtb -o "$output/$name.dtbo" "$output/$name.dts"
@@ -91,7 +93,7 @@ for name in ufs usb; do
 done
 printf '%s\n' "$usb_profile" > "$output/usb-profile"
 printf '%s\n' "$llcc_profile" > "$output/llcc-profile"
-(cd "$output"; sha256sum ufs.dtbo usb.dtbo > overlay-SHA256SUMS)
+(cd "$output"; sha256sum ufs.dtbo usb.dtbo lights.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/uke-identity.c" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
     "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" \
     "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
