@@ -5,6 +5,7 @@ SHELL := /bin/bash
 version := 7.3.0
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
+	bash -n tests/dp-eld-notification-contract.sh
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
 	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh

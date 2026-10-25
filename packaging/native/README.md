@@ -492,3 +492,10 @@ video implementation, the reviewed OEM video configuration gates and the
 accepted display isolation. It adds no DSC/FEC activation, Type-C pin override
 or display timing change. Verify node permissions and receiver capabilities
 on the tablet before qualifying external DP compression.
+
+25 October 2026: release 10 notifies the registered PCM ELD control when the
+SM7675 DP codec's cached monitor bytes change at startup or hotplug. The
+notification uses the actual registered PCM device and is absent before
+control registration or after component removal. Foreign DP parents retain
+their original behavior. Monitor-name persistence and audio hotplug require
+separate tablet acceptance; host fixtures do not establish those results.

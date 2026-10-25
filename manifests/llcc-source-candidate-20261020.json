@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "746e83c818005fba36ec9b02acb07484e6e55f3b9c1b84f1e6e52b53e56191ae"
+      "sha256": "cce63b2ed7dee711f8a84c788d1e48a97a2b74c47cdc4c93979cc53f0641a831"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -102,6 +102,14 @@
     {
       "path": "tests/dpu-mixer-reservation-contract.sh",
       "sha256": "6d26cca722204407fc845c0c9416665f96e2b00bf56fb13451c9610901d8baa8"
+    },
+    {
+      "path": "patches/display/0057-uke-displayport-eld-notification.patch",
+      "sha256": "94211352436b0098076f8d4cc5c885372c2ae714d0566856d117d324b915c313"
+    },
+    {
+      "path": "tests/dp-eld-notification-contract.sh",
+      "sha256": "b97c2bea7f3f98baf3bf84ffc584a9cb9a3915861c899eee1f6fdc86627bc915"
     }
   ],
   "baseline_files": [
@@ -224,7 +232,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-9",
+  "kernel_release": "7.3.0-10",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
