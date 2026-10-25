@@ -1,0 +1,448 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: iris: add SM7675 P010 input and sizing
+
+SM7675 exposes only eight-bit encoder inputs and sizes its internal
+buffers for eight-bit data. Add P010 and reuse the ten-bit allocation
+helpers. Validate profile/format pairs before stream properties and
+refuse layout changes while either queue has buffers. Report a checked
+TRY_FMT layout, preserve visible raw dimensions and refresh the coded
+buffer requirement after a bit-depth change.
+
+OnePlus SM7675 modules 1138e00fee63582a0cc6a53af3286621786827b7 provides
+the Cliffs P010 mask, Iris33 buffer bit-depth selection and 25 percent
+bitstream headroom. The Uke Cliffs XML provides the Main10 source profile.
+HFI linear stride is in pixels; V4L2 bytesperline is in bytes. The
+encoder color format and HEVC profile select its bit depth. The decoder
+LUMA_CHROMA_BIT_DEPTH startup property is unchanged.
+
+This is source implementation, not PAS/HFI or physical encode acceptance.
+VA Main10, metadata, extended controls and target validation remain.
+
+diff --git a/drivers/media/platform/qcom/iris/iris_buffer.c b/drivers/media/platform/qcom/iris/iris_buffer.c
+index 3e78be7..5c838cf 100644
+--- a/drivers/media/platform/qcom/iris/iris_buffer.c
++++ b/drivers/media/platform/qcom/iris/iris_buffer.c
+@@ -120,15 +120,9 @@ static u32 iris_yuv_buffer_size_nv12(struct iris_inst *inst)
+  *
+  * Note: All the alignments are hardware requirements.
+  */
+-static u32 iris_yuv_buffer_size_p010(struct iris_inst *inst)
++u32 iris_yuv_buffer_size_p010(const struct v4l2_format *f)
+ {
+ 	u32 y_plane, uv_plane, y_stride, uv_stride, y_scanlines, uv_scanlines;
+-	struct v4l2_format *f;
+-
+-	if (inst->domain == DECODER)
+-		f = inst->fmt_dst;
+-	else
+-		f = inst->fmt_src;
+ 
+ 	y_stride = ALIGN(f->fmt.pix_mp.width * 2, Y_STRIDE_ALIGN_P010);
+ 	uv_stride = ALIGN(f->fmt.pix_mp.width * 2, UV_STRIDE_ALIGN_P010);
+@@ -441,6 +435,9 @@ static u32 iris_enc_bitstream_buffer_size(struct iris_inst *inst)
+ 	    bitstream_size < yuv_size)
+ 		bitstream_size = (bitstream_size << 1);
+ 
++	if (iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat))
++		bitstream_size += bitstream_size >> 2;
++
+ 	return ALIGN(bitstream_size, 4096);
+ }
+ 
+@@ -457,7 +454,7 @@ int iris_get_buffer_size(struct iris_inst *inst,
+ 			else if (inst->fmt_dst->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_QC10C)
+ 				return iris_yuv_buffer_size_qc10c(inst);
+ 			else if (inst->fmt_dst->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010)
+-				return iris_yuv_buffer_size_p010(inst);
++				return iris_yuv_buffer_size_p010(inst->fmt_dst);
+ 			else
+ 				return iris_yuv_buffer_size_nv12(inst);
+ 		case BUF_DPB:
+@@ -473,6 +470,8 @@ int iris_get_buffer_size(struct iris_inst *inst,
+ 		case BUF_INPUT:
+ 			if (inst->fmt_src->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_QC08C)
+ 				return iris_yuv_buffer_size_qc08c(inst);
++			else if (inst->fmt_src->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010)
++				return iris_yuv_buffer_size_p010(inst->fmt_src);
+ 			else
+ 				return iris_yuv_buffer_size_nv12(inst);
+ 		case BUF_OUTPUT:
+diff --git a/drivers/media/platform/qcom/iris/iris_buffer.h b/drivers/media/platform/qcom/iris/iris_buffer.h
+index ab8e5d9..045dc19 100644
+--- a/drivers/media/platform/qcom/iris/iris_buffer.h
++++ b/drivers/media/platform/qcom/iris/iris_buffer.h
+@@ -108,6 +108,7 @@ struct iris_buffers {
+ };
+ 
+ int iris_get_buffer_size(struct iris_inst *inst, enum iris_buffer_type buffer_type);
++u32 iris_yuv_buffer_size_p010(const struct v4l2_format *f);
+ void iris_get_internal_buffers(struct iris_inst *inst, u32 plane);
+ int iris_create_internal_buffers(struct iris_inst *inst, u32 plane);
+ int iris_queue_internal_buffers(struct iris_inst *inst, u32 plane);
+diff --git a/drivers/media/platform/qcom/iris/iris_ctrls.c b/drivers/media/platform/qcom/iris/iris_ctrls.c
+index ef95d50..232c54b 100644
+--- a/drivers/media/platform/qcom/iris/iris_ctrls.c
++++ b/drivers/media/platform/qcom/iris/iris_ctrls.c
+@@ -477,11 +477,6 @@ static void iris_sm7675_limit_caps(struct iris_core *core)
+ 			caps[id].value = min(caps[id].value, caps[id].max);
+ 		}
+ 	}
+-	/* shortcut: expose Main10 encode after the P010 buffer/HFI chain is implemented. */
+-	caps[PROFILE_HEVC].max = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE;
+-	caps[PROFILE_HEVC].step_or_mask &= BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
+-					BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE);
+-	caps[PROFILE_HEVC].value = min(caps[PROFILE_HEVC].value, caps[PROFILE_HEVC].max);
+ }
+ 
+ void iris_session_init_caps(struct iris_core *core)
+diff --git a/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c b/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
+index b8c813e..7eb1387 100644
+--- a/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
++++ b/drivers/media/platform/qcom/iris/iris_hfi_gen2_command.c
+@@ -478,26 +478,23 @@ static int iris_hfi_gen2_set_colorformat(struct iris_inst *inst, u32 plane)
+ 	u32 port = iris_hfi_gen2_get_port(inst, plane);
+ 	u32 hfi_colorformat, pixelformat;
+ 
+-	if (inst->domain == DECODER) {
+-		pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
+-		switch (pixelformat) {
+-		case V4L2_PIX_FMT_NV12:
+-			hfi_colorformat = HFI_COLOR_FMT_NV12;
+-			break;
+-		case V4L2_PIX_FMT_QC08C:
+-			hfi_colorformat = HFI_COLOR_FMT_NV12_UBWC;
+-			break;
+-		case V4L2_PIX_FMT_P010:
+-			hfi_colorformat = HFI_COLOR_FMT_P010;
+-			break;
+-		case V4L2_PIX_FMT_QC10C:
+-			hfi_colorformat = HFI_COLOR_FMT_TP10_UBWC;
+-			break;
+-		}
+-	} else {
+-		pixelformat = inst->fmt_src->fmt.pix_mp.pixelformat;
+-		hfi_colorformat = pixelformat == V4L2_PIX_FMT_NV12 ?
+-			HFI_COLOR_FMT_NV12 : HFI_COLOR_FMT_NV12_UBWC;
++	pixelformat = inst->domain == DECODER ?
++		inst->fmt_dst->fmt.pix_mp.pixelformat : inst->fmt_src->fmt.pix_mp.pixelformat;
++	switch (pixelformat) {
++	case V4L2_PIX_FMT_NV12:
++		hfi_colorformat = HFI_COLOR_FMT_NV12;
++		break;
++	case V4L2_PIX_FMT_QC08C:
++		hfi_colorformat = HFI_COLOR_FMT_NV12_UBWC;
++		break;
++	case V4L2_PIX_FMT_P010:
++		hfi_colorformat = HFI_COLOR_FMT_P010;
++		break;
++	case V4L2_PIX_FMT_QC10C:
++		hfi_colorformat = HFI_COLOR_FMT_TP10_UBWC;
++		break;
++	default:
++		return -EINVAL;
+ 	}
+ 
+ 	return iris_hfi_gen2_session_set_property(inst,
+diff --git a/drivers/media/platform/qcom/iris/iris_venc.c b/drivers/media/platform/qcom/iris/iris_venc.c
+index 4766da1..96c6d8d 100644
+--- a/drivers/media/platform/qcom/iris/iris_venc.c
++++ b/drivers/media/platform/qcom/iris/iris_venc.c
+@@ -87,13 +87,23 @@ static const u32 iris_venc_formats_cap[] = {
+ static const u32 iris_venc_formats_out[] = {
+ 	[IRIS_FMT_NV12] = V4L2_PIX_FMT_NV12,
+ 	[IRIS_FMT_QC08C] = V4L2_PIX_FMT_QC08C,
++	[IRIS_FMT_TP10] = V4L2_PIX_FMT_P010,
+ };
+ 
++static bool iris_venc_p010_supported(struct iris_inst *inst)
++{
++	return inst->core->iris_platform_data == &sm7675_data &&
++		inst->codec == V4L2_PIX_FMT_HEVC;
++}
++
+ static bool check_format(struct iris_inst *inst, u32 pixfmt, u32 type)
+ {
+ 	unsigned int size, i;
+ 	const u32 *fmt;
+ 
++	if (pixfmt == V4L2_PIX_FMT_P010 && !iris_venc_p010_supported(inst))
++		return false;
++
+ 	switch (type) {
+ 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+ 		fmt = iris_venc_formats_out;
+@@ -136,7 +146,7 @@ static u32 find_format_by_index(struct iris_inst *inst, u32 index, u32 type)
+ 	if (index >= size)
+ 		return 0;
+ 
+-	return fmt[index];
++	return check_format(inst, fmt[index], type) ? fmt[index] : 0;
+ }
+ 
+ int iris_venc_enum_fmt(struct iris_inst *inst, struct v4l2_fmtdesc *f)
+@@ -198,6 +208,26 @@ int iris_venc_try_fmt(struct iris_inst *inst, struct v4l2_format *f)
+ 	if (pixmp->field == V4L2_FIELD_ANY)
+ 		pixmp->field = V4L2_FIELD_NONE;
+ 
++	if (pixmp->pixelformat == V4L2_PIX_FMT_P010) {
++		const struct platform_inst_caps *caps = iris_get_inst_caps(inst, inst->codec);
++
++		if (f->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE ||
++		    !iris_venc_p010_supported(inst) ||
++		    pixmp->width < caps->min_frame_width ||
++		    pixmp->width > caps->max_frame_width ||
++		    pixmp->height < caps->min_frame_height ||
++		    pixmp->height > caps->max_frame_height ||
++		    (pixmp->width & 1) || (pixmp->height & 1) ||
++		    NUM_MBS_PER_FRAME(pixmp->height, pixmp->width) > caps->max_mbpf)
++			return -EINVAL;
++		pixmp->width = ALIGN(pixmp->width, 128);
++		pixmp->height = ALIGN(pixmp->height, 32);
++		pixmp->field = V4L2_FIELD_NONE;
++		memset(pixmp->plane_fmt, 0, sizeof(pixmp->plane_fmt));
++		pixmp->plane_fmt[0].bytesperline = pixmp->width * 2;
++		pixmp->plane_fmt[0].sizeimage = iris_yuv_buffer_size_p010(f);
++	}
++
+ 	pixmp->num_planes = 1;
+ 
+ 	return 0;
+@@ -208,8 +238,11 @@ static int iris_venc_s_fmt_output(struct iris_inst *inst, struct v4l2_format *f)
+ 	struct v4l2_format *fmt;
+ 	u32 codec_align;
+ 	bool supported;
++	int ret;
+ 
+-	iris_venc_try_fmt(inst, f);
++	ret = iris_venc_try_fmt(inst, f);
++	if (ret)
++		return ret;
+ 
+ 	supported = check_format(inst, f->fmt.pix_mp.pixelformat, f->type);
+ 	if (!supported)
+@@ -255,19 +288,37 @@ static int iris_venc_s_fmt_output(struct iris_inst *inst, struct v4l2_format *f)
+ static int iris_venc_s_fmt_input(struct iris_inst *inst, struct v4l2_format *f)
+ {
+ 	struct v4l2_format *fmt, *output_fmt;
++	u32 raw_width = f->fmt.pix_mp.width;
++	u32 raw_height = f->fmt.pix_mp.height;
++	bool supported = check_format(inst, f->fmt.pix_mp.pixelformat, f->type);
++	bool p010;
++	int ret;
+ 
+-	iris_venc_try_fmt(inst, f);
++	ret = iris_venc_try_fmt(inst, f);
++	if (ret)
++		return ret;
+ 
+ 	if (!check_format(inst, f->fmt.pix_mp.pixelformat, f->type))
+ 		return -EINVAL;
+ 
++	p010 = f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010;
++	if (!p010) {
++		raw_width = f->fmt.pix_mp.width;
++		raw_height = f->fmt.pix_mp.height;
++	} else if (!supported) {
++		raw_width = inst->enc_raw_width;
++		raw_height = inst->enc_raw_height;
++	}
++
+ 	fmt = inst->fmt_src;
+ 	fmt->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+ 	fmt->fmt.pix_mp.width = ALIGN(f->fmt.pix_mp.width, 128);
+ 	fmt->fmt.pix_mp.height = ALIGN(f->fmt.pix_mp.height, 32);
+ 	fmt->fmt.pix_mp.num_planes = 1;
+ 	fmt->fmt.pix_mp.pixelformat = f->fmt.pix_mp.pixelformat;
+-	fmt->fmt.pix_mp.plane_fmt[0].bytesperline = ALIGN(f->fmt.pix_mp.width, 128);
++	fmt->fmt.pix_mp.plane_fmt[0].bytesperline =
++		ALIGN(f->fmt.pix_mp.width, 128) *
++		(f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010 ? 2 : 1);
+ 	fmt->fmt.pix_mp.plane_fmt[0].sizeimage = iris_get_buffer_size(inst, BUF_INPUT);
+ 
+ 	fmt->fmt.pix_mp.colorspace = f->fmt.pix_mp.colorspace;
+@@ -285,18 +336,20 @@ static int iris_venc_s_fmt_input(struct iris_inst *inst, struct v4l2_format *f)
+ 
+ 	inst->buffers[BUF_INPUT].min_count = iris_vpu_buf_count(inst, BUF_INPUT);
+ 	inst->buffers[BUF_INPUT].size = fmt->fmt.pix_mp.plane_fmt[0].sizeimage;
++	output_fmt->fmt.pix_mp.plane_fmt[0].sizeimage = iris_get_buffer_size(inst, BUF_OUTPUT);
++	inst->buffers[BUF_OUTPUT].size = output_fmt->fmt.pix_mp.plane_fmt[0].sizeimage;
+ 
+-	inst->enc_raw_width = f->fmt.pix_mp.width;
+-	inst->enc_raw_height = f->fmt.pix_mp.height;
+-	inst->enc_scale_width = f->fmt.pix_mp.width;
+-	inst->enc_scale_height = f->fmt.pix_mp.height;
++	inst->enc_raw_width = raw_width;
++	inst->enc_raw_height = raw_height;
++	inst->enc_scale_width = raw_width;
++	inst->enc_scale_height = raw_height;
+ 
+-	if (f->fmt.pix_mp.width != inst->crop.width ||
+-	    f->fmt.pix_mp.height != inst->crop.height) {
++	if (raw_width != inst->crop.width ||
++	    raw_height != inst->crop.height) {
+ 		inst->crop.top = 0;
+ 		inst->crop.left = 0;
+-		inst->crop.width = fmt->fmt.pix_mp.width;
+-		inst->crop.height = fmt->fmt.pix_mp.height;
++		inst->crop.width = p010 ? raw_width : fmt->fmt.pix_mp.width;
++		inst->crop.height = p010 ? raw_height : fmt->fmt.pix_mp.height;
+ 
+ 		iris_venc_s_fmt_output(inst, output_fmt);
+ 	}
+@@ -315,6 +368,12 @@ int iris_venc_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
+ 	if (vb2_is_busy(q))
+ 		return -EBUSY;
+ 
++	if ((f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010 ||
++	     inst->fmt_src->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010) &&
++	    (vb2_is_busy(v4l2_m2m_get_vq(inst->m2m_ctx, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)) ||
++	     vb2_is_busy(v4l2_m2m_get_vq(inst->m2m_ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE))))
++		return -EBUSY;
++
+ 	switch (f->type) {
+ 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+ 		return iris_venc_s_fmt_input(inst, f);
+@@ -476,10 +535,27 @@ int iris_venc_g_param(struct iris_inst *inst, struct v4l2_streamparm *s_parm)
+ 	return 0;
+ }
+ 
++static int iris_venc_validate_bit_depth(struct iris_inst *inst)
++{
++	bool p010 = inst->fmt_src->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_P010;
++	bool main10 = inst->codec == V4L2_PIX_FMT_HEVC &&
++		inst->fw_caps[PROFILE_HEVC].value == V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10;
++
++	if (p010 && !iris_venc_p010_supported(inst))
++		return -EINVAL;
++	if (inst->core->iris_platform_data != &sm7675_data)
++		return 0;
++	return p010 == main10 ? 0 : -EINVAL;
++}
++
+ int iris_venc_streamon_input(struct iris_inst *inst)
+ {
+ 	int ret;
+ 
++	ret = iris_venc_validate_bit_depth(inst);
++	if (ret)
++		return ret;
++
+ 	ret = iris_set_properties(inst, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+ 	if (ret)
+ 		return ret;
+@@ -509,6 +585,10 @@ int iris_venc_streamon_output(struct iris_inst *inst)
+ {
+ 	int ret;
+ 
++	ret = iris_venc_validate_bit_depth(inst);
++	if (ret)
++		return ret;
++
+ 	ret = iris_set_properties(inst, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+ 	if (ret)
+ 		goto error;
+diff --git a/drivers/media/platform/qcom/iris/iris_vpu_buffer.c b/drivers/media/platform/qcom/iris/iris_vpu_buffer.c
+index df5df06..dc21cd9 100644
+--- a/drivers/media/platform/qcom/iris/iris_vpu_buffer.c
++++ b/drivers/media/platform/qcom/iris/iris_vpu_buffer.c
+@@ -1398,6 +1398,7 @@ u32 hfi_buffer_line_enc_vpu33(u32 frame_width, u32 frame_height, bool is_ten_bit
+ 
+ static u32 iris_vpu_enc_line_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+ 	u32 height = iris_vpu_enc_get_bitstream_height(inst);
+ 	u32 width = iris_vpu_enc_get_bitstream_width(inst);
+@@ -1405,16 +1406,17 @@ static u32 iris_vpu_enc_line_size(struct iris_inst *inst)
+ 
+ 	if (inst->codec == V4L2_PIX_FMT_HEVC) {
+ 		lcu_size = 32;
+-		return hfi_buffer_line_enc(width, height, 0, num_vpp_pipes,
++		return hfi_buffer_line_enc(width, height, ten_bit, num_vpp_pipes,
+ 					   lcu_size, HFI_CODEC_ENCODE_HEVC);
+ 	}
+ 
+-	return hfi_buffer_line_enc(width, height, 0, num_vpp_pipes,
++	return hfi_buffer_line_enc(width, height, ten_bit, num_vpp_pipes,
+ 				   lcu_size, HFI_CODEC_ENCODE_AVC);
+ }
+ 
+ static u32 iris_vpu33_enc_line_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+ 	u32 height = iris_vpu_enc_get_bitstream_height(inst);
+ 	u32 width = iris_vpu_enc_get_bitstream_width(inst);
+@@ -1422,11 +1424,11 @@ static u32 iris_vpu33_enc_line_size(struct iris_inst *inst)
+ 
+ 	if (inst->codec == V4L2_PIX_FMT_HEVC) {
+ 		lcu_size = 32;
+-		return hfi_buffer_line_enc_vpu33(width, height, 0, num_vpp_pipes,
++		return hfi_buffer_line_enc_vpu33(width, height, ten_bit, num_vpp_pipes,
+ 						 lcu_size, HFI_CODEC_ENCODE_HEVC);
+ 	}
+ 
+-	return hfi_buffer_line_enc_vpu33(width, height, 0, num_vpp_pipes,
++	return hfi_buffer_line_enc_vpu33(width, height, ten_bit, num_vpp_pipes,
+ 					 lcu_size, HFI_CODEC_ENCODE_AVC);
+ }
+ 
+@@ -1637,6 +1639,7 @@ static inline u32 hfi_buffer_scratch1_enc(u32 frame_width, u32 frame_height,
+ 
+ static u32 iris_vpu_enc_scratch1_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+ 	u32 frame_height = iris_vpu_enc_get_bitstream_height(inst);
+ 	u32 frame_width = iris_vpu_enc_get_bitstream_width(inst);
+@@ -1655,7 +1658,7 @@ static u32 iris_vpu_enc_scratch1_size(struct iris_inst *inst)
+ 	}
+ 
+ 	return hfi_buffer_scratch1_enc(frame_width, frame_height, lcu_size,
+-				       num_ref, false, num_vpp_pipes, is_h265);
++				       num_ref, ten_bit, num_vpp_pipes, is_h265);
+ }
+ 
+ static inline u32 ubwc_metadata_plane_stride(u32 width,
+@@ -1735,21 +1738,23 @@ static inline u32 hfi_buffer_scratch2_enc(u32 frame_width, u32 frame_height,
+ 
+ static u32 iris_vpu_enc_scratch2_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 frame_height = iris_vpu_enc_get_bitstream_height(inst);
+ 	u32 frame_width = iris_vpu_enc_get_bitstream_width(inst);
+ 	u32 num_ref = hfi_buffer_get_recon_count(inst);
+ 
+-	return hfi_buffer_scratch2_enc(frame_width, frame_height, num_ref, false);
++	return hfi_buffer_scratch2_enc(frame_width, frame_height, num_ref, ten_bit);
+ }
+ 
+ static u32 iris_vpu_enc_vpss_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 ds_enable = is_scaling_enabled(inst);
+ 	struct v4l2_format *f = inst->fmt_dst;
+ 	u32 height = f->fmt.pix_mp.height;
+ 	u32 width = f->fmt.pix_mp.width;
+ 
+-	return hfi_buffer_vpss_enc(width, height, ds_enable, 0, 0);
++	return hfi_buffer_vpss_enc(width, height, ds_enable, 0, ten_bit);
+ }
+ 
+ static inline u32 size_dpb_opb(u32 height, u32 lcu_size)
+@@ -2040,13 +2045,14 @@ static u32 hfi_vpu4x_buffer_line_enc(u32 frame_width, u32 frame_height,
+ 
+ static u32 iris_vpu4x_enc_line_size(struct iris_inst *inst)
+ {
++	bool ten_bit = iris_fmt_is_10bit(inst->fmt_src->fmt.pix_mp.pixelformat);
+ 	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+ 	u32 lcu_size = inst->codec == V4L2_PIX_FMT_HEVC ? 32 : 16;
+ 	struct v4l2_format *f = inst->fmt_dst;
+ 	u32 height = f->fmt.pix_mp.height;
+ 	u32 width = f->fmt.pix_mp.width;
+ 
+-	return hfi_vpu4x_buffer_line_enc(width, height, 0, num_vpp_pipes,
++	return hfi_vpu4x_buffer_line_enc(width, height, ten_bit, num_vpp_pipes,
+ 					 lcu_size, inst->codec);
+ }
+ 

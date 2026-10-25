@@ -4,7 +4,7 @@
   "base_commit": "470d18160dac9f9adf65ee8ff6f86472573504c1",
   "upstream_version": "7.3.0",
   "prior_candidate": "67c9ee7a02ad27f76beecd7d2590dffa11575acf",
-  "status": "native-preparation-integration-candidate",
+  "status": "native-p010-source-candidate",
   "active_series": false,
   "dt_enabled": true,
   "iris_match_added": true,
@@ -70,6 +70,10 @@
     {
       "path": "patches/video/0015-sm7675-native-match-and-firmware-availability.patch",
       "sha256": "317591794cb333505f79f7dcb2477206ee0a2d2597f8fddea6eb7b824408e5ab"
+    },
+    {
+      "path": "patches/video/0016-sm7675-p010-native-encode.patch",
+      "sha256": "d9bdd0222521ac769cd54cf7be928457aa167ad4284563a449b0e517a3db42ea"
     }
   ],
   "checks": {
@@ -93,7 +97,7 @@
     "video_smmu_actlr_aperture_fixture": true,
     "required_domain_supply_fault_fixture": true,
     "reset_error_propagation_fixture": true,
-    "actual_source_fixture_count": 16,
+    "actual_source_fixture_count": 17,
     "controller_retention_fault_fixture": true,
     "controller_reset_retry_fixture": true,
     "oneshot_irq_pm_fixture": true,
@@ -104,7 +108,9 @@
     "full_native_preparation": false,
     "iris_binding_four_refusals": true,
     "iris_legacy_binding_accepted": true,
-    "firmware_availability_fault_fixture": true
+    "firmware_availability_fault_fixture": true,
+    "p010_encode_source_fixture": true,
+    "p010_iris_aarch64_composite": true
   },
   "sources": [
     {
@@ -183,12 +189,19 @@
     "PAS/HFI target boot and firmware UC/mmap/device-region runtime validation",
     "Validate shared nonsecure IOMMU behavior and error teardown on target",
     "Qualify remaining HFI controls, SKU/fuse admission, coded-height conflicts and aggregate scheduling against firmware",
-    "Complete native graph preparation and gated source activation",
     "Full kernel/RPM and recoverable native V4L2 validation",
     "Main10 encode, extended controls, lifecycle, performance and application matrix",
-    "Failed PAS/power teardown during administrative removal remains unqualified"
+    "Failed PAS/power teardown during administrative removal remains unqualified",
+    "Qualify P010/Main10 native source and complete the VA Main10 surface/encoder chain"
   ],
   "native_prepare_active": true,
-  "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
-  "candidate_kernel_release": "7.3.0-6"
+  "integration_base_commit": "c4feee0d717770f909a08038af51058ed806d747",
+  "candidate_kernel_release": "7.3.0-7",
+  "prior_delivery": {
+    "kernel_release": "7.3.0-6",
+    "source_commit": "f7d4ced2ba8153cc12b2a0cb0c3e8eaf0473bb32",
+    "copr_build": 11205247,
+    "signed_rpms_installed": true,
+    "booted": false
+  }
 }

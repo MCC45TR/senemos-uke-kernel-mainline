@@ -236,7 +236,7 @@ int main() {
     assert(core.inst_fw_caps_dec[LEVEL_HEVC].max==V4L2_MPEG_VIDEO_HEVC_LEVEL_5_1);
     assert(core.inst_fw_caps_dec[LEVEL_VP9].max==V4L2_MPEG_VIDEO_VP9_LEVEL_5_1);
     assert(!(core.inst_fw_caps_enc[LEVEL_HEVC].step_or_mask & BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_6)));
-    assert(!(core.inst_fw_caps_enc[PROFILE_HEVC].step_or_mask & BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10)));
+    assert(core.inst_fw_caps_enc[PROFILE_HEVC].step_or_mask & BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10));
     assert(core.inst_fw_caps_dec[PROFILE_HEVC].step_or_mask & BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10));
     for (unsigned id=LAYER0_BITRATE_H264; id<=LAYER5_BITRATE_HEVC; ++id)
         assert(core.inst_fw_caps_enc[id].max<=100000000);

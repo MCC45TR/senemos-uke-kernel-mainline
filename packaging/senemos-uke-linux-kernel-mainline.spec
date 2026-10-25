@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 6
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
@@ -391,6 +391,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
+- Add scoped SM7675 P010 input, checked layout and native Main10 allocation.
+- Validate profile/format pairs and preserve the existing 7.3.0-6 trial source.
+- Keep firmware, VA Main10 implementation and physical acceptance separate.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-6
 - Integrate the checked native Cliffs Iris, VIDEOCC and shared SMMU path.
 - Preserve the published release-4/5 display, USB and RGB source changes.
