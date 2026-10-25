@@ -760,6 +760,10 @@ static int nvt_suspend(struct device *dev)
 	int ret = 0;
 
 	mutex_lock(&t->ctrl);
+	if (t->irq_wake) {
+		ret = -EBUSY;
+		goto out;
+	}
 	if (t->gesture_armed && device_may_wakeup(dev) && !t->removed) {
 		ret = enable_irq_wake(t->spi->irq);
 		if (ret)
@@ -812,11 +816,16 @@ static DEFINE_SIMPLE_DEV_PM_OPS(nvt_pm_ops, nvt_suspend, nvt_resume);
 static void nvt_shutdown(struct spi_device *spi)
 {
 	struct nvt_uke_touch *t = spi_get_drvdata(spi);
+	unsigned long flags;
 
 	mutex_lock(&t->ctrl);
+	spin_lock_irqsave(&t->state_lock, flags);
 	t->removed = true;
+	t->suspended = true;
+	t->epoch++;
+	spin_unlock_irqrestore(&t->state_lock, flags);
+	nvt_quiesce(t);
 	mutex_unlock(&t->ctrl);
-	nvt_suspend(&spi->dev);
 }
 
 static const struct of_device_id nvt_matches[] = {

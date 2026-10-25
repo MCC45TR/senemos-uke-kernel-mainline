@@ -304,6 +304,8 @@ int main(void) {
     assert(nvt_ready(&touch)==-ESHUTDOWN);
     mock.wake_disable_error=-EIO;
     assert(nvt_resume(&gesture_device)==-EIO && touch.suspended && touch.irq_wake);
+    const unsigned int arms=mock.wake_enables;
+    assert(nvt_suspend(&gesture_device)==-EBUSY && mock.wake_enables==arms);
     mock.wake_disable_error=0;
     assert(!nvt_resume(&gesture_device) && !touch.irq_wake && !nvt_ready(&touch));
     assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RELEASE,&gesture_state)==NOTIFY_OK);

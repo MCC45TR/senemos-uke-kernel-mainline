@@ -133,7 +133,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "d6a8181a4736813e5544d2d5b2117affc1d1214dffcbcdfed93c385182993f7a"
+      "sha256": "37fda507fec8576f2be149341c235570aede0e152f6d1322f4cce91102c28b5f"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
