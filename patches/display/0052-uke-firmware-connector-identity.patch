@@ -1,8 +1,16 @@
 diff --git a/drivers/gpu/drm/sysfb/simpledrm.c b/drivers/gpu/drm/sysfb/simpledrm.c
-index 97aff7e..aa12b7b 100644
+index 97aff7e..ee31586 100644
 --- a/drivers/gpu/drm/sysfb/simpledrm.c
 +++ b/drivers/gpu/drm/sysfb/simpledrm.c
-@@ -897,7 +897,6 @@ static struct simpledrm_device *simpledrm_device_create(struct drm_driver *drv,
+@@ -647,7 +647,6 @@ static struct simpledrm_device *simpledrm_device_create(struct drm_driver *drv,
+ 	struct drm_device *dev;
+ 	int width, height, stride;
+ 	u16 width_mm = 0, height_mm = 0;
+-	bool uke_internal_panel = false;
+ 	struct device_node *panel_node;
+ 	enum drm_panel_orientation orientation = DRM_MODE_PANEL_ORIENTATION_UNKNOWN;
+ 	const struct drm_format_info *format;
+@@ -897,7 +896,6 @@ static struct simpledrm_device *simpledrm_device_create(struct drm_driver *drv,
  
  	connector = &sdev->connector;
  	ret = drm_connector_init(dev, connector, &simpledrm_connector_funcs,
