@@ -392,6 +392,7 @@ fi
 %changelog
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
 - Keep the single internal and external Uke pipelines on separate CRTCs.
+- Prefer the spare color mixer and preserve another stream's DSPP ownership.
 - Bound UCSI debugfs responses to the negotiated protocol payload size.
 
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3

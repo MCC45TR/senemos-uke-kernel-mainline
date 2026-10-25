@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "d022850686b2ac4ee3ec9e8b7443ab703673b67b068646e043a2b5b853755f36"
+      "sha256": "bc5e6b044e66c5b54bbf7bc2ee5d7ec801e4d03e146147fcfb4ea6ff74dcf6a3"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -94,6 +94,14 @@
     {
       "path": "tests/ucsi-debugfs-bounds-contract.sh",
       "sha256": "09813b84e1e08aadfdd07ace1ab1c6d25a34b73e2df0ad9bf6584d9b795ba5d7"
+    },
+    {
+      "path": "patches/display/0056-uke-preserve-bonded-panel-resources.patch",
+      "sha256": "317151c892b7f92d6690d4e7d5f72425ee6f24d6ea48cd9df2a5315e484475c6"
+    },
+    {
+      "path": "tests/dpu-mixer-reservation-contract.sh",
+      "sha256": "6d26cca722204407fc845c0c9416665f96e2b00bf56fb13451c9610901d8baa8"
     }
   ],
   "baseline_files": [

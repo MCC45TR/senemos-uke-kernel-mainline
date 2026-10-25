@@ -49,6 +49,7 @@ bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/g
 bash "$profile/tests/output-bits-contract.sh" "$kernel"
 bash "$profile/tests/dpu-output-affinity-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
 bash "$profile/tests/ucsi-debugfs-bounds-contract.sh" "$kernel/drivers/usb/typec/ucsi/debugfs.c"
+bash "$profile/tests/dpu-mixer-reservation-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_rm.c"
 bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
 bash "$profile/tests/dsi-connector-state-contract.sh" "$kernel"
 bash "$profile/tests/dsi-color-depth-contract.sh" "$kernel/drivers/gpu/drm/msm/dsi/dsi_manager.c"

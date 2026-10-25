@@ -5,7 +5,7 @@ SHELL := /bin/bash
 version := 7.3.0
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
-	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh
+	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
