@@ -252,3 +252,16 @@ for reproducible bugs and [SECURITY.md](SECURITY.md) for vulnerabilities.
 
 Project tooling and documentation use [MIT](LICENSE). Linux code and derived
 patches retain their original SPDX and GPL-compatible licenses.
+## Release channels
+
+25 October 2026: the normal mainline package and its matched singleboot child
+follow Linux 7.3.x. The scheduled selector uses the newest admitted 7.3 release,
+including upstream's `7.3` spelling, and retains signed-source verification.
+An older source queue requires a reviewed port before automatic updates.
+The common package builds its own singleboot child in the same COPR transaction;
+the separate historical metadata branch is not advanced for this channel.
+
+The unstable channel is reserved for Linux 7.4-rcN. Its source recipe refuses
+the retained 7.3 tree before installing build dependencies. A new RC still needs
+its signed archive, reviewed adaptation and package checks; the channel change
+does not qualify an unreleased kernel or establish tablet support.
