@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 1
+%global senemos_build_release 3
 %else
 %global senemos_build_release 1
 %endif
@@ -390,6 +390,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3
+- Keep the temporary framebuffer out of the native DSI connector namespace.
+- Use the SM7675 catalog mixer width for uncompressed display topology.
+
 * Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
 - Prepare the matched normal and userdata family from the reviewed Linux 7.3 port.
 - Initialize DSI and DP connector states through the Linux 7.3 factory.

@@ -1,0 +1,12 @@
+diff --git a/drivers/gpu/drm/sysfb/simpledrm.c b/drivers/gpu/drm/sysfb/simpledrm.c
+index 97aff7e..aa12b7b 100644
+--- a/drivers/gpu/drm/sysfb/simpledrm.c
++++ b/drivers/gpu/drm/sysfb/simpledrm.c
+@@ -897,7 +897,6 @@ static struct simpledrm_device *simpledrm_device_create(struct drm_driver *drv,
+ 
+ 	connector = &sdev->connector;
+ 	ret = drm_connector_init(dev, connector, &simpledrm_connector_funcs,
+-				 uke_internal_panel ? DRM_MODE_CONNECTOR_DSI :
+ 				 DRM_MODE_CONNECTOR_Unknown);
+ 	if (ret)
+ 		return ERR_PTR(ret);

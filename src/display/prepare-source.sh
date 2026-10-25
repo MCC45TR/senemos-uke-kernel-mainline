@@ -74,7 +74,10 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0047-uke-o82-retain-touch-cadence-floor.patch \
                  0048-uke-displayport-hdr-atomic-state.patch \
                  0049-uke-displayport-disconnected-lane-limit.patch \
-                 0050-uke-connector-state-73.patch; do
+                 0050-uke-connector-state-73.patch \
+                 0051-uke-sm7675-color-mixers.patch \
+                 0052-uke-firmware-connector-identity.patch \
+                 0053-uke-active-output-bits.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

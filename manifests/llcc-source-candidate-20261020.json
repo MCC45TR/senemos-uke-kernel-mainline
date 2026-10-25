@@ -69,7 +69,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "21178719af6888e5813f67fb95659a7d968fbdfcb441889a20310e352c95ab75"
+      "sha256": "565154b29b94b8d9818b97199fe5a6e8e7949f64ab680ab1c27b9e99e76a0a5c"
     },
     {
       "path": "packaging/native/llcc-profile",
