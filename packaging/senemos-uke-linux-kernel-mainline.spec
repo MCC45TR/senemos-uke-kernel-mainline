@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 5
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
@@ -390,6 +390,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
+- Enable the upstream DP AUX character interface for receiver capability diagnostics.
+- Preserve the accepted display isolation, RGB probe repair and boot contracts.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
 - Validate the registered LED device name instead of its optional input name.
 - Cover the RGB supplier probe with NULL-name and identity refusal fixtures.

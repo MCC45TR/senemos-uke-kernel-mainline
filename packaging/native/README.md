@@ -475,3 +475,11 @@ voltage/sync, SMMU mappings, backlight and MDSS ownership state without new
 register reads, power/clock writes or timing changes. Cliffs interconnect sync
 still invokes the original callback. These are diagnostic observations;
 physical gray-screen and repeated-startup qualification remain open.
+
+25 October 2026: normal 7.3.0-7 enables the original DRM DP AUX character
+interface for direct receiver-capability diagnostics. The native MSM AUX
+parent and DRM-device assignment are reviewed before enabling registration.
+This adds no DSC/FEC activation, Type-C pin override or display timing change.
+Read receiver capabilities and verify the resulting device permissions on the
+tablet before claiming external DSC support. The working release-5 display
+isolation and RGB probe repair are retained.

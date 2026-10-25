@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "b95e08d459dcfb2b07d158c3ec70185836c5cea5eb1d67c272a3b71258c2c8db"
+      "sha256": "52a72215b3a3cafd6909bb840e7d4d157f1a2207dfd64a5803a612199225ddf7"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
