@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 3
+%global senemos_build_release 4
 %else
 %global senemos_build_release 1
 %endif
@@ -390,6 +390,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
+- Own the RGB LED through a kernel consumer with battery and camera policy.
+- Provide bounded color-test and HEX control ioctls without changing LPG electrical limits.
+- Refuse competing multicolor sysfs writes while the consumer owns the LED.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3
 - Keep the temporary framebuffer out of the native DSI connector namespace.
 - Use the SM7675 catalog mixer width for uncompressed display topology.
