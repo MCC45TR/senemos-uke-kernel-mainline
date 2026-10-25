@@ -390,6 +390,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-2
+- Integrate admitted PMXR2230 torch/RGB providers and bounded flash cleanup.
+- Expose real torch brightness steps without raising the current ceiling.
+
 * Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
 - Prepare the matched normal and userdata family from the reviewed Linux 7.3 port.
 - Initialize DSI and DP connector states through the Linux 7.3 factory.
