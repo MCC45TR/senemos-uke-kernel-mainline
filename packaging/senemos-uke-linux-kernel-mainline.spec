@@ -392,6 +392,7 @@ fi
 %changelog
 * Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
 - Prepare the matched normal and userdata family from the reviewed Linux 7.3 port.
+- Initialize DSI and DP connector states through the Linux 7.3 factory.
 - Preserve guarded activation and parallel module packaging.
 
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
