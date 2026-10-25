@@ -45,7 +45,6 @@ git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
-bash "$profile/src/video/prepare-source.sh" "$kernel"
 bash "$profile/tests/dpu-color-topology-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c"
 bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/gpu/drm/sysfb/simpledrm.c"
 bash "$profile/tests/output-bits-contract.sh" "$kernel"
@@ -66,6 +65,7 @@ if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
     bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
     sha256sum "$profile/patches/boot/0009-uke-displayport-dma-scope.patch" >> "$output/abl-source-SHA256SUMS"
 fi
+bash "$profile/src/video/prepare-source.sh" "$kernel"
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
     "${usb_cpp[@]}" \
