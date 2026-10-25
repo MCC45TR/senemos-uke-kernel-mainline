@@ -1069,6 +1069,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
  */
 static unsigned char uke_fdt[UKE_FDT_CAPACITY] __ro_after_init __aligned(8);
 #include "uke-abl-overlays.h"
+#include "uke-lights.h"
 
 void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 {
@@ -1086,6 +1087,20 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
 	}
 	if (!ret)
 		return input;
+	if (uke_lights_admitted(input)) {
+		ret = fdt_open_into(uke_fdt, uke_fdt, sizeof(uke_fdt));
+		if (!ret)
+			ret = fdt_overlay_apply(uke_fdt, uke_lights_overlay);
+		if (!ret)
+			ret = fdt_pack(uke_fdt);
+		if (ret) {
+			pr_crit("Uke light overlay rejected (%d); refusing a partial graph\n", ret);
+			while (true)
+				cpu_relax();
+		}
+	} else {
+		pr_warn("Uke lights: OEM graph not admitted; light controls unavailable\n");
+	}
 	*physical = __pa_symbol(uke_fdt);
 	pr_info("Uke ABL DT: selected RAM preserved; UFS, selected USB profile and simplefb prepared\n");
 	return uke_fdt;
