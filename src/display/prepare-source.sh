@@ -77,7 +77,9 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0050-uke-connector-state-73.patch \
                  0051-uke-sm7675-color-mixers.patch \
                  0052-uke-firmware-connector-identity.patch \
-                 0053-uke-active-output-bits.patch; do
+                 0053-uke-active-output-bits.patch \
+                 0054-uke-independent-display-crtcs.patch \
+                 0055-ucsi-debugfs-response-bounds.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
