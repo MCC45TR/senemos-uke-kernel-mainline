@@ -24,8 +24,44 @@
   ],
   "files": [
     {
+      "path": "packaging/native/llcc-profile",
+      "sha256": "264857412f434201eb6eb7642da71970e5ea68b90a78a7abd6c02ad2d1c193c4"
+    },
+    {
+      "path": "packaging/native/prepare.sh",
+      "sha256": "169da2cb7157c4b288975110be9e95dd0209154736ee5a7f86e3d2fa2a03c82c"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "709a3ccb4eeae550397cd9b0721f3533f445f064b706d1926957e6ada69ef7e1"
+    },
+    {
+      "path": "src/boot/uke-abl.c",
+      "sha256": "80e75958975a3dd01e3454442ee33c78a14604045af55bbee76abd4e9372e03b"
+    },
+    {
+      "path": "src/boot/uke-llcc.h",
+      "sha256": "23c68712181a817ede3d03aca3838f9bee62084fe2da8c6a504d899878f9771a"
+    },
+    {
+      "path": "src/boot/uke-root-selector.h",
+      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+    },
+    {
       "path": "src/performance/prepare-llcc-dt.sh",
       "sha256": "2867ff6710f1530ecb9c9a1ae7846c25efdbc9e08533cadaf177b1dda7fd04b7"
+    },
+    {
+      "path": "tests/fixtures/llcc-sm7675-policy.inc",
+      "sha256": "0fec1f62be4719c8da2937d8072f1d546470da4111c863600da107ee9f70bdf4"
+    },
+    {
+      "path": "tests/llcc-boot-fdt-contract.sh",
+      "sha256": "177056612d45fcd41450fcafce1688c74f17e9dc488ddb232ac25788176630ee"
+    },
+    {
+      "path": "tests/llcc-gpu-startup-contract.sh",
+      "sha256": "44bbcebcf4773afd9b3550c45382159cff10cab2c33df9cc67782f3f20af75c9"
     },
     {
       "path": "tests/llcc-sm7675-contract.sh",
@@ -36,48 +72,12 @@
       "sha256": "313898c6ba25a99dad9fd5b4935865faf5583c956356692608f7f94cda447da3"
     },
     {
-      "path": "tests/fixtures/llcc-sm7675-policy.inc",
-      "sha256": "0fec1f62be4719c8da2937d8072f1d546470da4111c863600da107ee9f70bdf4"
-    },
-    {
-      "path": "tests/llcc-gpu-startup-contract.sh",
-      "sha256": "44bbcebcf4773afd9b3550c45382159cff10cab2c33df9cc67782f3f20af75c9"
-    },
-    {
-      "path": "src/boot/uke-llcc.h",
-      "sha256": "23c68712181a817ede3d03aca3838f9bee62084fe2da8c6a504d899878f9771a"
-    },
-    {
-      "path": "src/boot/uke-abl.c",
-      "sha256": "87a0ce40478f335217f9729ba5014a5f532bed5098c92a696cbebaee95477c7d"
-    },
-    {
-      "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "202038986a4ab34e46bdada3795d9a2d32e7ef8d1f388460056bcc3f002679b1"
-    },
-    {
-      "path": "tests/llcc-boot-fdt-contract.sh",
-      "sha256": "177056612d45fcd41450fcafce1688c74f17e9dc488ddb232ac25788176630ee"
-    },
-    {
-      "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "path": "tests/resin-wake-contract.sh",
+      "sha256": "6de153a27483d9dec6890c6c244800d8d84267e9424d4e7afde7f083d64d14d7"
     },
     {
       "path": "tests/root-selector-contract.cpp",
       "sha256": "ba1d6730de0c1f889ace858e6eff5b03c117457642b9e07b91ca907150915261"
-    },
-    {
-      "path": "packaging/native/prepare.sh",
-      "sha256": "565154b29b94b8d9818b97199fe5a6e8e7949f64ab680ab1c27b9e99e76a0a5c"
-    },
-    {
-      "path": "packaging/native/llcc-profile",
-      "sha256": "264857412f434201eb6eb7642da71970e5ea68b90a78a7abd6c02ad2d1c193c4"
-    },
-    {
-      "path": "tests/resin-wake-contract.sh",
-      "sha256": "6de153a27483d9dec6890c6c244800d8d84267e9424d4e7afde7f083d64d14d7"
     }
   ],
   "baseline_files": [
