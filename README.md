@@ -8,11 +8,12 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.3.0.json)
 
 The 25 October source targets signed Linux 7.3 with the retained Uke display,
-USB, battery and video adaptations. Normal release 11 boots on POCO Pad X1
-with matching modules, active desktop and touchscreen services. Its gesture
-entry times out after panel blanking; release 12 corrects the firmware lifetime
-and adds a downstream HDMI clock-budget check. These candidate changes still
-require native package delivery and physical wake tests. External DP DSC/FEC,
+USB, battery and video adaptations. Normal release 12 boots on POCO Pad X1
+with matching modules, active desktop and touchscreen services. A physical
+USB mouse wakes s2idle, but battery queries become unavailable after resume.
+Release 13 drains serialized battery requests before suspending their transport;
+its package and tablet validation remain pending. Double-tap gesture entry,
+external DP DSC/FEC,
 four-lane negotiation and DDC/CI remain open. Historical results below retain
 their exact older kernel identities.
 

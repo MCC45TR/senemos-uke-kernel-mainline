@@ -1,5 +1,14 @@
 # Mainline native source profile
 
+25 October 2026, Linux 7.3.0-13 candidate: release 12 resumes from a physical
+USB mouse wake, but suspending an in-flight battery request permanently latches
+the transport's EPIPE guard. Drain its serialized owner before marking the
+transport suspended. An inconsistent pending request aborts suspend; genuine
+timeout, removal and firmware-generation ambiguity remain blocked. Host tests
+execute the actual request, callback and PM functions with a concurrent reply.
+Package delivery and battery telemetry across tablet sleep remain untested.
+No charge setting, firmware reset or external DSC path is added.
+
 25 October 2026, Linux 7.3.0-12 candidate: release-11 tracing shows normal
 touch firmware reaches INIT but cannot finish REK calibration after panel
 blanking. The OEM gesture path keeps its initialized firmware. Retain that

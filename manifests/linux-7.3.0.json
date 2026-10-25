@@ -464,6 +464,10 @@
     {
       "path": "patches/7.3.0/0113-uke-display-boot-observations.patch",
       "sha256": "569c93ae9d780bfe29ab33d9d2ea46867c8576875c3e468783a196a6fdaa78fd"
+    },
+    {
+      "path": "patches/7.3.0/0114-uke-battmgr-drain-before-suspend.patch",
+      "sha256": "34bf39e452bc30ec8ac02e6ac47dc46c9b6177ce0a4a0f618c3bd58f453cfb8f"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
