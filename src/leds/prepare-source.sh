@@ -20,5 +20,6 @@ printf '\nobj-$(CONFIG_LEDS_UKE_RGB) += leds-uke-rgb.o\n' >> "$kernel/drivers/le
 git -C "$kernel" apply --check "$here/../../patches/boot/0012-led-multicolor-sysfs-disable.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0012-led-multicolor-sysfs-disable.patch"
 bash "$here/../../tests/rgb-policy.sh"
+bash "$here/../../tests/rgb-supplier.sh"
 bash "$here/../../tests/rgb-lifetime.sh"
 bash "$here/../../tests/rgb-sysfs.sh" "$kernel"

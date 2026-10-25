@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 4
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
@@ -390,6 +390,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+- Validate the registered LED device name instead of its optional input name.
+- Cover the RGB supplier probe with NULL-name and identity refusal fixtures.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
 - Keep the single internal and external Uke pipelines on separate CRTCs.
 - Prefer the spare color mixer and preserve another stream's DSPP ownership.

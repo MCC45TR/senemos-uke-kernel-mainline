@@ -8,6 +8,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
 	bash tests/rgb-policy.sh
+	bash tests/rgb-supplier.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
