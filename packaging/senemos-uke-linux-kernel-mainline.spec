@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline-unstable
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 13
+%global senemos_build_release 14
 %else
 %global senemos_build_release 1
 %endif
@@ -384,6 +384,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/unstable-default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-14
+- Model the Linux 7.3 connector state factory in the fixed-depth fixture.
+- Check both DSI state and color-depth contracts before native compilation.
+
 * Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
 - Create DSI and DP connector state through the Linux 7.3 factory callback.
 - Parallelize unchanged module packaging and report build-stage elapsed times.
