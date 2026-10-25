@@ -334,7 +334,7 @@ static int rgb_probe(struct platform_device *pdev)
 	led = devm_of_led_get(&pdev->dev, 0);
 	if (IS_ERR(led))
 		return dev_err_probe(&pdev->dev, PTR_ERR(led), "RGB supplier unavailable\n");
-	if (strcmp(led->name, "uke:rgb:status") || !(led->flags & LED_MULTI_COLOR) ||
+	if (strcmp(dev_name(led->dev), "uke:rgb:status") || !(led->flags & LED_MULTI_COLOR) ||
 	    led->max_brightness != 511 || !led->dev->parent->driver ||
 	    strcmp(led->dev->parent->driver->name, "qcom-spmi-lpg"))
 		return -ENODEV;

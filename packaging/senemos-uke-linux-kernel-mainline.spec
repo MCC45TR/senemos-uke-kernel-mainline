@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 5
+%global senemos_build_release 6
 %else
 %global senemos_build_release 1
 %endif
@@ -391,10 +391,14 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-6
 - Integrate the checked native Cliffs Iris, VIDEOCC and shared SMMU path.
-- Preserve the published release-4 display, USB and RGB source changes.
+- Preserve the published release-4/5 display, USB and RGB source changes.
 - Require private firmware before codec registration; target acceptance remains open.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+- Validate the registered LED device name instead of its optional input name.
+- Cover the RGB supplier probe with NULL-name and identity refusal fixtures.
 
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
 - Keep the single internal and external Uke pipelines on separate CRTCs.
