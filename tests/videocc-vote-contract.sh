@@ -39,10 +39,22 @@ C
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
 #include "vdd-level.h"
 static int fault, prepare_votes, unprepare_votes, regulator_gets, deinit,
-           proxy_votes, proxy_unvotes, sync_calls;
+           proxy_votes, proxy_unvotes, sync_calls, domain_gets;
+struct regulator { int unused; };
+static struct regulator bridge;
+#define EPROBE_DEFER 517
+#define IS_ERR(p) ((uintptr_t)(p) >= (uintptr_t)-4095)
+#define PTR_ERR(p) ((int)(intptr_t)(p))
+static struct regulator *devm_regulator_get_optional(struct device *dev, const char *name) {
+    (void)dev; assert(!strcmp(name,"vdd_mm_mxc")); ++domain_gets;
+    if (fault == 8) return (struct regulator *)(intptr_t)-ENODEV;
+    if (fault == 9) return (struct regulator *)(intptr_t)-EPROBE_DEFER;
+    return &bridge;
+}
 static void (*cleanup)(void *);
 static int clk_prepare_regmap(struct clk_hw *hw) { (void)hw; ++prepare_votes; return fault==1 ? -EIO : 0; }
 static void clk_unprepare_regmap(struct clk_hw *hw) { (void)hw; ++unprepare_votes; }
@@ -78,6 +90,8 @@ int main(void) {
     fault=1; assert(uke_video_pll_prepare(&hw)==-EIO && unprepare_votes==0);
     fault=2; assert(uke_video_pll_prepare(&hw)==-ETIMEDOUT && unprepare_votes==1);
     fault=0; assert(uke_video_pll_prepare(&hw)==0 && prepare_votes==3);
+    fault=8; assert(uke_video_voltage_init(&dev)==-ENODEV && !regulator_gets && !proxy_votes);
+    fault=9; assert(uke_video_voltage_init(&dev)==-EPROBE_DEFER && !regulator_gets && !proxy_votes);
     fault=3; assert(uke_video_voltage_init(&dev)==-ENODEV && proxy_votes==0);
     fault=4; assert(uke_video_voltage_init(&dev)==-ENOMEM && deinit==1 && proxy_votes==0);
     fault=5; assert(uke_video_voltage_init(&dev)==-EIO && !uke_video_proxy_active);
@@ -99,6 +113,7 @@ int main(void) {
     fault=0; uke_video_sync_state(&dev); assert(!uke_video_proxy_active);
     int releases=proxy_unvotes; uke_video_sync_state(&dev); assert(proxy_unvotes==releases);
     cleanup(&dev); assert(deinit==3 && regulator_gets==4);
+    assert(domain_gets==6);
 }
 C
 "${CC:-gcc}" -std=gnu11 -O2 -Wall -Wextra -Werror -I "$work" "$work/check.c" -o "$work/check"

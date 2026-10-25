@@ -16,16 +16,23 @@ boot change, firmware payload or tablet codec acceptance is included.
    voter before clocks; the SM7675 binding requires that supply.
 4. `0007`: the exact Uke HLOS Video/SF and Venus configuration interconnect
    routes, sharing existing display/USB/DDR providers and BCMs.
+5. `0008`: exact Uke firmware mmap/device regions, checked allocation and
+   mapping ownership, error-returning boot setup and PAS shutdown retention.
+6. `0009`: exact video SID/ACTLR admission and a shared DMA aperture starting
+   at the intersection of the OEM pixel/nonpixel pools.
+7. `0010`: reject a missing/deferred controller parent rather than allowing
+   the generic GDSC optional-supply lookup to omit it.
+8. `0011`: propagate shared Qualcomm reset transport and callback errors.
 
 The offline overlay in `src/video/` resolves against the captured Linux 7.3
 handoff FDT while leaving video nodes disabled. The shared nonsecure IOMMU
-mapping is an upstream comparison candidate; equivalence to OEM split
-pixel/nonpixel ownership remains unproven. The 192 MHz OPP is an initial
+mapping now uses the exact OEM ACTLR and the common valid DMA range;
+equivalence to OEM split ownership still needs firmware/frame tests. The 192 MHz OPP is an initial
 source test point, not a supported performance ceiling.
 
-Remaining platform work includes controller retention/reset ownership,
-firmware mmap/device-region lifetime, SKU-specific HFI capabilities and exact
-buffer addressing. Complete full kernel/RPM validation and a recoverable
+Remaining platform work includes controller retention/reset ordering,
+legacy/native provider ownership, SKU-specific HFI capabilities and target
+validation of firmware/addressing/teardown. Complete full kernel/RPM validation and a recoverable
 firmware/native V4L2 trial before activating this source series. Main10 encode,
 extended modes, lifecycle, sustained performance and applications remain
 separate required work.

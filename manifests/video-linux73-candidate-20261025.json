@@ -38,6 +38,22 @@
     {
       "path": "patches/video/0007-cliffs-video-interconnect.patch",
       "sha256": "745f42205a8739225185004c6dcaf335c597396357976ac45911c5fac6ff139f"
+    },
+    {
+      "path": "patches/video/0008-sm7675-firmware-memory-lifetime.patch",
+      "sha256": "443f337099ef1e296272cb6b9f19d7f95bd4c0f065a721edffcd3ad2743374c7"
+    },
+    {
+      "path": "patches/video/0009-sm7675-video-smmu-context.patch",
+      "sha256": "87963ee55af14833a023a4c6141d8b11a7cbc58db441c10e4d9cd350f1c10a50"
+    },
+    {
+      "path": "patches/video/0010-sm7675-required-domain-supply.patch",
+      "sha256": "cc588a025270f926c3de9db010f0a3f6f875a6cedf58b7a4fb2b3fcbfed1ed03"
+    },
+    {
+      "path": "patches/video/0011-qcom-reset-error-propagation.patch",
+      "sha256": "5849929786893dc56b217d5aff2ade545fdc5b352d3a6d48e0af8205bb4c7cde"
     }
   ],
   "checks": {
@@ -52,7 +68,16 @@
     "live_fdt_offline_overlay": true,
     "full_kernel": false,
     "kernel_rpm": false,
-    "physical_codec": false
+    "physical_codec": false,
+    "aarch64_smmu_object": true,
+    "aarch64_reset_object": true,
+    "firmware_memory_fault_fixture": true,
+    "core_pas_lifetime_fault_fixture": true,
+    "hfi_queue_memory_hooks_fixture": true,
+    "video_smmu_actlr_aperture_fixture": true,
+    "required_domain_supply_fault_fixture": true,
+    "reset_error_propagation_fixture": true,
+    "actual_source_fixture_count": 12
   },
   "sources": [
     {
@@ -62,7 +87,8 @@
         "drivers/clk/qcom/videocc-pineapple.c",
         "drivers/clk/qcom/clk-branch.c",
         "drivers/interconnect/qcom/cliffs.c",
-        "include/dt-bindings/interconnect/qcom,cliffs.h"
+        "include/dt-bindings/interconnect/qcom,cliffs.h",
+        "drivers/clk/qcom/reset.c"
       ]
     },
     {
@@ -71,7 +97,8 @@
       "files": [
         "qcom/cliffs.dtsi",
         "qcom/cliffs-regulators.dtsi",
-        "qcom/cliffs-reserved-memory.dtsi"
+        "qcom/cliffs-reserved-memory.dtsi",
+        "qcom/msm-arm-smmu-cliffs.dtsi"
       ]
     },
     {
@@ -79,7 +106,9 @@
       "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
       "files": [
         "vendor/qcom/proprietary/video-devicetree/cliffs-vidc.dtsi",
-        "vendor/qcom/opensource/video-driver/driver/variant/iris33/src/msm_vidc_iris33.c"
+        "vendor/qcom/opensource/video-driver/driver/variant/iris33/src/msm_vidc_iris33.c",
+        "vendor/qcom/opensource/video-driver/driver/platform/cliffs/src/msm_vidc_cliffs.c",
+        "vendor/qcom/opensource/video-driver/driver/vidc/src/venus_hfi_queue.c"
       ]
     },
     {
@@ -89,6 +118,14 @@
     {
       "id": "current-upstream-comparison",
       "commit": "21a7f44fd0765fcc5194130b28767786eba1d1e7"
+    },
+    {
+      "id": "exact-uke-video-module",
+      "source_release": "OS3.0.304.0.WOZMIXM",
+      "file": "vendor_dlkm/lib/modules/msm_video.ko",
+      "sha256": "2976535e5523521d953bdc762fc446e02bd5b564b28db34789d066b6070406df",
+      "device_region_symbol_offset": ".rodata+0x17660",
+      "executed": false
     }
   ],
   "firmware": {
@@ -104,9 +141,10 @@
     "python_scope": "unmodified pinned upstream host-only schema tool"
   },
   "remaining": [
-    "Controller retention and ordered reset ownership",
-    "Firmware mmap/device-region lifetime and PAS/HFI boot",
-    "Validate shared nonsecure IOMMU mapping against OEM split ownership",
+    "Controller retention and ordered reset sequencing",
+    "Legacy regulator GDSC and native provider ownership",
+    "PAS/HFI target boot and firmware UC/mmap/device-region runtime validation",
+    "Validate shared nonsecure IOMMU behavior and error teardown on target",
     "Replace inherited capability and scheduler limits with exact SKU/firmware intersection",
     "Complete native graph preparation and gated source activation",
     "Full kernel/RPM and recoverable native V4L2 validation",
