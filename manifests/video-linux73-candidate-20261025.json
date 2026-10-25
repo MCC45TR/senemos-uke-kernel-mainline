@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-25",
+  "base_commit": "470d18160dac9f9adf65ee8ff6f86472573504c1",
+  "upstream_version": "7.3.0",
+  "prior_candidate": "67c9ee7a02ad27f76beecd7d2590dffa11575acf",
+  "status": "inactive-arm64-compiled-source-candidate",
+  "active_series": false,
+  "dt_enabled": false,
+  "iris_match_added": false,
+  "firmware_packaged": false,
+  "tablet_codec_tested": false,
+  "patches": [
+    {
+      "path": "patches/video/0001-sm7675-video-linux73-candidate.patch",
+      "sha256": "e44a33a1af1f77b4b0a573e3d85d2d45d67bd07cb34130ef86ce9e1bf5b4a3e2"
+    },
+    {
+      "path": "patches/video/0002-iris-va-decode-order.patch",
+      "sha256": "800331dc6e8a14c7b4865a6b611aaf28b89d5cd751bcdbff3a78f99ca3cd4d60"
+    },
+    {
+      "path": "patches/video/0003-iris-va-capture-pool.patch",
+      "sha256": "43ac6c6c7d7561ce7154de30a2d5e041cbf597267e2aa208bcbfea7a45337ec5"
+    },
+    {
+      "path": "patches/video/0004-iris-va-encoder-deblocking.patch",
+      "sha256": "7836233d5ab86686058d0f9608ea7407636ae8dec2259e05e69a991bf9ad467f"
+    },
+    {
+      "path": "patches/video/0005-iris-va-error-timestamp.patch",
+      "sha256": "75321dfa1731fcebcc171129e6f290ff6dd97b244ff087b25357673f9696ca52"
+    },
+    {
+      "path": "patches/video/0006-sm7675-controller-domain-supply.patch",
+      "sha256": "daae4c389d4de9861ce3f5eb289e749c4f96be076d83677dd96ce79e723926e1"
+    },
+    {
+      "path": "patches/video/0007-cliffs-video-interconnect.patch",
+      "sha256": "745f42205a8739225185004c6dcaf335c597396357976ac45911c5fac6ff139f"
+    }
+  ],
+  "checks": {
+    "aarch64_iris_composite": true,
+    "aarch64_videocc_object": true,
+    "aarch64_interconnect_object": true,
+    "kcflags": "-Werror",
+    "lifecycle_fault_fixtures": true,
+    "decode_order_opt_in_fixture": true,
+    "video_display_topology_fixture": true,
+    "regulator_binding_six_refusals": true,
+    "live_fdt_offline_overlay": true,
+    "full_kernel": false,
+    "kernel_rpm": false,
+    "physical_codec": false
+  },
+  "sources": [
+    {
+      "id": "uke-oem-kernel",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "files": [
+        "drivers/clk/qcom/videocc-pineapple.c",
+        "drivers/clk/qcom/clk-branch.c",
+        "drivers/interconnect/qcom/cliffs.c",
+        "include/dt-bindings/interconnect/qcom,cliffs.h"
+      ]
+    },
+    {
+      "id": "uke-oem-dt",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "files": [
+        "qcom/cliffs.dtsi",
+        "qcom/cliffs-regulators.dtsi",
+        "qcom/cliffs-reserved-memory.dtsi"
+      ]
+    },
+    {
+      "id": "same-soc-video",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "files": [
+        "vendor/qcom/proprietary/video-devicetree/cliffs-vidc.dtsi",
+        "vendor/qcom/opensource/video-driver/driver/variant/iris33/src/msm_vidc_iris33.c"
+      ]
+    },
+    {
+      "id": "radxa-va-kernel-deltas",
+      "commit": "6d03c3f8fb19b86f84b2b6c60ff20d1402f0ac41"
+    },
+    {
+      "id": "current-upstream-comparison",
+      "commit": "21a7f44fd0765fcc5194130b28767786eba1d1e7"
+    }
+  ],
+  "firmware": {
+    "filename": "vpu30_2v.mbn",
+    "source_release": "OS3.0.304.0.WOZMIXM",
+    "sha256": "2ad782a1eace4556f13178c82480e672bb2063818f438864f45067347ccdeb2a",
+    "local_bytes_rehashed": true,
+    "pas_authentication_tested": false
+  },
+  "host_tools": {
+    "clang": "23.1.4",
+    "dt_schema": "2026.09-1.fc46",
+    "python_scope": "unmodified pinned upstream host-only schema tool"
+  },
+  "remaining": [
+    "Controller retention and ordered reset ownership",
+    "Firmware mmap/device-region lifetime and PAS/HFI boot",
+    "Validate shared nonsecure IOMMU mapping against OEM split ownership",
+    "Replace inherited capability and scheduler limits with exact SKU/firmware intersection",
+    "Complete native graph preparation and gated source activation",
+    "Full kernel/RPM and recoverable native V4L2 validation",
+    "Main10 encode, extended controls, lifecycle, performance and application matrix"
+  ]
+}
