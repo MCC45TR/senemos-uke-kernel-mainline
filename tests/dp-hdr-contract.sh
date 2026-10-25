@@ -18,6 +18,7 @@ using u8=uint8_t;using u32=uint32_t;using u64=uint64_t;
 #define DIV_ROUND_UP_ULL(n,d) (((n)+(d)-1)/(d))
 #define round_down(n,d) ((n)/(d)*(d))
 #define min3(a,b,c) std::min({a,b,c})
+#define max(a,b) std::max(a,b)
 enum drm_colorspace {DRM_MODE_COLORIMETRY_DEFAULT,DRM_MODE_COLORIMETRY_BT2020_RGB};
 enum {DP_SDP_VSC=7,DP_PIXELFORMAT_YUV420=3,DP_PIXELFORMAT_RGB=0,
       DP_DYNAMIC_RANGE_CTA=1,DP_DYNAMIC_RANGE_VESA=0,DP_CONTENT_TYPE_NOT_DEFINED=0,
@@ -51,7 +52,7 @@ static int hdmi_drm_infoframe_pack_only(hdmi_drm_infoframe*,u8* bytes,size_t len
     return packet_error?packet_error:30;
 }
 CPP
-awk '/^(bool|int) msm_dp_utils_(link_fits|select_bpp|pack_vsc_sdp|pack_hdr_sdp)\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$utils" >> "$work/check.cpp"
+awk '/^(bool|int) msm_dp_utils_(link_fits|tmds_fits|select_bpp|pack_vsc_sdp|pack_hdr_sdp)\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$utils" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 struct phy {};
 struct msm_dp_ctrl {};
@@ -91,14 +92,32 @@ int main() {
     assert(msm_dp_utils_link_fits(594000,24,540000,2,true));
     assert(!msm_dp_utils_link_fits(594000,30,540000,2,true));
     assert(!msm_dp_utils_link_fits(0,30,540000,4,false));
-    assert(msm_dp_utils_select_bpp(10,10,241500,540000,2,false,true)==30);
-    assert(msm_dp_utils_select_bpp(10,10,299890,540000,2,false,true)==-ENOSPC);
-    assert(msm_dp_utils_select_bpp(10,10,299890,540000,2,false,false)==24);
-    assert(msm_dp_utils_select_bpp(0,10,241500,540000,2,false,false)==24);
-    assert(msm_dp_utils_select_bpp(0,10,241500,540000,2,false,true)==-EINVAL);
-    assert(msm_dp_utils_select_bpp(10,8,241500,540000,2,false,true)==-EINVAL);
-    assert(msm_dp_utils_select_bpp(12,12,241500,540000,2,false,true)==30);
-    assert(msm_dp_utils_select_bpp(5,10,241500,540000,2,false,false)==-EINVAL);
+    assert(msm_dp_utils_tmds_fits(241500,30,320000,false));
+    assert(msm_dp_utils_tmds_fits(241500,30,301875,false));
+    assert(!msm_dp_utils_tmds_fits(241500,30,301874,false));
+    assert(!msm_dp_utils_tmds_fits(299890,30,320000,false));
+    assert(msm_dp_utils_tmds_fits(299890,30,374863,false));
+    assert(!msm_dp_utils_tmds_fits(299890,30,374862,false));
+    assert(msm_dp_utils_tmds_fits(299890,24,320000,false));
+    assert(msm_dp_utils_tmds_fits(594000,30,371250,true));
+    assert(!msm_dp_utils_tmds_fits(594000,30,371249,true));
+    assert(msm_dp_utils_tmds_fits(594000,24,594000,false));
+    assert(!msm_dp_utils_tmds_fits(594000,24,593999,false));
+    assert(!msm_dp_utils_tmds_fits(299890,18,240000,false));
+    assert(msm_dp_utils_tmds_fits(299890,30,0,false));
+    assert(!msm_dp_utils_tmds_fits(0,30,320000,false));
+    assert(!msm_dp_utils_tmds_fits(241500,0,320000,false));
+    assert(msm_dp_utils_select_bpp(10,10,241500,540000,4,false,true,320000)==30);
+    assert(msm_dp_utils_select_bpp(10,10,299890,540000,4,false,true,320000)==-ENOSPC);
+    assert(msm_dp_utils_select_bpp(10,10,299890,540000,4,false,false,320000)==24);
+    assert(msm_dp_utils_select_bpp(10,10,241500,540000,2,false,true,0)==30);
+    assert(msm_dp_utils_select_bpp(10,10,299890,540000,2,false,true,0)==-ENOSPC);
+    assert(msm_dp_utils_select_bpp(10,10,299890,540000,2,false,false,0)==24);
+    assert(msm_dp_utils_select_bpp(0,10,241500,540000,2,false,false,0)==24);
+    assert(msm_dp_utils_select_bpp(0,10,241500,540000,2,false,true,0)==-EINVAL);
+    assert(msm_dp_utils_select_bpp(10,8,241500,540000,2,false,true,0)==-EINVAL);
+    assert(msm_dp_utils_select_bpp(12,12,241500,540000,2,false,true,0)==30);
+    assert(msm_dp_utils_select_bpp(5,10,241500,540000,2,false,false,0)==-EINVAL);
     dp_sdp sdp{};
     assert(msm_dp_utils_pack_vsc_sdp(&sdp,DRM_MODE_COLORIMETRY_BT2020_RGB,10,false)==0);
     assert(last_vsc.colorimetry==DP_COLORIMETRY_BT2020_RGB&&last_vsc.bpc==10);

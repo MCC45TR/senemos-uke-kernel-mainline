@@ -80,7 +80,8 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
                  0053-uke-active-output-bits.patch \
                  0054-uke-independent-display-crtcs.patch \
                  0055-ucsi-debugfs-response-bounds.patch \
-                 0056-uke-preserve-bonded-panel-resources.patch; do
+                 0056-uke-preserve-bonded-panel-resources.patch \
+                 0058-uke-displayport-downstream-tmds-budget.patch; do
     patch=$here/../../patches/display/$candidate
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

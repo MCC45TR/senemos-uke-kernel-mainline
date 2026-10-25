@@ -1,6 +1,16 @@
 # Mainline native source profile
 
-25 October 2026, Linux 7.3.0-11 candidate: checked Uke double-tap commands
+25 October 2026, Linux 7.3.0-12 candidate: release-11 tracing shows normal
+touch firmware reaches INIT but cannot finish REK calibration after panel
+blanking. The OEM gesture path keeps its initialized firmware. Retain that
+known firmware state across transport quiescence, refuse gesture entry when
+it is unavailable, and invalidate it on release, fault, watchdog or a
+non-gesture suspend. Normal cold startup remains unchanged. The DP RGB
+selection also checks the HDMI monitor's advertised TMDS limit independently
+of DP bandwidth. Host tests and AArch64 objects pass; native delivery and
+physical wake remain open. This does not enable external DSC or FEC.
+
+25 October 2026, Linux 7.3.0-11 candidate history: checked Uke double-tap commands
 request panel power retention only after normal-firmware admission and command
 readback. A separate input reports checksum-valid double taps as KEY_WAKEUP.
 Reset, failed entry, removal and shutdown retain the full quiesce/power-off

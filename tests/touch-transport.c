@@ -47,6 +47,7 @@ struct nvt_uke_touch {
     bool streaming, panel_ready, suspended, removed, fault;
     bool irq_enabled, booted, idle_reset;
     bool gesture_io, gesture_armed, irq_wake;
+    bool firmware_ready;
     const struct firmware *firmware;
     bool charger_known, charger_online;
     unsigned int watchdog;
@@ -119,6 +120,7 @@ static void vb2_discard_done(struct vb2_queue *q) {
     assert(!t->boot_work.pending && !t->charger_work.pending);
     q->errors += q->done; q->done = 0;
 }
+static void vb2_queue_error(struct vb2_queue *q) { q->errors++; }
 static void *system_long_wq;
 static void queue_work(void *queue, struct work_struct *w) { mock.queues++; w->pending = 1; }
 static void *dev_get_drvdata(struct device *dev) { return dev->touch; }
@@ -149,6 +151,7 @@ static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
     mock.charger_calls++; return mock.charger_error;
 }
 #define dev_warn_ratelimited(...) do { mock.warnings++; } while (0)
+#define dev_err_ratelimited(...) do { mock.warnings++; } while (0)
 
 #include "production.h"
 
@@ -162,6 +165,7 @@ static void reset(void) {
     touch.streaming = touch.panel_ready = true;
     touch.suspended = touch.removed = touch.fault = false;
     touch.irq_enabled = false; touch.booted = true;
+    touch.firmware_ready = true;
     touch.gesture_io = touch.gesture_armed = touch.irq_wake = false;
     touch.firmware = &firmware;
     touch.charger_known = touch.charger_online = false;
@@ -291,10 +295,12 @@ int main(void) {
     assert(mock.queues == 1);
 
     /* Gesture retention is independent of raw streaming and arms wake once. */
-    reset(); mock.wake_allowed=true; touch.panel_ready=touch.streaming=false;
+    reset(); mock.wake_allowed=true; touch.streaming=false;
     u64 gesture_state=0;
+    assert(nvt_panel_changed(&touch.panel_notifier,0,&gesture_state)==NOTIFY_OK);
+    assert(!touch.panel_ready && !touch.booted && touch.firmware_ready);
     assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_STOP);
-    assert(mock.boots==1 && mock.gestures==1 && touch.gesture_armed && touch.irq_enabled);
+    assert(mock.boots==0 && mock.gestures==1 && touch.gesture_armed && touch.irq_enabled);
     assert(!nvt_ready(&touch));
     struct device gesture_device={.touch=&touch};
     mock.wake_enable_error=-EIO;
@@ -310,14 +316,29 @@ int main(void) {
     assert(!nvt_resume(&gesture_device) && !touch.irq_wake && !nvt_ready(&touch));
     assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RELEASE,&gesture_state)==NOTIFY_OK);
     assert(!touch.gesture_armed && !touch.gesture_io && !touch.irq_enabled);
+    assert(!touch.firmware_ready);
     for(unsigned int failure=0;failure<2;failure++) {
         reset(); mock.wake_allowed=true; touch.panel_ready=false;
-        if(failure) mock.gesture_error=-EPROTO; else mock.boot_error=-EIO;
+        if(failure) mock.gesture_error=-EPROTO; else touch.firmware_ready=false;
         assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_BAD);
         assert(!touch.gesture_armed && !touch.gesture_io && !touch.irq_enabled);
+        assert(!mock.boots && mock.gestures==failure);
     }
     reset(); touch.panel_ready=false;
     assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_OK && !mock.boots);
+
+    /* Only a completed normal boot can admit a later gesture transition. */
+    reset(); touch.booted=touch.firmware_ready=false; touch.idle_reset=false;
+    nvt_boot_worker(&touch.boot_work);
+    assert(mock.boots==1 && touch.booted && touch.firmware_ready && touch.irq_enabled);
+    mock.boot_error=-EIO;
+    nvt_boot_worker(&touch.boot_work);
+    assert(mock.boots==2 && !touch.booted && !touch.firmware_ready && touch.fault);
+    reset(); touch.panel_ready=false;
+    nvt_boot_worker(&touch.boot_work);
+    assert(!mock.boots && !touch.booted && !touch.firmware_ready && !touch.fault);
+    reset();
+    assert(!nvt_suspend(&gesture_device) && !touch.firmware_ready);
 
     /* The real panel callback must drain a transfer before reset may proceed. */
     for (unsigned int iteration = 0; iteration < 100; ++iteration) {

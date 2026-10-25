@@ -133,7 +133,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "37fda507fec8576f2be149341c235570aede0e152f6d1322f4cce91102c28b5f"
+      "sha256": "725098945b72f8bfbea277067f7fd028eabc1a31def88cca7475a39907b544ce"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
@@ -150,6 +150,10 @@
     {
       "path": "tests/touch-gesture.c",
       "sha256": "edb411450bdc4a61700cfe3669676465dd416a3255122e1a7289d8e9ddcfe9b8"
+    },
+    {
+      "path": "patches/display/0058-uke-displayport-downstream-tmds-budget.patch",
+      "sha256": "f95aca41aac201e77222191384bc71aead18678584ec57e29a38788734a6ccf6"
     }
   ],
   "baseline_files": [
@@ -272,7 +276,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-11",
+  "kernel_release": "7.3.0-12",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

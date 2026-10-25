@@ -5,11 +5,11 @@ root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 awk '
- /^static (bool nvt_active\(|int nvt_ready\(|int nvt_transfer\(|int nvt_spi_io\(|void nvt_irq_set\(|void nvt_quiesce\(|int nvt_panel_changed\(|int nvt_suspend\(|int nvt_resume\(|void nvt_apply_charger\(|void nvt_charger_worker\(|int nvt_supply_changed\()/ { copying=1 }
+ /^static (bool nvt_active\(|int nvt_ready\(|int nvt_transfer\(|int nvt_spi_io\(|void nvt_irq_set\(|void nvt_quiesce\(|void nvt_fault\(|void nvt_boot_worker\(|int nvt_panel_changed\(|int nvt_suspend\(|int nvt_resume\(|void nvt_apply_charger\(|void nvt_charger_worker\(|int nvt_supply_changed\()/ { copying=1 }
  copying { print }
  copying && /^}/ { copying=0 }
 ' "$root/src/input/nt36532-uke-spi.c" > "$stage/production.h"
-[[ $(grep -c '^static ' "$stage/production.h") == 12 ]]
+[[ $(grep -c '^static ' "$stage/production.h") == 14 ]]
 sanitize=()
 [[ -z ${UKE_TOUCH_SANITIZE:-} ]] || sanitize=(-fsanitize=address,undefined -fno-omit-frame-pointer)
 "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wno-unused-parameter \

@@ -59,6 +59,7 @@ struct nvt_uke_touch {
 	bool streaming, panel_ready, suspended, removed, fault;
 	bool irq_enabled, booted, idle_reset;
 	bool gesture_io, gesture_armed, irq_wake;
+	bool firmware_ready;
 	bool charger_known, charger_online;
 	u32 sequence;
 	unsigned int watchdog;
@@ -203,6 +204,7 @@ static void nvt_fault(struct nvt_uke_touch *t)
 {
 	unsigned long flags;
 
+	t->firmware_ready = false;
 	spin_lock_irqsave(&t->state_lock, flags);
 	t->fault = true;
 	t->epoch++;
@@ -268,6 +270,7 @@ static void nvt_boot_worker(struct work_struct *work)
 	t->transfer_epoch = t->epoch;
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	t->booted = false;
+	t->firmware_ready = false;
 	ret = nvt_ready(t);
 	if (!ret)
 		ret = nvt_uke_boot(&t->io, t->firmware->data, t->firmware->size,
@@ -276,6 +279,7 @@ static void nvt_boot_worker(struct work_struct *work)
 	t->watchdog = 0;
 	if (!ret) {
 		t->booted = true;
+		t->firmware_ready = true;
 		t->charger_known = false;
 		nvt_apply_charger(t);
 	} else if (ret != -ESHUTDOWN) {
@@ -348,6 +352,7 @@ static irqreturn_t nvt_irq_thread(int irq, void *context)
 	if (watchdog > 0) {
 		t->idle_reset = watchdog == 0xfd;
 		t->booted = false;
+		t->firmware_ready = false;
 		queue_work(system_long_wq, &t->boot_work);
 	}
 out:
@@ -373,9 +378,8 @@ static int nvt_panel_changed(struct notifier_block *nb, unsigned long event, voi
 		t->gesture_io = true;
 		t->transfer_epoch = ++t->epoch;
 		spin_unlock_irqrestore(&t->state_lock, flags);
-		ret = nvt_uke_boot(&t->io, t->firmware->data, t->firmware->size, false);
-		if (!ret)
-			ret = nvt_uke_gesture_enter(&t->io);
+		/* OEM keeps running firmware: REK calibration cannot finish after panel off. */
+		ret = t->firmware_ready ? nvt_uke_gesture_enter(&t->io) : -EAGAIN;
 		spin_lock_irqsave(&t->state_lock, flags);
 		t->gesture_armed = !ret;
 		t->gesture_io = !ret;
@@ -393,6 +397,9 @@ static int nvt_panel_changed(struct notifier_block *nb, unsigned long event, voi
 	}
 	if (event == UKE_O82_TOUCH_RELEASE) {
 		nvt_quiesce(t);
+		mutex_lock(&t->io_lock);
+		t->firmware_ready = false;
+		mutex_unlock(&t->io_lock);
 		sysfs_notify(&t->spi->dev.kobj, NULL, "gesture_wake_armed");
 		goto out;
 	}
@@ -775,8 +782,12 @@ static int nvt_suspend(struct device *dev)
 	if (!t->irq_wake)
 		t->epoch++;
 	spin_unlock_irqrestore(&t->state_lock, flags);
-	if (!t->irq_wake)
+	if (!t->irq_wake) {
 		nvt_quiesce(t);
+		mutex_lock(&t->io_lock);
+		t->firmware_ready = false;
+		mutex_unlock(&t->io_lock);
+	}
 	vb2_discard_done(&t->queue);
 out:
 	mutex_unlock(&t->ctrl);
