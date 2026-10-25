@@ -58,6 +58,10 @@
     {
       "path": "patches/video/0012-sm7675-checked-power-and-oneshot-irq.patch",
       "sha256": "83060fc53740f8e8abc18eb655e6c446eb535ce5a0015b72cb82062d898a5261"
+    },
+    {
+      "path": "patches/video/0013-sm7675-codec-caps-and-q16-rates.patch",
+      "sha256": "8e3acbccbcd1ecdbfb23615de58914c85a18c61290736c306134c365ddcf6127"
     }
   ],
   "checks": {
@@ -81,13 +85,14 @@
     "video_smmu_actlr_aperture_fixture": true,
     "required_domain_supply_fault_fixture": true,
     "reset_error_propagation_fixture": true,
-    "actual_source_fixture_count": 15,
+    "actual_source_fixture_count": 16,
     "controller_retention_fault_fixture": true,
     "controller_reset_retry_fixture": true,
     "oneshot_irq_pm_fixture": true,
     "videocc_enabled_during_compile": true,
     "patch_reapplication_zero_fuzz": true,
-    "offline_legacy_gdsc_ownership": true
+    "offline_legacy_gdsc_ownership": true,
+    "codec_caps_q16_fixture": true
   },
   "sources": [
     {
@@ -136,6 +141,16 @@
       "sha256": "2976535e5523521d953bdc762fc446e02bd5b564b28db34789d066b6070406df",
       "device_region_symbol_offset": ".rodata+0x17660",
       "executed": false
+    },
+    {
+      "id": "uke-oem-cliffs-codec-xml",
+      "source_release": "OS3.0.304.0.WOZMIXM",
+      "files": [
+        "vendor/etc/media_codecs_cliffs_v0.xml",
+        "vendor/etc/media_codecs_cliffs_v1.xml"
+      ],
+      "sha256": "748f378bb70638e464023767ec2bb5f9c113b38bb586f46f5ecda3dc2894160f",
+      "variants_identical": true
     }
   ],
   "firmware": {
@@ -155,7 +170,7 @@
     "Physical native VIDEOCC domain/supply ownership validation",
     "PAS/HFI target boot and firmware UC/mmap/device-region runtime validation",
     "Validate shared nonsecure IOMMU behavior and error teardown on target",
-    "Replace inherited capability and scheduler limits with exact SKU/firmware intersection",
+    "Qualify remaining HFI controls, SKU/fuse admission, coded-height conflicts and aggregate scheduling against firmware",
     "Complete native graph preparation and gated source activation",
     "Full kernel/RPM and recoverable native V4L2 validation",
     "Main10 encode, extended controls, lifecycle, performance and application matrix",

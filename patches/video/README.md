@@ -25,6 +25,8 @@ boot change, firmware payload or tablet codec acceptance is included.
 8. `0011`: propagate shared Qualcomm reset transport and callback errors.
 9. `0012`: exact ordered controller reset and provider-owned retention,
    retryable power teardown, checked PM references and an SM7675 oneshot IRQ.
+10. `0013`: codec/direction-specific dimensions, rate budgets and firmware
+    control bounds, safe encoder pipe arithmetic and Q16 frame-rate preservation.
 
 The offline overlay in `src/video/` resolves against the captured Linux 7.3
 handoff FDT while leaving video nodes disabled. The overlay also disables
@@ -35,10 +37,23 @@ The shared nonsecure IOMMU mapping uses the exact OEM ACTLR and common DMA range
 equivalence to OEM split ownership still needs firmware/frame tests. The 192 MHz OPP is an initial
 source test point, not a supported performance ceiling.
 
-Fifteen actual-source host fixtures cover the new sequence, partial startup,
+Sixteen actual-source host fixtures cover the new sequence, partial startup,
 every reset failure, retention/readback failures, teardown retries and IRQ/PM
 ownership. Iris and VIDEOCC compile with `CONFIG_SM_VIDEOCC_8550=m` and
 `-Werror`; this checks the real exported-helper call rather than its stub.
+
+The exact OS3.0.304.0 Cliffs v0/v1 XML files are identical, SHA-256
+`748f378bb70638e464023767ec2bb5f9c113b38bb586f46f5ecda3dc2894160f`.
+Their clear-video limits and the pinned Cliffs instance tables bound the
+initial controls. Frame interval enumeration checks blocks/frame and floors
+the blocks/s-derived rate. Encoder admission retains fractional Q16 rates,
+including through both HFI packet writers, and restores the prior setting
+when a request fails. The encoder clock estimate uses the platform pipe
+count because its firmware table has no PIPE entry.
+
+Main10 encode stays gated until the native P010 buffer/HFI path is implemented.
+Coded-height conflicts, aggregate scheduling, remaining extended controls and
+physical high-rate acceptance remain open; source limits are not measurements.
 
 Remaining platform work includes SKU-specific HFI capabilities and target
 validation of firmware/addressing/teardown. Complete full kernel/RPM validation and a recoverable
