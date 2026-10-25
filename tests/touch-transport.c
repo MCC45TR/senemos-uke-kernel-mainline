@@ -14,6 +14,10 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 #define NVT_UKE_FRAME_SIZE 5432
 #define NOTIFY_OK 1
+#define NOTIFY_STOP 0x8001
+#define NOTIFY_BAD 0x8002
+#define UKE_O82_TOUCH_RETAIN 1
+#define UKE_O82_TOUCH_RELEASE 2
 #define POWER_SUPPLY_PROP_ONLINE 1
 #define PSY_EVENT_PROP_CHANGED 1
 #define container_of(p, t, m) ((t *)((char *)(p) - offsetof(t, m)))
@@ -23,8 +27,9 @@ typedef pthread_mutex_t mutex_t;
 #define spin_lock_irqsave(m, f) do { (f) = 0; mutex_lock(m); } while (0)
 #define spin_unlock_irqrestore(m, f) do { (void)(f); mutex_unlock(m); } while (0)
 struct nvt_uke_touch;
-struct spi_device { struct nvt_uke_touch *touch; int irq, dev; };
-struct device { struct nvt_uke_touch *touch; };
+struct device { struct nvt_uke_touch *touch; int kobj; };
+struct spi_device { struct nvt_uke_touch *touch; int irq; struct device dev; };
+struct firmware { const u8 *data; size_t size; };
 struct work_struct { unsigned int pending; struct nvt_uke_touch *touch; };
 struct notifier_block { int unused; };
 struct nvt_uke_io { void *context; };
@@ -41,6 +46,8 @@ struct nvt_uke_touch {
     u64 epoch, transfer_epoch, panel_state;
     bool streaming, panel_ready, suspended, removed, fault;
     bool irq_enabled, booted, idle_reset;
+    bool gesture_io, gesture_armed, irq_wake;
+    const struct firmware *firmware;
     bool charger_known, charger_online;
     unsigned int watchdog;
     u8 *tx, *rx;
@@ -59,6 +66,9 @@ static struct {
     unsigned int charger_calls, psy_gets, warnings;
     int charger_error, psy_error, online, psy_refs;
     bool psy_missing;
+    bool wake_allowed;
+    int wake_enable_error, wake_disable_error, boot_error, gesture_error;
+    unsigned int wake_enables, wake_disables, boots, gestures;
     u8 bytes[2][NVT_UKE_FRAME_SIZE + 2];
     bool block, entered, proceed;
     pthread_mutex_t lock;
@@ -91,13 +101,21 @@ static int spi_sync(struct spi_device *spi, struct spi_message *m) {
 }
 static void enable_irq(int irq) { assert(irq == 54); mock.enables++; }
 static void disable_irq(int irq) { assert(irq == 54); mock.disables++; }
+static int enable_irq_wake(int irq) { assert(irq == 54); mock.wake_enables++; return mock.wake_enable_error; }
+static int disable_irq_wake(int irq) { assert(irq == 54); mock.wake_disables++; return mock.wake_disable_error; }
+static bool device_may_wakeup(struct device *dev) { return mock.wake_allowed; }
+static void sysfs_notify(void *kobj, const char *dir, const char *name) {
+    assert(!dir && !strcmp(name, "gesture_wake_armed"));
+}
+#define dev_warn(...) do { mock.warnings++; } while (0)
+#define dev_err(...) do { mock.warnings++; } while (0)
 static void cancel_work_sync(struct work_struct *w) {
     assert(!w->touch->irq_enabled);
     mock.cancels++; w->pending = 0;
 }
 static void vb2_discard_done(struct vb2_queue *q) {
     struct nvt_uke_touch *t = container_of(q, struct nvt_uke_touch, queue);
-    assert(t->suspended && !t->irq_enabled);
+    assert(t->suspended && (!t->irq_enabled || t->irq_wake));
     assert(!t->boot_work.pending && !t->charger_work.pending);
     q->errors += q->done; q->done = 0;
 }
@@ -120,6 +138,12 @@ static int power_supply_get_property(struct power_supply *s, int prop, union pow
 }
 static void power_supply_put(struct power_supply *s) { assert(s == &psy); mock.psy_refs--; }
 static int nvt_ready(void *context);
+static int nvt_uke_boot(const struct nvt_uke_io *io, const u8 *data, size_t size, bool idle) {
+    assert(!nvt_ready(io->context) && !idle); mock.boots++; return mock.boot_error;
+}
+static int nvt_uke_gesture_enter(const struct nvt_uke_io *io) {
+    assert(!nvt_ready(io->context)); mock.gestures++; return mock.gesture_error;
+}
 static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
     assert(nvt_ready(io->context) == 0 && online == mock.online);
     mock.charger_calls++; return mock.charger_error;
@@ -131,12 +155,15 @@ static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
 static struct nvt_uke_touch touch;
 static struct spi_device spi = { .touch = &touch, .irq = 54 };
 static u8 tx[NVT_UKE_FRAME_SIZE + 2], rx[NVT_UKE_FRAME_SIZE + 2];
+static const struct firmware firmware;
 
 static void reset(void) {
     touch.epoch = touch.transfer_epoch = 1;
     touch.streaming = touch.panel_ready = true;
     touch.suspended = touch.removed = touch.fault = false;
     touch.irq_enabled = false; touch.booted = true;
+    touch.gesture_io = touch.gesture_armed = touch.irq_wake = false;
+    touch.firmware = &firmware;
     touch.charger_known = touch.charger_online = false;
     touch.panel_state = 1; touch.watchdog = 10; touch.idle_reset = true;
     touch.boot_work.pending = 0;
@@ -147,6 +174,9 @@ static void reset(void) {
     mock.charger_calls = mock.psy_gets = mock.warnings = 0;
     mock.charger_error = mock.psy_error = mock.psy_refs = 0;
     mock.online = 1; mock.psy_missing = false;
+    mock.wake_allowed = false;
+    mock.wake_enable_error = mock.wake_disable_error = mock.boot_error = mock.gesture_error = 0;
+    mock.wake_enables = mock.wake_disables = mock.boots = mock.gestures = 0;
     mock.block = mock.entered = mock.proceed = false;
 }
 
@@ -259,6 +289,33 @@ int main(void) {
     assert(mock.queues == 0);
     assert(nvt_supply_changed(&touch.supply_notifier, PSY_EVENT_PROP_CHANGED, &psy) == NOTIFY_OK);
     assert(mock.queues == 1);
+
+    /* Gesture retention is independent of raw streaming and arms wake once. */
+    reset(); mock.wake_allowed=true; touch.panel_ready=touch.streaming=false;
+    u64 gesture_state=0;
+    assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_STOP);
+    assert(mock.boots==1 && mock.gestures==1 && touch.gesture_armed && touch.irq_enabled);
+    assert(!nvt_ready(&touch));
+    struct device gesture_device={.touch=&touch};
+    mock.wake_enable_error=-EIO;
+    assert(nvt_suspend(&gesture_device)==-EIO && !touch.suspended && !touch.irq_wake);
+    mock.wake_enable_error=0;
+    assert(!nvt_suspend(&gesture_device) && touch.irq_wake && touch.irq_enabled);
+    assert(nvt_ready(&touch)==-ESHUTDOWN);
+    mock.wake_disable_error=-EIO;
+    assert(nvt_resume(&gesture_device)==-EIO && touch.suspended && touch.irq_wake);
+    mock.wake_disable_error=0;
+    assert(!nvt_resume(&gesture_device) && !touch.irq_wake && !nvt_ready(&touch));
+    assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RELEASE,&gesture_state)==NOTIFY_OK);
+    assert(!touch.gesture_armed && !touch.gesture_io && !touch.irq_enabled);
+    for(unsigned int failure=0;failure<2;failure++) {
+        reset(); mock.wake_allowed=true; touch.panel_ready=false;
+        if(failure) mock.gesture_error=-EPROTO; else mock.boot_error=-EIO;
+        assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_BAD);
+        assert(!touch.gesture_armed && !touch.gesture_io && !touch.irq_enabled);
+    }
+    reset(); touch.panel_ready=false;
+    assert(nvt_panel_changed(&touch.panel_notifier,UKE_O82_TOUCH_RETAIN,&gesture_state)==NOTIFY_OK && !mock.boots);
 
     /* The real panel callback must drain a transfer before reset may proceed. */
     for (unsigned int iteration = 0; iteration < 100; ++iteration) {

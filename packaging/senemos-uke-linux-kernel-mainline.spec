@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 10
+%global senemos_build_release 11
 %else
 %global senemos_build_release 1
 %endif
@@ -391,6 +391,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
+- Add checked gesture retention and selective lid-open dispatch for s2idle wake trials.
+- Preserve the release-10 display, video, AUX and ELD changes.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-10
 - Notify the registered Uke DP PCM ELD control when its cached bytes change.
 - Retain the reviewed video prerequisites and receiver diagnostic interface.

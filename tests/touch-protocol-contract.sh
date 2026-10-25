@@ -42,6 +42,11 @@ printf '#include_next <linux/errno.h>\n' > "$stage/linux/errno.h"
     -I "$stage" "$root/tests/touch-protocol.c" "$root/src/input/nt36532-uke-protocol.c" \
     "${sanitize[@]}" -o "$stage/check"
 "$stage/check"
+"${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
+    -I "$stage" "$root/tests/touch-gesture.c" "$root/src/input/nt36532-uke-protocol.c" \
+    "${sanitize[@]}" -o "$stage/gesture"
+"$stage/gesture"
+printf 'Checked Uke gesture command sequence, checksum, filtering and failure paths: PASS\n'
 if [[ -n ${UKE_TOUCH_REFERENCE_DECODER:-} ]]; then
     [[ -f $UKE_TOUCH_REFERENCE_DECODER ]]
     "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -I "$stage" \

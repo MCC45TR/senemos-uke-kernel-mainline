@@ -93,6 +93,10 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define ALIGN(n,a) (((n)+(a)-1)&~((a)-1))
 #define BIT(n) (1U<<(n))
+#define GENMASK(h,l) (((~0U) << (l)) & ((~0U) >> (31-(h))))
+#define NOTIFY_STOP 0x8001
+#define UKE_O82_TOUCH_RETAIN 1
+#define UKE_O82_TOUCH_RELEASE 2
 #define dev_err(dev,fmt,...) ((void)snprintf(last_error,sizeof(last_error),fmt,##__VA_ARGS__))
 #define dev_info(dev,fmt,...) info(fmt,##__VA_ARGS__)
 #define dev_warn(...) ((void)0)
@@ -130,8 +134,12 @@ typedef struct {u64 value;} atomic64_t;
 static u64 atomic64_read(const atomic64_t *state) {return state->value;}
 static void atomic64_set(atomic64_t *state,u64 value) {state->value=value;}
 struct blocking_notifier_head {u64 last; unsigned int calls;};
+static int gesture_notify_result, gesture_retains, gesture_releases;
 static int blocking_notifier_call_chain(struct blocking_notifier_head *head,unsigned long event,void *data) {
-    assert(head && event==0 && data); head->last=*(u64 *)data; ++head->calls; return 0;
+    assert(head && data);
+    if(event==UKE_O82_TOUCH_RETAIN) {++gesture_retains; return gesture_notify_result;}
+    if(event==UKE_O82_TOUCH_RELEASE) {++gesture_releases; return 0;}
+    assert(!event); head->last=*(u64 *)data; ++head->calls; return 0;
 }
 static void sysfs_notify(int *kobj,const char *directory,const char *name) {
     assert(kobj&&!directory&&!strcmp(name,"touch_reset_state"));
@@ -473,6 +481,7 @@ cat >> "$work/check.c" <<'C'
     return 0;
 }
 static struct o82_panel context(int variant,int mode) {
+    gesture_notify_result=gesture_retains=gesture_releases=0;
     static const struct drm_panel_funcs funcs={.enable=o82_enable,.disable=o82_disable};
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
@@ -517,6 +526,24 @@ static struct o82_panel context(int variant,int mode) {
     return ctx;
 }
 int main(void) {
+    {
+        struct o82_panel c=context(0,3);
+        assert(!o82_prepare(&c.panel));
+        gesture_notify_result=NOTIFY_STOP;
+        assert(!o82_unprepare(&c.panel));
+        assert(!c.prepared && c.gesture_retained && gesture_retains==1);
+        for(int i=0;i<3;i++) assert(balance[i]==1);
+        assert(!o82_unprepare(&c.panel) && gesture_retains==1);
+        const int released=gesture_releases;
+        pps_start=transfers+2*c.active->on_count-pps_transfers;
+        assert(!o82_prepare(&c.panel) && !c.gesture_retained);
+        assert(gesture_releases==released+1);
+        for(int i=0;i<3;i++) assert(balance[i]==1);
+        assert(!o82_unprepare(&c.panel) && c.gesture_retained);
+        c.removing=true;
+        assert(!o82_unprepare(&c.panel) && !c.gesture_retained);
+        for(int i=0;i<3;i++) assert(!balance[i]);
+    }
     for(int result=0;result<4;result++) {
         struct o82_panel ctx=context(0,3);
         probe_backlight=result==0 ? ctx.backlight:result==1 ? NULL:ERR_PTR(result==2 ? -EIO:-ENODEV);

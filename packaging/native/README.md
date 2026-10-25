@@ -1,5 +1,17 @@
 # Mainline native source profile
 
+25 October 2026, Linux 7.3.0-11 candidate: checked Uke double-tap commands
+request panel power retention only after normal-firmware admission and command
+readback. A separate input reports checksum-valid double taps as KEY_WAKEUP.
+Reset, failed entry, removal and shutdown retain the full quiesce/power-off
+path. Wake IRQ ownership is balanced across system sleep. The paired SMEM lid
+consumer reports a wake event only for a valid opening; its selected ADSP
+parent dispatches nested events during s2idle without an unconditional wake.
+Closing and tablet-mode events do not report wake. Deep-suspend wake, physical
+gestures, power consumption and accessory wake require tablet validation.
+The release-10 graphics, video, AUX and ELD source is preserved. No external
+DSC/FEC or Type-C pin override is enabled by these wake changes.
+
 25 October 2026, Linux 7.3.0-5 candidate: the native Cliffs Iris path adds
 checked firmware mappings, controller/reset/IRQ ownership and the exact Uke
 VIDEOCC/SMMU graph. It retains the published release-4 display, USB and RGB

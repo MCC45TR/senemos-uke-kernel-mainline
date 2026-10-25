@@ -8,11 +8,14 @@
 #include <linux/firmware.h>
 #include <linux/gpio/consumer.h>
 #include <linux/interrupt.h>
+#include <linux/input.h>
 #include <linux/irq.h>
 #include <linux/module.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/power_supply.h>
+#include <linux/pm_wakeup.h>
+#include <linux/property.h>
 #include <linux/slab.h>
 #include <linux/spi/spi.h>
 #include <linux/uidgid.h>
@@ -37,6 +40,7 @@ struct nvt_uke_buffer {
 
 struct nvt_uke_touch {
 	struct spi_device *spi;
+	struct input_dev *wake_input;
 	struct v4l2_device v4l2;
 	struct video_device video;
 	struct vb2_queue queue;
@@ -54,6 +58,7 @@ struct nvt_uke_touch {
 	u64 epoch, transfer_epoch, panel_state;
 	bool streaming, panel_ready, suspended, removed, fault;
 	bool irq_enabled, booted, idle_reset;
+	bool gesture_io, gesture_armed, irq_wake;
 	bool charger_known, charger_online;
 	u32 sequence;
 	unsigned int watchdog;
@@ -73,7 +78,8 @@ static int nvt_ready(void *context)
 	int ret;
 
 	spin_lock_irqsave(&t->state_lock, flags);
-	ret = nvt_active(t) && t->transfer_epoch == t->epoch ? 0 : -ESHUTDOWN;
+	ret = (nvt_active(t) || (t->gesture_io && !t->suspended &&
+		!t->removed && !t->fault)) && t->transfer_epoch == t->epoch ? 0 : -ESHUTDOWN;
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	return ret;
 }
@@ -152,7 +158,8 @@ static void nvt_irq_set(struct nvt_uke_touch *t, bool enabled)
 
 	mutex_lock(&t->irq_lock);
 	spin_lock_irqsave(&t->state_lock, flags);
-	active = nvt_active(t) && t->transfer_epoch == t->epoch;
+	active = (nvt_active(t) || (t->gesture_armed && !t->removed && !t->fault)) &&
+		t->transfer_epoch == t->epoch;
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	enabled &= active;
 	if (enabled != t->irq_enabled) {
@@ -167,12 +174,26 @@ static void nvt_irq_set(struct nvt_uke_touch *t, bool enabled)
 
 static void nvt_quiesce(struct nvt_uke_touch *t)
 {
+	int ret;
+	unsigned long flags;
+
 	/* State was invalidated first. Drain IRQ before its last work enqueue. */
 	nvt_irq_set(t, false);
+	if (t->irq_wake) {
+		ret = disable_irq_wake(t->spi->irq);
+		if (ret)
+			dev_err(&t->spi->dev, "THP wake IRQ disarm failed: %d\n", ret);
+		else
+			t->irq_wake = false;
+	}
 	cancel_work_sync(&t->boot_work);
 	cancel_work_sync(&t->charger_work);
 	mutex_lock(&t->io_lock);
 	t->booted = false;
+	spin_lock_irqsave(&t->state_lock, flags);
+	t->gesture_armed = false;
+	t->gesture_io = false;
+	spin_unlock_irqrestore(&t->state_lock, flags);
 	t->watchdog = 0;
 	t->idle_reset = false;
 	mutex_unlock(&t->io_lock);
@@ -295,6 +316,18 @@ static irqreturn_t nvt_irq_thread(int irq, void *context)
 	int ret, watchdog;
 
 	mutex_lock(&t->io_lock);
+	if (t->gesture_armed) {
+		if (!nvt_ready(t) && device_may_wakeup(&t->spi->dev) &&
+		    !nvt_uke_read_frame(&t->io, t->frame) &&
+		    nvt_uke_double_tap(t->frame, NVT_UKE_GESTURE_SIZE) == 1) {
+			pm_wakeup_event(&t->spi->dev, 500);
+			input_report_key(t->wake_input, KEY_WAKEUP, 1);
+			input_sync(t->wake_input);
+			input_report_key(t->wake_input, KEY_WAKEUP, 0);
+			input_sync(t->wake_input);
+		}
+		goto out;
+	}
 	if (!t->booted || nvt_ready(t))
 		goto out;
 	ret = nvt_uke_read_frame(&t->io, t->frame);
@@ -328,8 +361,41 @@ static int nvt_panel_changed(struct notifier_block *nb, unsigned long event, voi
 	u64 state = *(u64 *)data;
 	unsigned long flags;
 	bool active;
+	int ret = NOTIFY_OK;
 
 	mutex_lock(&t->ctrl);
+	if (event == UKE_O82_TOUCH_RETAIN) {
+		if (!device_may_wakeup(&t->spi->dev) || t->removed || t->fault || t->suspended)
+			goto out;
+		nvt_quiesce(t);
+		mutex_lock(&t->io_lock);
+		spin_lock_irqsave(&t->state_lock, flags);
+		t->gesture_io = true;
+		t->transfer_epoch = ++t->epoch;
+		spin_unlock_irqrestore(&t->state_lock, flags);
+		ret = nvt_uke_boot(&t->io, t->firmware->data, t->firmware->size, false);
+		if (!ret)
+			ret = nvt_uke_gesture_enter(&t->io);
+		spin_lock_irqsave(&t->state_lock, flags);
+		t->gesture_armed = !ret;
+		t->gesture_io = !ret;
+		spin_unlock_irqrestore(&t->state_lock, flags);
+		mutex_unlock(&t->io_lock);
+		if (ret) {
+			dev_warn(&t->spi->dev, "THP gesture entry failed: %d; power retention refused\n", ret);
+			ret = NOTIFY_BAD;
+		} else {
+			nvt_irq_set(t, true);
+			ret = NOTIFY_STOP;
+		}
+		sysfs_notify(&t->spi->dev.kobj, NULL, "gesture_wake_armed");
+		goto out;
+	}
+	if (event == UKE_O82_TOUCH_RELEASE) {
+		nvt_quiesce(t);
+		sysfs_notify(&t->spi->dev.kobj, NULL, "gesture_wake_armed");
+		goto out;
+	}
 	if (state != t->panel_state) {
 		spin_lock_irqsave(&t->state_lock, flags);
 		t->panel_state = state;
@@ -344,8 +410,9 @@ static int nvt_panel_changed(struct notifier_block *nb, unsigned long event, voi
 		if (active)
 			queue_work(system_long_wq, &t->boot_work);
 	}
+out:
 	mutex_unlock(&t->ctrl);
-	return NOTIFY_OK;
+	return ret;
 }
 
 static int nvt_queue_setup(struct vb2_queue *q, unsigned int *count,
@@ -388,7 +455,8 @@ static int nvt_start_streaming(struct vb2_queue *q, unsigned int count)
 	spin_lock_irqsave(&t->state_lock, flags);
 	t->streaming = true;
 	t->fault = false;
-	t->epoch++;
+	if (!t->gesture_armed)
+		t->epoch++;
 	active = nvt_active(t);
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	t->sequence = 0;
@@ -408,9 +476,11 @@ static void nvt_stop_streaming(struct vb2_queue *q)
 	mutex_lock(&t->ctrl);
 	spin_lock_irqsave(&t->state_lock, flags);
 	t->streaming = false;
-	t->epoch++;
+	if (!t->gesture_armed)
+		t->epoch++;
 	spin_unlock_irqrestore(&t->state_lock, flags);
-	nvt_quiesce(t);
+	if (!t->gesture_armed)
+		nvt_quiesce(t);
 	spin_lock_irqsave(&t->buffers_lock, flags);
 	list_splice_init(&t->buffers, &pending);
 	spin_unlock_irqrestore(&t->buffers_lock, flags);
@@ -507,6 +577,22 @@ static void nvt_release(struct v4l2_device *v4l2)
 
 static const struct drm_panel_follower_funcs nvt_follower_funcs = { };
 
+static void nvt_wake_cleanup(void *data)
+{
+	device_init_wakeup(data, false);
+}
+
+static ssize_t gesture_wake_armed_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct nvt_uke_touch *t = dev_get_drvdata(dev);
+
+	return sysfs_emit(buf, "%u\n", READ_ONCE(t->gesture_armed));
+}
+static DEVICE_ATTR_RO(gesture_wake_armed);
+static struct attribute *nvt_attrs[] = { &dev_attr_gesture_wake_armed.attr, NULL };
+ATTRIBUTE_GROUPS(nvt);
+
 static int nvt_probe(struct spi_device *spi)
 {
 	struct device *dev = &spi->dev;
@@ -565,6 +651,23 @@ static int nvt_probe(struct spi_device *spi)
 		goto put;
 	spi->bits_per_word = 8;
 	ret = spi_setup(spi);
+	if (ret)
+		goto put;
+	t->wake_input = devm_input_allocate_device(dev);
+	if (!t->wake_input) {
+		ret = -ENOMEM;
+		goto put;
+	}
+	t->wake_input->name = "Uke Double Tap Wake";
+	t->wake_input->id.bustype = BUS_SPI;
+	input_set_capability(t->wake_input, EV_KEY, KEY_WAKEUP);
+	ret = input_register_device(t->wake_input);
+	if (ret)
+		goto put;
+	ret = device_init_wakeup(dev, device_property_present(dev, "wakeup-source"));
+	if (ret)
+		goto put;
+	ret = devm_add_action_or_reset(dev, nvt_wake_cleanup, dev);
 	if (ret)
 		goto put;
 	ret = devm_request_threaded_irq(dev, spi->irq, NULL, nvt_irq_thread,
@@ -654,16 +757,26 @@ static int nvt_suspend(struct device *dev)
 {
 	struct nvt_uke_touch *t = dev_get_drvdata(dev);
 	unsigned long flags;
+	int ret = 0;
 
 	mutex_lock(&t->ctrl);
+	if (t->gesture_armed && device_may_wakeup(dev) && !t->removed) {
+		ret = enable_irq_wake(t->spi->irq);
+		if (ret)
+			goto out;
+		t->irq_wake = true;
+	}
 	spin_lock_irqsave(&t->state_lock, flags);
 	t->suspended = true;
-	t->epoch++;
+	if (!t->irq_wake)
+		t->epoch++;
 	spin_unlock_irqrestore(&t->state_lock, flags);
-	nvt_quiesce(t);
+	if (!t->irq_wake)
+		nvt_quiesce(t);
 	vb2_discard_done(&t->queue);
+out:
 	mutex_unlock(&t->ctrl);
-	return 0;
+	return ret;
 }
 
 static int nvt_resume(struct device *dev)
@@ -671,11 +784,21 @@ static int nvt_resume(struct device *dev)
 	struct nvt_uke_touch *t = dev_get_drvdata(dev);
 	unsigned long flags;
 	bool active;
+	int ret;
 
 	mutex_lock(&t->ctrl);
+	if (t->irq_wake) {
+		ret = disable_irq_wake(t->spi->irq);
+		if (ret) {
+			mutex_unlock(&t->ctrl);
+			return ret;
+		}
+		t->irq_wake = false;
+	}
 	spin_lock_irqsave(&t->state_lock, flags);
 	t->suspended = false;
-	t->epoch++;
+	if (!t->gesture_armed)
+		t->epoch++;
 	active = nvt_active(t);
 	spin_unlock_irqrestore(&t->state_lock, flags);
 	if (active)
@@ -688,6 +811,11 @@ static DEFINE_SIMPLE_DEV_PM_OPS(nvt_pm_ops, nvt_suspend, nvt_resume);
 
 static void nvt_shutdown(struct spi_device *spi)
 {
+	struct nvt_uke_touch *t = spi_get_drvdata(spi);
+
+	mutex_lock(&t->ctrl);
+	t->removed = true;
+	mutex_unlock(&t->ctrl);
 	nvt_suspend(&spi->dev);
 }
 
@@ -706,6 +834,7 @@ static struct spi_driver nvt_driver = {
 		.name = "nt36532-uke-thp",
 		.of_match_table = nvt_matches,
 		.pm = pm_sleep_ptr(&nvt_pm_ops),
+		.dev_groups = nvt_groups,
 	},
 	.probe = nvt_probe,
 	.remove = nvt_remove,

@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "cce63b2ed7dee711f8a84c788d1e48a97a2b74c47cdc4c93979cc53f0641a831"
+      "sha256": "242aa7eb8e92704aeb1c8e77594caacd7788e4b67763364f2b66ac26dbd0979f"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -110,6 +110,46 @@
     {
       "path": "tests/dp-eld-notification-contract.sh",
       "sha256": "b97c2bea7f3f98baf3bf84ffc584a9cb9a3915861c899eee1f6fdc86627bc915"
+    },
+    {
+      "path": "patches/input/0001-smp2p-lid-open-wake.patch",
+      "sha256": "e856477b3346c4a58e536c6f828f925ec191466d299c43fc3df8dfd77847cfb0"
+    },
+    {
+      "path": "tests/lid-wake-contract.sh",
+      "sha256": "436cacbb2a2597538cd541c1cd5af7f286daf5900ee30b4d017c1c1daa46f81e"
+    },
+    {
+      "path": "src/boot/uke-hall.h",
+      "sha256": "7489b10dd5a6a81fbbb2b44cbf8fc26873e3f6c06f7216ea708a30750ae49d35"
+    },
+    {
+      "path": "src/display/panel-xiaomi-o82.c",
+      "sha256": "0cf49d8dd01c499a73085489e59cd638c0f8c413cefefefe1de616c0c6c869e9"
+    },
+    {
+      "path": "src/display/uke-o82-touch.h",
+      "sha256": "8421c0bfb2feb718bc35acab02228dc660317097524e0aec3fcc980a4b72dd53"
+    },
+    {
+      "path": "src/input/nt36532-uke-spi.c",
+      "sha256": "d6a8181a4736813e5544d2d5b2117affc1d1214dffcbcdfed93c385182993f7a"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.c",
+      "sha256": "35e06863fc3fe09446d8070c0e1fa00d86e06fd0eac9565da0654b2b03f5f486"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.h",
+      "sha256": "129996737927c5515e2c1c9101a7d0703e880b50119e29914b85aef739e54913"
+    },
+    {
+      "path": "src/input/sm7675-uke-thp.dtsi",
+      "sha256": "adacddbe4b4b8b035914ecde9f3b79c8ae9f3d847c4c54afa8b7c1f38fd5963a"
+    },
+    {
+      "path": "tests/touch-gesture.c",
+      "sha256": "edb411450bdc4a61700cfe3669676465dd416a3255122e1a7289d8e9ddcfe9b8"
     }
   ],
   "baseline_files": [
@@ -232,7 +272,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-10",
+  "kernel_release": "7.3.0-11",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -341,3 +341,69 @@ int nvt_uke_charger(const struct nvt_uke_io *io, bool connected)
 		return ret;
 	return value == connected ? nvt_uke_guard(io) : -EPROTO;
 }
+
+/* Direct Uke GPL module 9bb7c433: extended commands 0x11/0x1b, pen off, 0x13. */
+static int nvt_uke_gesture_setting(const struct nvt_uke_io *io, u8 command, u16 value)
+{
+	u8 request[] = { 0xbf, command, 0, (u8)value, (u8)(value >> 8) }, ack;
+	u16 actual;
+	unsigned int i;
+	int ret;
+
+	io->delay_ms(io->context, 35);
+	for (i = 0; i < 5; i++) {
+		ret = nvt_uke_write(io, 0x11c450, request, sizeof(request), false);
+		if (ret)
+			return ret;
+		io->delay_ms(io->context, 20);
+		ret = nvt_uke_read(io, 0x11c450, &ack, 1, false);
+		if (ret)
+			return ret;
+		if (!ack)
+			break;
+	}
+	if (i == 5)
+		return -ETIMEDOUT;
+	ret = nvt_uke_custom(io, command, &actual);
+	if (ret)
+		return ret;
+	return actual == value ? 0 : -EPROTO;
+}
+
+int nvt_uke_gesture_enter(const struct nvt_uke_io *io)
+{
+	const u8 pen_off[] = { 0x7b, 0 };
+	int ret = nvt_uke_guard(io);
+
+	if (ret)
+		return ret;
+	ret = nvt_uke_gesture_setting(io, 0x11, 1);
+	if (!ret)
+		ret = nvt_uke_gesture_setting(io, 0x1b, 0);
+	if (ret)
+		return ret;
+	io->delay_ms(io->context, 35);
+	ret = nvt_uke_write(io, 0x11c450, pen_off, sizeof(pen_off), false);
+	if (ret)
+		return ret;
+	io->delay_ms(io->context, 35);
+	/* Gesture entry has no ACK polling in the exact Uke implementation. */
+	return nvt_uke_byte(io, 0x11c450, 0x13);
+}
+
+int nvt_uke_double_tap(const u8 *data, size_t size)
+{
+	unsigned int i, sum = 0;
+	u8 id;
+
+	if (!data || size != NVT_UKE_GESTURE_SIZE)
+		return -EINVAL;
+	for (i = 0; i < NVT_UKE_GESTURE_SIZE; i++)
+		sum += data[i];
+	if (sum & 0xff)
+		return -EBADMSG;
+	id = data[0] >> 3;
+	if (id == 30 && data[1] == 1)
+		id = data[2];
+	return id == 15 ? 1 : 0;
+}

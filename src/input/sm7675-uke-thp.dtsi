@@ -12,6 +12,7 @@
 			interrupts = <54 IRQ_TYPE_EDGE_RISING>;
 			panel-id-gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 			panel = <&uke_panel>;
+			wakeup-source;
 		};
 	};
 };
