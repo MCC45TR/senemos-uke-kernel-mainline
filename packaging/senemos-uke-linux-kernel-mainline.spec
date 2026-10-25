@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 12
+%global senemos_build_release 13
 %else
 %global senemos_build_release 1
 %endif
@@ -391,6 +391,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
+- Drain serialized battery requests before marking the Uke transport suspended.
+- Keep ambiguous delivery blocked and test the in-flight reply during suspend.
+
 * Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
 - Keep initialized touch firmware for gesture entry after panel blanking.
 - Enforce the advertised downstream HDMI TMDS budget for DP color selection.
