@@ -6,11 +6,12 @@ Teach the AudioReach topology loader and graph configuration about module
 LPAIF with four 32-bit slots; the newer Audio IF module is not part of the
 OEM speaker graph. Parameters follow the stock ACDB graph metadata:
 interface configuration 0x0800101B (28 bytes), lane mask 0x0800106A, hardware
-endpoint media format 0x08001017 and interface clock attributes 0x0800113C.
-Stream-level slot settings override the topology defaults.
+endpoint media format 0x08001017, frame size factor 0x08001018 and interface
+clock attributes 0x0800113C. Stream-level slot settings override the topology
+defaults.
 
 diff --git a/sound/soc/qcom/qdsp6/audioreach.c b/sound/soc/qcom/qdsp6/audioreach.c
-index cce0ad31f..beebcbafb 100644
+index cce0ad31f..cc2472359 100644
 --- a/sound/soc/qcom/qdsp6/audioreach.c
 +++ b/sound/soc/qcom/qdsp6/audioreach.c
 @@ -152,6 +152,27 @@ struct apm_i2s_module_intf_cfg {
@@ -41,7 +42,7 @@ index cce0ad31f..beebcbafb 100644
  struct apm_audio_if_module_intf_cfg {
  	struct apm_module_param_data param_data;
  	struct param_id_audio_if_intf_cfg cfg;
-@@ -1066,6 +1087,82 @@ static int audioreach_i2s_set_media_format(struct q6apm_graph *graph,
+@@ -1066,6 +1087,93 @@ static int audioreach_i2s_set_media_format(struct q6apm_graph *graph,
  	return q6apm_send_cmd_sync(graph->apm, pkt, 0);
  }
  
@@ -49,6 +50,7 @@ index cce0ad31f..beebcbafb 100644
 +					   const struct audioreach_module *module,
 +					   const struct audioreach_module_config *cfg)
 +{
++	struct apm_module_frame_size_factor_cfg *fs_cfg;
 +	struct apm_module_hw_ep_clk_attr_cfg *clk_cfg;
 +	struct apm_module_param_data *param_data;
 +	struct apm_tdm_module_intf_cfg *intf_cfg;
@@ -57,8 +59,9 @@ index cce0ad31f..beebcbafb 100644
 +	int ic_sz = APM_TDM_INTF_CFG_PSIZE;
 +	int ln_sz = APM_TDM_LANE_CFG_PSIZE;
 +	int ep_sz = APM_HW_EP_CFG_PSIZE;
++	int fs_sz = APM_FS_CFG_PSIZE;
 +	int ck_sz = APM_HW_EP_CLK_ATTR_PSIZE;
-+	int size = ic_sz + ln_sz + ep_sz + ck_sz;
++	int size = ic_sz + ln_sz + ep_sz + fs_sz + ck_sz;
 +	u32 slot_mask = cfg->slot_mask ? cfg->slot_mask : module->slot_mask;
 +	u16 nslots = cfg->nslots_per_frame ? cfg->nslots_per_frame :
 +		     module->nslots_per_frame;
@@ -110,6 +113,15 @@ index cce0ad31f..beebcbafb 100644
 +	hw_cfg->mf.data_format = module->data_format;
 +
 +	p += ep_sz;
++	fs_cfg = p;
++	param_data = &fs_cfg->param_data;
++	param_data->module_instance_id = module->instance_id;
++	param_data->error_code = 0;
++	param_data->param_id = PARAM_ID_HW_EP_FRAME_SIZE_FACTOR;
++	param_data->param_size = fs_sz - APM_MODULE_PARAM_DATA_SIZE;
++	fs_cfg->frame_size_factor = 1;
++
++	p += fs_sz;
 +	clk_cfg = p;
 +	param_data = &clk_cfg->param_data;
 +	param_data->module_instance_id = module->instance_id;
@@ -124,7 +136,7 @@ index cce0ad31f..beebcbafb 100644
  static int audioreach_audio_if_set_media_format(struct q6apm_graph *graph,
  						const struct audioreach_module *module,
  						const struct audioreach_module_config *cfg)
-@@ -1493,6 +1590,10 @@ int audioreach_set_media_format(struct q6apm_graph *graph,
+@@ -1493,6 +1601,10 @@ int audioreach_set_media_format(struct q6apm_graph *graph,
  	case MODULE_ID_I2S_SINK:
  		rc = audioreach_i2s_set_media_format(graph, module, cfg);
  		break;

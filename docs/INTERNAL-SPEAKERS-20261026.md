@@ -90,6 +90,18 @@ native entry, and the driver now registers its component even when the chip is
 not detected, so one bad amplifier can no longer remove the card. That speaker
 refuses to open a stream.
 
+## Second boot, release 18
+
+All four amplifiers probed and the `POCO-Pad-X1` card registered, so HDMI audio's
+card is back. Playing silence on `MultiMedia2` with the route and the four
+speaker switches on: the DSP accepted every command, the TDM bit clock reached
+the amplifiers and their PLLs locked (`status 0x0242`, so the lock bit is bit 1
+as assumed). The DSP never consumed the submitted buffers: four buffer-done
+events arrived together only at stream stop, and ALSA reported
+`playback write timeout`. The stock graph also programs the hardware-endpoint
+frame size factor (`0x08001018` = 1) on the TDM sink, which release 18 omitted.
+Release 19 sends it.
+
 ## Not established
 
 Audible output; TDM bit clock and frame sync; DSP acceptance of the graph;

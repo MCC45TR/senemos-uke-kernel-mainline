@@ -68,17 +68,17 @@ C
         extract_block "$q6/audioreach.h" "^struct $s [{]" '^} __packed;'
     done
     printf '#define PARAM_ID_TDM_LANE_CFG 0x0800106A\n#define PARAM_ID_HW_EP_CLK_ATTR_CFG 0x0800113C\n#define PARAM_ID_HW_EP_MF_CFG 0x08001017\n'
-    for s in apm_tdm_module_intf_cfg apm_tdm_module_lane_cfg apm_module_hw_ep_clk_attr_cfg apm_module_hw_ep_mf_cfg; do
+    for s in apm_tdm_module_intf_cfg apm_tdm_module_lane_cfg apm_module_hw_ep_clk_attr_cfg apm_module_hw_ep_mf_cfg apm_module_frame_size_factor_cfg; do
         extract_block "$q6/audioreach.c" "^struct $s [{]" '^#define|^} __packed;'
     done
-    for m in APM_TDM_INTF_CFG_PSIZE APM_TDM_LANE_CFG_PSIZE APM_HW_EP_CLK_ATTR_PSIZE APM_HW_EP_CFG_PSIZE; do
+    for m in APM_TDM_INTF_CFG_PSIZE APM_TDM_LANE_CFG_PSIZE APM_HW_EP_CLK_ATTR_PSIZE APM_HW_EP_CFG_PSIZE APM_FS_CFG_PSIZE; do
         grep -E "^#define $m " "$q6/audioreach.c"
     done
     extract_block "$q6/audioreach.c" '^static int audioreach_tdm_set_media_format' '^}'
 } | grep -v '^#define PARAM_ID_TDM_LANE_CFG\|^#define PARAM_ID_HW_EP_CLK_ATTR_CFG\|^#define PARAM_ID_HW_EP_MF_CFG' >> "$work/body.c"
 # Parameter ids come from the real header lines, not from the harness.
 grep -E '^#define (PARAM_ID_TDM_INTF_CFG|PARAM_ID_TDM_LANE_CFG|PARAM_ID_HW_EP_CLK_ATTR_CFG|AR_HW_EP_CLK_ATTR_DEFAULT)\b' "$q6/audioreach.h" >> "$work/defs.c"
-grep -E '^#define PARAM_ID_HW_EP_MF_CFG\b' "$q6/audioreach.h" >> "$work/defs.c"
+grep -E '^#define (PARAM_ID_HW_EP_MF_CFG|PARAM_ID_HW_EP_FRAME_SIZE_FACTOR)\b' "$q6/audioreach.h" >> "$work/defs.c"
 cat "$work/defs.c" "$work/body.c" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 
@@ -124,8 +124,11 @@ int main(void) {
     p = block(2, &head, &offset);
     assert(head.param_id == 0x08001017 && word(p, 0) == 48000);
     assert(half(p, 2) == 32 && half(p, 3) == 4 && word(p, 2) == 1);
-    /* 4: interface clock attributes as the stock graph sends them. */
+    /* 4: frame size factor, which the stock graph also sends to the TDM endpoint. */
     p = block(3, &head, &offset);
+    assert(head.param_id == 0x08001018 && head.param_size == 8 && word(p, 0) == 1);
+    /* 5: interface clock attributes as the stock graph sends them. */
+    p = block(4, &head, &offset);
     assert(head.param_id == 0x0800113c && head.param_size == 16);
     assert(word(p, 0) == 0 && word(p, 1) == 0 && word(p, 2) == 4 && word(p, 3) == 0);
     assert(offset + sizeof head + 16 == sent_size);             /* nothing trailing */

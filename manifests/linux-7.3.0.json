@@ -475,7 +475,7 @@
     },
     {
       "path": "patches/7.3.0/0116-q6apm-tdm-sink-module.patch",
-      "sha256": "0486367c1e54125f1694513896347f29a96ee528d4f4a05190cecf8681fd0dfd"
+      "sha256": "ca224f92e18a2b54e450afd5ddfcf8fccbe64c7afd357faba4771edf841e0641"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
