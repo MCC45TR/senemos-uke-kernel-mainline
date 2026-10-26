@@ -137,11 +137,11 @@
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
-      "sha256": "35e06863fc3fe09446d8070c0e1fa00d86e06fd0eac9565da0654b2b03f5f486"
+      "sha256": "cf33bab95023c620fda609ae1493660c3ba57d22aef6cb21929217abad2e5edd"
     },
     {
       "path": "src/input/nt36532-uke-protocol.h",
-      "sha256": "129996737927c5515e2c1c9101a7d0703e880b50119e29914b85aef739e54913"
+      "sha256": "f59f54111546e2f61b950a083716fe678601c0568f200d24dbc314db272a8c13"
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
@@ -149,7 +149,7 @@
     },
     {
       "path": "tests/touch-gesture.c",
-      "sha256": "edb411450bdc4a61700cfe3669676465dd416a3255122e1a7289d8e9ddcfe9b8"
+      "sha256": "a907ac43cbb8a447656b3343722e09920bb81535dcf92385ed0022190b17e89f"
     },
     {
       "path": "patches/display/0058-uke-displayport-downstream-tmds-budget.patch",

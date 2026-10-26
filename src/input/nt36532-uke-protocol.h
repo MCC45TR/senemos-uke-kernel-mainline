@@ -32,6 +32,7 @@ int nvt_uke_validate_image(const struct nvt_uke_io *io, const u8 *data, size_t s
 int nvt_uke_boot(const struct nvt_uke_io *io, const u8 *data, size_t size, bool idle_reset);
 int nvt_uke_read_frame(const struct nvt_uke_io *io, u8 data[NVT_UKE_FRAME_SIZE]);
 int nvt_uke_charger(const struct nvt_uke_io *io, bool connected);
+int nvt_uke_coordinate_mode(const struct nvt_uke_io *io, bool enabled);
 int nvt_uke_gesture_enter(const struct nvt_uke_io *io);
 int nvt_uke_double_tap(const u8 *data, size_t size);
 

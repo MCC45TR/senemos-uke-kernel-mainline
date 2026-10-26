@@ -33,7 +33,7 @@ static int write_data(void *context, u32 address, const void *data, size_t size,
 		return ret;
 	if (size == 5) {
 		assert(bytes[0] == 0xbf && !bytes[2]);
-		assert(bytes[1] == 0x11 || bytes[1] == 0x1b);
+		assert(bytes[1] == 0x11 || bytes[1] == 0x1b || bytes[1] == 0x15);
 		values[bytes[1]] = get_unaligned_le16(bytes + 3);
 		setting_writes++;
 		if (!busy)
@@ -125,4 +125,24 @@ int main(void)
 	reset(); wrong = true;
 	assert(nvt_uke_gesture_enter(&io) == -EPROTO && event_count == 2);
 	assert(nvt_uke_gesture_enter(NULL) == -EINVAL);
+
+	reset(); assert(!nvt_uke_coordinate_mode(&io, true));
+	assert(values[0x15] == 1 && setting_writes == 1 && event_count == 2);
+	assert(events[0] == 0x15 && events[1] == 0x115);
+	operations = calls; checks = guards;
+	for (unsigned int i = 1; i <= operations; i++) {
+		reset(); fail_call = i;
+		assert(nvt_uke_coordinate_mode(&io, true) == -EREMOTEIO && calls == i);
+	}
+	for (unsigned int i = 1; i <= checks; i++) {
+		reset(); stop_guard = i;
+		assert(nvt_uke_coordinate_mode(&io, true) == -ESHUTDOWN && guards == i);
+	}
+	reset(); values[0x15] = 1;
+	assert(!nvt_uke_coordinate_mode(&io, false) && !values[0x15]);
+	reset(); busy = true;
+	assert(nvt_uke_coordinate_mode(&io, true) == -ETIMEDOUT && setting_writes == 5);
+	reset(); wrong = true;
+	assert(nvt_uke_coordinate_mode(&io, true) == -EPROTO && event_count == 2);
+	assert(nvt_uke_coordinate_mode(NULL, true) == -EINVAL);
 }

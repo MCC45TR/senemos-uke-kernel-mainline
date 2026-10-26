@@ -342,8 +342,8 @@ int nvt_uke_charger(const struct nvt_uke_io *io, bool connected)
 	return value == connected ? nvt_uke_guard(io) : -EPROTO;
 }
 
-/* Direct Uke GPL module 9bb7c433: extended commands 0x11/0x1b, pen off, 0x13. */
-static int nvt_uke_gesture_setting(const struct nvt_uke_io *io, u8 command, u16 value)
+/* Direct Uke GPL module 9bb7c433: bounded extended-command ACK and readback. */
+static int nvt_uke_setting(const struct nvt_uke_io *io, u8 command, u16 value)
 {
 	u8 request[] = { 0xbf, command, 0, (u8)value, (u8)(value >> 8) }, ack;
 	u16 actual;
@@ -370,6 +370,15 @@ static int nvt_uke_gesture_setting(const struct nvt_uke_io *io, u8 command, u16 
 	return actual == value ? 0 : -EPROTO;
 }
 
+int nvt_uke_coordinate_mode(const struct nvt_uke_io *io, bool enabled)
+{
+	int ret = nvt_uke_guard(io);
+
+	if (!ret)
+		ret = nvt_uke_setting(io, 0x15, enabled);
+	return ret ? ret : nvt_uke_guard(io);
+}
+
 int nvt_uke_gesture_enter(const struct nvt_uke_io *io)
 {
 	const u8 pen_off[] = { 0x7b, 0 };
@@ -377,9 +386,9 @@ int nvt_uke_gesture_enter(const struct nvt_uke_io *io)
 
 	if (ret)
 		return ret;
-	ret = nvt_uke_gesture_setting(io, 0x11, 1);
+	ret = nvt_uke_setting(io, 0x11, 1);
 	if (!ret)
-		ret = nvt_uke_gesture_setting(io, 0x1b, 0);
+		ret = nvt_uke_setting(io, 0x1b, 0);
 	if (ret)
 		return ret;
 	io->delay_ms(io->context, 35);
