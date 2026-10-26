@@ -4,6 +4,8 @@
 #include <string.h>
 #include "../src/input/nt36532-uke-matrix.h"
 #define MT_TOOL_FINGER 0
+#define ABS_MT_POSITION_X 0
+#define ABS_MT_POSITION_Y 1
 #define msecs_to_jiffies(ms) (ms)
 #define time_after(a,b) ((long)((b)-(a)) < 0)
 static unsigned long jiffies = 1000;
@@ -13,7 +15,8 @@ struct input_dev {
     u16 x[10], y[10];
     unsigned int slot, frames, syncs;
 };
-struct touchscreen_properties { u16 max_x, max_y; };
+struct touchscreen_properties { u16 max_x, max_y; bool invert_x, invert_y, swap_x_y; };
+static const struct touchscreen_properties *properties;
 struct spi_device { int dev; };
 struct nvt_uke_touch {
     struct input_dev *wake_input;
@@ -44,7 +47,11 @@ static int input_mt_assign_slots(struct input_dev *input, int *slots,
 {
     assert(input && count <= 2 && distance == 3199);
     for (unsigned int i = 0; i < count; i++) {
-        assert(positions[i].x == decoded.x[i] && positions[i].y == decoded.y[i]);slots[i] = assigned[i];
+        int x = properties->invert_x ? properties->max_x - decoded.x[i] : decoded.x[i];
+        int y = properties->invert_y ? properties->max_y - decoded.y[i] : decoded.y[i];
+        assert(positions[i].x == (properties->swap_x_y ? y : x));
+        assert(positions[i].y == (properties->swap_x_y ? x : y));
+        slots[i] = assigned[i];
     }
     return assign_error;
 }
@@ -56,11 +63,28 @@ static void input_mt_report_slot_state(struct input_dev *input, int tool, bool a
 {
     assert(tool == MT_TOOL_FINGER);input->active[input->slot] = active;input->seen[input->slot] = active;
 }
-static void touchscreen_report_pos(struct input_dev *input,
+static void touchscreen_set_mt_pos(struct input_mt_pos *position,
+    const struct touchscreen_properties *prop, unsigned int x, unsigned int y)
+{
+    if (prop->invert_x)x = prop->max_x - x;
+    if (prop->invert_y)y = prop->max_y - y;
+    position->x = (int)(prop->swap_x_y ? y : x);
+    position->y = (int)(prop->swap_x_y ? x : y);
+}
+static void input_report_abs(struct input_dev *input, int axis, int value)
+{
+    assert(value >= 0);
+    if (axis == ABS_MT_POSITION_X)input->x[input->slot] = (u16)value;
+    else {assert(axis == ABS_MT_POSITION_Y);input->y[input->slot] = (u16)value;}
+}
+void touchscreen_report_pos(struct input_dev *input,
     const struct touchscreen_properties *prop, int x, int y, bool mt)
 {
     assert(mt && x >= 0 && y >= 0 && x <= prop->max_x && y <= prop->max_y);
-    input->x[input->slot] = (u16)x;input->y[input->slot] = (u16)y;
+    struct input_mt_pos position;
+    touchscreen_set_mt_pos(&position, prop, (unsigned int)x, (unsigned int)y);
+    input_report_abs(input, ABS_MT_POSITION_X, position.x);
+    input_report_abs(input, ABS_MT_POSITION_Y, position.y);
 }
 static void input_mt_sync_frame(struct input_dev *input)
 {
@@ -76,7 +100,8 @@ int main(void)
 {
     u8 packet[NVT_UKE_FRAME_SIZE] = { 0 };
     struct input_dev input = { 0 };
-    struct nvt_uke_touch touch = { .wake_input = &input, .prop = {31999,21359}, .frame = packet };
+    struct nvt_uke_touch touch = { .wake_input = &input, .prop = {.max_x=31999,.max_y=21359}, .frame = packet };
+    properties = &touch.prop;
     nvt_publish_contacts(&touch, 0);
     assert(touch.input_packets == 1 && !touch.contacts_active && input.syncs == 1);
     decoded = (struct nvt_uke_contacts) { .active=3, .x={1000,2000}, .y={3000,4000} };
@@ -93,5 +118,20 @@ int main(void)
     assign_error = -5;nvt_publish_contacts(&touch, 0);assert(!input.active[9]);
     assign_error = 0;nvt_publish_contacts(&touch, 0);nvt_release_contacts(&touch);
     assert(!input.active[9] && !touch.contacts_active);
+    for (unsigned int flags = 0; flags < 8; flags++) {
+        touch.prop.invert_x = flags & 1;
+        touch.prop.invert_y = flags & 2;
+        touch.prop.swap_x_y = flags & 4;
+        decoded.active = 3;
+        for (unsigned int held = 0; held < 200; held++) {
+            nvt_publish_contacts(&touch, 0);
+            assert(touch.contacts_active == 0x204 && input.active[9] && input.active[2]);
+            int x = touch.prop.invert_x ? 30999 : 1000;
+            int y = touch.prop.invert_y ? 18359 : 3000;
+            assert(input.x[9] == (touch.prop.swap_x_y ? y : x));
+            assert(input.y[9] == (touch.prop.swap_x_y ? x : y));
+        }
+        nvt_release_contacts(&touch);
+    }
     assigned[0] = -1;nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
 }

@@ -177,7 +177,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "e665e0852d16fe3c1aa4f377f3ed7fae09adae70a11a919441586e1dcd3c0170"
+      "sha256": "76069637f88c59cad10b870390b5a2cf1a5f81c876222012a6e58556fc5add8e"
     },
     {
       "path": "src/input/prepare-source.sh",
@@ -197,7 +197,7 @@
     },
     {
       "path": "tests/touch-publish.c",
-      "sha256": "5604c482c3de2515e64ae5d7d2b822c83ee2314bd3c63f4c821f7b4c4d23c380"
+      "sha256": "d1ca0cfc0c1dd504831842f2bb82b585b13ac45ba5869e865c240358d017feb5"
     },
     {
       "path": "tests/touch-transport-contract.sh",

@@ -116,7 +116,7 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 	for (i = 0; i < NVT_UKE_CONTACTS; i++) {
 		if (!(contacts.active & (1U << i)))
 			continue;
-		positions[count++] = (struct input_mt_pos) { contacts.x[i], contacts.y[i] };
+		touchscreen_set_mt_pos(&positions[count++], &t->prop, contacts.x[i], contacts.y[i]);
 	}
 	ret = input_mt_assign_slots(t->wake_input, slots, positions, count, t->prop.max_x / 10);
 	if (ret) {
@@ -135,7 +135,8 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 	for (i = 0; i < count; i++) {
 		input_mt_slot(t->wake_input, (unsigned int)slots[i]);
 		input_mt_report_slot_state(t->wake_input, MT_TOOL_FINGER, true);
-		touchscreen_report_pos(t->wake_input, &t->prop, positions[i].x, positions[i].y, true);
+		input_report_abs(t->wake_input, ABS_MT_POSITION_X, positions[i].x);
+		input_report_abs(t->wake_input, ABS_MT_POSITION_Y, positions[i].y);
 		t->contacts_active |= (u16)(1U << slots[i]);
 	}
 	input_mt_sync_frame(t->wake_input);
