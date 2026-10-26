@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Uke DisplayPort playback and the separate closed registration profile. */
+/* Uke DisplayPort and internal speaker playback, plus the closed registration profile. */
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
@@ -96,6 +96,124 @@ static int uke_hdmi_probe(struct platform_device *pdev)
 	return devm_snd_soc_register_card(dev, card);
 }
 
+#define UKE_SPEAKER_AMPS	4
+#define UKE_SPEAKER_SLOTS	4
+#define UKE_SPEAKER_SLOT_WIDTH	32
+
+static int uke_speaker_late_probe(struct snd_soc_card *card)
+{
+	struct snd_soc_pcm_runtime *rtd;
+	unsigned int frontends = 0, backends = 0, seen = 0;
+
+	for_each_card_rtds(card, rtd) {
+		struct snd_soc_dai *cpu = snd_soc_rtd_to_cpu(rtd, 0);
+
+		if (rtd->dai_link->no_pcm) {
+			if (cpu->id == DISPLAY_PORT_RX_0)
+				seen |= BIT(0);
+			else if (cpu->id == SECONDARY_TDM_RX_0)
+				seen |= BIT(1);
+			else
+				return -EINVAL;
+			backends++;
+		} else {
+			if (!rtd->dai_link->dynamic || cpu->id > 1 ||
+			    cpu->driver->capture.channels_min)
+				return -EINVAL;
+			frontends++;
+		}
+	}
+	return frontends == 2 && backends == 2 && seen == 3 ? 0 : -EINVAL;
+}
+
+/* Four 32-bit TDM slots at 48 kHz, one slot per amplifier. */
+static int uke_speaker_fixup(struct snd_soc_pcm_runtime *rtd,
+			     struct snd_pcm_hw_params *params)
+{
+	struct snd_interval *rate = hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE);
+	struct snd_interval *channels = hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
+	struct snd_mask *format = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
+
+	rate->min = rate->max = 48000;
+	channels->min = channels->max = UKE_SPEAKER_SLOTS;
+	snd_mask_none(format);
+	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S32_LE);
+	return 0;
+}
+
+static int uke_speaker_init(struct snd_soc_pcm_runtime *rtd)
+{
+	return snd_soc_dai_set_tdm_slot(snd_soc_rtd_to_cpu(rtd, 0), 0,
+					GENMASK(UKE_SPEAKER_SLOTS - 1, 0),
+					UKE_SPEAKER_SLOTS, UKE_SPEAKER_SLOT_WIDTH);
+}
+
+static bool uke_backend_owned(struct snd_soc_dai_link *link)
+{
+	return link->no_pcm && link->num_cpus == 1 && link->num_platforms == 1 &&
+	       of_device_is_compatible(link->cpus[0].of_node, "qcom,q6apm-lpass-dais") &&
+	       of_device_is_compatible(link->platforms[0].of_node, "qcom,q6apm") &&
+	       link->cpus[0].of_node->parent == link->platforms[0].of_node;
+}
+
+static int uke_speaker_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct snd_soc_dai_link *hdmi = NULL, *speaker = NULL, *link;
+	struct snd_soc_card *card;
+	struct snd_soc_jack *jack;
+	struct device_node *frontend;
+	unsigned int i;
+	int ret;
+
+	card = devm_kzalloc(dev, sizeof(*card), GFP_KERNEL);
+	jack = devm_kzalloc(dev, sizeof(*jack), GFP_KERNEL);
+	if (!card || !jack)
+		return -ENOMEM;
+	card->dev = dev;
+	card->owner = THIS_MODULE;
+	card->driver_name = "sm7675";
+	card->late_probe = uke_speaker_late_probe;
+	snd_soc_card_set_drvdata(card, jack);
+	ret = qcom_snd_parse_of(card);
+	if (ret)
+		return ret;
+	if (card->num_links != 2 || card->num_aux_devs ||
+	    strcmp(card->name, "POCO-Pad-X1"))
+		return -EINVAL;
+
+	for_each_card_prelinks(card, i, link) {
+		if (link->id == DISPLAY_PORT_RX_0 && !hdmi)
+			hdmi = link;
+		else if (link->id == SECONDARY_TDM_RX_0 && !speaker)
+			speaker = link;
+		else
+			return -EINVAL;
+	}
+	if (!hdmi || !speaker || !uke_backend_owned(hdmi) || !uke_backend_owned(speaker) ||
+	    hdmi->num_codecs != 1 || speaker->num_codecs != UKE_SPEAKER_AMPS ||
+	    !of_device_is_compatible(hdmi->codecs[0].of_node, "qcom,sm7675-dp") ||
+	    speaker->cpus[0].of_node != hdmi->cpus[0].of_node)
+		return -EINVAL;
+	for (i = 0; i < UKE_SPEAKER_AMPS; i++)
+		if (!of_device_is_compatible(speaker->codecs[i].of_node, "foursemi,fs19xx"))
+			return -EINVAL;
+
+	frontend = of_get_compatible_child(hdmi->platforms[0].of_node, "qcom,q6apm-dais");
+	ret = frontend && of_device_is_available(frontend) &&
+		of_property_read_bool(frontend, "xiaomi,hdmi-only") &&
+		!of_property_read_bool(frontend, "xiaomi,registration-only") ? 0 : -EINVAL;
+	of_node_put(frontend);
+	if (ret)
+		return ret;
+
+	hdmi->init = uke_hdmi_init;
+	hdmi->be_hw_params_fixup = uke_hdmi_fixup;
+	speaker->init = uke_speaker_init;
+	speaker->be_hw_params_fixup = uke_speaker_fixup;
+	return devm_snd_soc_register_card(dev, card);
+}
+
 static int uke_audio_late_probe(struct snd_soc_card *card)
 {
 	struct snd_soc_pcm_runtime *rtd;
@@ -121,6 +239,8 @@ static int uke_audio_probe(struct platform_device *pdev)
 		return -ENODEV;
 	if (of_device_is_compatible(dev->of_node, "xiaomi,uke-hdmi-audio-card"))
 		return uke_hdmi_probe(pdev);
+	if (of_device_is_compatible(dev->of_node, "xiaomi,uke-speaker-audio-card"))
+		return uke_speaker_probe(pdev);
 
 	card = devm_kzalloc(dev, sizeof(*card), GFP_KERNEL);
 	if (!card)
@@ -154,6 +274,7 @@ static int uke_audio_probe(struct platform_device *pdev)
 static const struct of_device_id uke_audio_match[] = {
 	{ .compatible = "xiaomi,uke-audio-card" },
 	{ .compatible = "xiaomi,uke-hdmi-audio-card" },
+	{ .compatible = "xiaomi,uke-speaker-audio-card" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, uke_audio_match);
@@ -166,5 +287,5 @@ static struct platform_driver uke_audio_driver = {
 	},
 };
 module_platform_driver(uke_audio_driver);
-MODULE_DESCRIPTION("Uke AudioReach DisplayPort and closed registration cards");
+MODULE_DESCRIPTION("Uke AudioReach DisplayPort, speaker and closed registration cards");
 MODULE_LICENSE("GPL");

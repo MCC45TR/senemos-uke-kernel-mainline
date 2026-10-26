@@ -111,3 +111,10 @@ its code is not executed or shipped. Exact stock speaker and VI graphs contain
 legacy TDM sink/source modules and Foursemi RX/TX modules. The newer upstream
 Audio IF implementation uses different modules and is not a drop-in solution.
 No tuning payload or unit calibration is exported or installed by the tool.
+
+## Internal speaker source candidate
+
+The 26 October 2026 [internal speaker report](INTERNAL-SPEAKERS-20261026.md)
+adds the FS19xx amplifier driver, the AudioReach TDM sink, a combined HDMI and
+speaker card and the `speakers` audio profile. Source, host and amplifier-probe
+results only; no sound output has been tested.

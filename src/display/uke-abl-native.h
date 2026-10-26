@@ -1,4 +1,30 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Give an unlabeled OEM node a phandle and a symbol so overlays can reference it.
+ * Adding the phandle shifts later nodes, so /__symbols__ is resolved afterwards.
+ */
+static int UKE_INIT uke_native_symbol(void *fdt, const char *name, const char *path)
+{
+	unsigned int phandle;
+	int node = fdt_path_offset(fdt, path), symbols, ret;
+
+	if (node < 0)
+		return node;
+	phandle = fdt_get_phandle(fdt, node);
+	if (!phandle) {
+		ret = fdt_generate_phandle(fdt, &phandle);
+		if (ret)
+			return ret;
+		ret = fdt_setprop_u32(fdt, node, "phandle", phandle);
+		if (ret)
+			return ret;
+	}
+	symbols = fdt_path_offset(fdt, "/__symbols__");
+	if (symbols < 0)
+		return symbols;
+	return fdt_setprop_string(fdt, symbols, name, path);
+}
+
 /* Explicit native-display candidate only; called on the private adapted FDT. */
 static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 				 const char *panel_selector)
@@ -8,6 +34,9 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 		"/soc/display_gpio_regulator_vsp", "/soc/display_gpio_regulator_vsn"
 	};
 	static const char *const bias_symbols[] = { "display_panel_vsp", "display_panel_vsn" };
+	static const char *const amp_symbols[] = {
+		"uke_amp_tl", "uke_amp_tr", "uke_amp_bl", "uke_amp_br"
+	};
 	char framebuffer[128];
 	const char *text;
 	int chosen, node, size, ret;
@@ -48,6 +77,23 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 	/* ABL preserves the Uke bias providers but drops their OEM symbol names. */
 	for (i = 0; i < 2; i++) {
 		ret = fdt_setprop_string(fdt, node, bias_symbols[i], bias_paths[i]);
+		if (ret)
+			return ret;
+	}
+	/*
+	 * The four OEM speaker amplifiers (QUP1 SE3, 0x34-0x37) carry no labels. The
+	 * speaker profile references them; other profiles ignore the extra symbols.
+	 */
+	for (i = 0; i < sizeof(amp_symbols) / sizeof(amp_symbols[0]); i++) {
+		char amp[96];
+
+		snprintf(amp, sizeof(amp),
+			 "/soc/qcom,qupv3_1_geni_se@8c0000/i2c@88c000/fs19xx_smartpa@%x",
+			 0x34 + i);
+		node = fdt_path_offset(fdt, amp);
+		if (node < 0 || fdt_node_check_compatible(fdt, node, "foursemi,fs16xx"))
+			continue;
+		ret = uke_native_symbol(fdt, amp_symbols[i], amp);
 		if (ret)
 			return ret;
 	}
