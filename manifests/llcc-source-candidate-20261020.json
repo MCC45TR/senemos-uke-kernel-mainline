@@ -133,7 +133,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "76069637f88c59cad10b870390b5a2cf1a5f81c876222012a6e58556fc5add8e"
+      "sha256": "d88df6fd539ac43c90a707494906fd126db784e6b6e9865d4036385ee0caccb5"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
@@ -141,7 +141,7 @@
     },
     {
       "path": "src/input/nt36532-uke-protocol.h",
-      "sha256": "327902ca99d040918b73c202493bdc7f95079247c69a08e9a6cc8256fad7d07d"
+      "sha256": "04843dd877fa78925cee93e9c9eb08d29930a96c32bda006edaeaed9a465b5f4"
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
@@ -209,7 +209,7 @@
     },
     {
       "path": "tests/touch-publish.c",
-      "sha256": "d1ca0cfc0c1dd504831842f2bb82b585b13ac45ba5869e865c240358d017feb5"
+      "sha256": "23924ce5b9f3ed352e76a30445d842796e8ef02032085e2bdb8e74aecbbc38e6"
     },
     {
       "path": "src/input/Makefile",
@@ -241,15 +241,15 @@
     },
     {
       "path": "src/input/nt36532-uke-matrix.c",
-      "sha256": "eecd319d86c5896bbadd6a849f697e5b52951a9ea6a06c58cac248630314b134"
+      "sha256": "fd681e4edaac89c93de0bf5ad005793b5dd785bb67b071bd0c282d5e97e9c842"
     },
     {
       "path": "src/input/nt36532-uke-matrix.h",
-      "sha256": "8e1672bd32941fb463de17989173cd72b76cae02658d397a10a8e47be2e24089"
+      "sha256": "76e6a67e74f0baf08da19f619c37c18cae68254d02910a3f83303f88b1bac227"
     },
     {
       "path": "tests/touch-matrix.c",
-      "sha256": "42582555783cac5dbf7709af3cca8f68791517d4a2ee5a821e85ed3fa64bfe87"
+      "sha256": "e88b1a793e48a42fe445ecc7173ba76d67e5ee94aac0151a8751627e66e031b1"
     }
   ],
   "baseline_files": [

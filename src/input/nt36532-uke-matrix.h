@@ -7,6 +7,8 @@
 #define NVT_UKE_ROWS 40
 #define NVT_UKE_COLUMNS 60
 #define NVT_UKE_CALIBRATION_FRAMES 32
+#define NVT_UKE_PEAK_DOWN 300
+#define NVT_UKE_PEAK_UP 220
 
 struct nvt_uke_matrix {
 	s32 reference[NVT_UKE_NODES], delta[NVT_UKE_NODES];

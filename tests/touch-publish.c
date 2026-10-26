@@ -104,7 +104,7 @@ int main(void)
     properties = &touch.prop;
     nvt_publish_contacts(&touch, 0);
     assert(touch.input_packets == 1 && !touch.contacts_active && input.syncs == 1);
-    decoded = (struct nvt_uke_contacts) { .active=3, .x={1000,2000}, .y={3000,4000} };
+    decoded = (struct nvt_uke_contacts) { .active=3, .x={1000,2000}, .y={3000,4000}, .peak={650,650} };
     nvt_publish_contacts(&touch, 0);
     assert(touch.contacts_active == 0x204 && input.active[9] && input.active[2]);
     assert(input.x[9] == 1000 && input.y[2] == 4000);
@@ -133,5 +133,21 @@ int main(void)
         }
         nvt_release_contacts(&touch);
     }
+    /* Low peaks keep their assigned old slot, but cannot start a new touch. */
+    decoded.active = 3;decoded.peak[0] = decoded.peak[1] = 240;
+    nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
+    decoded.peak[0] = 350;
+    nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x200);
+    decoded.peak[0] = 240;decoded.peak[1] = 350;
+    nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x204);
+    decoded.peak[1] = 220;
+    for (unsigned int held = 0; held < 200; held++) {
+        nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x204);
+    }
+    decoded.active = 1;
+    nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x200);
+    nvt_release_contacts(&touch);
+    nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
+    decoded.active = 3;decoded.peak[0] = decoded.peak[1] = 350;
     assigned[0] = -1;nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
 }

@@ -14,6 +14,7 @@
 struct nvt_uke_contacts {
 	u16 active;
 	u16 x[NVT_UKE_CONTACTS], y[NVT_UKE_CONTACTS];
+	u16 peak[NVT_UKE_CONTACTS];
 };
 
 struct nvt_uke_frame {

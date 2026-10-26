@@ -55,6 +55,13 @@ int main(int argc, char **argv)
 		process(); assert(contacts.active == 1);
 	}
 	finger(20, 35);process();assert(contacts.active == 3);
+	/* A held, light contact must reach the MT slot hysteresis unchanged. */
+	flat(10000);
+	put_unaligned_le16(10240, data + (20 * 60 + 30) * 2);
+	put_unaligned_le16(10150, data + (20 * 60 + 31) * 2);
+	process();assert(contacts.active == 1 && contacts.peak[0] == 240);
+	put_unaligned_le16(10219, data + (20 * 60 + 30) * 2);
+	process();assert(!contacts.active);
 	flat(10000);finger(20, 35);process();assert(contacts.active == 1);
 	flat(10000);process();assert(!contacts.active);
 	for (unsigned int i = 0; i < 10; i++) finger(4 + (i / 5) * 25, 4 + (i % 5) * 11);

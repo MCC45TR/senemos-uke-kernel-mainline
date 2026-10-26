@@ -9,7 +9,6 @@
 #include "nt36532-uke-matrix.h"
 
 #define NVT_NOISE 120
-#define NVT_PEAK 300
 #define NVT_NO_PARENT 0xffff
 
 void nvt_uke_matrix_reset(struct nvt_uke_matrix *m)
@@ -110,7 +109,7 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 			}
 		}
 		m->parent[node] = (u16)root;
-		if (root == node && best >= NVT_PEAK) {
+		if (root == node && best >= NVT_UKE_PEAK_UP) {
 			/* A broad/noisy frame must not become truncated phantom fingers. */
 			if (count == NVT_UKE_CONTACTS)
 				return 0;
@@ -133,12 +132,13 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		}
 	}
 	for (i = 0; i < count; i++) {
-		if (blobs[i].nodes < 2 || blobs[i].nodes > 80 || blobs[i].weight < 400)
+		if (blobs[i].nodes < 2 || blobs[i].nodes > 80)
 			continue;
 		contacts->x[output] = nvt_axis(blobs[i].x, blobs[i].weight,
 			m->columns, NVT_UKE_COLUMNS, max_x);
 		contacts->y[output] = nvt_axis(blobs[i].y, blobs[i].weight,
 			m->rows, NVT_UKE_ROWS, max_y);
+		contacts->peak[output] = (u16)m->delta[blobs[i].root];
 		contacts->active |= (u16)(1U << output++);
 	}
 	/* Adapt only after a sustained quiet interval; held fingers keep their baseline. */
