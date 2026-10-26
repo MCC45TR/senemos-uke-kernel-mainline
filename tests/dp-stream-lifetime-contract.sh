@@ -48,7 +48,11 @@ static void msm_dp_hpd_unplug_handle(msm_dp_display_private*) {}
 static bool msm_dp_display_host_phy_init(msm_dp_display_private *dp) { if(!dp->phy_initialized)++phy_on;dp->phy_initialized=true;return true; }
 static void msm_dp_display_host_phy_exit(msm_dp_display_private *dp) { if(dp->phy_initialized)++phy_off;dp->phy_initialized=false; }
 static msm_dp_link *selected_link;
-static int msm_dp_ctrl_on_link(msm_dp_ctrl*,msm_dp_panel*) { ++link_on;selected_link->link_params=selected_link->link_caps;if(downshift)selected_link->link_params.num_lanes/=2;return link_error; }
+static int msm_dp_ctrl_on_link(msm_dp_ctrl*,msm_dp_panel*) {
+ ++link_on;selected_link->link_params=selected_link->link_caps;
+ if(downshift)selected_link->link_params.num_lanes/=2;
+ return link_error;
+}
 static int msm_dp_ctrl_prepare_stream_on(msm_dp_ctrl*,msm_dp_panel*,bool) { return train_error; }
 static void msm_dp_ctrl_off_link(msm_dp_ctrl*,msm_dp_panel*) { ++link_off; }
 static void msm_dp_ctrl_reinit_phy(msm_dp_ctrl*) {}
@@ -82,8 +86,11 @@ int main() {
  auto init=[&] { reset();dp={};dp.msm_dp_display.pdev=&pdev;dp.panel=&panels[0];dp.link=&link;dp.ctrl=&ctrl;
   dp.msm_dp_display.mst_active=true;link.sink_count=1;link.link_caps={540000,2};selected_link=&link;for(auto& p:panels)p.stream_active=false; };
  for(int failure=0;failure<4;failure++) {
-  init();if(failure==0)resume_error=-EIO;if(failure==1)link.sink_count=0;
-  if(failure==2)link_error=-EIO;if(failure==3)train_error=-EIO;
+  init();
+  if(failure==0)resume_error=-EIO;
+  if(failure==1)link.sink_count=0;
+  if(failure==2)link_error=-EIO;
+  if(failure==3)train_error=-EIO;
   assert(msm_dp_display_prepare_link(&dp.msm_dp_display)<0);
   assert(!dp.msm_dp_display.link_ready&&!dp.stream_pm_active&&!dp.stream_link_attempted&&!dp.phy_initialized);
   assert(gets==puts_count&&phy_on==phy_off);msm_dp_display_unprepare(&dp.msm_dp_display);assert(gets==puts_count);
@@ -115,9 +122,12 @@ int main() {
  for(bool uke:{false,true})for(int failure=0;failure<7;failure++) {
   init();dp.msm_dp_display.mst_active=false;panels[0].hdr_active=true;
   managed=uke;
-  if(failure==1)resume_error=-EIO;if(failure==2)link.sink_count=0;
-  if(failure==3)link_error=-EIO;if(failure==4)train_error=-EIO;
-  if(failure==5)stream_error=-EIO;if(failure==6)post_error=-EIO;
+  if(failure==1)resume_error=-EIO;
+  if(failure==2)link.sink_count=0;
+  if(failure==3)link_error=-EIO;
+  if(failure==4)train_error=-EIO;
+  if(failure==5)stream_error=-EIO;
+  if(failure==6)post_error=-EIO;
   msm_dp_display_atomic_enable(&dp.msm_dp_display,&commit);
   if(!failure)assert(panels[0].stream_active&&dp.msm_dp_display.active_stream_cnt==1&&gets==1&&!puts_count);
   else {

@@ -197,7 +197,7 @@
     },
     {
       "path": "tests/dp-mst-payload-contract.sh",
-      "sha256": "bc257ca4e4722a2ae4d9aed4b9d6d731b4f3540b1b13e66a89434435a9202de8"
+      "sha256": "8a79f90f4fa801a6ed605f3ce7a207dbb2f07d0cc35fe3fa39540f3d8f2b7e1f"
     },
     {
       "path": "tests/dp-mst-control-contract.sh",

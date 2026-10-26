@@ -19,7 +19,7 @@ struct drm_dp_mst_topology_state { drm_dp_mst_atomic_payload payload; };
 struct drm_dp_mst_topology_mgr { unsigned payload_count; };
 struct msm_dp { void *drm_dev;unsigned active_stream_cnt;bool link_ready; };
 struct msm_dp_panel { drm_connector *connector;unsigned stream_id;bool stream_active; };
-struct msm_dp_mst { drm_dp_mst_topology_mgr mst_mgr;msm_dp *msm_dp;bool mst_lock; };
+struct msm_dp_mst { drm_dp_mst_topology_mgr mst_mgr;struct msm_dp *msm_dp;bool mst_lock; };
 struct msm_dp_mst_connector { drm_connector connector;msm_dp_mst *dp_mst;drm_dp_mst_port *mst_port; };
 struct drm_atomic_commit { msm_dp_mst_connector *connector;drm_dp_mst_topology_state *topology; };
 struct Guard {bool *lock;explicit Guard(bool *p):lock(p){assert(!*lock);*lock=true;}~Guard(){assert(*lock);*lock=false;}};
@@ -40,13 +40,15 @@ static int msm_dp_display_prepare_link(msm_dp *dp) {if(stage==2)return -EIO;if(!
 static void drm_dp_mst_update_slots(drm_dp_mst_topology_state*,int) {}
 static int drm_dp_add_payload_part1(drm_dp_mst_topology_mgr *mgr,drm_dp_mst_topology_state*,drm_dp_mst_atomic_payload *p) {
  ++mgr->payload_count;p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_LOCAL;
- if(stage==3)return -EIO;p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_DFP;return 0;
+ if(stage==3)return -EIO;
+ p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_DFP;return 0;
 }
 static void msm_dp_display_set_stream_info(msm_dp*,msm_dp_panel*,int,int,int) {++slot_updates;}
 static int msm_dp_display_enable_helper(msm_dp *dp,msm_dp_panel *p) {if(stage==4)return -EIO;p->stream_active=true;++dp->active_stream_cnt;return 0;}
 static int drm_dp_check_act_status(drm_dp_mst_topology_mgr*) {return stage==5?-ETIMEDOUT:0;}
 static int drm_dp_add_payload_part2(drm_dp_mst_topology_mgr*,drm_dp_mst_atomic_payload *p) {
- if(stage==6)return -EIO;p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_REMOTE;return 0;
+ if(stage==6)return -EIO;
+ p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_REMOTE;return 0;
 }
 static void drm_dp_remove_payload_part1(drm_dp_mst_topology_mgr*,drm_dp_mst_topology_state*,drm_dp_mst_atomic_payload *p) {assert(p->payload_allocation_status);++removes;}
 static void drm_dp_remove_payload_part2(drm_dp_mst_topology_mgr *mgr,drm_dp_mst_topology_state*,drm_dp_mst_atomic_payload*,drm_dp_mst_atomic_payload *p) {
