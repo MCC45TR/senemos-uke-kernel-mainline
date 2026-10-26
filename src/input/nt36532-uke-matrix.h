@@ -7,8 +7,9 @@
 #define NVT_UKE_ROWS 40
 #define NVT_UKE_COLUMNS 60
 #define NVT_UKE_CALIBRATION_FRAMES 32
-#define NVT_UKE_PEAK_DOWN 300
-#define NVT_UKE_PEAK_UP 220
+/* Raw Uke multifinger peaks are weaker than the vendor processed-signal scale. */
+#define NVT_UKE_PEAK_DOWN 100
+#define NVT_UKE_PEAK_UP 70
 
 struct nvt_uke_matrix {
 	s32 reference[NVT_UKE_NODES], delta[NVT_UKE_NODES];

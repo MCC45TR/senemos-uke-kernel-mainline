@@ -31,7 +31,7 @@ struct nvt_uke_touch {
 static unsigned int warnings;
 static int decode_error, assign_error;
 static struct nvt_uke_contacts decoded;
-static int assigned[] = { 9, 2 };
+static int assigned[] = { 9, 2, 8, 3, 7, 4, 6, 5, 1, 0 };
 #define dev_warn_ratelimited(...) do { warnings++; } while (0)
 int nvt_uke_decode(const u8 *data, size_t size, struct nvt_uke_frame *frame)
 {
@@ -45,7 +45,7 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *matrix, const struct nvt_uke_f
 static int input_mt_assign_slots(struct input_dev *input, int *slots,
     const struct input_mt_pos *positions, unsigned int count, unsigned int distance)
 {
-    assert(input && count <= 2 && distance == 3199);
+    assert(input && count <= 10 && distance == 3199);
     for (unsigned int i = 0; i < count; i++) {
         int x = properties->invert_x ? properties->max_x - decoded.x[i] : decoded.x[i];
         int y = properties->invert_y ? properties->max_y - decoded.y[i] : decoded.y[i];
@@ -134,19 +134,34 @@ int main(void)
         nvt_release_contacts(&touch);
     }
     /* Low peaks keep their assigned old slot, but cannot start a new touch. */
-    decoded.active = 3;decoded.peak[0] = decoded.peak[1] = 240;
+    decoded.active = 3;decoded.peak[0] = decoded.peak[1] = 90;
     nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
-    decoded.peak[0] = 350;
+    decoded.peak[0] = 120;
     nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x200);
-    decoded.peak[0] = 240;decoded.peak[1] = 350;
+    decoded.peak[0] = 90;decoded.peak[1] = 120;
     nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x204);
-    decoded.peak[1] = 220;
+    decoded.peak[1] = 70;
     for (unsigned int held = 0; held < 200; held++) {
         nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x204);
     }
     decoded.active = 1;
     nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x200);
     nvt_release_contacts(&touch);
+    nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
+    decoded.active = 0x3ff;
+    for (unsigned int i = 0; i < 10; i++) {
+        decoded.x[i] = (u16)(1000 + i * 2000);
+        decoded.y[i] = (u16)(2000 + i * 1000);
+        decoded.peak[i] = 120;
+    }
+    nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x3ff);
+    for (unsigned int i = 0; i < 10; i++)decoded.peak[i] = 80;
+    for (unsigned int held = 0; held < 200; held++) {
+        nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x3ff);
+    }
+    decoded.active = 0x1ff;
+    nvt_publish_contacts(&touch, 0);assert(touch.contacts_active == 0x3fe);
+    decoded.active = 0;
     nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);
     decoded.active = 3;decoded.peak[0] = decoded.peak[1] = 350;
     assigned[0] = -1;nvt_publish_contacts(&touch, 0);assert(!touch.contacts_active);

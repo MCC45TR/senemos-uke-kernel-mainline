@@ -8,7 +8,7 @@
 #include <linux/unaligned.h>
 #include "nt36532-uke-matrix.h"
 
-#define NVT_NOISE 120
+#define NVT_NOISE 40
 #define NVT_NO_PARENT 0xffff
 
 void nvt_uke_matrix_reset(struct nvt_uke_matrix *m)
@@ -142,7 +142,7 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		contacts->active |= (u16)(1U << output++);
 	}
 	/* Adapt only after a sustained quiet interval; held fingers keep their baseline. */
-	if (top < 200) {
+	if (top < NVT_UKE_PEAK_UP) {
 		if (m->quiet < 64)
 			m->quiet++;
 		if (m->quiet == 64)

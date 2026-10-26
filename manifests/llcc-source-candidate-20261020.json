@@ -209,7 +209,7 @@
     },
     {
       "path": "tests/touch-publish.c",
-      "sha256": "23924ce5b9f3ed352e76a30445d842796e8ef02032085e2bdb8e74aecbbc38e6"
+      "sha256": "6b77d9d5f9598883eb562cdd8c371a3d54712f11e24478ba629636cacd06bb2f"
     },
     {
       "path": "src/input/Makefile",
@@ -241,15 +241,15 @@
     },
     {
       "path": "src/input/nt36532-uke-matrix.c",
-      "sha256": "fd681e4edaac89c93de0bf5ad005793b5dd785bb67b071bd0c282d5e97e9c842"
+      "sha256": "958df2ba5ef3ae539807c9c57cf637c3170cf6ac24ddeb1f7f9fc550a0277f24"
     },
     {
       "path": "src/input/nt36532-uke-matrix.h",
-      "sha256": "76e6a67e74f0baf08da19f619c37c18cae68254d02910a3f83303f88b1bac227"
+      "sha256": "98b1e20e3944cf8b6b99b4c9acb64d8a8d43617d33f2956d258d45f99e562019"
     },
     {
       "path": "tests/touch-matrix.c",
-      "sha256": "e88b1a793e48a42fe445ecc7173ba76d67e5ee94aac0151a8751627e66e031b1"
+      "sha256": "c0ae5afe7311705665ad89e9251793981386f0892a33c123e672f8543b61e18d"
     }
   ],
   "baseline_files": [
