@@ -13,6 +13,7 @@ extract_block() {  # file, start regex, closing regex
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +47,6 @@ struct audioreach_module_config {
     u32 sample_rate; u16 bit_width, num_channels; u32 slot_mask; u16 nslots_per_frame, slot_width;
 };
 static unsigned char sent[512]; static size_t sent_size; static unsigned sends; static bool fail_alloc;
-#include <stdbool.h>
 static void *audioreach_alloc_apm_cmd_pkt(int pkt_size, uint32_t opcode, uint32_t token) {
     if (fail_alloc) return (void *)(uintptr_t)-ENOMEM;
     size_t total = GPR_HDR_SIZE + APM_CMD_HDR_SIZE + pkt_size;
@@ -63,7 +63,8 @@ static int q6apm_send_cmd_sync(struct q6apm *apm, struct gpr_pkt *pkt, uint32_t 
 C
 {
     extract_block "$q6/audioreach.h" '^#define PARAM_ID_TDM_INTF_CFG' '^#define AR_HW_EP_CLK_ATTR_DEFAULT'
-    for s in param_id_tdm_intf_cfg param_id_tdm_lane_cfg param_id_hw_ep_clk_attr param_id_hw_ep_mf; do
+    # The first block above already carries the interface and lane structures.
+    for s in param_id_hw_ep_clk_attr param_id_hw_ep_mf; do
         extract_block "$q6/audioreach.h" "^struct $s [{]" '^} __packed;'
     done
     printf '#define PARAM_ID_TDM_LANE_CFG 0x0800106A\n#define PARAM_ID_HW_EP_CLK_ATTR_CFG 0x0800113C\n#define PARAM_ID_HW_EP_MF_CFG 0x08001017\n'
