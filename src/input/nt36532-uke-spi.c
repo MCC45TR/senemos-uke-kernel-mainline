@@ -11,6 +11,7 @@
 #include <linux/input/mt.h>
 #include <linux/input/touchscreen.h>
 #include <linux/irq.h>
+#include <linux/jiffies.h>
 #include <linux/module.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
@@ -24,6 +25,7 @@
 #include <drm/drm_panel.h>
 
 #include "nt36532-uke-protocol.h"
+#include "nt36532-uke-matrix.h"
 
 #define NVT_UKE_FIRMWARE "qcom/uke/touch/csot/normal.bin"
 #define NVT_UKE_WIRE_SIZE (NVT_UKE_FRAME_SIZE + 2)
@@ -39,6 +41,8 @@ struct nvt_uke_touch {
 	struct nvt_uke_io io;
 	struct work_struct boot_work;
 	struct work_struct charger_work;
+	struct delayed_work poll_work;
+	struct nvt_uke_matrix matrix;
 	/* ctrl changes state; workers never acquire it or a panel lock. */
 	struct mutex ctrl, io_lock, irq_lock;
 	spinlock_t state_lock;
@@ -50,6 +54,7 @@ struct nvt_uke_touch {
 	bool charger_known, charger_online;
 	unsigned int watchdog;
 	u64 input_packets, input_errors;
+	unsigned long last_irq, last_valid;
 	u16 contacts_active;
 	u8 *tx, *rx, *frame;
 };
@@ -58,6 +63,17 @@ static bool nvt_active(struct nvt_uke_touch *t)
 {
 	return t->panel_ready && !t->suspended &&
 		!t->removed && !t->fault;
+}
+
+static void nvt_schedule_poll(struct nvt_uke_touch *t)
+{
+	unsigned long flags;
+
+	/* Fence requeue against the state invalidation before quiesce/remove. */
+	spin_lock_irqsave(&t->state_lock, flags);
+	if (nvt_active(t) && t->booted && t->transfer_epoch == t->epoch)
+		mod_delayed_work(system_long_wq, &t->poll_work, msecs_to_jiffies(20));
+	spin_unlock_irqrestore(&t->state_lock, flags);
 }
 
 static void nvt_release_contacts(struct nvt_uke_touch *t)
@@ -78,28 +94,52 @@ static void nvt_release_contacts(struct nvt_uke_touch *t)
 static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 {
 	struct nvt_uke_contacts contacts;
-	unsigned int i;
+	struct nvt_uke_frame frame;
+	struct input_mt_pos positions[NVT_UKE_CONTACTS];
+	int slots[NVT_UKE_CONTACTS];
+	unsigned int i, count = 0;
 	int ret = frame_error;
 
 	if (!ret)
-		ret = nvt_uke_decode_contacts(t->frame, NVT_UKE_GESTURE_SIZE,
-					     t->prop.max_x, t->prop.max_y, &contacts);
+		ret = nvt_uke_decode(t->frame, NVT_UKE_FRAME_SIZE, &frame);
+	if (!ret)
+		ret = nvt_uke_matrix_process(&t->matrix, &frame,
+					    t->prop.max_x, t->prop.max_y, &contacts);
 	if (ret) {
 		t->input_errors++;
-		nvt_release_contacts(t);
-		dev_warn_ratelimited(&t->spi->dev, "Touch coordinate packet rejected: %d\n", ret);
+		if (time_after(jiffies, t->last_valid + msecs_to_jiffies(100)))
+			nvt_release_contacts(t);
+		dev_warn_ratelimited(&t->spi->dev, "Touch matrix packet rejected: %d\n", ret);
 		return;
 	}
+	t->last_valid = jiffies;
 	for (i = 0; i < NVT_UKE_CONTACTS; i++) {
 		if (!(contacts.active & (1U << i)))
 			continue;
-		input_mt_slot(t->wake_input, i);
+		positions[count++] = (struct input_mt_pos) { contacts.x[i], contacts.y[i] };
+	}
+	ret = input_mt_assign_slots(t->wake_input, slots, positions, count, t->prop.max_x / 10);
+	if (ret) {
+		t->input_errors++;
+		nvt_release_contacts(t);
+		return;
+	}
+	for (i = 0; i < count; i++) {
+		if (slots[i] < 0 || slots[i] >= NVT_UKE_CONTACTS) {
+			/* A full old frame can leave no free slot for a distant new contact. */
+			nvt_release_contacts(t);
+			return;
+		}
+	}
+	t->contacts_active = 0;
+	for (i = 0; i < count; i++) {
+		input_mt_slot(t->wake_input, (unsigned int)slots[i]);
 		input_mt_report_slot_state(t->wake_input, MT_TOOL_FINGER, true);
-		touchscreen_report_pos(t->wake_input, &t->prop, contacts.x[i], contacts.y[i], true);
+		touchscreen_report_pos(t->wake_input, &t->prop, positions[i].x, positions[i].y, true);
+		t->contacts_active |= (u16)(1U << slots[i]);
 	}
 	input_mt_sync_frame(t->wake_input);
 	input_sync(t->wake_input);
-	t->contacts_active = contacts.active;
 	t->input_packets++;
 }
 
@@ -211,6 +251,7 @@ static void nvt_quiesce(struct nvt_uke_touch *t)
 
 	/* State was invalidated first. Drain IRQ before its last work enqueue. */
 	nvt_irq_set(t, false);
+	cancel_delayed_work_sync(&t->poll_work);
 	if (t->irq_wake) {
 		ret = disable_irq_wake(t->spi->irq);
 		if (ret)
@@ -304,35 +345,79 @@ static void nvt_boot_worker(struct work_struct *work)
 	t->booted = false;
 	t->firmware_ready = false;
 	nvt_release_contacts(t);
+	nvt_uke_matrix_reset(&t->matrix);
 	ret = nvt_ready(t);
 	if (!ret)
 		ret = nvt_uke_boot(&t->io, t->firmware->data, t->firmware->size,
 				   t->idle_reset);
 	if (!ret)
-		ret = nvt_uke_coordinate_mode(&t->io, true);
+		ret = nvt_uke_coordinate_mode(&t->io, false);
 	t->idle_reset = false;
 	t->watchdog = 0;
 	if (!ret) {
 		t->booted = true;
 		t->firmware_ready = true;
 		t->charger_known = false;
+		t->last_irq = t->last_valid = jiffies;
 		nvt_apply_charger(t);
 	} else if (ret != -ESHUTDOWN) {
 		nvt_fault(t);
 		dev_err_ratelimited(&t->spi->dev, "THP firmware start failed: %d\n", ret);
 	}
 	mutex_unlock(&t->io_lock);
-	if (!ret)
+	if (!ret) {
 		nvt_irq_set(t, true);
+		nvt_schedule_poll(t);
+	}
+}
+
+static void nvt_read_contacts(struct nvt_uke_touch *t)
+{
+	int ret, watchdog;
+
+	if (!t->booted || nvt_ready(t))
+		return;
+	ret = nvt_uke_read_frame(&t->io, t->frame);
+	if (ret) {
+		if (ret != -ESHUTDOWN) {
+			t->booted = false;
+			nvt_fault(t);
+			/* The worker disables IRQ outside this threaded handler. */
+			queue_work(system_long_wq, &t->boot_work);
+		}
+		return;
+	}
+	watchdog = nvt_uke_watchdog(t->frame, NVT_UKE_FRAME_SIZE, &t->watchdog);
+	if (nvt_ready(t))
+		return;
+	if (watchdog > 0) {
+		nvt_release_contacts(t);
+		t->idle_reset = watchdog == 0xfd;
+		t->booted = false;
+		t->firmware_ready = false;
+		queue_work(system_long_wq, &t->boot_work);
+		return;
+	}
+	nvt_publish_contacts(t, 0);
+}
+
+static void nvt_poll_worker(struct work_struct *work)
+{
+	struct nvt_uke_touch *t = container_of(to_delayed_work(work), struct nvt_uke_touch, poll_work);
+
+	mutex_lock(&t->io_lock);
+	if (!t->gesture_armed && time_after_eq(jiffies, t->last_irq + msecs_to_jiffies(20)))
+		nvt_read_contacts(t);
+	mutex_unlock(&t->io_lock);
+	nvt_schedule_poll(t);
 }
 
 static irqreturn_t nvt_irq_thread(int irq, void *context)
 {
 	struct nvt_uke_touch *t = context;
-	struct nvt_uke_frame decoded;
-	int ret, watchdog;
 
 	mutex_lock(&t->io_lock);
+	t->last_irq = jiffies;
 	if (t->gesture_armed) {
 		if (!nvt_ready(t) && device_may_wakeup(&t->spi->dev) &&
 		    !nvt_uke_read_frame(&t->io, t->frame) &&
@@ -343,32 +428,9 @@ static irqreturn_t nvt_irq_thread(int irq, void *context)
 			input_report_key(t->wake_input, KEY_WAKEUP, 0);
 			input_sync(t->wake_input);
 		}
-		goto out;
+	} else {
+		nvt_read_contacts(t);
 	}
-	if (!t->booted || nvt_ready(t))
-		goto out;
-	ret = nvt_uke_read_frame(&t->io, t->frame);
-	if (ret) {
-		if (ret != -ESHUTDOWN) {
-			t->booted = false;
-			nvt_fault(t);
-			/* The worker disables IRQ outside this threaded handler. */
-			queue_work(system_long_wq, &t->boot_work);
-		}
-		goto out;
-	}
-	watchdog = nvt_uke_watchdog(t->frame, NVT_UKE_FRAME_SIZE, &t->watchdog);
-	ret = nvt_uke_decode(t->frame, NVT_UKE_FRAME_SIZE, &decoded);
-	if (nvt_ready(t))
-		goto out;
-	nvt_publish_contacts(t, ret);
-	if (watchdog > 0) {
-		t->idle_reset = watchdog == 0xfd;
-		t->booted = false;
-		t->firmware_ready = false;
-		queue_work(system_long_wq, &t->boot_work);
-	}
-out:
 	mutex_unlock(&t->io_lock);
 	return IRQ_HANDLED;
 }
@@ -462,8 +524,10 @@ static ssize_t input_stats_show(struct device *dev,
 	ssize_t ret;
 
 	mutex_lock(&t->io_lock);
-	ret = sysfs_emit(buf, "packets=%llu errors=%llu active=0x%x ready=%u\n",
-			t->input_packets, t->input_errors, t->contacts_active, t->booted);
+	ret = sysfs_emit(buf, "packets=%llu errors=%llu active=0x%x calibrated=%u ready=%u\n",
+			t->input_packets, t->input_errors, t->contacts_active,
+			t->matrix.samples == NVT_UKE_CALIBRATION_FRAMES,
+			t->booted && t->matrix.samples == NVT_UKE_CALIBRATION_FRAMES);
 	mutex_unlock(&t->io_lock);
 	return ret;
 }
@@ -479,6 +543,8 @@ static int nvt_probe(struct spi_device *spi)
 	struct gpio_desc *panel_id;
 	struct nvt_uke_touch *t;
 	u32 size_x, size_y;
+	u32 mm_x, mm_y;
+	const char *label;
 	int ret;
 
 	if (!of_machine_is_compatible("xiaomi,uke") || spi->max_speed_hz != 19200000 ||
@@ -495,7 +561,11 @@ static int nvt_probe(struct spi_device *spi)
 		return dev_err_probe(dev, -ENODEV, "Expected existing high panel-ID input\n");
 	if (device_property_read_u32(dev, "touchscreen-size-x", &size_x) ||
 	    device_property_read_u32(dev, "touchscreen-size-y", &size_y) ||
-	    size_x < 2 || size_x > 4096 || size_y < 2 || size_y > 4096)
+	    size_x != 32000 || size_y != 21360 ||
+	    device_property_read_string(dev, "label", &label) || !*label || strlen(label) > 79 ||
+	    device_property_read_u32(dev, "touchscreen-x-mm", &mm_x) ||
+	    device_property_read_u32(dev, "touchscreen-y-mm", &mm_y) ||
+	    mm_x < 1 || mm_x > 1000 || mm_y < 1 || mm_y > 1000)
 		return dev_err_probe(dev, -EINVAL, "Bounded DT touch geometry required\n");
 	t = devm_kzalloc(dev, sizeof(*t), GFP_KERNEL);
 	if (!t)
@@ -507,6 +577,10 @@ static int nvt_probe(struct spi_device *spi)
 	spin_lock_init(&t->state_lock);
 	INIT_WORK(&t->boot_work, nvt_boot_worker);
 	INIT_WORK(&t->charger_work, nvt_charger_worker);
+	INIT_DELAYED_WORK(&t->poll_work, nvt_poll_worker);
+	if (device_property_read_u32_array(dev, "novatek,column-map", t->matrix.columns, NVT_UKE_COLUMNS) ||
+	    device_property_read_u32_array(dev, "novatek,row-map", t->matrix.rows, NVT_UKE_ROWS))
+		return dev_err_probe(dev, -EINVAL, "CSOT electrode mapping required\n");
 	t->io = (struct nvt_uke_io) {
 		.context = t, .read = nvt_read, .write = nvt_write,
 		.check_ready = nvt_ready, .delay_ms = nvt_delay, .sha256 = nvt_sha256,
@@ -532,14 +606,19 @@ static int nvt_probe(struct spi_device *spi)
 	t->wake_input = devm_input_allocate_device(dev);
 	if (!t->wake_input)
 		return -ENOMEM;
-	t->wake_input->name = "Novatek NT36532 Uke Touchscreen";
+	t->wake_input->name = label;
+	t->wake_input->phys = devm_kasprintf(dev, GFP_KERNEL, "%s/input0", dev_name(dev));
+	if (!t->wake_input->phys)
+		return -ENOMEM;
 	t->wake_input->id.bustype = BUS_SPI;
 	input_set_capability(t->wake_input, EV_KEY, KEY_WAKEUP);
 	input_set_abs_params(t->wake_input, ABS_MT_POSITION_X, 0, size_x - 1, 0, 0);
 	input_set_abs_params(t->wake_input, ABS_MT_POSITION_Y, 0, size_y - 1, 0, 0);
+	input_abs_set_res(t->wake_input, ABS_MT_POSITION_X, size_x / mm_x);
+	input_abs_set_res(t->wake_input, ABS_MT_POSITION_Y, size_y / mm_y);
 	touchscreen_parse_properties(t->wake_input, true, &t->prop);
 	ret = input_mt_init_slots(t->wake_input, NVT_UKE_CONTACTS,
-				 INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
+				 INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED | INPUT_MT_TRACK);
 	if (ret)
 		return ret;
 	ret = input_register_device(t->wake_input);

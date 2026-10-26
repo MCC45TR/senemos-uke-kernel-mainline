@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 17
+%global senemos_build_release 18
 %else
 %global senemos_build_release 1
 %endif
@@ -86,7 +86,7 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
-Requires: uke-boot-integration(kernel-touch-input-v1) >= 1
+Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
@@ -187,6 +187,8 @@ uke_check_start=$SECONDS
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/mainline-boot-status-contract.sh
 bash native-profile/tests/touch-runtime-package-contract.sh
+CC=clang bash native-profile/tests/touch-protocol-contract.sh
+CC=clang bash native-profile/tests/touch-transport-contract.sh
 grep -Fx 'CONFIG_TOUCHSCREEN_NT36532_UKE=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst
 modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst | grep -Fx 'spi:nt36532-uke-touch'
@@ -386,6 +388,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-18
+- Process Uke THP matrices in kernel input with a live baseline and tracked multitouch slots.
+- Read touch identity, dimensions and shared electrode mapping from DT; retain lost-IRQ recovery.
+- Require native boot acceptance support and run input/lifecycle fixtures in the RPM build.
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-17
 - Report touchscreen coordinates through native input and load shared model firmware directly.
 - Remove the matched userspace touch processor from the kernel payload.

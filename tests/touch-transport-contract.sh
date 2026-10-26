@@ -5,11 +5,11 @@ root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 awk '
- /^static (bool nvt_active\(|int nvt_ready\(|int nvt_transfer\(|int nvt_spi_io\(|void nvt_irq_set\(|void nvt_quiesce\(|void nvt_fault\(|void nvt_boot_worker\(|int nvt_panel_changed\(|int nvt_suspend\(|int nvt_resume\(|void nvt_apply_charger\(|void nvt_charger_worker\(|int nvt_supply_changed\()/ { copying=1 }
+ /^static (bool nvt_active\(|void nvt_schedule_poll\(|int nvt_ready\(|int nvt_transfer\(|int nvt_spi_io\(|void nvt_irq_set\(|void nvt_quiesce\(|void nvt_fault\(|void nvt_boot_worker\(|int nvt_panel_changed\(|int nvt_suspend\(|int nvt_resume\(|void nvt_apply_charger\(|void nvt_charger_worker\(|int nvt_supply_changed\()/ { copying=1 }
  copying { print }
  copying && /^}/ { copying=0 }
 ' "$root/src/input/nt36532-uke-spi.c" > "$stage/production.h"
-[[ $(grep -c '^static ' "$stage/production.h") == 14 ]]
+[[ $(grep -c '^static ' "$stage/production.h") == 15 ]]
 sanitize=()
 [[ -z ${UKE_TOUCH_SANITIZE:-} ]] || sanitize=(-fsanitize=address,undefined -fno-omit-frame-pointer)
 "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wno-unused-parameter \
@@ -36,7 +36,9 @@ cmp "$root/src/display/uke-o82-touch.h" "$stage/kernel/include/linux/uke-o82-tou
 if bash "$root/src/input/prepare-source.sh" "$stage/kernel"; then
     echo 'Duplicate staging unexpectedly accepted' >&2; exit 1
 fi
-grep -Fx 'bash "$profile/src/input/prepare-source.sh" "$kernel"' "$root/packaging/native/prepare.sh"
-grep -Fx 'CONFIG_TOUCHSCREEN_NT36532_UKE=m' "$root/packaging/native/native.config"
+profile=$root/packaging/native
+[[ -f $profile/prepare.sh ]] || profile=$root
+grep -Fx 'bash "$profile/src/input/prepare-source.sh" "$kernel"' "$profile/prepare.sh"
+grep -Fx 'CONFIG_TOUCHSCREEN_NT36532_UKE=m' "$profile/native.config"
 grep -Fx '#include "../input/sm7675-uke-thp.dtsi"' "$root/src/display/sm7675-uke-native-display-oem-modes.dtso"
 printf 'Explicit staging and matched release selection: PASS\n'

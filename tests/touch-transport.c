@@ -31,6 +31,10 @@ struct device { struct nvt_uke_touch *touch; int kobj; };
 struct spi_device { struct nvt_uke_touch *touch; int irq; struct device dev; };
 struct firmware { const u8 *data; size_t size; };
 struct work_struct { unsigned int pending; struct nvt_uke_touch *touch; };
+struct delayed_work { unsigned int pending; };
+struct nvt_uke_matrix { unsigned int samples; };
+static unsigned long jiffies = 1234;
+#define msecs_to_jiffies(ms) (ms)
 struct notifier_block { int unused; };
 struct nvt_uke_io { void *context; };
 struct vb2_queue { unsigned int done, errors; };
@@ -39,6 +43,9 @@ struct nvt_uke_touch {
     mutex_t ctrl, io_lock, irq_lock, state_lock;
     struct work_struct boot_work;
     struct work_struct charger_work;
+    struct delayed_work poll_work;
+    struct nvt_uke_matrix matrix;
+    unsigned long last_irq, last_valid;
     struct notifier_block panel_notifier;
     struct notifier_block supply_notifier;
     struct nvt_uke_io io;
@@ -117,6 +124,11 @@ static void cancel_work_sync(struct work_struct *w) {
 }
 static void *system_long_wq;
 static void queue_work(void *queue, struct work_struct *w) { mock.queues++; w->pending = 1; }
+static void mod_delayed_work(void *queue, struct delayed_work *w, unsigned long delay) {
+    assert(queue == system_long_wq && delay == 20);w->pending = 1;
+}
+static void cancel_delayed_work_sync(struct delayed_work *w) { w->pending = 0; }
+static void nvt_uke_matrix_reset(struct nvt_uke_matrix *m) { m->samples = 0; }
 static void *dev_get_drvdata(struct device *dev) { return dev->touch; }
 struct power_supply_desc { const char *name; };
 struct power_supply { const struct power_supply_desc *desc; };
@@ -144,7 +156,7 @@ static void nvt_release_contacts(struct nvt_uke_touch *t) {
     assert(t == t->spi->touch); mock.releases++;
 }
 static int nvt_uke_coordinate_mode(const struct nvt_uke_io *io, bool enabled) {
-    assert(!nvt_ready(io->context) && enabled); mock.coordinates++;
+    assert(!nvt_ready(io->context) && !enabled); mock.coordinates++;
     return mock.coordinate_error;
 }
 static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
@@ -173,6 +185,7 @@ static void reset(void) {
     touch.panel_state = 1; touch.watchdog = 10; touch.idle_reset = true;
     touch.boot_work.pending = 0;
     touch.charger_work.pending = 0;
+    touch.poll_work.pending = 0;touch.matrix.samples = 32;
     mock.calls = mock.fail = mock.short_at = mock.change_epoch = 0;
     mock.enables = mock.disables = mock.cancels = mock.queues = 0;
     mock.charger_calls = mock.psy_gets = mock.warnings = 0;
@@ -330,6 +343,14 @@ int main(void) {
     reset(); touch.booted=touch.firmware_ready=false; touch.idle_reset=false;
     nvt_boot_worker(&touch.boot_work);
     assert(mock.boots==1 && mock.coordinates==1 && touch.booted && touch.firmware_ready && touch.irq_enabled);
+    assert(touch.poll_work.pending && touch.matrix.samples == 0);
+    touch.removed = true;
+    nvt_quiesce(&touch);
+    assert(!touch.poll_work.pending);
+    nvt_schedule_poll(&touch);
+    assert(!touch.poll_work.pending);
+    reset();touch.idle_reset=false;
+    nvt_boot_worker(&touch.boot_work);
     mock.boot_error=-EIO;
     nvt_boot_worker(&touch.boot_work);
     assert(mock.boots==2 && !touch.booted && !touch.firmware_ready && touch.fault);

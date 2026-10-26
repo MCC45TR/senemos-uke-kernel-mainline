@@ -17,7 +17,9 @@ cat > "$stage/linux/types.h" <<'C'
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef int16_t s16;
+typedef int32_t s32;
 typedef uint32_t u32;
+typedef uint64_t u64;
 #endif
 C
 cat > "$stage/linux/unaligned.h" <<'C'
@@ -47,10 +49,9 @@ printf '#include_next <linux/errno.h>\n' > "$stage/linux/errno.h"
     "${sanitize[@]}" -o "$stage/gesture"
 "$stage/gesture"
 "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
-    -I "$stage" "$root/tests/touch-contacts.c" "$root/src/input/nt36532-uke-protocol.c" \
-    "${sanitize[@]}" -o "$stage/contacts"
-"$stage/contacts"
-printf 'Ten-slot coordinates, independent lifts, geometry, checksum and malformed-packet refusal: PASS\n'
+    -I "$stage" "$root/tests/touch-matrix.c" "$root/src/input/nt36532-uke-matrix.c" \
+    "$root/src/input/nt36532-uke-protocol.c" "${sanitize[@]}" -o "$stage/matrix"
+"$stage/matrix" "$@"
 awk '
  /^static void nvt_release_contacts\(/ || /^static void nvt_publish_contacts\(/ { copying=1 }
  copying { print }
@@ -58,7 +59,7 @@ awk '
 ' "$root/src/input/nt36532-uke-spi.c" > "$stage/production-contacts.h"
 [[ $(grep -c '^static void ' "$stage/production-contacts.h") == 2 ]]
 "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
-    -I "$stage" "$root/tests/touch-publish.c" "$root/src/input/nt36532-uke-protocol.c" \
+    -I "$stage" "$root/tests/touch-publish.c" \
     "${sanitize[@]}" -o "$stage/publish"
 "$stage/publish"
 printf 'Production input publisher: slots, lifts, packet failure and quiesce releases: PASS\n'

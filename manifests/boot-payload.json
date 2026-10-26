@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-25",
+  "date": "2026-10-26",
   "source_date_epoch": 1792058622,
-  "source_origin": "Project boot producer 4eb69e5, current native display/sensor profile and bounded slot/private-userdata VRR handoff 84b172c; release-16 native nftables and per-profile root filesystem/panic policy; explicit retained root-selector capability note v1, without VRR activation; release-17 requires the guarded updater, confirms OEM adapter wire 7 before an SDP budget write and uses the current per-CPU workqueue; electrical suspend remains unqualified; candidate native offline userdata expansion with unchanged GPT and filesystem identity, tablet validation pending; v2 explicit four-filesystem userdata policy with built-in XFS/Btrfs and F2FS-only offline growth; new native formats remain untested; candidate native platform-profile QoS and legacy DT compatibility; tablet handoff not qualified; release-18 is based on the accepted release-14 source and pairs the Uke V4L2 THP driver/DT with a separately licensed, versioned and hashed C++ processor; physical contact and suspend validation remain pending; unstable7 pairs mainline19 touch and transport-ready QRTR with the registration-only accepted14 baseline; retain 7.3 RNG/GF128/QCE and notifier compatibility, no physical acceptance; unstable release-8 scopes fixed-board drivers, early modules and DT compilation to Uke while retaining the current touch, QRTR, display and root contracts; source checks do not establish hardware acceptance",
+  "source_origin": "Linux 7.3 Uke native adaptation retaining the accepted 7.3.0-16 display, Type-C, DP DSC/FEC/MST and video source. Release 18 replaces the nonfunctional release-17 coordinate assumption with kernel THP matrix processing, DT identity/electrode mapping, tracked input and missed-IRQ recovery. Shared model firmware remains separate; no private reference or userspace contact client is included. Physical touch, multitouch, VRR and accessory acceptance remain open.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -166,6 +166,66 @@
     {
       "path": "tests/mainline-boot-status-contract.sh",
       "sha256": "234c8a761f99bf1894349214a333192182f71d5bcbe46166bd6b5404e3ab4c69"
+    },
+    {
+      "path": "src/input/Makefile",
+      "sha256": "b8b5340e23ac427ae8be137e550e98ff0c9282388bdede147034a94b91d42bb5"
+    },
+    {
+      "path": "src/input/README.md",
+      "sha256": "e8e425bf9921c170694d6b6706523f9637b3831b74bac93186ecc40bd29d2b0c"
+    },
+    {
+      "path": "src/input/nt36532-uke-spi.c",
+      "sha256": "e665e0852d16fe3c1aa4f377f3ed7fae09adae70a11a919441586e1dcd3c0170"
+    },
+    {
+      "path": "src/input/prepare-source.sh",
+      "sha256": "7fd928c26f2ff7434d8e4d67c96c4f7fd6d496ccca0b760aeec61960d414bccd"
+    },
+    {
+      "path": "src/input/sm7675-uke-thp.dtsi",
+      "sha256": "24137c66abe5251bc90be40a665b6868f6a2bc15d83a6fa3a3b62ea250c79e62"
+    },
+    {
+      "path": "tests/touch-dt-contract.sh",
+      "sha256": "b6ba213128c92e8cfbf2f19121eb808181f344d63b7bb222315595110adedfae"
+    },
+    {
+      "path": "tests/touch-protocol-contract.sh",
+      "sha256": "664b8d536dd600a761c97136c86da1c011282b65d557cb63e3cb0bab9b652061"
+    },
+    {
+      "path": "tests/touch-publish.c",
+      "sha256": "5604c482c3de2515e64ae5d7d2b822c83ee2314bd3c63f4c821f7b4c4d23c380"
+    },
+    {
+      "path": "tests/touch-transport-contract.sh",
+      "sha256": "ef55d62ae2d3286c010f4e2725861c293d3988dff4aafd207211537f6c62dac1"
+    },
+    {
+      "path": "tests/touch-transport.c",
+      "sha256": "85517289da7a9dca187562d33b67a415f2fe27a2cfa8cac2259078ba5309d8aa"
+    },
+    {
+      "path": "src/input/nt36532-uke-matrix.c",
+      "sha256": "eecd319d86c5896bbadd6a849f697e5b52951a9ea6a06c58cac248630314b134"
+    },
+    {
+      "path": "src/input/nt36532-uke-matrix.h",
+      "sha256": "8e1672bd32941fb463de17989173cd72b76cae02658d397a10a8e47be2e24089"
+    },
+    {
+      "path": "tests/touch-matrix.c",
+      "sha256": "42582555783cac5dbf7709af3cca8f68791517d4a2ee5a821e85ed3fa64bfe87"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.c",
+      "sha256": "cf33bab95023c620fda609ae1493660c3ba57d22aef6cb21929217abad2e5edd"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.h",
+      "sha256": "327902ca99d040918b73c202493bdc7f95079247c69a08e9a6cc8256fad7d07d"
     }
   ],
   "root_selector_capability": {

@@ -379,48 +379,6 @@ int nvt_uke_coordinate_mode(const struct nvt_uke_io *io, bool enabled)
 	return ret ? ret : nvt_uke_guard(io);
 }
 
-/* Six-byte slots follow upstream novatek-nvt-ts.c (Hans de Goede, GPL-2+).
- * Uke command/dummy bytes are already stripped by the SPI transport.
- */
-int nvt_uke_decode_contacts(const u8 *data, size_t size, u16 max_x, u16 max_y,
-			    struct nvt_uke_contacts *contacts)
-{
-	struct nvt_uke_contacts decoded = { 0 };
-	unsigned int i, sum = 0, seen = 0;
-
-	if (!data || !contacts || size != NVT_UKE_GESTURE_SIZE ||
-	    !max_x || !max_y || max_x > 4095 || max_y > 4095)
-		return -EINVAL;
-	for (i = 0; i < size; i++)
-		sum += data[i];
-	if (sum & 0xff)
-		return -EBADMSG;
-	for (i = 0; i < NVT_UKE_CONTACTS; i++) {
-		const u8 *point = data + i * 6;
-		unsigned int slot = point[0] >> 3, state = point[0] & 7;
-		u16 x, y;
-
-		if (point[0] == 0xff)
-			continue;
-		if (!slot || slot > NVT_UKE_CONTACTS || state < 1 || state > 3 ||
-		    (seen & (1U << (slot - 1))))
-			return -EPROTO;
-		slot--;
-		seen |= 1U << slot;
-		if (state == 3)
-			continue;
-		x = (u16)(((u16)point[1] << 4) | (point[3] >> 4));
-		y = (u16)(((u16)point[2] << 4) | (point[3] & 0x0f));
-		if (x > max_x || y > max_y)
-			return -ERANGE;
-		decoded.active |= (u16)(1U << slot);
-		decoded.x[slot] = x;
-		decoded.y[slot] = y;
-	}
-	*contacts = decoded;
-	return 0;
-}
-
 int nvt_uke_gesture_enter(const struct nvt_uke_io *io)
 {
 	const u8 pen_off[] = { 0x7b, 0 };

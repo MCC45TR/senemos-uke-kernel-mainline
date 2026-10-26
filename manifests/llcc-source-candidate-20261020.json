@@ -133,19 +133,19 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "53ef9c791fdd90029b4d1a8c0683ae889a89ecb860aac77de9380fe33c1d46e3"
+      "sha256": "e665e0852d16fe3c1aa4f377f3ed7fae09adae70a11a919441586e1dcd3c0170"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
-      "sha256": "7898b6c8e505ebebb894f34c567727e78e1b1c1bff973f32ad6ab2ac524eacdf"
+      "sha256": "cf33bab95023c620fda609ae1493660c3ba57d22aef6cb21929217abad2e5edd"
     },
     {
       "path": "src/input/nt36532-uke-protocol.h",
-      "sha256": "2577cc2dc72a9d4915e4777064b69375e9a0c7fef4ede5efad88ff17e76ef6c5"
+      "sha256": "327902ca99d040918b73c202493bdc7f95079247c69a08e9a6cc8256fad7d07d"
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
-      "sha256": "44f287218bad1844ce29dfb3c6f9d655f09c6ef4ea0b96aecbd959578032b381"
+      "sha256": "24137c66abe5251bc90be40a665b6868f6a2bc15d83a6fa3a3b62ea250c79e62"
     },
     {
       "path": "tests/touch-gesture.c",
@@ -208,12 +208,48 @@
       "sha256": "d9b79a6ffaea7027c53e9a4845546d280a72e64f6017e7007252a196e5e0243f"
     },
     {
-      "path": "tests/touch-contacts.c",
-      "sha256": "283872aa3ec21a917f47ada9e1efac6ea95485590086543b8ca93071ad400c0d"
+      "path": "tests/touch-publish.c",
+      "sha256": "5604c482c3de2515e64ae5d7d2b822c83ee2314bd3c63f4c821f7b4c4d23c380"
     },
     {
-      "path": "tests/touch-publish.c",
-      "sha256": "50cf2c85cf055a0890e6d88f8060aeaa21c008fa7d5933b1a20f0bf742cfa66e"
+      "path": "src/input/Makefile",
+      "sha256": "b8b5340e23ac427ae8be137e550e98ff0c9282388bdede147034a94b91d42bb5"
+    },
+    {
+      "path": "src/input/README.md",
+      "sha256": "e8e425bf9921c170694d6b6706523f9637b3831b74bac93186ecc40bd29d2b0c"
+    },
+    {
+      "path": "src/input/prepare-source.sh",
+      "sha256": "7fd928c26f2ff7434d8e4d67c96c4f7fd6d496ccca0b760aeec61960d414bccd"
+    },
+    {
+      "path": "tests/touch-dt-contract.sh",
+      "sha256": "b6ba213128c92e8cfbf2f19121eb808181f344d63b7bb222315595110adedfae"
+    },
+    {
+      "path": "tests/touch-protocol-contract.sh",
+      "sha256": "664b8d536dd600a761c97136c86da1c011282b65d557cb63e3cb0bab9b652061"
+    },
+    {
+      "path": "tests/touch-transport-contract.sh",
+      "sha256": "ef55d62ae2d3286c010f4e2725861c293d3988dff4aafd207211537f6c62dac1"
+    },
+    {
+      "path": "tests/touch-transport.c",
+      "sha256": "85517289da7a9dca187562d33b67a415f2fe27a2cfa8cac2259078ba5309d8aa"
+    },
+    {
+      "path": "src/input/nt36532-uke-matrix.c",
+      "sha256": "eecd319d86c5896bbadd6a849f697e5b52951a9ea6a06c58cac248630314b134"
+    },
+    {
+      "path": "src/input/nt36532-uke-matrix.h",
+      "sha256": "8e1672bd32941fb463de17989173cd72b76cae02658d397a10a8e47be2e24089"
+    },
+    {
+      "path": "tests/touch-matrix.c",
+      "sha256": "42582555783cac5dbf7709af3cca8f68791517d4a2ee5a821e85ed3fa64bfe87"
     }
   ],
   "baseline_files": [
@@ -336,7 +372,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-17",
+  "kernel_release": "7.3.0-18",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
