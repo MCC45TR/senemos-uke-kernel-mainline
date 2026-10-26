@@ -4,10 +4,12 @@ Environment: POCO Pad X1 (Xiaomi Pad 7, SM7675), Fedora Rawhide AArch64.
 Tablet probes ran on the installed Linux 7.3.0-16 kernel; source checks ran on a
 prepared Linux 7.3 tree (116 patches, `audio-profile` = `speakers`).
 
-**Status: source and host results only, plus amplifier-driver results on the
-tablet without any audio output. No sound has been produced.** The TDM bit
-clock, DSP graph, LPASS pin control and card have not run on hardware. Do not
-mark internal speakers working before the tests in the last section pass.
+**Status (release 20): all four internal speakers play on hardware.** All four
+amplifiers probe, their PLLs lock, the DSP consumes a 4-channel S16_LE stream at
+48 kHz, and each speaker was verified individually and through the desktop
+(ALSA UCM + PipeWire). Not covered: HDMI audio re-test on this card, sample widths
+above 16 bit, speaker calibration, microphones, suspend. See the sections below
+for how the path was bisected.
 
 ## Evidence
 
@@ -35,7 +37,7 @@ No preset, tuning or calibration data is stored in this repository.
 |---|---|
 | `patches/7.3.0/0115` | `fs19xx` ASoC/I2C driver. Active-low reset held while idle, OEM start sequence, DAC muted until the amplifier reports PLL lock, output switch default off, digital volume capped at the OEM uncalibrated limit (0xDF, -12 dB). Preset parsed with size, CRC and bounds checks. A missing preset leaves the card usable and the speaker disabled. |
 | `patches/7.3.0/0116` | AudioReach legacy TDM sink/source (`0x0700100E/F`): interface config `0x0800101B`, lane mask `0x0800106A`, endpoint format `0x08001017`, clock attributes `0x0800113C`, plus the topology token loader. |
-| `src/audio/uke-audio-card.c` | `xiaomi,uke-speaker-audio-card`: HDMI and four-amplifier TDM backends in one card, fixed 48 kHz / 4 ch / S32, CPU slots 4 x 32. |
+| `src/audio/uke-audio-card.c` | `xiaomi,uke-speaker-audio-card`: HDMI and four-amplifier TDM backends in one card, fixed 48 kHz / 4 ch / S16_LE back end inside 4 x 32-bit slots. |
 | `src/audio/POCO-Pad-X1.conf` | HDMI graph unchanged plus `MultiMedia2` (4 ch) to the TDM sink behind `SECONDARY_TDM_RX_0 Audio Mixer`. |
 | `src/audio/sm7675-uke-speaker-audio.dtsi` | Amplifier bus and nodes, LPASS LPI pinctrl for gpio6-9, two-link card. |
 | `src/display/uke-abl-native.h` | Publishes symbols and phandles for the four unlabeled OEM amplifiers before the overlay applies. |
