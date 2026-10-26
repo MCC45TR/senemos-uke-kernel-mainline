@@ -20,12 +20,16 @@ struct dsi_bridge {int id; bool video_enabled;};
 static struct msm_dsi *selected;
 static struct msm_dsi *dsi_mgr_get_dsi(int id) {(void)id;return selected;}
 static struct drm_dsc_config *msm_dsi_host_get_dsc_config(struct mipi_dsi_host *h) {return h->dsc;}
-struct msm_dp {bool power_on;};
+struct msm_dp {bool unused;};
 struct msm_dp_mode {unsigned bpp;};
-struct msm_dp_panel {struct msm_dp_mode msm_dp_mode;};
+struct drm_connector {unsigned id;};
+struct msm_dp_panel {struct msm_dp_mode msm_dp_mode;bool stream_active,dsc_active;struct {struct drm_dsc_config dsc;} dsc;struct drm_connector *connector;};
 struct msm_dp_debug_private {struct msm_dp *display;struct msm_dp_panel *panel;};
+struct msm_dp_mst {unsigned max_streams;struct {struct msm_dp_panel *dp_panel;} mst_encoders[2];int mst_lock;};
+struct msm_dp_mst_connector {struct drm_connector connector;struct msm_dp_mst *dp_mst;};
+#define guard(type) (void)
 C
-for item in 'dsi/dsi_manager.c:dsi_mgr_output_bits_show' 'dp/dp_debug.c:msm_dp_output_bits_show'; do
+for item in 'dsi/dsi_manager.c:dsi_mgr_output_bits_show' 'dp/dp_debug.c:msm_dp_output_bits_show' 'dp/dp_mst_drm.c:msm_dp_mst_output_bits_show'; do
  file=${item%%:*}; name=${item#*:}
  awk -v signature="static int $name(" 'index($0,signature)==1{emit=found=1} emit{print} emit&&/^}/{exit} END{if(!found)exit 1}' "$kernel/drivers/gpu/drm/msm/$file" >> "$work/check.c"
 done
@@ -38,14 +42,27 @@ int main(void) {
  assert(!dsi_mgr_output_bits_show(&seq,NULL));assert(!strcmp(seq.line,"version=1 active=1 bpc=10 bpp=30 dsc_bpp_x16=128\n"));
  selected=NULL;assert(!dsi_mgr_output_bits_show(&seq,NULL));assert(strstr(seq.line,"bpc=0 bpp=0"));selected=&dsi;
  host.dsc=NULL;assert(!dsi_mgr_output_bits_show(&seq,NULL));assert(strstr(seq.line,"bpc=0 bpp=0"));
- struct msm_dp display={false};struct msm_dp_panel panel={{30}};struct msm_dp_debug_private debug={&display,&panel};seq.private=&debug;
+ struct msm_dp display={false};struct msm_dp_panel panel={.msm_dp_mode={30}};struct msm_dp_debug_private debug={&display,&panel};seq.private=&debug;
  for(unsigned power=0;power<2;power++)for(unsigned bpc=6;bpc<=12;bpc+=2) {
-  display.power_on=power;panel.msm_dp_mode.bpp=bpc*3;
+  panel.stream_active=power;panel.msm_dp_mode.bpp=bpc*3;
   assert(!msm_dp_output_bits_show(&seq,NULL));
   char expected[256];bool active=power;
   snprintf(expected,sizeof(expected),"version=1 active=%u bpc=%u bpp=%u dsc_bpp_x16=0\n",active,active?bpc:0,active?bpc*3:0);
   assert(!strcmp(seq.line,expected));
  }
+ panel.stream_active=panel.dsc_active=true;panel.msm_dp_mode.bpp=30;panel.dsc.dsc.bits_per_pixel=128;
+ assert(!msm_dp_output_bits_show(&seq,NULL));assert(strstr(seq.line,"bpc=10 bpp=30 dsc_bpp_x16=128"));
+ panel.stream_active=false;
+ assert(!msm_dp_output_bits_show(&seq,NULL));assert(strstr(seq.line,"active=0 bpc=0 bpp=0 dsc_bpp_x16=0"));
+ struct msm_dp_panel other={.msm_dp_mode={24},.stream_active=true};
+ struct msm_dp_mst mst={.max_streams=2,.mst_encoders={{&panel},{&other}}};
+ struct msm_dp_mst_connector a={{1},&mst},b={{2},&mst};panel.connector=&a.connector;other.connector=&b.connector;
+ seq.private=&a;assert(!msm_dp_mst_output_bits_show(&seq,NULL));assert(strstr(seq.line,"active=0 bpc=0 bpp=0"));
+ seq.private=&b;assert(!msm_dp_mst_output_bits_show(&seq,NULL));assert(strstr(seq.line,"active=1 bpc=8 bpp=24"));
+ panel.stream_active=true;seq.private=&a;
+ assert(!msm_dp_mst_output_bits_show(&seq,NULL));assert(strstr(seq.line,"active=1 bpc=10 bpp=30"));
+ mst.mst_encoders[0].dp_panel=NULL;
+ assert(!msm_dp_mst_output_bits_show(&seq,NULL));assert(strstr(seq.line,"active=0 bpc=0 bpp=0"));
  puts("Actual DP/DSI stream snapshots: enabled depth, DSC wire bits, inactive/disconnected and missing-state boundaries passed; host only");
 }
 C

@@ -20,7 +20,7 @@ struct Guard {
 #define guard(x) const Guard held
 struct panel { unsigned lane_limit; };
 struct link { unsigned max_dp_lanes; };
-struct display { bool power_on; };
+struct display { bool active_stream_cnt; };
 struct msm_dp_display_private {
     bool plugged_lock=false,plugged=false,stream_pm_active=false,stream_link_attempted=false;
     display msm_dp_display{};
@@ -44,7 +44,7 @@ int main() {
     const unsigned lanes[]{1,2,4};
     for(unsigned source:lanes)for(unsigned wanted:lanes)for(unsigned busy=0;busy<16;busy++) {
         panel p{4};link l{source};msm_dp_display_private dp{};
-        dp.panel=&p;dp.link=&l;dp.plugged=busy&1;dp.msm_dp_display.power_on=busy&2;
+        dp.panel=&p;dp.link=&l;dp.plugged=busy&1;dp.msm_dp_display.active_stream_cnt=busy&2;
         dp.stream_pm_active=busy&4;dp.stream_link_attempted=busy&8;
         const int expected=wanted>source?-EINVAL:busy?-EBUSY:0;
         assert(msm_dp_display_set_lane_limit(&dp,wanted)==expected);

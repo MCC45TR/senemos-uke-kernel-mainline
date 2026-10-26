@@ -84,7 +84,7 @@ static void msm_dp_write_link(void *p,u32 offset,u32 value) {
 static u32 msm_dp_read_link(void *p,u32 offset) {
  (void)p; assert(!(offset&3) && offset<sizeof(link_regs)); return link_regs[offset/4];
 }
-static void msm_dp_write_p0(void *p,u32 offset,u32 value) {
+static void msm_dp_write_pn(void *p,u32 offset,u32 value) {
  (void)p; assert(!(offset&3) && offset<sizeof(p0_regs)); p0_regs[offset/4]=value; p0_writes++;
 }
 static u32 get_unaligned_le32(const void *p) { u32 value; memcpy(&value,p,4); return le32toh(value); }

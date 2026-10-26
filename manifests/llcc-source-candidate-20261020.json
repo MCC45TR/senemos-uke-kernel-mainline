@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "242aa7eb8e92704aeb1c8e77594caacd7788e4b67763364f2b66ac26dbd0979f"
+      "sha256": "f721945db5bb3fe82e7a777b5cc66e853766b80ff96a9463a1bc7e9022be3cfb"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -89,7 +89,7 @@
     },
     {
       "path": "tests/dpu-output-affinity-contract.sh",
-      "sha256": "3c8fa906e972470cacee7a8c726314827af81bbeef29330dd2ec6e72c0c84c17"
+      "sha256": "ea56791ef4ba2c08cf7a6e8457e5867fe6767bf1fb8423b041ed716dcb368c61"
     },
     {
       "path": "tests/ucsi-debugfs-bounds-contract.sh",
@@ -157,7 +157,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "b44935cfb62b117c50dc83d4972a96366a9c5b33febd2b7d5564787e9dccd016"
+      "sha256": "3021c1a9b5715abd2408c1db4b97f314c95368c53076a82bbf280f2deb27addd"
     },
     {
       "path": "src/display/dp_dsc.c",
@@ -169,7 +169,7 @@
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "cb2b94ae2ca0820ebd3b95f7fc6904a24059803b38d523eb5bf72e7dec8b0a3f"
+      "sha256": "b41bb314c8881112e46971df48bb964cd458ae831e2b1b43e012b3c85a1058d1"
     },
     {
       "path": "patches/display/0059-uke-displayport-rgb-dsc-fec.patch",
@@ -177,7 +177,7 @@
     },
     {
       "path": "tests/dp-dsc-state-contract.sh",
-      "sha256": "9992a53bec32610cdc18ff549d01582070559fd4f85234f68013b8e9fcea6b54"
+      "sha256": "d8cc878da391b7867392b03a80848da84e44646818f79abda4528d5da403e8c7"
     },
     {
       "path": "patches/display/0060-uke-dp-clear-fec-detected-status.patch",
@@ -190,6 +190,22 @@
     {
       "path": "tests/dp-fec-status-contract.sh",
       "sha256": "159e9615cb022c30f0b086da922fb9cbb6aa3eb4cb67fe1fecbab866d4f24c69"
+    },
+    {
+      "path": "patches/display/0061-uke-dp-mst-and-negotiated-lanes.patch",
+      "sha256": "fbccb92d2cace9fc92986dbbd95c8c12ae6404cf628fc2dff94ba4eb07f6c758"
+    },
+    {
+      "path": "tests/dp-mst-payload-contract.sh",
+      "sha256": "bc257ca4e4722a2ae4d9aed4b9d6d731b4f3540b1b13e66a89434435a9202de8"
+    },
+    {
+      "path": "tests/dp-mst-control-contract.sh",
+      "sha256": "56f33207bd158a38e771320faeb65f683b3ff1b0a88e2cdf3bd590a331b3d658"
+    },
+    {
+      "path": "tests/dp-altmode-retimer-contract.sh",
+      "sha256": "d9b79a6ffaea7027c53e9a4845546d280a72e64f6017e7007252a196e5e0243f"
     }
   ],
   "baseline_files": [
@@ -312,7 +328,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-15",
+  "kernel_release": "7.3.0-16",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

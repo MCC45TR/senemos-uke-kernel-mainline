@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 15
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -395,6 +395,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-16
+- Add two-stream RGB8 SDR MST with payload and shared-link failure cleanup.
+- Bound DP training by negotiated Type-C lanes and preserve unchanged IRQ routing.
+
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-15
 - Require a fresh FEC receiver event before admitting compressed DisplayPort.
 - Exercise stale detection, failed status clearing and actual compressed TU calculations.

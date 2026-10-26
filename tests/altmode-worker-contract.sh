@@ -18,6 +18,7 @@ using u64=uint64_t;
 #define MUX_CTRL_STATE_USB3_ONLY 1
 #define MUX_CTRL_STATE_TUNNELING 4
 enum drm_connector_status { connector_status_connected=1, connector_status_disconnected=2, connector_status_unknown=3 };
+enum drm_connector_dp_event { DRM_CONNECTOR_NO_EXTRA_STATUS,DRM_CONNECTOR_DP_IRQ_HPD };
 #define spin_lock_irqsave(lock,flags) do {(void)(lock);(flags)=0;} while(0)
 #define spin_unlock_irqrestore(lock,flags) do {(void)(lock);(void)(flags);} while(0)
 #define dev_err_ratelimited(...) do {} while(0)
@@ -48,7 +49,7 @@ struct pmic_glink_altmode_port {
     pmic_glink_altmode_port(pmic_glink_altmode *am):altmode(am) {}
 };
 #define work_to_altmode_port(w) reinterpret_cast<pmic_glink_altmode_port *>(w)
-static unsigned acks,switches,connected,disconnected,safe_calls;
+static unsigned acks,switches,connected,disconnected,safe_calls,irq_events;
 static bool consumed,lose_service_on_ack;
 static int ack_error,mux_error;
 static int pmic_glink_altmode_request(pmic_glink_altmode *am,unsigned cmd,unsigned port) {
@@ -69,7 +70,8 @@ static int pmic_glink_altmode_enable_dp(pmic_glink_altmode *,pmic_glink_altmode_
 static int pmic_glink_altmode_enable_tbt(pmic_glink_altmode *,pmic_glink_altmode_port *) {return 0;}
 static int pmic_glink_altmode_enable_usb4(pmic_glink_altmode *,pmic_glink_altmode_port *) {return 0;}
 static int pmic_glink_altmode_enable_usb(pmic_glink_altmode *,pmic_glink_altmode_port *) {return 0;}
-static void drm_aux_hpd_bridge_notify(int *,int status) {
+static void drm_aux_hpd_bridge_notify_extra(int *,int status,drm_connector_dp_event event) {
+    if(event==DRM_CONNECTOR_DP_IRQ_HPD){assert(status==connector_status_connected);++irq_events;}
     if(status==connector_status_connected) {
         assert(consumed);++connected;
     } else {assert(status==connector_status_disconnected);++disconnected;}
@@ -77,7 +79,7 @@ static void drm_aux_hpd_bridge_notify(int *,int status) {
     consumed=false;
 }
 static void reset() {
-    acks=switches=connected=disconnected=safe_calls=0;
+    acks=switches=connected=disconnected=safe_calls=irq_events=0;
     consumed=lose_service_on_ack=false;ack_error=mux_error=0;
 }
 CPP
@@ -91,6 +93,7 @@ int main() {
     reset();am={};port={&am};port.count=2;port.events[1].hpd_irq=1;
     pmic_glink_altmode_worker(&port.work);
     assert(acks==2 && switches==2 && connected==2 && !disconnected);
+    assert(irq_events==1);
     reset();am={};port={&am};port.count=2;port.events[1].orientation=2;
     pmic_glink_altmode_worker(&port.work);
     assert(acks==2 && switches==2 && connected==2 && !disconnected);

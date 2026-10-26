@@ -19,7 +19,7 @@ struct drm_atomic_commit { drm_bridge_state *bridge; };
 struct device { void *data,*of_node; };
 struct device_attribute {};
 struct platform_device { device dev; };
-struct msm_dp { bool is_edp,power_on; platform_device *pdev; drm_bridge *bridge; };
+struct msm_dp { bool is_edp,active_stream_cnt,mst_active; platform_device *pdev; drm_bridge *bridge; };
 struct msm_dp_panel { bool dsc_requested; msm_dp_dsc_config dsc; };
 struct msm_dp_display_private {
  msm_dp msm_dp_display; msm_dp_panel *panel;
@@ -49,15 +49,17 @@ int main() {
  dp.msm_dp_display.pdev=&pdev; dp.msm_dp_display.bridge=&bridge; device dev{&dp,nullptr};
  assert(uke_dp_dsc_store(&dev,nullptr,"bad",3)==-EINVAL && !panel.dsc_requested && !dp.plugged_lock);
  for(unsigned condition=0;condition<4;condition++) {
-  dp.plugged=condition==0;dp.msm_dp_display.power_on=condition==1;
+  dp.plugged=condition==0;dp.msm_dp_display.active_stream_cnt=condition==1;
   dp.stream_pm_active=condition==2;dp.stream_link_attempted=condition==3;
   assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==-EBUSY && !panel.dsc_requested && !dp.plugged_lock);
  }
- dp.plugged=dp.msm_dp_display.power_on=dp.stream_pm_active=dp.stream_link_attempted=false;
+ dp.plugged=dp.msm_dp_display.active_stream_cnt=dp.stream_pm_active=dp.stream_link_attempted=false;
  assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==2 && panel.dsc_requested && !dp.plugged_lock);
  assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr));
  panel.dsc.dsc.bits_per_pixel=128;
  assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr)==&panel.dsc.dsc);
+ dp.msm_dp_display.mst_active=true;
+ assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr));dp.msm_dp_display.mst_active=false;
  msm_dp_bridge_state next{};drm_atomic_commit state{&next.base};
  assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,&state));
  next.dsc.dsc.bits_per_pixel=128;

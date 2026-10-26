@@ -1,5 +1,22 @@
 # Mainline native source profile
 
+26 October 2026, Linux 7.3.0-16 candidate: add two-stream DP MST using the
+upstream v7 implementation and IRQ_HPD v8 bridge contract, adapted to retain
+Uke's SST color, DSC/FEC and runtime-PM guards. Uke OEM INTF0/3 map to DP0
+streams 0/1. Failed payload allocation, ACT, stream enable and link downshift
+release their resources without stopping a surviving stream. Identical IRQ_HPD
+routing preserves the retimer; training is bounded by acknowledged C/E or D/F
+pin routing. No firmware override or new negotiation owner is introduced.
+
+MST admits RGB8 SDR; HDR, chroma conversion and compressed MST are refused.
+The current firmware does not expose standard alternate-mode override, and
+the observed JH925 route reports two lanes and MST_CAP=0. Host fault fixtures
+and AArch64 MSM compilation pass; native package delivery, a visible second
+stream, four-lane negotiation and USB/Ethernet fallback remain unvalidated.
+Source attribution: Yongxing Mou and Abhinav Kumar, MST v7 (29 September 2026),
+and Dmitry Baryshkov, IRQ_HPD v8 (24 October 2026). See the source links in
+`patches/display/0061-uke-dp-mst-and-negotiated-lanes.patch`.
+
 26 October 2026, Linux 7.3.0-15 candidate: clear both latched FEC detection
 events after acknowledged FEC_READY and before training. A stale enable event
 must not qualify a new compressed link. Status-clear failures abort setup;

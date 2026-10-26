@@ -46,3 +46,42 @@ int main(void) {
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/check.c" -o "$work/check"
 "$work/check"
+cat > "$work/streams.c" <<'C'
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+typedef unsigned u32;
+enum { INTF_0, INTF_1, INTF_2, INTF_3, INTF_DP, INTF_DSI, INTF_WB };
+enum { MSM_DP_CONTROLLER_0, MSM_DSI_CONTROLLER_0=0, MSM_DSI_CONTROLLER_1=1 };
+#define DPU_IRQ_IDX(a,b) (b)
+struct dpu_intf_cfg {const char *name;unsigned id,base,len,type,controller_id,prog_fetch_lines_worst_case,intr_underrun,intr_vsync,intr_tear_rd_ptr;};
+C
+awk '/^static const struct dpu_intf_cfg sm7675_intf\[\] =/{emit=1} emit{print} emit&&/^};/{exit}' \
+    "$(dirname -- "$file")/catalog/dpu_10_1_sm7675.h" >> "$work/streams.c"
+cat >> "$work/streams.c" <<'C'
+struct dpu_hw_intf {unsigned id;} hw[4];
+struct dpu_rm {int unused;};
+struct dpu_mdss_cfg {const struct dpu_intf_cfg *intf;int intf_count;};
+struct msm_display_info {unsigned h_tile_instance[2],intf_type;int stream_id;};
+static struct dpu_hw_intf *dpu_rm_get_intf(struct dpu_rm *rm,unsigned id) {(void)rm;assert(id<4);return &hw[id];}
+C
+awk '/^static struct dpu_hw_intf \*dpu_encoder_get_intf\(/{emit=1} emit{print} emit&&/^}/{exit}' \
+    "$(dirname -- "$file")/dpu_encoder.c" >> "$work/streams.c"
+cat >> "$work/streams.c" <<'C'
+int main(void) {
+ struct dpu_rm rm={0};struct dpu_mdss_cfg catalog={sm7675_intf,4};
+ struct msm_display_info info={.intf_type=INTF_DP};
+ assert(dpu_encoder_get_intf(&catalog,&rm,&info,0)==&hw[INTF_0]);
+ info.stream_id=1;assert(dpu_encoder_get_intf(&catalog,&rm,&info,0)==&hw[INTF_3]);
+ assert(sm7675_intf[3].base==0x37000 && sm7675_intf[3].len==0x300);
+ assert(sm7675_intf[3].intr_underrun==30 && sm7675_intf[3].intr_vsync==31);
+ info.stream_id=2;assert(!dpu_encoder_get_intf(&catalog,&rm,&info,0));
+ info.stream_id=0;info.h_tile_instance[0]=1;assert(!dpu_encoder_get_intf(&catalog,&rm,&info,0));
+ info.intf_type=INTF_DSI;assert(dpu_encoder_get_intf(&catalog,&rm,&info,0)==&hw[INTF_2]);
+ info.h_tile_instance[0]=0;assert(dpu_encoder_get_intf(&catalog,&rm,&info,0)==&hw[INTF_1]);
+ info.intf_type=INTF_WB;assert(!dpu_encoder_get_intf(&catalog,&rm,&info,0));
+ puts("Actual Uke stream mapping: DP0 INTF0/3, DSI0/1 and unsupported-stream rejection passed; host only");
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/streams.c" -o "$work/streams"
+"$work/streams"
