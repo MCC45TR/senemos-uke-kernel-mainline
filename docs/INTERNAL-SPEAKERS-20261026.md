@@ -73,6 +73,23 @@ these patches) supplied a GPIO I2C bus and a fake-clock card:
   (`STATUS = 0x0200`), the driver stayed muted, and every amplifier returned to
   reset when the stream closed.
 
+## First boot, release 17 (26 October 2026)
+
+The new kernel booted. The overlay applied: the amplifier I2C bus came up, the
+LPASS LPI pin controller probed, and three amplifiers probed with the expected
+positions (0x34 top-left, 0x36 bottom-left, 0x37 bottom-right). Amplifier 0x35
+reported `amplifier not detected`, and because the card waits for all four
+codecs, **no sound card registered, HDMI audio included**.
+
+Cause: the reset line was held asserted. The OEM node's active-high `reset-gpio`
+and the overlay's active-low `reset-gpios` name the same GPIO, so gpiolib's
+shared-GPIO scan put the line behind a voting proxy. For 0x35 the proxy never
+released the amplifier (level read back asserted after deassert; a debug build
+showed this on eight retries). Release 18 removes the OEM `reset-gpio` in the
+native entry, and the driver now registers its component even when the chip is
+not detected, so one bad amplifier can no longer remove the card. That speaker
+refuses to open a stream.
+
 ## Not established
 
 Audible output; TDM bit clock and frame sync; DSP acceptance of the graph;

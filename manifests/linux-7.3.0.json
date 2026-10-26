@@ -471,7 +471,7 @@
     },
     {
       "path": "patches/7.3.0/0115-asoc-fs19xx-smart-amplifier.patch",
-      "sha256": "f420a3f266f40e34bbcaf2bbbc47a2291c113fda1d943ea6184e12a773384c67"
+      "sha256": "de5a9819365a0847c8f129e461395c7e245ff604c1d1d3c0668f8afb97487a47"
     },
     {
       "path": "patches/7.3.0/0116-q6apm-tdm-sink-module.patch",

@@ -51,6 +51,8 @@ int main(int argc,char **argv) {
             const auto *symbol=static_cast<const char *>(fdt_getprop(fdt.data(),symbols,labels[i],&bytes));
             assert(symbol && !std::strcmp(symbol,path));
             assert(fdt_get_phandle(fdt.data(),fdt_path_offset(fdt.data(),path))!=0);
+            /* A second, active-high description of the reset line would make gpiolib share it. */
+            assert(!fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),path),"reset-gpio",&bytes));
         }
     }
     std::ofstream output(argv[3],std::ios::binary);

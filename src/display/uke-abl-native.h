@@ -93,6 +93,14 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 		node = fdt_path_offset(fdt, amp);
 		if (node < 0 || fdt_node_check_compatible(fdt, node, "foursemi,fs16xx"))
 			continue;
+		/*
+		 * The OEM active-high reset-gpio and the overlay's reset-gpios name the
+		 * same line; gpiolib then treats it as shared and may refuse to release
+		 * the amplifier from reset. Leave only the overlay's property.
+		 */
+		ret = fdt_delprop(fdt, node, "reset-gpio");
+		if (ret && ret != -FDT_ERR_NOTFOUND)
+			return ret;
 		ret = uke_native_symbol(fdt, amp_symbols[i], amp);
 		if (ret)
 			return ret;

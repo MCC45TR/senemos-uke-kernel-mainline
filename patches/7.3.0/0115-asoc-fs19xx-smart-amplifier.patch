@@ -10,7 +10,9 @@ amplifier reports PLL lock, the output switch defaults to off and the digital
 volume is capped at the OEM uncalibrated limit. No OEM preset or calibration
 data is carried; the preset is loaded as firmware.
 
-The driver matches the OEM foursemi,fs16xx compatible as well.
+The driver matches the OEM foursemi,fs16xx compatible as well. An amplifier
+that is not detected still registers its component, so the sound card and its
+other links bind; that speaker refuses to open a stream.
 
 diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
 index 8e251e1d8..a0bdb1b99 100644
@@ -56,10 +58,10 @@ index 3d122ace7..df51f3ff5 100644
  obj-$(CONFIG_SND_SOC_HDAC_HDA) += snd-soc-hdac-hda.o
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
 new file mode 100644
-index 000000000..e7c34dbaa
+index 000000000..0eb6de6c7
 --- /dev/null
 +++ b/sound/soc/codecs/fs19xx.c
-@@ -0,0 +1,884 @@
+@@ -0,0 +1,891 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +//
 +// fs19xx.c -- Driver for the FourSemi FS19xx smart speaker amplifier
@@ -514,7 +516,7 @@ index 000000000..e7c34dbaa
 +	struct fs19xx_priv *fs19xx = snd_soc_component_get_drvdata(dai->component);
 +
 +	if (!fs19xx->preset) {
-+		dev_err_once(fs19xx->dev, "no amplifier preset loaded\n");
++		dev_err_once(fs19xx->dev, "amplifier or preset unavailable\n");
 +		return -ENODEV;
 +	}
 +	return 0;
@@ -893,13 +895,20 @@ index 000000000..e7c34dbaa
 +		return dev_err_probe(dev, -EINVAL, "reset-gpios must be GPIO_ACTIVE_LOW\n");
 +
 +	ret = fs19xx_detect(fs19xx, &chipid);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "amplifier not detected\n");
-+
-+	/* A missing preset leaves the card usable with this speaker disabled. */
-+	fs19xx_load_preset(fs19xx, chipid);
-+	if (fs19xx->preset)
-+		dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
++	if (ret == -EPROBE_DEFER)
++		return ret;
++	if (ret) {
++		/*
++		 * Keep the component so the sound card (and HDMI) still binds; this
++		 * speaker then refuses to open a stream.
++		 */
++		dev_err(dev, "amplifier not detected (%d); speaker disabled\n", ret);
++	} else {
++		/* A missing preset also leaves the card usable, speaker disabled. */
++		fs19xx_load_preset(fs19xx, chipid);
++		if (fs19xx->preset)
++			dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
++	}
 +
 +	return devm_snd_soc_register_component(dev, &fs19xx_component, &fs19xx_dai, 1);
 +}
