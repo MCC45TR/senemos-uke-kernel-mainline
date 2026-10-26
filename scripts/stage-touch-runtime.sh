@@ -28,7 +28,7 @@ inputs=$work/$prefix/uke-sensors/manifests/touch-runtime-source.json
 rpm_source=$cache/uke-touchscreen-source.src.rpm
 if [[ ! -s $rpm_source ]]; then
     url=$(jq -er .url "$inputs")
-    [[ $url == https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test-archive-20261020/srpm-builds/11179043/uke-touchscreen-0.1.0-13.fc46.src.rpm ]]
+    [[ $url == https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-migration-archive-20261020/uke-touchscreen-0.1.0-13.fc46.src.rpm ]]
     curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' \
         --connect-timeout 20 --max-time 240 "$url" -o "$work/touch.src.rpm"
     printf '%s  %s\n' "$(jq -er .sha256 "$inputs")" "$work/touch.src.rpm" | sha256sum -c -

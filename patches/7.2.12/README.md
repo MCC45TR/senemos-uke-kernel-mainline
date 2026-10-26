@@ -134,3 +134,26 @@ and accepts exactly two frontend runtimes. The registration-only DT enables
 the guarded frontend component, retaining disabled backend and physical paths.
 Neither card registration nor software refusal fixtures qualify speaker or
 microphone operation.
+
+## DP and USB mode admission, 24 October 2026
+
+Patch 0107 separates valid DP assignments D/F from the Uke unknown-mode
+refusal in QMP. The actual mux callback previously rejected these valid
+combined DP+USB modes while the generic mux framework ignored that provider's
+`EOPNOTSUPP`. The new fixture rejects that source and checks C/D/E/F selection,
+invalid-mode refusal, unchanged routes, powered-DP refusal and error handling.
+PHY tables, board values and foreign-device fallback remain unchanged.
+Source regression success does not establish visible HDMI output.
+
+Patch 0108 adds dynamic-debug call sites for acknowledged PAN events, QMP
+requests and each Type-C mux provider's result. It does not alter routing,
+power or error handling and does not log USB data payloads. The existing
+`CONFIG_DYNAMIC_DEBUG` configuration lets a test session enable these sites
+and restore its previous flags afterward; the new sites are silent by default.
+
+Patch 0109 acknowledges and applies each PAN event while suppressing duplicate
+unchanged HPD levels sent to DRM. HPD IRQs, route changes, fault disconnects and
+service cleanup remain observable. The actual worker fixture covers duplicate
+events, IRQs, route changes and recovery after a mux error. This addresses the
+repeated hotplug path; its effect on the observed settings overlap still needs
+tablet validation.

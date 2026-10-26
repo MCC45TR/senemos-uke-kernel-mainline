@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 22
+%global senemos_build_release 28
 %else
 %global senemos_build_release 1
 %endif
@@ -162,7 +162,8 @@ if test ! -e %{uke_boot_userspace}; then
 fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
-jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:%(getconf _NPROCESSORS_ONLN)}
+jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
+test "$jobs" -le 8 || jobs=8
 g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
     touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
     -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
@@ -263,6 +264,7 @@ CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-vrr-floor-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
@@ -372,6 +374,34 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-28
+- Let stopped DP pixel clocks follow initial PHY parent setup; retain prepare-time and active voltage guards.
+- Suppress repeated unchanged HPD reports while acknowledging every firmware event and retaining IRQs.
+- Add source-extracted regression checks; visible HDMI output remains unverified.
+
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-27
+- Accept valid DP+USB pin assignments D/F while retaining unknown-mode and power guards.
+- Exercise the actual QMP mux callback before building the matched package family.
+- Add opt-in PAN/QMP/mux decision logs through the existing dynamic-debug interface.
+- Keep local source-RPM host metadata generic; physical HDMI validation remains pending.
+
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-26
+- Preserve PAN Alt Mode routing across UCSI partner updates and USB EQ across repeated mux requests.
+- Acknowledge PAN events before blocking display work and retain the fixed panel until reboot.
+- Retain release-25 charging readback, GPU fault, display pacing and touch-export corrections.
+- Source and host checks passed; tablet validation remains pending.
+
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-25
+- Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
+- Check actual capture and fault-completion lock-cycle behavior before building.
+- Use the buffered touch source exporter and first-valid-frame readiness.
+- Preserve the existing display, touch and charging policies.
+
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-24
+- Retain eligible O82 VRR modes above the requested floor.
+- Normalize opted-in 30-89 Hz requests to the observed 90 Hz touch trial floor.
+- Check effective parameter readback without changing the disabled default or boot-note ABI.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-22
 - Export the native touchscreen SPI alias for standard module autoload.
 - Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.
