@@ -74,6 +74,10 @@
     {
       "path": "patches/video/0017-cliffs-video-config-clocks.patch",
       "sha256": "c5796ac0342b7a7cb2cae95a130ccd1e0880e28a1cc5aa68f2426a820d6121ca"
+    },
+    {
+      "path": "patches/video/0016-sm7675-p010-native-encode.patch",
+      "sha256": "d9bdd0222521ac769cd54cf7be928457aa167ad4284563a449b0e517a3db42ea"
     }
   ],
   "checks": {
@@ -196,5 +200,14 @@
   ],
   "native_prepare_active": true,
   "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
-  "candidate_kernel_release": "7.3.0-14"
+  "candidate_kernel_release": "7.3.0-14",
+  "main10_source_candidate": {
+    "base_release": "7.3.0-15",
+    "base_commit": "770b877757873ff87c02dc23e0a3486755ef569a",
+    "patched_source_and_host_contracts_passed": true,
+    "full_kernel_build": false,
+    "installed": false,
+    "hardware_encode_tested": false,
+    "release_tuple_reserved": false
+  }
 }
