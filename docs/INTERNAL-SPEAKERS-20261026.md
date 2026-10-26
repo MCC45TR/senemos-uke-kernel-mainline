@@ -102,6 +102,24 @@ events arrived together only at stream stop, and ALSA reported
 frame size factor (`0x08001018` = 1) on the TDM sink, which release 18 omitted.
 Release 19 sends it.
 
+## Third boot, release 19: first sound
+
+Release 19 sent the frame size factor but still stalled. A runtime experiment
+(extra frontends with different module chains, back-end width as a module
+parameter, hardware 26 October 2026) isolated the cause. The DSP returns
+buffers while the stream runs only when it does not have to change sample width:
+
+| Chain | 32-bit back end | 24-bit | 16-bit |
+|---|---|---|---|
+| decoder, converter | stalls | stalls | works |
+| decoder, converter, MFC | stalls | works | works |
+
+With a 16-bit back end inside the 4 x 32-bit TDM frame, a quiet 440 Hz tone on
+all four channels was audible from the internal speakers. Release 20 therefore
+uses an S16_LE back end and an S16_LE-only speaker frontend; wider sources need
+the MFC chain, to be added later. The amplifier driver now takes any sample
+width because the TDM frame fixes the bit clock.
+
 ## Not established
 
 Audible output; TDM bit clock and frame sync; DSP acceptance of the graph;
@@ -122,7 +140,7 @@ component is open work.
 2. Keep volume low (default is already capped). Route and enable:
    `amixer -c 0 cset name='SECONDARY_TDM_RX_0 Audio Mixer MultiMedia2' on`, then
    `Speaker Switch` on for `TopLeft`, `TopRight`, `BottomLeft`, `BottomRight`.
-3. Play four-channel S16 or S24 at 48 kHz with `aplay -D hw:0,1`.
+3. Play four-channel S16 at 48 kHz with `aplay -D hw:0,1 -c 4 -f S16_LE -r 48000`.
 4. Watch `dmesg` for `status 0x.... after N polls`. If the PLL never reports
    lock, the output stays muted by design: record the value, then retry with
    `snd_soc_fs19xx force_unmute=1` only for a short, low-level test.

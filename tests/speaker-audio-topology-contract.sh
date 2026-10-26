@@ -28,13 +28,13 @@ grep -Fq "stream_name 'DISPLAY_PORT_RX_0 Playback'" "$work/decoded.conf"
 grep -Fq "stream_name 'Secondary TDM0 Playback'" "$work/decoded.conf"
 grep -Fq "stream_name 'MultiMedia1 Playback'" "$work/decoded.conf"
 grep -Fq "stream_name 'MultiMedia2 Playback'" "$work/decoded.conf"
-# Speaker frontend: four channels at 48 kHz, 16/24-bit.
+# Speaker frontend: four channels at 48 kHz, 16-bit (the DSP stalls on width conversion).
 awk "/^SectionPCMCapabilities/ {in_caps=1} in_caps && /^\t'MultiMedia2 Playback' \{/ {emit=1; next} emit && /^\t\}/ {exit} emit {print}" "$work/decoded.conf" > "$work/fe2"
 grep -Fxq "$(printf '\t\tchannels_min 4')" "$work/fe2"
 grep -Fxq "$(printf '\t\tchannels_max 4')" "$work/fe2"
 grep -Fxq "$(printf '\t\trate_min 48000')" "$work/fe2"
 grep -Fxq "$(printf '\t\trate_max 48000')" "$work/fe2"
-grep -Fxq "$(printf "\t\tformats 'S16_LE, S24_LE'")" "$work/fe2"
+grep -Fxq "$(printf "\t\tformats 'S16_LE'")" "$work/fe2"
 # Both backends are reachable only through their audio mixers; no capture or other hardware.
 grep -Fq "SECONDARY_TDM_RX_0 Audio Mixer" "$work/decoded.conf"
 grep -Fq "DISPLAY_PORT_RX_0 Audio Mixer" "$work/decoded.conf"

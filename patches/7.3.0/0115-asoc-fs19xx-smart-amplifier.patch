@@ -58,10 +58,10 @@ index 3d122ace7..df51f3ff5 100644
  obj-$(CONFIG_SND_SOC_HDAC_HDA) += snd-soc-hdac-hda.o
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
 new file mode 100644
-index 000000000..0eb6de6c7
+index 000000000..e7576b3ea
 --- /dev/null
 +++ b/sound/soc/codecs/fs19xx.c
-@@ -0,0 +1,891 @@
+@@ -0,0 +1,892 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +//
 +// fs19xx.c -- Driver for the FourSemi FS19xx smart speaker amplifier
@@ -526,9 +526,9 @@ index 000000000..0eb6de6c7
 +				struct snd_pcm_hw_params *params,
 +				struct snd_soc_dai *dai)
 +{
++	/* Sample width is the DSP's choice; the 4 x 32-bit TDM frame fixes BCLK. */
 +	if (params_rate(params) != FS19XX_RATE ||
-+	    params_channels(params) != FS19XX_SLOTS ||
-+	    params_physical_width(params) != FS19XX_SLOT_WIDTH)
++	    params_channels(params) != FS19XX_SLOTS)
 +		return -EINVAL;
 +	return 0;
 +}
@@ -561,7 +561,8 @@ index 000000000..0eb6de6c7
 +		.channels_min = 1,
 +		.channels_max = FS19XX_SLOTS,
 +		.rates = SNDRV_PCM_RATE_48000,
-+		.formats = SNDRV_PCM_FMTBIT_S32_LE,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE |
++			   SNDRV_PCM_FMTBIT_S32_LE,
 +	},
 +	.ops = &fs19xx_dai_ops,
 +};

@@ -126,7 +126,11 @@ static int uke_speaker_late_probe(struct snd_soc_card *card)
 	return frontends == 2 && backends == 2 && seen == 3 ? 0 : -EINVAL;
 }
 
-/* Four 32-bit TDM slots at 48 kHz, one slot per amplifier. */
+/*
+ * Four 32-bit TDM slots at 48 kHz, one slot per amplifier. Samples stay 16-bit:
+ * the DSP cannot widen them in this graph and never consumes the stream if the
+ * back end is wider than the frontend (hardware result, 26 October 2026).
+ */
 static int uke_speaker_fixup(struct snd_soc_pcm_runtime *rtd,
 			     struct snd_pcm_hw_params *params)
 {
@@ -137,7 +141,7 @@ static int uke_speaker_fixup(struct snd_soc_pcm_runtime *rtd,
 	rate->min = rate->max = 48000;
 	channels->min = channels->max = UKE_SPEAKER_SLOTS;
 	snd_mask_none(format);
-	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S32_LE);
+	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S16_LE);
 	return 0;
 }
 
