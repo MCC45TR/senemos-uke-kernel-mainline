@@ -58,10 +58,10 @@ index 3d122ace7..df51f3ff5 100644
  obj-$(CONFIG_SND_SOC_HDAC_HDA) += snd-soc-hdac-hda.o
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
 new file mode 100644
-index 000000000..e7576b3ea
+index 000000000..ebd27f863
 --- /dev/null
 +++ b/sound/soc/codecs/fs19xx.c
-@@ -0,0 +1,892 @@
+@@ -0,0 +1,899 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +//
 +// fs19xx.c -- Driver for the FourSemi FS19xx smart speaker amplifier
@@ -142,7 +142,7 @@ index 000000000..e7576b3ea
 +#define FS19XX_VOL_MAX			0xff
 +
 +#define FS19XX_LOCK_POLL_MS		10
-+#define FS19XX_LOCK_POLL_COUNT		30
++#define FS19XX_LOCK_POLL_COUNT		200
 +#define FS19XX_UNMUTE_DELAY_MS		30
 +
 +/* Preset file layout; all integers are little endian. */
@@ -447,28 +447,35 @@ index 000000000..e7576b3ea
 +	struct fs19xx_priv *fs19xx = container_of(to_delayed_work(work),
 +						  struct fs19xx_priv, unmute_work);
 +	unsigned int status = 0, tsctrl;
++	bool locked = false;
 +	int i, ret;
++
++	/*
++	 * The bit clock can take a while to appear after the stream starts. Poll
++	 * without holding the lock across the sleeps so a stream stop never waits.
++	 */
++	for (i = 0; i < FS19XX_LOCK_POLL_COUNT && !locked; i++) {
++		scoped_guard(mutex, &fs19xx->lock) {
++			if (!fs19xx->powered)
++				return;
++			ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &status);
++			locked = !ret && (status & FS19XX_STATUS_PLLS);
++		}
++		if (!locked && force_unmute && i == 2)
++			locked = true;
++		if (!locked)
++			msleep(FS19XX_LOCK_POLL_MS);
++	}
++	dev_info_once(fs19xx->dev, "status 0x%04x after %d polls\n", status, i);
++	if (!locked) {
++		dev_warn(fs19xx->dev, "PLL not locked (status 0x%04x), staying muted\n", status);
++		return;
++	}
 +
 +	guard(mutex)(&fs19xx->lock);
 +
 +	if (!fs19xx->powered)
 +		return;
-+
-+	for (i = 0; i < FS19XX_LOCK_POLL_COUNT; i++) {
-+		ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &status);
-+		if (!ret && (status & FS19XX_STATUS_PLLS))
-+			break;
-+		if (force_unmute && i == 2)
-+			break;
-+		msleep(FS19XX_LOCK_POLL_MS);
-+	}
-+	dev_info_once(fs19xx->dev, "status 0x%04x after %d polls\n", status, i);
-+	if (i == FS19XX_LOCK_POLL_COUNT) {
-+		dev_warn(fs19xx->dev, "PLL not locked (status 0x%04x), staying muted\n",
-+			 status);
-+		return;
-+	}
-+
 +	if (regmap_write(fs19xx->regmap, FS19XX_REG_DACCTRL, FS19XX_DACCTRL_RUN))
 +		return;
 +	msleep(10);
