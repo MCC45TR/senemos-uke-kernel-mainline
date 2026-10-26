@@ -1,5 +1,12 @@
 # Uke Linux 7.3 adaptation
 
+26 October 2026 source addition: patch 0114 exports a read-only, cache-only
+UCSI PDO/RDO observation on Uke power supplies. Status/PDO generation, sink
+role, partner, index and suspend-time offset guard the snapshot. Reading sends
+no firmware command. A reported contract does not establish measured input
+power, exact negotiated revision or electrical acceptance. Host getter tests
+and selected UCSI object compilation remain separate from native/tablet tests.
+
 23 October 2026 candidate: release 7 uses mainline19's accepted-14-based
 hardware profile, paired SPI/IRQ touch transport/DT/client and transport-ready
 QRTR handshake. Its 102-patch queue retains the reviewed 7.3 API adaptations
