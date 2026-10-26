@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 14
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -226,6 +226,8 @@ CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
 CC=clang bash native-profile/tests/dp-dsc-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dp-dsc-state-contract.sh drivers/gpu/drm/msm/dp/dp_display.c
+CC=clang bash native-profile/tests/dp-fec-status-contract.sh drivers/gpu/drm/msm/dp/dp_ctrl.c
+CC=clang bash native-profile/tests/dp-dsc-tu-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-protection-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
@@ -393,6 +395,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-15
+- Require a fresh FEC receiver event before admitting compressed DisplayPort.
+- Exercise stale detection, failed status clearing and actual compressed TU calculations.
+
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-14
 - Add default-off RGB DSC with checked FEC, bounded PPS registers and atomic resource state.
 

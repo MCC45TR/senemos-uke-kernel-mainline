@@ -12,10 +12,12 @@ USB, battery and video adaptations. Signed normal release 13 boots on POCO
 Pad X1 through DNF with matching modules, desktop and touchscreen services.
 Battery telemetry remains synchronized after one RTC-woken s2idle trial;
 release 12's physical USB mouse wake is a separate earlier result.
-Candidate 14 adds disconnected, default-off RGB DSC/FEC controls and checked
-receiver negotiation. Host capability, PPS register-boundary, failure and
-atomic-state checks pass; native package and physical compression validation
-remain pending. Double-tap gesture entry, four-lane negotiation, DDC/CI and
+Signed release 14 delivers disconnected, default-off RGB DSC/FEC controls
+through COPR/DNF and boots with matching modules. Candidate 15 additionally
+clears latched FEC detection before training and checks stale/fresh events and
+actual compressed TU calculations. Host capability, PPS register-boundary,
+failure and atomic-state checks pass; release-15 delivery and physical
+compression validation remain pending. Double-tap gesture entry, four-lane negotiation, DDC/CI and
 sustained accessory stability remain open. Historical results below retain
 their exact older kernel identities.
 

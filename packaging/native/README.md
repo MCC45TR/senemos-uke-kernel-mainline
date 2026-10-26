@@ -1,5 +1,16 @@
 # Mainline native source profile
 
+26 October 2026, Linux 7.3.0-15 candidate: clear both latched FEC detection
+events after acknowledged FEC_READY and before training. A stale enable event
+must not qualify a new compressed link. Status-clear failures abort setup;
+default-off policy, disconnected-only changes and the RGB fallback are retained.
+Actual receiver-sequence and compressed-TU fixtures cover stale/fresh events,
+write failures, 8/10-bpc equivalence and 1440p/4K source timings. Source/host
+checks remain separate from native package delivery and visible DSC acceptance.
+
+Release 14 is delivered through signed COPR/DNF and boots with matching modules.
+Its connected-policy safeguard is verified; physical compression is still open.
+
 26 October 2026, Linux 7.3.0-14 candidate: opt-in external RGB DSC accepts
 8/10-bit input at 8 compressed bits per pixel, one or two source-bounded slices
 and compatible receiver capabilities. Policy changes require disconnection.

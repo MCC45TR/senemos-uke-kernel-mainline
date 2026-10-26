@@ -157,7 +157,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "72eb81e1ea4c181f529d73ba6673193a81dc712aa4fb4861144b62369d9e88bd"
+      "sha256": "b44935cfb62b117c50dc83d4972a96366a9c5b33febd2b7d5564787e9dccd016"
     },
     {
       "path": "src/display/dp_dsc.c",
@@ -178,6 +178,18 @@
     {
       "path": "tests/dp-dsc-state-contract.sh",
       "sha256": "9992a53bec32610cdc18ff549d01582070559fd4f85234f68013b8e9fcea6b54"
+    },
+    {
+      "path": "patches/display/0060-uke-dp-clear-fec-detected-status.patch",
+      "sha256": "350e38cb4cdf9bdd033c311e70dff7c7530a120a6155bf4be0414b62c982f5c7"
+    },
+    {
+      "path": "tests/dp-dsc-tu-contract.sh",
+      "sha256": "18b18357b768fe4baefeae766eaab0c9deb71320adeae2a71a8896dc04378976"
+    },
+    {
+      "path": "tests/dp-fec-status-contract.sh",
+      "sha256": "159e9615cb022c30f0b086da922fb9cbb6aa3eb4cb67fe1fecbab866d4f24c69"
     }
   ],
   "baseline_files": [
@@ -300,7 +312,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-14",
+  "kernel_release": "7.3.0-15",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
