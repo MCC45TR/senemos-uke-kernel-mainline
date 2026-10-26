@@ -1,5 +1,16 @@
 # Mainline native source profile
 
+26 October 2026, Linux 7.3.0-17 candidate: move NT36532 contact reporting into
+the kernel input driver. The new DT binding supplies CSOT coordinate bounds;
+the driver requests shared model firmware directly, checks coordinate mode,
+validates complete packets and publishes ten type-B slots. Panel-generation,
+IRQ, watchdog, charger and gesture guards remain in the kernel. The V4L2 raw
+transport and separately built userspace contact processor are removed from
+this kernel payload. Boot integration skips its legacy service for the new
+binding and retains dispatch for installed rollback kernels. This is a test
+candidate: physical contact geometry, multitouch and lifecycle acceptance must
+be recorded after installation; an idle mode readback is not a contact test.
+
 26 October 2026, Linux 7.3.0-16 candidate: add two-stream DP MST using the
 upstream v7 implementation and IRQ_HPD v8 bridge contract, adapted to retain
 Uke's SST color, DSC/FEC and runtime-PM guards. Uke OEM INTF0/3 map to DP0

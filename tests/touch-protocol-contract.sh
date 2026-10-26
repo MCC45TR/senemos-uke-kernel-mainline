@@ -46,6 +46,22 @@ printf '#include_next <linux/errno.h>\n' > "$stage/linux/errno.h"
     -I "$stage" "$root/tests/touch-gesture.c" "$root/src/input/nt36532-uke-protocol.c" \
     "${sanitize[@]}" -o "$stage/gesture"
 "$stage/gesture"
+"${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
+    -I "$stage" "$root/tests/touch-contacts.c" "$root/src/input/nt36532-uke-protocol.c" \
+    "${sanitize[@]}" -o "$stage/contacts"
+"$stage/contacts"
+printf 'Ten-slot coordinates, independent lifts, geometry, checksum and malformed-packet refusal: PASS\n'
+awk '
+ /^static void nvt_release_contacts\(/ || /^static void nvt_publish_contacts\(/ { copying=1 }
+ copying { print }
+ copying && /^}/ { copying=0 }
+' "$root/src/input/nt36532-uke-spi.c" > "$stage/production-contacts.h"
+[[ $(grep -c '^static void ' "$stage/production-contacts.h") == 2 ]]
+"${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
+    -I "$stage" "$root/tests/touch-publish.c" "$root/src/input/nt36532-uke-protocol.c" \
+    "${sanitize[@]}" -o "$stage/publish"
+"$stage/publish"
+printf 'Production input publisher: slots, lifts, packet failure and quiesce releases: PASS\n'
 printf 'Checked Uke gesture command sequence, checksum, filtering and failure paths: PASS\n'
 if [[ -n ${UKE_TOUCH_REFERENCE_DECODER:-} ]]; then
     [[ -f $UKE_TOUCH_REFERENCE_DECODER ]]

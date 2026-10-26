@@ -91,7 +91,6 @@ srpm: validate
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
 	# Source generation needs no target compiler or installed binary BuildRequires.
 	bash scripts/stage-boot-sources.sh "$$top/SOURCES"
-	bash scripts/stage-touch-runtime.sh "$$top/SOURCES"
 	install -m644 packaging/SINGLEBOOT.md "$$top/SOURCES/SINGLEBOOT.md"
 	install -m644 LICENSE "$$top/SOURCES/singleboot-LICENSE"
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"

@@ -120,6 +120,5 @@ raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
 printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\n' \
     "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"
-[[ -s $source_modules/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst ]]
-install -Dm755 "$kernel/native-generated/uke-touch-capture" "$source_modules/uke/uke-touch-capture"
-printf 'touch_client_sha256=%s\n' "$(sha256sum "$source_modules/uke/uke-touch-capture" | cut -d ' ' -f1)" >> "$out/boot-manifest"
+[[ -s $source_modules/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst ]]
+[[ ! -e $source_modules/uke/uke-touch-capture ]]

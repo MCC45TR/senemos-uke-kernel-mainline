@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 16
+%global senemos_build_release 17
 %else
 %global senemos_build_release 1
 %endif
@@ -26,7 +26,6 @@ Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
 Source7: SINGLEBOOT.md
 Source8: singleboot-LICENSE
-Source9: senemos-uke-touch-runtime-1.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
@@ -61,14 +60,15 @@ Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
 Summary: Matching Uke kernel modules
-License: GPL-2.0-only AND GPL-3.0-or-later AND MIT AND Apache-2.0
+License: GPL-2.0-only AND MIT AND BSD-3-Clause
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
+Requires: uke-firmware >= 3.0.304.0
 Provides: installonlypkg(kernel)
 
 %description modules
 Modules from the same native-profile source and configuration as the raw Image.
-The separately licensed calibrated touch processor is matched to this release.
+The native touchscreen reports input without a userspace contact processor.
 
 %package dtbs
 Summary: Uke compile-stage device tree and native overlay
@@ -86,8 +86,7 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
-Requires: uke-kernel-update(kernel-touch-client-v1) >= 1
-Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1
+Requires: uke-boot-integration(kernel-touch-input-v1) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
@@ -151,8 +150,6 @@ bash native-profile/prepare.sh "$PWD"
 tar -xJf %{SOURCE5}
 cmp boot-recipe/lock.json %{SOURCE6}
 (cd boot-recipe; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
-tar -xJf %{SOURCE9}
-(cd touch-runtime; sha256sum --check --strict SOURCE-SHA256SUMS)
 
 printf 'UKE_BUILD_STAGE source_prepare elapsed_s=%d\n' "$((SECONDS-uke_prep_start))"
 
@@ -170,10 +167,6 @@ test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
 test "$jobs" -le 8 || jobs=8
-g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
-    touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
-    -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
-readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8550=m \
@@ -194,12 +187,12 @@ uke_check_start=$SECONDS
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
 bash native-profile/tests/mainline-boot-status-contract.sh
 bash native-profile/tests/touch-runtime-package-contract.sh
-grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
-test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
-modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst | grep -Fx 'spi:nt36532-uke-thp'
+grep -Fx 'CONFIG_TOUCHSCREEN_NT36532_UKE=m' %{_uke_out}/.config
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst | grep -Fx 'spi:nt36532-uke-touch'
 CC=clang bash native-profile/tests/spi-geni-completion-contract.sh drivers/spi/spi-geni-qcom.c
-test -x %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
-test "$(sha256sum %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture | cut -d ' ' -f1)" = "$(sed -n 's/^touch_client_sha256=//p' %{_uke_out}/boot-manifest)"
+test ! -e %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
+! grep -q '^touch_client_sha256=' %{_uke_out}/boot-manifest
 CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
 bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
@@ -371,8 +364,6 @@ fi
 /usr/lib/firmware/%{krel}/
 
 %files modules
-%license touch-runtime/capture/LICENSE.GPL-3.0 touch-runtime/capture/LICENSE.MIT touch-runtime/capture/upstream/nt36532-thp/LICENSE
-/usr/lib/modules/%{krel}/uke/
 /usr/lib/modules/%{krel}/kernel/
 /usr/lib/modules/%{krel}/modules.alias*
 /usr/lib/modules/%{krel}/modules.dep*
@@ -395,6 +386,9 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-17
+- Report touchscreen coordinates through native input and load shared model firmware directly.
+- Remove the matched userspace touch processor from the kernel payload.
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-16
 - Add two-stream RGB8 SDR MST with payload and shared-link failure cleanup.
 - Bound DP training by negotiated Type-C lanes and preserve unchanged IRQ routing.

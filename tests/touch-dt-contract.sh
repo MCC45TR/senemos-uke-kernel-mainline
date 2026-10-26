@@ -27,7 +27,7 @@ cpp -P -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" -I 
     "$output/candidate.dts" > "$output/overlay.dts"
 dtc -q -@ -I dts -O dtb -o "$output/overlay.dtbo" "$output/overlay.dts"
 fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/overlay.dtbo"
-[[ $(fdtget -t s "$output/candidate.dtb" "$leaf" compatible) == novatek,nt36532-uke-thp ]]
+[[ $(fdtget -t s "$output/candidate.dtb" "$leaf" compatible) == novatek,nt36532-uke-touch ]]
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" interrupt-parent) == "$tlmm_handle" ]]
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" interrupts) == '36 1' ]]
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" panel-id-gpios) == "$tlmm_handle 1a 0" ]]

@@ -133,19 +133,19 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "725098945b72f8bfbea277067f7fd028eabc1a31def88cca7475a39907b544ce"
+      "sha256": "53ef9c791fdd90029b4d1a8c0683ae889a89ecb860aac77de9380fe33c1d46e3"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
-      "sha256": "cf33bab95023c620fda609ae1493660c3ba57d22aef6cb21929217abad2e5edd"
+      "sha256": "7898b6c8e505ebebb894f34c567727e78e1b1c1bff973f32ad6ab2ac524eacdf"
     },
     {
       "path": "src/input/nt36532-uke-protocol.h",
-      "sha256": "f59f54111546e2f61b950a083716fe678601c0568f200d24dbc314db272a8c13"
+      "sha256": "2577cc2dc72a9d4915e4777064b69375e9a0c7fef4ede5efad88ff17e76ef6c5"
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
-      "sha256": "adacddbe4b4b8b035914ecde9f3b79c8ae9f3d847c4c54afa8b7c1f38fd5963a"
+      "sha256": "44f287218bad1844ce29dfb3c6f9d655f09c6ef4ea0b96aecbd959578032b381"
     },
     {
       "path": "tests/touch-gesture.c",
@@ -206,6 +206,14 @@
     {
       "path": "tests/dp-altmode-retimer-contract.sh",
       "sha256": "d9b79a6ffaea7027c53e9a4845546d280a72e64f6017e7007252a196e5e0243f"
+    },
+    {
+      "path": "tests/touch-contacts.c",
+      "sha256": "283872aa3ec21a917f47ada9e1efac6ea95485590086543b8ca93071ad400c0d"
+    },
+    {
+      "path": "tests/touch-publish.c",
+      "sha256": "50cf2c85cf055a0890e6d88f8060aeaa21c008fa7d5933b1a20f0bf742cfa66e"
     }
   ],
   "baseline_files": [
@@ -328,7 +336,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-16",
+  "kernel_release": "7.3.0-17",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

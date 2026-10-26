@@ -7,11 +7,14 @@
 	fragment@240 {
 		target-path = "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0";
 		__overlay__ {
-			compatible = "novatek,nt36532-uke-thp";
+			compatible = "novatek,nt36532-uke-touch";
 			interrupt-parent = <&tlmm>;
 			interrupts = <54 IRQ_TYPE_EDGE_RISING>;
 			panel-id-gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 			panel = <&uke_panel>;
+			/* Exact CSOT mapping bounds; firmware metadata uses tenfold units. */
+			touchscreen-size-x = <3200>;
+			touchscreen-size-y = <2136>;
 			wakeup-source;
 		};
 	};

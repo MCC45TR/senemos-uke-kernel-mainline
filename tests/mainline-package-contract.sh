@@ -20,8 +20,10 @@ grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*\)$' <<< "$parsed"
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
 grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.3.1' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(guarded-automatic)\t12\t1' <<< "$requires"
-grep -Fxq "$expected-boot"$'\tuke-kernel-update(kernel-touch-client-v1)\t12\t1' <<< "$requires"
-grep -Fxq "$expected-boot"$'\tuke-boot-integration(kernel-touch-dispatch-v1)\t12\t1' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-boot-integration(kernel-touch-input-v1)\t12\t1' <<< "$requires"
+if grep -Eq 'kernel-touch-(client|dispatch)|^Source9:' <<< "$parsed"; then
+    echo 'Native input must not require the userspace capture processor' >&2; exit 1
+fi
 if grep -E '^Obsoletes:|^Conflicts:|^%post([[:space:]]|$)|^%pre([[:space:]]|$)|^Requires:.*(python|pypy)|senemos-uke-linux-kernel-mainline-native' <<< "$parsed"; then
     echo 'Mainline source packages must preserve installed boot and fallback kernels' >&2
     exit 1

@@ -69,7 +69,8 @@ static struct {
     bool psy_missing;
     bool wake_allowed;
     int wake_enable_error, wake_disable_error, boot_error, gesture_error;
-    unsigned int wake_enables, wake_disables, boots, gestures;
+    unsigned int wake_enables, wake_disables, boots, gestures, coordinates, releases;
+    int coordinate_error;
     u8 bytes[2][NVT_UKE_FRAME_SIZE + 2];
     bool block, entered, proceed;
     pthread_mutex_t lock;
@@ -114,13 +115,6 @@ static void cancel_work_sync(struct work_struct *w) {
     assert(!w->touch->irq_enabled);
     mock.cancels++; w->pending = 0;
 }
-static void vb2_discard_done(struct vb2_queue *q) {
-    struct nvt_uke_touch *t = container_of(q, struct nvt_uke_touch, queue);
-    assert(t->suspended && (!t->irq_enabled || t->irq_wake));
-    assert(!t->boot_work.pending && !t->charger_work.pending);
-    q->errors += q->done; q->done = 0;
-}
-static void vb2_queue_error(struct vb2_queue *q) { q->errors++; }
 static void *system_long_wq;
 static void queue_work(void *queue, struct work_struct *w) { mock.queues++; w->pending = 1; }
 static void *dev_get_drvdata(struct device *dev) { return dev->touch; }
@@ -145,6 +139,13 @@ static int nvt_uke_boot(const struct nvt_uke_io *io, const u8 *data, size_t size
 }
 static int nvt_uke_gesture_enter(const struct nvt_uke_io *io) {
     assert(!nvt_ready(io->context)); mock.gestures++; return mock.gesture_error;
+}
+static void nvt_release_contacts(struct nvt_uke_touch *t) {
+    assert(t == t->spi->touch); mock.releases++;
+}
+static int nvt_uke_coordinate_mode(const struct nvt_uke_io *io, bool enabled) {
+    assert(!nvt_ready(io->context) && enabled); mock.coordinates++;
+    return mock.coordinate_error;
 }
 static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
     assert(nvt_ready(io->context) == 0 && online == mock.online);
@@ -172,7 +173,6 @@ static void reset(void) {
     touch.panel_state = 1; touch.watchdog = 10; touch.idle_reset = true;
     touch.boot_work.pending = 0;
     touch.charger_work.pending = 0;
-    touch.queue = (struct vb2_queue) { 0 };
     mock.calls = mock.fail = mock.short_at = mock.change_epoch = 0;
     mock.enables = mock.disables = mock.cancels = mock.queues = 0;
     mock.charger_calls = mock.psy_gets = mock.warnings = 0;
@@ -181,6 +181,7 @@ static void reset(void) {
     mock.wake_allowed = false;
     mock.wake_enable_error = mock.wake_disable_error = mock.boot_error = mock.gesture_error = 0;
     mock.wake_enables = mock.wake_disables = mock.boots = mock.gestures = 0;
+    mock.coordinates = mock.releases = 0; mock.coordinate_error = 0;
     mock.block = mock.entered = mock.proceed = false;
 }
 
@@ -238,7 +239,7 @@ int main(void) {
     for (unsigned int bits = 0; bits < 32; ++bits) {
         reset(); touch.streaming = bits & 1; touch.panel_ready = bits & 2;
         touch.suspended = bits & 4; touch.removed = bits & 8; touch.fault = bits & 16;
-        assert((nvt_ready(&touch) == 0) == (bits == 3));
+        assert((nvt_ready(&touch) == 0) == (bits == 2 || bits == 3));
         touch.epoch++;
         assert(nvt_ready(&touch) == -ESHUTDOWN);
     }
@@ -255,9 +256,7 @@ int main(void) {
     assert(nvt_panel_changed(&touch.panel_notifier, 0, &state) == NOTIFY_OK);
     assert(mock.cancels == 2 && mock.queues == 1);
     struct device dev = { .touch = &touch };
-    touch.queue.done = 2;
     assert(nvt_suspend(&dev) == 0 && touch.suspended);
-    assert(touch.queue.done == 0 && touch.queue.errors == 2);
     assert(nvt_resume(&dev) == 0 && !touch.suspended && mock.queues == 2);
     state = 4;
     assert(nvt_panel_changed(&touch.panel_notifier, 0, &state) == NOTIFY_OK);
@@ -330,10 +329,13 @@ int main(void) {
     /* Only a completed normal boot can admit a later gesture transition. */
     reset(); touch.booted=touch.firmware_ready=false; touch.idle_reset=false;
     nvt_boot_worker(&touch.boot_work);
-    assert(mock.boots==1 && touch.booted && touch.firmware_ready && touch.irq_enabled);
+    assert(mock.boots==1 && mock.coordinates==1 && touch.booted && touch.firmware_ready && touch.irq_enabled);
     mock.boot_error=-EIO;
     nvt_boot_worker(&touch.boot_work);
     assert(mock.boots==2 && !touch.booted && !touch.firmware_ready && touch.fault);
+    reset(); touch.idle_reset=false; mock.coordinate_error=-EPROTO;
+    nvt_boot_worker(&touch.boot_work);
+    assert(mock.boots==1 && mock.coordinates==1 && touch.fault && !touch.booted && !touch.irq_enabled);
     reset(); touch.panel_ready=false;
     nvt_boot_worker(&touch.boot_work);
     assert(!mock.boots && !touch.booted && !touch.firmware_ready && !touch.fault);

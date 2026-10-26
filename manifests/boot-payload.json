@@ -9,7 +9,7 @@
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "831ab3b50e4163376cfc215356fc50078ee4a4f48412b04b590f124fdf5612b9"
+      "sha256": "9b684bbbc7ce4c1e630cb732dc01ed62ff7e5d5673ddc5e494b96756c7ee4a97"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "d37db53da1a374ffd9f275c155135f49654ae5066e34a7b634a606e2afe6ed27"
+      "sha256": "30e56eb574ba3adc9fd6aa3da7ee320ce8f986c4415c0f0214569bd9e75560cb"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "fadc7c3ba2910e1be2ac4f898b65f7a69afd62ed4bf1141df366411c64544853"
+      "sha256": "81a30b4d11194ae9bb246fc5739b349e05570b68d05da839bc2c8f1d4f4fe49c"
     },
     {
       "path": "tests/native-firewall-contract.sh",
