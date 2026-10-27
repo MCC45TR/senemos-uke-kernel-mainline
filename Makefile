@@ -45,6 +45,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/ufs-mcq-allocation-contract.sh
 	bash -n tests/bwmon-counter-contract.sh tests/bwmon-dt-contract.sh
 	bash -n tests/l3-provider-contract.sh
+	bash -n tests/opp-bandwidth-transaction-contract.sh
 	CXX=clang++ bash tests/bwmon-dt-contract.sh
 	bash -n tests/mdt-memory-admission-contract.sh tests/mdt-metadata-contract.sh tests/fastrpc-buffer-lifetime-contract.sh tests/rproc-edge-stop-contract.sh
 	bash -n tests/qup-interconnect-contract.sh tests/uke-rpmh-resource-contract.sh tests/wpss-proxy-contract.sh

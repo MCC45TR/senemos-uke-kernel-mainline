@@ -25,6 +25,7 @@ struct dev_pm_opp { unsigned int bw; int refs; };
 struct icc_bwmon {
     struct device *dev;
     unsigned int target_kbps, current_kbps, max_bw_kbps, min_bw_kbps;
+    bool retry_opp;
     void *regs[2];
 };
 static struct dev_pm_opp opps[] = {{100,0},{200,0},{300,0}};
@@ -92,7 +93,11 @@ int main(void) {
     int prior_votes=votes, prior_clears=clears, prior_enables=enables;
     b.target_kbps=150; lookup_error=true; invoke(&b);
     assert(b.current_kbps==300 && votes==prior_votes && clears==prior_clears && enables==prior_enables);
-    puts("Actual BWMON IRQ thread: failed up/down votes, same-target retry, successful commit, OPP bounds/refcounts and IRQ rearm passed; host only");
+    lookup_error=false; b.current_kbps=100; b.target_kbps=250; applied=100; vote_error=-EIO;
+    prior_votes=votes; invoke(&b);
+    b.target_kbps=100; vote_error=0; invoke(&b);
+    assert(votes==prior_votes+2 && !b.retry_opp && b.current_kbps==100 && applied==100);
+    puts("Actual BWMON IRQ thread: failed votes, return-to-applied retry, successful commit, OPP bounds/refcounts and IRQ rearm passed; host only");
     return 0;
 }
 C

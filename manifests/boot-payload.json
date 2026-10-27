@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke candidate 31 retains native DDR BWMON, CDSP, audio/reset, RNG and UFS prerequisites, reviewed amplifier rotation and audio topology/probe corrections. Native L3 probe refuses invalid clocks and LUTs, retains frequency width and unwinds ICC link failure. CPU/LLCC paired L3 votes, multi-path OPP recovery, MEMLAT and physical acceptance remain open. No new L3 or CPU monitor node is enabled; no firmware or device-private data is included.",
+  "source_origin": "Linux 7.3 Uke candidate 32 retains installed release-31 audio topology, amplifier rotation, native DDR BWMON, CDSP, RNG and UFS guards. L3 probe validates clocks, LUTs and link lifetime. OPP retains complete bandwidth snapshots, restores all paths on failure and retries incomplete transitions; BWMON retries the previous target after failure. CPU/LLCC DT admission, MEMLAT and physical acceptance remain open. No new monitor or L3 node, firmware or private data is included.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -289,7 +289,7 @@
     },
     {
       "path": "tests/bwmon-vote-error-contract.sh",
-      "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
+      "sha256": "5bf684032cb3aa5466265e412c60add4cea9fb0d8795acf6ef352267965c860b"
     },
     {
       "path": "tests/usbss-kconfig-contract.sh",
@@ -325,7 +325,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "57c63f9035eb91c07e026e887373979fadaf73a368d8ecdd2309aa98b5598f4a"
+      "sha256": "c981e8667332ea3cd89ac5e1e1a092cb6e2660acb75ae63cfa89c5f0e45a3fff"
     },
     {
       "path": "tests/qup-interconnect-contract.sh",
@@ -402,6 +402,14 @@
     {
       "path": "patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch",
       "sha256": "3c14ca70b5a528f74c9692d6af22e17d71e5e3c98696e6e480672bf957d99bbd"
+    },
+    {
+      "path": "tests/opp-bandwidth-transaction-contract.sh",
+      "sha256": "3801b8412de1f1e39c80cbb44300ba01f1eea8cbaa4a3c66d550db2e6668dfd8"
+    },
+    {
+      "path": "patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch",
+      "sha256": "40e7f401bf5e31b59b77c1a503c12c438b5b33583fe5ba79ae775a626ff40419"
     }
   ],
   "root_selector_capability": {

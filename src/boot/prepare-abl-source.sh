@@ -76,12 +76,15 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0021-bwmon-preserve-app
 git -C "$kernel" apply "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-counter-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-dt-contract.sh"
-git -C "$kernel" apply --check "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch"
-git -C "$kernel" apply "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch"
 bash "$here/../../tests/l3-provider-contract.sh" "$kernel"
+bash "$here/../../tests/opp-bandwidth-transaction-contract.sh" "$kernel"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
@@ -173,6 +176,7 @@ done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch" >> "$output/abl-source-SHA256SUMS"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
     0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \

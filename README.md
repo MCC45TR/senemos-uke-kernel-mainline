@@ -57,6 +57,13 @@ restores the reviewed speaker-rotation patch omitted from the release-30
 source lineage. Actual-callback host regression and protection tests pass;
 automatic boot recovery and physical playback require separate tablet evidence.
 
+Source candidate `7.3.0-32` retains a bandwidth snapshot with each OPP path set,
+restores all paths after failure and keeps incomplete transitions retryable.
+BWMON retries even when the next sample returns to the last successful target.
+Actual-function host fixtures cover initial/removal votes, failed rollback,
+OPP-cache suppression and owned path/snapshot allocation and release. CPU/LLCC
+DT admission, matched full build/package and physical acceptance remain open.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora

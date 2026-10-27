@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "57c63f9035eb91c07e026e887373979fadaf73a368d8ecdd2309aa98b5598f4a"
+      "sha256": "c981e8667332ea3cd89ac5e1e1a092cb6e2660acb75ae63cfa89c5f0e45a3fff"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -341,7 +341,7 @@
     },
     {
       "path": "tests/bwmon-vote-error-contract.sh",
-      "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
+      "sha256": "5bf684032cb3aa5466265e412c60add4cea9fb0d8795acf6ef352267965c860b"
     },
     {
       "path": "tests/usbss-kconfig-contract.sh",
@@ -446,6 +446,14 @@
     {
       "path": "patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch",
       "sha256": "3c14ca70b5a528f74c9692d6af22e17d71e5e3c98696e6e480672bf957d99bbd"
+    },
+    {
+      "path": "tests/opp-bandwidth-transaction-contract.sh",
+      "sha256": "3801b8412de1f1e39c80cbb44300ba01f1eea8cbaa4a3c66d550db2e6668dfd8"
+    },
+    {
+      "path": "patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch",
+      "sha256": "40e7f401bf5e31b59b77c1a503c12c438b5b33583fe5ba79ae775a626ff40419"
     }
   ],
   "baseline_files": [
@@ -568,7 +576,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-31",
+  "kernel_release": "7.3.0-32",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
