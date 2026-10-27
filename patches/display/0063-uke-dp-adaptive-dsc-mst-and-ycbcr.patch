@@ -642,7 +642,15 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  u8 msm_dp_utils_calculate_parity(u32 data);
 --- a/drivers/gpu/drm/msm/dp/dp_mst_drm.c
 +++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.c
-@@ -13,6 +13,8 @@
+@@ -6,6 +6,7 @@
+ #include <drm/drm_edid.h>
+ #include <drm/drm_fixed.h>
+ #include <drm/drm_atomic_helper.h>
++#include <drm/drm_property.h>
+ #include <drm/display/drm_dp_mst_helper.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/debugfs.h>
+@@ -13,6 +14,8 @@
  
  #include "dp_mst_drm.h"
  #include "dp_panel.h"
@@ -651,7 +659,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  #define to_dp_mst_connector(x) \
  		container_of((x), struct msm_dp_mst_connector, connector)
-@@ -23,8 +25,57 @@
+@@ -23,8 +26,57 @@
  	struct drm_connector connector;
  	struct drm_dp_mst_port *mst_port;
  	struct msm_dp_mst *dp_mst;
@@ -709,7 +717,15 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  struct msm_dp_mst_encoder {
  	struct drm_encoder *enc;
  	int stream_id;
-@@ -48,7 +99,7 @@
+@@ -37,6 +89,7 @@
+ 	struct msm_dp *msm_dp;
+ 	struct msm_dp_link *link;
+ 	struct drm_dp_aux *dp_aux;
++	struct drm_property *max_bpc_property;
+ 	u32 max_streams;
+ 	/* Serializes concurrent stream link-state access across streams. */
+ 	struct mutex mst_lock;
+@@ -48,7 +101,7 @@
  {
  	struct msm_dp_mst_connector *conn = seq->private;
  	struct msm_dp_mst *mst = conn->dp_mst;
@@ -718,7 +734,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	unsigned int i;
  
  	guard(mutex)(&mst->mst_lock);
-@@ -57,11 +108,12 @@
+@@ -57,11 +110,12 @@
  
  		if (panel && panel->connector == &conn->connector && panel->stream_active) {
  			bpp = panel->msm_dp_mode.bpp;
@@ -733,7 +749,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	return 0;
  }
  DEFINE_SHOW_ATTRIBUTE(msm_dp_mst_output_bits);
-@@ -83,11 +135,12 @@
+@@ -83,11 +137,12 @@
  
  static const struct drm_connector_funcs msm_dp_drm_mst_connector_funcs = {
  	.debugfs_init = msm_dp_mst_debugfs_init,
@@ -749,7 +765,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  };
  
  /* DP MST Connector OPs */
-@@ -125,6 +178,11 @@
+@@ -125,6 +180,11 @@
  
  	drm_edid = drm_dp_mst_edid_read(connector, &mst->mst_mgr, mst_conn->mst_port);
  	drm_edid_connector_update(connector, drm_edid);
@@ -761,7 +777,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	rc = drm_edid_connector_add_modes(connector);
  
-@@ -152,13 +210,24 @@
+@@ -152,13 +212,24 @@
  	 * that would be feasible at the actual link bpp. mode_valid must not
  	 * depend on negotiated parameters.
  	 */
@@ -787,7 +803,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	return msm_dp_display_mode_valid(dp_display, &connector->display_info, mode);
  }
  
-@@ -167,6 +236,22 @@
+@@ -167,6 +238,22 @@
  {
  	struct msm_dp_mst_connector *mst_conn = to_dp_mst_connector(connector);
  	struct msm_dp_mst *mst = mst_conn->dp_mst;
@@ -810,7 +826,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	return drm_dp_atomic_release_time_slots(state, &mst->mst_mgr, mst_conn->mst_port);
  }
-@@ -183,6 +268,68 @@
+@@ -183,6 +270,68 @@
  	return NULL;
  }
  
@@ -879,7 +895,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  static void msm_dp_mst_remove_payload(struct msm_dp_mst *mst,
  				      struct drm_dp_mst_topology_state *mst_state,
  				      struct msm_dp_panel *panel)
-@@ -245,6 +392,8 @@
+@@ -245,6 +394,8 @@
  		return -EBUSY;
  	drm_connector_get(connector);
  	panel->connector = connector;
@@ -888,7 +904,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	rc = msm_dp_display_set_mode_helper(dp_display, state, encoder, panel);
  	if (rc) {
-@@ -252,6 +401,8 @@
+@@ -252,6 +403,8 @@
  			"[MST] stream:%u set_mode failed rc=%d\n", panel->stream_id, rc);
  		goto failed;
  	}
@@ -897,7 +913,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	rc = msm_dp_display_prepare_link(dp_display);
  	if (rc) {
-@@ -275,7 +426,11 @@
+@@ -275,7 +428,11 @@
  		    panel->stream_id, payload->vc_start_slot,
  		    payload->time_slots, payload->pbn);
  
@@ -910,7 +926,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	if (rc)
  		goto failed;
  
-@@ -291,6 +446,7 @@
+@@ -291,6 +448,7 @@
  	return 0;
  
  failed:
@@ -918,7 +934,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	if (payload_started && payload->payload_allocation_status != DRM_DP_MST_PAYLOAD_ALLOCATION_NONE) {
  		drm_dp_remove_payload_part1(&mst->mst_mgr, mst_state, payload);
  		drm_dp_remove_payload_part2(&mst->mst_mgr, mst_state, payload, payload);
-@@ -326,6 +482,8 @@
+@@ -326,6 +484,8 @@
  
  	if (panel->connector != connector)
  		return;
@@ -927,7 +943,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  	drm_dp_remove_payload_part1(&mst->mst_mgr, new_mst_state, new_payload);
  
  	drm_dp_remove_payload_part2(&mst->mst_mgr, new_mst_state, old_payload, new_payload);
-@@ -372,7 +530,14 @@
+@@ -372,7 +532,14 @@
  	struct msm_dp_mst_connector *mst_conn = to_dp_mst_connector(conn_state->connector);
  	struct msm_dp_mst *mst = mst_conn->dp_mst;
  	struct drm_dp_mst_topology_state *mst_state;
@@ -943,13 +959,15 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	if (!conn_state->crtc)
  		return 0;
-@@ -382,9 +547,54 @@
+@@ -382,9 +549,56 @@
  	if (conn_state->hdr_output_metadata || conn_state->colorspace ||
  	    drm_mode_is_420_only(&conn_state->connector->display_info, &crtc_state->mode))
  		return -EOPNOTSUPP;
 -
 -	bpp = 24;
 -	pbn = drm_dp_calc_pbn_mode(crtc_state->mode.clock, bpp << 4);
++	if (conn_state->max_requested_bpc && conn_state->max_requested_bpc < 8)
++		return -EINVAL;
 +	memset(color, 0, sizeof(*color));
 +	requested = msm_dp_display_dsc_requested(mst->msm_dp, &fec);
 +	if (requested && mst_conn->dsc_aux) {
@@ -1001,7 +1019,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	mst_state = drm_atomic_get_mst_topology_state(crtc_state->state, &mst->mst_mgr);
  	if (IS_ERR(mst_state))
-@@ -397,8 +607,8 @@
+@@ -397,8 +611,8 @@
  					      mst_conn->mst_port, pbn);
  	if (slots < 0)
  		return slots;
@@ -1012,7 +1030,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  }
  
  int msm_dp_mst_attach_encoder(struct msm_dp *dp_display, unsigned int stream_id,
-@@ -571,6 +781,16 @@
+@@ -571,6 +785,16 @@
  
  	drm_connector_helper_add(connector, &msm_dp_drm_mst_connector_helper_funcs);
  	connector->funcs->reset(connector);
@@ -1020,7 +1038,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
 +		rc = -ENOMEM;
 +		goto err_connector;
 +	}
-+	connector->max_bpc_property = mst->msm_dp->connector->max_bpc_property;
++	connector->max_bpc_property = mst->max_bpc_property;
 +	if (connector->max_bpc_property) {
 +		rc = drm_connector_attach_max_bpc_property(connector, 8, 10);
 +		if (rc)
@@ -1029,7 +1047,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	/* add all encoders as possible encoders */
  	for (i = 0; i < mst->max_streams; i++) {
-@@ -590,7 +810,11 @@
+@@ -590,7 +814,11 @@
  				   dev->mode_config.path_property, 0);
  	drm_object_attach_property(&connector->base,
  				   dev->mode_config.tile_property, 0);
@@ -1042,6 +1060,27 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  
  	drm_dbg_kms(dev, "[MST] add_connector done conn:%d max_streams:%u\n",
  		    connector->base.id, mst->max_streams);
+@@ -632,6 +860,12 @@
+ 	mst->link = link;
+ 	mst->max_streams = max_streams;
+ 	mst->dp_aux = drm_aux;
++	/* Create the range before dynamic connectors; DRM owns the property's lifetime. */
++	mst->max_bpc_property = drm_property_create_range(dev, 0, "max bpc", 8, 10);
++	if (!mst->max_bpc_property) {
++		kfree(mst);
++		return -ENOMEM;
++	}
+ 
+ 	ret = drm_dp_mst_topology_mgr_init(&mst->mst_mgr, dev,
+ 					   drm_aux,
+@@ -640,6 +874,7 @@
+ 					   dp_display->connector->base.id);
+ 	if (ret) {
+ 		drm_err(dev, "[MST] topology manager init failed\n");
++		drm_property_destroy(dev, mst->max_bpc_property);
+ 		kfree(mst);
+ 		return ret;
+ 	}
 --- a/drivers/gpu/drm/msm/dp/dp_mst_drm.h
 +++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.h
 @@ -7,6 +7,14 @@

@@ -69,7 +69,7 @@
     },
     {
       "path": "patches/display/0063-uke-dp-adaptive-dsc-mst-and-ycbcr.patch",
-      "sha256": "68def4a579413baa13421eee35b954b171462f2a0e2a4cb0fb184e95f0680b14"
+      "sha256": "a67bbcb585833da70d369316af6a3f8e9b3347b12917b11da4b562467253e006"
     },
     {
       "path": "patches/input/0001-smp2p-lid-open-wake.patch",
@@ -193,7 +193,7 @@
     },
     {
       "path": "tests/dp-mst-dsc-contract.sh",
-      "sha256": "088df37c3097654bc6cbd986cd9ddbc2d3b9e8c378820b2dff447d7ec61d08f8"
+      "sha256": "e8dbffe2ab07b34bc4bffaa60c426402d489f2a72aa433b6ec8e8a481ccb6806"
     },
     {
       "path": "tests/dp-mst-payload-contract.sh",
@@ -289,7 +289,7 @@
     },
     {
       "path": "tests/dp-mst-connector-contract.sh",
-      "sha256": "ca2fdb711606206a37a24ed281676f9c2bfa47a49719a754ed038e4e347e5479"
+      "sha256": "002584ec1289fca6304917bd898c856e321e3bf1e926f0172d8f80a6f713efeb"
     }
   ],
   "baseline_files": [

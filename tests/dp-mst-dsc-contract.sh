@@ -134,6 +134,9 @@ int main(void) {
  states[0].base.hdr_output_metadata=&commit;
  assert(msm_dp_mst_stream_atomic_check(&encoder,&crtc,&states[0].base)==-EOPNOTSUPP);states[0].base.hdr_output_metadata=NULL;
  conn[0].dsc_aux=NULL;dp.requested=false;
+ states[0].base.max_requested_bpc=6;
+ assert(msm_dp_mst_stream_atomic_check(&encoder,&crtc,&states[0].base)==-EINVAL);
+ states[0].base.max_requested_bpc=8;
  assert(!msm_dp_mst_stream_atomic_check(&encoder,&crtc,&states[0].base)&&!ports[0].dsc&&states[0].color.bpp==24);
  crtc.modeset=false;states[0].color.bpp=30;
  assert(!msm_dp_mst_stream_atomic_check(&encoder,&crtc,&states[0].base)&&states[0].color.bpp==30);
