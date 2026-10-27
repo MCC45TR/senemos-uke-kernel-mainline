@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "status": "bounded-VP9-RAM-trial-passed-full-regression-pending",
+  "status": "bounded-native-and-VA-HD-RAM-regression-passed-delivery-pending",
   "base_commit": "e3229b4e2295b38515977b43116b82534d62f662",
   "target_kernel": "7.3.0-19",
   "active_preparation": false,
@@ -67,7 +67,7 @@
   "tablet_candidate_loaded": true,
   "tablet_frames_accepted": true,
   "persistent_installation": false,
-  "tablet_frame_scope": "Two bounded native1080p VP9 profiles only; no full-mode, lifecycle or package acceptance",
+  "tablet_frame_scope": "Seven native and seven VA1080p profiles,30 exact frames per profile; no remaining-mode,lifecycle,performance or signed-package acceptance",
   "tablet_trial": {
     "date": "2026-10-27",
     "module_sha256": "e8d684e8131588805aa8d9064719e2bd088458e49600b4ed923b50b63bae2764",
@@ -107,5 +107,32 @@
     "persistent_installation": false,
     "whole_kernel_or_package_built": false,
     "next_gate": "Fix and test native FFmpeg drain protocol; then repeat the candidate regression set and sample GL while the RAM candidate is active"
+  },
+  "combined_drain_retry_trial": {
+    "date": "2026-10-27",
+    "kernel": "7.3.0-19",
+    "source_base": "e3229b4e2295b38515977b43116b82534d62f662",
+    "candidate_module_sha256": "e8d684e8131588805aa8d9064719e2bd088458e49600b4ed923b50b63bae2764",
+    "ffmpeg_source_commit": "f8bb11c",
+    "ffmpeg_sha256": "bf0635b3e2e0d161ccb3c4bf20fae34b7ff29cca04940d64f32bdc368c7458d6",
+    "userspace_failure_root": "Final queued packet/capture readiness EAGAIN before filterEOF/STOP, after external drain accepted; draining-only retry misses it",
+    "native_profiles": 7,
+    "va_profiles": 7,
+    "width": 1920,
+    "height": 1080,
+    "frames_per_profile": 30,
+    "all_full_reference_rows_equal": true,
+    "all_actual_child_status_zero": true,
+    "new_codec_kernel_errors": 0,
+    "iris_refs_after_each": 0,
+    "candidate_active_gpu_reports_complete": true,
+    "complete_gpu_reports": 6,
+    "fd732_gl_pixels_and_context_restore_equal_before_candidate_restored": true,
+    "original_module_restored": true,
+    "stock_module_bytes_boot_state_and_taint_unchanged": true,
+    "restored_default_vainfo_passed": true,
+    "persistent_module_installation": false,
+    "source_or_module_build_is_full_kernel_build": false,
+    "next_gate": "Remaining modes and duration provenance, full matched kernel/module build and signed existing-family delivery, lifecycle and sustained acceptance"
   }
 }
