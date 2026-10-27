@@ -37,6 +37,7 @@ typedef uint16_t __le16; typedef uint32_t __le32;
 #define check_mul_overflow(a, b, d) __builtin_mul_overflow(a, b, d)
 #define dev_dbg(dev, ...) ((void)0)
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define is_power_of_2(v) ((v) && !((v) & ((v)-1)))
 static u16 get_unaligned_le16(const void *p) { u16 v; memcpy(&v, p, 2); return v; }
 static u16 crc16(u16 crc, const u8 *p, size_t len) {
     while (len--) { crc ^= *p++; for (int i = 0; i < 8; i++) crc = crc & 1 ? (crc >> 1) ^ 0xA001 : crc >> 1; }
@@ -68,7 +69,7 @@ static void *devm_kmemdup(struct device *dev, const void *src, size_t len, int g
 }
 static void devm_kfree(struct device *dev, void *p) { (void)dev; live_allocations--; free(p); }
 C
-awk '/^#define FS19XX_DEFAULT_FW_NAME/ {emit=1} /^static unsigned int max_volume/ {exit} emit {print}' \
+awk '/^#define FS19XX_DEFAULT_FW_NAME/ {emit=1} /^static int fs19xx_read_stable/ {exit} emit {print}' \
     "$source_file" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 #define min_t(t, a, b) ((t)(a) < (t)(b) ? (t)(a) : (t)(b))
@@ -207,6 +208,15 @@ int main(int argc, char **argv) {
     struct opt short_spk[1] = { { 0x34, 0x29, 258, 8, 0xb0ce, 16, 0, 0 } };
     build_preset(&bad, short_spk, 1);
     assert(parse(&bad, 0x34, 0x29) == -EINVAL);                     /* no position word */
+    struct opt wrong_position[1] = { { 0x34, 0x29, 258, 3, 0xb0ce, 0, 0, 0 } };
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == -EINVAL);
+    wrong_position[0].pos = 16;
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == -EINVAL);
+    wrong_position[0].pos = 8; wrong_position[0].tcoef = 0;
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == -EINVAL);
     struct opt huge[1] = { { 0x34, 0x29, 258, 8, 0xb0ce, 0, 0, 0 } };
     build_preset(&bad, huge, 1);
     {   /* a sub-list claiming more entries than the file holds, with a recomputed CRC */

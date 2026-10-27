@@ -47,6 +47,7 @@ struct audioreach_module_config {
     u32 sample_rate; u16 bit_width, num_channels; u32 slot_mask; u16 nslots_per_frame, slot_width;
 };
 static unsigned char sent[512]; static size_t sent_size; static unsigned sends; static bool fail_alloc;
+static int send_status;
 static void *audioreach_alloc_apm_cmd_pkt(int pkt_size, uint32_t opcode, uint32_t token) {
     if (fail_alloc) return (void *)(uintptr_t)-ENOMEM;
     size_t total = GPR_HDR_SIZE + APM_CMD_HDR_SIZE + pkt_size;
@@ -58,7 +59,7 @@ static int q6apm_send_cmd_sync(struct q6apm *apm, struct gpr_pkt *pkt, uint32_t 
     (void)apm; (void)rsp;
     sent_size = pkt->hdr.b1; assert(sent_size <= sizeof(sent));
     memcpy(sent, pkt, sent_size); sends++;
-    return 0;
+    return send_status;
 }
 C
 {
@@ -135,9 +136,27 @@ int main(void) {
 
     /* A stream-level slot configuration overrides the module defaults. */
     cfg.slot_mask = 3; cfg.nslots_per_frame = 2; cfg.slot_width = 16;
+    cfg.num_channels = 2; cfg.bit_width = 16;
     assert(audioreach_tdm_set_media_format(&graph, &module, &cfg) == 0);
     p = block(0, &head, &offset);
     assert(word(p, 3) == 3 && half(p, 8) == 2 && half(p, 9) == 16);
+
+    const struct audioreach_module_config valid = cfg;
+    for (unsigned fault = 0; fault < 7; fault++) {
+        cfg = valid;
+        if (fault == 0) cfg.nslots_per_frame = 33;
+        if (fault == 1) cfg.slot_width = 33;
+        if (fault == 2) cfg.slot_mask = 4;
+        if (fault == 3) cfg.num_channels = 3;
+        if (fault == 4) cfg.bit_width = 32;
+        if (fault == 5) cfg.sample_rate = 0;
+        if (fault == 6) cfg.num_channels = 0;
+        sends = 0;
+        assert(audioreach_tdm_set_media_format(&graph, &module, &cfg) == -EINVAL && sends == 0);
+    }
+    cfg = valid; send_status = -EIO;
+    assert(audioreach_tdm_set_media_format(&graph, &module, &cfg) == -EIO);
+    send_status = 0;
 
     /* Allocation failure is propagated and nothing is sent. */
     fail_alloc = true; sends = 0;

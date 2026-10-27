@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 20
+%global senemos_build_release 21
 %else
 %global senemos_build_release 1
 %endif
@@ -40,7 +40,7 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
-Recommends: uke-displayport-audio >= 0.1.0-2
+Recommends: uke-displayport-audio >= 0.1.0-6
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -245,7 +245,9 @@ CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -393,6 +395,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-21
+- Contain FS19xx clock, thermal, register and stream-lifecycle failures.
+- Enforce the uncalibrated volume ceiling and propagate invalid AudioReach setup.
+- Require the combined-card desktop policy; microphone capture remains unavailable.
+
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-18
 - Process Uke THP matrices in kernel input with a live baseline and tracked multitouch slots.
 - Read touch identity, dimensions and shared electrode mapping from DT; retain lost-IRQ recovery.

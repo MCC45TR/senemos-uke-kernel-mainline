@@ -32,9 +32,9 @@
 };
 
 /*
- * The amplifiers stay in reset (GPIO low) until a stream starts. The OEM
- * active-high reset-gpio remains, but gpiolib resolves reset-gpios first and
- * the driver requires this active-low description.
+ * The amplifiers stay in reset (GPIO low) until a stream starts. The native
+ * entry removes the duplicate OEM reset-gpio; the driver requires reset-gpios
+ * to describe the remaining line as active-low.
  */
 &uke_amp_tl {
 	compatible = "foursemi,fs19xx";

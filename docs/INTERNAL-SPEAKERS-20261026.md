@@ -1,5 +1,9 @@
 # Internal speaker path, 26 October 2026
 
+The later [27 October test candidate](AUDIO-POLISH-20261027.md) adds runtime
+fault containment and desktop policy delivery. Its integrated package is a
+separate artifact; the physical result below is not transferred to it.
+
 Tested device: Xiaomi Pad 7 (SM7675, board name "uke"; the configured sound card
 name is `POCO-Pad-X1`), Fedora Rawhide AArch64, Linux 7.3.0, native boot image
 release 20, `speakers` audio profile.
