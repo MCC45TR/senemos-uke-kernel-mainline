@@ -42,6 +42,8 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/ufs-ice-dt-contract.sh
 	bash -n tests/ufs-mcq-contract.sh tests/bwmon-vote-error-contract.sh tests/usbss-kconfig-contract.sh
 	bash -n tests/ufs-mcq-allocation-contract.sh
+	bash -n tests/bwmon-counter-contract.sh tests/bwmon-dt-contract.sh
+	CXX=clang++ bash tests/bwmon-dt-contract.sh
 	bash -n tests/mdt-memory-admission-contract.sh tests/mdt-metadata-contract.sh tests/fastrpc-buffer-lifetime-contract.sh tests/rproc-edge-stop-contract.sh
 	bash -n tests/qup-interconnect-contract.sh tests/uke-rpmh-resource-contract.sh tests/wpss-proxy-contract.sh
 	bash -n tests/pas-stop-ownership-contract.sh tests/rproc-early-stop-contract.sh tests/sysmon-stop-preparation-contract.sh

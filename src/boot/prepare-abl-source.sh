@@ -74,7 +74,11 @@ bash "$here/../../tests/audio-providers-fdt-contract.sh" "$kernel"
 bash "$here/../../tests/speaker-audio-fdt-contract.sh" "$kernel"
 git -C "$kernel" apply --check "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
+bash "$here/../../tests/bwmon-counter-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
+bash "$here/../../tests/bwmon-dt-contract.sh"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
@@ -91,6 +95,7 @@ install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 install -m644 "$here/uke-ufs.h" "$kernel/arch/arm64/kernel/uke-ufs.h"
 install -m644 "$here/uke-identity.c" "$kernel/arch/arm64/kernel/uke-identity.c"
 install -m644 "$here/uke-hardware.h" "$kernel/arch/arm64/kernel/uke-hardware.h"
+install -m644 "$here/uke-bwmon.h" "$kernel/arch/arm64/kernel/uke-bwmon.h"
 install -Dm644 "$here/bindings/firmware/xiaomi,uke-ssc-sensors.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
 install -Dm644 "$here/bindings/firmware/xiaomi,uke-accessory-profile.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-accessory-profile.yaml"
 install -m644 "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc.h"
@@ -147,6 +152,7 @@ sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-
     "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/uke-bwmon.h" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch" >> "$output/abl-source-SHA256SUMS"
@@ -162,6 +168,7 @@ for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-err
     sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
 done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch" >> "$output/abl-source-SHA256SUMS"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
     0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \

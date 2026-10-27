@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 29
+%global senemos_build_release 30
 %else
 %global senemos_build_release 1
 %endif
@@ -34,6 +34,7 @@ BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
+BuildRequires: libfdt-devel
 BuildRequires: python3
 BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
 Requires: %{name}-core = %{version}-%{release}
@@ -399,6 +400,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-30
+- Derive native DDR BWMON OPPs from exact Uke frequencies and byte units.
+- Preserve existing MC requests while adding AMC/WAKE-only monitor votes.
+- Recover owned counter-read faults without committing a failed sample.
+- CPU/LLCC secondary L3 voting and physical bandwidth/lifecycle checks remain open.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-29
 - Restore the Cliffs NSP/crypto suppliers and two/three-rail proxy ownership.
 - Preserve PAS stop errors and prepare target shutdown before client removal.

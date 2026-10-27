@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "69d2a817418edae5e09f6cf7884bde55c3e372369c75c8c63cf3702a7b2f0064"
+      "sha256": "347c2b3a7b4861e7785a22a65db36b296619c0a15b0f800a1d80d42ef65cf769"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -414,6 +414,30 @@
     {
       "path": "patches/boot/0028-cliffs-proxy-per-rail-ownership.patch",
       "sha256": "2e92813312db2ae041941e8983845a554194a93fa3508bcdc998722cc22dbb1d"
+    },
+    {
+      "path": "src/boot/uke-bwmon.h",
+      "sha256": "8146c7a265c6a005db2469cec1a96211ab8253560c33559db209c803a6db5343"
+    },
+    {
+      "path": "src/display/uke-abl-native.h",
+      "sha256": "04dcc44ea75046c3cbfbeb87aa666f74130f7992a7b01d16421d901c1746af55"
+    },
+    {
+      "path": "tests/bwmon-counter-contract.sh",
+      "sha256": "1003d4f7cfa4710327e757606c522f20df177e69006863d58290f3ddae2d6d35"
+    },
+    {
+      "path": "tests/bwmon-dt-contract.sh",
+      "sha256": "994a1ab84effdfbf1943464a3b1d6ec046fcdc0c990c07bec75fce34a4da510c"
+    },
+    {
+      "path": "tests/usb-typec-fdt-check.cpp",
+      "sha256": "b3a55201924ff3134a13c38524623947ca76850e828e0b9461ce66c54b29a199"
+    },
+    {
+      "path": "patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch",
+      "sha256": "a54329db153d525015c1de4f82ecab61189bf9da99b7849c4a807ead3ffe02bf"
     }
   ],
   "baseline_files": [
@@ -536,7 +560,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-29",
+  "kernel_release": "7.3.0-30",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

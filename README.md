@@ -30,6 +30,14 @@ CDSP match or firmware start is enabled. Source-package, AArch64 build and
 physical lifecycle results require separate evidence; forced removal,
 startup failure and exported-buffer teardown remain open.
 
+Source candidate `7.3.0-30` adds native DDR bandwidth monitoring with exact
+Uke frequency/width OPPs and decimal ICC units. Existing MC requests retain
+their endpoints and tags; the monitor uses AMC/WAKE-only votes. Actual-source
+fault/unit tests and four retained full Type-C/display graph checks pass on
+the host. CPU/LLCC secondary L3 voting, MEMLAT and physical bandwidth/lifecycle
+acceptance remain open. No tablet installation or bandwidth measurement is
+claimed for this candidate.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora

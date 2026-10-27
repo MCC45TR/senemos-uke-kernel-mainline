@@ -183,7 +183,8 @@ static void check_graph(const Bytes &dt) {
     need(fdt_path_offset(dt.data(), (usb + "/port").c_str()) == -FDT_ERR_NOTFOUND, "Inherited USB single port retained");
     exact(dt, usb, "phys", {handle(dt,hs),q,QMP_USB43DP_USB3_PHY}); strings(dt,usb,"phy-names",{"usb2-phy","usb3-phy"});
     exact(dt,usb,"iommus",{handle(dt,symbol(dt,"apps_smmu")),0x40,0});
-    exact(dt,usb,"interconnects",{handle(dt,symbol(dt,"aggre1_noc")),49,handle(dt,symbol(dt,"mc_virt")),512,
+    exact(dt,symbol(dt,"mc_virt"),"#interconnect-cells",{2});
+    exact(dt,usb,"interconnects",{handle(dt,symbol(dt,"aggre1_noc")),49,handle(dt,symbol(dt,"mc_virt")),512,0,
         handle(dt,symbol(dt,"gem_noc")),2,handle(dt,symbol(dt,"cnoc_cfg")),547});
     const auto core_gdsc=symbol(dt,"gcc_usb30_prim_gdsc");
     exact(dt,usb,"gdsc-supply",{handle(dt,core_gdsc)}); compatible(dt,core_gdsc,"qcom,sm7675-usb-gdsc");
