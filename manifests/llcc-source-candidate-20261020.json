@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "2a3fb7063e6301ace3e911741fc184a9e2f41db517ae742752948074ba8aef1e"
+      "sha256": "509cf1b12a4e421566b07e1d1c2834230012c96714e06ce2a88c17de82b14901"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "6d7dfc9b66854d39706ee596c4d3d5a537caf258ff414043ba8159b0d9d3d5ed"
+      "sha256": "1bedc2c4e27510dbe0c59277da5c6e478f2577b07c07623136dbdee3825c201f"
     },
     {
       "path": "src/boot/uke-abl.c",
