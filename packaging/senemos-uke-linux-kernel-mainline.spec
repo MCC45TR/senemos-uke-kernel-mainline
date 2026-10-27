@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 22
+%global senemos_build_release 23
 %else
 %global senemos_build_release 1
 %endif
@@ -396,7 +396,7 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-22
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-23
 - Add bounded OEM speaker rotation controls and restore routing before unmute.
 - Recommend the native Wayland session helper for KDE and GNOME display transforms.
 
