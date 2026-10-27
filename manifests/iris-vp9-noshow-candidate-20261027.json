@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "status": "bounded-native-and-VA-HD-RAM-regression-passed-delivery-pending",
+  "status": "display-and-decode-order-bounded-RAM-validation-passed-full-delivery-pending",
   "base_commit": "e3229b4e2295b38515977b43116b82534d62f662",
   "target_kernel": "7.3.0-19",
   "active_preparation": false,
@@ -134,5 +134,90 @@
     "persistent_module_installation": false,
     "source_or_module_build_is_full_kernel_build": false,
     "next_gate": "Remaining modes and duration provenance, full matched kernel/module build and signed existing-family delivery, lifecycle and sustained acceptance"
+  },
+  "decode_order_extension": {
+    "date": "2026-10-27",
+    "patch_sha256": "4598c3b2669d928172bfd318733aa39729972979d643abe2db1cc96ce26b4cdb",
+    "fixture_sha256": "4a3eb7cf139d09c5054c4b9f37c5ee1a3d73e62e0c69428e3da5aea13b8aeaab",
+    "source_change": "Recycle the same narrowly qualified empty NOSHOW buffer in decode order as well as display order; nonempty/error/ownership paths remain original",
+    "diagnosis": {
+      "actual_picture_type": "0x42 P|NOSHOW",
+      "output_order": "decode",
+      "first_raw_size": 0,
+      "first_raw_timestamp": 12000,
+      "first_raw_flags": 0,
+      "following_raw_size": 3133440,
+      "following_raw_timestamp": 12000,
+      "source_scoped_VA_persistent_before_exit": 251,
+      "source_scoped_VA_persistent_before_visible_frames": 11,
+      "own_probes_removed": true,
+      "global_trace_state_preserved": true
+    },
+    "fixture": {
+      "previous_display_order_source_failed_checks": 8,
+      "new_checks_passed": 35,
+      "queue_and_ownership_modeled": true
+    },
+    "module": {
+      "sha256": "c23ac4f521a6229dd2c311f6f5e57065cab65f5dc09acab8ffaa429449b0560c",
+      "compiler_sdk_sha256": "c18fe0ac7b154f01be89d2b9dcb4643bf78d8b2f39b3ec010d516b025629f841",
+      "includes_hevc_budget_patch": true,
+      "functional_config_changed": false,
+      "undefined_symbol_set_equals_original": true,
+      "undefined_symbols": 145,
+      "this_module_size": 1216,
+      "vermagic": "7.3.0-19 SMP preempt mod_unload aarch64",
+      "intree": true,
+      "module_symvers_missing": true,
+      "explicit_modpost_unresolved_warnings": 10,
+      "suppressed_modpost_unresolved_warnings": 135,
+      "full_kernel_or_signed_package_build": false,
+      "initial_external_target_attempt_rejected_readonly_source": true
+    },
+    "first_partial_trial": {
+      "completed_profile_mode_jobs": 12,
+      "all_completed_jobs_exact": true,
+      "syscall_tracing": true,
+      "deadline_interrupted_next_job": true,
+      "automatic_restore_blocked_by_live_reference": true,
+      "following_report_stock_restoration_not_verified": true,
+      "explicit_followup_stock_restoration_passed": true,
+      "default_va_after_explicit_restore_passed": true,
+      "taint_after_explicit_restore": 516
+    },
+    "final_ram_trial": {
+      "video_backend": "Scoped WC-surface candidate8e4ad958cdef06b2c30081862506ca16f23f7813d652f264cc5faac42c4a53a7",
+      "client_avutil_sha256": "9616580b1484ab98757f7bc5cee0496226cd75266c0e74033abfecfc84b2cab7",
+      "profiles": 7,
+      "modes": [
+        "1920x1080/30frames",
+        "3840x2160/60frames"
+      ],
+      "jobs": 14,
+      "frames_exact": 630,
+      "all_reference_rows_equal": true,
+      "syscall_tracing": false,
+      "source_storage_fixture_used": true,
+      "rejection_shim_used": false,
+      "new_codec_kernel_errors": 0,
+      "iris_refs_after_each": 0,
+      "complete_gpu_reports": 6,
+      "gl_pixels_context_equal": true,
+      "stock_restored": true,
+      "default_va_after_restore_passed": true,
+      "boot_state_and_taint_unchanged": true
+    },
+    "cleanup": {
+      "own_job_process_group_tracked": true,
+      "foreground_child_timeout": true,
+      "host_group_cleanup_and_unrelated_sibling_control_passed": true,
+      "device_timeout_cleanup_fault_injection_qualified": false
+    },
+    "delivery": {
+      "active_preparation": false,
+      "installed_persistently": false,
+      "full_signed_delivery_pending": true,
+      "sustained_lifecycle_browser_physical_acceptance": false
+    }
   }
 }

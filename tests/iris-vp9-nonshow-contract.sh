@@ -75,8 +75,10 @@ static void expect(bool value, const char *name) {
 }
 int main() {
     Fixture f;
+    for (u32 order : {0u,1u}) for (u64 timestamp : {0ull,12000ull})
     for (u32 format : {u32(V4L2_PIX_FMT_NV12),u32(V4L2_PIX_FMT_P010)}) {
         f.reset(); f.dst.fmt.pix_mp.pixelformat=format;
+        f.inst.fw_caps[0].value=order; f.reply.timestamp=timestamp;
         expect(iris_hfi_gen2_handle_output_buffer(&f.inst,&f.reply)==0 && queued==1,
                "valid hidden reference recycles one linear capture buffer");
         expect(f.buffer.attr==BUF_ATTR_QUEUED && !f.buffer.data_size && !drain && !psc,
@@ -94,7 +96,7 @@ int main() {
         case 3: f.reply.flags=HFI_BUF_FW_FLAG_LAST; break;
         case 4: f.reply.flags=HFI_BUF_FW_FLAG_PSC_LAST; break;
         case 5: f.buffer.attr|=BUF_ATTR_PENDING_RELEASE; break;
-        case 6: f.inst.fw_caps[0].value=1; break;
+        case 6: f.hfi.hfi_frame_info.picture_type=HFI_GEN2_PICTURE_P; break;
         case 7: f.src.fmt.pix_mp.pixelformat=V4L2_PIX_FMT_H264; break;
         case 8: f.dst.fmt.pix_mp.pixelformat=V4L2_PIX_FMT_YUV420; break;
         case 9: f.inst.domain=ENCODER; break;
