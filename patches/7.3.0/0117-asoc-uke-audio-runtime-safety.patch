@@ -8,7 +8,7 @@ Keep preset writes muted and volume bounded. Propagate topology-loader errors
 before admitting a graph.
 
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
-index ebd27f8..4cda2f0 100644
+index ebd27f8..4e9a2c6 100644
 --- a/sound/soc/codecs/fs19xx.c
 +++ b/sound/soc/codecs/fs19xx.c
 @@ -18,6 +18,7 @@
@@ -440,17 +440,18 @@ index ebd27f8..4cda2f0 100644
  	.controls		= fs19xx_controls,
  	.num_controls		= ARRAY_SIZE(fs19xx_controls),
  	.dapm_widgets		= fs19xx_dapm_widgets,
-@@ -711,6 +785,9 @@ static int fs19xx_parse_dev(struct fs19xx_priv *fs19xx, const u8 *copy, size_t f
+@@ -711,6 +785,10 @@ static int fs19xx_parse_dev(struct fs19xx_priv *fs19xx, const u8 *copy, size_t f
  		return -EINVAL;
  	fs19xx->tcoef = get_unaligned_le16(list + FS19XX_INFO_TEMPR_COEF * sizeof(__le16));
  	fs19xx->position = get_unaligned_le16(list + FS19XX_INFO_POSITION * sizeof(__le16));
-+	if (!fs19xx->tcoef || !is_power_of_2(fs19xx->position) ||
++	if (!fs19xx->tcoef || fs19xx->tcoef > 0x7fff ||
++	    !is_power_of_2(fs19xx->position) ||
 +	    fs19xx->position > BIT(3))
 +		return -EINVAL;
  
  	ret = fs19xx_find_sub(copy, fw_size, dev_off, dev, FS19XX_DSC_REG_COMMON,
  			      sizeof(struct fs19xx_reg_unit), &list, &count);
-@@ -803,7 +880,8 @@ static int fs19xx_detect(struct fs19xx_priv *fs19xx, unsigned int *chipid)
+@@ -803,7 +881,8 @@ static int fs19xx_detect(struct fs19xx_priv *fs19xx, unsigned int *chipid)
  		return ret;
  
  	*chipid = id >> 8;
@@ -460,7 +461,7 @@ index ebd27f8..4cda2f0 100644
  		return -ENODEV;
  	dev_info(fs19xx->dev, "FS19xx id 0x%04x rev 0x%04x\n", id, rev);
  	return 0;
-@@ -822,7 +900,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -822,7 +901,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  
  	fs19xx->i2c = client;
  	fs19xx->dev = dev;
@@ -469,7 +470,7 @@ index ebd27f8..4cda2f0 100644
  	mutex_init(&fs19xx->lock);
  	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
  	i2c_set_clientdata(client, fs19xx);
-@@ -832,7 +910,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -832,7 +911,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  		return dev_err_probe(dev, PTR_ERR(fs19xx->regmap), "regmap init failed\n");
  
  	/* Asserted (logical 1) holds the amplifier in reset. */
@@ -478,7 +479,7 @@ index ebd27f8..4cda2f0 100644
  	if (IS_ERR(fs19xx->gpio_reset))
  		return dev_err_probe(dev, PTR_ERR(fs19xx->gpio_reset), "reset gpio\n");
  	if (fs19xx->gpio_reset && !gpiod_is_active_low(fs19xx->gpio_reset))
-@@ -861,13 +939,12 @@ static void fs19xx_i2c_remove(struct i2c_client *client)
+@@ -861,13 +940,12 @@ static void fs19xx_i2c_remove(struct i2c_client *client)
  {
  	struct fs19xx_priv *fs19xx = i2c_get_clientdata(client);
  
@@ -496,7 +497,7 @@ index ebd27f8..4cda2f0 100644
  }
  
  static const struct i2c_device_id fs19xx_i2c_id[] = {
-@@ -892,8 +969,10 @@ static struct i2c_driver fs19xx_i2c_driver = {
+@@ -892,8 +970,10 @@ static struct i2c_driver fs19xx_i2c_driver = {
  	.id_table = fs19xx_i2c_id,
  	.probe = fs19xx_i2c_probe,
  	.remove = fs19xx_i2c_remove,

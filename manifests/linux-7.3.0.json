@@ -479,7 +479,7 @@
     },
     {
       "path": "patches/7.3.0/0117-asoc-uke-audio-runtime-safety.patch",
-      "sha256": "0a8d0fa228b8466d1fdee220f881caf90b5ed7d1a2ba91c5d79802c6e1a245b2"
+      "sha256": "369a439c03297a9c215d4760cdb75d8dde0ef9f7f3a5b985bf3ed286dc8bbc69"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

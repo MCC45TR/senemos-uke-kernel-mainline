@@ -217,6 +217,15 @@ int main(int argc, char **argv) {
     wrong_position[0].pos = 8; wrong_position[0].tcoef = 0;
     build_preset(&bad, wrong_position, 1);
     assert(parse(&bad, 0x34, 0x29) == -EINVAL);
+    wrong_position[0].tcoef = 0x8000;
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == -EINVAL);
+    wrong_position[0].tcoef = 0xffff;
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == -EINVAL);
+    wrong_position[0].tcoef = 0x7fff;
+    build_preset(&bad, wrong_position, 1);
+    assert(parse(&bad, 0x34, 0x29) == 0);
     struct opt huge[1] = { { 0x34, 0x29, 258, 8, 0xb0ce, 0, 0, 0 } };
     build_preset(&bad, huge, 1);
     {   /* a sub-list claiming more entries than the file holds, with a recomputed CRC */

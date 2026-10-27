@@ -24,7 +24,8 @@ path inside four 32-bit TDM slots. It changes the following behavior:
 - Stop on DAI shutdown, component suspend, I2C removal and system shutdown.
   Resume leaves the amplifier off until a new DAI unmute event.
 - Refuse unstable register reads, timed-out/unknown preset operations,
-  overflowing register fields and invalid preset position/coefficient data.
+  overflowing register fields and invalid preset position/coefficient data,
+  including coefficients that cannot fit after the required register shift.
 - Require the active-low reset GPIO. Refuse the unqualified FS1958 identity,
   whose OEM gain and sample-rate encodings differ from the tested 0x29 family.
 - Reject invalid TDM slot/media configuration and propagate topology-loader
