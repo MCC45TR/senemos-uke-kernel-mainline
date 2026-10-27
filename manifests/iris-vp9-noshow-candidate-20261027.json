@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "status": "source-and-module-build-candidate",
+  "status": "bounded-VP9-RAM-trial-passed-full-regression-pending",
   "base_commit": "e3229b4e2295b38515977b43116b82534d62f662",
   "target_kernel": "7.3.0-19",
   "active_preparation": false,
@@ -60,9 +60,52 @@
     "modpost_unresolved_symbol_warnings": true,
     "depends_metadata_empty": true,
     "complete_dependency_or_package_acceptance": false,
-    "scope": "Temporary insmod trial requires original providers already loaded; not an installable module RPM"
+    "scope": "Temporary insmod trial requires original providers already loaded; not an installable module RPM",
+    "all_unmodified_iris_C_headers_makefile_Kconfig_equal_to_accepted_base": true,
+    "only_changed_function_size": "iris_hfi_gen2_handle_output_buffer"
   },
-  "tablet_candidate_loaded": false,
-  "tablet_frames_accepted": false,
-  "persistent_installation": false
+  "tablet_candidate_loaded": true,
+  "tablet_frames_accepted": true,
+  "persistent_installation": false,
+  "tablet_frame_scope": "Two bounded native1080p VP9 profiles only; no full-mode, lifecycle or package acceptance",
+  "tablet_trial": {
+    "date": "2026-10-27",
+    "module_sha256": "e8d684e8131588805aa8d9064719e2bd088458e49600b4ed923b50b63bae2764",
+    "untraced": true,
+    "native_profiles": [
+      {
+        "profile": "VP9 Profile0",
+        "format": "NV12",
+        "width": 1920,
+        "height": 1080,
+        "frames": 30,
+        "independent_pixels_timing_sizes_dimensions_sar_equal": true
+      },
+      {
+        "profile": "VP9 Profile2",
+        "format": "P010",
+        "width": 1920,
+        "height": 1080,
+        "frames": 30,
+        "independent_pixels_timing_sizes_dimensions_sar_equal": true
+      }
+    ],
+    "following_h264_regression_passed": false,
+    "h264_failure": "FFmpeg9.0.2 CLI abort134 at fftools/ffmpeg_dec.c:753 after receive_frame returned EAGAIN during flush; no completed framehash output",
+    "new_codec_kernel_errors": 0,
+    "stock_module_restored": true,
+    "packaged_module_file_unchanged": true,
+    "userdata_state_unchanged": true,
+    "kernel_taint_unchanged": true,
+    "iris_refs_after": 0,
+    "restored_default_vainfo_exit": 0,
+    "restored_va_h264_1080_frames": 30,
+    "restored_va_h264_reference_equal": true,
+    "original_chrome_before_after_stock_gl_equal": true,
+    "complete_gpu_reports": 4,
+    "candidate_gpu_sample_collected": false,
+    "persistent_installation": false,
+    "whole_kernel_or_package_built": false,
+    "next_gate": "Fix and test native FFmpeg drain protocol; then repeat the candidate regression set and sample GL while the RAM candidate is active"
+  }
 }
