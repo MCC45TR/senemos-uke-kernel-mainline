@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 27, retaining release-26 BWMON vote-error handling, release-25 audio provider/reset foundations and release-24 RNG, ICE and transactional MCQ. Apply reset/pin/supply dependencies to the actual Type-C USBSS module while preserving the separate fixed USB2 driver scope. Native BWMON resource/OPP conversion, analog codec/jack/PCM, CDSP and physical acceptance remain open. Source and build checks do not establish tablet installation.",
+  "source_origin": "Linux 7.3 Uke native source candidate 28, retaining release-27 audio/reset dependency scope, release-26 BWMON error handling and release-24 RNG, ICE and MCQ. Restore the earlier MDT carveout, FastRPC buffer and transport-stop safeguards in the actual 7.3 queue; bound ELF32 metadata before copying. Actual-source host/sanitizer checks include retained firmware-header geometry only. Native CDSP, analog codec/jack/PCM, bandwidth resources/OPP policy and physical acceptance remain open. No firmware bytes or new remoteproc start are added.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -294,6 +294,34 @@
     {
       "path": "tests/usbss-kconfig-contract.sh",
       "sha256": "32e1d242b63d3b00a6d23c7a2742ac925adc6a4f4b7bdb943554669912fa5bcb"
+    },
+    {
+      "path": "patches/boot/0022-mdt-admit-geometry-and-metadata.patch",
+      "sha256": "f2e863aadf89d2c4ef72c86ab2a2afd7e40992856c4a958ef49d39ea90a98e62"
+    },
+    {
+      "path": "patches/boot/0023-fastrpc-own-coherent-dma-handle.patch",
+      "sha256": "d0a2956fc9ad90ef4e4c765d0b5a4cba3f6116cf6d762856492c1c7214fda988"
+    },
+    {
+      "path": "patches/boot/0024-rproc-retry-transport-stop.patch",
+      "sha256": "6a26a0583014710971787da64653556c730b10df476efe22b047d6ecac232180"
+    },
+    {
+      "path": "tests/mdt-memory-admission-contract.sh",
+      "sha256": "feda80b257802a75e228be57029d895db7a8731b9634f7794292425f7047614a"
+    },
+    {
+      "path": "tests/mdt-metadata-contract.sh",
+      "sha256": "f3095cf439af9ef3edfd99bc356c6e1c75f786a3a7174520574f3d4633e91337"
+    },
+    {
+      "path": "tests/fastrpc-buffer-lifetime-contract.sh",
+      "sha256": "e78154962c1fb71bf3b7ddeafdc04d254ad86a0b0db6d83e40560e3331563793"
+    },
+    {
+      "path": "tests/rproc-edge-stop-contract.sh",
+      "sha256": "747512977ba90239fee3bd27783f170274379ec9b17523820091b89af281b162"
     }
   ],
   "root_selector_capability": {

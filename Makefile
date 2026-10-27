@@ -42,6 +42,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/ufs-ice-dt-contract.sh
 	bash -n tests/ufs-mcq-contract.sh tests/bwmon-vote-error-contract.sh tests/usbss-kconfig-contract.sh
 	bash -n tests/ufs-mcq-allocation-contract.sh
+	bash -n tests/mdt-memory-admission-contract.sh tests/mdt-metadata-contract.sh tests/fastrpc-buffer-lifetime-contract.sh tests/rproc-edge-stop-contract.sh
 	bash -n tests/wcd939x-channel-switch-contract.sh tests/wcd939x-probe-error-contract.sh \
 	    tests/wcd939x-reset-consumer-contract.sh tests/wcd939x-reset-contract.sh \
 	    tests/usbss-reset-lifetime-contract.sh tests/soundwire-probe-error-contract.sh \

@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "d588676fdd3729b7f34c693fd11bc832881ecbbba2580780bee372f57d11c0b9"
+      "sha256": "84dc7efb328a886ddca7b8d2e5fa85d43f6c996912ca3bba562fae2ffa3f89ce"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -346,6 +346,34 @@
     {
       "path": "tests/usbss-kconfig-contract.sh",
       "sha256": "32e1d242b63d3b00a6d23c7a2742ac925adc6a4f4b7bdb943554669912fa5bcb"
+    },
+    {
+      "path": "patches/boot/0022-mdt-admit-geometry-and-metadata.patch",
+      "sha256": "f2e863aadf89d2c4ef72c86ab2a2afd7e40992856c4a958ef49d39ea90a98e62"
+    },
+    {
+      "path": "patches/boot/0023-fastrpc-own-coherent-dma-handle.patch",
+      "sha256": "d0a2956fc9ad90ef4e4c765d0b5a4cba3f6116cf6d762856492c1c7214fda988"
+    },
+    {
+      "path": "patches/boot/0024-rproc-retry-transport-stop.patch",
+      "sha256": "6a26a0583014710971787da64653556c730b10df476efe22b047d6ecac232180"
+    },
+    {
+      "path": "tests/mdt-memory-admission-contract.sh",
+      "sha256": "feda80b257802a75e228be57029d895db7a8731b9634f7794292425f7047614a"
+    },
+    {
+      "path": "tests/mdt-metadata-contract.sh",
+      "sha256": "f3095cf439af9ef3edfd99bc356c6e1c75f786a3a7174520574f3d4633e91337"
+    },
+    {
+      "path": "tests/fastrpc-buffer-lifetime-contract.sh",
+      "sha256": "e78154962c1fb71bf3b7ddeafdc04d254ad86a0b0db6d83e40560e3331563793"
+    },
+    {
+      "path": "tests/rproc-edge-stop-contract.sh",
+      "sha256": "747512977ba90239fee3bd27783f170274379ec9b17523820091b89af281b162"
     }
   ],
   "baseline_files": [
@@ -468,7 +496,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-27",
+  "kernel_release": "7.3.0-28",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

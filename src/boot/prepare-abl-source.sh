@@ -75,6 +75,15 @@ bash "$here/../../tests/speaker-audio-fdt-contract.sh" "$kernel"
 git -C "$kernel" apply --check "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
+for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
+    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
+    git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
+    git -C "$kernel" apply "$here/../../patches/boot/$cdsp_patch"
+done
+SANITIZE=1 bash "$here/../../tests/mdt-memory-admission-contract.sh" "$kernel/drivers/soc/qcom/mdt_loader.c"
+bash "$here/../../tests/mdt-metadata-contract.sh" "$kernel/drivers/soc/qcom/mdt_loader.c"
+SANITIZE=1 bash "$here/../../tests/fastrpc-buffer-lifetime-contract.sh" "$kernel/drivers/misc/fastrpc.c"
+SANITIZE=1 bash "$here/../../tests/rproc-edge-stop-contract.sh" "$kernel/drivers/remoteproc/qcom_common.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
@@ -153,3 +162,7 @@ for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-err
     sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
 done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"
+for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
+    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
+    sha256sum "$here/../../patches/boot/$cdsp_patch" >> "$output/abl-source-SHA256SUMS"
+done

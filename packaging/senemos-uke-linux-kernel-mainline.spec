@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 27
+%global senemos_build_release 28
 %else
 %global senemos_build_release 1
 %endif
@@ -399,6 +399,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-28
+- Restore MDT, FastRPC buffer and remote transport lifetime guards in the 7.3 source queue.
+- Bound ELF32 metadata copies and admit firmware geometry before PAS operations.
+- Run actual-code host fault and sanitizer checks during source preparation.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-27
 - Apply reset, pin and supply dependencies to the Type-C USBSS module.
 - Retain the separate fixed USB2 driver dependency scope and check both real Kconfig stanzas.

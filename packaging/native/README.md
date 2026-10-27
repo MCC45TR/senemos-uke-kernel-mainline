@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+27 October 2026, Linux 7.3.0-28 source candidate: restore reviewed MDT, FastRPC
+coherent-buffer and transport-stop safeguards absent from the 7.3 queue. Bound
+ELF32 metadata before copying and validate carveout geometry before PAS setup.
+Actual-code sanitizer checks reproduce the original failures and pass after the
+changes, including read-only retained CDSP/DTB headers. Native CDSP power, PAS,
+FastRPC/DMA integration and physical compute acceptance remain open. No firmware
+bytes or automatic remoteproc start are added.
+
 27 October 2026, Linux 7.3.0-27 source candidate: apply coordinated-reset
 dependencies to the actual Type-C USBSS module. The separate fixed USB2 driver
 retains its original dependency scope. Actual Kconfig checks cover the complete
