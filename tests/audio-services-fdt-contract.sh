@@ -44,7 +44,7 @@ for node in slim@6C40000 i2c@88c000; do
 done
 profile=$root/audio-profile
 [[ -f $profile ]] || profile=$root/packaging/native/audio-profile
-case $(cat "$profile") in registration-only|hdmi-only) ;; *) exit 1;; esac
+case $(cat "$profile") in registration-only|hdmi-only|speakers) ;; *) exit 1;; esac
 printf 'Audio service FDT: native 1/2, OEM 3/7 retained, both DAIs and physical buses disabled.\n'
 
 printf '/dts-v1/;\n/plugin/;\n#include "%s/src/audio/sm7675-uke-audio-services.dtsi"\n#include "%s/src/audio/sm7675-uke-audio-card.dtsi"\n' "$root" "$root" > "$work/card.dts"

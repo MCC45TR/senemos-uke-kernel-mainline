@@ -24,6 +24,7 @@ typedef uint8_t u8;typedef uint32_t u32;typedef uint64_t u64;
 #define BIT(n) (1U<<(n))
 #define __packed __attribute__((packed))
 #define max(a,b) ((a)>(b)?(a):(b))
+#define min(a,b) ((a)<(b)?(a):(b))
 #define DRM_EDID_YCBCR420_DC_30 1
 #define DRM_CONNECTOR_COLOR_FORMAT_YCBCR422 2
 struct drm_display_info {bool is_hdmi;unsigned max_tmds_clock,color_formats;struct {unsigned y420_dc_modes;} hdmi;};
@@ -81,6 +82,9 @@ int main(void) {
   assert(msm_dp_utils_select_pcon(&sink,caps,port,&mode,30,false,DRM_MODE_COLORIMETRY_DEFAULT,&out)<0);
  }
  assert(msm_dp_utils_select_pcon(&info,dpcd,ports,&mode,30,false,FOREIGN_COLOR,&out)<0);
+ ports[1]=80;
+ assert(msm_dp_utils_select_pcon(&info,dpcd,ports,&mode,30,false,DRM_MODE_COLORIMETRY_DEFAULT,&out)==-ENOSPC);
+ ports[1]=128;
  info.color_formats=0;mode.is420=true;
  assert(msm_dp_utils_select_pcon(&info,dpcd,ports,&mode,30,false,DRM_MODE_COLORIMETRY_DEFAULT,&out)<0);
  info.hdmi.y420_dc_modes=DRM_EDID_YCBCR420_DC_30;

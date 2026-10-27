@@ -521,7 +521,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  #include <drm/display/drm_hdmi_helper.h>
  
  #include "dp_utils.h"
-@@ -113,6 +115,92 @@
+@@ -113,6 +115,95 @@
  	return clock && bpp && (!max_tmds_clock || required <= available);
  }
  
@@ -531,11 +531,14 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
 +		enum drm_colorspace colorspace, struct msm_dp_pcon_config *config)
 +{
 +	u8 cap, conversion;
++	u32 tmds = info->max_tmds_clock;
 +	bool detailed = drm_dp_is_branch(dpcd) && dpcd[DP_DPCD_REV] >= 0x13 &&
 +		(dpcd[DP_DOWNSTREAMPORT_PRESENT] & DP_DETAILED_CAP_INFO_AVAILABLE) &&
 +		(ports[0] & DP_DS_PORT_TYPE_MASK) == DP_DS_PORT_TYPE_HDMI;
 +
 +	memset(config, 0, sizeof(*config));
++	if (detailed && ports[1])
++		tmds = tmds ? min(tmds, ports[1] * 2500U) : ports[1] * 2500U;
 +	config->format = source420 ? DP_PIXELFORMAT_YUV420 : DP_PIXELFORMAT_RGB;
 +	config->configure = detailed && !!(ports[3] &
 +		(DP_DS_HDMI_YCBCR444_TO_422_CONV | DP_DS_HDMI_YCBCR444_TO_420_CONV |
@@ -544,7 +547,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
 +		return 0;
 +	if (source420 && drm_dp_is_branch(dpcd) && !drm_dp_downstream_420_passthrough(dpcd, ports))
 +		return -EOPNOTSUPP;
-+	if (msm_dp_utils_tmds_fits(mode->clock, bpp, info->max_tmds_clock, source420))
++	if (msm_dp_utils_tmds_fits(mode->clock, bpp, tmds, source420))
 +		return 0;
 +	if (source420 || !detailed)
 +		return -ENOSPC;
@@ -562,7 +565,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
 +	/* HDMI 4:2:2 uses the pixel clock at every supported component depth. */
 +	if ((info->color_formats & BIT(DRM_CONNECTOR_COLOR_FORMAT_YCBCR422)) &&
 +	    (ports[3] & DP_DS_HDMI_YCBCR444_TO_422_CONV) &&
-+	    msm_dp_utils_tmds_fits(mode->clock, 24, info->max_tmds_clock, false)) {
++	    msm_dp_utils_tmds_fits(mode->clock, 24, tmds, false)) {
 +		config->format = DP_PIXELFORMAT_YUV422;
 +		config->control2 = conversion | DP_CONVERSION_TO_YCBCR422_ENABLE;
 +		return 0;
@@ -570,7 +573,7 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
 +	if (drm_mode_is_420(info, mode) &&
 +	    (bpp <= 24 || (info->hdmi.y420_dc_modes & DRM_EDID_YCBCR420_DC_30)) &&
 +	    drm_dp_downstream_444_to_420_conversion(dpcd, ports) &&
-+	    msm_dp_utils_tmds_fits(mode->clock, bpp, info->max_tmds_clock, true)) {
++	    msm_dp_utils_tmds_fits(mode->clock, bpp, tmds, true)) {
 +		config->format = DP_PIXELFORMAT_YUV420;
 +		config->control1 = DP_CONVERSION_TO_YCBCR420_ENABLE;
 +		config->control2 = conversion;

@@ -39,6 +39,22 @@ int main(int argc,char **argv) {
     assert(status && bytes==5 && !std::strcmp(status,"okay"));
     assert(!fdt_getprop(fdt.data(),fb,"backlight",&bytes));
     assert(fdt_path_offset(fdt.data(),"/soc/display-subsystem@ae00000/dsi@ae94000/panel@0")>=0);
+    /* Speaker amplifiers have no OEM labels: the entry must publish symbols and phandles for them. */
+    {
+        static const char *const labels[]={"uke_amp_tl","uke_amp_tr","uke_amp_bl","uke_amp_br"};
+        const int symbols=fdt_path_offset(fdt.data(),"/__symbols__");
+        assert(symbols>=0);
+        for(unsigned i=0;i<4;i++) {
+            char path[96];
+            std::snprintf(path,sizeof path,"/soc/qcom,qupv3_1_geni_se@8c0000/i2c@88c000/fs19xx_smartpa@%x",0x34+i);
+            if(fdt_path_offset(original.data(),path)<0) continue;
+            const auto *symbol=static_cast<const char *>(fdt_getprop(fdt.data(),symbols,labels[i],&bytes));
+            assert(symbol && !std::strcmp(symbol,path));
+            assert(fdt_get_phandle(fdt.data(),fdt_path_offset(fdt.data(),path))!=0);
+            /* A second, active-high description of the reset line would make gpiolib share it. */
+            assert(!fdt_getprop(fdt.data(),fdt_path_offset(fdt.data(),path),"reset-gpio",&bytes));
+        }
+    }
     std::ofstream output(argv[3],std::ios::binary);
     output.write(fdt.data(),fdt_totalsize(fdt.data()));
     assert(output.good());

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 19
+%global senemos_build_release 24
 %else
 %global senemos_build_release 1
 %endif
@@ -40,7 +40,8 @@ Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
-Recommends: uke-displayport-audio >= 0.1.0-2
+Recommends: uke-displayport-audio >= 0.1.0-6
+Recommends: uke-speaker-orientation >= 0.1.0-1
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -174,7 +175,8 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
-    CONFIG_SND_SEQUENCER=m; do
+    CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
+    CONFIG_PINCTRL_SM8650_LPASS_LPI=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -246,6 +248,10 @@ CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -335,6 +341,8 @@ install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
 install -Dm644 native-generated/POCO-Pad-X1-HDMI-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-HDMI-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -391,6 +399,22 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-24
+- Negotiate OEM DSC rates and exact compressed TU bytes per atomic stream.
+- Add compressed MST payloads and shared decoder/passthrough AUX lifetime.
+- Admit advertised native 420 and converter YCbCr formats with checked TMDS controls.
+- Correct AVR pixel-period arithmetic; retain the unqualified low-floor panel guard.
+- Preserve release 23 speaker routing and the release 19 PPS/transport corrections.
+
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-23
+- Add bounded OEM speaker rotation controls and restore routing before unmute.
+- Recommend the native Wayland session helper for KDE and GNOME display transforms.
+
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-21
+- Contain FS19xx clock, thermal, register and stream-lifecycle failures.
+- Enforce the uncalibrated volume ceiling and propagate invalid AudioReach setup.
+- Require the combined-card desktop policy; microphone capture remains unavailable.
+
 * Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-18
 - Process Uke THP matrices in kernel input with a live baseline and tracked multitouch slots.
 - Read touch identity, dimensions and shared electrode mapping from DT; retain lost-IRQ recovery.
