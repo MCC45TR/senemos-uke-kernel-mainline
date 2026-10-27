@@ -483,7 +483,7 @@
     },
     {
       "path": "patches/7.3.0/0118-asoc-fs19xx-speaker-rotation.patch",
-      "sha256": "86bc3b62a05f3c230a552129326704d894b23e8a340e9ca1522dfab741a562a9"
+      "sha256": "402797bee14b7938d3f182009350078583043ef89280af6235ec1a50a389940e"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -46,7 +46,7 @@ struct delayed_work { struct work_struct work; bool pending; unsigned delay; };
 struct regmap {
     unsigned reg[256], writes, reads;
     int fail_read, fail_write;
-    bool unstable, ignore_ts_write;
+    bool unstable, ignore_ts_write, ignore_i2s_write;
 };
 static unsigned unlocks, sleeps;
 static void mutex_lock(struct mutex *m) { assert(!m->held); m->held=true; }
@@ -78,7 +78,7 @@ static int regmap_read(struct regmap *r,unsigned a,unsigned *v) {
 static int regmap_write(struct regmap *r,unsigned a,unsigned v) {
     r->writes++;
     if ((int)a==r->fail_write) return -EIO;
-    if (!(a==0x4c && r->ignore_ts_write)) r->reg[a]=v;
+    if (!(a==0x4c && r->ignore_ts_write) && !(a==0x17 && r->ignore_i2s_write)) r->reg[a]=v;
     return 0;
 }
 static void *i2c_get_clientdata(struct i2c_client *c) { return c->data; }
@@ -251,6 +251,8 @@ int main(void) {
     assert(rotation(2)==-EIO && amp.rotation==1); stopped();
     start(); regs.fail_write=FS19XX_REG_I2SCTRL;
     assert(rotation(2)==-EIO && amp.rotation==0); stopped();
+    start(); regs.ignore_i2s_write=true;
+    assert(rotation(1)==-EIO && amp.rotation==0); stopped();
     fresh(); regs.fail_write=FS19XX_REG_I2SCTRL;
     assert(enabled(1)==1 && fs19xx_dai_mute(&dai,0,0)==-EIO); stopped();
     assert(FS19XX_VOL_MAX==0xdf);

@@ -27,7 +27,7 @@ actual internal display transform; the driver does not read accelerometers.
  	unsigned int pll_polls;
  	bool powered;
  	bool speaker_enabled;
-@@ -332,6 +334,25 @@
+@@ -332,6 +334,31 @@
  			    (volume << 8) | 0x00c0);
  }
  
@@ -47,13 +47,19 @@ actual internal display transform; the driver does not read accelerometers.
 +		return ret;
 +	value = (value & ~FS19XX_I2SCTRL_CHS12) |
 +		FIELD_PREP(FS19XX_I2SCTRL_CHS12, channel);
-+	return regmap_write(fs19xx->regmap, FS19XX_REG_I2SCTRL, value);
++	ret = regmap_write(fs19xx->regmap, FS19XX_REG_I2SCTRL, value);
++	if (ret)
++		return ret;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_I2SCTRL, &value);
++	if (ret)
++		return ret;
++	return FIELD_GET(FS19XX_I2SCTRL_CHS12, value) == channel ? 0 : -EIO;
 +}
 +
  /* Everything except the DAC unmute and thermal sensing; DAC stays muted. */
  static int fs19xx_chip_start(struct fs19xx_priv *fs19xx)
  {
-@@ -347,6 +368,9 @@
+@@ -347,6 +374,9 @@
  	ret = regmap_write(fs19xx->regmap, FS19XX_REG_I2SCTRL, i2sctrl);
  	if (ret)
  		return ret;
@@ -63,7 +69,7 @@ actual internal display transform; the driver does not read accelerometers.
  
  	/* The PLL registers sit behind the OTP access key. */
  	ret = regmap_write(fs19xx->regmap, FS19XX_REG_OTPACC, FS19XX_OTPACC_KEY);
-@@ -635,6 +659,44 @@
+@@ -635,6 +665,44 @@
   * The amplifier output stays disabled until user space enables it. This
   * keeps an unqualified preset from driving the speakers on its own.
   */
@@ -108,7 +114,7 @@ actual internal display transform; the driver does not read accelerometers.
  static const struct snd_kcontrol_new fs19xx_controls[] = {
  	{
  		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
-@@ -644,6 +706,8 @@
+@@ -644,6 +712,8 @@
  		.put = fs19xx_volume_put,
  	},
  	SOC_SINGLE_BOOL_EXT("Speaker Switch", 0, fs19xx_enable_get, fs19xx_enable_put),
