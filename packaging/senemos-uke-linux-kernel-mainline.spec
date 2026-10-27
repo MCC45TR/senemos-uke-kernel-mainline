@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 26
+%global senemos_build_release 27
 %else
 %global senemos_build_release 1
 %endif
@@ -395,6 +395,9 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-27
+- Run the display timing fixture after the native timing adaptation.
+
 * Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-26
 - Extend timing fixtures for DP DTO padding and run them before kernel compilation.
 - Retain one execution of each AVR contract in the package check phase.

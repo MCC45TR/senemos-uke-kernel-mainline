@@ -49,10 +49,6 @@ git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
-bash "$profile/tests/dpu-dsi-timing-contract.sh" \
-    "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c" \
-    "$kernel/drivers/gpu/drm/msm/dsi/dsi_host.c" \
-    "$profile/src/display/o82-data.h" "$profile/src/display/panel-xiaomi-o82.c"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
@@ -75,6 +71,10 @@ bash "$profile/tests/dp-pcon-contract.sh" "$kernel"
 bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
+bash "$profile/tests/dpu-dsi-timing-contract.sh" \
+    "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c" \
+    "$kernel/drivers/gpu/drm/msm/dsi/dsi_host.c" \
+    "$profile/src/display/o82-data.h" "$profile/src/display/panel-xiaomi-o82.c"
 if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
     git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"

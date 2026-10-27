@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "f2ddef9d4c78480cb1972fe4e0fd1e5cbd78f2d02f5a61889b5d5e6d241236fa"
+      "sha256": "369fb035f804e9b799050de833183ae0282b0c81bc172e5a24933f9f48aae624"
     },
     {
       "path": "patches/display/0054-uke-independent-display-crtcs.patch",
@@ -416,7 +416,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-26",
+  "kernel_release": "7.3.0-27",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
