@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 32
+%global senemos_build_release 33
 %else
 %global senemos_build_release 1
 %endif
@@ -401,6 +401,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
+- Preserve held touch identities and qualify coherent new contact groups.
+- Retain interior electrode coordinates and filter single-contact patch roll.
+- Keep the matched release-31 audio corrections and reviewed L3/OPP safeguards.
+- Original KDE and Qt remain unchanged; desktop cancellation and Focus input acceptance remain open.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-32
 - Restore all owned OPP bandwidth requests after a failed multi-path vote.
 - Retain rollback uncertainty and retry incomplete OPP/BWMON cached targets.

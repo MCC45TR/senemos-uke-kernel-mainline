@@ -60,6 +60,8 @@ int main(int argc, char **argv)
 	initialize();process();assert(!contacts.active);
 	finger(20, 30);process();assert(contacts.active == 1);
 	assert(contacts.x[0] > 15000 && contacts.x[0] < 18000);
+	/* Interior OEM electrode coordinates must not be stretched to reach the edges. */
+	assert(contacts.x[0] == matrix.columns[30] && contacts.y[0] == matrix.rows[20]);
 	for (unsigned int i = 0; i < 2000; i++) {
 		frame.scan_mode = i & 1 ? 2 : 4;
 		process(); assert(contacts.active == 1);

@@ -133,7 +133,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "d88df6fd539ac43c90a707494906fd126db784e6b6e9865d4036385ee0caccb5"
+      "sha256": "ec80a9f5e7c72b04e2bb475d96ad3b37e8920ac1905b4ef6f63574892f446aab"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
@@ -209,7 +209,7 @@
     },
     {
       "path": "tests/touch-publish.c",
-      "sha256": "6b77d9d5f9598883eb562cdd8c371a3d54712f11e24478ba629636cacd06bb2f"
+      "sha256": "3e32401480b9bc8bf6aab14c1185f0477deb3f655c00554a0b3c0e45366462ff"
     },
     {
       "path": "src/input/Makefile",
@@ -229,7 +229,7 @@
     },
     {
       "path": "tests/touch-protocol-contract.sh",
-      "sha256": "664b8d536dd600a761c97136c86da1c011282b65d557cb63e3cb0bab9b652061"
+      "sha256": "0ef57c8df5328b3585936bc0bf905de39e1a704ec3ff5230d236c9d4c22a38a1"
     },
     {
       "path": "tests/touch-transport-contract.sh",
@@ -241,7 +241,7 @@
     },
     {
       "path": "src/input/nt36532-uke-matrix.c",
-      "sha256": "958df2ba5ef3ae539807c9c57cf637c3170cf6ac24ddeb1f7f9fc550a0277f24"
+      "sha256": "50392408bd5b9eb41884ee791ebe9c9dc1186068b6ab73389635fc365760eb57"
     },
     {
       "path": "src/input/nt36532-uke-matrix.h",
@@ -249,7 +249,7 @@
     },
     {
       "path": "tests/touch-matrix.c",
-      "sha256": "c0ae5afe7311705665ad89e9251793981386f0892a33c123e672f8543b61e18d"
+      "sha256": "9a63bf773954a4f1105b08e3be0d218540c34e4485131936dbfb40592b865929"
     },
     {
       "path": "src/boot/uke-ufs.h",
@@ -576,7 +576,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-32",
+  "kernel_release": "7.3.0-33",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

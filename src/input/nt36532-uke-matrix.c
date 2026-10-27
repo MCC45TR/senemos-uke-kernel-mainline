@@ -37,13 +37,19 @@ static u16 nvt_axis(u64 weighted, u32 weight, const u32 *map,
 {
 	u32 value = (u32)(weighted / weight);
 
-	/* Extend the outer electrode centres to the active surface edges. */
+	/* Extend only the outer intervals; preserve calibrated interior coordinates. */
 	if (value <= map[0])
 		return 0;
 	if (value >= map[count - 1])
 		return maximum;
-	return (u16)(((u64)(value - map[0]) * maximum) /
-		     (map[count - 1] - map[0]));
+	if (value < map[1])
+		return (u16)(((u64)(value - map[0]) * map[1]) /
+			     (map[1] - map[0]));
+	if (value > map[count - 2])
+		return (u16)(map[count - 2] +
+			((u64)(value - map[count - 2]) * (maximum - map[count - 2])) /
+			(map[count - 1] - map[count - 2]));
+	return (u16)value;
 }
 
 int nvt_uke_matrix_process(struct nvt_uke_matrix *m,

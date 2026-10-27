@@ -56,6 +56,12 @@ struct nvt_uke_touch {
 	u64 input_packets, input_errors;
 	unsigned long last_irq, last_valid;
 	u16 contacts_active;
+	u16 candidate_counter;
+	u8 candidate_count;
+	bool candidate_valid;
+	struct input_mt_pos motion_center;
+	u8 motion_slot;
+	bool motion_valid;
 	u8 *tx, *rx, *frame;
 };
 
@@ -89,6 +95,67 @@ static void nvt_release_contacts(struct nvt_uke_touch *t)
 	input_mt_sync_frame(t->wake_input);
 	input_sync(t->wake_input);
 	t->contacts_active = 0;
+	t->candidate_valid = false;
+	t->motion_valid = false;
+}
+
+static int nvt_stable_axis(int value, int center, int margin, int maximum)
+{
+	if (!value || value == maximum)
+		return value;
+	if (value > center + margin)
+		return value - margin;
+	if (value < center - margin)
+		return value + margin;
+	return center;
+}
+
+static void nvt_order_new_slots(const struct input_mt_pos *positions, int *slots,
+		unsigned int count, u16 previous, u16 starting)
+{
+	unsigned int i, j, selected, lowest, best, score, distance;
+	u16 remaining = 0, visited = 0;
+	int saved;
+
+	if (count < 3)
+		return;
+	for (i = 0; i < count; i++) {
+		if (previous & (1U << slots[i]))
+			visited |= (u16)(1U << i);
+		else if (starting & (1U << i))
+			remaining |= (u16)(1U << i);
+	}
+	/* Slot-ordered consumers must see a coherent group without moving held IDs. */
+	while (remaining) {
+		selected = lowest = count;
+		best = ~0U;
+		for (i = 0; i < count; i++) {
+			if (!(remaining & (1U << i)))
+				continue;
+			if (lowest == count || slots[i] < slots[lowest])
+				lowest = i;
+			score = visited ? ~0U : 0;
+			for (j = 0; j < count; j++) {
+				if (!((visited ? visited : remaining) & (1U << j)))
+					continue;
+				distance = (unsigned int)(abs(positions[i].x - positions[j].x) +
+					abs(positions[i].y - positions[j].y));
+				if (!visited)
+					score += distance;
+				else if (distance < score)
+					score = distance;
+			}
+			if (selected == count || score < best) {
+				selected = i;
+				best = score;
+			}
+		}
+		saved = slots[selected];
+		slots[selected] = slots[lowest];
+		slots[lowest] = saved;
+		visited |= (u16)(1U << selected);
+		remaining &= (u16)~(1U << selected);
+	}
 }
 
 static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
@@ -98,6 +165,7 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 	struct input_mt_pos positions[NVT_UKE_CONTACTS];
 	int slots[NVT_UKE_CONTACTS];
 	unsigned int i, count = 0;
+	bool confirmed;
 	u16 starting = 0, previous = t->contacts_active;
 	int ret = frame_error;
 
@@ -107,6 +175,7 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 		ret = nvt_uke_matrix_process(&t->matrix, &frame,
 					    t->prop.max_x, t->prop.max_y, &contacts);
 	if (ret) {
+		t->candidate_valid = false;
 		t->input_errors++;
 		if (time_after(jiffies, t->last_valid + msecs_to_jiffies(100)))
 			nvt_release_contacts(t);
@@ -121,7 +190,18 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 			starting |= (u16)(1U << count);
 		touchscreen_set_mt_pos(&positions[count++], &t->prop, contacts.x[i], contacts.y[i]);
 	}
-	ret = input_mt_assign_slots(t->wake_input, slots, positions, count, t->prop.max_x / 10);
+	/* Confirm additions in two distinct sensor frames; held motion and lifts stay immediate. */
+	confirmed = t->candidate_valid && t->candidate_counter != frame.counter &&
+		t->candidate_count == count;
+	if (!t->candidate_valid || t->candidate_counter != frame.counter) {
+		t->candidate_counter = frame.counter;
+		t->candidate_count = (u8)count;
+		t->candidate_valid = true;
+	}
+	if (!confirmed)
+		starting = 0;
+	/* Preserve the nearest held contact when another finger joins the frame. */
+	ret = input_mt_assign_slots(t->wake_input, slots, positions, count, 0);
 	if (ret) {
 		t->input_errors++;
 		nvt_release_contacts(t);
@@ -134,6 +214,15 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 			return;
 		}
 	}
+	nvt_order_new_slots(positions, slots, count, previous, starting);
+	/* Suppress single-finger contact-patch roll, without filtering fresh presses. */
+	if (count == 1 && t->motion_valid && t->motion_slot == slots[0] &&
+	    (previous & (1U << slots[0]))) {
+		positions[0].x = nvt_stable_axis(positions[0].x, t->motion_center.x,
+			t->prop.max_x / (2 * NVT_UKE_COLUMNS), t->prop.max_x);
+		positions[0].y = nvt_stable_axis(positions[0].y, t->motion_center.y,
+			t->prop.max_y / (2 * NVT_UKE_ROWS), t->prop.max_y);
+	}
 	t->contacts_active = 0;
 	for (i = 0; i < count; i++) {
 		/* A held finger may weaken without becoming a new touch on every frame. */
@@ -144,6 +233,11 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 		input_report_abs(t->wake_input, ABS_MT_POSITION_X, positions[i].x);
 		input_report_abs(t->wake_input, ABS_MT_POSITION_Y, positions[i].y);
 		t->contacts_active |= (u16)(1U << slots[i]);
+	}
+	t->motion_valid = count == 1 && t->contacts_active;
+	if (t->motion_valid) {
+		t->motion_center = positions[0];
+		t->motion_slot = (u8)slots[0];
 	}
 	input_mt_sync_frame(t->wake_input);
 	input_sync(t->wake_input);

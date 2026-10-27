@@ -7,6 +7,17 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.3.0.json)
 
+27 October 2026: candidate `7.3.0-33` preserves held touch identities, qualifies
+new contact groups, retains interior electrode coordinates and filters
+single-finger contact-patch roll. A separate RAM module on POCO Pad X1 with
+Fedora Rawhide and kernel `7.3.0-31` improved three-finger gestures and closed
+each of three test windows with one tap; deliberate dragging remained usable.
+The complete release-33 kernel still requires boot acceptance. Original KDE
+and Qt remain unchanged. The desktop top-left selection defect and Focus Pen /
+Focus Keyboard driver acceptance remain open. Disabling the optional KWin
+Touch Points visualization removed the reported multifinger rendering stall;
+it does not change input processing or desktop selection.
+
 The 26 October source targets signed Linux 7.3 with the retained Uke display,
 USB, battery and video adaptations. Signed normal release 13 boots on POCO
 Pad X1 through DNF with matching modules, desktop and touchscreen services.

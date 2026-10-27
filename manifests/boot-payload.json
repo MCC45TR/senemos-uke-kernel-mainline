@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke candidate 32 retains installed release-31 audio topology, amplifier rotation, native DDR BWMON, CDSP, RNG and UFS guards. L3 probe validates clocks, LUTs and link lifetime. OPP retains complete bandwidth snapshots, restores all paths on failure and retries incomplete transitions; BWMON retries the previous target after failure. CPU/LLCC DT admission, MEMLAT and physical acceptance remain open. No new monitor or L3 node, firmware or private data is included.",
+  "source_origin": "Linux 7.3 Uke candidate 32 retains installed release-31 audio topology, amplifier rotation, native DDR BWMON, CDSP, RNG and UFS guards. L3 probe validates clocks, LUTs and link lifetime. OPP retains complete bandwidth snapshots, restores all paths on failure and retries incomplete transitions; BWMON retries the previous target after failure. CPU/LLCC DT admission, MEMLAT and physical acceptance remain open. No new monitor or L3 node, firmware or private data is included. Candidate 33 adds native contact identity, coherent addition, interior-axis and single-contact hysteresis corrections. These passed separate RAM-module touch trials on release 31; the complete release-33 boot remains untested. Original Qt/KDE and firmware are unchanged.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -177,7 +177,7 @@
     },
     {
       "path": "src/input/nt36532-uke-spi.c",
-      "sha256": "d88df6fd539ac43c90a707494906fd126db784e6b6e9865d4036385ee0caccb5"
+      "sha256": "ec80a9f5e7c72b04e2bb475d96ad3b37e8920ac1905b4ef6f63574892f446aab"
     },
     {
       "path": "src/input/prepare-source.sh",
@@ -193,11 +193,11 @@
     },
     {
       "path": "tests/touch-protocol-contract.sh",
-      "sha256": "664b8d536dd600a761c97136c86da1c011282b65d557cb63e3cb0bab9b652061"
+      "sha256": "0ef57c8df5328b3585936bc0bf905de39e1a704ec3ff5230d236c9d4c22a38a1"
     },
     {
       "path": "tests/touch-publish.c",
-      "sha256": "6b77d9d5f9598883eb562cdd8c371a3d54712f11e24478ba629636cacd06bb2f"
+      "sha256": "3e32401480b9bc8bf6aab14c1185f0477deb3f655c00554a0b3c0e45366462ff"
     },
     {
       "path": "tests/touch-transport-contract.sh",
@@ -209,7 +209,7 @@
     },
     {
       "path": "src/input/nt36532-uke-matrix.c",
-      "sha256": "958df2ba5ef3ae539807c9c57cf637c3170cf6ac24ddeb1f7f9fc550a0277f24"
+      "sha256": "50392408bd5b9eb41884ee791ebe9c9dc1186068b6ab73389635fc365760eb57"
     },
     {
       "path": "src/input/nt36532-uke-matrix.h",
@@ -217,7 +217,7 @@
     },
     {
       "path": "tests/touch-matrix.c",
-      "sha256": "c0ae5afe7311705665ad89e9251793981386f0892a33c123e672f8543b61e18d"
+      "sha256": "9a63bf773954a4f1105b08e3be0d218540c34e4485131936dbfb40592b865929"
     },
     {
       "path": "src/input/nt36532-uke-protocol.c",
