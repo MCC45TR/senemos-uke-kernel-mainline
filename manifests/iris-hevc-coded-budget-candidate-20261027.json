@@ -109,12 +109,29 @@
     "original_module_restored": true,
     "stock_module_bytes_boot_state_and_taint_unchanged": true,
     "restored_default_vainfo_passed": true,
-    "complete_gpu_reports": 6,
+    "complete_gpu_reports": 5,
     "candidate_active_gpu_sample_reached": true,
     "fd732_gl_pixels_and_context_restoration_equal": true,
     "original_chrome_closed": true,
     "persistent_module_package_or_boot_installation": false,
     "sustained_advertised_rates_accepted": false,
-    "full_lifecycle_or_profile_wide_acceptance": false
+    "full_lifecycle_or_profile_wide_acceptance": false,
+    "gpu_reports_attempted": 6,
+    "report_completeness_correction": "Initial predicate accepted one448-character loading skeleton as complete; all GL/context pixels still passed independently"
+  },
+  "gpu_report_recheck": {
+    "date": "2026-10-27",
+    "candidate_module_unchanged": true,
+    "module_sha256": "78527fe1696b1267e06172ba42f1ac12d3125e0c05a61c27a26964fc05dee20e",
+    "collector_sha256": "f528c7fd2e2d4827e51a805cbefe985ea3d60585e2c8e505c20e172c3c4f848a",
+    "full_version_and_renderer_and_no_loading_placeholder_required": true,
+    "complete_reports": 6,
+    "before_active_restored_gl_pixels_and_context_restoration_equal": true,
+    "codec_jobs_repeated": false,
+    "original_module_restored": true,
+    "default_vainfo_passed": true,
+    "iris_refs_after": 0,
+    "boot_state_and_taint_unchanged": true,
+    "persistent_changes": false
   }
 }
