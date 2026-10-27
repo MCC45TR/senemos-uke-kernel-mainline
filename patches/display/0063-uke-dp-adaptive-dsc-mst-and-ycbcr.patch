@@ -1012,16 +1012,36 @@ its separate lower-floor guard. This is not a physical 1 Hz support declaration.
  }
  
  int msm_dp_mst_attach_encoder(struct msm_dp *dp_display, unsigned int stream_id,
-@@ -571,6 +781,9 @@
+@@ -571,6 +781,16 @@
  
  	drm_connector_helper_add(connector, &msm_dp_drm_mst_connector_helper_funcs);
  	connector->funcs->reset(connector);
++	if (!connector->state) {
++		rc = -ENOMEM;
++		goto err_connector;
++	}
 +	connector->max_bpc_property = mst->msm_dp->connector->max_bpc_property;
-+	if (connector->max_bpc_property)
-+		drm_connector_attach_max_bpc_property(connector, 8, 10);
++	if (connector->max_bpc_property) {
++		rc = drm_connector_attach_max_bpc_property(connector, 8, 10);
++		if (rc)
++			goto err_connector;
++	}
  
  	/* add all encoders as possible encoders */
  	for (i = 0; i < mst->max_streams; i++) {
+@@ -590,7 +810,11 @@
+ 				   dev->mode_config.path_property, 0);
+ 	drm_object_attach_property(&connector->base,
+ 				   dev->mode_config.tile_property, 0);
+-	drm_connector_set_path_property(connector, pathprop);
++	rc = drm_connector_set_path_property(connector, pathprop);
++	if (rc) {
++		drm_dp_mst_put_port_malloc(port);
++		goto err_connector;
++	}
+ 
+ 	drm_dbg_kms(dev, "[MST] add_connector done conn:%d max_streams:%u\n",
+ 		    connector->base.id, mst->max_streams);
 --- a/drivers/gpu/drm/msm/dp/dp_mst_drm.h
 +++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.h
 @@ -7,6 +7,14 @@

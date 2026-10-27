@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c821e2902d53119d18ce4fcd3454826423f88ca287d1476cc3af8d50681d1d8e"
+      "sha256": "fedbffe9bceb5c6cfe92fdd43364c67546bfe4377531a4d5cbbae47663927991"
     },
     {
       "path": "patches/display/0054-uke-independent-display-crtcs.patch",
@@ -69,7 +69,7 @@
     },
     {
       "path": "patches/display/0063-uke-dp-adaptive-dsc-mst-and-ycbcr.patch",
-      "sha256": "fce413136179a1b76e41d0bdda39bb2daed11091ccde8cf89383737b3abfc78e"
+      "sha256": "68def4a579413baa13421eee35b954b171462f2a0e2a4cb0fb184e95f0680b14"
     },
     {
       "path": "patches/input/0001-smp2p-lid-open-wake.patch",
@@ -286,6 +286,10 @@
     {
       "path": "tests/ucsi-debugfs-bounds-contract.sh",
       "sha256": "09813b84e1e08aadfdd07ace1ab1c6d25a34b73e2df0ad9bf6584d9b795ba5d7"
+    },
+    {
+      "path": "tests/dp-mst-connector-contract.sh",
+      "sha256": "ca2fdb711606206a37a24ed281676f9c2bfa47a49719a754ed038e4e347e5479"
     }
   ],
   "baseline_files": [
@@ -408,7 +412,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-24",
+  "kernel_release": "7.3.0-25",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -9,6 +9,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh
 	bash -n tests/dp-mst-payload-contract.sh tests/dp-mst-control-contract.sh tests/dp-altmode-retimer-contract.sh
 	bash -n tests/dp-mst-dsc-contract.sh tests/dp-pcon-contract.sh
+	bash -n tests/dp-mst-connector-contract.sh
 	bash -n tests/lid-wake-contract.sh
 	bash -n tests/dp-eld-notification-contract.sh
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh

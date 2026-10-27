@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 24
+%global senemos_build_release 25
 %else
 %global senemos_build_release 1
 %endif
@@ -399,6 +399,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-25
+- Refuse MST state allocation, max-bpc and path-property errors without leaking references.
+- Exercise constructor faults before packaging the display negotiation candidate.
+
 * Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-24
 - Negotiate OEM DSC rates and exact compressed TU bytes per atomic stream.
 - Add compressed MST payloads and shared decoder/passthrough AUX lifetime.
