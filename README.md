@@ -35,8 +35,17 @@ Uke frequency/width OPPs and decimal ICC units. Existing MC requests retain
 their endpoints and tags; the monitor uses AMC/WAKE-only votes. Actual-source
 fault/unit tests and four retained full Type-C/display graph checks pass on
 the host. CPU/LLCC secondary L3 voting, MEMLAT and physical bandwidth/lifecycle
-acceptance remain open. No tablet installation or bandwidth measurement is
-claimed for this candidate.
+acceptance remain open. On 27 October, signed COPR 11215488 installs this
+six-package cohort on POCO Pad X1, Fedora Rawhide AArch64. Boot B write/readback
+and the retained release-27 backup verify. No reboot is performed; the tablet
+still runs `7.3.0-27`, with candidate-30 boot and hardware acceptance open.
+
+Source candidate `7.3.0-31` adds the native L3 provider prerequisite: per-probe
+clock rates, zero/descending LUT refusal, native frequency width and cleanup
+after an ICC link allocation failure. Actual probe/set/remove fault fixtures
+cover clock, mapping, allocation, graph and provider failures on the host.
+CPU/LLCC BWMON activation still requires paired L3 votes and complete multi-path
+OPP failure handling. No new L3 node or monitor is enabled by this prerequisite.
 
 ## Status — 18 October 2026
 

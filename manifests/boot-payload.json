@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 30, retaining candidate-29 CDSP prerequisites, audio/reset, RNG and UFS guards. Add native DDR BWMON with exact Uke frequency/width OPPs and byte-to-decimal-ICC conversion. Normalize existing MC phandle arguments after final overlays, preserving their zero tags, and add an AMC/WAKE-only monitor request. Owned counter-read faults discard the sample and rearm without changing the applied vote. CPU/LLCC secondary L3 voting, MEMLAT, other hardware paths and physical acceptance remain open. No device operation or firmware bytes are included.",
+  "source_origin": "Linux 7.3 Uke source candidate 31 retains candidate-30 DDR BWMON, CDSP, audio/reset, RNG and UFS prerequisites. Native L3 probe now refuses zero clocks and zero/descending LUTs, retains native frequency width and unwinds ICC link failure. CPU/LLCC paired L3 votes, multi-path OPP recovery, MEMLAT and physical acceptance remain open. No new L3 or CPU monitor node is enabled; no firmware or device-private data is included.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -325,7 +325,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "347c2b3a7b4861e7785a22a65db36b296619c0a15b0f800a1d80d42ef65cf769"
+      "sha256": "57c63f9035eb91c07e026e887373979fadaf73a368d8ecdd2309aa98b5598f4a"
     },
     {
       "path": "tests/qup-interconnect-contract.sh",
@@ -394,6 +394,14 @@
     {
       "path": "patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch",
       "sha256": "a54329db153d525015c1de4f82ecab61189bf9da99b7849c4a807ead3ffe02bf"
+    },
+    {
+      "path": "tests/l3-provider-contract.sh",
+      "sha256": "f5aeffe90b191bd84365176f73ee88c8e26a7f69214b8423cf0c7d39dbde5a14"
+    },
+    {
+      "path": "patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch",
+      "sha256": "3c14ca70b5a528f74c9692d6af22e17d71e5e3c98696e6e480672bf957d99bbd"
     }
   ],
   "root_selector_capability": {

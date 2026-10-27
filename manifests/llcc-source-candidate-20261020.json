@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "347c2b3a7b4861e7785a22a65db36b296619c0a15b0f800a1d80d42ef65cf769"
+      "sha256": "57c63f9035eb91c07e026e887373979fadaf73a368d8ecdd2309aa98b5598f4a"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -438,6 +438,14 @@
     {
       "path": "patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch",
       "sha256": "a54329db153d525015c1de4f82ecab61189bf9da99b7849c4a807ead3ffe02bf"
+    },
+    {
+      "path": "tests/l3-provider-contract.sh",
+      "sha256": "f5aeffe90b191bd84365176f73ee88c8e26a7f69214b8423cf0c7d39dbde5a14"
+    },
+    {
+      "path": "patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch",
+      "sha256": "3c14ca70b5a528f74c9692d6af22e17d71e5e3c98696e6e480672bf957d99bbd"
     }
   ],
   "baseline_files": [
@@ -560,7 +568,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-30",
+  "kernel_release": "7.3.0-31",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
