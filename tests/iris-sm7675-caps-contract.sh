@@ -91,6 +91,7 @@ extract() {
 }
 extract '^const struct platform_inst_caps \*iris_get_inst_caps\(' "$iris/iris_utils.c"
 extract '^int iris_get_mbpf\(' "$iris/iris_utils.c"
+extract '^static int iris_check_inst_mbpf\(' "$iris/iris_vb2.c"
 extract '^int iris_check_inst_mbps\(' "$iris/iris_utils.c"
 extract '^int iris_check_core_mbps\(' "$iris/iris_utils.c"
 extract '^static void iris_sm7675_limit_level\(' "$iris/iris_ctrls.c"
@@ -148,6 +149,20 @@ int main() {
     assert(caps->max_frame_rate==200 && caps->mb_cycles_vsp==60);
     inst.codec=V4L2_PIX_FMT_HEVC;
     assert(iris_get_inst_caps(&inst,V4L2_PIX_FMT_NV12)->max_mbps==2088960);
+    caps=iris_get_inst_caps(&inst,V4L2_PIX_FMT_HEVC);
+    assert(caps->max_mbpf==34816 && caps->max_mbps==2088960 && caps->max_frame_width==4096);
+    format.fmt.pix_mp.width=4096; format.fmt.pix_mp.height=2176;
+    inst.crop.width=4096; inst.crop.height=2160;
+    assert(iris_get_mbpf(&inst)==34816 && iris_check_inst_mbpf(&inst)==0);
+    inst.codec=V4L2_PIX_FMT_H264; assert(iris_check_inst_mbpf(&inst)==-ENOMEM);
+    inst.codec=V4L2_PIX_FMT_VP9; assert(iris_check_inst_mbpf(&inst)==-ENOMEM);
+    inst.codec=V4L2_PIX_FMT_HEVC; inst.crop.height=2192;
+    assert(iris_check_inst_mbpf(&inst)==-ENOMEM);
+    inst.crop.height=4096; assert(iris_check_inst_mbpf(&inst)==-ENOMEM);
+    inst.crop.height=2160; inst.domain=ENCODER;
+    assert(iris_get_inst_caps(&inst,V4L2_PIX_FMT_HEVC)->max_mbpf==34560);
+    assert(iris_check_inst_mbpf(&inst)==-ENOMEM);
+    format={}; inst.crop={};
     inst.domain=ENCODER; inst.codec=V4L2_PIX_FMT_H264;
     v4l2_frmsizeenum size{}; size.pixel_format=V4L2_PIX_FMT_HEVC;
     assert(iris_enum_framesizes(&f,nullptr,&size)==0 && size.stepwise.min_width==96);

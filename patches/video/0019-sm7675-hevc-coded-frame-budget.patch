@@ -1,0 +1,54 @@
+Subject: [PATCH] media: iris: account for SM7675 HEVC coded-height alignment
+
+Iris aligns HEVC OUTPUT height to 32 lines and admits sessions using the
+maximum of coded and crop dimensions. A visible 4096x2160 stream therefore
+requires 34816 blocks, while the conservative XML-derived 34560 limit rejects
+it at REQBUFS before firmware parses its crop. Keep that conservative limit
+for AVC, VP9 and both encoders; allow only the HEVC decoder's 32-line budget.
+
+Uke Cliffs XML has an unresolved 34560 MBPF versus 4096x2176@60 conflict.
+The latter exactly matches its 2088960 MBPS budget. Same-SoC OnePlus source
+1138e00fee63582a0cc6a53af3286621786827b7 allows 36864 decoder blocks on SKU1
+and uses the same coded/crop maximum. This narrower 34816 candidate changes
+no axis, clock, core budget, codec mask, rate or firmware setting. Physical
+acceptance must retain coded/visible crop and exact frame evidence.
+
+Base: accepted Uke kernel19 Iris platform caps.
+License: GPL-2.0-only, matching the modified Qualcomm platform header.
+
+--- a/drivers/media/platform/qcom/iris/iris_platform_sm7675.h
++++ b/drivers/media/platform/qcom/iris/iris_platform_sm7675.h
+@@ -10,25 +10,26 @@
+ /* Clear-video intersection: Uke Cliffs XML and OnePlus SM7675 1138e00f.
+  * shortcut: 4096x2176 and larger coded-height conflicts need target acceptance.
+  */
+-#define SM7675_CAPS(minimum, mbps, fps, vsp, vpp, fw_vpp) { \
++#define SM7675_CAPS(minimum, mbpf, mbps, fps, vsp, vpp, fw_vpp) { \
+ 	.min_frame_width = minimum, .max_frame_width = 4096, \
+ 	.min_frame_height = minimum, .max_frame_height = 4096, \
+-	.max_mbpf = 34560, .max_mbps = mbps, \
++	.max_mbpf = mbpf, .max_mbps = mbps, \
+ 	.mb_cycles_vsp = vsp, .mb_cycles_vpp = vpp, \
+ 	.mb_cycles_fw = 489583, .mb_cycles_fw_vpp = fw_vpp, \
+ 	.max_frame_rate = fps, .max_operating_rate = fps, \
+ }
+ 
+ static struct platform_inst_caps platform_inst_cap_sm7675 =
+-	SM7675_CAPS(96, 2073600, 480, 25, 200, 66234);
++	SM7675_CAPS(96, 34560, 2073600, 480, 25, 200, 66234);
++/* HEVC's 32-line coded alignment covers visible 4096x2160 with crop. */
+ static const struct platform_inst_caps sm7675_hevc_dec_caps =
+-	SM7675_CAPS(96, 2088960, 480, 25, 200, 66234);
++	SM7675_CAPS(96, 34816, 2088960, 480, 25, 200, 66234);
+ static const struct platform_inst_caps sm7675_vp9_dec_caps =
+-	SM7675_CAPS(96, 2073600, 200, 60, 200, 66234);
++	SM7675_CAPS(96, 34560, 2073600, 200, 60, 200, 66234);
+ static const struct platform_inst_caps sm7675_h264_enc_caps =
+-	SM7675_CAPS(128, 2073600, 480, 25, 675, 48405);
++	SM7675_CAPS(128, 34560, 2073600, 480, 25, 675, 48405);
+ static const struct platform_inst_caps sm7675_hevc_enc_caps =
+-	SM7675_CAPS(96, 2088960, 480, 25, 675, 48405);
++	SM7675_CAPS(96, 34560, 2088960, 480, 25, 675, 48405);
+ #undef SM7675_CAPS
+ 
+ static const struct platform_inst_caps *sm7675_get_inst_caps(struct iris_inst *inst, u32 codec)
