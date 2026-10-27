@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 19
+%global senemos_build_release 20
 %else
 %global senemos_build_release 1
 %endif
@@ -174,7 +174,8 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
-    CONFIG_SND_SEQUENCER=m; do
+    CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
+    CONFIG_PINCTRL_SM8650_LPASS_LPI=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -243,6 +244,8 @@ CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -332,6 +335,8 @@ install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
 install -Dm644 native-generated/POCO-Pad-X1-HDMI-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-HDMI-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"

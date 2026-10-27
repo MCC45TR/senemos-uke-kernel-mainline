@@ -2,7 +2,9 @@
 
 Environment: POCO Pad X1, Fedora Rawhide AArch64, Linux 7.2.12-9 baseline
 and 7.2.12-10 service trial on 22 October. No ALSA cards or PCMs are present.
-Internal speaker and microphone support remain unavailable.
+Internal speakers play on the Xiaomi Pad 7 with the `speakers` profile (see the
+[internal speaker report](INTERNAL-SPEAKERS-20261026.md)). Microphone support
+remains unavailable.
 
 Patch 0079, ported from project commit `693dfd4`, fixes four reviewed startup/input problems: a request sent before
 APR installed the receive callback; stale readiness after request failure;
@@ -111,3 +113,11 @@ its code is not executed or shipped. Exact stock speaker and VI graphs contain
 legacy TDM sink/source modules and Foursemi RX/TX modules. The newer upstream
 Audio IF implementation uses different modules and is not a drop-in solution.
 No tuning payload or unit calibration is exported or installed by the tool.
+
+## Internal speakers
+
+The 26 October 2026 [internal speaker report](INTERNAL-SPEAKERS-20261026.md)
+adds the FS19xx amplifier driver, the AudioReach TDM sink, a combined HDMI and
+speaker card and the `speakers` audio profile. Tested on the Xiaomi Pad 7 on
+26 October 2026: all four speakers produce sound; calibration, wider sample
+widths, HDMI re-test and suspend are not covered.

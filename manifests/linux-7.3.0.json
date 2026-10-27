@@ -468,6 +468,14 @@
     {
       "path": "patches/7.3.0/0114-uke-battmgr-drain-before-suspend.patch",
       "sha256": "34bf39e452bc30ec8ac02e6ac47dc46c9b6177ce0a4a0f618c3bd58f453cfb8f"
+    },
+    {
+      "path": "patches/7.3.0/0115-asoc-fs19xx-smart-amplifier.patch",
+      "sha256": "7918bf161f096d716a27d80d894590c156fd7a01482e9873747f8b03f4f73c1b"
+    },
+    {
+      "path": "patches/7.3.0/0116-q6apm-tdm-sink-module.patch",
+      "sha256": "ca224f92e18a2b54e450afd5ddfcf8fccbe64c7afd357faba4771edf841e0641"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -479,7 +487,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "2af274c0d8b1394192a3e32d76a57609bafe0b030701948eec2f0b841159865b"
+      "sha256": "18831d6da348d8289b200b486848b78f7be4945d3443db5ac1b5a78fc9daec57"
     },
     {
       "path": "configs/fedora.config",
