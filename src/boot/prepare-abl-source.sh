@@ -76,7 +76,9 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0021-bwmon-preserve-app
 git -C "$kernel" apply "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
-    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
+    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
+    0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \
+    0027-remoteproc-early-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
     git -C "$kernel" apply "$here/../../patches/boot/$cdsp_patch"
 done
@@ -84,6 +86,12 @@ SANITIZE=1 bash "$here/../../tests/mdt-memory-admission-contract.sh" "$kernel/dr
 bash "$here/../../tests/mdt-metadata-contract.sh" "$kernel/drivers/soc/qcom/mdt_loader.c"
 SANITIZE=1 bash "$here/../../tests/fastrpc-buffer-lifetime-contract.sh" "$kernel/drivers/misc/fastrpc.c"
 SANITIZE=1 bash "$here/../../tests/rproc-edge-stop-contract.sh" "$kernel/drivers/remoteproc/qcom_common.c"
+bash "$here/../../tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
+bash "$here/../../tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
+SANITIZE=1 bash "$here/../../tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$here/../../tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$here/../../tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+bash "$here/../../tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
@@ -163,6 +171,8 @@ for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-err
 done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
-    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
+    0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
+    0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \
+    0027-remoteproc-early-stop.patch; do
     sha256sum "$here/../../patches/boot/$cdsp_patch" >> "$output/abl-source-SHA256SUMS"
 done

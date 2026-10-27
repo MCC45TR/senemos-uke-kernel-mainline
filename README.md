@@ -21,6 +21,15 @@ compression validation remain pending. Double-tap gesture entry, four-lane negot
 sustained accessory stability remain open. Historical results below retain
 their exact older kernel identities.
 
+On 27 October, source candidate `7.3.0-29` restores the Cliffs NSP/crypto
+suppliers and two/three-rail proxy ownership. PAS stop errors retain pending
+resources, and an optional preparation hook lets the Cliffs CDSP contract
+halt before transport removal. Host tests reproduce the previous stop-error
+and duplicate Sysmon-request failures and pass with the corrections. No new
+CDSP match or firmware start is enabled. Source-package, AArch64 build and
+physical lifecycle results require separate evidence; forced removal,
+startup failure and exported-buffer teardown remain open.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora

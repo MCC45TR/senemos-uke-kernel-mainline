@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 28
+%global senemos_build_release 29
 %else
 %global senemos_build_release 1
 %endif
@@ -399,6 +399,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-29
+- Restore the Cliffs NSP/crypto suppliers and two/three-rail proxy ownership.
+- Preserve PAS stop errors and prepare target shutdown before client removal.
+- Retain real Sysmon ACKs and test retry and legacy paths during source preparation.
+- Native CDSP activation and physical lifecycle acceptance remain unqualified.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-28
 - Restore MDT, FastRPC buffer and remote transport lifetime guards in the 7.3 source queue.
 - Bound ELF32 metadata copies and admit firmware geometry before PAS operations.

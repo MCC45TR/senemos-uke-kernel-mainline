@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 28, retaining release-27 audio/reset dependency scope, release-26 BWMON error handling and release-24 RNG, ICE and MCQ. Restore the earlier MDT carveout, FastRPC buffer and transport-stop safeguards in the actual 7.3 queue; bound ELF32 metadata before copying. Actual-source host/sanitizer checks include retained firmware-header geometry only. Native CDSP, analog codec/jack/PCM, bandwidth resources/OPP policy and physical acceptance remain open. No firmware bytes or new remoteproc start are added.",
+  "source_origin": "Linux 7.3 Uke native source candidate 29, retaining release-28 MDT, FastRPC and transport safeguards, release-27 audio/reset dependency scope, BWMON errors and RNG/ICE/MCQ work. Restore Cliffs NSP/crypto suppliers and two/three-rail proxy ownership. Preserve PAS stop errors, prepare the target halt before client removal, and retain real Sysmon ACKs. Actual-source host/sanitizer tests do not establish CDSP activation, forced removal, startup-failure or exported-DMA lifecycle safety. No firmware bytes or new remoteproc start are added; analog audio and physical acceptance remain open.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -322,6 +322,46 @@
     {
       "path": "tests/rproc-edge-stop-contract.sh",
       "sha256": "747512977ba90239fee3bd27783f170274379ec9b17523820091b89af281b162"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "6d7dfc9b66854d39706ee596c4d3d5a537caf258ff414043ba8159b0d9d3d5ed"
+    },
+    {
+      "path": "tests/qup-interconnect-contract.sh",
+      "sha256": "f10aaf70286f94afc85674dc1f2678d02413045c344b5673cad0c991944a6621"
+    },
+    {
+      "path": "tests/uke-rpmh-resource-contract.sh",
+      "sha256": "3c7431718dee3be16f64a4f9da2300064970e38f488819d5dcf0b4d3d9102f46"
+    },
+    {
+      "path": "tests/wpss-proxy-contract.sh",
+      "sha256": "59c3ad5b184e3132425c92520c436da8d371d215f8010207f08ea40d8f13822e"
+    },
+    {
+      "path": "tests/pas-stop-ownership-contract.sh",
+      "sha256": "8e32dfbe3a32226e9eeca289564258ed628da0ac145a0e637a5d00304b91abd2"
+    },
+    {
+      "path": "tests/rproc-early-stop-contract.sh",
+      "sha256": "e457447874dea9ace8adb7e5d9c908b06d4f9e2e205e8e39869527935707264c"
+    },
+    {
+      "path": "tests/sysmon-stop-preparation-contract.sh",
+      "sha256": "84cd035fdfb9740b0f33e4e986896bb445e204cd2d13cef4f484543616d9382e"
+    },
+    {
+      "path": "patches/boot/0025-cliffs-nsp-crypto-suppliers.patch",
+      "sha256": "e399e4d8464b5fbbaaaa7390a2f855f97ca5b9972bf963a097cd671c9b2523fe"
+    },
+    {
+      "path": "patches/boot/0026-cliffs-proxy-and-pas-stop-ownership.patch",
+      "sha256": "6bb8742c2bab2e2c1c5bb3b4eb8d4c52a945034fd03b60f01f3c111a73277dd5"
+    },
+    {
+      "path": "patches/boot/0027-remoteproc-early-stop.patch",
+      "sha256": "74f89a8228b62906833d3ee640f090b0b3b41ad99b4abae3c526b85f026833c9"
     }
   ],
   "root_selector_capability": {
