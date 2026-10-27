@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "ed090a20412d739ab6a8bfacad0d1f52ccbf9810bd80b4759ed5b270ba98f32e"
+      "sha256": "d588676fdd3729b7f34c693fd11bc832881ecbbba2580780bee372f57d11c0b9"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -334,6 +334,14 @@
     {
       "path": "tests/wcd939x-reset-contract.sh",
       "sha256": "f64abd0ecb81f35ddb56b1a0bf38f96e510be9339cedff82df7e57334e56792a"
+    },
+    {
+      "path": "patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch",
+      "sha256": "df71a33b601ea099cd03bd269e0ee020baec02de61b424e7100ed9b7966d4c53"
+    },
+    {
+      "path": "tests/bwmon-vote-error-contract.sh",
+      "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
     }
   ],
   "baseline_files": [
@@ -456,7 +464,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-25",
+  "kernel_release": "7.3.0-26",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

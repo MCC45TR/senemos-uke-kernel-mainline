@@ -72,6 +72,9 @@ bash "$here/../../tests/soundwire-probe-error-contract.sh" "$kernel"
 bash "$here/../../tests/lpass-sm7675-pins-contract.sh" "$kernel"
 bash "$here/../../tests/audio-providers-fdt-contract.sh" "$kernel"
 bash "$here/../../tests/speaker-audio-fdt-contract.sh" "$kernel"
+git -C "$kernel" apply --check "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch"
+bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
@@ -149,3 +152,4 @@ for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-err
     0020-soundwire-probe-errors.patch; do
     sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
 done
+sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"

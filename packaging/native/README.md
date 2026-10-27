@@ -1,5 +1,11 @@
 # Mainline native source profile
 
+27 October 2026, Linux 7.3.0-26 source candidate: retain release-25 audio
+foundations and preserve the last successful BWMON bandwidth when an OPP vote
+fails. Report rate-limited errors; later IRQ requests can retry an unchanged
+target. Actual IRQ-thread host fault checks pass. Native BWMON resource/OPP
+translation and physical counter, vote, IRQ and lifecycle acceptance remain open.
+
 27 October 2026, Linux 7.3.0-25 source candidate: retain release-24 RNG, ICE
 and transactional MCQ, and restore the reviewed VA/TX/RX and coordinated codec
 reset foundations. One SM7675 LPASS pin controller supplies the existing speaker

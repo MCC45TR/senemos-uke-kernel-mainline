@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 25
+%global senemos_build_release 26
 %else
 %global senemos_build_release 1
 %endif
@@ -398,6 +398,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-26
+- Preserve the last applied BWMON bandwidth after failed OPP transactions.
+- Exercise actual IRQ-thread vote errors, retries, OPP references and rearming on the host.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-25
 - Reuse the reviewed LPASS providers and coordinated codec reset with the current speaker graph.
 - Keep one exact SM7675 pin provider and preserve the speaker TDM mux slots.

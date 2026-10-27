@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 25, retaining release-24 RNG, ICE, transactional MCQ and the established SKU/input/display/speaker/USB profile. Adds VA/TX/RX providers, the attributed SM7675 LPASS pin controller and protected codec reset with partial-child cleanup; preserves channel-switch and SoundWire probe errors. The existing speaker TDM pins use the same controller. Analog codec, SoundWire graph, jack and PCM routing remain pending. Source, host and object checks do not establish tablet installation or hardware acceptance.",
+  "source_origin": "Linux 7.3 Uke native source candidate 26, retaining release-25 audio provider/reset foundations and release-24 RNG, ICE and transactional MCQ with the established SKU/input/display/speaker/USB profile. Preserve the last successful BWMON bandwidth after failed OPP transactions and report rate-limited errors; actual IRQ-thread host fixtures cover failures and subsequent retries. Native BWMON resource/OPP conversion, analog codec/jack/PCM, CDSP and physical acceptance remain open. Source and build checks do not establish tablet installation.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -282,6 +282,14 @@
     {
       "path": "tests/wcd939x-reset-contract.sh",
       "sha256": "f64abd0ecb81f35ddb56b1a0bf38f96e510be9339cedff82df7e57334e56792a"
+    },
+    {
+      "path": "patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch",
+      "sha256": "df71a33b601ea099cd03bd269e0ee020baec02de61b424e7100ed9b7966d4c53"
+    },
+    {
+      "path": "tests/bwmon-vote-error-contract.sh",
+      "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
     }
   ],
   "root_selector_capability": {
