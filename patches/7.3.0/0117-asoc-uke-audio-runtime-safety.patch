@@ -4,10 +4,11 @@ Subject: [PATCH] ASoC: contain Uke amplifier faults and reject invalid TDM setup
 Keep the OEM startup sequence, serialize stream and switch changes, stop on
 clock or thermal failures, and preserve volume retry state. Bound the
 uncalibrated volume in code and remove the bring-up bypass parameters.
-Propagate topology-loader errors before admitting a graph.
+Keep preset writes muted and volume bounded. Propagate topology-loader errors
+before admitting a graph.
 
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
-index ebd27f8..0cda734 100644
+index ebd27f8..4cda2f0 100644
 --- a/sound/soc/codecs/fs19xx.c
 +++ b/sound/soc/codecs/fs19xx.c
 @@ -18,6 +18,7 @@
@@ -26,7 +27,15 @@ index ebd27f8..0cda734 100644
  #define FS19XX_REG_REVID		0x04
  #define FS19XX_REG_OTPACC		0x0b
  #define FS19XX_OTPACC_KEY		0xca91
-@@ -75,7 +75,7 @@
+@@ -54,6 +54,7 @@
+ #define FS19XX_REG_DACCTRL		0x30
+ #define FS19XX_DACCTRL_MUTE		0x0310
+ #define FS19XX_DACCTRL_RUN		0x0210
++#define FS19XX_DACCTRL_MUTE_BIT		BIT(8)
+ #define FS19XX_REG_TSCTRL		0x4c
+ #define FS19XX_TSCTRL_TSEN		BIT(3)
+ #define FS19XX_REG_PLLCTRL1		0xa1
+@@ -75,7 +76,7 @@
  #define FS19XX_PLL_C3			0x0018
  
  #define FS19XX_VOL_DEFAULT		0xdf	/* OEM uncalibrated default, -12 dB */
@@ -35,7 +44,7 @@ index ebd27f8..0cda734 100644
  
  #define FS19XX_LOCK_POLL_MS		10
  #define FS19XX_LOCK_POLL_COUNT		200
-@@ -164,20 +164,14 @@ struct fs19xx_priv {
+@@ -164,20 +165,14 @@ struct fs19xx_priv {
  	u16 position;
  
  	unsigned int volume;
@@ -60,7 +69,7 @@ index ebd27f8..0cda734 100644
  /* Registers that are read-modify-written must be read twice to be trusted. */
  static int fs19xx_read_stable(struct fs19xx_priv *fs19xx, unsigned int reg,
  			      unsigned int *val)
-@@ -189,12 +183,13 @@ static int fs19xx_read_stable(struct fs19xx_priv *fs19xx, unsigned int reg,
+@@ -189,12 +184,13 @@ static int fs19xx_read_stable(struct fs19xx_priv *fs19xx, unsigned int reg,
  		ret = regmap_read(fs19xx->regmap, reg, &cur);
  		if (ret)
  			return ret;
@@ -78,7 +87,7 @@ index ebd27f8..0cda734 100644
  }
  
  static int fs19xx_apply_unit(struct fs19xx_priv *fs19xx,
-@@ -232,13 +227,15 @@ static int fs19xx_apply_unit(struct fs19xx_priv *fs19xx,
+@@ -232,22 +228,30 @@ static int fs19xx_apply_unit(struct fs19xx_priv *fs19xx,
  					return 0;
  			}
  			dev_dbg(fs19xx->dev, "wait on reg 0x%02x timed out\n", addr);
@@ -91,12 +100,36 @@ index ebd27f8..0cda734 100644
  		}
  	}
  
+-	if (pos == 0 && len == 15)
+-		return regmap_write(fs19xx->regmap, addr, value);
+-
+-	/* The OEM driver keeps the mask in 16 bits; match that. */
+-	mask = (((1U << (len + 1)) - 1) << pos) & 0xffff;
+-	ret = fs19xx_read_stable(fs19xx, addr, &cur);
+-	if (ret)
+-		return ret;
+-	cur = (cur & ~mask) | (((unsigned int)value << pos) & mask);
 +	if (pos + len >= 16)
 +		return -EINVAL;
- 	if (pos == 0 && len == 15)
- 		return regmap_write(fs19xx->regmap, addr, value);
++	if (pos == 0 && len == 15) {
++		cur = value;
++	} else {
++		/* The OEM driver keeps the mask in 16 bits; match that. */
++		mask = (((1U << (len + 1)) - 1) << pos) & 0xffff;
++		ret = fs19xx_read_stable(fs19xx, addr, &cur);
++		if (ret)
++			return ret;
++		cur = (cur & ~mask) | (((unsigned int)value << pos) & mask);
++	}
++	/* Preset tables cannot bypass the runtime unmute gate or volume ceiling. */
++	if (addr == FS19XX_REG_DACCTRL)
++		cur |= FS19XX_DACCTRL_MUTE_BIT;
++	if (addr == FS19XX_REG_VOLCTRL && (cur >> 8) > FS19XX_VOL_MAX)
++		cur = (FS19XX_VOL_MAX << 8) | (cur & 0xff);
+ 	return regmap_write(fs19xx->regmap, addr, cur);
+ }
  
-@@ -274,7 +271,7 @@ static int fs19xx_write_tables(struct fs19xx_priv *fs19xx)
+@@ -274,7 +278,7 @@ static int fs19xx_write_tables(struct fs19xx_priv *fs19xx)
  static int fs19xx_reset_chip(struct fs19xx_priv *fs19xx)
  {
  	unsigned int val = 0;
@@ -105,7 +138,7 @@ index ebd27f8..0cda734 100644
  
  	if (fs19xx->gpio_reset) {
  		gpiod_set_value_cansleep(fs19xx->gpio_reset, 1);
-@@ -287,7 +284,9 @@ static int fs19xx_reset_chip(struct fs19xx_priv *fs19xx)
+@@ -287,7 +291,9 @@ static int fs19xx_reset_chip(struct fs19xx_priv *fs19xx)
  		regmap_write(fs19xx->regmap, FS19XX_REG_PWRCTRL, FS19XX_PWRCTRL_RESET);
  		regmap_read(fs19xx->regmap, FS19XX_REG_PWRCTRL, &val);
  		msleep(15);
@@ -116,7 +149,7 @@ index ebd27f8..0cda734 100644
  		if (regmap_read(fs19xx->regmap, FS19XX_REG_CHIPINI, &val))
  			continue;
  		if (val == FS19XX_CHIPINI_DONE_A || val == FS19XX_CHIPINI_DONE_B)
-@@ -320,10 +319,10 @@ static int fs19xx_chip_init(struct fs19xx_priv *fs19xx)
+@@ -320,10 +326,10 @@ static int fs19xx_chip_init(struct fs19xx_priv *fs19xx)
  	return regmap_write(fs19xx->regmap, FS19XX_REG_SYSCTRL, 0);
  }
  
@@ -129,7 +162,7 @@ index ebd27f8..0cda734 100644
  }
  
  /* Everything except the DAC unmute and thermal sensing; DAC stays muted. */
-@@ -351,7 +350,10 @@ static int fs19xx_chip_start(struct fs19xx_priv *fs19xx)
+@@ -351,7 +357,10 @@ static int fs19xx_chip_start(struct fs19xx_priv *fs19xx)
  		ret = regmap_write(fs19xx->regmap, FS19XX_REG_PLLCTRL2, FS19XX_PLL_C2);
  	if (!ret)
  		ret = regmap_write(fs19xx->regmap, FS19XX_REG_PLLCTRL3, FS19XX_PLL_C3);
@@ -141,7 +174,7 @@ index ebd27f8..0cda734 100644
  	if (ret)
  		return ret;
  
-@@ -361,7 +363,7 @@ static int fs19xx_chip_start(struct fs19xx_priv *fs19xx)
+@@ -361,7 +370,7 @@ static int fs19xx_chip_start(struct fs19xx_priv *fs19xx)
  	ret = regmap_write(fs19xx->regmap, FS19XX_REG_PWRCTRL, FS19XX_PWRCTRL_RUN);
  	if (ret)
  		return ret;
@@ -150,7 +183,7 @@ index ebd27f8..0cda734 100644
  	if (ret)
  		return ret;
  	return regmap_write(fs19xx->regmap, FS19XX_REG_DACCTRL, FS19XX_DACCTRL_MUTE);
-@@ -382,48 +384,61 @@ static void fs19xx_unmute_work(struct work_struct *work)
+@@ -382,48 +391,61 @@ static void fs19xx_unmute_work(struct work_struct *work)
  {
  	struct fs19xx_priv *fs19xx = container_of(to_delayed_work(work),
  						  struct fs19xx_priv, unmute_work);
@@ -242,7 +275,7 @@ index ebd27f8..0cda734 100644
  	if (fs19xx->powered)
  		return 0;
  
-@@ -436,20 +451,19 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+@@ -436,20 +458,19 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
  		return ret;
  	}
  	fs19xx->powered = true;
@@ -268,7 +301,7 @@ index ebd27f8..0cda734 100644
  	fs19xx_chip_stop(fs19xx);
  }
  
-@@ -483,15 +497,31 @@ static int fs19xx_dai_mute(struct snd_soc_dai *dai, int mute, int stream)
+@@ -483,15 +504,31 @@ static int fs19xx_dai_mute(struct snd_soc_dai *dai, int mute, int stream)
  
  	guard(mutex)(&fs19xx->lock);
  
@@ -300,7 +333,7 @@ index ebd27f8..0cda734 100644
  	.hw_params	= fs19xx_dai_hw_params,
  	.mute_stream	= fs19xx_dai_mute,
  	.no_capture_mute = 1,
-@@ -516,7 +546,7 @@ static int fs19xx_volume_info(struct snd_kcontrol *kcontrol,
+@@ -516,7 +553,7 @@ static int fs19xx_volume_info(struct snd_kcontrol *kcontrol,
  	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
  	uinfo->count = 1;
  	uinfo->value.integer.min = 0;
@@ -309,7 +342,7 @@ index ebd27f8..0cda734 100644
  	return 0;
  }
  
-@@ -526,6 +556,7 @@ static int fs19xx_volume_get(struct snd_kcontrol *kcontrol,
+@@ -526,6 +563,7 @@ static int fs19xx_volume_get(struct snd_kcontrol *kcontrol,
  	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
  	struct fs19xx_priv *fs19xx = snd_soc_component_get_drvdata(component);
  
@@ -317,7 +350,7 @@ index ebd27f8..0cda734 100644
  	ucontrol->value.integer.value[0] = fs19xx->volume;
  	return 0;
  }
-@@ -535,21 +566,22 @@ static int fs19xx_volume_put(struct snd_kcontrol *kcontrol,
+@@ -535,21 +573,22 @@ static int fs19xx_volume_put(struct snd_kcontrol *kcontrol,
  {
  	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
  	struct fs19xx_priv *fs19xx = snd_soc_component_get_drvdata(component);
@@ -345,7 +378,7 @@ index ebd27f8..0cda734 100644
  }
  
  static int fs19xx_enable_get(struct snd_kcontrol *kcontrol,
-@@ -558,6 +590,7 @@ static int fs19xx_enable_get(struct snd_kcontrol *kcontrol,
+@@ -558,6 +597,7 @@ static int fs19xx_enable_get(struct snd_kcontrol *kcontrol,
  	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
  	struct fs19xx_priv *fs19xx = snd_soc_component_get_drvdata(component);
  
@@ -353,7 +386,7 @@ index ebd27f8..0cda734 100644
  	ucontrol->value.integer.value[0] = fs19xx->speaker_enabled;
  	return 0;
  }
-@@ -568,11 +601,23 @@ static int fs19xx_enable_put(struct snd_kcontrol *kcontrol,
+@@ -568,11 +608,23 @@ static int fs19xx_enable_put(struct snd_kcontrol *kcontrol,
  	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
  	struct fs19xx_priv *fs19xx = snd_soc_component_get_drvdata(component);
  	bool enable = ucontrol->value.integer.value[0];
@@ -377,7 +410,7 @@ index ebd27f8..0cda734 100644
  	fs19xx->speaker_enabled = enable;
  	if (!enable)
  		fs19xx_power_off(fs19xx);
-@@ -603,7 +648,29 @@ static const struct snd_soc_dapm_route fs19xx_dapm_routes[] = {
+@@ -603,7 +655,29 @@ static const struct snd_soc_dapm_route fs19xx_dapm_routes[] = {
  	{ "SPK", NULL, "AIF IN" },
  };
  
@@ -407,7 +440,7 @@ index ebd27f8..0cda734 100644
  	.controls		= fs19xx_controls,
  	.num_controls		= ARRAY_SIZE(fs19xx_controls),
  	.dapm_widgets		= fs19xx_dapm_widgets,
-@@ -711,6 +778,9 @@ static int fs19xx_parse_dev(struct fs19xx_priv *fs19xx, const u8 *copy, size_t f
+@@ -711,6 +785,9 @@ static int fs19xx_parse_dev(struct fs19xx_priv *fs19xx, const u8 *copy, size_t f
  		return -EINVAL;
  	fs19xx->tcoef = get_unaligned_le16(list + FS19XX_INFO_TEMPR_COEF * sizeof(__le16));
  	fs19xx->position = get_unaligned_le16(list + FS19XX_INFO_POSITION * sizeof(__le16));
@@ -417,7 +450,7 @@ index ebd27f8..0cda734 100644
  
  	ret = fs19xx_find_sub(copy, fw_size, dev_off, dev, FS19XX_DSC_REG_COMMON,
  			      sizeof(struct fs19xx_reg_unit), &list, &count);
-@@ -803,7 +873,8 @@ static int fs19xx_detect(struct fs19xx_priv *fs19xx, unsigned int *chipid)
+@@ -803,7 +880,8 @@ static int fs19xx_detect(struct fs19xx_priv *fs19xx, unsigned int *chipid)
  		return ret;
  
  	*chipid = id >> 8;
@@ -427,7 +460,7 @@ index ebd27f8..0cda734 100644
  		return -ENODEV;
  	dev_info(fs19xx->dev, "FS19xx id 0x%04x rev 0x%04x\n", id, rev);
  	return 0;
-@@ -822,7 +893,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -822,7 +900,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  
  	fs19xx->i2c = client;
  	fs19xx->dev = dev;
@@ -436,7 +469,7 @@ index ebd27f8..0cda734 100644
  	mutex_init(&fs19xx->lock);
  	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
  	i2c_set_clientdata(client, fs19xx);
-@@ -832,7 +903,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -832,7 +910,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  		return dev_err_probe(dev, PTR_ERR(fs19xx->regmap), "regmap init failed\n");
  
  	/* Asserted (logical 1) holds the amplifier in reset. */
@@ -445,7 +478,7 @@ index ebd27f8..0cda734 100644
  	if (IS_ERR(fs19xx->gpio_reset))
  		return dev_err_probe(dev, PTR_ERR(fs19xx->gpio_reset), "reset gpio\n");
  	if (fs19xx->gpio_reset && !gpiod_is_active_low(fs19xx->gpio_reset))
-@@ -861,13 +932,12 @@ static void fs19xx_i2c_remove(struct i2c_client *client)
+@@ -861,13 +939,12 @@ static void fs19xx_i2c_remove(struct i2c_client *client)
  {
  	struct fs19xx_priv *fs19xx = i2c_get_clientdata(client);
  
@@ -463,7 +496,7 @@ index ebd27f8..0cda734 100644
  }
  
  static const struct i2c_device_id fs19xx_i2c_id[] = {
-@@ -892,8 +962,10 @@ static struct i2c_driver fs19xx_i2c_driver = {
+@@ -892,8 +969,10 @@ static struct i2c_driver fs19xx_i2c_driver = {
  	.id_table = fs19xx_i2c_id,
  	.probe = fs19xx_i2c_probe,
  	.remove = fs19xx_i2c_remove,

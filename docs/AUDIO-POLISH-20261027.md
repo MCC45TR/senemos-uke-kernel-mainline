@@ -19,6 +19,8 @@ path inside four 32-bit TDM slots. It changes the following behavior:
   stream starts that amplifier; idle switch changes do not power it up.
 - Preserve cached volume after failed writes so an identical retry reaches
   hardware. Reject levels above 0xdf and remove `max_volume`/`force_unmute`.
+- Keep DAC mute asserted during preset table writes and clamp preset volume
+  writes as well, including read-modify-write operations.
 - Stop on DAI shutdown, component suspend, I2C removal and system shutdown.
   Resume leaves the amplifier off until a new DAI unmute event.
 - Refuse unstable register reads, timed-out/unknown preset operations,

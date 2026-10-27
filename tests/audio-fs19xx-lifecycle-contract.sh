@@ -152,6 +152,18 @@ int main(void) {
     struct fs19xx_reg_unit overflow={.ctrl=0x2722};
     assert(fs19xx_apply_unit(&amp,&overflow)==0);
     overflow.ctrl=0x2e22; assert(fs19xx_apply_unit(&amp,&overflow)==-EINVAL);
+    struct fs19xx_reg_unit unsafe={.ctrl=0xf030,.value=FS19XX_DACCTRL_RUN};
+    assert(fs19xx_apply_unit(&amp,&unsafe)==0);
+    assert(regs.reg[FS19XX_REG_DACCTRL]&FS19XX_DACCTRL_MUTE_BIT);
+    unsafe.ctrl=0x0830; unsafe.value=0;
+    assert(fs19xx_apply_unit(&amp,&unsafe)==0);
+    assert(regs.reg[FS19XX_REG_DACCTRL]&FS19XX_DACCTRL_MUTE_BIT);
+    unsafe.ctrl=0xf016; unsafe.value=0xffc0;
+    assert(fs19xx_apply_unit(&amp,&unsafe)==0);
+    assert(regs.reg[FS19XX_REG_VOLCTRL]==0xdfc0);
+    unsafe.ctrl=0x7816; unsafe.value=0xff;
+    assert(fs19xx_apply_unit(&amp,&unsafe)==0);
+    assert(regs.reg[FS19XX_REG_VOLCTRL]==0xdfc0);
 
     start(); poll(); assert(amp.powered && amp.unmute_work.pending);
     assert(regs.reg[FS19XX_REG_DACCTRL]==FS19XX_DACCTRL_MUTE);
