@@ -12,6 +12,7 @@ printf '#define EINVAL 22\n' > "$work/linux/errno.h"
 cat > "$work/linux/math64.h" <<'C'
 #include <stdint.h>
 typedef uint64_t u64;
+#define U32_MAX UINT32_MAX
 static inline u64 div64_u64(u64 a,u64 b) {return a/b;}
 C
 cat > "$work/drm/drm_modes.h" <<'C'
@@ -93,6 +94,7 @@ int main(void) {
  assert(c.capable&&c.display_info.monitor_range.min_vfreq==30&&c.display_info.monitor_range.max_vfreq==144);
  assert(dpu_encoder_uke_vrr_check(&enc.base,&state));
  o82_vrr_test_min_hz=29;OFF();
+ o82_vrr_test_min_hz=1;OFF();assert(!dpu_encoder_uke_vrr_check(&enc.base,&state));
  o82_vrr_test_min_hz=90;UPDATE();
  assert(c.capable&&c.display_info.monitor_range.min_vfreq==90&&c.display_info.monitor_range.max_vfreq==144);
  assert(dpu_encoder_uke_vrr_check(&enc.base,&state));

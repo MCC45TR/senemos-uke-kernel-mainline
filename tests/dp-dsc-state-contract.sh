@@ -14,6 +14,7 @@ struct drm_dsc_config { unsigned bits_per_pixel; };
 struct msm_dp_dsc_config { drm_dsc_config dsc; };
 struct drm_bridge_state {};
 struct drm_bridge {};
+struct drm_encoder {};
 struct msm_dp_bridge_state { drm_bridge_state base; msm_dp_dsc_config dsc; };
 struct drm_atomic_commit { drm_bridge_state *bridge; };
 struct device { void *data,*of_node; };
@@ -36,6 +37,10 @@ static int kstrtobool(const char *text,bool *value) {
  if(!strcmp(text,"0\n")){*value=false;return 0;}
  return -EINVAL;
 }
+static msm_dp_panel *mst_panel;
+static const msm_dp_bridge_state *mst_color;
+static msm_dp_panel *msm_dp_mst_get_panel(msm_dp*,drm_encoder*) {return mst_panel;}
+static const msm_dp_bridge_state *msm_dp_mst_get_color(msm_dp*,drm_encoder*,drm_atomic_commit*) {return mst_color;}
 static bool compatible=true;
 static bool of_device_is_compatible(void*,const char*) {return compatible;}
 static drm_bridge_state *drm_atomic_get_new_bridge_state(drm_atomic_commit *state,drm_bridge*) {return state->bridge;}
@@ -55,19 +60,21 @@ int main() {
  }
  dp.plugged=dp.msm_dp_display.active_stream_cnt=dp.stream_pm_active=dp.stream_link_attempted=false;
  assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==2 && panel.dsc_requested && !dp.plugged_lock);
- assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr));
+ assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,nullptr));
  panel.dsc.dsc.bits_per_pixel=128;
- assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr)==&panel.dsc.dsc);
+ assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,nullptr)==&panel.dsc.dsc);
  dp.msm_dp_display.mst_active=true;
- assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr));dp.msm_dp_display.mst_active=false;
+ assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,nullptr));
+ mst_panel=&panel;assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,nullptr)==&panel.dsc.dsc);
+ dp.msm_dp_display.mst_active=false;
  msm_dp_bridge_state next{};drm_atomic_commit state{&next.base};
- assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,&state));
+ assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,&state));
  next.dsc.dsc.bits_per_pixel=128;
- assert(msm_dp_get_dsc_config(&dp.msm_dp_display,&state)==&next.dsc.dsc);
+ assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,&state)==&next.dsc.dsc);
  state.bridge=nullptr;
- assert(msm_dp_get_dsc_config(&dp.msm_dp_display,&state)==&panel.dsc.dsc);
- compatible=false;assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr));compatible=true;
- dp.msm_dp_display.is_edp=true;assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,&state));
+ assert(msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,&state)==&panel.dsc.dsc);
+ compatible=false;assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,nullptr));compatible=true;
+ dp.msm_dp_display.is_edp=true;assert(!msm_dp_get_dsc_config(&dp.msm_dp_display,nullptr,&state));
  assert(uke_dp_dsc_store(&dev,nullptr,"0\n",2)==2 && !panel.dsc_requested);
 }
 CPP

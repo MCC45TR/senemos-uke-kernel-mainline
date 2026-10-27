@@ -190,6 +190,8 @@ const struct dpu_mdss_cfg dpu_sm7675_cfg = {
 	.dsc_count = ARRAY_SIZE(sm7675_dsc), .dsc = sm7675_dsc,
 	.merge_3d_count = ARRAY_SIZE(sm7675_merge_3d), .merge_3d = sm7675_merge_3d,
 	.intf_count = ARRAY_SIZE(sm7675_intf), .intf = sm7675_intf,
+	/* Exact Cliffs CDM 0x7a200, relative to the MDP base at 0x1000. */
+	.cdm = &dpu_cdm_5_x,
 	.vbif = &sm8650_vbif,
 	.perf = &sm7675_perf_data,
 };

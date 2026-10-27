@@ -12,6 +12,7 @@ printf '#define EINVAL 22\n' > "$work/linux/errno.h"
 cat > "$work/linux/math64.h" <<'C'
 #include <stdint.h>
 typedef uint64_t u64;
+#define U32_MAX UINT32_MAX
 static inline u64 div64_u64(u64 a, u64 b) { return a / b; }
 C
 cat > "$work/drm/drm_modes.h" <<'C'
@@ -103,7 +104,7 @@ int main(void) {
  assert(qcom_uke_o82_avr_lines(&base,119)==2329);
  for(unsigned hz=1;hz<1000;++hz) {
   int lines=qcom_uke_o82_avr_lines(&base,hz);
-  assert((lines>0)==(hz>=30&&hz<=120));
+  assert((lines>0)==(hz<=120));
   if(lines>0) {
    assert((u64)lines*base.htotal*hz<=(u64)base.clock*1000);
    assert((u64)(lines+1)*base.htotal*hz>(u64)base.clock*1000);
@@ -125,7 +126,8 @@ int main(void) {
  const int max_lines[] = {9240,11088,6929,9240,6929,6929,6930};
  for(unsigned i=0;i<ARRAY_SIZE(modes);++i) {
   assert(qcom_uke_o82_avr_lines(&modes[i],30)==max_lines[i]);
-  assert(qcom_uke_o82_avr_lines(&modes[i],29)==-EINVAL);
+  int one_hz=qcom_uke_o82_avr_lines(&modes[i],1);
+  assert(one_hz>65535 && (u64)one_hz*modes[i].htotal<=UINT32_MAX);
  }
  bad=base;bad.clock++;assert(qcom_uke_o82_avr_lines(&bad,119)==-EINVAL);
  struct dpu_hw_intf a={0},b={0};u32 period;
@@ -133,6 +135,8 @@ int main(void) {
  assert(!dpu_hw_intf_setup_avr(&a,2329,&period)&&!dpu_hw_intf_setup_avr(&b,2329,&period));
  assert(a.hw.reg[INTF_AVR_VTOTAL]==1332188);
  assert(a.hw.reg[INTF_AVR_VTOTAL]==b.hw.reg[INTF_AVR_VTOTAL]);
+ assert(!dpu_hw_intf_setup_avr(&a,qcom_uke_o82_avr_lines(&base,1),&period));
+ assert(period==158558400);
  fail_intf_readback=true;assert(dpu_hw_intf_setup_avr(&a,2329,&period)==-EIO);
  fail_intf_readback=false;
  unsigned writes=a.hw.writes;

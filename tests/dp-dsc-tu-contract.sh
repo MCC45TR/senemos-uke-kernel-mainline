@@ -17,6 +17,7 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32;
 typedef uint64_t u64,__u64; typedef int64_t s64; typedef unsigned uint;
 #define BIT(n) (1U<<(n))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+#define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define kzalloc_obj(v) calloc(1,sizeof(v))
 #define kfree(v) free(v)
 #define drm_dbg_dp(...) ((void)0)
@@ -35,17 +36,24 @@ awk '/^struct tu_algo_data/ {emit=1} /^static void msm_dp_ctrl_calc_tu_parameter
 cat <<'C'
 int main(void) {
  const struct {unsigned pclk,width,porch,slices,height;} modes[]={
-  {241500,2560,160,1,1440},{299890,2560,140,1,1440},{594000,3840,560,2,2160}
+  {241500,2560,160,1,1440},{299890,2560,140,1,1440},{594000,3840,560,2,2160},
+  {241500,1922,160,1,1440}
  };
- for(unsigned m=0;m<ARRAY_SIZE(modes);m++) for(unsigned fec=0;fec<2;fec++) {
+ const unsigned wire_rates[]={8,10,12,15};
+ for(unsigned m=0;m<ARRAY_SIZE(modes);m++) for(unsigned fec=0;fec<2;fec++)
+ for(unsigned rate=0;rate<ARRAY_SIZE(wire_rates);rate++) {
+  const unsigned wire=wire_rates[rate];
+  if((uint64_t)modes[m].pclk*wire>(fec?8432640U:8640000U))continue;
   struct msm_dp_vc_tu_mapping_table outputs[2]={{0}};
   for(unsigned i=0;i<2;i++) {
    struct msm_dp_tu_calc_input in={.lclk=540,.pclk_khz=modes[m].pclk,
     .hactive=modes[m].width,.hporch=modes[m].porch,.nlanes=2,.bpp=i?30:24,
-    .pixel_enc=444,.dsc_en=1,.fec_en=fec,.compress_ratio=i?375:300,
-    .num_of_dsc_slices=modes[m].slices};
+    .pixel_enc=444,.dsc_en=1,.fec_en=fec,.compress_ratio=(i?30:24)*100/wire,
+    .num_of_dsc_slices=modes[m].slices,
+    .dsc_bytes_per_slice=DIV_ROUND_UP((modes[m].width/modes[m].slices)*wire,8)};
    struct tu_algo_data timing={0}; msm_dp_panel_update_tu_timings(&in,&timing);
-   const unsigned bytes=modes[m].width+2*modes[m].slices;
+   const unsigned chunk=in.dsc_bytes_per_slice;
+   const unsigned bytes=(DIV_ROUND_UP(chunk,2)*2+2)*modes[m].slices;
    assert(timing.bpp==24);
    assert(llabs(timing.lwidth_fp-drm_fixp_from_fraction(bytes,3))<4);
    /* Upstream fixed-point multiplication discards low bits; clock bounds are in MHz. */

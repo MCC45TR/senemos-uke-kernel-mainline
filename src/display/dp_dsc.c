@@ -27,14 +27,14 @@ bool msm_dp_dsc_link_fits(const struct msm_dp_dsc_config *config,
 		(u64)rate * lanes * 8 * 16 * 1000000;
 }
 
-int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
+static int msm_dp_dsc_prepare_rate(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
 		       const struct drm_display_mode *mode, unsigned int bpc,
-		       unsigned int rate, unsigned int lanes,
+		       unsigned int rate, unsigned int lanes, unsigned int wire_bpp,
 		       struct msm_dp_dsc_config *result)
 {
 	struct msm_dp_dsc_config config = {};
 	struct drm_dsc_config *dsc = &config.dsc;
-	u32 slice_mask, max_width, bytes_per_line;
+	u32 slice_mask, max_width, bytes_per_line, n, d, remainder, clocks = 0, acks = 0;
 	unsigned int slices;
 	int throughput, rc_size, ret;
 	u8 revision = caps[DP_DSC_REV - DP_DSC_SUPPORT];
@@ -59,7 +59,7 @@ int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
 	dsc->pic_width = mode->hdisplay;
 	dsc->pic_height = mode->vdisplay;
 	dsc->bits_per_component = bpc;
-	dsc->bits_per_pixel = 8 << 4;
+	dsc->bits_per_pixel = wire_bpp << 4;
 	dsc->line_buf_depth = drm_dp_dsc_sink_line_buf_depth(caps);
 	if (dsc->line_buf_depth < bpc ||
 	    (dsc->dsc_version_minor == 1 && dsc->line_buf_depth > 13))
@@ -105,13 +105,66 @@ int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
 		return ret;
 	if (!msm_dp_dsc_link_fits(&config, mode, rate, lanes))
 		return -ENOSPC;
-	/* shortcut: 8 bpp and even RGB width need no DTO phase padding; extend before other rates. */
 	bytes_per_line = dsc->slice_chunk_size * dsc->slice_count;
 	config.dto_count = DIV_ROUND_UP(bytes_per_line, 6) - 1;
+	/* OEM DTO ratios use the 24-bit compressed transport, not the source bpc. */
+	switch (wire_bpp) {
+	case 15: n = 5; d = 8; break;
+	case 12: n = 1; d = 2; break;
+	case 10: n = 5; d = 12; break;
+	case 8: n = 1; d = 3; break;
+	default: return -EOPNOTSUPP;
+	}
+	config.dto = BIT(0) | BIT(3) | (n << 8) | (d << 16);
+	/* Match the OEM partial DTO group, including chunk rounding at line end. */
+	acks = (dsc->pic_width / 2 / d) * n;
+	remainder = n;
+	while (acks < config.dto_count + 1) {
+		clocks++;
+		if (remainder < n)
+			remainder += d;
+		remainder -= n;
+		if (remainder < n)
+			acks++;
+	}
+	config.extra_width = clocks > (dsc->pic_width / 2) % d ?
+		clocks - (dsc->pic_width / 2) % d : 0;
 	config.compression_ctrl = BIT(0) | ((ALIGN(bytes_per_line, 3) - bytes_per_line) << 3) |
 		((dsc->slice_count - 1) << 5) | (10 << 10) | (dsc->slice_chunk_size << 16);
 	*result = config;
 	return 0;
+}
+
+int msm_dp_dsc_prepare_bpp(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
+			 const struct drm_display_mode *mode, unsigned int bpc,
+			 unsigned int rate, unsigned int lanes, unsigned int max_bpp_x16,
+			 struct msm_dp_dsc_config *result)
+{
+	/* These integer rates have both upstream RC tables and exact OEM DTO tuples. */
+	static const unsigned int rates[] = { 15, 12, 10, 8 };
+	unsigned int i;
+	int ret = -ENOSPC;
+
+	memset(result, 0, sizeof(*result));
+	for (i = 0; i < ARRAY_SIZE(rates); i++) {
+		if ((rates[i] << 4) > max_bpp_x16 ||
+		    (bpc == 8 && rates[i] != 12 && rates[i] != 8) ||
+		    (bpc == 10 && rates[i] == 12))
+			continue;
+		ret = msm_dp_dsc_prepare_rate(caps, fec, mode, bpc, rate, lanes,
+					    rates[i], result);
+		if (!ret)
+			return 0;
+	}
+	return ret;
+}
+
+int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
+		       const struct drm_display_mode *mode, unsigned int bpc,
+		       unsigned int rate, unsigned int lanes,
+		       struct msm_dp_dsc_config *result)
+{
+	return msm_dp_dsc_prepare_bpp(caps, fec, mode, bpc, rate, lanes, 15 << 4, result);
 }
 
 u8 msm_dp_dsc_word_parity(u32 data)

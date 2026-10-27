@@ -11,9 +11,15 @@
 struct msm_dp_dsc_config {
 	struct drm_dsc_config dsc;
 	u32 dto_count;
+	u32 dto;
+	u32 extra_width;
 	u32 compression_ctrl;
 };
 
+int msm_dp_dsc_prepare_bpp(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
+			 const struct drm_display_mode *mode, unsigned int bpc,
+			 unsigned int rate, unsigned int lanes, unsigned int max_bpp_x16,
+			 struct msm_dp_dsc_config *result);
 int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
 		       const struct drm_display_mode *mode, unsigned int bpc,
 		       unsigned int rate, unsigned int lanes,

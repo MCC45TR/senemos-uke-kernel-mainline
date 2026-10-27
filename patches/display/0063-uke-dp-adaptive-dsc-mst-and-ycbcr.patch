@@ -1,0 +1,1189 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: negotiate DSC rates, MST streams and PCON color conversion
+
+Preserve per-commit/per-stream DSC ownership, exact chunk bytes, OEM DTO phase
+padding and independent PPS banks. Keep link FEC separate from shared decoder
+and passthrough AUX references. Admit optional source 420 and advertised PCON
+RGB-to-YCbCr conversions with a checked AUX transaction and precise TMDS budget.
+
+OEM contracts: MiCode display 44275c404a677d9d9e5230fedd1af2ef02fc7b9a,
+msm/dp/dp_panel.c, dp_catalog.c and msm/sde/sde_encoder_phys_vid.c,
+Copyright (c) 2012-2023 The Linux Foundation and Qualcomm Innovation Center.
+MST AUX/reference and PCON protocol comparison: signed Linux 7.3,
+drivers/gpu/drm/i915/display/intel_dp.c and drm_dp_mst_topology.c.
+Retain existing file-level GPL-2.0-only notices. No foreign board values.
+
+The AVR arithmetic supports a 32-bit pixel period; O82 receiver admission keeps
+its separate lower-floor guard. This is not a physical 1 Hz support declaration.
+
+--- a/drivers/gpu/drm/msm/dp/dp_ctrl.c
++++ b/drivers/gpu/drm/msm/dp/dp_ctrl.c
+@@ -104,6 +104,7 @@
+ 	int dsc_en;     /* dsc on/off */
+ 	int async_en;   /* async mode */
+ 	int fec_en;     /* fec */
++	int dsc_bytes_per_slice;
+ 	int compress_ratio; /* 2:1 = 200, 3:1 = 300, 3.75:1 = 375 */
+ 	int num_of_dsc_slices; /* number of slices per line */
+ };
+@@ -917,7 +918,8 @@
+ 
+ 	numerator = drm_fixp2int(temp3_fp);
+ 
+-	dsc_num_bytes  = numerator / dsc_num_slices;
++	dsc_num_bytes = in->dsc_bytes_per_slice ?:
++		DIV_ROUND_UP(numerator, dsc_num_slices);
+ 	eoc_bytes           = dsc_num_bytes % nlanes;
+ 	tot_num_eoc_symbols = nlanes * dsc_num_slices;
+ 	tot_num_hor_bytes   = dsc_num_bytes * dsc_num_slices;
+@@ -1512,7 +1514,8 @@
+ 	in.async_en = 0;
+ 	in.fec_en = in.dsc_en;
+ 	in.num_of_dsc_slices = in.dsc_en ? panel->dsc.dsc.slice_count : 0;
+-	in.compress_ratio = in.dsc_en ? in.bpp * 100 / 8 : 100;
++	in.dsc_bytes_per_slice = in.dsc_en ? panel->dsc.dsc.slice_chunk_size : 0;
++	in.compress_ratio = in.dsc_en ? in.bpp * 1600 / panel->dsc.dsc.bits_per_pixel : 100;
+ 
+ 	_dp_ctrl_calc_tu(ctrl, &in, tu_table);
+ }
+@@ -1960,6 +1963,9 @@
+ 			return ret;
+ 		if (!(status & DP_FEC_DECODE_EN_DETECTED))
+ 			continue;
++		/* MST decoder and passthrough flags have per-AUX reference lifetimes. */
++		if (panel->mst_fec)
++			return 0;
+ 		ret = drm_dp_dpcd_write_byte(ctrl->aux, DP_DSC_ENABLE, DP_DECOMPRESSION_EN);
+ 		if (!ret)
+ 			WRITE_ONCE(panel->dsc_active, true);
+@@ -1979,7 +1985,7 @@
+ 	if (ctrl->link_clks_on)
+ 		msm_dp_write_link(ctrl, REG_DP_MAINLINK_CTRL,
+ 			msm_dp_read_link(ctrl, REG_DP_MAINLINK_CTRL) & ~BIT(12));
+-	ret = drm_dp_dpcd_write_byte(ctrl->aux, DP_DSC_ENABLE, 0);
++	ret = panel->mst_fec ? 0 : drm_dp_dpcd_write_byte(ctrl->aux, DP_DSC_ENABLE, 0);
+ 	first_error = ret;
+ 	if (ret && msm_dp_aux_is_link_connected(ctrl->aux))
+ 		drm_dbg_dp(ctrl->drm_dev, "DSC receiver disable failed: %d\n", ret);
+@@ -3012,10 +3018,11 @@
+ 			return ret;
+ 		}
+ 	}
+-	if (panel->dsc.dsc.bits_per_pixel)
++	if (panel->dsc.dsc.bits_per_pixel || panel->mst_fec)
+ 		ctrl->fec_prepared = true;
+ 	if (ctrl->fec_prepared) {
+-		if (panel->dsc_caps_valid && !drm_dp_sink_supports_dsc(panel->dsc_dpcd)) {
++		if (!panel->mst_fec && panel->dsc_caps_valid &&
++		    !drm_dp_sink_supports_dsc(panel->dsc_dpcd)) {
+ 			msm_dp_write_link(ctrl, REG_DP_MAINLINK_CTRL,
+ 				msm_dp_read_link(ctrl, REG_DP_MAINLINK_CTRL) & ~BIT(12));
+ 			WRITE_ONCE(panel->dsc_active, false);
+@@ -3026,7 +3033,7 @@
+ 				return ret;
+ 		}
+ 	}
+-	if (panel->dsc.dsc.bits_per_pixel) {
++	if (panel->dsc.dsc.bits_per_pixel || panel->mst_fec) {
+ 		ctrl->fec_prepared = true;
+ 		force_link_train = true;
+ 	}
+@@ -3060,9 +3067,10 @@
+ 	pixel_rate_orig = panel->msm_dp_mode.drm_mode.clock;
+ 	ctrl->mst_active = mst_active;
+ 	if (state && panel->connector->display_info.is_hdmi &&
+-	    !msm_dp_utils_tmds_fits(pixel_rate_orig, panel->msm_dp_mode.bpp,
++	    !msm_dp_utils_tmds_fits(pixel_rate_orig,
++			state->pcon.format == DP_PIXELFORMAT_YUV422 ? 24 : panel->msm_dp_mode.bpp,
+ 			panel->connector->display_info.max_tmds_clock,
+-			panel->msm_dp_mode.out_fmt_is_yuv_420))
++			state->pcon.format == DP_PIXELFORMAT_YUV420))
+ 		return -ENOSPC;
+ 	if (state && panel->dsc.dsc.bits_per_pixel &&
+ 	    !msm_dp_dsc_link_fits(&panel->dsc, &panel->msm_dp_mode.drm_mode,
+@@ -3123,7 +3131,7 @@
+ 	mainlink_ready = msm_dp_ctrl_mainlink_ready(ctrl);
+ 	drm_dbg_dp(ctrl->drm_dev,
+ 		"mainlink %s\n", mainlink_ready ? "READY" : "NOT READY");
+-	if (panel->dsc.dsc.bits_per_pixel) {
++	if (panel->dsc.dsc.bits_per_pixel || panel->mst_fec) {
+ 		if (!mainlink_ready)
+ 			return -EIO;
+ 		return msm_dp_ctrl_fec_enable(ctrl, panel);
+--- a/drivers/gpu/drm/msm/dp/dp_panel.c
++++ b/drivers/gpu/drm/msm/dp/dp_panel.c
+@@ -39,6 +39,12 @@
+ 
+ 	if (id == DP_STREAM_0)
+ 		return reg;
++	/* SM7675 has two DSC packet banks, independent of the stream timing bank. */
++	if (is_s1 && reg >= REG_DP_COMPRESSION_MODE_CTRL &&
++	    reg < REG_DP_PPS_DATA + MSM_DP_DSC_RGB_PPS_BYTES)
++		return reg + 0x3e0;
++	if (is_s1 && reg == REG_DP_SDP_FLUSH)
++		return reg + 4;
+ 
+ 	switch (reg) {
+ 	case REG_DP_STATE_CTRL:
+@@ -204,7 +210,7 @@
+ 	    dpcd[DP_DPCD_REV] >= 0x14) {
+ 		rc = drm_dp_dpcd_read_data(panel->aux, DP_DSC_SUPPORT,
+ 			msm_dp_panel->dsc_dpcd, sizeof(msm_dp_panel->dsc_dpcd));
+-		if (!rc && drm_dp_sink_supports_dsc(msm_dp_panel->dsc_dpcd))
++		if (!rc)
+ 			rc = drm_dp_dpcd_read_byte(panel->aux, DP_FEC_CAPABILITY,
+ 						   &msm_dp_panel->fec_cap);
+ 		msm_dp_panel->dsc_caps_valid = !rc;
+@@ -593,9 +599,17 @@
+ 		msm_dp_write_link(panel, REG_DP_PPS_DATA + i * 4,
+ 				  get_unaligned_le32(payload + i * 4));
+ 	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO_COUNT, config->dto_count);
+-	/* 8 compressed bpp on the two-pixel RGB interface uses the OEM 1/3 DTO. */
+-	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO, BIT(0) | BIT(3) | (1 << 8) | (3 << 16));
+-	msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, config->compression_ctrl);
++	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO, config->dto);
++	/* MST BE placement depends on the compressed line's last three-byte group. */
++	if (msm_dp_panel->mst_fec) {
++		u32 bytes = config->dsc.slice_chunk_size * config->dsc.slice_count;
++		u32 be = bytes % 12 ? BIT(DIV_ROUND_UP(bytes % 12, 3) - 1) : 8;
++
++		msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL,
++			(config->compression_ctrl & ~GENMASK(13, 10)) | (be << 10));
++	} else {
++		msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, config->compression_ctrl);
++	}
+ 	flush = msm_dp_read_link(panel, REG_DP_SDP_FLUSH);
+ 	/* OEM bit 0 sends PPS; clear bit 2 to repeat it with the stream. */
+ 	msm_dp_write_link(panel, REG_DP_SDP_FLUSH, (flush & ~BIT(2)) | BIT(0));
+--- a/drivers/gpu/drm/msm/dp/dp_panel.h
++++ b/drivers/gpu/drm/msm/dp/dp_panel.h
+@@ -46,6 +46,9 @@
+ 	bool dsc_caps_valid;
+ 	bool dsc_requested;
+ 	bool dsc_active;
++	bool mst_fec;
++	struct drm_dp_aux *dsc_aux;
++	struct drm_dp_aux *passthrough_aux;
+ 	struct msm_dp_dsc_config dsc;
+ 
+ 	struct drm_connector *connector;
+@@ -54,6 +57,7 @@
+ 	bool video_test;
+ 	bool hdr_active;
+ 	bool stream_active;
++	enum dp_pixelformat hdmi_format;
+ 	u32 hw_revision;
+ 
+ 	enum msm_dp_stream_id stream_id;
+--- a/drivers/gpu/drm/msm/dp/dp_display.c
++++ b/drivers/gpu/drm/msm/dp/dp_display.c
+@@ -17,6 +17,7 @@
+ #include <drm/display/drm_dp_mst_helper.h>
+ #include <drm/display/drm_hdmi_audio_helper.h>
+ #include <drm/drm_edid.h>
++#include <drm/drm_fourcc.h>
+ #include <drm/drm_probe_helper.h>
+ 
+ #include "msm_drv.h"
+@@ -288,8 +289,8 @@
+ 	int ret;
+ 
+ 	if (dp->panel->dsc_requested) {
+-		drm_err(dp->drm_dev, "MST with DSC is not supported by this profile\n");
+-		return -EOPNOTSUPP;
++		if (!(dp->panel->fec_cap & DP_FEC_CAPABLE))
++			return -EOPNOTSUPP;
+ 	}
+ 	/* Clear any pre-existing MST state before enabling MST. */
+ 	ret = drm_dp_dpcd_write_byte(dp->aux, DP_MSTM_CTRL, 0);
+@@ -790,6 +791,8 @@
+ 	if (color) {
+ 		msm_dp_panel->dsc = color->dsc;
+ 		msm_dp_panel->msm_dp_mode.bpp = color->bpp;
++		msm_dp_panel->msm_dp_mode.out_fmt_is_yuv_420 = color->out_fmt_is_yuv_420;
++		msm_dp_panel->hdmi_format = color->pcon.format;
+ 	}
+ 	if (color) {
+ 		dp->color_needs_flush = true;
+@@ -833,6 +836,8 @@
+ 	}
+ 
+ 	if (!msm_dp_display->active_stream_cnt) {
++		dp->panel->mst_fec = msm_dp_display->mst_active &&
++			dp->panel->dsc_requested && (dp->panel->fec_cap & DP_FEC_CAPABLE);
+ 		msm_dp_display_host_phy_init(dp);
+ 		force_link_train = true;
+ 
+@@ -873,6 +878,11 @@
+ 	drm_dbg_dp(dp->drm_dev, "sink_count=%d\n", dp->link->sink_count);
+ 	if (msm_dp_panel->stream_active)
+ 		return 0;
++	if (state && !msm_dp_display->mst_active) {
++		rc = msm_dp_utils_configure_pcon(dp->aux, &state->pcon);
++		if (rc)
++			return rc;
++	}
+ 	rc = msm_dp_ctrl_on_stream(dp->ctrl, msm_dp_panel, state, msm_dp_display->mst_active);
+ 	if (!rc) {
+ 		msm_dp_panel->stream_active = true;
+@@ -984,6 +994,12 @@
+ 	link_info = &msm_dp_display->link->link_caps;
+ 
+ 	is_yuv_420 = drm_mode_is_420_only(info, mode);
++	if (!dp->mst_active && !msm_dp_display->panel->dsc_requested &&
++	    drm_mode_is_420(info, mode) && msm_dp_display->link->vsc_sdp_supported &&
++	    (!drm_dp_is_branch(msm_dp_display->panel->dpcd) ||
++	     drm_dp_downstream_420_passthrough(msm_dp_display->panel->dpcd,
++					       msm_dp_display->panel->downstream_ports)))
++		is_yuv_420 = true;
+ 	if (dp->mst_active && (is_yuv_420 || (info->bpc && info->bpc < 8)))
+ 		return MODE_BAD;
+ 
+@@ -1001,11 +1017,13 @@
+ 
+ 	if (mode_pclk_khz > DP_MAX_PIXEL_CLK_KHZ)
+ 		return MODE_CLOCK_HIGH;
+-	if (msm_dp_display->panel->dsc_requested && !is_yuv_420) {
++	if (!dp->mst_active && msm_dp_display->panel->dsc_requested && !is_yuv_420) {
+ 		struct msm_dp_dsc_config config;
++		struct msm_dp_pcon_config pcon;
+ 
+-		if (info->is_hdmi &&
+-		    !msm_dp_utils_tmds_fits(mode->clock, 24, info->max_tmds_clock, false))
++		if (msm_dp_utils_select_pcon(info, msm_dp_display->panel->dpcd,
++			msm_dp_display->panel->downstream_ports, mode, 24, false,
++			DRM_MODE_COLORIMETRY_DEFAULT, &pcon))
+ 			return MODE_CLOCK_HIGH;
+ 		return msm_dp_dsc_prepare(msm_dp_display->panel->dsc_dpcd,
+ 			msm_dp_display->panel->fec_cap, mode, 8,
+@@ -1490,7 +1508,7 @@
+ 	guard(mutex)(&dp->plugged_lock);
+ 	active = READ_ONCE(dp->msm_dp_display.active_stream_cnt);
+ 	return sysfs_emit(buf,
+-		"version=1 active=%u lanes=%u rate_khz=%u bpp=%u max_lanes=%u max_rate_khz=%u source_max_lanes=%u sink_max_lanes=%u dpcd_revision=0x%02x vsc_supported=%u hw_revision=0x%x hdr_requested=%u mst_driver=%u lane_limit=%u dsc_requested=%u dsc_active=%u dsc_bpp_x16=%u dsc_slices=%u mst_active=%u mst_max_streams=%u active_streams=%u sink_mst_capable=%u negotiated_lanes=%u\n",
++		"version=1 active=%u lanes=%u rate_khz=%u bpp=%u max_lanes=%u max_rate_khz=%u source_max_lanes=%u sink_max_lanes=%u dpcd_revision=0x%02x vsc_supported=%u hw_revision=0x%x hdr_requested=%u mst_driver=%u lane_limit=%u dsc_requested=%u dsc_active=%u dsc_bpp_x16=%u dsc_slices=%u mst_active=%u mst_max_streams=%u active_streams=%u sink_mst_capable=%u negotiated_lanes=%u source_yuv420=%u hdmi_format=%u dsc_dto=0x%x dsc_extra_width=%u\n",
+ 		active, active ? READ_ONCE(dp->link->link_params.num_lanes) : 0,
+ 		active ? READ_ONCE(dp->link->link_params.rate) : 0,
+ 		active && !dp->msm_dp_display.mst_active ? READ_ONCE(panel->msm_dp_mode.bpp) : 0,
+@@ -1504,7 +1522,10 @@
+ 		active && READ_ONCE(panel->dsc_active) ? READ_ONCE(panel->dsc.dsc.slice_count) : 0,
+ 		READ_ONCE(dp->msm_dp_display.mst_active), msm_dp_ctrl_get_stream_cnt(dp->ctrl),
+ 		READ_ONCE(dp->msm_dp_display.active_stream_cnt), READ_ONCE(dp->sink_mst_capable),
+-		msm_dp_ctrl_get_lane_count(dp->ctrl));
++		msm_dp_ctrl_get_lane_count(dp->ctrl),
++		active ? panel->msm_dp_mode.out_fmt_is_yuv_420 : 0,
++		active ? panel->hdmi_format : 0, active ? panel->dsc.dto : 0,
++		active ? panel->dsc.extra_width : 0);
+ }
+ static DEVICE_ATTR_RO(uke_dp_stream_state);
+ 
+@@ -1833,7 +1854,7 @@
+ 	const struct drm_display_info *info = &conn_state->connector->display_info;
+ 	bool yuv420 = drm_mode_is_420_only(info, mode);
+ 	int bpp, ret;
+-	unsigned int bpc;
++	unsigned int bpc, format;
+ 	bool hdr;
+ 
+ 	guard(mutex)(&dp->plugged_lock);
+@@ -1847,32 +1868,40 @@
+ 		return -EINVAL;
+ 	memset(&state->dsc, 0, sizeof(state->dsc));
+ 	hdr = state->hdr_enabled && state->hdr_sdp.db[2] != HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
+-	if (dp->panel->dsc_requested) {
+-		if (yuv420 || !dp->wide_bus_supported)
+-			return -EOPNOTSUPP;
+-		bpc = round_down(min3(info->bpc ?: 8U, conn_state->max_requested_bpc ?: 8U, 10U), 2);
+-		ret = -ENOSPC;
+-		for (; bpc >= (hdr ? 10 : 8); bpc -= 2) {
+-			if (info->is_hdmi && !msm_dp_utils_tmds_fits(mode->clock, bpc * 3,
+-								   info->max_tmds_clock, false))
++	if (dp->panel->dsc_requested && !dp->wide_bus_supported)
++		return -EOPNOTSUPP;
++	bpc = round_down(min3(info->bpc ?: 8U, conn_state->max_requested_bpc ?: 8U, 10U), 2);
++	for (; bpc >= (hdr ? 10 : dp->panel->dsc_requested ? 8 : 6); bpc -= 2) {
++		for (format = 0; format < 2; format++) {
++			bool source420 = !!format;
++
++			if ((!source420 && yuv420) ||
++			    (source420 && (!drm_mode_is_420(info, mode) || dp->panel->dsc_requested ||
++				conn_state->colorspace != DRM_MODE_COLORIMETRY_DEFAULT || bpc < 8 ||
++				(info->is_hdmi && bpc > 8 &&
++				 !(info->hdmi.y420_dc_modes & DRM_EDID_YCBCR420_DC_30)))))
++				continue;
++			ret = msm_dp_utils_select_pcon(info, dp->panel->dpcd, dp->panel->downstream_ports,
++				mode, bpc * 3, source420, conn_state->colorspace, &state->pcon);
++			if (ret)
+ 				continue;
+-			ret = msm_dp_dsc_prepare(dp->panel->dsc_dpcd, dp->panel->fec_cap,
+-				mode, bpc, dp->link->link_caps.rate, dp->link->link_caps.num_lanes,
+-				&state->dsc);
+-			if (!ret)
+-				break;
++			if (dp->panel->dsc_requested)
++				ret = msm_dp_dsc_prepare(dp->panel->dsc_dpcd, dp->panel->fec_cap,
++					mode, bpc, dp->link->link_caps.rate, dp->link->link_caps.num_lanes,
++					&state->dsc);
++			else
++				ret = msm_dp_utils_link_fits(mode->clock, bpc * 3,
++					dp->link->link_caps.rate, dp->link->link_caps.num_lanes, source420) ? 0 : -ENOSPC;
++			if (!ret) {
++				state->out_fmt_is_yuv_420 = source420;
++				goto selected;
++			}
+ 		}
+-		if (ret)
+-			return ret;
+-		bpp = bpc * 3;
+-	} else {
+-		bpp = msm_dp_utils_select_bpp(info->bpc, conn_state->max_requested_bpc ?: 8,
+-			mode->clock, dp->link->link_caps.rate, dp->link->link_caps.num_lanes,
+-			yuv420, hdr,
+-			info->is_hdmi ? info->max_tmds_clock : 0);
+ 	}
+-	if (bpp < 0)
+-		return bpp;
++	return -ENOSPC;
++selected:
++	bpp = bpc * 3;
++	yuv420 = state->out_fmt_is_yuv_420;
+ 	state->bpp = bpp;
+ 	state->colorspace = conn_state->colorspace;
+ 	state->vsc_enabled = yuv420 || state->hdr_enabled ||
+@@ -1884,7 +1913,17 @@
+ 	return msm_dp_utils_pack_vsc_sdp(&state->vsc_sdp, state->colorspace, bpp / 3, yuv420);
+ }
+ 
++bool msm_dp_display_dsc_requested(struct msm_dp *display, u8 *fec)
++{
++	struct msm_dp_display_private *dp =
++		container_of(display, struct msm_dp_display_private, msm_dp_display);
++
++	*fec = dp->panel->fec_cap;
++	return dp->panel->dsc_requested;
++}
++
+ struct drm_dsc_config *msm_dp_get_dsc_config(struct msm_dp *display,
++					  struct drm_encoder *encoder,
+ 					  struct drm_atomic_commit *state)
+ {
+ 	struct msm_dp_display_private *dp =
+@@ -1892,10 +1931,23 @@
+ 	struct msm_dp_dsc_config *config = &dp->panel->dsc;
+ 	struct drm_bridge_state *bridge_state;
+ 
+-	if (display->is_edp || display->mst_active ||
++	if (display->is_edp ||
+ 	    !of_device_is_compatible(display->pdev->dev.of_node, "qcom,sm7675-dp"))
+ 		return NULL;
+-	if (state) {
++	if (display->mst_active) {
++		if (state) {
++			const struct msm_dp_bridge_state *color =
++				msm_dp_mst_get_color(display, encoder, state);
++
++			return color && color->dsc.dsc.bits_per_pixel ?
++				(struct drm_dsc_config *)&color->dsc.dsc : NULL;
++		}
++		struct msm_dp_panel *panel = msm_dp_mst_get_panel(display, encoder);
++
++		if (!panel)
++			return NULL;
++		config = &panel->dsc;
++	} else if (state) {
+ 		bridge_state = drm_atomic_get_new_bridge_state(state, display->bridge);
+ 		if (bridge_state)
+ 			config = &to_dp_bridge_state(bridge_state)->dsc;
+@@ -1903,6 +1955,47 @@
+ 	return config->dsc.bits_per_pixel ? &config->dsc : NULL;
+ }
+ 
++unsigned int msm_dp_get_dsc_extra_width(struct msm_dp *display, struct drm_encoder *encoder)
++{
++	struct msm_dp_display_private *dp =
++		container_of(display, struct msm_dp_display_private, msm_dp_display);
++	struct msm_dp_panel *panel = display->mst_active ?
++		msm_dp_mst_get_panel(display, encoder) : dp->panel;
++
++	return panel ? panel->dsc.extra_width : 0;
++}
++
++u32 msm_dp_output_drm_format(struct msm_dp *display, struct drm_encoder *encoder,
++			    struct drm_atomic_commit *state)
++{
++	struct msm_dp_display_private *dp =
++		container_of(display, struct msm_dp_display_private, msm_dp_display);
++	const struct msm_dp_bridge_state *color = NULL;
++	struct msm_dp_panel *panel = display->mst_active ?
++		msm_dp_mst_get_panel(display, encoder) : dp->panel;
++	struct drm_bridge_state *bridge_state;
++	bool yuv420;
++	u32 bpp, wire_bpp;
++
++	if (!panel)
++		return DRM_FORMAT_RGB888;
++	if (state) {
++		if (display->mst_active)
++			color = msm_dp_mst_get_color(display, encoder, state);
++		else {
++			bridge_state = drm_atomic_get_new_bridge_state(state, display->bridge);
++			if (bridge_state)
++				color = to_dp_bridge_state(bridge_state);
++		}
++	}
++	yuv420 = color ? color->out_fmt_is_yuv_420 : panel->msm_dp_mode.out_fmt_is_yuv_420;
++	bpp = color ? color->bpp : panel->msm_dp_mode.bpp;
++	wire_bpp = color ? color->dsc.dsc.bits_per_pixel : panel->dsc.dsc.bits_per_pixel;
++	if (yuv420)
++		return bpp == 30 ? DRM_FORMAT_P010 : DRM_FORMAT_YUV420;
++	return !wire_bpp && bpp == 30 ? DRM_FORMAT_XRGB2101010 : DRM_FORMAT_RGB888;
++}
++
+ bool msm_dp_wide_bus_available(const struct msm_dp *msm_dp_display)
+ {
+ 	struct msm_dp_display_private *dp;
+@@ -1973,6 +2066,8 @@
+ 	if (!crtc)
+ 		return 0;
+ 	crtc_state = drm_atomic_get_new_crtc_state(state, crtc);
++	if (msm_dp_display->mst_active)
++		color = msm_dp_mst_get_color(msm_dp_display, encoder, state);
+ 	if (!msm_dp_display->mst_active &&
+ 	    of_device_is_compatible(msm_dp_display->pdev->dev.of_node, "qcom,sm7675-dp"))
+ 		color = to_dp_bridge_state(drm_atomic_get_new_bridge_state(state,
+@@ -2039,7 +2134,8 @@
+ }
+ 
+ int msm_dp_display_enable_helper(struct msm_dp *msm_dp_display,
+-				  struct msm_dp_panel *msm_dp_panel)
++				  struct msm_dp_panel *msm_dp_panel,
++				  const struct msm_dp_bridge_state *color)
+ {
+ 	struct msm_dp_display_private *dp =
+ 		container_of(msm_dp_display, struct msm_dp_display_private, msm_dp_display);
+@@ -2047,7 +2143,7 @@
+ 
+ 	if (!msm_dp_display->link_ready)
+ 		return -EIO;
+-	ret = msm_dp_display_enable(dp, msm_dp_panel, NULL);
++	ret = msm_dp_display_enable(dp, msm_dp_panel, color);
+ 	if (ret) {
+ 		drm_err(dp->drm_dev, "MST stream enable failed: %d\n", ret);
+ 		return ret;
+--- a/drivers/gpu/drm/msm/dp/dp_display.h
++++ b/drivers/gpu/drm/msm/dp/dp_display.h
+@@ -11,6 +11,8 @@
+ 
+ #define DP_MAX_PIXEL_CLK_KHZ	675000
+ 
++struct msm_dp_bridge_state;
++
+ struct msm_dp {
+ 	struct drm_device *drm_dev;
+ 	struct platform_device *pdev;
+@@ -49,7 +51,8 @@
+ int msm_dp_display_set_stream_info(struct msm_dp *msm_dp_display, struct msm_dp_panel *panel,
+ 				   u32 start_slot, u32 num_slots, u32 pbn);
+ int msm_dp_display_enable_helper(struct msm_dp *msm_dp_display,
+-				  struct msm_dp_panel *msm_dp_panel);
++				  struct msm_dp_panel *msm_dp_panel,
++				  const struct msm_dp_bridge_state *color);
+ int msm_dp_display_mst_send_act(struct msm_dp *msm_dp_display, struct msm_dp_panel *panel);
+ void msm_dp_display_disable_helper(struct msm_dp *msm_dp_display,
+ 				   struct msm_dp_panel *msm_dp_panel);
+--- a/drivers/gpu/drm/msm/dp/dp_drm.h
++++ b/drivers/gpu/drm/msm/dp/dp_drm.h
+@@ -14,6 +14,7 @@
+ #include "msm_drv.h"
+ #include "dp_display.h"
+ #include "dp_dsc.h"
++#include "dp_utils.h"
+ 
+ struct msm_dp_bridge {
+ 	struct drm_bridge bridge;
+@@ -29,6 +30,8 @@
+ 	struct dp_sdp vsc_sdp;
+ 	struct dp_sdp hdr_sdp;
+ 	struct msm_dp_dsc_config dsc;
++	struct msm_dp_pcon_config pcon;
++	bool out_fmt_is_yuv_420;
+ };
+ 
+ #define to_dp_bridge_state(x) container_of((x), struct msm_dp_bridge_state, base)
+--- a/drivers/gpu/drm/msm/dp/dp_utils.c
++++ b/drivers/gpu/drm/msm/dp/dp_utils.c
+@@ -6,6 +6,8 @@
+ #include <linux/types.h>
+ #include <drm/drm_connector.h>
+ #include <drm/drm_property.h>
++#include <drm/drm_edid.h>
++#include <drm/drm_modes.h>
+ #include <drm/display/drm_hdmi_helper.h>
+ 
+ #include "dp_utils.h"
+@@ -113,6 +115,92 @@
+ 	return clock && bpp && (!max_tmds_clock || required <= available);
+ }
+ 
++int msm_dp_utils_select_pcon(const struct drm_display_info *info,
++		const u8 dpcd[DP_RECEIVER_CAP_SIZE], const u8 ports[DP_MAX_DOWNSTREAM_PORTS],
++		const struct drm_display_mode *mode, unsigned int bpp, bool source420,
++		enum drm_colorspace colorspace, struct msm_dp_pcon_config *config)
++{
++	u8 cap, conversion;
++	bool detailed = drm_dp_is_branch(dpcd) && dpcd[DP_DPCD_REV] >= 0x13 &&
++		(dpcd[DP_DOWNSTREAMPORT_PRESENT] & DP_DETAILED_CAP_INFO_AVAILABLE) &&
++		(ports[0] & DP_DS_PORT_TYPE_MASK) == DP_DS_PORT_TYPE_HDMI;
++
++	memset(config, 0, sizeof(*config));
++	config->format = source420 ? DP_PIXELFORMAT_YUV420 : DP_PIXELFORMAT_RGB;
++	config->configure = detailed && !!(ports[3] &
++		(DP_DS_HDMI_YCBCR444_TO_422_CONV | DP_DS_HDMI_YCBCR444_TO_420_CONV |
++		 DP_DS_HDMI_BT709_RGB_YCBCR_CONV | DP_DS_HDMI_BT2020_RGB_YCBCR_CONV));
++	if (!info->is_hdmi)
++		return 0;
++	if (source420 && drm_dp_is_branch(dpcd) && !drm_dp_downstream_420_passthrough(dpcd, ports))
++		return -EOPNOTSUPP;
++	if (msm_dp_utils_tmds_fits(mode->clock, bpp, info->max_tmds_clock, source420))
++		return 0;
++	if (source420 || !detailed)
++		return -ENOSPC;
++	if (colorspace == DRM_MODE_COLORIMETRY_BT2020_RGB) {
++		cap = DP_DS_HDMI_BT2020_RGB_YCBCR_CONV;
++		conversion = DP_CONVERSION_BT2020_RGB_YCBCR_ENABLE;
++	} else if (colorspace == DRM_MODE_COLORIMETRY_DEFAULT) {
++		cap = DP_DS_HDMI_BT709_RGB_YCBCR_CONV;
++		conversion = DP_CONVERSION_BT709_RGB_YCBCR_ENABLE;
++	} else {
++		return -EOPNOTSUPP;
++	}
++	if (!drm_dp_downstream_rgb_to_ycbcr_conversion(dpcd, ports, cap))
++		return -ENOSPC;
++	/* HDMI 4:2:2 uses the pixel clock at every supported component depth. */
++	if ((info->color_formats & BIT(DRM_CONNECTOR_COLOR_FORMAT_YCBCR422)) &&
++	    (ports[3] & DP_DS_HDMI_YCBCR444_TO_422_CONV) &&
++	    msm_dp_utils_tmds_fits(mode->clock, 24, info->max_tmds_clock, false)) {
++		config->format = DP_PIXELFORMAT_YUV422;
++		config->control2 = conversion | DP_CONVERSION_TO_YCBCR422_ENABLE;
++		return 0;
++	}
++	if (drm_mode_is_420(info, mode) &&
++	    (bpp <= 24 || (info->hdmi.y420_dc_modes & DRM_EDID_YCBCR420_DC_30)) &&
++	    drm_dp_downstream_444_to_420_conversion(dpcd, ports) &&
++	    msm_dp_utils_tmds_fits(mode->clock, bpp, info->max_tmds_clock, true)) {
++		config->format = DP_PIXELFORMAT_YUV420;
++		config->control1 = DP_CONVERSION_TO_YCBCR420_ENABLE;
++		config->control2 = conversion;
++		return 0;
++	}
++	return -ENOSPC;
++}
++
++int msm_dp_utils_configure_pcon(struct drm_dp_aux *aux,
++			       const struct msm_dp_pcon_config *config)
++{
++	u8 before[2], value[2], readback[2];
++	u8 masks[2] = { DP_CONVERSION_TO_YCBCR420_ENABLE,
++		DP_CONVERSION_RGB_YCBCR_MASK | DP_CONVERSION_TO_YCBCR422_ENABLE };
++	unsigned int i;
++	int ret;
++
++	if (!config->configure)
++		return 0;
++	ret = drm_dp_dpcd_read_data(aux, DP_PROTOCOL_CONVERTER_CONTROL_1, before, 2);
++	if (ret)
++		return ret;
++	value[0] = (before[0] & ~masks[0]) | config->control1;
++	value[1] = (before[1] & ~masks[1]) | config->control2;
++	for (i = 0; i < 2; i++) {
++		ret = drm_dp_dpcd_write_byte(aux, DP_PROTOCOL_CONVERTER_CONTROL_1 + i, value[i]);
++		if (ret)
++			goto rollback;
++	}
++	ret = drm_dp_dpcd_read_data(aux, DP_PROTOCOL_CONVERTER_CONTROL_1, readback, 2);
++	if (!ret && !memcmp(value, readback, sizeof(value)))
++		return 0;
++	ret = ret ?: -EIO;
++rollback:
++	/* Keep DSC encoder/PPS and scrambling control bits outside this transaction. */
++	for (i = 0; i < 2; i++)
++		drm_dp_dpcd_write_byte(aux, DP_PROTOCOL_CONVERTER_CONTROL_1 + i, before[i]);
++	return ret;
++}
++
+ int msm_dp_utils_select_bpp(unsigned int bpc, unsigned int max_bpc,
+ 			    unsigned int clock, unsigned int rate,
+ 			    unsigned int lanes, bool yuv420, bool hdr,
+--- a/drivers/gpu/drm/msm/dp/dp_utils.h
++++ b/drivers/gpu/drm/msm/dp/dp_utils.h
+@@ -29,6 +29,20 @@
+ #define HEADER_3_MASK	    GENMASK(23, 16)
+ #define PARITY_3_MASK	    GENMASK(31, 24)
+ 
++struct msm_dp_pcon_config {
++	enum dp_pixelformat format;
++	u8 control1;
++	u8 control2;
++	bool configure;
++};
++
++int msm_dp_utils_select_pcon(const struct drm_display_info *info,
++		const u8 dpcd[DP_RECEIVER_CAP_SIZE], const u8 ports[DP_MAX_DOWNSTREAM_PORTS],
++		const struct drm_display_mode *mode, unsigned int bpp, bool source420,
++		enum drm_colorspace colorspace, struct msm_dp_pcon_config *config);
++int msm_dp_utils_configure_pcon(struct drm_dp_aux *aux,
++			       const struct msm_dp_pcon_config *config);
++
+ u8 msm_dp_utils_get_g0_value(u8 data);
+ u8 msm_dp_utils_get_g1_value(u8 data);
+ u8 msm_dp_utils_calculate_parity(u32 data);
+--- a/drivers/gpu/drm/msm/dp/dp_mst_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.c
+@@ -13,6 +13,8 @@
+ 
+ #include "dp_mst_drm.h"
+ #include "dp_panel.h"
++#include "dp_drm.h"
++#include "dp_utils.h"
+ 
+ #define to_dp_mst_connector(x) \
+ 		container_of((x), struct msm_dp_mst_connector, connector)
+@@ -23,8 +25,57 @@
+ 	struct drm_connector connector;
+ 	struct drm_dp_mst_port *mst_port;
+ 	struct msm_dp_mst *dp_mst;
++	struct drm_dp_aux *dsc_aux;
++	u8 dsc_caps[DP_DSC_RECEIVER_CAP_SIZE];
+ };
+ 
++struct msm_dp_mst_connector_state {
++	struct drm_connector_state base;
++	struct msm_dp_bridge_state color;
++};
++
++#define to_mst_state(x) container_of(x, struct msm_dp_mst_connector_state, base)
++
++static void msm_dp_mst_destroy_state(struct drm_connector *connector,
++				     struct drm_connector_state *state)
++{
++	__drm_atomic_helper_connector_destroy_state(state);
++	kfree(to_mst_state(state));
++}
++
++static void msm_dp_mst_reset(struct drm_connector *connector)
++{
++	struct msm_dp_mst_connector_state *state;
++
++	if (connector->state)
++		msm_dp_mst_destroy_state(connector, connector->state);
++	connector->state = NULL;
++	state = kzalloc_obj(*state);
++	if (state)
++		__drm_atomic_helper_connector_reset(connector, &state->base);
++}
++
++static struct drm_connector_state *msm_dp_mst_create_state(struct drm_connector *connector)
++{
++	struct msm_dp_mst_connector_state *state = kzalloc_obj(*state);
++
++	if (!state)
++		return ERR_PTR(-ENOMEM);
++	__drm_atomic_helper_connector_state_init(&state->base, connector);
++	return &state->base;
++}
++
++static struct drm_connector_state *msm_dp_mst_duplicate_state(struct drm_connector *connector)
++{
++	struct msm_dp_mst_connector_state *state =
++		kmemdup(to_mst_state(connector->state), sizeof(*state), GFP_KERNEL);
++
++	if (!state)
++		return NULL;
++	__drm_atomic_helper_connector_duplicate_state(connector, &state->base);
++	return &state->base;
++}
++
+ struct msm_dp_mst_encoder {
+ 	struct drm_encoder *enc;
+ 	int stream_id;
+@@ -48,7 +99,7 @@
+ {
+ 	struct msm_dp_mst_connector *conn = seq->private;
+ 	struct msm_dp_mst *mst = conn->dp_mst;
+-	unsigned int bpp = 0;
++	unsigned int bpp = 0, wire_bpp = 0;
+ 	unsigned int i;
+ 
+ 	guard(mutex)(&mst->mst_lock);
+@@ -57,11 +108,12 @@
+ 
+ 		if (panel && panel->connector == &conn->connector && panel->stream_active) {
+ 			bpp = panel->msm_dp_mode.bpp;
++			wire_bpp = panel->dsc_active ? panel->dsc.dsc.bits_per_pixel : 0;
+ 			break;
+ 		}
+ 	}
+-	seq_printf(seq, "version=1 active=%u bpc=%u bpp=%u dsc_bpp_x16=0\n",
+-		   !!bpp, bpp / 3, bpp);
++	seq_printf(seq, "version=1 active=%u bpc=%u bpp=%u dsc_bpp_x16=%u\n",
++		   !!bpp, bpp / 3, bpp, wire_bpp);
+ 	return 0;
+ }
+ DEFINE_SHOW_ATTRIBUTE(msm_dp_mst_output_bits);
+@@ -83,11 +135,12 @@
+ 
+ static const struct drm_connector_funcs msm_dp_drm_mst_connector_funcs = {
+ 	.debugfs_init = msm_dp_mst_debugfs_init,
+-	.reset = drm_atomic_helper_connector_reset,
++	.reset = msm_dp_mst_reset,
++	.atomic_create_state = msm_dp_mst_create_state,
+ 	.destroy = dp_mst_connector_destroy,
+ 	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+-	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
++	.atomic_duplicate_state = msm_dp_mst_duplicate_state,
++	.atomic_destroy_state = msm_dp_mst_destroy_state,
+ };
+ 
+ /* DP MST Connector OPs */
+@@ -125,6 +178,11 @@
+ 
+ 	drm_edid = drm_dp_mst_edid_read(connector, &mst->mst_mgr, mst_conn->mst_port);
+ 	drm_edid_connector_update(connector, drm_edid);
++	memset(mst_conn->dsc_caps, 0, sizeof(mst_conn->dsc_caps));
++	mst_conn->dsc_aux = drm_dp_mst_dsc_aux_for_port(mst_conn->mst_port);
++	if (mst_conn->dsc_aux && drm_dp_dpcd_read_data(mst_conn->dsc_aux,
++		DP_DSC_SUPPORT, mst_conn->dsc_caps, sizeof(mst_conn->dsc_caps)))
++		mst_conn->dsc_aux = NULL;
+ 
+ 	rc = drm_edid_connector_add_modes(connector);
+ 
+@@ -152,13 +210,24 @@
+ 	 * that would be feasible at the actual link bpp. mode_valid must not
+ 	 * depend on negotiated parameters.
+ 	 */
+-	required_pbn = drm_dp_calc_pbn_mode(mode->clock, (6 * 3) << 4);
++	required_pbn = drm_dp_calc_pbn_mode(mode->clock, (mst_conn->dsc_aux ? 8 : 18) << 4);
+ 
+ 	if (required_pbn > mst_port->full_pbn) {
+ 		drm_dbg_dp(dp_display->drm_dev, "mode:%s not supported.\n", mode->name);
+ 		return MODE_CLOCK_HIGH;
+ 	}
+ 
++	if (mst_conn->dsc_aux) {
++		struct msm_dp_dsc_config config;
++		u8 fec;
++
++		if (msm_dp_display_dsc_requested(dp_display, &fec))
++			return mode->clock > DP_MAX_PIXEL_CLK_KHZ * 2 ||
++				msm_dp_dsc_prepare(mst_conn->dsc_caps, fec, mode, 8,
++					mst_conn->dp_mst->link->link_caps.rate,
++					mst_conn->dp_mst->link->link_caps.num_lanes, &config) ?
++				MODE_CLOCK_HIGH : MODE_OK;
++	}
+ 	return msm_dp_display_mode_valid(dp_display, &connector->display_info, mode);
+ }
+ 
+@@ -167,6 +236,22 @@
+ {
+ 	struct msm_dp_mst_connector *mst_conn = to_dp_mst_connector(connector);
+ 	struct msm_dp_mst *mst = mst_conn->dp_mst;
++	struct drm_connector_state *new_state = drm_atomic_get_new_connector_state(state, connector);
++	struct drm_connector_state *old_state = drm_atomic_get_old_connector_state(state, connector);
++	struct drm_crtc_state *crtc_state = new_state->crtc ?
++		drm_atomic_get_new_crtc_state(state, new_state->crtc) : NULL;
++	u8 fec;
++	int ret;
++
++	if (crtc_state && old_state->max_requested_bpc != new_state->max_requested_bpc)
++		crtc_state->mode_changed = true;
++	if (msm_dp_display_dsc_requested(mst->msm_dp, &fec) &&
++	    (new_state->crtc != old_state->crtc ||
++	     (crtc_state && drm_atomic_crtc_needs_modeset(crtc_state)))) {
++		ret = drm_dp_mst_add_affected_dsc_crtcs(state, &mst->mst_mgr);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return drm_dp_atomic_release_time_slots(state, &mst->mst_mgr, mst_conn->mst_port);
+ }
+@@ -183,6 +268,68 @@
+ 	return NULL;
+ }
+ 
++struct msm_dp_panel *msm_dp_mst_get_panel(struct msm_dp *display, struct drm_encoder *encoder)
++{
++	return msm_dp_mst_panel_from_encoder(display->msm_dp_mst, encoder);
++}
++
++const struct msm_dp_bridge_state *msm_dp_mst_get_color(struct msm_dp *display,
++					struct drm_encoder *encoder,
++					struct drm_atomic_commit *state)
++{
++	struct drm_connector *connector = drm_atomic_get_new_connector_for_encoder(state, encoder);
++	struct drm_connector_state *conn_state;
++
++	if (!connector || connector->funcs != &msm_dp_drm_mst_connector_funcs ||
++	    to_dp_mst_connector(connector)->dp_mst != display->msm_dp_mst)
++		return NULL;
++	conn_state = drm_atomic_get_new_connector_state(state, connector);
++	return conn_state ? &to_mst_state(conn_state)->color : NULL;
++}
++
++/* Serialize shared decompression/passthrough AUX flags under mst_lock. */
++static int msm_dp_mst_dsc_flag(struct msm_dp_mst *mst, struct msm_dp_panel *panel,
++			      struct drm_dp_aux *aux, u8 mask, bool enable)
++{
++	u8 value;
++	unsigned int i;
++	int ret;
++
++	if (!aux)
++		return 0;
++	for (i = 0; i < mst->max_streams; i++) {
++		struct msm_dp_panel *peer = mst->mst_encoders[i].dp_panel;
++
++		if (!peer || peer == panel || !peer->dsc_active)
++			continue;
++		if ((mask == DP_DECOMPRESSION_EN && peer->dsc_aux == aux) ||
++		    (mask == DP_DSC_PASSTHROUGH_EN && peer->passthrough_aux == aux))
++			return 0;
++	}
++	ret = drm_dp_dpcd_read_byte(aux, DP_DSC_ENABLE, &value);
++	if (ret)
++		return ret;
++	return drm_dp_dpcd_write_byte(aux, DP_DSC_ENABLE,
++				      enable ? value | mask : value & ~mask);
++}
++
++static int msm_dp_mst_set_dsc(struct msm_dp_mst *mst, struct msm_dp_panel *panel, bool enable)
++{
++	int ret, pass_ret;
++
++	if (!panel->dsc.dsc.bits_per_pixel)
++		return 0;
++	ret = msm_dp_mst_dsc_flag(mst, panel, panel->dsc_aux, DP_DECOMPRESSION_EN, enable);
++	pass_ret = msm_dp_mst_dsc_flag(mst, panel, panel->passthrough_aux,
++				      DP_DSC_PASSTHROUGH_EN, enable);
++	if (enable && (ret || pass_ret)) {
++		msm_dp_mst_dsc_flag(mst, panel, panel->passthrough_aux, DP_DSC_PASSTHROUGH_EN, false);
++		msm_dp_mst_dsc_flag(mst, panel, panel->dsc_aux, DP_DECOMPRESSION_EN, false);
++	}
++	panel->dsc_active = enable && !ret && !pass_ret;
++	return ret ?: pass_ret;
++}
++
+ static void msm_dp_mst_remove_payload(struct msm_dp_mst *mst,
+ 				      struct drm_dp_mst_topology_state *mst_state,
+ 				      struct msm_dp_panel *panel)
+@@ -245,6 +392,8 @@
+ 		return -EBUSY;
+ 	drm_connector_get(connector);
+ 	panel->connector = connector;
++	panel->dsc_aux = mst_conn->dsc_aux;
++	panel->passthrough_aux = port->passthrough_aux;
+ 
+ 	rc = msm_dp_display_set_mode_helper(dp_display, state, encoder, panel);
+ 	if (rc) {
+@@ -252,6 +401,8 @@
+ 			"[MST] stream:%u set_mode failed rc=%d\n", panel->stream_id, rc);
+ 		goto failed;
+ 	}
++	panel->mst_fec = msm_dp_display_dsc_requested(dp_display, &panel->fec_cap) &&
++		(panel->fec_cap & DP_FEC_CAPABLE);
+ 
+ 	rc = msm_dp_display_prepare_link(dp_display);
+ 	if (rc) {
+@@ -275,7 +426,11 @@
+ 		    panel->stream_id, payload->vc_start_slot,
+ 		    payload->time_slots, payload->pbn);
+ 
+-	rc = msm_dp_display_enable_helper(dp_display, panel);
++	rc = msm_dp_mst_set_dsc(mst, panel, true);
++	if (rc)
++		goto failed;
++	rc = msm_dp_display_enable_helper(dp_display, panel,
++					 msm_dp_mst_get_color(dp_display, encoder, state));
+ 	if (rc)
+ 		goto failed;
+ 
+@@ -291,6 +446,7 @@
+ 	return 0;
+ 
+ failed:
++	msm_dp_mst_set_dsc(mst, panel, false);
+ 	if (payload_started && payload->payload_allocation_status != DRM_DP_MST_PAYLOAD_ALLOCATION_NONE) {
+ 		drm_dp_remove_payload_part1(&mst->mst_mgr, mst_state, payload);
+ 		drm_dp_remove_payload_part2(&mst->mst_mgr, mst_state, payload, payload);
+@@ -326,6 +482,8 @@
+ 
+ 	if (panel->connector != connector)
+ 		return;
++	if (msm_dp_mst_set_dsc(mst, panel, false))
++		msm_dp_display_set_link_failure(mst->msm_dp, true);
+ 	drm_dp_remove_payload_part1(&mst->mst_mgr, new_mst_state, new_payload);
+ 
+ 	drm_dp_remove_payload_part2(&mst->mst_mgr, new_mst_state, old_payload, new_payload);
+@@ -372,7 +530,14 @@
+ 	struct msm_dp_mst_connector *mst_conn = to_dp_mst_connector(conn_state->connector);
+ 	struct msm_dp_mst *mst = mst_conn->dp_mst;
+ 	struct drm_dp_mst_topology_state *mst_state;
+-	int bpp, pbn, slots;
++	struct msm_dp_bridge_state *color = &to_mst_state(conn_state)->color;
++	const struct drm_display_info *info = &conn_state->connector->display_info;
++	struct drm_connector_list_iter iter;
++	struct drm_connector *peer;
++	unsigned int streams = 0, bpc, max_wire = 15 << 4;
++	u8 fec;
++	bool requested;
++	int bpp, pbn, slots, ret;
+ 
+ 	if (!conn_state->crtc)
+ 		return 0;
+@@ -382,9 +547,54 @@
+ 	if (conn_state->hdr_output_metadata || conn_state->colorspace ||
+ 	    drm_mode_is_420_only(&conn_state->connector->display_info, &crtc_state->mode))
+ 		return -EOPNOTSUPP;
+-
+-	bpp = 24;
+-	pbn = drm_dp_calc_pbn_mode(crtc_state->mode.clock, bpp << 4);
++	memset(color, 0, sizeof(*color));
++	requested = msm_dp_display_dsc_requested(mst->msm_dp, &fec);
++	if (requested && mst_conn->dsc_aux) {
++		/* Share the 63 payload slots before allocation; connector order cannot bias quality. */
++		drm_connector_list_iter_begin(enc->dev, &iter);
++		drm_for_each_connector_iter(peer, &iter) {
++			struct drm_connector_state *cs;
++
++			if (peer->funcs != &msm_dp_drm_mst_connector_funcs ||
++			    to_dp_mst_connector(peer)->dp_mst != mst)
++				continue;
++			cs = drm_atomic_get_new_connector_state(crtc_state->state, peer) ?: peer->state;
++			if (cs && cs->crtc)
++				streams++;
++		}
++		drm_connector_list_iter_end(&iter);
++		bpc = round_down(min3(info->bpc ?: 8U, conn_state->max_requested_bpc ?: 8U, 10U), 2);
++		for (; bpc >= 8; bpc -= 2) {
++			max_wire = 15 << 4;
++			while (max_wire >= (8 << 4)) {
++				ret = msm_dp_dsc_prepare_bpp(mst_conn->dsc_caps, fec, &crtc_state->mode,
++					bpc, mst->link->link_caps.rate, mst->link->link_caps.num_lanes,
++					max_wire, &color->dsc);
++				if (ret)
++					break;
++				pbn = drm_dp_calc_pbn_mode(crtc_state->mode.clock, color->dsc.dsc.bits_per_pixel);
++				/* Reserve source FEC and per-slice transport overhead, rounded up. */
++				pbn = DIV_ROUND_UP_ULL((u64)pbn * drm_dp_bw_overhead(
++					mst->link->link_caps.num_lanes, crtc_state->mode.hdisplay,
++					color->dsc.dsc.slice_count, color->dsc.dsc.bits_per_pixel,
++					DRM_DP_BW_OVERHEAD_DSC | DRM_DP_BW_OVERHEAD_FEC | DRM_DP_BW_OVERHEAD_MST), 1000000);
++				if ((!info->is_hdmi || msm_dp_utils_tmds_fits(crtc_state->mode.clock,
++					bpc * 3, info->max_tmds_clock, false)) &&
++				    dfixed_const(pbn) <= (u64)drm_dp_get_vc_payload_bw(
++					mst->link->link_caps.rate, mst->link->link_caps.num_lanes).full *
++					(63 / max(streams, 1U)) && pbn <= mst_conn->mst_port->full_pbn)
++					goto compressed;
++				max_wire = color->dsc.dsc.bits_per_pixel - 1;
++			}
++		}
++		return -ENOSPC;
++	compressed:
++		bpp = bpc * 3;
++	} else {
++		bpp = 24;
++		pbn = drm_dp_calc_pbn_mode(crtc_state->mode.clock, bpp << 4);
++	}
++	color->bpp = bpp;
+ 
+ 	mst_state = drm_atomic_get_mst_topology_state(crtc_state->state, &mst->mst_mgr);
+ 	if (IS_ERR(mst_state))
+@@ -397,8 +607,8 @@
+ 					      mst_conn->mst_port, pbn);
+ 	if (slots < 0)
+ 		return slots;
+-
+-	return 0;
++	return min(drm_dp_mst_atomic_enable_dsc(crtc_state->state, mst_conn->mst_port,
++					      pbn, !!color->dsc.dsc.bits_per_pixel), 0);
+ }
+ 
+ int msm_dp_mst_attach_encoder(struct msm_dp *dp_display, unsigned int stream_id,
+@@ -571,6 +781,9 @@
+ 
+ 	drm_connector_helper_add(connector, &msm_dp_drm_mst_connector_helper_funcs);
+ 	connector->funcs->reset(connector);
++	connector->max_bpc_property = mst->msm_dp->connector->max_bpc_property;
++	if (connector->max_bpc_property)
++		drm_connector_attach_max_bpc_property(connector, 8, 10);
+ 
+ 	/* add all encoders as possible encoders */
+ 	for (i = 0; i < mst->max_streams; i++) {
+--- a/drivers/gpu/drm/msm/dp/dp_mst_drm.h
++++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.h
+@@ -7,6 +7,14 @@
+ 
+ #include "dp_display.h"
+ 
++struct msm_dp_bridge_state;
++const struct msm_dp_bridge_state *msm_dp_mst_get_color(struct msm_dp *display,
++					struct drm_encoder *encoder,
++					struct drm_atomic_commit *state);
++struct msm_dp_panel *msm_dp_mst_get_panel(struct msm_dp *display,
++					struct drm_encoder *encoder);
++bool msm_dp_display_dsc_requested(struct msm_dp *display, u8 *fec);
++
+ int msm_dp_mst_mgr_init(struct msm_dp *dp_display, struct msm_dp_link *link,
+ 			 u32 max_streams, struct drm_dp_aux *drm_aux);
+ void msm_dp_mst_mgr_destroy(struct msm_dp *dp_display);
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -387,7 +387,11 @@
+ 			       const struct drm_display_mode *mode);
+ bool msm_dp_wide_bus_available(const struct msm_dp *dp_display);
+ struct drm_dsc_config *msm_dp_get_dsc_config(struct msm_dp *display,
++					  struct drm_encoder *encoder,
+ 					  struct drm_atomic_commit *state);
++unsigned int msm_dp_get_dsc_extra_width(struct msm_dp *display, struct drm_encoder *encoder);
++u32 msm_dp_output_drm_format(struct msm_dp *display, struct drm_encoder *encoder,
++			    struct drm_atomic_commit *state);
+ unsigned int msm_dp_output_bpc(const struct msm_dp *dp_display,
+ 			       const struct drm_display_mode *mode);
+ 
+@@ -454,10 +458,21 @@
+ 	return false;
+ }
+ static inline struct drm_dsc_config *msm_dp_get_dsc_config(struct msm_dp *display,
++							 struct drm_encoder *encoder,
+ 							 struct drm_atomic_commit *state)
+ {
+ 	return NULL;
+ }
++static inline unsigned int msm_dp_get_dsc_extra_width(struct msm_dp *display,
++						     struct drm_encoder *encoder)
++{
++	return 0;
++}
++static inline u32 msm_dp_output_drm_format(struct msm_dp *display, struct drm_encoder *encoder,
++		struct drm_atomic_commit *state)
++{
++	return 0;
++}
+ static inline unsigned int msm_dp_output_bpc(const struct msm_dp *dp_display,
+ 					    const struct drm_display_mode *mode)
+ {
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -264,17 +264,14 @@
+ 	info = &dpu_enc->connector->display_info;
+ 	mode = &phys_enc->cached_mode;
+ 
+-	if (drm_mode_is_420_only(info, mode))
+-		return DRM_FORMAT_YUV420;
+ 	if (phys_enc->hw_intf->cap->type == INTF_DP &&
+ 	    of_machine_is_compatible("xiaomi,uke")) {
+ 		struct msm_drm_private *priv = drm_enc->dev->dev_private;
+ 		unsigned int id = dpu_enc->disp_info.h_tile_instance[0];
+-		/* DSC carries byte-packed RGB888 regardless of input precision. */
+-		if (!dpu_encoder_is_dsc_enabled(drm_enc) &&
+-		    msm_dp_output_bpc(priv->kms->dp[id], mode) == 10)
+-			return DRM_FORMAT_XRGB2101010;
++		return msm_dp_output_drm_format(priv->kms->dp[id], drm_enc, NULL);
+ 	}
++	if (drm_mode_is_420_only(info, mode))
++		return DRM_FORMAT_YUV420;
+ 
+ 	return DRM_FORMAT_RGB888;
+ }
+@@ -643,6 +640,8 @@
+ 		enc->disp_info.num_of_h_tiles == 2 &&
+ 		enc->disp_info.h_tile_instance[0] == 0 &&
+ 		enc->disp_info.h_tile_instance[1] == 1 &&
++		/* Source arithmetic down to 1 Hz does not qualify the O82/TDDI receiver. */
++		o82_vrr_test_min_hz >= 30 &&
+ 		qcom_uke_o82_avr_lines(mode, o82_vrr_test_min_hz) > 0 &&
+ 		msm_dsi_manager_uke_avr_check(drm_enc, mode) ? o82_vrr_test_min_hz : 0;
+ }
+@@ -904,7 +903,7 @@
+ 	if (dpu_enc->disp_info.intf_type == INTF_DSI)
+ 		return msm_dsi_get_dsc_config(priv->kms->dsi[index]);
+ 	if (dpu_enc->disp_info.intf_type == INTF_DP)
+-		return msm_dp_get_dsc_config(priv->kms->dp[index], state);
++		return msm_dp_get_dsc_config(priv->kms->dp[index], drm_enc, state);
+ 
+ 	return NULL;
+ }
+@@ -914,6 +913,15 @@
+ 	return dpu_encoder_dsc_for_state(drm_enc, NULL);
+ }
+ 
++unsigned int dpu_encoder_get_dsc_extra_width(struct drm_encoder *encoder)
++{
++	struct msm_drm_private *priv = encoder->dev->dev_private;
++	struct dpu_encoder_virt *enc = to_dpu_encoder_virt(encoder);
++
++	return msm_dp_get_dsc_extra_width(priv->kms->dp[enc->disp_info.h_tile_instance[0]],
++					encoder);
++}
++
+ void dpu_encoder_update_topology(struct drm_encoder *drm_enc,
+ 				 struct msm_display_topology *topology,
+ 				 struct drm_atomic_commit *state,
+@@ -973,7 +981,12 @@
+ 		if (fb && MSM_FORMAT_IS_YUV(msm_framebuffer_format(fb)))
+ 			topology->num_cdm++;
+ 	} else if (disp_info->intf_type == INTF_DP) {
+-		if (drm_mode_is_420_only(&connector->display_info, adj_mode))
++		u32 format = of_machine_is_compatible("xiaomi,uke") ?
++			msm_dp_output_drm_format(priv->kms->dp[disp_info->h_tile_instance[0]],
++				drm_enc, state) : 0;
++
++		if (format == DRM_FORMAT_YUV420 || format == DRM_FORMAT_P010 ||
++		    drm_mode_is_420_only(&connector->display_info, adj_mode))
+ 			topology->num_cdm++;
+ 	}
+ }
+@@ -1010,6 +1023,16 @@
+ 				return true;
+ 		}
+ 	}
++	if (conn_state->crtc && dpu_enc->disp_info.intf_type == INTF_DP &&
++	    of_machine_is_compatible("xiaomi,uke")) {
++		struct msm_drm_private *priv = drm_enc->dev->dev_private;
++		u32 format = msm_dp_output_drm_format(
++			priv->kms->dp[dpu_enc->disp_info.h_tile_instance[0]], drm_enc, state);
++		bool needs_cdm = format == DRM_FORMAT_YUV420 || format == DRM_FORMAT_P010;
++
++		if (needs_cdm != !!(dpu_enc->cur_master && dpu_enc->cur_master->hw_cdm))
++			return true;
++	}
+ 
+ 	return false;
+ }
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
+@@ -84,6 +84,7 @@
+ 		const struct drm_crtc_state *state);
+ 
+ bool dpu_encoder_is_dsc_enabled(const struct drm_encoder *drm_enc);
++unsigned int dpu_encoder_get_dsc_extra_width(struct drm_encoder *encoder);
+ 
+ int dpu_encoder_get_crc_values_cnt(const struct drm_encoder *drm_enc);
+ 
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c
+@@ -139,9 +139,13 @@
+ 		timing->xres = timing->width;
+ 		timing->dce_bytes_per_line = msm_dsc_get_bytes_per_line(dsc);
+ 	}
+-	if (phys_enc->hw_intf->cap->type == INTF_DP && timing->compression_en)
++	if (phys_enc->hw_intf->cap->type == INTF_DP && timing->compression_en) {
++		u32 extra = dpu_encoder_get_dsc_extra_width(phys_enc->parent);
++		timing->width += extra;
++		timing->h_back_porch += extra;
+ 		timing->dce_bytes_per_line = msm_dsc_get_bytes_per_line(
+ 						 dpu_encoder_get_dsc_config(phys_enc->parent));
++	}
+ }
+ 
+ static u32 get_horizontal_total(const struct dpu_hw_intf_timing_params *timing)

@@ -13,14 +13,16 @@ enum { DRM_DP_MST_PAYLOAD_ALLOCATION_NONE,DRM_DP_MST_PAYLOAD_ALLOCATION_LOCAL,
  DRM_DP_MST_PAYLOAD_ALLOCATION_DFP,DRM_DP_MST_PAYLOAD_ALLOCATION_REMOTE,DP_CAP_ANSI_8B10B };
 struct drm_encoder {};
 struct drm_connector { int refs; };
-struct drm_dp_mst_port {};
+struct drm_dp_mst_port {void *passthrough_aux;};
+struct msm_dp_bridge_state {};
+#define DP_FEC_CAPABLE 1
 struct drm_dp_mst_atomic_payload { int payload_allocation_status,vc_start_slot,time_slots,pbn; };
 struct drm_dp_mst_topology_state { drm_dp_mst_atomic_payload payload; };
 struct drm_dp_mst_topology_mgr { unsigned payload_count; };
 struct msm_dp { void *drm_dev;unsigned active_stream_cnt;bool link_ready; };
-struct msm_dp_panel { drm_connector *connector;unsigned stream_id;bool stream_active; };
+struct msm_dp_panel { drm_connector *connector;unsigned stream_id;bool stream_active;void *dsc_aux,*passthrough_aux;bool mst_fec;unsigned char fec_cap; };
 struct msm_dp_mst { drm_dp_mst_topology_mgr mst_mgr;struct msm_dp *msm_dp;bool mst_lock; };
-struct msm_dp_mst_connector { drm_connector connector;msm_dp_mst *dp_mst;drm_dp_mst_port *mst_port; };
+struct msm_dp_mst_connector { drm_connector connector;msm_dp_mst *dp_mst;drm_dp_mst_port *mst_port;void *dsc_aux; };
 struct drm_atomic_commit { msm_dp_mst_connector *connector;drm_dp_mst_topology_state *topology; };
 struct Guard {bool *lock;explicit Guard(bool *p):lock(p){assert(!*lock);*lock=true;}~Guard(){assert(*lock);*lock=false;}};
 #define guard(type) const Guard held
@@ -28,6 +30,9 @@ struct Guard {bool *lock;explicit Guard(bool *p):lock(p){assert(!*lock);*lock=tr
 #define drm_err(...) ((void)0)
 #define drm_dbg_kms(...) ((void)0)
 static msm_dp_panel panel;
+static bool msm_dp_display_dsc_requested(msm_dp*,unsigned char *fec) {*fec=1;return true;}
+static int msm_dp_mst_set_dsc(msm_dp_mst*,msm_dp_panel*,bool) {return 0;}
+static const msm_dp_bridge_state *msm_dp_mst_get_color(msm_dp*,drm_encoder*,drm_atomic_commit*) {return nullptr;}
 static unsigned stage,pm_gets,pm_puts,removes,restores,slot_updates,retained_streams;
 static drm_connector *drm_atomic_get_new_connector_for_encoder(drm_atomic_commit *state,drm_encoder*) {return &state->connector->connector;}
 static msm_dp_panel *msm_dp_mst_panel_from_encoder(msm_dp_mst*,drm_encoder*) {return &panel;}
@@ -44,7 +49,7 @@ static int drm_dp_add_payload_part1(drm_dp_mst_topology_mgr *mgr,drm_dp_mst_topo
  p->payload_allocation_status=DRM_DP_MST_PAYLOAD_ALLOCATION_DFP;return 0;
 }
 static void msm_dp_display_set_stream_info(msm_dp*,msm_dp_panel*,int,int,int) {++slot_updates;}
-static int msm_dp_display_enable_helper(msm_dp *dp,msm_dp_panel *p) {if(stage==4)return -EIO;p->stream_active=true;++dp->active_stream_cnt;return 0;}
+static int msm_dp_display_enable_helper(msm_dp *dp,msm_dp_panel *p,const msm_dp_bridge_state*) {if(stage==4)return -EIO;p->stream_active=true;++dp->active_stream_cnt;return 0;}
 static int drm_dp_check_act_status(drm_dp_mst_topology_mgr*) {return stage==5?-ETIMEDOUT:0;}
 static int drm_dp_add_payload_part2(drm_dp_mst_topology_mgr*,drm_dp_mst_atomic_payload *p) {
  if(stage==6)return -EIO;
@@ -68,10 +73,10 @@ int main() {
  for(retained_streams=0;retained_streams<=1;retained_streams++)for(stage=0;stage<=6;stage++) {
   pm_gets=pm_puts=removes=restores=slot_updates=link_failures=0;
   msm_dp dp{};dp.active_stream_cnt=retained_streams;dp.link_ready=retained_streams!=0;
-  msm_dp_mst mst{{retained_streams},&dp,false};drm_dp_mst_port port;
-  msm_dp_mst_connector connector{{1},&mst,&port};
+  msm_dp_mst mst{{retained_streams},&dp,false};drm_dp_mst_port port{};
+  msm_dp_mst_connector connector{{1},&mst,&port,nullptr};
   drm_dp_mst_topology_state topology{{0,-1,8,100}};drm_atomic_commit state{&connector,&topology};
-  panel={nullptr,1,false};drm_encoder encoder;
+  panel={};panel.stream_id=1;drm_encoder encoder;
   const int result=msm_dp_mst_stream_enable(&encoder,&state);
   if(!stage) {
    assert(!result&&panel.connector==&connector.connector&&panel.stream_active&&connector.connector.refs==2);

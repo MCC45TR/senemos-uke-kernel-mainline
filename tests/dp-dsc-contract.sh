@@ -70,9 +70,10 @@ done
 sed '/^#include /d' "$root/src/display/dp_dsc.h"
 sed '/^#include /d' "$root/src/display/dp_dsc.c"
 sed '/^#include /d' "$kernel/drivers/gpu/drm/msm/dp/dp_reg.h"
+printf '%s\n' '#define msm_dp_dsc_prepare(c,f,m,b,r,l,o) msm_dp_dsc_prepare_bpp(c,f,m,b,r,l,128,o)'
 cat <<'C'
 struct msm_dp_panel {
- struct msm_dp_dsc_config dsc; bool dsc_active;
+ struct msm_dp_dsc_config dsc; bool dsc_active,mst_fec;
  struct { unsigned bpp; bool out_fmt_is_yuv_420; } msm_dp_mode;
  unsigned stream_id; struct { unsigned version; } psr_cap;
 };
@@ -148,7 +149,10 @@ static unsigned format_bpc;
 static bool dpu_encoder_is_dsc_enabled(struct drm_encoder *p) { (void)p; return format_dsc; }
 static bool drm_mode_is_420_only(void *info,void *mode) { (void)info;(void)mode;return format_420; }
 static bool of_machine_is_compatible(const char *name) { (void)name;return format_uke; }
-static unsigned msm_dp_output_bpc(void *dp,void *mode) { (void)dp;(void)mode;return format_bpc; }
+static u32 msm_dp_output_drm_format(void *dp,void *encoder,void *state) {
+ (void)dp;(void)encoder;(void)state;
+ return format_420?DRM_FORMAT_YUV420:!format_dsc&&format_bpc==10?DRM_FORMAT_XRGB2101010:DRM_FORMAT_RGB888;
+}
 C
 extract "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c" dpu_encoder_get_drm_fmt
 cat <<'C'
@@ -162,6 +166,20 @@ int main(void) {
  (void)dpu_encoder_is_dsc_enabled;
  struct drm_display_mode mode={.clock=241500,.hdisplay=2560,.vdisplay=1440};
  struct msm_dp_dsc_config out;
+ /* Independent wire-budget cases exercise the real RC tables and all OEM DTO ratios. */
+ const struct {unsigned bpc,rate,lanes,bpp,dto;} adaptive[]={
+  {8,540000,2,12,0x20109},{10,540000,2,15,0x80509},
+  {10,270000,2,15,0x80509},{10,162000,2,10,0xc0509},
+  {10,270000,1,8,0x30109}
+ };
+ for(unsigned i=0;i<ARRAY_SIZE(adaptive);i++) {
+  assert(!msm_dp_dsc_prepare_bpp(receiver,1,&mode,adaptive[i].bpc,
+   adaptive[i].rate,adaptive[i].lanes,240,&out));
+  assert(out.dsc.bits_per_pixel==adaptive[i].bpp*16 && out.dto==adaptive[i].dto);
+  assert(out.dto_count+1==DIV_ROUND_UP(out.dsc.slice_chunk_size*out.dsc.slice_count,6));
+  assert(out.extra_width<24);
+  assert(msm_dp_dsc_link_fits(&out,&mode,adaptive[i].rate,adaptive[i].lanes));
+ }
  for(unsigned bpc=8;bpc<=10;bpc+=2) for(unsigned hz=60;hz<=75;hz+=15) {
   mode.clock=hz==60?241500:299890;
   assert(!msm_dp_dsc_prepare(receiver,1,&mode,bpc,540000,2,&out));

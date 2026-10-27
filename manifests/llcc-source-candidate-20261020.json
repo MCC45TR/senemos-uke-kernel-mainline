@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "f721945db5bb3fe82e7a777b5cc66e853766b80ff96a9463a1bc7e9022be3cfb"
+      "sha256": "f8f7771a30ce42d7657fcccc51a96156bf3c4d30bf3ef51d1130d4c26c01fa71"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -157,19 +157,19 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "1b09820ace580174304fcbf94b4c4a32a6e288608643717f0e89bdce2ec1805a"
+      "sha256": "7d69d4767c811a5c438cdd45af248395e3cfa5ddb53212762a24e43120b8fd47"
     },
     {
       "path": "src/display/dp_dsc.c",
-      "sha256": "ff0e048226ec605e2becc440fc48c14ef8493b06e82a2611e4927374d3164e7a"
+      "sha256": "db325c6d314d7f0c35393664d6798777744139b9b4c9200d7320463e4504ef5c"
     },
     {
       "path": "src/display/dp_dsc.h",
-      "sha256": "b38f54d26297ba842a4dd7db9b05d44fe8b2c360fa3ae56509fb1056d884a061"
+      "sha256": "2d7e5cf8041b9f21d0b55537937466e911f66db7f3d1ad1b9d15080da6bc2c5c"
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "ca017607635aa66257a039d108f5f4e93da066a0c8adc4a39e89aba957df1582"
+      "sha256": "161ad913959e5b475b22780363c690856248463fa7a2d2de0e03c30997258321"
     },
     {
       "path": "patches/display/0059-uke-displayport-rgb-dsc-fec.patch",
@@ -177,7 +177,7 @@
     },
     {
       "path": "tests/dp-dsc-state-contract.sh",
-      "sha256": "d8cc878da391b7867392b03a80848da84e44646818f79abda4528d5da403e8c7"
+      "sha256": "323dd3b4f431c5cfee7340efce0fb7f5d6d8f4c69bd14f74169e39d353d911a6"
     },
     {
       "path": "patches/display/0060-uke-dp-clear-fec-detected-status.patch",
@@ -185,11 +185,11 @@
     },
     {
       "path": "tests/dp-dsc-tu-contract.sh",
-      "sha256": "18b18357b768fe4baefeae766eaab0c9deb71320adeae2a71a8896dc04378976"
+      "sha256": "ecdf5e2fd969c738e2c80478c424db55e3f7c95b2cb8d3732252fcd9e7cc1284"
     },
     {
       "path": "tests/dp-fec-status-contract.sh",
-      "sha256": "159e9615cb022c30f0b086da922fb9cbb6aa3eb4cb67fe1fecbab866d4f24c69"
+      "sha256": "7c2e3d5b50dc32f2047e8b85a08f73ad657486837331726b3612a42551156e43"
     },
     {
       "path": "patches/display/0061-uke-dp-mst-and-negotiated-lanes.patch",
@@ -197,11 +197,11 @@
     },
     {
       "path": "tests/dp-mst-payload-contract.sh",
-      "sha256": "8a79f90f4fa801a6ed605f3ce7a207dbb2f07d0cc35fe3fa39540f3d8f2b7e1f"
+      "sha256": "c358a66f2ef2c50e3542238f8e936cf2e54b63cb018d7727cd665c511b079822"
     },
     {
       "path": "tests/dp-mst-control-contract.sh",
-      "sha256": "56f33207bd158a38e771320faeb65f683b3ff1b0a88e2cdf3bd590a331b3d658"
+      "sha256": "2f693033ee2b9c14ccc9e0f8ab036f4b22eee435aed27706ea8b45a018f66067"
     },
     {
       "path": "tests/dp-altmode-retimer-contract.sh",
@@ -254,6 +254,38 @@
     {
       "path": "patches/display/0062-uke-dp-dsc-pps-and-byte-transport.patch",
       "sha256": "791eb6d011c71d01fa1382bab87eab922cd238103bbbce0b1f21af8b97817104"
+    },
+    {
+      "path": "patches/display/0063-uke-dp-adaptive-dsc-mst-and-ycbcr.patch",
+      "sha256": "5f88cf5661d2059817b7ea9d803ac291157af5f030cb428b5809131f185049e3"
+    },
+    {
+      "path": "tests/dp-pcon-contract.sh",
+      "sha256": "d45deef96f40898af7e1ee68fb15fb4ce8ff109e64e316cc8a876a2b27a32ff7"
+    },
+    {
+      "path": "tests/dp-mst-dsc-contract.sh",
+      "sha256": "088df37c3097654bc6cbd986cd9ddbc2d3b9e8c378820b2dff447d7ec61d08f8"
+    },
+    {
+      "path": "src/display/o82-avr.h",
+      "sha256": "6ef5e86c82dae71f37a29e644db80e1102a289156c65e92c4613b5fb8e65dc4b"
+    },
+    {
+      "path": "src/display/dpu_10_1_sm7675.h",
+      "sha256": "17d1f021752f643aab1a1709090c12db35e2389bd9cbc660fcfc35de0926cc06"
+    },
+    {
+      "path": "tests/dp-stream-lifetime-contract.sh",
+      "sha256": "49cc69f34849e3842983e0b4021846d4347533b670d72fe057ecaa4c48e188f3"
+    },
+    {
+      "path": "tests/o82-avr-contract.sh",
+      "sha256": "e0b3e3765e616ce07a690ebd6a72cbc6c814ea877f56c784d8bbbe0d42b3a81a"
+    },
+    {
+      "path": "tests/o82-vrr-capability-contract.sh",
+      "sha256": "f48bec6139afa6b39712bfb8c9a14cffc6069e942ab6e395b27b49ec5131d0e6"
     }
   ],
   "baseline_files": [

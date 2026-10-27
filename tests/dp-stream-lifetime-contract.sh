@@ -15,11 +15,12 @@ cat > "$work/test.cpp" <<'CPP'
 enum { DP_STREAM_0, DP_STREAM_1, DP_STREAM_2 };
 struct device { void *of_node; };
 struct platform_device { device dev; };
-struct msm_dp_bridge_state {};
+struct msm_dp_bridge_state {int pcon;};
+#define DP_FEC_CAPABLE 1
 struct drm_bridge {};
 struct drm_atomic_commit {};
 struct msm_dp_ctrl {};
-struct msm_dp_panel { unsigned stream_id; bool stream_active,hdr_active; };
+struct msm_dp_panel { unsigned stream_id; bool stream_active,hdr_active;bool mst_fec=false,dsc_requested=false;unsigned fec_cap=0; };
 struct LinkInfo {unsigned rate,num_lanes;};
 struct msm_dp_link { unsigned sink_count; LinkInfo link_caps,link_params; };
 struct msm_dp { bool is_edp,link_ready; unsigned active_stream_cnt; bool mst_active; platform_device *pdev; drm_bridge *bridge;void *drm_dev;unsigned connector_type; };
@@ -27,6 +28,7 @@ struct msm_dp_display_private {
  msm_dp msm_dp_display; msm_dp_panel *panel; msm_dp_link *link; msm_dp_ctrl *ctrl;
  bool stream_pm_active,stream_link_attempted,phy_initialized; void *drm_dev;
  bool plugged_lock,link_failed,link_status_notified;int link_status_work;
+ void *aux;
 };
 #define container_of(p,type,field) reinterpret_cast<type*>(reinterpret_cast<char*>(p)-offsetof(type,field))
 #define drm_dbg_dp(...) ((void)0)
@@ -63,6 +65,7 @@ static void msm_dp_panel_disable_vsc_sdp(msm_dp_panel *p) { assert(pixel[p->stre
 static void msm_dp_panel_disable_hdr_sdp(msm_dp_panel *p) { assert(pixel[p->stream_id]);++hdroff; }
 static bool of_device_is_compatible(void*,const char*) { return managed; }
 static int msm_dp_display_post_enable(msm_dp*) { return post_error; }
+static int msm_dp_utils_configure_pcon(void*,const int*) {return 0;}
 static void msm_dp_display_audio_notify_disable(msm_dp_display_private*) {}
 static msm_dp_bridge_state color;
 static msm_dp_bridge_state *drm_atomic_get_new_bridge_state(drm_atomic_commit*,drm_bridge*) {return &color;}
@@ -100,10 +103,10 @@ int main() {
  downshift=false;assert(!msm_dp_display_prepare_link(&dp.msm_dp_display));msm_dp_display_unprepare(&dp.msm_dp_display);
  init();assert(!msm_dp_display_prepare_link(&dp.msm_dp_display));
  assert(!msm_dp_display_prepare_link(&dp.msm_dp_display)&&gets==1&&link_on==1);
- assert(!msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0]));
- assert(!msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[1]));
+ assert(!msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0],nullptr));
+ assert(!msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[1],nullptr));
  assert(dp.msm_dp_display.active_stream_cnt==2&&pixel[0]&&pixel[1]);
- stream_error=-EIO;assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[2])==-EIO);
+ stream_error=-EIO;assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[2],nullptr)==-EIO);
  assert(dp.msm_dp_display.active_stream_cnt==2&&!pixel[2]&&!panels[2].stream_active);
  assert(!msm_dp_display_disable(&dp,&panels[2])&&vscoff==0);
  assert(!msm_dp_display_disable(&dp,&panels[0]));msm_dp_display_unprepare(&dp.msm_dp_display);
@@ -112,10 +115,10 @@ int main() {
  assert(!msm_dp_display_disable(&dp,&panels[1]));msm_dp_display_unprepare(&dp.msm_dp_display);
  assert(!dp.msm_dp_display.active_stream_cnt&&puts_count==1&&link_off==1&&vscoff==2&&hdroff==2);
  msm_dp_display_unprepare(&dp.msm_dp_display);assert(puts_count==1&&!warnings);
- init();assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0])==-EIO);
+ init();assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0],nullptr)==-EIO);
  assert(!gets&&!dp.msm_dp_display.active_stream_cnt);
  assert(!msm_dp_display_prepare_link(&dp.msm_dp_display));post_error=-EIO;
- assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0])==-EIO);
+ assert(msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0],nullptr)==-EIO);
  assert(!dp.msm_dp_display.active_stream_cnt&&!pixel[0]&&!panels[0].stream_active);
  msm_dp_display_unprepare(&dp.msm_dp_display);assert(gets==puts_count&&!warnings);
  drm_atomic_commit commit;

@@ -22,7 +22,7 @@ C
 sed '/^#include /d' "$(dirname -- "$source")/../../../../../include/drm/display/drm_dp.h"
 sed '/^#include /d' "$registers"
 cat <<'C'
-struct msm_dp_panel { bool dsc_active; };
+struct msm_dp_panel { bool dsc_active,mst_fec; };
 struct msm_dp_link { unsigned sink_request; };
 struct msm_dp_ctrl_private { bool fec_prepared; void *aux,*drm_dev; struct msm_dp_link *link; };
 static u32 mainlink;
@@ -88,6 +88,9 @@ int main(void) {
  reset();training_error=-ETIMEDOUT;
  assert(msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step)==-ETIMEDOUT);
  assert(training==1 && !status && !panel.dsc_active);
+ panel.mst_fec=true;reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
+ detect_after=1;assert(!msm_dp_ctrl_fec_enable(&ctrl,&panel));
+ assert(!panel.dsc_active&&writes==2);
  puts("Production FEC READY/status-clear ordering, stale-ACK refusal, fresh ACK and failure propagation: PASS; host only.");
 }
 C

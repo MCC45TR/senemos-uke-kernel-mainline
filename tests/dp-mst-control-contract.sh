@@ -14,6 +14,8 @@ cat <<'C'
 #include <errno.h>
 #include <stdio.h>
 typedef uint32_t u32;typedef uint64_t u64;
+enum msm_dp_stream_id {DP_STREAM_0,DP_STREAM_1,DP_STREAM_2,DP_STREAM_3,DP_STREAM_MAX};
+#define MSM_DP_DSC_RGB_PPS_BYTES 88
 typedef int irqreturn_t;
 enum {IRQ_NONE,IRQ_HANDLED,IRQ_WAKE_THREAD};
 enum {connector_status_connected=1,connector_status_disconnected=2,DRM_CONNECTOR_DP_IRQ_HPD=1};
@@ -30,6 +32,7 @@ static unsigned reads,writes,sleeps,last_sleep;static bool timeout;
 static u32 status5,status7;
 C
 sed '/^#include /d' "$(dirname -- "$source")/dp_reg.h"
+awk '/^u32 msm_dp_stream_reg\(/ {emit=1} emit{print} emit&&/^}/{exit}' "$(dirname -- "$source")/dp_panel.c"
 sed -n '/^#define DP_INTERRUPT_STATUS_ACK_SHIFT/,/^#define DP_CTRL_INTR_READY_FOR_VIDEO/p' "$source" | sed '$d'
 cat <<'C'
 static u32 msm_dp_read_ahb(struct msm_dp_ctrl_private *ctrl,u32 reg) {
@@ -61,6 +64,11 @@ for name in msm_dp_display_irq_handler msm_dp_display_irq_thread; do
 done
 cat <<'C'
 int main(void) {
+ for(u32 reg=REG_DP_COMPRESSION_MODE_CTRL;reg<REG_DP_PPS_DATA+88;reg+=4) {
+  assert(msm_dp_stream_reg(DP_STREAM_0,reg)==reg);
+  assert(msm_dp_stream_reg(DP_STREAM_1,reg)==reg+0x3e0);
+ }
+ assert(msm_dp_stream_reg(DP_STREAM_1,REG_DP_SDP_FLUSH)==REG_DP_SDP_FLUSH+4);
  struct msm_dp_ctrl_private ctrl={0};struct msm_dp_panel panel={0};
  assert(!msm_dp_ctrl_mst_send_act(&ctrl.msm_dp_ctrl,&panel)&&!writes&&!sleeps);
  ctrl.mst_active=true;
