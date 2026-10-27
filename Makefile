@@ -40,7 +40,7 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/hardware-dt.sh
 	bash tests/ufs-ice-contract.sh
 	bash -n tests/ufs-ice-dt-contract.sh
-	bash -n tests/ufs-mcq-contract.sh tests/bwmon-vote-error-contract.sh
+	bash -n tests/ufs-mcq-contract.sh tests/bwmon-vote-error-contract.sh tests/usbss-kconfig-contract.sh
 	bash -n tests/ufs-mcq-allocation-contract.sh
 	bash -n tests/wcd939x-channel-switch-contract.sh tests/wcd939x-probe-error-contract.sh \
 	    tests/wcd939x-reset-consumer-contract.sh tests/wcd939x-reset-contract.sh \

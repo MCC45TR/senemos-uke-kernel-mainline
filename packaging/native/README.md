@@ -1,5 +1,11 @@
 # Mainline native source profile
 
+27 October 2026, Linux 7.3.0-27 source candidate: apply coordinated-reset
+dependencies to the actual Type-C USBSS module. The separate fixed USB2 driver
+retains its original dependency scope. Actual Kconfig checks cover the complete
+profile and every missing pin/reset/supply dependency. Retain release-26 BWMON
+error handling; physical audio, bandwidth voting and boot acceptance remain open.
+
 27 October 2026, Linux 7.3.0-26 source candidate: retain release-25 audio
 foundations and preserve the last successful BWMON bandwidth when an OPP vote
 fails. Report rate-limited errors; later IRQ requests can retry an unchanged

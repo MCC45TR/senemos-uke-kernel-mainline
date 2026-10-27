@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 26
+%global senemos_build_release 27
 %else
 %global senemos_build_release 1
 %endif
@@ -183,6 +183,7 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+bash native-profile/tests/usbss-kconfig-contract.sh "$PWD" "%{_uke_out}/scripts/kconfig/conf"
 
 printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
 
@@ -398,6 +399,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-27
+- Apply reset, pin and supply dependencies to the Type-C USBSS module.
+- Retain the separate fixed USB2 driver dependency scope and check both real Kconfig stanzas.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-26
 - Preserve the last applied BWMON bandwidth after failed OPP transactions.
 - Exercise actual IRQ-thread vote errors, retries, OPP references and rearming on the host.

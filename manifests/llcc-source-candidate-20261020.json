@@ -289,7 +289,7 @@
     },
     {
       "path": "patches/boot/0018-wcd939x-coordinated-reset.patch",
-      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+      "sha256": "5610df6ae41c127bf07e1c1431dab0d04793f766217358189f440f7bebe0d246"
     },
     {
       "path": "patches/boot/0019-sm7675-lpass-pinctrl.patch",
@@ -342,6 +342,10 @@
     {
       "path": "tests/bwmon-vote-error-contract.sh",
       "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
+    },
+    {
+      "path": "tests/usbss-kconfig-contract.sh",
+      "sha256": "32e1d242b63d3b00a6d23c7a2742ac925adc6a4f4b7bdb943554669912fa5bcb"
     }
   ],
   "baseline_files": [
@@ -464,7 +468,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-26",
+  "kernel_release": "7.3.0-27",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

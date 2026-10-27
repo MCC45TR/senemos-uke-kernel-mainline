@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 26, retaining release-25 audio provider/reset foundations and release-24 RNG, ICE and transactional MCQ with the established SKU/input/display/speaker/USB profile. Preserve the last successful BWMON bandwidth after failed OPP transactions and report rate-limited errors; actual IRQ-thread host fixtures cover failures and subsequent retries. Native BWMON resource/OPP conversion, analog codec/jack/PCM, CDSP and physical acceptance remain open. Source and build checks do not establish tablet installation.",
+  "source_origin": "Linux 7.3 Uke native source candidate 27, retaining release-26 BWMON vote-error handling, release-25 audio provider/reset foundations and release-24 RNG, ICE and transactional MCQ. Apply reset/pin/supply dependencies to the actual Type-C USBSS module while preserving the separate fixed USB2 driver scope. Native BWMON resource/OPP conversion, analog codec/jack/PCM, CDSP and physical acceptance remain open. Source and build checks do not establish tablet installation.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "8a1b87a3ac2354e86a17075aa4ac3420d5ee282bf8cd2122f1d32c0a762594df"
+      "sha256": "3abd341d02d07c0fb14bfeb86852466bff29e7989e015f3a0b2571bb09f325c1"
     },
     {
       "path": "tests/native-firewall-contract.sh",
@@ -237,7 +237,7 @@
     },
     {
       "path": "patches/boot/0018-wcd939x-coordinated-reset.patch",
-      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+      "sha256": "5610df6ae41c127bf07e1c1431dab0d04793f766217358189f440f7bebe0d246"
     },
     {
       "path": "patches/boot/0019-sm7675-lpass-pinctrl.patch",
@@ -290,6 +290,10 @@
     {
       "path": "tests/bwmon-vote-error-contract.sh",
       "sha256": "02468fa05f576e97e1aa9de14a57442a109df871ee54aa1c2f6545ddb2be5eb9"
+    },
+    {
+      "path": "tests/usbss-kconfig-contract.sh",
+      "sha256": "32e1d242b63d3b00a6d23c7a2742ac925adc6a4f4b7bdb943554669912fa5bcb"
     }
   ],
   "root_selector_capability": {

@@ -96,17 +96,17 @@ WCD93xx codec bindings. The Uke USBSS provider uses the standard reset core.
    - qcom,tx-device
    - qcom,rx-device
    - qcom,micbias1-microvolt
---- a/drivers/usb/common/Kconfig
-+++ b/drivers/usb/common/Kconfig
-@@ -52,7 +52,7 @@
- 
- config USB_WCD939X_UKE
- 	bool "Xiaomi Uke WCD939x USB2 routing"
--	depends on I2C && REGULATOR && GPIOLIB
-+	depends on I2C && REGULATOR && GPIOLIB && OF && PINCTRL && RESET_CONTROLLER
+--- a/drivers/usb/typec/mux/Kconfig
++++ b/drivers/usb/typec/mux/Kconfig
+@@ -98,7 +98,7 @@
+ config TYPEC_MUX_UKE_WCD939X
+ 	tristate "Uke WCD939x USB2 and DisplayPort AUX switch"
+-	depends on I2C && OF
++	depends on I2C && OF && REGULATOR && GPIOLIB && PINCTRL && RESET_CONTROLLER
  	select REGMAP_I2C
  	help
- 	  Configure the fixed USB2 data route through the WCD939x on Xiaomi Uke.
+ 	  Exact Uke WCD2.0 Type-C USB2/AUX routing. Firmware owns CC/PD.
+ 	  The fixed USB2 rescue profile uses its existing separate driver.
 --- a/sound/soc/codecs/wcd939x.c
 +++ b/sound/soc/codecs/wcd939x.c
 @@ -21,6 +21,7 @@
