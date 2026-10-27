@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "7d1d4f5959ecb53b948c7c9f8282c3b079b5e0f2a84bd7ad600f02a743b91b61"
+      "sha256": "8388c2ef5dcb5bbc1422d2d10e7bf9541b8144a2a43e983bbd6da34a3888f14e"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "1bedc2c4e27510dbe0c59277da5c6e478f2577b07c07623136dbdee3825c201f"
+      "sha256": "69d2a817418edae5e09f6cf7884bde55c3e372369c75c8c63cf3702a7b2f0064"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -385,7 +385,7 @@
     },
     {
       "path": "tests/wpss-proxy-contract.sh",
-      "sha256": "59c3ad5b184e3132425c92520c436da8d371d215f8010207f08ea40d8f13822e"
+      "sha256": "08886938fb787dd9a7e30cc0c20ac1c3873eac5ee5e9411e33027ef35a097061"
     },
     {
       "path": "tests/pas-stop-ownership-contract.sh",
@@ -410,6 +410,10 @@
     {
       "path": "patches/boot/0027-remoteproc-early-stop.patch",
       "sha256": "74f89a8228b62906833d3ee640f090b0b3b41ad99b4abae3c526b85f026833c9"
+    },
+    {
+      "path": "patches/boot/0028-cliffs-proxy-per-rail-ownership.patch",
+      "sha256": "2e92813312db2ae041941e8983845a554194a93fa3508bcdc998722cc22dbb1d"
     }
   ],
   "baseline_files": [

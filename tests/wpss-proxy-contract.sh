@@ -27,7 +27,8 @@ struct qcom_pas {
     unsigned int proxy_regulator_count = 2, proxy_regulator_load = 0;
     regulator_bulk_data proxy_regs[3] {};
     uint8_t proxy_voltage_mask = 0, proxy_load_mask = 0;
-    bool proxy_regs_enabled = false;
+    bool proxy_regs_enabled = false; // Retained to reproduce the old bulk path.
+    uint8_t proxy_enable_mask = 0;
     int proxy_error = 0;
     regulator *cx_supply = nullptr, *px_supply = nullptr;
 };
@@ -36,7 +37,8 @@ struct qcom_pas_data {
 };
 regulator rails[3];
 int fail_vote = -1, bulk_error = 0, get_error = 0, errors = 0, gets = 0;
-int fail_load = -1, fail_unvote = -1, fail_unload = -1, bulk_enables = 0, bulk_disables = 0;
+int fail_load = -1, fail_unvote = -1, fail_unload = -1, enable_calls = 0, disable_calls = 0;
+int fail_enable = -1, fail_disable = -1;
 int pd_gets = 0, pd_puts = 0;
 bool of_property_present(void *node, const char *name) {
     auto *d = static_cast<device *>(node);
@@ -49,24 +51,33 @@ template<class... T> void dev_err(device *, const char *, T...) { ++errors; }
 int regulator_set_voltage(regulator *r, int value, int maximum) {
     assert(maximum == INT_MAX);
     if ((value && r - rails == fail_vote) || (!value && r - rails == fail_unvote)) return -EIO;
+    if (!value) assert(!r->refs);
     r->vote = value;
     return 0;
 }
-int regulator_bulk_enable(int count, regulator_bulk_data *regs) {
-    ++bulk_enables;
-    if (bulk_error) return bulk_error; // Regulator core unwinds failed enables.
-    for (int i = 0; i < count; ++i) {
-        assert(!regs[i].consumer->refs);
-        regs[i].consumer->enabled = true; ++regs[i].consumer->refs;
-    }
+int regulator_enable(regulator *r) {
+    ++enable_calls;
+    if (bulk_error || r-rails==fail_enable) return -EIO;
+    assert(!r->refs); r->enabled=true; ++r->refs;
     return 0;
 }
+int regulator_disable(regulator *r) {
+    ++disable_calls;
+    if (bulk_error || r-rails==fail_disable) return -EIO;
+    assert(r->refs==1); r->enabled=false; --r->refs;
+    return 0;
+}
+// Model core.c's bulk rollback, including its ignored secondary failures.
+int regulator_bulk_enable(int count, regulator_bulk_data *regs) {
+    int results[3],error=0;
+    for(int i=0;i<count;i++) { results[i]=regulator_enable(regs[i].consumer); if(!error) error=results[i]; }
+    if(error) for(int i=0;i<count;i++) if(!results[i]) regulator_disable(regs[i].consumer);
+    return error;
+}
 int regulator_bulk_disable(int count, regulator_bulk_data *regs) {
-    ++bulk_disables;
-    if (bulk_error) return bulk_error; // Core restores enables after a failure.
-    for (int i = 0; i < count; ++i) {
-        assert(regs[i].consumer->refs == 1);
-        regs[i].consumer->enabled = false; --regs[i].consumer->refs;
+    for(int i=count-1;i>=0;i--) {
+        int ret=regulator_disable(regs[i].consumer);
+        if(ret) { for(++i;i<count;i++) regulator_enable(regs[i].consumer); return ret; }
     }
     return 0;
 }
@@ -122,9 +133,21 @@ int main() {
         assert(qcom_pas_init_regulator(&pas) == 0);
         auto clean = [&] {
             assert(!pas.proxy_error);
-            assert(!pas.proxy_regs_enabled && !pas.proxy_voltage_mask && !pas.proxy_load_mask);
+            assert(!pas.proxy_enable_mask && !pas.proxy_voltage_mask && !pas.proxy_load_mask);
             for (const auto &r : rails) assert(!r.enabled && !r.refs && !r.vote && !r.load);
         };
+        fail_enable=1; fail_disable=0;
+        assert(qcom_pas_proxy_enable(&pas)==-EIO);
+        assert(rails[0].refs==1 && rails[0].vote==turbo && pas.proxy_enable_mask==BIT(0));
+        fail_enable=fail_disable=-1;
+        assert(qcom_pas_proxy_enable(&pas)==0 && pas.proxy_enable_mask==BIT(count)-1);
+        for(unsigned int i=0;i<count;i++) assert(rails[i].refs==1);
+        assert(qcom_pas_proxy_disable(&pas)==0); clean();
+        assert(qcom_pas_proxy_enable(&pas)==0);
+        fail_disable=0; fail_enable=static_cast<int>(count-1);
+        assert(qcom_pas_proxy_disable(&pas)==-EIO);
+        assert(pas.proxy_enable_mask==BIT(0) && rails[0].refs==1 && rails[count-1].refs==0);
+        fail_enable=fail_disable=-1; assert(qcom_pas_proxy_disable(&pas)==0); clean();
         for (unsigned int stage = 0; stage <= count; ++stage) {
             fail_vote = stage < count ? static_cast<int>(stage) : -1;
             bulk_error = stage == count ? -EIO : 0;
@@ -135,35 +158,35 @@ int main() {
             fail_load = stage;
             assert(qcom_pas_proxy_enable(&pas) == -EIO); clean();
         }
-        fail_load = -1; bulk_enables = bulk_disables = errors = 0;
-        assert(qcom_pas_proxy_enable(&pas) == 0 && bulk_enables == 1);
-        assert(qcom_pas_proxy_enable(&pas) == 0 && bulk_enables == 1);
+        fail_load = -1; enable_calls = disable_calls = errors = 0;
+        assert(qcom_pas_proxy_enable(&pas) == 0 && enable_calls == static_cast<int>(count));
+        assert(qcom_pas_proxy_enable(&pas) == 0 && enable_calls == static_cast<int>(count));
         bulk_error = -EIO;
         assert(qcom_pas_proxy_disable(&pas)==-EIO && pas.proxy_error==-EIO);
-        assert(errors == 1 && pas.proxy_regs_enabled);
+        assert(errors == static_cast<int>(count) && pas.proxy_enable_mask == BIT(count)-1);
         for (unsigned int i = 0; i < count; ++i)
             assert(rails[i].refs == 1 && rails[i].vote == turbo && rails[i].load == static_cast<int>(pas.proxy_regulator_load));
-        assert(qcom_pas_proxy_enable(&pas) == 0 && bulk_enables == 1);
+        assert(qcom_pas_proxy_enable(&pas) == 0 && enable_calls == static_cast<int>(count));
         bulk_error = 0;
         qcom_pas_proxy_disable(&pas); clean();
         qcom_pas_proxy_disable(&pas); clean();
-        assert(bulk_disables == 2);
+        assert(disable_calls == static_cast<int>(2*count));
         for (unsigned int stage = 0; stage < count; ++stage) {
             assert(qcom_pas_proxy_enable(&pas) == 0);
             fail_unvote = static_cast<int>(stage);
             assert(qcom_pas_proxy_disable(&pas)==-EIO && pas.proxy_error==-EIO);
-            assert(!pas.proxy_regs_enabled && pas.proxy_voltage_mask == BIT(stage));
+            assert(!pas.proxy_enable_mask && pas.proxy_voltage_mask == BIT(stage));
             assert(rails[stage].vote == turbo && !rails[stage].refs);
-            const int disabled = bulk_disables;
+            const int disabled = disable_calls;
             fail_unvote = -1;
             qcom_pas_proxy_disable(&pas); clean();
-            assert(bulk_disables == disabled);
+            assert(disable_calls == disabled);
         }
         if (count == 3) for (int stage = 0; stage < 3; ++stage) {
             assert(qcom_pas_proxy_enable(&pas) == 0);
             fail_unload = stage;
             assert(qcom_pas_proxy_disable(&pas)==-EIO && pas.proxy_error==-EIO);
-            assert(!pas.proxy_regs_enabled && pas.proxy_load_mask == BIT(stage));
+            assert(!pas.proxy_enable_mask && pas.proxy_load_mask == BIT(stage));
             assert(rails[stage].load == 100000 && !rails[stage].refs);
             fail_unload = -1;
             qcom_pas_proxy_disable(&pas); clean();

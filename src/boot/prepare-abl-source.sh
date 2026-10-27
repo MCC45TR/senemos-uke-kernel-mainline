@@ -165,6 +165,6 @@ sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.pa
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
     0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \
-    0027-remoteproc-early-stop.patch; do
+    0027-remoteproc-early-stop.patch 0028-cliffs-proxy-per-rail-ownership.patch; do
     sha256sum "$here/../../patches/boot/$cdsp_patch" >> "$output/abl-source-SHA256SUMS"
 done

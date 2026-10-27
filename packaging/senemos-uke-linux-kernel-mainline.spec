@@ -402,6 +402,7 @@ fi
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-29
 - Restore the Cliffs NSP/crypto suppliers and two/three-rail proxy ownership.
 - Preserve PAS stop errors and prepare target shutdown before client removal.
+- Track each proxy enable reference when bulk rollback can itself fail.
 - Retain real Sysmon ACKs and test retry and legacy paths during source preparation.
 - Native CDSP activation and physical lifecycle acceptance remain unqualified.
 
