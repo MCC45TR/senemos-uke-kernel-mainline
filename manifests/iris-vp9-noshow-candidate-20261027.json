@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-27",
+  "status": "source-and-module-build-candidate",
+  "base_commit": "e3229b4e2295b38515977b43116b82534d62f662",
+  "target_kernel": "7.3.0-19",
+  "active_preparation": false,
+  "package_or_nvr_changed": false,
+  "patch": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
+  "patch_sha256": "fafd22a31daa9a5eccdc7ca6f5a68d5231939981a7b99228e2bf7efdc05a916e",
+  "fixture": "tests/iris-vp9-nonshow-contract.sh",
+  "fixture_sha256": "83ab67774043e08267da598dae8e7e6a020d1baea4fdbd96985b288458fa34ee",
+  "diagnosis": {
+    "original_module_compressed_sha256": "5384e91654d9b2de2c63c97e16b1f25b5f9f2ee10c0a94b70ce25e28d6e5848a",
+    "instrumented_trace_only": true,
+    "actual_picture_type": "0x42 P|NOSHOW",
+    "raw_size": 0,
+    "raw_timestamp": 0,
+    "raw_firmware_flags": 0,
+    "data_corrupt_events": 0,
+    "overflow_events": 0,
+    "own_probes_removed": true,
+    "global_trace_state_preserved": true
+  },
+  "donor_review": {
+    "uke_oem_commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "uke_oem_limit": "No selected video sources in bounded techpack/video and msm/vidc paths",
+    "same_soc_commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+    "same_soc_finding": "NOSHOW enum exists; no portable matching completion handler found in the bounded driver source search",
+    "upstream_linux_commit": "d135ab453a7400a34930bdda1ef4bdc8acfac80e",
+    "upstream_finding": "Current Iris also maps NOSHOW to ERROR",
+    "license": "GPL-2.0-only; modified Qualcomm 2022-2024 completion handler",
+    "board_values_copied": false,
+    "donor_code_executed": false
+  },
+  "host_fixture": {
+    "actual_functions_executed": true,
+    "queue_and_ownership_modeled": true,
+    "old_source_failed_checks": 5,
+    "candidate_checks_passed": 23
+  },
+  "module_build": {
+    "compiler": "clang23.1.4-1.fc46 x86_64 targeting AArch64",
+    "sdk_image_sha256": "c18fe0ac7b154f01be89d2b9dcb4643bf78d8b2f39b3ec010d516b025629f841",
+    "source": "Exact retained kernel19 prepared tree with the single candidate patch",
+    "signed_kernel_config_sha256": "984e03a00c88bc2df982adddf2e060bf90a849d5be93adf9e98313516f88fadb",
+    "config_changes": [
+      "CC_CAN_LINK capability probe unavailable for the host cross linker",
+      "PAHOLE_VERSION changes from0 to130; debug/BTF configuration remains disabled"
+    ],
+    "other_functional_config_changes": false,
+    "full_arm64_iris_compilation_passed": true,
+    "full_kernel_or_package_built": false,
+    "module_sha256": "e8d684e8131588805aa8d9064719e2bd088458e49600b4ed923b50b63bae2764",
+    "vermagic": "7.3.0-19 SMP preempt mod_unload aarch64",
+    "intree": true,
+    "undefined_symbol_set_equals_installed_original": true,
+    "undefined_symbols": 145,
+    "this_module_section_size": 1216,
+    "module_symvers_catalog_present": false,
+    "modpost_unresolved_symbol_warnings": true,
+    "depends_metadata_empty": true,
+    "complete_dependency_or_package_acceptance": false,
+    "scope": "Temporary insmod trial requires original providers already loaded; not an installable module RPM"
+  },
+  "tablet_candidate_loaded": false,
+  "tablet_frames_accepted": false,
+  "persistent_installation": false
+}
