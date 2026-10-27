@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 31
+%global senemos_build_release 32
 %else
 %global senemos_build_release 1
 %endif
@@ -400,6 +400,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-32
+- Restore all owned OPP bandwidth requests after a failed multi-path vote.
+- Retain rollback uncertainty and retry incomplete OPP/BWMON cached targets.
+- Own the bandwidth snapshot with its paths and propagate allocation failures.
+- Keep CPU/LLCC DT admission and physical acceptance open.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-31
 - Reject invalid native L3 clocks and zero/descending frequency tables.
 - Retain native frequency width and unwind failed ICC link allocation.

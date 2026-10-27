@@ -47,6 +47,13 @@ cover clock, mapping, allocation, graph and provider failures on the host.
 CPU/LLCC BWMON activation still requires paired L3 votes and complete multi-path
 OPP failure handling. No new L3 node or monitor is enabled by this prerequisite.
 
+Source candidate `7.3.0-32` retains a bandwidth snapshot with each OPP path set,
+restores all paths after failure and keeps incomplete transitions retryable.
+BWMON retries even when the next sample returns to the last successful target.
+Actual-function host fixtures cover initial/removal votes, failed rollback,
+OPP-cache suppression and owned path/snapshot allocation and release. CPU/LLCC
+DT admission, matched full build/package and physical acceptance remain open.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora
