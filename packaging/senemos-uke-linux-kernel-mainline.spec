@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 30
+%global senemos_build_release 31
 %else
 %global senemos_build_release 1
 %endif
@@ -251,6 +251,7 @@ CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-probe-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko

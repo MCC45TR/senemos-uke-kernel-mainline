@@ -38,6 +38,16 @@ the host. CPU/LLCC secondary L3 voting, MEMLAT and physical bandwidth/lifecycle
 acceptance remain open. No tablet installation or bandwidth measurement is
 claimed for this candidate.
 
+On 27 October 2026, POCO Pad X1 running Fedora Rawhide and `7.3.0-30`
+has all required speaker packages and the exact preset, but no ALSA card.
+The strict buffer loader rejects valid shared-memory endpoint widgets. Four
+amplifiers initially NACK; a later controlled reprobe identifies all four as
+0x2900/0x00a3 and loads their expected presets. Candidate `7.3.0-31` admits
+the two endpoint types, defers transient amplifier detection failures and
+restores the reviewed speaker-rotation patch omitted from the release-30
+source lineage. Actual-callback host regression and protection tests pass;
+automatic boot recovery and physical playback require separate tablet evidence.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 30, retaining candidate-29 CDSP prerequisites, audio/reset, RNG and UFS guards. Add native DDR BWMON with exact Uke frequency/width OPPs and byte-to-decimal-ICC conversion. Normalize existing MC phandle arguments after final overlays, preserving their zero tags, and add an AMC/WAKE-only monitor request. Owned counter-read faults discard the sample and rearm without changing the applied vote. CPU/LLCC secondary L3 voting, MEMLAT, other hardware paths and physical acceptance remain open. No device operation or firmware bytes are included.",
+  "source_origin": "Linux 7.3 Uke native source candidate 31, retaining candidate-29 CDSP prerequisites, audio/reset, RNG and UFS guards. Add native DDR BWMON with exact Uke frequency/width OPPs and byte-to-decimal-ICC conversion. Normalize existing MC phandle arguments after final overlays, preserving their zero tags, and add an AMC/WAKE-only monitor request. Owned counter-read faults discard the sample and rearm without changing the applied vote. CPU/LLCC secondary L3 voting, MEMLAT, other hardware paths and physical acceptance remain open. No device operation or firmware bytes are included. Restore reviewed amplifier rotation, admit valid shared-memory topology endpoints and defer transient amplifier bus failures. Release-30 tablet diagnosis and host callback regressions are separate from candidate-31 boot/playback acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,

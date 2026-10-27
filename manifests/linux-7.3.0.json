@@ -480,6 +480,14 @@
     {
       "path": "patches/7.3.0/0117-asoc-uke-audio-runtime-safety.patch",
       "sha256": "369a439c03297a9c215d4760cdb75d8dde0ef9f7f3a5b985bf3ed286dc8bbc69"
+    },
+    {
+      "path": "patches/7.3.0/0118-asoc-fs19xx-speaker-rotation.patch",
+      "sha256": "402797bee14b7938d3f182009350078583043ef89280af6235ec1a50a389940e"
+    },
+    {
+      "path": "patches/7.3.0/0119-asoc-uke-probe-readiness.patch",
+      "sha256": "3b471cf198606afb0008dcd315034ffa0c573c60907e702cff71729150b0bec9"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
