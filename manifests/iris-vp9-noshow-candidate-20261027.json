@@ -6,9 +6,9 @@
   "active_preparation": false,
   "package_or_nvr_changed": false,
   "patch": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
-  "patch_sha256": "fafd22a31daa9a5eccdc7ca6f5a68d5231939981a7b99228e2bf7efdc05a916e",
+  "patch_sha256": "4598c3b2669d928172bfd318733aa39729972979d643abe2db1cc96ce26b4cdb",
   "fixture": "tests/iris-vp9-nonshow-contract.sh",
-  "fixture_sha256": "83ab67774043e08267da598dae8e7e6a020d1baea4fdbd96985b288458fa34ee",
+  "fixture_sha256": "4a3eb7cf139d09c5054c4b9f37c5ee1a3d73e62e0c69428e3da5aea13b8aeaab",
   "diagnosis": {
     "original_module_compressed_sha256": "5384e91654d9b2de2c63c97e16b1f25b5f9f2ee10c0a94b70ce25e28d6e5848a",
     "instrumented_trace_only": true,
@@ -36,7 +36,8 @@
     "actual_functions_executed": true,
     "queue_and_ownership_modeled": true,
     "old_source_failed_checks": 5,
-    "candidate_checks_passed": 23
+    "candidate_checks_passed": 23,
+    "evidence_stage": "Initial display-order-only candidate; current both-order fixture is decode_order_extension.fixture"
   },
   "module_build": {
     "compiler": "clang23.1.4-1.fc46 x86_64 targeting AArch64",
@@ -62,7 +63,8 @@
     "complete_dependency_or_package_acceptance": false,
     "scope": "Temporary insmod trial requires original providers already loaded; not an installable module RPM",
     "all_unmodified_iris_C_headers_makefile_Kconfig_equal_to_accepted_base": true,
-    "only_changed_function_size": "iris_hfi_gen2_handle_output_buffer"
+    "only_changed_function_size": "iris_hfi_gen2_handle_output_buffer",
+    "evidence_stage": "Initial display-order-only module; current combined module is decode_order_extension.module"
   },
   "tablet_candidate_loaded": true,
   "tablet_frames_accepted": true,
@@ -219,5 +221,7 @@
       "full_signed_delivery_pending": true,
       "sustained_lifecycle_browser_physical_acceptance": false
     }
-  }
+  },
+  "original_display_order_patch_sha256": "fafd22a31daa9a5eccdc7ca6f5a68d5231939981a7b99228e2bf7efdc05a916e",
+  "original_display_order_fixture_sha256": "83ab67774043e08267da598dae8e7e6a020d1baea4fdbd96985b288458fa34ee"
 }
