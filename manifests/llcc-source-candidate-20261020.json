@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "f721945db5bb3fe82e7a777b5cc66e853766b80ff96a9463a1bc7e9022be3cfb"
+      "sha256": "25dfb8aa75f0a9e5323ba3b246db64dd8e01d076deb0e08bc70d97ff479daa9a"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -328,7 +328,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-16",
+  "kernel_release": "7.3.0-20",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -26,6 +26,7 @@ case $(cat "$profile/audio-profile") in
     services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
     registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
     hdmi-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_HDMI=1);;
+    speakers) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_SPEAKERS=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
@@ -33,6 +34,8 @@ alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
     -o "$output/POCO-Pad-X1-HDMI-tplg.bin"
+alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" \
+    -o "$output/POCO-Pad-X1-tplg.bin"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 git -C "$kernel" apply --check "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
@@ -65,7 +68,7 @@ bash "$profile/tests/dp-mst-control-contract.sh" "$kernel/drivers/gpu/drm/msm/dp
 bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
-if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
+if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
     git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
@@ -96,5 +99,9 @@ fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-re
 if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
     bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
     bash "$profile/tests/dp-audio-topology-contract.sh"
+fi
+if [[ $(cat "$profile/audio-profile") == speakers ]]; then
+    bash "$profile/tests/speaker-audio-fdt-contract.sh" "$kernel"
+    bash "$profile/tests/speaker-audio-topology-contract.sh"
 fi
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'
