@@ -38,6 +38,8 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/identity-contract.sh
 	bash tests/fm19511-contract.sh
 	bash tests/hardware-dt.sh
+	bash tests/ufs-ice-contract.sh
+	bash -n tests/ufs-ice-dt-contract.sh
 	bash -n src/nfc/prepare-source.sh tests/nfc-syntax.sh tests/ir-spi-contract.sh
 	bash tests/kernel-family-contract.sh
 	bash tests/userdata-grow-contract.sh

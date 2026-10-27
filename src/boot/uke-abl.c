@@ -47,6 +47,8 @@ void __init uke_abl_prepare_cmdline(const void *fdt, char *cmdline,
 #include "uke-root-selector.h"
 #endif
 
+#include "uke-ufs.h"
+
 static int UKE_INIT uke_path_reg(const void *fdt, const char *path,
 				unsigned int address, unsigned int bytes)
 {
@@ -930,7 +932,7 @@ int UKE_INIT uke_abl_transform(void *output, size_t capacity,
 	    fdt32_to_cpu(board[1]) != 0 ||
 	    fdt_node_check_compatible(input, 0, "qcom,cliffs-mtp") ||
 	    capacity > UKE_FDT_CAPACITY || capacity <= input_bytes ||
-	    uke_path_reg(input, "/soc/ufshc@1d84000", 0x1d84000, 0x3000) ||
+	    uke_ufs_admit(input) ||
 	    uke_path_reg(input, "/soc/ufsphy_mem@1d80000", 0x1d80000, 0x2000) ||
 	    uke_reboot_cell(input) || uke_wifi_graph(input) || uke_legacy_layout(input) || uke_gpu_opps(input) ||
 	    uke_backlight_bus(input) || uke_spi_graph(input) || uke_board_pins(input) ||

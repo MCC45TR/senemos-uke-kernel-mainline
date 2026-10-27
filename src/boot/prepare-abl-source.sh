@@ -54,6 +54,7 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profi
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
+install -m644 "$here/uke-ufs.h" "$kernel/arch/arm64/kernel/uke-ufs.h"
 install -m644 "$here/uke-identity.c" "$kernel/arch/arm64/kernel/uke-identity.c"
 install -m644 "$here/uke-hardware.h" "$kernel/arch/arm64/kernel/uke-hardware.h"
 install -Dm644 "$here/bindings/firmware/xiaomi,uke-ssc-sensors.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
@@ -99,7 +100,7 @@ done
 printf '%s\n' "$usb_profile" > "$output/usb-profile"
 printf '%s\n' "$llcc_profile" > "$output/llcc-profile"
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo lights.dtbo > overlay-SHA256SUMS)
-sha256sum "$here/uke-abl.c" "$here/uke-identity.c" "$here/uke-hardware.h" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
+sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-hardware.h" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
     "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" \
     "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
     "$here/../../patches/boot/0002-uke-sensor-context-banks.patch" \

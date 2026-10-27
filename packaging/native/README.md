@@ -597,3 +597,13 @@ notification uses the actual registered PCM device and is absent before
 control registration or after component removal. Foreign DP parents retain
 their original behavior. Monitor-name persistence and audio hotplug require
 separate tablet acceptance; host fixtures do not establish those results.
+
+27 October 2026: source candidate 23 connects the exact contiguous Cliffs
+ICE/HWKM windows to the upstream host-owned ICE path. It adds the native
+`ice_core_clk` name and the OEM 100--403 MHz frequency range while retaining
+the existing always-on UFS GDSC providers. Admission requires all five OEM
+resource pairs and the matching shared-ICE allocator; unqualified layouts
+are rejected before overlay application. Upstream retains SCM, version and
+fuse checks and the default raw-key policy. No Android key, storage layout or
+root mount is changed. MCQ integration, a full matched build, recoverable boot
+and isolated inline-encryption I/O acceptance remain pending.

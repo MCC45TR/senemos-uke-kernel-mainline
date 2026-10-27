@@ -33,11 +33,11 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "ea3c36ac4e1d31188f0cc69370a0da09cd7d76acfb7ff4e3e23059b0c934f9b5"
+      "sha256": "42aaa14a776ea3479d595f82137cea447fc69d92183e82249d3611e39441968a"
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "0a65bc46fee9bfc222f7949ee1015bd02a7cb16fd4f8a159e2207d09436f26a1"
+      "sha256": "962717cc365e9b6731e799f9b001a3fdde37a98c73fa9b0620f91cdbc3bd152c"
     },
     {
       "path": "src/boot/uke-llcc.h",
@@ -250,6 +250,14 @@
     {
       "path": "tests/touch-matrix.c",
       "sha256": "c0ae5afe7311705665ad89e9251793981386f0892a33c123e672f8543b61e18d"
+    },
+    {
+      "path": "src/boot/uke-ufs.h",
+      "sha256": "d7c66fd3b1a10d13589dcd806e47fad2f27a1fbd9677670b32296772a9575366"
+    },
+    {
+      "path": "src/boot/sm7675-uke-ufs.dtso",
+      "sha256": "ac12345c7b45406529cdf6929d4456a0ebe8cc59eb570166e7f8363306ef49f2"
     }
   ],
   "baseline_files": [
