@@ -16,6 +16,8 @@ if [[ -z $kernel ]]; then
     ' "$root/patches/7.3.0/0115-asoc-fs19xx-smart-amplifier.patch" > "$kernel/sound/soc/codecs/fs19xx.c"
     git -C "$kernel" apply --include=sound/soc/codecs/fs19xx.c \
         "$root/patches/7.3.0/0117-asoc-uke-audio-runtime-safety.patch"
+    git -C "$kernel" apply --include=sound/soc/codecs/fs19xx.c \
+        "$root/patches/7.3.0/0118-asoc-fs19xx-speaker-rotation.patch"
 fi
 source_file=$kernel/sound/soc/codecs/fs19xx.c
 cat > "$work/check.c" <<'C'
@@ -29,6 +31,8 @@ cat > "$work/check.c" <<'C'
 typedef uint8_t u8; typedef uint16_t u16, __le16; typedef uint32_t __le32;
 #define __packed __attribute__((packed))
 #define BIT(n) (1U << (n))
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+#define is_power_of_2(x) ((x) && !((x) & ((x)-1)))
 #define GENMASK(h,l) ((~0U << (l)) & (~0U >> (31-(h))))
 #define FIELD_GET(m,v) (((v)&(m)) >> __builtin_ctz(m))
 #define FIELD_PREP(m,v) (((v) << __builtin_ctz(m)) & (m))
@@ -86,15 +90,18 @@ struct snd_soc_component { struct fs19xx_priv *data; };
 struct snd_soc_dai { struct snd_soc_component *component; };
 struct snd_pcm_substream { int unused; };
 struct snd_kcontrol { struct snd_soc_component *component; };
-struct snd_ctl_elem_value { struct { struct { long value[1]; } integer; } value; };
+struct snd_ctl_elem_value { struct { struct { long value[1]; } integer;
+    struct { unsigned item[1]; } enumerated; } value; };
 static struct snd_soc_component *snd_kcontrol_chip(struct snd_kcontrol *c) { return c->component; }
 static struct fs19xx_priv *snd_soc_component_get_drvdata(struct snd_soc_component *c) { return c->data; }
 C
+sed -n '/^static const char \* const fs19xx_rotation_text\[\]/p' "$source_file" >> "$work/check.c"
 for fn in fs19xx_read_stable fs19xx_apply_unit fs19xx_write_tables fs19xx_reset_chip \
-          fs19xx_chip_init fs19xx_set_volume_reg fs19xx_chip_start fs19xx_chip_stop \
+          fs19xx_chip_init fs19xx_set_volume_reg fs19xx_set_rotation_reg fs19xx_chip_start fs19xx_chip_stop \
           fs19xx_unmute_work fs19xx_power_on fs19xx_power_off fs19xx_dai_startup \
           fs19xx_dai_mute fs19xx_dai_shutdown fs19xx_volume_get fs19xx_volume_put \
-          fs19xx_enable_get fs19xx_enable_put fs19xx_suspend fs19xx_resume fs19xx_detect fs19xx_i2c_remove; do
+          fs19xx_enable_get fs19xx_enable_put fs19xx_rotation_get fs19xx_rotation_put \
+          fs19xx_suspend fs19xx_resume fs19xx_detect fs19xx_i2c_remove; do
     awk -v name="$fn" '$0 ~ "^static [^(]*[ *]" name "\\(" {emit=1} emit {print} emit && /^}/ {exit}' \
         "$source_file" > "$work/function.c"
     grep -Fq "$fn(" "$work/function.c"
@@ -114,8 +121,9 @@ static void fresh(void) {
     regs.reg[FS19XX_REG_CHIPINI]=FS19XX_CHIPINI_DONE_A;
     gpio.asserted=true; sleeps=unlocks=0;
     amp.regmap=&regs; amp.gpio_reset=&gpio; amp.preset=(u8 *)"qualified fixture";
-    amp.volume=FS19XX_VOL_DEFAULT; amp.tcoef=258;
+    amp.volume=FS19XX_VOL_DEFAULT; amp.tcoef=258; amp.position=8;
 }
+static int rotation(unsigned v) { value.value.enumerated.item[0]=v; return fs19xx_rotation_put(&control,&value); }
 static int enabled(long v) { value.value.integer.value[0]=v; return fs19xx_enable_put(&control,&value); }
 static int volume(long v) { value.value.integer.value[0]=v; return fs19xx_volume_put(&control,&value); }
 static void start(void) {
@@ -218,6 +226,33 @@ int main(void) {
     assert(fs19xx_dai_mute(&dai,0,0)==0 && amp.powered);
     struct i2c_client client={.data=&amp}; fs19xx_i2c_remove(&client); stopped();
     assert(enabled(0)==-ENODEV && fs19xx_dai_mute(&dai,0,0)==-ENODEV);
+    fresh(); assert(rotation(4)==-EINVAL && regs.writes==0);
+    amp.preset=NULL; assert(rotation(1)==-ENODEV && regs.writes==0);
+    fresh(); assert(rotation(1)==1 && regs.writes==0 && !amp.powered);
+    assert(fs19xx_suspend(&component)==0 && rotation(2)==1 && regs.writes==0);
+    assert(fs19xx_resume(&component)==0 && !amp.powered);
+    assert(enabled(1)==1 && fs19xx_dai_mute(&dai,0,0)==0);
+    assert(FIELD_GET(FS19XX_I2SCTRL_CHS12,regs.reg[FS19XX_REG_I2SCTRL])==2);
+    fs19xx_rotation_get(&control,&value); assert(value.value.enumerated.item[0]==2);
+    /* Expected rows are LT, RT, LB, RB from the exact OEM position contract. */
+    const unsigned positions[]={8,2,4,1};
+    const unsigned channels[4][4]={{1,2,1,2},{2,2,1,1},{2,1,2,1},{1,1,2,2}};
+    for (unsigned turn=0;turn<4;turn++) for(unsigned pos=0;pos<4;pos++) {
+        fresh(); amp.position=positions[pos];
+        regs.reg[FS19XX_REG_I2SCTRL]=0xa6e7;
+        assert(fs19xx_set_rotation_reg(&amp,turn)==0);
+        assert(regs.reg[FS19XX_REG_I2SCTRL]==
+            ((0xa6e7 & ~FS19XX_I2SCTRL_CHS12)|FIELD_PREP(FS19XX_I2SCTRL_CHS12,channels[turn][pos])));
+    }
+    fresh(); amp.position=0; assert(fs19xx_set_rotation_reg(&amp,0)==-EINVAL && regs.writes==0);
+    start(); assert(rotation(1)==1 && amp.rotation==1 && amp.powered);
+    writes=regs.writes; assert(rotation(1)==0 && regs.writes==writes);
+    regs.fail_read=FS19XX_REG_I2SCTRL;
+    assert(rotation(2)==-EIO && amp.rotation==1); stopped();
+    start(); regs.fail_write=FS19XX_REG_I2SCTRL;
+    assert(rotation(2)==-EIO && amp.rotation==0); stopped();
+    fresh(); regs.fail_write=FS19XX_REG_I2SCTRL;
+    assert(enabled(1)==1 && fs19xx_dai_mute(&dai,0,0)==-EIO); stopped();
     assert(FS19XX_VOL_MAX==0xdf);
     puts("FS19xx real lifecycle: clock/thermal faults, retry, switch, shutdown, suspend and remove passed; host only");
 }

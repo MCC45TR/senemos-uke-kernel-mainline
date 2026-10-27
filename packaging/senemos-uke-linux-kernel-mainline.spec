@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 21
+%global senemos_build_release 22
 %else
 %global senemos_build_release 1
 %endif
@@ -41,6 +41,7 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
 Recommends: uke-displayport-audio >= 0.1.0-6
+Recommends: uke-speaker-orientation >= 0.1.0-1
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -395,6 +396,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-22
+- Add bounded OEM speaker rotation controls and restore routing before unmute.
+- Recommend the native Wayland session helper for KDE and GNOME display transforms.
+
 * Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-21
 - Contain FS19xx clock, thermal, register and stream-lifecycle failures.
 - Enforce the uncalibrated volume ceiling and propagate invalid AudioReach setup.
