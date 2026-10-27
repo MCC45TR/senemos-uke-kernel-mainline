@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 25
+%global senemos_build_release 26
 %else
 %global senemos_build_release 1
 %endif
@@ -225,9 +225,6 @@ CC=clang bash native-profile/tests/dp-dsc-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dp-dsc-state-contract.sh drivers/gpu/drm/msm/dp/dp_display.c
 CC=clang bash native-profile/tests/dp-fec-status-contract.sh drivers/gpu/drm/msm/dp/dp_ctrl.c
 CC=clang bash native-profile/tests/dp-dsc-tu-contract.sh "$PWD"
-CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
-CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
-CC=clang bash native-profile/tests/o82-vrr-floor-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-protection-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
@@ -295,7 +292,6 @@ CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/disp
 CC=clang bash native-profile/tests/o82-readback-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/o82-refresh-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-pll-bias-contract.sh "$PWD" %{_uke_out}
-CXX=clang++ bash native-profile/tests/dpu-dsi-timing-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-data.h native-profile/src/display/panel-xiaomi-o82.c
 
 CXX=clang++ bash native-profile/tests/o82-dfps-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-dfps-atomic-contract.sh drivers/gpu/drm/msm/msm_atomic.c
@@ -399,6 +395,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-26
+- Extend timing fixtures for DP DTO padding and run them before kernel compilation.
+- Retain one execution of each AVR contract in the package check phase.
+
 * Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-25
 - Refuse MST state allocation, max-bpc and path-property errors without leaking references.
 - Exercise constructor faults before packaging the display negotiation candidate.

@@ -33,7 +33,7 @@ struct drm_display_mode {
 struct drm_dsc_config {
     unsigned int bits_per_pixel,bits_per_component,slice_count,slice_chunk_size;
 };
-struct drm_encoder { bool dsc,wide; drm_dsc_config config; };
+struct drm_encoder { bool dsc,wide; drm_dsc_config config; unsigned int extra_width; };
 struct dpu_intf_caps { int type; };
 struct dpu_hw_intf { dpu_intf_caps *cap; };
 struct dpu_encoder_phys { drm_encoder *parent; dpu_hw_intf *hw_intf; };
@@ -46,6 +46,7 @@ struct dpu_hw_intf_timing_params {
 static bool dpu_encoder_is_widebus_enabled(const drm_encoder *e) { return e->wide; }
 static bool dpu_encoder_is_dsc_enabled(const drm_encoder *e) { return e->dsc; }
 static drm_dsc_config *dpu_encoder_get_dsc_config(drm_encoder *e) { return &e->config; }
+static unsigned int dpu_encoder_get_dsc_extra_width(drm_encoder *e) { return e->extra_width; }
 static unsigned int drm_dsc_get_bpp_int(const drm_dsc_config *d) { return d->bits_per_pixel>>4; }
 static unsigned int msm_dsc_get_bytes_per_line(const drm_dsc_config *d) {
     return d->slice_count*d->slice_chunk_size;
@@ -107,6 +108,13 @@ int main() {
     dpu_hw_intf_timing_params timing{};
     drm_mode_to_intf_timing_params(&physical,&o82_modes[3].mode,&timing);
     assert(timing.width==3200);
+    encoder.wide=true;encoder.extra_width=2;
+    drm_mode_to_intf_timing_params(&physical,&o82_modes[3].mode,&timing);
+    assert(timing.width==1602 && timing.xres==1600 && timing.h_back_porch==131);
+    assert(timing.dce_bytes_per_line==1600);
+    encoder.dsc=false;
+    drm_mode_to_intf_timing_params(&physical,&o82_modes[3].mode,&timing);
+    assert(timing.width==1600 && timing.h_back_porch==129 && !timing.compression_en);
 }
 CPP
 } >> "$work/check.cpp"

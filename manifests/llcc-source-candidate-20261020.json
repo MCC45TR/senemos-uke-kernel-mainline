@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "fedbffe9bceb5c6cfe92fdd43364c67546bfe4377531a4d5cbbae47663927991"
+      "sha256": "f2ddef9d4c78480cb1972fe4e0fd1e5cbd78f2d02f5a61889b5d5e6d241236fa"
     },
     {
       "path": "patches/display/0054-uke-independent-display-crtcs.patch",
@@ -290,6 +290,10 @@
     {
       "path": "tests/dp-mst-connector-contract.sh",
       "sha256": "002584ec1289fca6304917bd898c856e321e3bf1e926f0172d8f80a6f713efeb"
+    },
+    {
+      "path": "tests/dpu-dsi-timing-contract.sh",
+      "sha256": "a7a8e0e502b433d15597215773719c44dad4bdf5ef509f8116b53616e6bde95f"
     }
   ],
   "baseline_files": [
@@ -412,7 +416,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-25",
+  "kernel_release": "7.3.0-26",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
