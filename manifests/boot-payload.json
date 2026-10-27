@@ -365,7 +365,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "509cf1b12a4e421566b07e1d1c2834230012c96714e06ce2a88c17de82b14901"
+      "sha256": "7d1d4f5959ecb53b948c7c9f8282c3b079b5e0f2a84bd7ad600f02a743b91b61"
     }
   ],
   "root_selector_capability": {

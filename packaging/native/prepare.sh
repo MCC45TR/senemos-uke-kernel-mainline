@@ -50,18 +50,6 @@ git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
-# NSP shares SH1 with the native display paths prepared above.
-for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
-    0026-cliffs-proxy-and-pas-stop-ownership.patch 0027-remoteproc-early-stop.patch; do
-    git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
-    git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
-done
-bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
-bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
-SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
-bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
-bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
-bash "$profile/tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
@@ -93,6 +81,18 @@ if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
     fi
 fi
 bash "$profile/src/video/prepare-source.sh" "$kernel"
+# NSP shares SH1 with the native display and video paths prepared above.
+for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
+    0026-cliffs-proxy-and-pas-stop-ownership.patch 0027-remoteproc-early-stop.patch; do
+    git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
+    git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
+done
+bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
+SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+bash "$profile/tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
     "${usb_cpp[@]}" \
