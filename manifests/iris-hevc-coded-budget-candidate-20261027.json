@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "status": "source-and-cross-module-checked-not-device-qualified",
+  "status": "bounded-RAM-mode-samples-passed-signed-delivery-pending",
   "base_commit": "e3229b4e2295b38515977b43116b82534d62f662",
   "additional_candidate": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
   "patch": "patches/video/0019-sm7675-hevc-coded-frame-budget.patch",
@@ -23,7 +23,10 @@
   },
   "source_diagnosis": {
     "upstream_linux_commit": "d135ab453a7400a34930bdda1ef4bdc8acfac80e",
-    "upstream_files": ["drivers/media/platform/qcom/iris/iris_vdec.c", "drivers/media/platform/qcom/iris/iris_utils.c"],
+    "upstream_files": [
+      "drivers/media/platform/qcom/iris/iris_vdec.c",
+      "drivers/media/platform/qcom/iris/iris_utils.c"
+    ],
     "hevc_output_height_alignment": 32,
     "mbpf_dimensions": "Maximum of coded input and crop dimensions; unchanged",
     "visible": "4096x2160",
@@ -64,6 +67,54 @@
     "modpost_suppressed_undefined_warnings": 135,
     "complete_dependencies_full_kernel_and_signed_package_built": false
   },
-  "tablet_candidate_tested": false,
-  "next_gate": "Protected temporary RAM trial with actual4096 HEVC Main/Main10 crop and exact pixels, remaining modes and complete before/active/restored GPU regressions"
+  "tablet_candidate_tested": true,
+  "next_gate": "Integrate only after full matched kernel/signature/package checks; remaining lifecycle, sustained rates, original browser and physical output validation are separate",
+  "ram_trial": {
+    "date": "2026-10-27",
+    "module_sha256": "78527fe1696b1267e06172ba42f1ac12d3125e0c05a61c27a26964fc05dee20e",
+    "source_commit": "bcf68f4",
+    "untraced": true,
+    "native_client_sha256": "bf0635b3e2e0d161ccb3c4bf20fae34b7ff29cca04940d64f32bdc368c7458d6",
+    "scoped_va_source_family": "uke-additional1.0.0-12/COPR11212019",
+    "scoped_va_child": "uke-vaapi-v4l2-1.0.0-3",
+    "scoped_va_elf_sha256": "eac2beb23b0dafbdcafc57d5ec8a5bdb72aafa54ef64ddceb389c8a7a59eb4e6",
+    "jobs_passed": 45,
+    "actual_child_status_all_zero": true,
+    "full_framehash_rows_equal_jobs": 43,
+    "unknown_avframe_duration_jobs": 2,
+    "native_4096_hevc_main_and_main10": {
+      "visible": [
+        4096,
+        2160
+      ],
+      "capture": [
+        4096,
+        2176
+      ],
+      "frames_each": 30,
+      "strides": [
+        4096,
+        8192
+      ],
+      "packed_pixels_timing_size_sar_exact": true
+    },
+    "scoped_va_4096_profiles": 7,
+    "nominal_high_rate_profile_api_samples": 28,
+    "native_hevc_minimum_and720_regressions": 4,
+    "native_uhd_vp9_profiles": 2,
+    "native_uhd_vp9_frames_each": 60,
+    "native_uhd_vp9_scope": "Exact pixels,PTS/DTS,size,dimensions,SAR;AVFrame duration0 permitted unknown;raw writer duration17 versus reference16 retained separately",
+    "new_codec_kernel_errors": 0,
+    "iris_refs_after_each": 0,
+    "original_module_restored": true,
+    "stock_module_bytes_boot_state_and_taint_unchanged": true,
+    "restored_default_vainfo_passed": true,
+    "complete_gpu_reports": 6,
+    "candidate_active_gpu_sample_reached": true,
+    "fd732_gl_pixels_and_context_restoration_equal": true,
+    "original_chrome_closed": true,
+    "persistent_module_package_or_boot_installation": false,
+    "sustained_advertised_rates_accepted": false,
+    "full_lifecycle_or_profile_wide_acceptance": false
+  }
 }
