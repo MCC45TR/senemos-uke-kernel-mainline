@@ -58,6 +58,13 @@ int main(int argc,char **argv) {
     assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"remoteproc-adsp@03000000")>=0);
     assert(!fdt_setprop_u32(dt.data(),path(dt.data(),"/soc/remoteproc-adsp@03000000"),"phandle",42));
     assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"xiaomi_fingerprint")>=0);
+    assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"qrng@10c3000")>=0);
+    const char *rng="/soc/qrng@10c3000";
+    assert(!fdt_setprop_string(dt.data(),path(dt.data(),rng),"compatible","qcom,msm-rng"));
+    const fdt32_t rng_reg[]={cpu_to_fdt32(0x10c3000),cpu_to_fdt32(0x1000)};
+    assert(!fdt_setprop(dt.data(),path(dt.data(),rng),"reg",rng_reg,sizeof rng_reg));
+    assert(!fdt_setprop(dt.data(),path(dt.data(),rng),"qcom,no-qrng-config",nullptr,0));
+    assert(!fdt_setprop(dt.data(),path(dt.data(),rng),"qcom,no-clock-support",nullptr,0));
     assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"qcom,mdss_mdp@ae00000")>=0);
     const char *parent="/soc/qcom,mdss_mdp@ae00000";
     for(const char *name:{"unused-panel","referenced-panel","aliased-panel"}) {
@@ -70,12 +77,35 @@ int main(int argc,char **argv) {
     assert(!fdt_setprop_string(dt.data(),path(dt.data(),"/aliases"),"panel0","/soc/qcom,mdss_mdp@ae00000/aliased-panel"));
     assert(!fdt_setprop_string(dt.data(),path(dt.data(),"/__symbols__"),"old_panel","/soc/qcom,mdss_mdp@ae00000/unused-panel"));
     auto initial=dt;
+    for(unsigned fault=0;fault<8;++fault) {
+        auto bad=initial;int n=path(bad.data(),rng);
+        if(fault<3) {
+            fdt32_t reg[]={cpu_to_fdt32(fault==0?0x10c4000:0x10c3000),cpu_to_fdt32(fault==1?0x2000:0x1000)};
+            assert(!fdt_setprop(bad.data(),n,"reg",reg,fault==2?4:sizeof reg));
+        }
+        if(fault==3)assert(!fdt_delprop(bad.data(),n,"qcom,no-qrng-config"));
+        if(fault==4)assert(!fdt_setprop_string(bad.data(),n,"compatible","other,rng"));
+        if(fault==5)assert(!fdt_setprop_u32(bad.data(),n,"clocks",42));
+        if(fault==6)assert(!fdt_setprop_u32(bad.data(),n,"qcom,no-clock-support",1));
+        if(fault==7)assert(!fdt_setprop_string(bad.data(),n,"clock-names","core"));
+        auto before=bad;assert(uke_hardware_names(bad.data())<0&&bad==before);
+    }
+    {
+        auto disabled=initial;
+        assert(!fdt_setprop_string(disabled.data(),path(disabled.data(),rng),"status","disabled"));
+        assert(!uke_hardware_names(disabled.data()));
+        assert(!std::strcmp(text(disabled.data(),rng,"status"),"disabled"));
+    }
     assert(!uke_hardware_names(dt.data()));
     assert(!std::strcmp(text(dt.data(),"/cpus","model"),"Qualcomm Snapdragon 7+ Gen 3"));
     assert(!std::strcmp(text(dt.data(),"/cpus/cpu@200","compatible"),"arm,cortex-a520"));
     assert(!std::strcmp(text(dt.data(),"/cpus/cpu@300","compatible"),"arm,cortex-a720"));
     assert(!std::strcmp(text(dt.data(),"/cpus/cpu@700","compatible"),"arm,cortex-x4"));
     assert(!std::strcmp(text(dt.data(),"/memory","model"),"LPDDR5X"));
+    assert(!fdt_node_check_compatible(dt.data(),path(dt.data(),rng),"qcom,sm7675-trng"));
+    assert(!fdt_node_check_compatible(dt.data(),path(dt.data(),rng),"qcom,trng"));
+    assert(!fdt_getprop(dt.data(),path(dt.data(),rng),"qcom,no-qrng-config",nullptr));
+    assert(!fdt_getprop(dt.data(),path(dt.data(),rng),"qcom,no-clock-support",nullptr));
     assert(!std::strcmp(text(dt.data(),"/firmware/uke-accessories","pen-model"),"Xiaomi Focus Pen"));
     int count=0,n;fdt_for_each_subnode(n,dt.data(),path(dt.data(),"/firmware/ssc-sensors")) {
         assert(!fdt_node_check_compatible(dt.data(),n,"xiaomi,uke-ssc-sensor"));

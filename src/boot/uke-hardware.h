@@ -7,6 +7,46 @@ static int UKE_INIT uke_hardware_child(void *fdt, int parent, const char *name)
 	return node == -FDT_ERR_NOTFOUND ? fdt_add_subnode(fdt, parent, name) : node;
 }
 
+static int UKE_INIT uke_hardware_rng(void *fdt)
+{
+	static const char compatible[] = "qcom,sm7675-trng\0qcom,trng";
+	const fdt32_t *reg;
+	int node = fdt_path_offset(fdt, "/soc/qrng@10c3000"), bytes, ret;
+	unsigned int i;
+	static const char *const legacy[] = { "qcom,no-qrng-config", "qcom,no-clock-support" };
+	bool converted;
+
+	if (node == -FDT_ERR_NOTFOUND)
+		return 0;
+	if (node < 0)
+		return node;
+	reg = (const fdt32_t *)fdt_getprop(fdt, node, "reg", &bytes);
+	if (!reg || bytes != 8 || fdt32_to_cpu(reg[0]) != 0x10c3000 ||
+	    fdt32_to_cpu(reg[1]) != 0x1000 || fdt_getprop(fdt, node, "clocks", NULL) ||
+	    fdt_getprop(fdt, node, "clock-names", NULL))
+		return -FDT_ERR_BADVALUE;
+	converted = !fdt_node_check_compatible(fdt, node, "qcom,sm7675-trng") &&
+		    !fdt_node_check_compatible(fdt, node, "qcom,trng");
+	if (!converted) {
+		if (fdt_node_check_compatible(fdt, node, "qcom,msm-rng"))
+			return -FDT_ERR_BADVALUE;
+		for (i = 0; i < ARRAY_SIZE(legacy); i++)
+			if (!fdt_getprop(fdt, node, legacy[i], &bytes) || bytes)
+				return -FDT_ERR_BADVALUE;
+	}
+	/* The firmware owns setup: upstream TRNG reads the FIFO without reprogramming it. */
+	ret = fdt_setprop(fdt, node, "compatible", compatible, sizeof(compatible));
+	if (ret)
+		return ret;
+	for (i = 0; i < ARRAY_SIZE(legacy); i++) {
+		node = fdt_path_offset(fdt, "/soc/qrng@10c3000");
+		ret = fdt_delprop(fdt, node, legacy[i]);
+		if (ret && ret != -FDT_ERR_NOTFOUND)
+			return ret;
+	}
+	return 0;
+}
+
 static int UKE_INIT uke_hardware_names(void *fdt)
 {
 	static const struct {
@@ -54,6 +94,9 @@ static int UKE_INIT uke_hardware_names(void *fdt)
 	if (fdt_node_check_compatible(fdt, 0, "xiaomi,uke") ||
 	    fdt_node_check_compatible(fdt, 0, "qcom,sm7675"))
 		return -FDT_ERR_BADVALUE;
+	ret = uke_hardware_rng(fdt);
+	if (ret)
+		return ret;
 	node = fdt_path_offset(fdt, "/soc/xiaomi_fingerprint");
 	if (node >= 0) {
 		ret = fdt_setprop_string(fdt, node, "status", "disabled");

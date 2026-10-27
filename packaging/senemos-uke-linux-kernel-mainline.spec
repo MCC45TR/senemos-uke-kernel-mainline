@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 22
+%global senemos_build_release 23
 %else
 %global senemos_build_release 1
 %endif
@@ -176,7 +176,7 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
     CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
     CONFIG_PINCTRL_SM8650_LPASS_LPI=m CONFIG_FM19511_UKE=m \
-    CONFIG_RC_CORE=m CONFIG_LIRC=y CONFIG_IR_SPI=m; do
+    CONFIG_RC_CORE=m CONFIG_LIRC=y CONFIG_IR_SPI=m CONFIG_HW_RANDOM_QCOM=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -396,6 +396,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-23
+- Connect the exact firmware-initialized Uke RNG to the upstream TRNG driver.
+- Require matching resources and retain disabled or unqualified hardware paths.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-22
 - Preserve SKU identity, report the processor and LPDDR5X, and describe SSC-owned sensors.
 - Add the POCO-only FM19511 tag transport and Uke infrared through upstream LIRC.

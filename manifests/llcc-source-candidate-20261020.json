@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "3cac4b3361f190bedb8a45f75b5086a2ce1fea77546b0596a445e8f63422fab6"
+      "sha256": "ea3c36ac4e1d31188f0cc69370a0da09cd7d76acfb7ff4e3e23059b0c934f9b5"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -372,7 +372,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-22",
+  "kernel_release": "7.3.0-23",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

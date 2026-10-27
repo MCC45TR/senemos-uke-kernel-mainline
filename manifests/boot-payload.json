@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 22, retaining the release-21 display, input, audio and USB adaptation. Adds exact product names, firmware-owned SSC descriptions, conservative template removal, POCO-only FM19511 tag transport and upstream LIRC infrared through OEM SE1. Source and host checks do not establish tablet boot, NFC RF or IR optical acceptance.",
+  "source_origin": "Linux 7.3 Uke native source candidate 23, retaining release-22 hardware descriptions, SKU admission, NFC/IR and the release-21 input/display/audio/USB profile. Adds exact-resource admission to the firmware-initialized upstream TRNG path. Source, object and host checks do not establish tablet installation or hardware acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "3b5d7cf956e7b0f0330466676f43209611507d6a05970c401472403e7972d0b2"
+      "sha256": "f3fbf4e1323b6725a9c08d33f05b26af67afca2f1869977f6a269ecdb9773e60"
     },
     {
       "path": "tests/native-firewall-contract.sh",
