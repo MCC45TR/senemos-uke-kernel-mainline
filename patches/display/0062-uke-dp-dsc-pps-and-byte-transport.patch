@@ -1,0 +1,54 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: transmit Uke DSC PPS and preserve byte transport
+
+The Uke OEM catalog at 44275c404a677d9d9e5230fedd1af2ef02fc7b9a
+and same-SoC OnePlus display source at 1138e00fee63582a0cc6a53af3286621786827b7
+use flush bit 0 to transmit PPS and clear bit 2 for continuous PPS. Setting
+bit 2 alone never triggers the parameter packet.
+
+Keep DSC transport at 8 bpc in both DPU interface format and DP stream
+configuration, independently of the original 8/10-bpc samples described by
+PPS and VSC. Preserve uncompressed depth, runtime source-bit reporting,
+DSI, checked FEC admission and the downstream HDMI budget.
+
+The regression executes the production functions and fails on the old
+PPS write. Cover both stream banks and both source depths. Hardware
+acceptance remains separate from these host checks.
+
+--- a/drivers/gpu/drm/msm/dp/dp_panel.c
++++ b/drivers/gpu/drm/msm/dp/dp_panel.c
+@@ -597,7 +597,8 @@
+ 	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO, BIT(0) | BIT(3) | (1 << 8) | (3 << 16));
+ 	msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, config->compression_ctrl);
+ 	flush = msm_dp_read_link(panel, REG_DP_SDP_FLUSH);
+-	msm_dp_write_link(panel, REG_DP_SDP_FLUSH, flush | BIT(2));
++	/* OEM bit 0 sends PPS; clear bit 2 to repeat it with the stream. */
++	msm_dp_write_link(panel, REG_DP_SDP_FLUSH, (flush & ~BIT(2)) | BIT(0));
+ }
+ 
+ static void msm_dp_panel_send_sdp(struct msm_dp_panel_private *panel,
+--- a/drivers/gpu/drm/msm/dp/dp_ctrl.c
++++ b/drivers/gpu/drm/msm/dp/dp_ctrl.c
+@@ -619,7 +619,8 @@
+ 		config |= DP_CONFIGURATION_CTRL_RGB_YUV; /* YUV420 */
+ 
+ 	tbd = msm_dp_link_get_test_bits_depth(ctrl->link,
+-					      msm_dp_panel->msm_dp_mode.bpp);
++			msm_dp_panel->dsc.dsc.bits_per_pixel ? 24 :
++			msm_dp_panel->msm_dp_mode.bpp);
+ 
+ 	config |= tbd << DP_CONFIGURATION_CTRL_BPC_SHIFT;
+ 
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -270,7 +270,9 @@
+ 	    of_machine_is_compatible("xiaomi,uke")) {
+ 		struct msm_drm_private *priv = drm_enc->dev->dev_private;
+ 		unsigned int id = dpu_enc->disp_info.h_tile_instance[0];
+-		if (msm_dp_output_bpc(priv->kms->dp[id], mode) == 10)
++		/* DSC carries byte-packed RGB888 regardless of input precision. */
++		if (!dpu_encoder_is_dsc_enabled(drm_enc) &&
++		    msm_dp_output_bpc(priv->kms->dp[id], mode) == 10)
+ 			return DRM_FORMAT_XRGB2101010;
+ 	}
+ 

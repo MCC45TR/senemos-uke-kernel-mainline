@@ -99,6 +99,9 @@ if [[ $version == 7.3.0 ]]; then
     patch=$here/../../patches/display/0061-uke-dp-mst-and-negotiated-lanes.patch
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
+    patch=$here/../../patches/display/0062-uke-dp-dsc-pps-and-byte-transport.patch
+    git -C "$kernel" apply --check "$patch"
+    git -C "$kernel" apply "$patch"
 fi
 for path in "${paths[@]}"; do
     source=${path##*/}

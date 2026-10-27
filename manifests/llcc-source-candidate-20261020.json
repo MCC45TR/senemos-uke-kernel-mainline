@@ -157,7 +157,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "3021c1a9b5715abd2408c1db4b97f314c95368c53076a82bbf280f2deb27addd"
+      "sha256": "1b09820ace580174304fcbf94b4c4a32a6e288608643717f0e89bdce2ec1805a"
     },
     {
       "path": "src/display/dp_dsc.c",
@@ -169,7 +169,7 @@
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "b41bb314c8881112e46971df48bb964cd458ae831e2b1b43e012b3c85a1058d1"
+      "sha256": "ca017607635aa66257a039d108f5f4e93da066a0c8adc4a39e89aba957df1582"
     },
     {
       "path": "patches/display/0059-uke-displayport-rgb-dsc-fec.patch",
@@ -250,6 +250,10 @@
     {
       "path": "tests/touch-matrix.c",
       "sha256": "c0ae5afe7311705665ad89e9251793981386f0892a33c123e672f8543b61e18d"
+    },
+    {
+      "path": "patches/display/0062-uke-dp-dsc-pps-and-byte-transport.patch",
+      "sha256": "791eb6d011c71d01fa1382bab87eab922cd238103bbbce0b1f21af8b97817104"
     }
   ],
   "baseline_files": [

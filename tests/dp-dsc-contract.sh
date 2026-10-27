@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Host-only execution of production DSC and upstream RC/PPS helpers; no AUX I/O.
 set -Eeuo pipefail
+ulimit -c 0
 kernel=${1:?Pass the prepared kernel tree}
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 cmp "$root/src/display/dp_dsc.c" "$kernel/drivers/gpu/drm/msm/dp/dp_dsc.c"
@@ -46,7 +47,7 @@ static bool warn_on(bool value) { return value; }
 #define DRM_DEBUG_KMS(...) ((void)0)
 #define EXPORT_SYMBOL(v)
 #define WRITE_ONCE(value,new_value) ((value)=(new_value))
-#define drm_dbg_dp(...) ((void)0)
+#define drm_dbg_dp(dev,...) ((void)(dev))
 #define container_of(ptr,type,member) ((type *)((char *)(ptr)-offsetof(type,member)))
 static u64 mul_u32_u32(u32 a,u32 b) { return (u64)a*b; }
 struct drm_display_mode { int clock, hdisplay, vdisplay; unsigned int flags; };
@@ -70,10 +71,17 @@ sed '/^#include /d' "$root/src/display/dp_dsc.h"
 sed '/^#include /d' "$root/src/display/dp_dsc.c"
 sed '/^#include /d' "$kernel/drivers/gpu/drm/msm/dp/dp_reg.h"
 cat <<'C'
-struct msm_dp_panel { struct msm_dp_dsc_config dsc; bool dsc_active; };
+struct msm_dp_panel {
+ struct msm_dp_dsc_config dsc; bool dsc_active;
+ struct { unsigned bpp; bool out_fmt_is_yuv_420; } msm_dp_mode;
+ unsigned stream_id; struct { unsigned version; } psr_cap;
+};
 struct msm_dp_panel_private { struct msm_dp_panel msm_dp_panel; };
-struct msm_dp_ctrl_private { bool fec_prepared,link_clks_on; void *aux,*drm_dev; };
+struct msm_dp_ctrl_private { bool fec_prepared,link_clks_on; void *aux,*drm_dev,*link; };
+struct msm_dp_link {};
+struct msm_dp_link_private { struct msm_dp_link msm_dp_link; void *drm_dev; };
 static u32 link_regs[0x500/4],p0_regs[0x100/4];
+static u32 stream_regs[2][0x500/4];
 static unsigned link_writes,p0_writes,reads,aux_writes,delays;
 static int read_error,write_error; static unsigned detect_after;
 static u32 aux_registers[8]; static u8 aux_values[8];
@@ -102,13 +110,47 @@ static int drm_dp_dpcd_write_byte(void *aux,u32 reg,u8 value) {
 }
 static bool msm_dp_aux_is_link_connected(void *aux) { (void)aux; return true; }
 static void usleep_range(unsigned lo,unsigned hi) { assert(lo==900 && hi==1000); delays++; }
+static u32 msm_dp_read_stream_link(void *p,unsigned stream,u32 offset) {
+ (void)p; assert(stream<2 && offset==REG_DP_CONFIGURATION_CTRL); return stream_regs[stream][offset/4];
+}
+static void msm_dp_write_stream_link(void *p,unsigned stream,u32 offset,u32 value) {
+ (void)p; assert(stream<2 && offset==REG_DP_CONFIGURATION_CTRL); stream_regs[stream][offset/4]=value;
+}
 C
 for name in msm_dp_panel_clear_dsc_dto msm_dp_panel_config_dsc; do
     extract "$kernel/drivers/gpu/drm/msm/dp/dp_panel.c" "$name"
 done
-for name in msm_dp_ctrl_fec_enable msm_dp_ctrl_fec_disable; do
+extract "$kernel/drivers/gpu/drm/msm/dp/dp_link.c" msm_dp_link_get_test_bits_depth
+for name in msm_dp_ctrl_fec_enable msm_dp_ctrl_fec_disable msm_dp_ctrl_config_ctrl_streams; do
     extract "$kernel/drivers/gpu/drm/msm/dp/dp_ctrl.c" "$name"
 done
+cat <<'C'
+#define DRM_FORMAT_RGB888 1
+#define DRM_FORMAT_XRGB2101010 2
+#define DRM_FORMAT_YUV420 3
+#define INTF_DP 1
+struct drm_display_info {};
+struct drm_connector { struct drm_display_info display_info; };
+struct drm_device { void *dev_private; };
+struct drm_encoder { struct drm_device *dev; };
+struct dpu_encoder_virt {
+ struct drm_encoder base; struct drm_connector *connector;
+ struct { unsigned h_tile_instance[1]; } disp_info;
+};
+struct fake_kms { void *dp[1]; };
+struct msm_drm_private { struct fake_kms *kms; };
+struct fake_intf_cap { unsigned type; };
+struct fake_intf { struct fake_intf_cap *cap; };
+struct dpu_encoder_phys { struct drm_encoder *parent; struct fake_intf *hw_intf; struct drm_display_mode cached_mode; };
+#define to_dpu_encoder_virt(p) container_of(p,struct dpu_encoder_virt,base)
+static bool format_dsc,format_420,format_uke=true;
+static unsigned format_bpc;
+static bool dpu_encoder_is_dsc_enabled(struct drm_encoder *p) { (void)p; return format_dsc; }
+static bool drm_mode_is_420_only(void *info,void *mode) { (void)info;(void)mode;return format_420; }
+static bool of_machine_is_compatible(const char *name) { (void)name;return format_uke; }
+static unsigned msm_dp_output_bpc(void *dp,void *mode) { (void)dp;(void)mode;return format_bpc; }
+C
+extract "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c" dpu_encoder_get_drm_fmt
 cat <<'C'
 static const u8 receiver[16]={0x01,0x21,0x00,0x14,0x0b,0x02,0x01,0,0,0x1f,0x06,0x11,0x08,0,0,0};
 static void rejected(u8 *caps,u8 fec,struct drm_display_mode mode,unsigned bpc,unsigned rate,unsigned lanes) {
@@ -117,6 +159,7 @@ static void rejected(u8 *caps,u8 fec,struct drm_display_mode mode,unsigned bpc,u
  const u8 *p=(const u8 *)&out; for(size_t i=0;i<sizeof(out);i++)assert(!p[i]);
 }
 int main(void) {
+ (void)dpu_encoder_is_dsc_enabled;
  struct drm_display_mode mode={.clock=241500,.hdisplay=2560,.vdisplay=1440};
  struct msm_dp_dsc_config out;
  for(unsigned bpc=8;bpc<=10;bpc+=2) for(unsigned hz=60;hz<=75;hz+=15) {
@@ -136,11 +179,13 @@ int main(void) {
   for(unsigned i=88;i<128;i++)assert(!bytes[i]);
   struct msm_dp_panel_private panel={.msm_dp_panel.dsc=out};
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++)link_regs[i]=0xdeadbeef;
+  link_regs[REG_DP_SDP_FLUSH/4]=BIT(2)|BIT(1)|BIT(7);
   memset(p0_regs,0,sizeof(p0_regs)); link_writes=p0_writes=0;
   msm_dp_panel_config_dsc(&panel.msm_dp_panel);
   assert(link_regs[REG_DP_PPS_HEADER/4]==0x7f1000);
   assert(link_regs[REG_DP_PPS_HEADER_PARITY/4]==0xa22300);
   assert(link_regs[REG_DP_COMPRESSION_MODE_CTRL/4]==out.compression_ctrl);
+  assert(link_regs[REG_DP_SDP_FLUSH/4]==(BIT(0)|BIT(1)|BIT(7)));
   assert(p0_regs[MMSS_DP_DSC_DTO_COUNT/4]==426 && p0_regs[MMSS_DP_DSC_DTO/4]==0x30109);
   assert(link_writes==34 && p0_writes==3);
   for(unsigned i=0;i<22;i++)assert(link_regs[(REG_DP_PPS_DATA/4)+i]==get_unaligned_le32(bytes+i*4));
@@ -215,7 +260,28 @@ int main(void) {
  }
  aux_writes=0; write_error=0; ctrl.link_clks_on=false; link_writes=0;
  assert(!msm_dp_ctrl_fec_disable(&ctrl,&panel) && !ctrl.fec_prepared && !link_writes);
+ for(unsigned stream=0;stream<2;stream++)for(unsigned bpp=24;bpp<=30;bpp+=6)for(unsigned compressed=0;compressed<2;compressed++) {
+  panel.stream_id=stream;panel.msm_dp_mode.bpp=bpp;panel.dsc.dsc.bits_per_pixel=compressed?128:0;
+  stream_regs[stream][REG_DP_CONFIGURATION_CTRL/4]=0xa5a5ffff;
+  msm_dp_ctrl_config_ctrl_streams(&ctrl,&panel);
+  const u32 config=stream_regs[stream][REG_DP_CONFIGURATION_CTRL/4];
+  assert(FIELD_GET(DP_CONFIGURATION_CTRL_BPC_MASK,config)==
+         (compressed?1U:(bpp==30?2U:1U)));
+  assert((config&~(DP_CONFIGURATION_CTRL_BPC_MASK|DP_CONFIGURATION_CTRL_RGB_YUV_MASK|DP_CONFIGURATION_CTRL_SEND_VSC))==
+         (0xa5a5ffff&~(DP_CONFIGURATION_CTRL_BPC_MASK|DP_CONFIGURATION_CTRL_RGB_YUV_MASK|DP_CONFIGURATION_CTRL_SEND_VSC)));
+  assert(panel.msm_dp_mode.bpp==bpp && panel.dsc.dsc.bits_per_pixel==(compressed?128U:0U));
+ }
+ struct fake_kms kms={};struct msm_drm_private priv={&kms};struct drm_device dev={&priv};
+ struct drm_connector connector={};struct dpu_encoder_virt encoder={.base.dev=&dev,.connector=&connector};
+ struct fake_intf_cap cap={INTF_DP};struct fake_intf intf={&cap};
+ struct dpu_encoder_phys phys={.parent=&encoder.base,.hw_intf=&intf};
+ for(format_bpc=8;format_bpc<=10;format_bpc+=2)for(unsigned compressed=0;compressed<2;compressed++) {
+  format_dsc=compressed;
+  assert(dpu_encoder_get_drm_fmt(&phys)==(compressed||format_bpc==8?DRM_FORMAT_RGB888:DRM_FORMAT_XRGB2101010));
+ }
+ format_dsc=false;format_420=true;assert(dpu_encoder_get_drm_fmt(&phys)==DRM_FORMAT_YUV420);
  puts("Production DSC/RC/PPS, bounded registers/DTO, 4K geometry, FEC ACK/timeout/cleanup and full-word parity: PASS; host only");
+ puts("PPS trigger/repetition and independent 8-bit DSC transport for 8/10-bit source samples: PASS; host only");
 }
 C
 } > "$work/test.c"

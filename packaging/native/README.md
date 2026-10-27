@@ -36,6 +36,15 @@ Actual receiver-sequence and compressed-TU fixtures cover stale/fresh events,
 write failures, 8/10-bpc equivalence and 1440p/4K source timings. Source/host
 checks remain separate from native package delivery and visible DSC acceptance.
 
+27 October 2026, Linux 7.3.0-19 candidate: the external DSC path now triggers
+PPS transmission with flush bit 0 and enables its repetition by clearing bit 2,
+matching the exact Uke OEM and same-SoC catalog. DPU and DP transport remain
+RGB888 for compressed bytes even when PPS describes 10-bit source samples.
+Active source-depth reporting, uncompressed RGB10, DSI, the HDMI clock budget,
+FEC acknowledgment and disconnected-only controls are preserved. Three
+production-function regressions fail independently on the prior source and pass
+with the correction. These host checks do not qualify physical DSC/FEC output.
+
 Release 14 is delivered through signed COPR/DNF and boots with matching modules.
 Its connected-policy safeguard is verified; physical compression is still open.
 
