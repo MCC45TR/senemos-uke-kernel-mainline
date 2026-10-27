@@ -40,6 +40,8 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/hardware-dt.sh
 	bash tests/ufs-ice-contract.sh
 	bash -n tests/ufs-ice-dt-contract.sh
+	bash -n tests/ufs-mcq-contract.sh
+	bash -n tests/ufs-mcq-allocation-contract.sh
 	bash -n src/nfc/prepare-source.sh tests/nfc-syntax.sh tests/ir-spi-contract.sh
 	bash tests/kernel-family-contract.sh
 	bash tests/userdata-grow-contract.sh
@@ -56,7 +58,11 @@ test-touch-transport:
 test-touch-dt:
 	test -n "$(kernel_source)" -a -n "$(running_fdt)" -a -n "$(dt_output)"
 	bash tests/touch-dt-contract.sh "$(kernel_source)" "$(running_fdt)" "$(dt_output)"
-.PHONY: test-root-capability
+.PHONY: test-ufs-mcq test-root-capability
+test-ufs-mcq:
+	test -n "$(kernel_source)"
+	bash tests/ufs-mcq-contract.sh "$(kernel_source)"
+	bash tests/ufs-mcq-allocation-contract.sh "$(kernel_source)"
 test-root-capability:
 	test -n "$(kernel_source)"
 	bash tests/root-selector-note-contract.sh "$(kernel_source)" manifests/boot-payload.json

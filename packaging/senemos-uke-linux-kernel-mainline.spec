@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 23
+%global senemos_build_release 24
 %else
 %global senemos_build_release 1
 %endif
@@ -398,6 +398,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-24
+- Map the admitted Cliffs MCQ configuration, operation and status regions separately.
+- Bound capability-derived queues and unwind mapping failures before SDB fallback.
+- Retain native main-IRQ completion handling and poll-queue exclusion.
+- Preserve working SDB buffers and queue metadata until all MCQ DMA allocations commit.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-23
 - Connect the exact firmware-initialized Uke RNG to the upstream TRNG driver.
 - Admit the exact UFS ICE/HWKM resources and retain the native host clock/power path.

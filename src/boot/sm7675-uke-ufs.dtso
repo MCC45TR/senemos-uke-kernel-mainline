@@ -6,7 +6,7 @@
  * Requires the UFS PHY, NoC, scoped SMMU/GDSC and RPMh snapshot fixes.
  * PHY clocks use mainline IDs; GCC parents must use this PHY's clock provider.
  * ICE uses the native host-owned path and the exact contiguous OEM windows.
- * MCQ needs its separate operation/status mapping; it is not enabled here yet.
+ * MCQ retains its separate OEM operation/status windows and native IRQ path.
  */
 /dts-v1/;
 /plugin/;
@@ -77,8 +77,9 @@
 &ufshc_mem {
 	/* Generic upstream host reads the actual controller version. */
 	compatible = "qcom,ufshc";
-	reg = <0x01d84000 0x3000>, <0x01d88000 0x11000>;
-	reg-names = "std", "ice";
+	reg = <0x01d84000 0x3000>, <0x01d88000 0x11000>,
+	      <0x01da5000 0x2000>, <0x01da4000 0x10>;
+	reg-names = "std", "ice", "mcq_sqd", "mcq_vs";
 	clocks = <&gcc GCC_UFS_PHY_AXI_CLK>,
 		 <&gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
 		 <&gcc GCC_UFS_PHY_AHB_CLK>,

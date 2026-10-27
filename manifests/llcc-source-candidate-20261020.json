@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "42aaa14a776ea3479d595f82137cea447fc69d92183e82249d3611e39441968a"
+      "sha256": "60ab1d9870444a43b4526aa3f25c53429afa4161c4a6afa677b388a255c1f614"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -257,7 +257,27 @@
     },
     {
       "path": "src/boot/sm7675-uke-ufs.dtso",
-      "sha256": "ac12345c7b45406529cdf6929d4456a0ebe8cc59eb570166e7f8363306ef49f2"
+      "sha256": "a11f87cd28729a0652584e738bf02e40896192a0d05d2e4d6be4fa861945e424"
+    },
+    {
+      "path": "src/boot/uke-ufs-mcq.h",
+      "sha256": "dd8710d707b7de64dc1ca10a3e2527d93bbd10ce3b68302eb6d289b97771e1f6"
+    },
+    {
+      "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
+      "sha256": "e19bd14247bb72b49147a5f6f45f1468f0770379b59fd0372b5ecc299d5b6d3a"
+    },
+    {
+      "path": "tests/ufs-mcq-contract.sh",
+      "sha256": "65e6f8ab12aac419b41f203ebaad2fa6bab3ed69de71983709d910ba2b870e51"
+    },
+    {
+      "path": "patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch",
+      "sha256": "e6d73f16403f99a35dbec30c91ba559b27fb0311efb2b6a9ea7ab79532533c20"
+    },
+    {
+      "path": "tests/ufs-mcq-allocation-contract.sh",
+      "sha256": "750e060fd0e3d78f20754de245ffb58b8a160ed432116dbef0c5bde3b6249237"
     }
   ],
   "baseline_files": [
@@ -380,7 +400,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-23",
+  "kernel_release": "7.3.0-24",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

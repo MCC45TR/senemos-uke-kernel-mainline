@@ -50,6 +50,13 @@ git -C "$kernel" apply "$here/../../patches/boot/0007-uke-cpu-hardware-name.patc
 bash "$here/../../tests/cpu-hardware-name-contract.sh" "$kernel/arch/arm64/kernel/cpuinfo.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0013-sm7675-trng-binding.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0013-sm7675-trng-binding.patch"
+install -m644 "$here/uke-ufs-mcq.h" "$kernel/drivers/ufs/host/ufs-qcom-uke.h"
+git -C "$kernel" apply --check "$here/../../patches/boot/0014-uke-ufs-mcq-resources.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0014-uke-ufs-mcq-resources.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch"
+bash "$here/../../tests/ufs-mcq-contract.sh" "$kernel"
+bash "$here/../../tests/ufs-mcq-allocation-contract.sh" "$kernel"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
@@ -107,6 +114,8 @@ sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-
     "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch" \
     "$here/../../patches/boot/0004-uke-bluetooth-power.patch" \
     "$here/../../patches/boot/0013-sm7675-trng-binding.patch" \
+    "$here/uke-ufs-mcq.h" "$here/../../patches/boot/0014-uke-ufs-mcq-resources.patch" \
+    "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch" \
     "$here/../../patches/$version/0036-uke-adreno732-render.patch" \
     "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"

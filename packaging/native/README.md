@@ -607,3 +607,16 @@ are rejected before overlay application. Upstream retains SCM, version and
 fuse checks and the default raw-key policy. No Android key, storage layout or
 root mount is changed. MCQ integration, a full matched build, recoverable boot
 and isolated inline-encryption I/O acceptance remain pending.
+
+27 October 2026: source candidate 24 adds the separate OEM Cliffs MCQ
+operation and status windows. The native driver derives queue-configuration
+placement from QCFGPTR, bounds it between the ICE/HWKM and vendor regions,
+and unwinds partial mappings before the core's existing SDB fallback. The core
+also retains working SDB DMA buffers until every MCQ allocation succeeds and
+restores buffers and queue counts on failure. Other controllers retain their
+existing mapping. The standard main-IRQ completion
+handler remains in use; poll queues are excluded from that handler. Host
+fixtures cover resource/queue limits, all mapping failures, generic-controller
+behavior, actual core completion dispatch and DMA allocation failure/rollback
+without reducing the supported tag count. Matched boot, storage I/O,
+error recovery and suspend/resume acceptance on Uke remain pending.

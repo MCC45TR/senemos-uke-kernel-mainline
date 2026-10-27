@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 23, retaining release-22 hardware descriptions, SKU admission, NFC/IR and the release-21 input/display/audio/USB profile. Adds exact-resource admission to the firmware-initialized upstream TRNG path and the exact host-owned UFS ICE resources/clock. MCQ is still pending. Source, object and host checks do not establish tablet installation or hardware acceptance.",
+  "source_origin": "Linux 7.3 Uke native source candidate 24, retaining release-23 RNG and ICE, release-22 hardware descriptions and SKU admission, and the release-21 input/display/audio/USB profile. Adds separate Cliffs MCQ resource mapping with bounded capability-derived queues and native main-IRQ completion. Preserves the original SDB DMA buffers and queue metadata until all replacement allocations commit. Source, object and host checks do not establish tablet installation or hardware acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
