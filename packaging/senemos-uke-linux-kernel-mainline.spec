@@ -401,6 +401,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-31
+- Reject invalid native L3 clocks and zero/descending frequency tables.
+- Retain native frequency width and unwind failed ICC link allocation.
+- Exercise actual L3 probe/set/remove ownership and errors during preparation.
+- Paired CPU/LLCC votes, multi-path OPP recovery and physical acceptance remain open.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-30
 - Derive native DDR BWMON OPPs from exact Uke frequencies and byte units.
 - Preserve existing MC requests while adding AMC/WAKE-only monitor votes.
