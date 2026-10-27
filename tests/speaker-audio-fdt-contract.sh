@@ -12,6 +12,7 @@ cat > "$work/base.dts" <<'DTS'
  #address-cells = <1>; #size-cells = <1>;
  soc {
   #address-cells = <1>; #size-cells = <1>; ranges;
+  wcd_usbss: usbss {};
   apps_smmu: iommu@15000000 { compatible = "qcom,sm7675-boot-smmu"; reg = <0x15000000 0x1000>; #iommu-cells = <2>; };
   tlmm: pinctrl@f000000 { compatible = "qcom,cliffs-pinctrl"; reg = <0xf000000 0x1000>; gpio-controller; #gpio-cells = <2>; };
   gpi_dma1: dma-controller@a00000 { reg = <0xa00000 0x1000>; #dma-cells = <3>; };
@@ -54,7 +55,8 @@ for entry in 34:30:TopLeft 35:149:TopRight 36:124:BottomLeft 37:123:BottomRight;
  test "$(fdtget -t u "$work/result.dtb" "$amp" '#sound-dai-cells')" = 0
 done
 lpi=/soc/pinctrl@6e80000
-test "$(fdtget -t s "$work/result.dtb" "$lpi" compatible)" = qcom,sm8650-lpass-lpi-pinctrl
+test "$(fdtget -t s "$work/result.dtb" "$lpi" compatible)" = qcom,sm7675-lpass-lpi-pinctrl
+test "$(fdtget -t x "$work/result.dtb" "$lpi" reg)" = "6e80000 17000"
 test "$(fdtget -t s "$work/result.dtb" "$lpi" clock-names)" = 'core audio'
 pins=$lpi/tdm-active-state
 test "$(fdtget -t s "$work/result.dtb" "$pins/clk-pins" pins)" = gpio6

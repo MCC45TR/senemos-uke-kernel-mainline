@@ -33,7 +33,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "60ab1d9870444a43b4526aa3f25c53429afa4161c4a6afa677b388a255c1f614"
+      "sha256": "ed090a20412d739ab6a8bfacad0d1f52ccbf9810bd80b4759ed5b270ba98f32e"
     },
     {
       "path": "src/boot/uke-abl.c",
@@ -278,6 +278,62 @@
     {
       "path": "tests/ufs-mcq-allocation-contract.sh",
       "sha256": "750e060fd0e3d78f20754de245ffb58b8a160ed432116dbef0c5bde3b6249237"
+    },
+    {
+      "path": "patches/boot/0016-wcd939x-channel-switches.patch",
+      "sha256": "a1535075d5a250c722d16e9ae7c7bfca1441a92c359a19e3bfefc90fb4e37975"
+    },
+    {
+      "path": "patches/boot/0017-wcd939x-provider-errors.patch",
+      "sha256": "f0b8c2368b52263a9be3f63042085e6fc0c0081488c24b6f03cd2677f2d035c3"
+    },
+    {
+      "path": "patches/boot/0018-wcd939x-coordinated-reset.patch",
+      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+    },
+    {
+      "path": "patches/boot/0019-sm7675-lpass-pinctrl.patch",
+      "sha256": "8623e8e7683b18f36b69758c5e7707fde60fb2725d650466482091cadbc865fb"
+    },
+    {
+      "path": "patches/boot/0020-soundwire-probe-errors.patch",
+      "sha256": "876c5dba4c9c50cd5b73cd75c2c532919f7025dfdd82dd9af8ac27d15cb91637"
+    },
+    {
+      "path": "src/audio/sm7675-uke-audio-providers.dtsi",
+      "sha256": "b7002b6f3945db914bdb291be5fd84dccf65b31fb82c1075d3c88952dfb0617c"
+    },
+    {
+      "path": "tests/audio-providers-fdt-contract.sh",
+      "sha256": "2748fd60ca07e6c2c5670b5874647c071610068f171bf16e29a5a7af5de0c85b"
+    },
+    {
+      "path": "tests/lpass-sm7675-pins-contract.sh",
+      "sha256": "14ce5d810b7780c36f66dfd06b2bdaa1c92339456f69a2f0544760d9dc851af7"
+    },
+    {
+      "path": "tests/soundwire-probe-error-contract.sh",
+      "sha256": "bdac3d6387804b23095dcf4c81cef5a80d4783ffcd3302ce2080ed92a0da1d82"
+    },
+    {
+      "path": "tests/usbss-reset-lifetime-contract.sh",
+      "sha256": "e2073e29cb9c8685f7ceb16a32abffb2c67d48c1970c856cc4e27e1856ebfb62"
+    },
+    {
+      "path": "tests/wcd939x-channel-switch-contract.sh",
+      "sha256": "1b6cba29e6c36a121327d7d57ad39db9144cd39766d0f0bce9e9a00eb8266bb6"
+    },
+    {
+      "path": "tests/wcd939x-probe-error-contract.sh",
+      "sha256": "fcfdbbc4cdf05d5117139244a695435d03da7f4d19089917158eb7e70d629ce9"
+    },
+    {
+      "path": "tests/wcd939x-reset-consumer-contract.sh",
+      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
+    },
+    {
+      "path": "tests/wcd939x-reset-contract.sh",
+      "sha256": "f64abd0ecb81f35ddb56b1a0bf38f96e510be9339cedff82df7e57334e56792a"
     }
   ],
   "baseline_files": [
@@ -400,7 +456,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-24",
+  "kernel_release": "7.3.0-25",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -8,6 +8,7 @@
  */
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+#include "sm7675-uke-audio-providers.dtsi"
 
 &uke_q6apm_dais {
 	/* Exact Uke audio-ion stream identities; never use identity DMA. */
@@ -68,48 +69,35 @@
 	status = "okay";
 };
 
-&{/soc} {
-	/* LPASS LPI TLMM; the OEM copy sits below a non-bus node and is never probed. */
-	uke_lpass_tlmm: pinctrl@6e80000 {
-		compatible = "qcom,sm8650-lpass-lpi-pinctrl";
-		reg = <0x06e80000 0x20000>;
-		clocks = <&uke_q6prm_clocks LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
-			 <&uke_q6prm_clocks LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
-		clock-names = "core", "audio";
-		gpio-controller;
-		#gpio-cells = <2>;
-		gpio-ranges = <&uke_lpass_tlmm 0 0 23>;
-		status = "okay";
+&uke_lpass_tlmm {
+	/* OEM lpi_tdm1_* pins: gpio6 SCK, gpio7 WS, gpio8 SD0, gpio9 SD1. */
+	uke_tdm_active: tdm-active-state {
+		clk-pins {
+			pins = "gpio6";
+			function = "i2s1_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
 
-		/* OEM lpi_tdm1_* pins: gpio6 SCK, gpio7 WS, gpio8 SD0, gpio9 SD1. */
-		uke_tdm_active: tdm-active-state {
-			clk-pins {
-				pins = "gpio6";
-				function = "i2s1_clk";
-				drive-strength = <8>;
-				bias-disable;
-			};
+		ws-pins {
+			pins = "gpio7";
+			function = "i2s1_ws";
+			drive-strength = <8>;
+			bias-disable;
+		};
 
-			ws-pins {
-				pins = "gpio7";
-				function = "i2s1_ws";
-				drive-strength = <8>;
-				bias-disable;
-			};
+		sd0-pins {
+			pins = "gpio8";
+			function = "i2s1_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
 
-			sd0-pins {
-				pins = "gpio8";
-				function = "i2s1_data";
-				drive-strength = <8>;
-				bias-disable;
-			};
-
-			sd1-pins {
-				pins = "gpio9";
-				function = "i2s1_data";
-				drive-strength = <8>;
-				bias-pull-down;
-			};
+		sd1-pins {
+			pins = "gpio9";
+			function = "i2s1_data";
+			drive-strength = <8>;
+			bias-pull-down;
 		};
 	};
 };

@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+27 October 2026, Linux 7.3.0-25 source candidate: retain release-24 RNG, ICE
+and transactional MCQ, and restore the reviewed VA/TX/RX and coordinated codec
+reset foundations. One SM7675 LPASS pin controller supplies the existing speaker
+TDM pins and optional reset child. Preserve USBSS routing on failed or absent
+audio suppliers; clean partial children before parent power removal. Actual-code
+host fixtures, combined-FDT checks and AArch64 objects pass. Physical codec,
+SoundWire, jack, analog USB-C playback/capture and boot acceptance remain open.
+
 27 October 2026, Linux 7.3.0-22 source candidate: report the exact Snapdragon
 7+ Gen 3 product, LPDDR5X and SKU-specific Focus accessory labels. Preserve
 the existing Pad 7/POCO selection; enable the FM19511 tag only for POCO.

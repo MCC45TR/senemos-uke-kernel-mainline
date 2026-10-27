@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native source candidate 24, retaining release-23 RNG and ICE, release-22 hardware descriptions and SKU admission, and the release-21 input/display/audio/USB profile. Adds separate Cliffs MCQ resource mapping with bounded capability-derived queues and native main-IRQ completion. Preserves the original SDB DMA buffers and queue metadata until all replacement allocations commit. Source, object and host checks do not establish tablet installation or hardware acceptance.",
+  "source_origin": "Linux 7.3 Uke native source candidate 25, retaining release-24 RNG, ICE, transactional MCQ and the established SKU/input/display/speaker/USB profile. Adds VA/TX/RX providers, the attributed SM7675 LPASS pin controller and protected codec reset with partial-child cleanup; preserves channel-switch and SoundWire probe errors. The existing speaker TDM pins use the same controller. Analog codec, SoundWire graph, jack and PCM routing remain pending. Source, host and object checks do not establish tablet installation or hardware acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "12da9bcbbd18f23cf4f3b469d8b3ac83a558ccd0d758dac8488c03ba9330cbe6"
+      "sha256": "0de42d6be5b7b6b6b3ecd1da192defc3e4644204ffca6c8d7d3b5ab5727d2b53"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "f3fbf4e1323b6725a9c08d33f05b26af67afca2f1869977f6a269ecdb9773e60"
+      "sha256": "8a1b87a3ac2354e86a17075aa4ac3420d5ee282bf8cd2122f1d32c0a762594df"
     },
     {
       "path": "tests/native-firewall-contract.sh",
@@ -226,6 +226,62 @@
     {
       "path": "src/input/nt36532-uke-protocol.h",
       "sha256": "04843dd877fa78925cee93e9c9eb08d29930a96c32bda006edaeaed9a465b5f4"
+    },
+    {
+      "path": "patches/boot/0016-wcd939x-channel-switches.patch",
+      "sha256": "a1535075d5a250c722d16e9ae7c7bfca1441a92c359a19e3bfefc90fb4e37975"
+    },
+    {
+      "path": "patches/boot/0017-wcd939x-provider-errors.patch",
+      "sha256": "f0b8c2368b52263a9be3f63042085e6fc0c0081488c24b6f03cd2677f2d035c3"
+    },
+    {
+      "path": "patches/boot/0018-wcd939x-coordinated-reset.patch",
+      "sha256": "a6778cd037d4a75674503cead17b21c8a19534d61661c16f83e28444b68e8c5a"
+    },
+    {
+      "path": "patches/boot/0019-sm7675-lpass-pinctrl.patch",
+      "sha256": "8623e8e7683b18f36b69758c5e7707fde60fb2725d650466482091cadbc865fb"
+    },
+    {
+      "path": "patches/boot/0020-soundwire-probe-errors.patch",
+      "sha256": "876c5dba4c9c50cd5b73cd75c2c532919f7025dfdd82dd9af8ac27d15cb91637"
+    },
+    {
+      "path": "src/audio/sm7675-uke-audio-providers.dtsi",
+      "sha256": "b7002b6f3945db914bdb291be5fd84dccf65b31fb82c1075d3c88952dfb0617c"
+    },
+    {
+      "path": "tests/audio-providers-fdt-contract.sh",
+      "sha256": "2748fd60ca07e6c2c5670b5874647c071610068f171bf16e29a5a7af5de0c85b"
+    },
+    {
+      "path": "tests/lpass-sm7675-pins-contract.sh",
+      "sha256": "14ce5d810b7780c36f66dfd06b2bdaa1c92339456f69a2f0544760d9dc851af7"
+    },
+    {
+      "path": "tests/soundwire-probe-error-contract.sh",
+      "sha256": "bdac3d6387804b23095dcf4c81cef5a80d4783ffcd3302ce2080ed92a0da1d82"
+    },
+    {
+      "path": "tests/usbss-reset-lifetime-contract.sh",
+      "sha256": "e2073e29cb9c8685f7ceb16a32abffb2c67d48c1970c856cc4e27e1856ebfb62"
+    },
+    {
+      "path": "tests/wcd939x-channel-switch-contract.sh",
+      "sha256": "1b6cba29e6c36a121327d7d57ad39db9144cd39766d0f0bce9e9a00eb8266bb6"
+    },
+    {
+      "path": "tests/wcd939x-probe-error-contract.sh",
+      "sha256": "fcfdbbc4cdf05d5117139244a695435d03da7f4d19089917158eb7e70d629ce9"
+    },
+    {
+      "path": "tests/wcd939x-reset-consumer-contract.sh",
+      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
+    },
+    {
+      "path": "tests/wcd939x-reset-contract.sh",
+      "sha256": "f64abd0ecb81f35ddb56b1a0bf38f96e510be9339cedff82df7e57334e56792a"
     }
   ],
   "root_selector_capability": {

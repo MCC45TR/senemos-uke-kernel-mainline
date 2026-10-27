@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 24
+%global senemos_build_release 25
 %else
 %global senemos_build_release 1
 %endif
@@ -175,7 +175,7 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
     CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
-    CONFIG_PINCTRL_SM8650_LPASS_LPI=m CONFIG_FM19511_UKE=m \
+    CONFIG_PINCTRL_SM8650_LPASS_LPI=m CONFIG_PINCTRL_PALAWAN_LPASS_LPI=m CONFIG_FM19511_UKE=m \
     CONFIG_RC_CORE=m CONFIG_LIRC=y CONFIG_IR_SPI=m CONFIG_HW_RANDOM_QCOM=m \
     CONFIG_BLK_INLINE_ENCRYPTION=y CONFIG_SCSI_UFS_CRYPTO=y \
     CONFIG_QCOM_INLINE_CRYPTO_ENGINE=m; do
@@ -398,6 +398,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-25
+- Reuse the reviewed LPASS providers and coordinated codec reset with the current speaker graph.
+- Keep one exact SM7675 pin provider and preserve the speaker TDM mux slots.
+- Preserve codec supplier errors and release partial reset children before power-down.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-24
 - Map the admitted Cliffs MCQ configuration, operation and status regions separately.
 - Bound capability-derived queues and unwind mapping failures before SDB fallback.

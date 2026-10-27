@@ -57,6 +57,21 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0015-ufs-mcq-preserve-s
 git -C "$kernel" apply "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch"
 bash "$here/../../tests/ufs-mcq-contract.sh" "$kernel"
 bash "$here/../../tests/ufs-mcq-allocation-contract.sh" "$kernel"
+for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
+    0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
+    0020-soundwire-probe-errors.patch; do
+    git -C "$kernel" apply --check "$here/../../patches/boot/$audio_patch"
+    git -C "$kernel" apply "$here/../../patches/boot/$audio_patch"
+done
+bash "$here/../../tests/wcd939x-channel-switch-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-probe-error-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-reset-consumer-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-reset-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
+bash "$here/../../tests/usbss-reset-lifetime-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
+bash "$here/../../tests/soundwire-probe-error-contract.sh" "$kernel"
+bash "$here/../../tests/lpass-sm7675-pins-contract.sh" "$kernel"
+bash "$here/../../tests/audio-providers-fdt-contract.sh" "$kernel"
+bash "$here/../../tests/speaker-audio-fdt-contract.sh" "$kernel"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
@@ -127,3 +142,10 @@ sha256sum "$here/../../patches/boot/0008-uke-platform-profile.patch" \
     "$here/../power/uke-platform-profile.c" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
     "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../audio/sm7675-uke-audio-providers.dtsi" \
+    "$here/../audio/sm7675-uke-speaker-audio.dtsi" >> "$output/abl-source-SHA256SUMS"
+for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
+    0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
+    0020-soundwire-probe-errors.patch; do
+    sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
+done
