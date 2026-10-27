@@ -113,7 +113,10 @@ srpm: validate
 	install -m644 packaging/SINGLEBOOT.md "$$top/SOURCES/SINGLEBOOT.md"
 	install -m644 LICENSE "$$top/SOURCES/singleboot-LICENSE"
 	rpmbuild -bs --nodeps --target aarch64 --define "_topdir $$top" "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"
-	cp "$$top/SRPMS/"*.src.rpm "$(outdir)/"
+	for source_rpm in "$$top/SRPMS/"*.src.rpm; do
+		destination="$(outdir)/$${source_rpm##*/}"
+		[[ "$$source_rpm" -ef "$$destination" ]] || cp "$$source_rpm" "$$destination"
+	done
 # A standalone source clone also owns its host build entry and pinned rules.
 .PHONY: test-entry
 test-entry:
