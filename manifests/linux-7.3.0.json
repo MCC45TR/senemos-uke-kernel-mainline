@@ -35,7 +35,7 @@
     },
     {
       "path": "patches/7.3.0/0007-uke-independent-dts.patch",
-      "sha256": "6f6bc4b718a94f04bebc5dca6de8b3329392074a6dee14e9d9f7df1087cf0601"
+      "sha256": "81b515d04e7463534074e75a651e7a4803fad536240a52dadd0d83e7a6b724c0"
     },
     {
       "path": "patches/7.3.0/0008-sm7675-ufs-phy.patch",
@@ -491,7 +491,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "18831d6da348d8289b200b486848b78f7be4945d3443db5ac1b5a78fc9daec57"
+      "sha256": "e095d38fe7e53fbc7208005f89596dad35f7f8e5e539f2bc4cfef778c621b601"
     },
     {
       "path": "configs/fedora.config",

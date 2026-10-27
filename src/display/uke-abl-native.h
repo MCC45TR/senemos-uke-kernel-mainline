@@ -1,4 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+#ifdef __KERNEL__
+#include "uke-hardware.h"
+#else
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#endif
+#include "../boot/uke-hardware.h"
+#endif
 /*
  * Give an unlabeled OEM node a phandle and a symbol so overlays can reference it.
  * Adding the phandle shifts later nodes, so /__symbols__ is resolved afterwards.
@@ -108,11 +116,17 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 	ret = fdt_overlay_apply(fdt, overlay);
 	if (ret)
 		return ret;
+	ret = uke_hardware_names(fdt);
+	if (ret)
+		return ret;
+	ret = uke_hardware_simplify(fdt);
+	if (ret)
+		return ret;
 	node = fdt_path_offset(fdt, framebuffer);
 	ret = fdt_setprop_string(fdt, node, "status", "okay");
 	if (ret)
 		return ret;
 	/* Firmware scanout must not wait for or blank the native panel backlight. */
 	ret = fdt_delprop(fdt, node, "backlight");
-	return ret ? ret : fdt_pack(fdt);
+	return ret && ret != -FDT_ERR_NOTFOUND ? ret : fdt_pack(fdt);
 }

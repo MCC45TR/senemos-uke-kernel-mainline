@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-26",
+  "date": "2026-10-27",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke native adaptation retaining the accepted 7.3.0-16 display, Type-C, DP DSC/FEC/MST and video source. Release 19 corrects transformed MT slot matching and preserves weaker held contacts through slot hysteresis in native kernel matrix input. Shared model firmware remains separate; no private reference or userspace contact client is included. Physical multitouch, VRR and accessory acceptance remain open.",
+  "source_origin": "Linux 7.3 Uke native source candidate 22, retaining the release-21 display, input, audio and USB adaptation. Adds exact product names, firmware-owned SSC descriptions, conservative template removal, POCO-only FM19511 tag transport and upstream LIRC infrared through OEM SE1. Source and host checks do not establish tablet boot, NFC RF or IR optical acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "9344ff3dbdcc2af86689c66c4456429afab8df496b415ac26d9915d9e5d7d9ff"
+      "sha256": "12da9bcbbd18f23cf4f3b469d8b3ac83a558ccd0d758dac8488c03ba9330cbe6"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "81a30b4d11194ae9bb246fc5739b349e05570b68d05da839bc2c8f1d4f4fe49c"
+      "sha256": "3b5d7cf956e7b0f0330466676f43209611507d6a05970c401472403e7972d0b2"
     },
     {
       "path": "tests/native-firewall-contract.sh",
@@ -185,11 +185,11 @@
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
-      "sha256": "24137c66abe5251bc90be40a665b6868f6a2bc15d83a6fa3a3b62ea250c79e62"
+      "sha256": "782109bd2357fb796a8e30ef7699735b6371c3692d0101fbf2d23c2cf0f07625"
     },
     {
       "path": "tests/touch-dt-contract.sh",
-      "sha256": "b6ba213128c92e8cfbf2f19121eb808181f344d63b7bb222315595110adedfae"
+      "sha256": "9f7168db1774676084f33f233d984975b52436a28fabd9b998def938c1b45478"
     },
     {
       "path": "tests/touch-protocol-contract.sh",

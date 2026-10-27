@@ -36,6 +36,9 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/upstream-candidate-contract.sh
 	bash tests/touch-runtime-package-contract.sh
 	bash tests/identity-contract.sh
+	bash tests/fm19511-contract.sh
+	bash tests/hardware-dt.sh
+	bash -n src/nfc/prepare-source.sh tests/nfc-syntax.sh tests/ir-spi-contract.sh
 	bash tests/kernel-family-contract.sh
 	bash tests/userdata-grow-contract.sh
 	bash tests/early-modules-contract.sh
@@ -83,7 +86,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
+	git archive HEAD src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"

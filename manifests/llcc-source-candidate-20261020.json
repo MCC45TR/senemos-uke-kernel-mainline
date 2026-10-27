@@ -29,15 +29,15 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "25dfb8aa75f0a9e5323ba3b246db64dd8e01d076deb0e08bc70d97ff479daa9a"
+      "sha256": "2a3fb7063e6301ace3e911741fc184a9e2f41db517ae742752948074ba8aef1e"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "709a3ccb4eeae550397cd9b0721f3533f445f064b706d1926957e6ada69ef7e1"
+      "sha256": "3cac4b3361f190bedb8a45f75b5086a2ce1fea77546b0596a445e8f63422fab6"
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "80e75958975a3dd01e3454442ee33c78a14604045af55bbee76abd4e9372e03b"
+      "sha256": "0a65bc46fee9bfc222f7949ee1015bd02a7cb16fd4f8a159e2207d09436f26a1"
     },
     {
       "path": "src/boot/uke-llcc.h",
@@ -145,7 +145,7 @@
     },
     {
       "path": "src/input/sm7675-uke-thp.dtsi",
-      "sha256": "24137c66abe5251bc90be40a665b6868f6a2bc15d83a6fa3a3b62ea250c79e62"
+      "sha256": "782109bd2357fb796a8e30ef7699735b6371c3692d0101fbf2d23c2cf0f07625"
     },
     {
       "path": "tests/touch-gesture.c",
@@ -225,7 +225,7 @@
     },
     {
       "path": "tests/touch-dt-contract.sh",
-      "sha256": "b6ba213128c92e8cfbf2f19121eb808181f344d63b7bb222315595110adedfae"
+      "sha256": "9f7168db1774676084f33f233d984975b52436a28fabd9b998def938c1b45478"
     },
     {
       "path": "tests/touch-protocol-contract.sh",
@@ -372,7 +372,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-21",
+  "kernel_release": "7.3.0-22",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

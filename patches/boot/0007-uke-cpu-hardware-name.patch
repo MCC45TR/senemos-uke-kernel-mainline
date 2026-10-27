@@ -1,10 +1,9 @@
 From: Uke Linux project <75160848+MCC45TR@users.noreply.github.com>
-Subject: [PATCH] arm64: report the Uke SM7675 SoC through cpuinfo Hardware
+Subject: [PATCH] arm64: report the Uke processor product through cpuinfo
 
-Original Fastfetch reads Hardware on ARM before its DT-compatible fallback.
-Expose the actual SoC name only for Uke/SM7675, without changing MIDR, core
-identity, topology or frequency reporting. Original Solid continues to
-identify individual CPU cores from implementer and part IDs.
+Provide the requested SoC product name through model name and Hardware for
+Uke/SM7675. Retain MIDR, individual core part/revision, topology and frequency
+reporting, and preserve the original formatter for other boards.
 
 --- a/arch/arm64/kernel/cpuinfo.c
 +++ b/arch/arm64/kernel/cpuinfo.c
@@ -16,13 +15,28 @@ identify individual CPU cores from implementer and part IDs.
  #include <linux/personality.h>
  #include <linux/preempt.h>
  #include <linux/printk.h>
-@@ -237,6 +238,10 @@
+@@ -226,6 +227,8 @@ static int c_show(struct seq_file *m, void *v)
+ 	bool compat = personality(current->personality) == PER_LINUX32;
+ 	struct cpuinfo_arm64 *cpuinfo = v;
+ 	u32 midr = cpuinfo->reg_midr;
++	bool uke = of_machine_is_compatible("xiaomi,uke") &&
++		   of_machine_is_compatible("qcom,sm7675");
+ 
+ 	/*
+ 	 * glibc reads /proc/cpuinfo to determine the number of
+@@ -233,10 +236,15 @@ static int c_show(struct seq_file *m, void *v)
+ 	 * "processor".  Give glibc what it expects.
+ 	 */
+ 	seq_printf(m, "processor\t: %d\n", cpu);
+-	if (compat)
++	if (uke)
++		seq_puts(m, "model name\t: Qualcomm Snapdragon 7+ Gen 3\n");
++	else if (compat)
  		seq_printf(m, "model name\t: ARMv8 Processor rev %d (%s)\n",
  			   MIDR_REVISION(midr), COMPAT_ELF_PLATFORM);
  
-+	if (of_machine_is_compatible("xiaomi,uke") &&
-+	    of_machine_is_compatible("qcom,sm7675"))
-+		seq_puts(m, "Hardware\t: Qualcomm Snapdragon 7+ Gen 3 (SM7675)\n");
++	if (uke)
++		seq_puts(m, "Hardware\t: Qualcomm Snapdragon 7+ Gen 3\n");
 +
  	seq_printf(m, "BogoMIPS\t: %lu.%02lu\n",
  		   loops_per_jiffy / (500000UL/HZ),

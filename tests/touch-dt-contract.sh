@@ -35,7 +35,7 @@ fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/overlay.dtbo"
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" interrupts) == '36 1' ]]
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" panel-id-gpios) == "$tlmm_handle 1a 0" ]]
 [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" panel) == "$(fdtget -t x "$input" "$panel" phandle)" ]]
-[[ $(fdtget -t s "$output/candidate.dtb" "$leaf" label) == 'POCO Pad X1 Touchscreen' ]]
+[[ $(fdtget -t s "$output/candidate.dtb" "$leaf" label) == 'Xiaomi Pad 7 Touchscreen' ]]
 [[ $(fdtget -t u "$output/candidate.dtb" "$leaf" touchscreen-size-x) == 32000 ]]
 [[ $(fdtget -t u "$output/candidate.dtb" "$leaf" touchscreen-size-y) == 21360 ]]
 [[ $(fdtget -t u "$output/candidate.dtb" "$leaf" novatek,column-map | wc -w) == 60 ]]

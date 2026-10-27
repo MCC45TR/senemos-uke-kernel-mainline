@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 21
+%global senemos_build_release 22
 %else
 %global senemos_build_release 1
 %endif
@@ -175,7 +175,8 @@ for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
     CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
-    CONFIG_PINCTRL_SM8650_LPASS_LPI=m; do
+    CONFIG_PINCTRL_SM8650_LPASS_LPI=m CONFIG_FM19511_UKE=m \
+    CONFIG_RC_CORE=m CONFIG_LIRC=y CONFIG_IR_SPI=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
@@ -395,6 +396,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-22
+- Preserve SKU identity, report the processor and LPDDR5X, and describe SSC-owned sensors.
+- Add the POCO-only FM19511 tag transport and Uke infrared through upstream LIRC.
+- Remove unreferenced panel and false fingerprint templates; physical acceptance remains pending.
+
 * Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-21
 - Contain FS19xx clock, thermal, register and stream-lifecycle failures.
 - Enforce the uncalibrated volume ceiling and propagate invalid AudioReach setup.

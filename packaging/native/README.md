@@ -1,5 +1,15 @@
 # Mainline native source profile
 
+27 October 2026, Linux 7.3.0-22 source candidate: report the exact Snapdragon
+7+ Gen 3 product, LPDDR5X and SKU-specific Focus accessory labels. Preserve
+the existing Pad 7/POCO selection; enable the FM19511 tag only for POCO.
+Nine firmware-owned SSC descriptions retain explicit model candidates, and
+the upstream LIRC transmitter uses the OEM SPI SE1 route. Remove the absent
+fingerprint template and reviewed unreferenced panel/input test data.
+Host fixtures, focused schemas, pin/provider checks and the NFC ARM64 object
+pass. Tablet boot, NFC RF interaction and IR optical acceptance remain open.
+See `docs/DT-HARDWARE-20261027.md` in the source repository.
+
 26 October 2026, Linux 7.3.0-17 candidate: move NT36532 contact reporting into
 the kernel input driver. The new DT binding supplies CSOT coordinate bounds;
 the driver requests shared model firmware directly, checks coordinate mode,
