@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-46 source candidate: match the active and display
+data windows for compressed DisplayPort, following the exact Uke OEM and
+same-SoC OnePlus interface contract. Release-45 register capture shows the
+display window programmed and the active window zero while compressed output
+is black. The real timing function fails the new assertion before correction
+and passes afterward at FHD/QHD/UHD, 8/10 bpc; existing O82 and uncompressed
+checks remain. This source correction requires separate physical qualification.
+
 29 October 2026, Linux 7.3.0-45 source candidate: use eight-bit packetizer
 transport for DSC, retaining input depth in PPS/MSA. Mark changes in selected
 stream bpp or normalized DSC parameters as mode changes so CRTC programming
@@ -8,7 +16,9 @@ both preceding omissions and pass after correction. Four translation units
 pass AArch64 header syntax checks. Release-42 tablet trials reach decoder
 enable but fail FEC and visible-image acceptance; manual display disable/enable
 restores uncompressed output without USB removal. Neither source nor package
-checks establish that release 45 corrects those physical failures.
+checks establish physical success. Subsequent release-45 tablet and webcam
+trials confirm automatic visible uncompressed recovery without USB removal;
+compressed pixels still fail with a valid uncorrected FEC count.
 
 29 October 2026, Linux 7.3.0-44 source candidate: retain a DRM device reference
 through attached policy changes and refuse missing, unregistered or replaced

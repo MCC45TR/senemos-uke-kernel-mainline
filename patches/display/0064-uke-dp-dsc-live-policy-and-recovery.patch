@@ -514,3 +514,20 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	old = drm_atomic_get_old_connector_state(conn_state->state, conn_state->connector);
  	if (old && (old->max_requested_bpc != conn_state->max_requested_bpc ||
  		    old->colorspace != conn_state->colorspace ||
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
+@@ -220,9 +220,11 @@
+ 		display_hctl = active_hctl;
+ 
+ 		intf_cfg |= INTF_CFG_ACTIVE_H_EN | INTF_CFG_ACTIVE_V_EN;
+-		if (p->compression_en)
++		if (p->compression_en) {
+ 			display_data_hctl = ((hsync_start_x +
+ 				DIV_ROUND_UP(p->dce_bytes_per_line, 6) - 1) << 16) | hsync_start_x;
++			active_data_hctl = display_data_hctl;
++		}
+ 	}
+ 
+ 	den_polarity = 0;

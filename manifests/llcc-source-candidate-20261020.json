@@ -545,7 +545,7 @@
     },
     {
       "path": "patches/display/0064-uke-dp-dsc-live-policy-and-recovery.patch",
-      "sha256": "9022791dc83721390548d7fb7cca97079de7f207aa8e5a24d2be22577490d305"
+      "sha256": "1e21cac54c42b4839e87a1cd2390677bc60c4d6b6eae40c76c76828e4573489f"
     },
     {
       "path": "tests/dp-stream-lifetime-contract.sh",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-45",
+  "kernel_release": "7.3.0-46",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
