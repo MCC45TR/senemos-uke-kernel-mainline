@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 34
+%global senemos_build_release 35
 %else
 %global senemos_build_release 1
 %endif
@@ -404,6 +404,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-35
+- Use exported OF CPU lookup with balanced references for modular LLCC counters.
+- Admit the exact OEM NFC L7E provider while retaining POCO-only tag transport.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-34
 - Integrate the running release-33 audio and native touch source fixes.
 - Preserve paired CPU/L3 bandwidth admission and complete-path OPP recovery.

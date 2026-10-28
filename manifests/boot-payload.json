@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Combined Uke candidate 34 merges running source b566637 (audio probe, rotation and touch-group fixes) with source 86fba10 (paired CPU/L3 bandwidth). Complete-path OPP recovery and all retained hardware prerequisites remain. No new physical acceptance is claimed. Count-only native LLCC-v2 perf adds exclusive per-CPU ownership, fault handling and exact DT admission. MEMLAT policy and physical counter qualification remain open.",
+  "source_origin": "Candidate 35 retains combined audio, touch and paired CPU/L3 source from candidate 34, uses exported OF CPU lookup for the modular LLCC counter and admits exact OEM NFC L7E. No new physical acceptance is claimed.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "b04d256b67362079d085e384b5cdf3810c1eb075afb0358499baf261712efdda"
+      "sha256": "a3dc5b5430b77d484c7bb0d7d7c0d814e113f49f4b6bf2155a93203bda46681f"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -90,6 +90,10 @@
     {
       "path": "patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch",
       "sha256": "967c24f799749d12e90b6c57c913f08c6ef322bdeec8f3a856e9bd3af5c1686d"
+    },
+    {
+      "path": "patches/boot/0033-uke-nfc-regulator-resource.patch",
+      "sha256": "1c858d146f1728233ba1920c96a970307e9b289a875d6f0c11d4c3af3b3e22bb"
     },
     {
       "path": "src/audio/sm7675-uke-audio-providers.dtsi",
@@ -257,7 +261,7 @@
     },
     {
       "path": "src/performance/qcom-sm7675-llcc-pmu.c",
-      "sha256": "c5c6fced7133e0db295a6e114fa7fc9a8ce25eb720852ffd41d94c3675aaee9b"
+      "sha256": "72f300e99161f07b78081ce3e4d530b2ebde2f43a9bb81b4509bbacfc31bf97a"
     },
     {
       "path": "src/power/uke-platform-profile.c",
@@ -301,7 +305,7 @@
     },
     {
       "path": "tests/llcc-pmu-contract.sh",
-      "sha256": "5e5716b7faff73f043bc1d6c5bd44be9b75ca8ee55f9e746cc92b232a70219de"
+      "sha256": "229c520e944a10363c1133b37a8c4ace5c0e1078a99107fc9f72521196729672"
     },
     {
       "path": "tests/lpass-sm7675-pins-contract.sh",
@@ -401,7 +405,7 @@
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",
-      "sha256": "3c7431718dee3be16f64a4f9da2300064970e38f488819d5dcf0b4d3d9102f46"
+      "sha256": "051c682933d1ef561a57943057e8299df9740a11aab321ee910ae6dbb4f0b8eb"
     },
     {
       "path": "tests/usb-typec-fdt-check.cpp",
