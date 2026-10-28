@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 32
+%global senemos_build_release 33
 %else
 %global senemos_build_release 1
 %endif
@@ -400,6 +400,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
+- Admit exact CPU/LLCC monitor resources with both OEM primary and L3 OPP votes.
+- Preserve existing GEM requests while adding AMC/WAKE-only monitor votes.
+- Use the shared L3 page and existing CPUfreq clock pair; reject unmet L3 floors.
+- Retain OPP rollback/retry guards and require distinct physical acceptance.
+
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-32
 - Restore all owned OPP bandwidth requests after a failed multi-path vote.
 - Retain rollback uncertainty and retry incomplete OPP/BWMON cached targets.

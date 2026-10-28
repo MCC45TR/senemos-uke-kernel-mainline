@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-27",
+  "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Linux 7.3 Uke candidate 32 retains candidate-31 L3 admission and the installed candidate-30 source. OPP owns a last-complete per-path bandwidth snapshot, restores all paths on error, preserves rollback uncertainty and retries incomplete transitions. BWMON retries a return to its last successful target after an error. Snapshot allocation/release and NULL-table readiness callers are tested. CPU/LLCC DT admission, MEMLAT and physical acceptance remain open. No new monitor or L3 node is enabled; no firmware or device-private data is included.",
+  "source_origin": "Linux 7.3 Uke candidate 33 retains L3 supplier admission and OPP complete-path rollback/retry. Admit the exact CPU/LLCC monitor with all six OEM primary and secondary L3 OPPs, the existing XO/GPLL0 clock pair and non-overlapping shared L3 page. Preserve existing GEM request semantics, add an AMC/WAKE-only monitor path and reject L3 requests above the firmware LUT. MEMLAT, LLCC performance counters, other hardware paths and physical acceptance remain open. No firmware or private device data is included.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "0de42d6be5b7b6b6b3ecd1da192defc3e4644204ffca6c8d7d3b5ab5727d2b53"
+      "sha256": "166ee50d31b4daf540885e05b7a2dbfd571afcc58edffb509778a8a820f5a919"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -153,7 +153,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "3abd341d02d07c0fb14bfeb86852466bff29e7989e015f3a0b2571bb09f325c1"
+      "sha256": "e2eaf604eacdf87a28cdda7b9ad2dd33b80f6b4d80b7408deabc4d066a8c050d"
     },
     {
       "path": "tests/native-firewall-contract.sh",
@@ -325,7 +325,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "c981e8667332ea3cd89ac5e1e1a092cb6e2660acb75ae63cfa89c5f0e45a3fff"
+      "sha256": "07639d94d7a2a50fb21acbeb44447ba8c4bfccac44844ad48da708ae3d67bdbe"
     },
     {
       "path": "tests/qup-interconnect-contract.sh",
@@ -377,7 +377,7 @@
     },
     {
       "path": "src/display/uke-abl-native.h",
-      "sha256": "04dcc44ea75046c3cbfbeb87aa666f74130f7992a7b01d16421d901c1746af55"
+      "sha256": "a4858b8928b6f4880d9ad4b05cd81b6229e7fd65c85cec599f7f4e9338285a79"
     },
     {
       "path": "tests/bwmon-counter-contract.sh",
@@ -389,7 +389,7 @@
     },
     {
       "path": "tests/usb-typec-fdt-check.cpp",
-      "sha256": "b3a55201924ff3134a13c38524623947ca76850e828e0b9461ce66c54b29a199"
+      "sha256": "68e325e38739ebce77a9f73fa0ce8aef63de562367d2423eb8d563560779b1f3"
     },
     {
       "path": "patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch",
@@ -397,7 +397,7 @@
     },
     {
       "path": "tests/l3-provider-contract.sh",
-      "sha256": "f5aeffe90b191bd84365176f73ee88c8e26a7f69214b8423cf0c7d39dbde5a14"
+      "sha256": "b9704c03b90b512b77ca1f8725e3eb552e6797e8c6b95ccd55baea0870355342"
     },
     {
       "path": "patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch",
@@ -410,6 +410,18 @@
     {
       "path": "patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch",
       "sha256": "40e7f401bf5e31b59b77c1a503c12c438b5b33583fe5ba79ae775a626ff40419"
+    },
+    {
+      "path": "src/boot/uke-cpu-bwmon.h",
+      "sha256": "9ce426cdc8a714134fd5de76629cb883e6d630d21e0e842fe86cbeab34055ebd"
+    },
+    {
+      "path": "tests/cpu-bwmon-dt-contract.sh",
+      "sha256": "e0e67961bce89cf85bc4cfaec94b753d9b28409a553a73df6fffec9373dedf80"
+    },
+    {
+      "path": "patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch",
+      "sha256": "967c24f799749d12e90b6c57c913f08c6ef322bdeec8f3a856e9bd3af5c1686d"
     }
   ],
   "root_selector_capability": {

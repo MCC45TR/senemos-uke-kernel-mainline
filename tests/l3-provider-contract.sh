@@ -115,9 +115,17 @@ static void accepted(struct platform_device *p,unsigned int count,unsigned long 
     nodes[1]->peak_bw=first*src->buswidth/1000;
     assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==0);
     nodes[1]->peak_bw++;
-    assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==(count==1?0:1));
+    if(qp->reject_overvote&&count==1) assert(qcom_osm_l3_set(nodes[0],nodes[1])==-ERANGE);
+    else assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==(count==1?0:1));
     nodes[1]->peak_bw=UINT32_MAX;
-    assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==count-1&&written_offset==qp->reg_perf_state);
+    if(qp->reject_overvote) {
+        unsigned int before=writes;
+        assert(qcom_osm_l3_set(nodes[0],nodes[1])==-ERANGE&&writes==before);
+        nodes[1]->peak_bw=last*src->buswidth/1000;
+        assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==count-1);
+        nodes[1]->peak_bw++;before=writes;
+        assert(qcom_osm_l3_set(nodes[0],nodes[1])==-ERANGE&&writes==before);
+    } else assert(!qcom_osm_l3_set(nodes[0],nodes[1])&&written_value==count-1&&written_offset==qp->reg_perf_state);
     qcom_osm_l3_remove(p); assert(deregistrations==1&&destroys==2&&removes==1); finish();
 }
 int main(int argc,char **argv) {
@@ -143,7 +151,7 @@ int main(int argc,char **argv) {
         accepted(&p,3,307200000UL,4896000000UL);
     }
     if(all) {
-        const struct qcom_osm_l3_desc *descs[]={&osm_l3,&epss_l3_perf_state,&shikra_epss_l3_perf_state,&epss_l3_l3_vote};
+        const struct qcom_osm_l3_desc *descs[]={&osm_l3,&epss_l3_perf_state,&shikra_epss_l3_perf_state,&epss_l3_l3_vote,&sm7675_epss_l3};
         for(unsigned int i=0;i<ARRAY_SIZE(descs);i++) {
             desc=descs[i]; reset(desc); struct platform_device p=device(desc); accepted(&p,3,307200000,614400000);
             reset(desc); p=device(desc); reg(desc->reg_freq_lut,0); reg(desc->reg_freq_lut+desc->lut_row_size,0); accepted(&p,1,300000000,300000000);

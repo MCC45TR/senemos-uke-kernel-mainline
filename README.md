@@ -54,6 +54,16 @@ Actual-function host fixtures cover initial/removal votes, failed rollback,
 OPP-cache suppression and owned path/snapshot allocation and release. CPU/LLCC
 DT admission, matched full build/package and physical acceptance remain open.
 
+Source candidate `7.3.0-33` admits the CPU/LLCC monitor with six exact OEM
+primary/secondary bandwidth OPPs and a native shared-L3 provider. It reuses the
+CPUfreq XO/GPLL0 pair and only the shared L3 page; original CPU domains remain
+unchanged. Existing GEM requests keep their semantics and the new monitor votes
+only in AMC/WAKE. An L3 request beyond the firmware LUT fails instead of being
+silently clipped. Host sanitizer checks, four retained ICC-graph comparisons,
+four complete Type-C/display transforms and focused binding checks pass.
+MEMLAT, LLCC performance counters and physical bandwidth/lifecycle acceptance
+remain open; no candidate-33 tablet operation is claimed.
+
 ## Status — 18 October 2026
 
 Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora

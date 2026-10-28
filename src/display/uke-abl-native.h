@@ -2,12 +2,14 @@
 #ifdef __KERNEL__
 #include "uke-hardware.h"
 #include "uke-bwmon.h"
+#include "uke-cpu-bwmon.h"
 #else
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 #include "../boot/uke-hardware.h"
 #include "../boot/uke-bwmon.h"
+#include "../boot/uke-cpu-bwmon.h"
 #endif
 /*
  * Give an unlabeled OEM node a phandle and a symbol so overlays can reference it.
@@ -125,6 +127,9 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
 	if (ret)
 		return ret;
 	ret = uke_bwmon_apply(fdt);
+	if (ret)
+		return ret;
+	ret = uke_cpu_bwmon_apply(fdt);
 	if (ret)
 		return ret;
 	node = fdt_path_offset(fdt, framebuffer);
