@@ -365,7 +365,7 @@
     },
     {
       "path": "tests/rproc-early-stop-contract.sh",
-      "sha256": "e457447874dea9ace8adb7e5d9c908b06d4f9e2e205e8e39869527935707264c"
+      "sha256": "559bea4dc8ac0b19bda431a75445a8d398580debf2a5a0bcd8de09d3596bb665"
     },
     {
       "path": "tests/rproc-edge-stop-contract.sh",
