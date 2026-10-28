@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 41
+%global senemos_build_release 42
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-42
+- Negotiate attached DSC policy through atomic state and DRM link-status recovery.
+- Check receiver enable readback and monitor link, decoder and FEC state.
+- Retain a failed-compression latch and separate source from physical acceptance.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-41
 - Select the proposed upstream GEM nonblocking-reclaim control for Uke latency.
 - Preserve inactive eviction and swap, and report completed shrinker progress.

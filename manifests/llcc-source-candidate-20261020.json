@@ -213,7 +213,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "3021c1a9b5715abd2408c1db4b97f314c95368c53076a82bbf280f2deb27addd"
+      "sha256": "4707dd0927de64a116f2f62f81e44bcd4b7a868eb7ebe16da59ba6514b00ceb8"
     },
     {
       "path": "src/display/uke-abl-native.h",
@@ -301,11 +301,11 @@
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "b41bb314c8881112e46971df48bb964cd458ae831e2b1b43e012b3c85a1058d1"
+      "sha256": "80184256d85d5613a79d7292e5b4fc027ed685ea3afea2a2160d2ffeac8079a1"
     },
     {
       "path": "tests/dp-dsc-state-contract.sh",
-      "sha256": "d8cc878da391b7867392b03a80848da84e44646818f79abda4528d5da403e8c7"
+      "sha256": "acb16619b336bb2dbc4e9643e5ae51c1007a7d7097ff34d6a2a22b326009ebff"
     },
     {
       "path": "tests/dp-dsc-tu-contract.sh",
@@ -317,7 +317,7 @@
     },
     {
       "path": "tests/dp-fec-status-contract.sh",
-      "sha256": "159e9615cb022c30f0b086da922fb9cbb6aa3eb4cb67fe1fecbab866d4f24c69"
+      "sha256": "50a18d1038120d911127f70c09c8b54469daaf48a4f5444c658346c7a1e90dd8"
     },
     {
       "path": "tests/dp-mst-control-contract.sh",
@@ -542,6 +542,14 @@
     {
       "path": "patches/boot/0042-bcl-report-empty-current.patch",
       "sha256": "1f510eb8b1ef471d6f77924d36f04e76b02bfe2db179f28a71b848830f621fa8"
+    },
+    {
+      "path": "patches/display/0064-uke-dp-dsc-live-policy-and-recovery.patch",
+      "sha256": "fb7a8159bd584caf29b7c93845677a0a21609889e2df327fd09b4fd40b89ca54"
+    },
+    {
+      "path": "tests/dp-stream-lifetime-contract.sh",
+      "sha256": "f55ce2337008b9230141a3ecfafa9b2d630b923210144c894509f35f49768c21"
     }
   ],
   "baseline_files": [
@@ -664,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-41",
+  "kernel_release": "7.3.0-42",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

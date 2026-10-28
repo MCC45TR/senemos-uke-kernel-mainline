@@ -89,7 +89,11 @@ static void msm_dp_write_pn(void *p,u32 offset,u32 value) {
 }
 static u32 get_unaligned_le32(const void *p) { u32 value; memcpy(&value,p,4); return le32toh(value); }
 static int drm_dp_dpcd_read_byte(void *aux,u32 reg,u8 *value) {
- (void)aux; assert(reg==DP_FEC_STATUS); reads++;
+ (void)aux;
+ if(reg!=DP_FEC_STATUS) {
+  assert(reg==DP_DSC_ENABLE || reg==DP_FEC_CONFIGURATION);*value=1;return 0;
+ }
+ reads++;
  if(read_error)return read_error;
  *value=reads>=detect_after?DP_FEC_DECODE_EN_DETECTED:0; return 0;
 }

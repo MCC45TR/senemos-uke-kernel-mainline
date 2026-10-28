@@ -1,5 +1,14 @@
 # Mainline native source profile
 
+28 October 2026, Linux 7.3.0-42 source candidate: select DSC automatically only
+when uncompressed output cannot preserve the admitted precision/bandwidth.
+The attached root policy supports auto/on/off through a full DRM modeset;
+failed DSC is latched out until a fresh attachment or explicit policy request.
+Read back receiver decoder/FEC enable, monitor lane status and qualified FEC
+counters, and request bounded uncompressed recovery on failure. Existing
+USB-PD and lane routing are retained. Host source tests do not qualify a
+visible compressed image, cable-free recovery or sustained tablet operation.
+
 28 October 2026, Linux7.3.0-41 source candidate: retain Rob Clark's proposed
 GEM blocking control and select nonblocking reclamation for the Uke kernel.
 Keep inactive eviction, normal swap, reservation ownership, active-buffer
