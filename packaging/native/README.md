@@ -1,10 +1,21 @@
 # Mainline native source profile
 
+28 October 2026, Linux7.3.0-40 source candidate: default transparent huge pages
+to advised mappings instead of all anonymous mappings. A kernel38/Plasma6.8.2
+panel-transition trace records21.6-second direct reclaim and22-second display
+gaps under the preceding policy. A bounded runtime madvise comparison records
+1.151ms maximum direct reclaim and413ms maximum DP presentation gap; repeat
+and fresh-boot acceptance remain separate. Retain THP for applications that
+request it, all normal allocation errors and the existing swap configuration.
+No CMA size, GPU capability, firmware, timeout or board value is changed.
+
 28 October 2026, Linux 7.3.0-39 source candidate: select the bounded VP9 empty
 NOSHOW completion correction in both decode orders. Recycle only a valid unused
 linear capture buffer; preserve corruption, overflow, ownership, LAST/PSC and
 queue submission errors. The preceding source fails eight modeled checks;
-the candidate passes35. This selects the complete change against release38,
+the candidate passes35. The fresh release38 baseline has17 failed assertions;
+the earlier eight-failure count refers only to the preceding trial comparison.
+This selects the complete change against release38,
 including the initial handler absent from the earlier incremental patch file.
 Signed delivery and current Chrome/session acceptance remain separate gates.
 

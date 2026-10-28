@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Candidate39 retains release38 and selects valid empty VP9 NOSHOW capture recycling in both output orders, with errors and firmware ownership preserved. The earlier incremental trial patch is consolidated against the actual selected source. CDSP retained startup remains unselected; physical session acceptance is separate.",
+  "source_origin": "Candidate40 retains release39 VP9 and release38 BCL safeguards and defaults transparent huge pages to advised mappings. Kernel38 runtime panel-transition controls show bounded reclaim/presentation improvement. No CMA, firmware, GPU capability or electrical parameter changes. Fresh signed-package boot acceptance remains separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "b537d564af0a9898aaf21697434d5e9e0094c668fd1a65eb506b22b4842189b8"
+      "sha256": "ca576bdfcf5947e85b083266e018293d84384895af6cf043b7680963a1be2325"
     },
     {
       "path": "packaging/native/prepare.sh",
