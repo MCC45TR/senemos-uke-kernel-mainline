@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 33
+%global senemos_build_release 34
 %else
 %global senemos_build_release 1
 %endif
@@ -251,6 +251,7 @@ CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-probe-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
@@ -400,11 +401,21 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-34
+- Integrate the running release-33 audio and native touch source fixes.
+- Preserve paired CPU/L3 bandwidth admission and complete-path OPP recovery.
+- Use a distinct tuple for the combined source lineage.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
 - Admit exact CPU/LLCC monitor resources with both OEM primary and L3 OPP votes.
 - Preserve existing GEM requests while adding AMC/WAKE-only monitor votes.
 - Use the shared L3 page and existing CPUfreq clock pair; reject unmet L3 floors.
 - Retain OPP rollback/retry guards and require distinct physical acceptance.
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
+- Preserve held touch identities and qualify coherent new contact groups.
+- Retain interior electrode coordinates and filter single-contact patch roll.
+- Keep the matched release-31 audio corrections and reviewed L3/OPP safeguards.
+- Original KDE and Qt remain unchanged; desktop cancellation and Focus input acceptance remain open.
 
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-32
 - Restore all owned OPP bandwidth requests after a failed multi-path vote.

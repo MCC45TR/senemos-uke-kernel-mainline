@@ -18,9 +18,10 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
+	bash -n tests/audio-probe-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.3.0
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 118) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 120) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
