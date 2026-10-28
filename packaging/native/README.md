@@ -324,6 +324,9 @@ it does not implement the vendor current/voltage thermal proxies or MEMLAT.
 Unavailable ADC samples return `ENODATA`, and alarm work/wake cleanup is serialized.
 Host fault fixtures and AArch64 object compilation are separate from a matched
 candidate boot, measurement accuracy, physical alarms and policy acceptance.
+Candidate 38 also rejects empty PM7550BA current samples with `ENODATA`,
+following the OEM invalid-zero contract. Release 37 booted and exposed voltage,
+thresholds and three IRQs; its zero current samples did not establish zero load.
 The exact release 4 COPR bundle boots normally. Its 23 IIO channels, ten board
 thermal consumers and thirteen CPU cooling bindings are present. The full
 installation has 67 readable hwmon temperature inputs and 51 thermal zones,

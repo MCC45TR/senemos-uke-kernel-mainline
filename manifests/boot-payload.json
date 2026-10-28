@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Candidate 37 retains release 36 and adds the proposed native PM7550BA BCL hwmon driver with standard emergency attributes, unavailable ADC handling, serialized alarm cleanup and exact retained Uke node/revision admission. Firmware thresholds and the legacy thermal graph are preserved. Matched build, package, boot and physical results remain separate.",
+  "source_origin": "Candidate 38 retains release 37 and rejects empty PM7550BA current ADC samples without renewing the cache, following the exact OEM invalid-zero contract observed during release-37 validation. Firmware thresholds and other PMIC descriptors remain unchanged. The CDSP retained-startup patch remains unselected. Source/build/package/device results stay distinct.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -193,7 +193,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "403306bcf4e77825848348d0b699df2a412acea55360045f1c33b46890e942d9"
+      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
     },
     {
       "path": "src/boot/uke-bwmon.h",
@@ -477,7 +477,7 @@
     },
     {
       "path": "tests/bcl-hwmon-contract.sh",
-      "sha256": "8a77c1f3d491b3c7f903580e986dbc3fa14f2900c73c369dbca0ae9d5dd662bd"
+      "sha256": "b33397defa3512f6db2aac70793baaf111c63889bdc486c5872b761bc8be3675"
     },
     {
       "path": "tests/bcl-alarm-lifetime-contract.sh",
@@ -486,6 +486,10 @@
     {
       "path": "tests/bcl-uke-admission-contract.sh",
       "sha256": "225443df083ee22afb4b8c35d2d2161333a96349070382913a0e4fb02117c49e"
+    },
+    {
+      "path": "patches/boot/0042-bcl-report-empty-current.patch",
+      "sha256": "1f510eb8b1ef471d6f77924d36f04e76b02bfe2db179f28a71b848830f621fa8"
     }
   ],
   "root_selector_capability": {

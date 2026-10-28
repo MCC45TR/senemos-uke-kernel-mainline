@@ -114,6 +114,15 @@ static int sentinel(void) {
     d=make_device(&smb2370_data);d.batt_config=BCL_BATT_2S;bytes[0]=0xff;bytes[1]=0x7f;
     ret=bcl_in_input_read(&d,&out);
     if(ret!=-ENODATA||out!=321||d.last_in_updated) {fprintf(stderr,"16-bit unavailable sample: ret=%d out=%ld cache_stamp=%lu\n",ret,out,d.last_in_updated);return 1;}
+    d=make_device(&pm7550ba_data);out=321;
+    ret=bcl_curr_input_read(&d,&out);
+    if(ret!=-ENODATA||out!=321||d.last_curr_updated) {fprintf(stderr,"PM7550BA empty current sample: ret=%d out=%ld cache_stamp=%lu\n",ret,out,d.last_curr_updated);return 1;}
+    fields[F_CURR_INPUT].value=0xfe;
+    assert(!bcl_curr_input_read(&d,&out)&&out==-188&&d.last_curr_updated==2000);
+    jiffies+=HZ;fields[F_CURR_INPUT].value=0;out=321;
+    assert(bcl_curr_input_read(&d,&out)==-ENODATA&&out==321&&d.last_curr_updated==2000&&d.last_curr_input==-188);
+    d=make_device(&smb2370_data);d.batt_config=BCL_BATT_2S;bytes[0]=bytes[1]=0;
+    assert(!bcl_curr_input_read(&d,&out)&&out==0&&d.last_curr_updated==2000);
     return 0;
 }
 int main(int argc,char **argv) {

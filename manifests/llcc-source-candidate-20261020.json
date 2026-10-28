@@ -161,7 +161,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "403306bcf4e77825848348d0b699df2a412acea55360045f1c33b46890e942d9"
+      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
     },
     {
       "path": "src/boot/sm7675-uke-ufs.dtso",
@@ -529,7 +529,7 @@
     },
     {
       "path": "tests/bcl-hwmon-contract.sh",
-      "sha256": "8a77c1f3d491b3c7f903580e986dbc3fa14f2900c73c369dbca0ae9d5dd662bd"
+      "sha256": "b33397defa3512f6db2aac70793baaf111c63889bdc486c5872b761bc8be3675"
     },
     {
       "path": "tests/bcl-alarm-lifetime-contract.sh",
@@ -538,6 +538,10 @@
     {
       "path": "tests/bcl-uke-admission-contract.sh",
       "sha256": "225443df083ee22afb4b8c35d2d2161333a96349070382913a0e4fb02117c49e"
+    },
+    {
+      "path": "patches/boot/0042-bcl-report-empty-current.patch",
+      "sha256": "1f510eb8b1ef471d6f77924d36f04e76b02bfe2db179f28a71b848830f621fa8"
     }
   ],
   "baseline_files": [
@@ -660,7 +664,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-37",
+  "kernel_release": "7.3.0-38",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

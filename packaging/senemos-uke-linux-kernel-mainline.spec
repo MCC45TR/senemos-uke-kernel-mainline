@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 37
+%global senemos_build_release 38
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-38
+- Return ENODATA for an empty PM7550BA current ADC sample without renewing its cache.
+- Preserve valid current samples, firmware thresholds and other PMIC descriptors.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-37
 - Add native PM7550BA BCL hwmon with exact Uke revision and resource admission.
 - Preserve unavailable voltage samples and serialize alarm work/wake cleanup.

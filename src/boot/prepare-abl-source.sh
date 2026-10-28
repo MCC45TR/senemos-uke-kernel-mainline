@@ -94,7 +94,7 @@ bash "$here/../../tests/cpu-bwmon-dt-contract.sh"
 for bcl_patch in 0038-hwmon-emergency-attributes.patch \
     0035-qcom-bcl-hwmon-binding.patch 0036-qcom-bcl-hwmon-driver.patch \
     0037-bcl-report-unavailable-voltage.patch 0039-bcl-alarm-wake-lifetime.patch \
-    0040-uke-pm7550ba-bcl-admission.patch; do
+    0040-uke-pm7550ba-bcl-admission.patch 0042-bcl-report-empty-current.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$bcl_patch"
     git -C "$kernel" apply "$here/../../patches/boot/$bcl_patch"
 done
