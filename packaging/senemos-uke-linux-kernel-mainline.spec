@@ -212,6 +212,9 @@ bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
 CC=clang bash native-profile/tests/llcc-boot-fdt-contract.sh "$PWD"
+CC=clang bash native-profile/tests/llcc-pmu-contract.sh
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst | grep -Fx 'of:N*T*Cqcom,sm7675-llcc-pmuC*'
 test "$(cat native-generated/llcc-profile)" = native-v1
 grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
@@ -404,6 +407,7 @@ fi
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-34
 - Integrate the running release-33 audio and native touch source fixes.
 - Preserve paired CPU/L3 bandwidth admission and complete-path OPP recovery.
+- Add the count-only SM7675 LLCC perf provider with exclusive per-CPU events.
 - Use a distinct tuple for the combined source lineage.
 
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33

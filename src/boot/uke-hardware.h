@@ -7,6 +7,49 @@ static int UKE_INIT uke_hardware_child(void *fdt, int parent, const char *name)
 	return node == -FDT_ERR_NOTFOUND ? fdt_add_subnode(fdt, parent, name) : node;
 }
 
+static int UKE_INIT uke_hardware_llcc_pmu(void *fdt)
+{
+	const char *path = "/soc/llcc-pmu@24095000";
+	const char *name, *value;
+	const fdt32_t *reg;
+	int node = fdt_path_offset(fdt, path), soc, bytes, property;
+
+	if (node == -FDT_ERR_NOTFOUND)
+		return 0;
+	if (node < 0)
+		return node;
+	soc = fdt_path_offset(fdt, "/soc");
+	if (soc < 0 || fdt_address_cells(fdt, soc) != 1 || fdt_size_cells(fdt, soc) != 1)
+		return -FDT_ERR_BADVALUE;
+	reg = (const fdt32_t *)fdt_getprop(fdt, node, "reg", &bytes);
+	if (!reg || bytes != 8 || fdt32_to_cpu(reg[0]) != 0x24095000 || fdt32_to_cpu(reg[1]) != 0x300)
+		return -FDT_ERR_BADVALUE;
+	value = (const char *)fdt_getprop(fdt, node, "reg-names", &bytes);
+	if (!value || bytes != 10 || memcmp(value, "lagg-base", 10))
+		return -FDT_ERR_BADVALUE;
+	value = (const char *)fdt_getprop(fdt, node, "compatible", &bytes);
+	if (!value || !((bytes == sizeof("qcom,llcc-pmu-ver2") && !memcmp(value, "qcom,llcc-pmu-ver2", bytes)) ||
+		       (bytes == sizeof("qcom,sm7675-llcc-pmu") && !memcmp(value, "qcom,sm7675-llcc-pmu", bytes))))
+		return -FDT_ERR_BADVALUE;
+	value = (const char *)fdt_getprop(fdt, node, "status", &bytes);
+	if (value && !((bytes == 5 && !memcmp(value, "okay", 5)) ||
+		       (bytes == 3 && !memcmp(value, "ok", 3)) ||
+		       (bytes == 9 && !memcmp(value, "disabled", 9))))
+		return -FDT_ERR_BADVALUE;
+	if (fdt_first_subnode(fdt, node) != -FDT_ERR_NOTFOUND)
+		return -FDT_ERR_BADVALUE;
+	fdt_for_each_property_offset(property, fdt, node) {
+		if (!fdt_getprop_by_offset(fdt, property, &name, &bytes) ||
+		    (strcmp(name, "compatible") && strcmp(name, "reg") && strcmp(name, "reg-names") &&
+		     strcmp(name, "status") && strcmp(name, "phandle") && strcmp(name, "linux,phandle")))
+			return -FDT_ERR_BADVALUE;
+	}
+	if (property != -FDT_ERR_NOTFOUND)
+		return property;
+	/* Retain disabled/absent status; probe only reads registers until a perf event starts. */
+	return fdt_setprop_string(fdt, node, "compatible", "qcom,sm7675-llcc-pmu");
+}
+
 static int UKE_INIT uke_hardware_rng(void *fdt)
 {
 	static const char compatible[] = "qcom,sm7675-trng\0qcom,trng";
@@ -95,6 +138,9 @@ static int UKE_INIT uke_hardware_names(void *fdt)
 	    fdt_node_check_compatible(fdt, 0, "qcom,sm7675"))
 		return -FDT_ERR_BADVALUE;
 	ret = uke_hardware_rng(fdt);
+	if (ret)
+		return ret;
+	ret = uke_hardware_llcc_pmu(fdt);
 	if (ret)
 		return ret;
 	node = fdt_path_offset(fdt, "/soc/xiaomi_fingerprint");

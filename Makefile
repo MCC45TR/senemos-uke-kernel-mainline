@@ -17,6 +17,8 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/rgb-supplier.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
+	bash -n src/performance/prepare-source.sh tests/llcc-pmu-contract.sh
+	CC=clang bash tests/llcc-pmu-contract.sh
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
 	bash -n tests/audio-probe-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
@@ -108,7 +110,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
+	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"

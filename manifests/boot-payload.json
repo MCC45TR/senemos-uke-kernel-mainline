@@ -2,18 +2,18 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Combined Uke candidate 34 merges running source b566637 (audio probe, rotation and touch-group fixes) with source 86fba10 (paired CPU/L3 bandwidth). Complete-path OPP recovery and all retained hardware prerequisites remain. No new physical acceptance is claimed.",
+  "source_origin": "Combined Uke candidate 34 merges running source b566637 (audio probe, rotation and touch-group fixes) with source 86fba10 (paired CPU/L3 bandwidth). Complete-path OPP recovery and all retained hardware prerequisites remain. No new physical acceptance is claimed. Count-only native LLCC-v2 perf adds exclusive per-CPU ownership, fault handling and exact DT admission. MEMLAT policy and physical counter qualification remain open.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "166ee50d31b4daf540885e05b7a2dbfd571afcc58edffb509778a8a820f5a919"
+      "sha256": "b18f5b0a2cf4cac82c363132dcf168734cccfdcbc813a5833f0bcf44542aa416"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "8388c2ef5dcb5bbc1422d2d10e7bf9541b8144a2a43e983bbd6da34a3888f14e"
+      "sha256": "b04d256b67362079d085e384b5cdf3810c1eb075afb0358499baf261712efdda"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -248,6 +248,18 @@
       "sha256": "782109bd2357fb796a8e30ef7699735b6371c3692d0101fbf2d23c2cf0f07625"
     },
     {
+      "path": "src/performance/prepare-source.sh",
+      "sha256": "dc1658ba1e7656ea4e271c0dacd58e795a6ce75f699480e3e598f62daeec06fc"
+    },
+    {
+      "path": "src/performance/qcom,sm7675-llcc-pmu.yaml",
+      "sha256": "7008a81745db7adb1b1d3ff85377ae105902cdea90074eb3eeabdd3e5c537582"
+    },
+    {
+      "path": "src/performance/qcom-sm7675-llcc-pmu.c",
+      "sha256": "c5c6fced7133e0db295a6e114fa7fc9a8ce25eb720852ffd41d94c3675aaee9b"
+    },
+    {
       "path": "src/power/uke-platform-profile.c",
       "sha256": "f56f75f74eeacc2c0b3694feeeef034bab4a0ac62939ffe70fcb493df35bcc4e"
     },
@@ -286,6 +298,10 @@
     {
       "path": "tests/l3-provider-contract.sh",
       "sha256": "b9704c03b90b512b77ca1f8725e3eb552e6797e8c6b95ccd55baea0870355342"
+    },
+    {
+      "path": "tests/llcc-pmu-contract.sh",
+      "sha256": "5e5716b7faff73f043bc1d6c5bd44be9b75ca8ee55f9e746cc92b232a70219de"
     },
     {
       "path": "tests/lpass-sm7675-pins-contract.sh",
@@ -381,7 +397,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "e2eaf604eacdf87a28cdda7b9ad2dd33b80f6b4d80b7408deabc4d066a8c050d"
+      "sha256": "b16ee455b9bd72141400c7907da06322a8169ad4723c1457fd8501e68fa51a3c"
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",

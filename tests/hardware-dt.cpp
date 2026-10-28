@@ -54,6 +54,14 @@ int main(int argc,char **argv) {
         assert(fdt_add_subnode(dt.data(),path(dt.data(),"/cpus"),name)>=0);
     }
     for(const char *name:{"memory","firmware","soc","__symbols__","aliases"})assert(fdt_add_subnode(dt.data(),0,name)>=0);
+    assert(!fdt_setprop_u32(dt.data(),path(dt.data(),"/soc"),"#address-cells",1));
+    assert(!fdt_setprop_u32(dt.data(),path(dt.data(),"/soc"),"#size-cells",1));
+    const char *pmu="/soc/llcc-pmu@24095000";
+    assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"llcc-pmu@24095000")>=0);
+    assert(!fdt_setprop_string(dt.data(),path(dt.data(),pmu),"compatible","qcom,llcc-pmu-ver2"));
+    const fdt32_t pmu_reg[]={cpu_to_fdt32(0x24095000),cpu_to_fdt32(0x300)};
+    assert(!fdt_setprop(dt.data(),path(dt.data(),pmu),"reg",pmu_reg,sizeof pmu_reg));
+    assert(!fdt_setprop_string(dt.data(),path(dt.data(),pmu),"reg-names","lagg-base"));
     assert(!fdt_setprop_u64(dt.data(),path(dt.data(),"/memory"),"reg",0x8000000020000000ULL));
     assert(fdt_add_subnode(dt.data(),path(dt.data(),"/soc"),"remoteproc-adsp@03000000")>=0);
     assert(!fdt_setprop_u32(dt.data(),path(dt.data(),"/soc/remoteproc-adsp@03000000"),"phandle",42));
@@ -77,6 +85,32 @@ int main(int argc,char **argv) {
     assert(!fdt_setprop_string(dt.data(),path(dt.data(),"/aliases"),"panel0","/soc/qcom,mdss_mdp@ae00000/aliased-panel"));
     assert(!fdt_setprop_string(dt.data(),path(dt.data(),"/__symbols__"),"old_panel","/soc/qcom,mdss_mdp@ae00000/unused-panel"));
     auto initial=dt;
+    for(unsigned fault=0;fault<10;++fault) {
+        auto bad=initial;int n=path(bad.data(),pmu);
+        if(fault<3) {
+            fdt32_t reg[]={cpu_to_fdt32(fault==0?0x24095004:0x24095000),cpu_to_fdt32(fault==1?0x1000:0x300)};
+            assert(!fdt_setprop(bad.data(),n,"reg",reg,fault==2?4:sizeof reg));
+        }
+        if(fault==3)assert(!fdt_setprop_string(bad.data(),n,"compatible","qcom,llcc-pmu"));
+        if(fault==4)assert(!fdt_setprop_string(bad.data(),n,"reg-names","base"));
+        if(fault==5)assert(!fdt_setprop_u32(bad.data(),n,"interrupts",1));
+        if(fault==6)assert(!fdt_setprop_string(bad.data(),n,"status","reserved"));
+        if(fault==7)assert(!fdt_setprop_u32(bad.data(),path(bad.data(),"/soc"),"#address-cells",2));
+        if(fault==8)assert(!fdt_setprop_u32(bad.data(),path(bad.data(),"/soc"),"#size-cells",2));
+        if(fault==9)assert(fdt_add_subnode(bad.data(),n,"other")>=0);
+        auto before=bad;assert(uke_hardware_llcc_pmu(bad.data())<0&&bad==before);
+    }
+    for(const char *status:{"disabled","ok","okay"}) {
+        auto candidate=initial;
+        assert(!fdt_setprop_string(candidate.data(),path(candidate.data(),pmu),"status",status));
+        assert(!uke_hardware_llcc_pmu(candidate.data()));
+        assert(!std::strcmp(text(candidate.data(),pmu,"status"),status));
+        auto before=candidate;assert(!uke_hardware_llcc_pmu(candidate.data())&&candidate==before);
+    }
+    {
+        auto absent=initial;assert(!fdt_del_node(absent.data(),path(absent.data(),pmu)));
+        auto before=absent;assert(!uke_hardware_llcc_pmu(absent.data())&&absent==before);
+    }
     for(unsigned fault=0;fault<8;++fault) {
         auto bad=initial;int n=path(bad.data(),rng);
         if(fault<3) {
@@ -97,6 +131,7 @@ int main(int argc,char **argv) {
         assert(!std::strcmp(text(disabled.data(),rng,"status"),"disabled"));
     }
     assert(!uke_hardware_names(dt.data()));
+    assert(!fdt_node_check_compatible(dt.data(),path(dt.data(),pmu),"qcom,sm7675-llcc-pmu"));
     assert(!std::strcmp(text(dt.data(),"/cpus","model"),"Qualcomm Snapdragon 7+ Gen 3"));
     assert(!std::strcmp(text(dt.data(),"/cpus/cpu@200","compatible"),"arm,cortex-a520"));
     assert(!std::strcmp(text(dt.data(),"/cpus/cpu@300","compatible"),"arm,cortex-a720"));

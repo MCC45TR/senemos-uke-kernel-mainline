@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "166ee50d31b4daf540885e05b7a2dbfd571afcc58edffb509778a8a820f5a919"
+      "sha256": "b18f5b0a2cf4cac82c363132dcf168734cccfdcbc813a5833f0bcf44542aa416"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "8388c2ef5dcb5bbc1422d2d10e7bf9541b8144a2a43e983bbd6da34a3888f14e"
+      "sha256": "b04d256b67362079d085e384b5cdf3810c1eb075afb0358499baf261712efdda"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -256,6 +256,18 @@
       "sha256": "2867ff6710f1530ecb9c9a1ae7846c25efdbc9e08533cadaf177b1dda7fd04b7"
     },
     {
+      "path": "src/performance/prepare-source.sh",
+      "sha256": "dc1658ba1e7656ea4e271c0dacd58e795a6ce75f699480e3e598f62daeec06fc"
+    },
+    {
+      "path": "src/performance/qcom,sm7675-llcc-pmu.yaml",
+      "sha256": "7008a81745db7adb1b1d3ff85377ae105902cdea90074eb3eeabdd3e5c537582"
+    },
+    {
+      "path": "src/performance/qcom-sm7675-llcc-pmu.c",
+      "sha256": "c5c6fced7133e0db295a6e114fa7fc9a8ce25eb720852ffd41d94c3675aaee9b"
+    },
+    {
       "path": "tests/audio-providers-fdt-contract.sh",
       "sha256": "2748fd60ca07e6c2c5670b5874647c071610068f171bf16e29a5a7af5de0c85b"
     },
@@ -338,6 +350,10 @@
     {
       "path": "tests/llcc-gpu-startup-contract.sh",
       "sha256": "44bbcebcf4773afd9b3550c45382159cff10cab2c33df9cc67782f3f20af75c9"
+    },
+    {
+      "path": "tests/llcc-pmu-contract.sh",
+      "sha256": "5e5716b7faff73f043bc1d6c5bd44be9b75ca8ee55f9e746cc92b232a70219de"
     },
     {
       "path": "tests/llcc-sm7675-contract.sh",
@@ -437,7 +453,7 @@
     },
     {
       "path": "tests/uke-build-scope-contract.sh",
-      "sha256": "e2eaf604eacdf87a28cdda7b9ad2dd33b80f6b4d80b7408deabc4d066a8c050d"
+      "sha256": "b16ee455b9bd72141400c7907da06322a8169ad4723c1457fd8501e68fa51a3c"
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",
