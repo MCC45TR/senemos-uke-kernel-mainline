@@ -82,6 +82,8 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0031-opp-restore-bandwi
 git -C "$kernel" apply "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-counter-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-dt-contract.sh"
@@ -183,6 +185,7 @@ sha256sum "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recove
 sha256sum "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch" >> "$output/abl-source-SHA256SUMS"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
     0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \

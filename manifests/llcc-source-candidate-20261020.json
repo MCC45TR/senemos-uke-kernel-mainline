@@ -116,6 +116,10 @@
       "sha256": "1c858d146f1728233ba1920c96a970307e9b289a875d6f0c11d4c3af3b3e22bb"
     },
     {
+      "path": "patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch",
+      "sha256": "b9a3a8e1b40fda12b85da54e9cc37c42d1e2d73586e9bf70bdba03101afb3040"
+    },
+    {
       "path": "patches/display/0054-uke-independent-display-crtcs.patch",
       "sha256": "dda3aa0a500b4947d905d7bb16654ae4cea6866240d53ff475dcabe8654da544"
     },
@@ -157,7 +161,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "07639d94d7a2a50fb21acbeb44447ba8c4bfccac44844ad48da708ae3d67bdbe"
+      "sha256": "14c72bb934e4174a84a30eb2e5265c38f57af51ab6024c015d7f94ba3f94f7f8"
     },
     {
       "path": "src/boot/sm7675-uke-ufs.dtso",
@@ -341,7 +345,7 @@
     },
     {
       "path": "tests/l3-provider-contract.sh",
-      "sha256": "b9704c03b90b512b77ca1f8725e3eb552e6797e8c6b95ccd55baea0870355342"
+      "sha256": "ab4c70ce62c1b3c200861834008f0dcf15f299eb6b49aa00a20afcb8da00f836"
     },
     {
       "path": "tests/lid-wake-contract.sh",
@@ -354,6 +358,10 @@
     {
       "path": "tests/llcc-gpu-startup-contract.sh",
       "sha256": "44bbcebcf4773afd9b3550c45382159cff10cab2c33df9cc67782f3f20af75c9"
+    },
+    {
+      "path": "tests/llcc-live-check.cpp",
+      "sha256": "5be86d78af80c8f73f3646ee3e8d839983ad444430c90bfec200ad0995edd886"
     },
     {
       "path": "tests/llcc-pmu-contract.sh",
@@ -616,7 +624,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-35",
+  "kernel_release": "7.3.0-36",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 kernel=${1:?Pass prepared kernel source}
 mode=${2:-all}
-case $mode in all|link|clocks|lut|descending|wide) ;; *) exit 2;; esac
+case $mode in all|link|clocks|lut|descending|wide|boot-floor) ;; *) exit 2;; esac
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 cat > "$work/check.c" <<'C'
@@ -28,6 +28,8 @@ typedef uint64_t u64;
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define PTR_ERR(p) ((int)(intptr_t)(p))
 #define GFP_KERNEL 0
+#define U32_MAX UINT32_MAX
+#define check_mul_overflow(a,b,p) __builtin_mul_overflow(a,b,p)
 #define __iomem
 #define icc_units_to_bps(v) ((u64)(v)*1000)
 #define do_div(n,d) ((n)/=(d))
@@ -41,9 +43,10 @@ struct icc_node;
 struct icc_provider {
     struct device *dev; void *data,*aggregate,*xlate;
     int (*set)(struct icc_node *,struct icc_node *);
+    int (*get_bw)(struct icc_node *,u32 *,u32 *);
     struct icc_node *nodes[2]; unsigned int count;
 };
-struct icc_node { unsigned int id,peak_bw; void *data; struct icc_provider *provider; };
+struct icc_node { unsigned int id,peak_bw,init_avg,init_peak; void *data; struct icc_provider *provider; };
 struct icc_onecell_data { size_t num_nodes; struct icc_node *nodes[]; };
 struct clk { unsigned long rate; };
 static struct clk clocks[2];
@@ -53,6 +56,8 @@ static unsigned char registers[0x2000];
 static unsigned int clock_gets,clock_puts,maps,allocs,creates,destroys,removes,registrations,deregistrations,errors,writes;
 static unsigned int written_offset,written_value;
 static int clock_error=-1,alloc_error=-1,node_error=-1,name_error=-1,link_error,register_error,map_error;
+static bool boot_floor;
+static unsigned int initial_errors;
 static struct clk *clk_get(struct device *dev,const char *name) {
     (void)dev; unsigned int i=!strcmp(name,"alternate"); clock_gets++;
     assert(i||!strcmp(name,"xo")); return (int)i==clock_error?ERR_PTR(-EPROBE_DEFER):clocks+i;
@@ -79,7 +84,16 @@ static struct icc_node *icc_node_create_dyn(void) {
 }
 static void icc_node_destroy(unsigned int id) { assert(id<2&&nodes[id]); free(nodes[id]); nodes[id]=NULL; destroys++; }
 static int icc_node_set_name(struct icc_node *node,struct icc_provider *p,const char *name) { (void)p; assert(name&&*name); return (int)node->id==name_error?-ENOMEM:0; }
-static void icc_node_add(struct icc_node *node,struct icc_provider *p) { assert(p->count<2); node->provider=p; p->nodes[p->count++]=node; }
+static void icc_node_add(struct icc_node *node,struct icc_provider *p) {
+    assert(p->count<2); node->provider=p; p->nodes[p->count++]=node;
+    if(boot_floor) {
+        if(p->get_bw) assert(!p->get_bw(node,&node->init_avg,&node->init_peak));
+        else node->init_avg=node->init_peak=INT32_MAX;
+        node->peak_bw=node->init_peak;
+        if((node->init_avg||node->init_peak)&&p->set(node,node)) initial_errors++;
+        node->peak_bw=0;
+    }
+}
 static int icc_link_nodes(struct icc_node *src,struct icc_node **dst) { assert(src&&dst&&*dst&&src->provider==(*dst)->provider); return link_error; }
 static void icc_nodes_remove(struct icc_provider *p) { removes++; while(p->count) icc_node_destroy(p->nodes[--p->count]->id); }
 static int icc_provider_register(struct icc_provider *p) { assert(p->count==2); registrations++; return register_error; }
@@ -100,6 +114,7 @@ static void reset(const struct qcom_osm_l3_desc *desc) {
     memset(registers,0,sizeof(registers)); reg(REG_ENABLE,1);
     clocks[0].rate=19200000; clocks[1].rate=600000000;
     clock_gets=clock_puts=maps=allocs=creates=destroys=removes=registrations=deregistrations=errors=writes=0;
+    boot_floor=false;initial_errors=0;
     clock_error=alloc_error=node_error=name_error=-1; link_error=register_error=map_error=0;
     for(unsigned int i=0;i<4;i++) reg(desc->reg_freq_lut+i*desc->lut_row_size,(1U<<30)|((unsigned int[]){16,24,32,32})[i]);
 }
@@ -149,6 +164,24 @@ int main(int argc,char **argv) {
         reset(desc); struct platform_device p=device(desc);
         for(unsigned int i=0;i<4;i++) reg(desc->reg_freq_lut+i*4,(1U<<30)|((unsigned int[]){16,240,255,255})[i]);
         accepted(&p,3,307200000UL,4896000000UL);
+    }
+    if(all||!strcmp(argv[1],"boot-floor")) {
+        for(unsigned int bad=0;bad<2;bad++) {
+            desc=&sm7675_epss_l3;reset(desc);struct platform_device p=device(desc);
+            clocks[0].rate=bad?200000000000000000UL:200000000000UL;
+            refused(&p,-ERANGE);assert(!creates&&!registrations);
+        }
+        desc=&sm7675_epss_l3;reset(desc);boot_floor=true;struct platform_device p=device(desc);
+        assert(!qcom_osm_l3_probe(&p));
+        if(initial_errors)fprintf(stderr,"Actual native ICC initialization rejected %u default boot floors\n",initial_errors);
+        assert(!initial_errors);
+        struct qcom_osm_l3_icc_provider *qp=p.data;
+        assert(qp->provider.get_bw&&writes==2&&written_value==2);
+        for(unsigned int i=0;i<2;i++)assert(!nodes[i]->init_avg&&nodes[i]->init_peak==19660800);
+        nodes[1]->peak_bw=nodes[1]->init_peak;assert(!qcom_osm_l3_set(nodes[0],nodes[1]));
+        nodes[1]->peak_bw++;unsigned int before=writes;
+        assert(qcom_osm_l3_set(nodes[0],nodes[1])==-ERANGE&&writes==before);
+        qcom_osm_l3_remove(&p);finish();
     }
     if(all) {
         const struct qcom_osm_l3_desc *descs[]={&osm_l3,&epss_l3_perf_state,&shikra_epss_l3_perf_state,&epss_l3_l3_vote,&sm7675_epss_l3};

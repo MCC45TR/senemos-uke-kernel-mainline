@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Candidate 35 retains combined audio, touch and paired CPU/L3 source from candidate 34, uses exported OF CPU lookup for the modular LLCC counter and admits exact OEM NFC L7E. No new physical acceptance is claimed.",
+  "source_origin": "Candidate 36 retains the complete release-35 source and corrects the SM7675 ICC initial L3 floor using checked firmware-LUT capacity. Genuine client overvotes remain rejected. Source/build and runtime/physical results remain separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -94,6 +94,10 @@
     {
       "path": "patches/boot/0033-uke-nfc-regulator-resource.patch",
       "sha256": "1c858d146f1728233ba1920c96a970307e9b289a875d6f0c11d4c3af3b3e22bb"
+    },
+    {
+      "path": "patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch",
+      "sha256": "b9a3a8e1b40fda12b85da54e9cc37c42d1e2d73586e9bf70bdba03101afb3040"
     },
     {
       "path": "src/audio/sm7675-uke-audio-providers.dtsi",
@@ -189,7 +193,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "07639d94d7a2a50fb21acbeb44447ba8c4bfccac44844ad48da708ae3d67bdbe"
+      "sha256": "14c72bb934e4174a84a30eb2e5265c38f57af51ab6024c015d7f94ba3f94f7f8"
     },
     {
       "path": "src/boot/uke-bwmon.h",
@@ -301,7 +305,11 @@
     },
     {
       "path": "tests/l3-provider-contract.sh",
-      "sha256": "b9704c03b90b512b77ca1f8725e3eb552e6797e8c6b95ccd55baea0870355342"
+      "sha256": "ab4c70ce62c1b3c200861834008f0dcf15f299eb6b49aa00a20afcb8da00f836"
+    },
+    {
+      "path": "tests/llcc-live-check.cpp",
+      "sha256": "5be86d78af80c8f73f3646ee3e8d839983ad444430c90bfec200ad0995edd886"
     },
     {
       "path": "tests/llcc-pmu-contract.sh",
