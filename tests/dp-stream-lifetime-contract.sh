@@ -2,6 +2,7 @@
 # Exercise production link ownership and per-stream failure cleanup without hardware.
 set -Eeuo pipefail
 ulimit -c 0
+ulimit -c 0
 kernel=${1:?Pass prepared kernel}
 source=$kernel/drivers/gpu/drm/msm/dp/dp_display.c
 work=$(mktemp -d)
@@ -105,6 +106,9 @@ int main() {
  init();downshift=true;assert(msm_dp_display_prepare_link(&dp.msm_dp_display)==-EAGAIN);
  assert(!dp.msm_dp_display.link_ready&&link.link_caps.num_lanes==1&&gets==puts_count);
  downshift=false;assert(!msm_dp_display_prepare_link(&dp.msm_dp_display));msm_dp_display_unprepare(&dp.msm_dp_display);
+ init();dp.msm_dp_display.mst_active=false;dp.link_status_notified=true;downshift=true;
+ assert(msm_dp_display_prepare_link(&dp.msm_dp_display)==-EAGAIN);
+ assert(link.link_caps.num_lanes==1&&gets==puts_count&&!dp.link_status_notified&&!dp.plugged_lock);
  init();assert(!msm_dp_display_prepare_link(&dp.msm_dp_display));
  assert(!msm_dp_display_prepare_link(&dp.msm_dp_display)&&gets==1&&link_on==1);
  assert(!msm_dp_display_enable_helper(&dp.msm_dp_display,&panels[0]));

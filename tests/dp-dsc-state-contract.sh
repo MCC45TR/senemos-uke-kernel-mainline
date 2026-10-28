@@ -125,6 +125,8 @@ int main() {
  prepare_error=0;
  assert(!msm_dp_display_atomic_check(&dp.msm_dp_display,&mode,&conn,&state)&&state.dsc.dsc.bits_per_pixel==128);
  panel.dsc.dsc.bits_per_pixel=128;dp.dsc_policy_changed=false;dp.link_status_notified=false;
+ panel.dsc_last_error=-EAGAIN;msm_dp_display_set_link_failure(&dp.msm_dp_display,true);
+ assert(!panel.dsc_failed&&!panel.dsc_fallbacks);panel.dsc_last_error=0;
  msm_dp_display_set_link_failure(&dp.msm_dp_display,true);
  assert(panel.dsc_failed&&panel.dsc_fallbacks==1);
  msm_dp_display_link_status_work(&dp.link_status_work);const auto notices=notified;

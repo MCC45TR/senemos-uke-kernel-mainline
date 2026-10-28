@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+28 October 2026, Linux 7.3.0-43 source candidate: apply negotiated link-budget
+reduction to SST as well as MST. Recheck atomic admission after a smaller
+trained link and keep DSC eligible for that bandwidth retry. Reset the retry
+notification only after strict budget progress; receiver faults retain the
+compression-failure latch. Host regression covers the formerly missed SST
+case. Actual trained-link downshift and compressed output remain separate
+physical validation gates.
+
 28 October 2026, Linux 7.3.0-42 source candidate: select DSC automatically only
 when uncompressed output cannot preserve the admitted precision/bandwidth.
 The attached root policy supports auto/on/off through a full DRM modeset;

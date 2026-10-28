@@ -80,7 +80,27 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	}
  
  	return 0;
-@@ -1001,15 +1007,18 @@
+@@ -847,11 +853,16 @@
+ 	rc = msm_dp_ctrl_prepare_stream_on(dp->ctrl, dp->panel, force_link_train);
+ 	if (rc)
+ 		goto failed;
+-	if (msm_dp_display->mst_active &&
++	if ((msm_dp_display->mst_active ||
++	     of_device_is_compatible(msm_dp_display->pdev->dev.of_node, "qcom,sm7675-dp")) &&
+ 	    (dp->link->link_params.rate < dp->link->link_caps.rate ||
+ 	     dp->link->link_params.num_lanes < dp->link->link_caps.num_lanes)) {
+-		dp->link->link_caps.rate = dp->link->link_params.rate;
+-		dp->link->link_caps.num_lanes = dp->link->link_params.num_lanes;
++		scoped_guard(mutex, &dp->plugged_lock) {
++			dp->link->link_caps.rate = dp->link->link_params.rate;
++			dp->link->link_caps.num_lanes = dp->link->link_params.num_lanes;
++			/* A strictly smaller budget permits one fresh bounded retry. */
++			dp->link_status_notified = false;
++		}
+ 		rc = -EAGAIN;
+ 		goto failed;
+ 	}
+@@ -1001,15 +1012,18 @@
  
  	if (mode_pclk_khz > DP_MAX_PIXEL_CLK_KHZ)
  		return MODE_CLOCK_HIGH;
@@ -102,7 +122,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	}
  
  	mode_bpp = dp->mst_active ? 24 : info->bpc * num_components;
-@@ -1490,7 +1499,7 @@
+@@ -1490,7 +1504,7 @@
  	guard(mutex)(&dp->plugged_lock);
  	active = READ_ONCE(dp->msm_dp_display.active_stream_cnt);
  	return sysfs_emit(buf,
@@ -111,7 +131,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  		active, active ? READ_ONCE(dp->link->link_params.num_lanes) : 0,
  		active ? READ_ONCE(dp->link->link_params.rate) : 0,
  		active && !dp->msm_dp_display.mst_active ? READ_ONCE(panel->msm_dp_mode.bpp) : 0,
-@@ -1504,7 +1513,9 @@
+@@ -1504,7 +1518,9 @@
  		active && READ_ONCE(panel->dsc_active) ? READ_ONCE(panel->dsc.dsc.slice_count) : 0,
  		READ_ONCE(dp->msm_dp_display.mst_active), msm_dp_ctrl_get_stream_cnt(dp->ctrl),
  		READ_ONCE(dp->msm_dp_display.active_stream_cnt), READ_ONCE(dp->sink_mst_capable),
@@ -122,7 +142,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  }
  static DEVICE_ATTR_RO(uke_dp_stream_state);
  
-@@ -1552,23 +1563,38 @@
+@@ -1552,23 +1568,38 @@
  	struct msm_dp_display_private *dp = dev_get_dp_display_private(dev);
  
  	guard(mutex)(&dp->plugged_lock);
@@ -169,11 +189,12 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	return count;
  }
  static DEVICE_ATTR_RW(uke_dp_dsc);
-@@ -1590,6 +1616,12 @@
+@@ -1590,6 +1621,13 @@
  
  	scoped_guard(mutex, &dp->plugged_lock) {
  		dp->link_failed = failed;
 +		if (failed && !display->mst_active && dp->panel->dsc.dsc.bits_per_pixel &&
++		    dp->panel->dsc_last_error != -EAGAIN &&
 +		    !dp->panel->dsc_failed) {
 +			dp->panel->dsc_failed = true;
 +			dp->panel->dsc_fallbacks++;
@@ -182,7 +203,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  		if (!failed)
  			dp->link_status_notified = false;
  	}
-@@ -1605,9 +1637,10 @@
+@@ -1605,9 +1643,10 @@
  	bool notify;
  
  	scoped_guard(mutex, &dp->plugged_lock) {
@@ -195,7 +216,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  		dp->link_status_notified = true;
  	}
  	if (READ_ONCE(dp->msm_dp_display.mst_active)) {
-@@ -1620,6 +1653,60 @@
+@@ -1620,6 +1659,60 @@
  		drm_kms_helper_connector_hotplug_event(connector);
  }
  
@@ -256,7 +277,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  int msm_dp_get_mst_max_stream(struct msm_dp *msm_dp_display)
  {
  	struct msm_dp_display_private *dp =
-@@ -1645,6 +1732,7 @@
+@@ -1645,6 +1738,7 @@
  	if (!msm_dp_display->msm_dp_mst)
  		return;
  	synchronize_irq(dp->irq);
@@ -264,7 +285,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	cancel_work_sync(&dp->link_status_work);
  	msm_dp_mst_mgr_destroy(msm_dp_display);
  }
-@@ -1678,6 +1766,7 @@
+@@ -1678,6 +1772,7 @@
  
  	mutex_init(&dp->plugged_lock);
  	INIT_WORK(&dp->link_status_work, msm_dp_display_link_status_work);
@@ -272,7 +293,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  
  	rc = msm_dp_display_get_io(dp);
  	if (rc)
-@@ -1727,6 +1816,7 @@
+@@ -1727,6 +1822,7 @@
  
  err:
  	disable_work_sync(&dp->link_status_work);
@@ -280,7 +301,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	msm_dp_display_deinit_sub_modules(dp);
  	return rc;
  }
-@@ -1737,6 +1827,7 @@
+@@ -1737,6 +1833,7 @@
  
  	if (of_device_is_compatible(pdev->dev.of_node, "qcom,sm7675-dp"))
  		device_remove_group(&pdev->dev, &uke_dp_stream_group);
@@ -288,7 +309,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	disable_work_sync(&dp->link_status_work);
  	component_del(&pdev->dev, &msm_dp_display_comp_ops);
  	msm_dp_display_deinit_sub_modules(dp);
-@@ -1847,10 +1938,19 @@
+@@ -1847,10 +1944,19 @@
  		return -EINVAL;
  	memset(&state->dsc, 0, sizeof(state->dsc));
  	hdr = state->hdr_enabled && state->hdr_sdp.db[2] != HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
@@ -312,7 +333,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  		ret = -ENOSPC;
  		for (; bpc >= (hdr ? 10 : 8); bpc -= 2) {
  			if (info->is_hdmi && !msm_dp_utils_tmds_fits(mode->clock, bpc * 3,
-@@ -1862,14 +1962,10 @@
+@@ -1862,14 +1968,10 @@
  			if (!ret)
  				break;
  		}
@@ -330,7 +351,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	}
  	if (bpp < 0)
  		return bpp;
-@@ -2029,10 +2125,13 @@
+@@ -2029,10 +2131,13 @@
  
  	drm_dbg_dp(msm_dp_display->drm_dev, "type=%d Done\n", msm_dp_display->connector_type);
  	msm_dp_display_set_link_failure(msm_dp_display, false);
@@ -344,7 +365,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	WRITE_ONCE(dp->panel->hdr_active, false);
  	msm_dp_display_unprepare(msm_dp_display);
  	msm_dp_display_set_link_failure(msm_dp_display, true);
-@@ -2157,6 +2256,7 @@
+@@ -2157,6 +2262,7 @@
  	struct msm_dp_display_private *msm_dp_display =
  		container_of(dp, struct msm_dp_display_private, msm_dp_display);
  
