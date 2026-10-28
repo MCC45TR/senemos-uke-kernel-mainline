@@ -120,3 +120,4 @@
 0119-asoc-uke-probe-readiness.patch
 0120-msm-shrinker-blocking-control.patch
 0121-msm-uke-nonblocking-reclaim.patch
+0122-uke-battery-status-notification.patch

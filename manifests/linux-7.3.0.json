@@ -496,6 +496,10 @@
     {
       "path": "patches/7.3.0/0121-msm-uke-nonblocking-reclaim.patch",
       "sha256": "5551d9fd7a5e5ea9d5e75f8904e722de70adfac3143973bfb104b197195e0884"
+    },
+    {
+      "path": "patches/7.3.0/0122-uke-battery-status-notification.patch",
+      "sha256": "9ae02caf93213fa8bcc7abc0862fcc18c2361ce14d6f640c90aee0f95b59f0c3"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
