@@ -1,6 +1,21 @@
 # Mainline native source profile
 
-28 October 2026, Linux7.3.0-40 source candidate: default transparent huge pages
+28 October 2026, Linux7.3.0-41 source candidate: retain Rob Clark's proposed
+GEM blocking control and select nonblocking reclamation for the Uke kernel.
+Keep inactive eviction, normal swap, reservation ownership, active-buffer
+checks and no-progress errors. Report freed pages even when a scanned LRU
+becomes empty, as required by the actual MM caller. The actual policy/scan
+fixture has32 checks; the old source fails10 and the candidate passes all.
+This is source/model validation, not physical acceptance of the new policy.
+
+The runtime control disabling all GEM eviction avoids multi-second stalls in
+three loaded panel cycles, but removes normal swapping as well. That control
+is restored after measurement. Release41 uses the narrower proposed upstream
+mechanism. Restore the preceding THP default: release40's first comparison
+improves, but repeated MADVISE trials still stall22.6seconds. Release40/COPR
+11219571 is canceled before publication and does not establish a fix.
+
+28 October 2026, canceled Linux7.3.0-40 source trial: default transparent huge pages
 to advised mappings instead of all anonymous mappings. A kernel38/Plasma6.8.2
 panel-transition trace records21.6-second direct reclaim and22-second display
 gaps under the preceding policy. A bounded runtime madvise comparison records

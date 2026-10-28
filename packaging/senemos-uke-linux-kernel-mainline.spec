@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 40
+%global senemos_build_release 41
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-41
+- Select the proposed upstream GEM nonblocking-reclaim control for Uke latency.
+- Preserve inactive eviction and swap, and report completed shrinker progress.
+- Retain VP9/BCL safeguards; the THP-only release40 trial was canceled.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-40
 - Restrict the default transparent-hugepage policy to advised mappings.
 - Reduce measured reclaim stalls during loaded internal-panel transitions.

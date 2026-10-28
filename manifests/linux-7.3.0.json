@@ -488,6 +488,14 @@
     {
       "path": "patches/7.3.0/0119-asoc-uke-probe-readiness.patch",
       "sha256": "3b471cf198606afb0008dcd315034ffa0c573c60907e702cff71729150b0bec9"
+    },
+    {
+      "path": "patches/7.3.0/0120-msm-shrinker-blocking-control.patch",
+      "sha256": "fb3c4d7ec8d0df4f77d780de7587a911ed509304eae9f1bf3238f542c7d2c7d0"
+    },
+    {
+      "path": "patches/7.3.0/0121-msm-uke-nonblocking-reclaim.patch",
+      "sha256": "5551d9fd7a5e5ea9d5e75f8904e722de70adfac3143973bfb104b197195e0884"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "ca576bdfcf5947e85b083266e018293d84384895af6cf043b7680963a1be2325"
+      "sha256": "b537d564af0a9898aaf21697434d5e9e0094c668fd1a65eb506b22b4842189b8"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "a3dc5b5430b77d484c7bb0d7d7c0d814e113f49f4b6bf2155a93203bda46681f"
+      "sha256": "950d9cf5de4826b664c8a47e61c3586d39b901fc7afbbcef806655ccea102335"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -664,7 +664,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-40",
+  "kernel_release": "7.3.0-41",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

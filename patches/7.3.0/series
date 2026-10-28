@@ -118,3 +118,5 @@
 0117-asoc-uke-audio-runtime-safety.patch
 0118-asoc-fs19xx-speaker-rotation.patch
 0119-asoc-uke-probe-readiness.patch
+0120-msm-shrinker-blocking-control.patch
+0121-msm-uke-nonblocking-reclaim.patch

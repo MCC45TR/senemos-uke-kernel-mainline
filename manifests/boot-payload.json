@@ -2,18 +2,18 @@
   "schema_version": 1,
   "date": "2026-10-28",
   "source_date_epoch": 1792058622,
-  "source_origin": "Candidate40 retains release39 VP9 and release38 BCL safeguards and defaults transparent huge pages to advised mappings. Kernel38 runtime panel-transition controls show bounded reclaim/presentation improvement. No CMA, firmware, GPU capability or electrical parameter changes. Fresh signed-package boot acceptance remains separate.",
+  "source_origin": "Candidate41 retains release39 VP9 and release38 BCL safeguards, adopts the proposed upstream GEM blocking control with the Uke kernel default nonblocking, and preserves inactive eviction/swap. Report positive freed progress even with an empty LRU. The THP-only trial40 was canceled after repeated stalls; prior THP default restored. Source/model, package and fresh physical validation remain separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "ca576bdfcf5947e85b083266e018293d84384895af6cf043b7680963a1be2325"
+      "sha256": "b537d564af0a9898aaf21697434d5e9e0094c668fd1a65eb506b22b4842189b8"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "a3dc5b5430b77d484c7bb0d7d7c0d814e113f49f4b6bf2155a93203bda46681f"
+      "sha256": "950d9cf5de4826b664c8a47e61c3586d39b901fc7afbbcef806655ccea102335"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
