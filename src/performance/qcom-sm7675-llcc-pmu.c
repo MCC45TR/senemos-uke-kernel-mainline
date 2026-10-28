@@ -13,7 +13,6 @@
 #include <linux/perf_event.h>
 #include <linux/platform_device.h>
 #include <linux/pm.h>
-#include <asm/smp_plat.h>
 
 #define LLCC_CPUS 8
 #define LLCC_CFG 0x200
@@ -259,15 +258,28 @@ static int llcc_resume(struct device *dev)
 
 static int llcc_cpu_map(struct sm7675_llcc_pmu *p)
 {
+	struct device_node *node;
+	const __be32 *reg;
 	unsigned long used = 0;
 	unsigned int cpu, bank;
+	int cells, bytes;
 	u64 id;
 
 	if (num_possible_cpus() != LLCC_CPUS)
 		return -EINVAL;
 	for_each_possible_cpu(cpu) {
-		id = cpu_logical_map(cpu);
-		bank = MPIDR_AFFINITY_LEVEL(id, 1);
+		node = of_get_cpu_node(cpu, NULL);
+		if (!node)
+			return -EINVAL;
+		cells = of_n_addr_cells(node);
+		reg = of_get_property(node, "reg", &bytes);
+		if (!reg || cells < 1 || cells > 2 || bytes != cells * sizeof(*reg)) {
+			of_node_put(node);
+			return -EINVAL;
+		}
+		id = of_read_number(reg, cells);
+		of_node_put(node);
+		bank = (id >> 8) & 0xff; /* MPIDR affinity level 1. */
 		if (cpu >= LLCC_CPUS || bank >= LLCC_CPUS || (id & ~0x700ULL) || (used & BIT(bank)))
 			return -EINVAL;
 		used |= BIT(bank);

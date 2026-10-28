@@ -16,6 +16,7 @@ cat > "$work/check.c" <<'C'
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint8_t u8;
+typedef uint32_t __be32;
 typedef uint64_t local64_t;
 typedef unsigned int raw_spinlock_t;
 #define __iomem
@@ -42,7 +43,6 @@ typedef unsigned int raw_spinlock_t;
 #define ERR_PTR(e) ((void *)(intptr_t)(e))
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define PTR_ERR(p) ((int)(intptr_t)(p))
-#define MPIDR_AFFINITY_LEVEL(id,n) (((id)>>((n)*8))&255)
 struct device { void *data; };
 struct resource { u64 start,end; };
 struct platform_device { struct device dev; struct resource *resource; };
@@ -64,6 +64,10 @@ struct hrtimer { enum hrtimer_restart (*fn)(struct hrtimer *);bool armed; };
 struct notifier_block { int (*notifier_call)(struct notifier_block *,unsigned long,void *); };
 static char registers[0x300];
 static u64 cpu_ids[8];
+struct device_node { unsigned int cpu; };
+static struct device_node nodes[8];
+static unsigned int node_refs;
+static int address_cells=1,reg_bytes=4,missing_cpu=-1;
 static unsigned int cpus=8,current_cpu,lock_depth,writes,clears,timer_starts,timer_cancels,notifier_regs,notifier_unregs,perf_regs,perf_unregs;
 static unsigned int notifier_live,perf_live;
 static int map_error,notifier_error,perf_error;
@@ -73,7 +77,11 @@ static struct pmu *registered;
 static void *llcc_groups;
 static unsigned int num_possible_cpus(void) { return cpus; }
 #define for_each_possible_cpu(cpu) for((cpu)=0;(cpu)<cpus;(cpu)++)
-static u64 cpu_logical_map(unsigned int cpu) { assert(cpu<8);return cpu_ids[cpu]; }
+static struct device_node *of_get_cpu_node(unsigned int cpu,void *thread) { assert(cpu<8&&!thread);if((int)cpu==missing_cpu)return NULL;nodes[cpu].cpu=cpu;node_refs++;return &nodes[cpu]; }
+static int of_n_addr_cells(struct device_node *n) { assert(n&&node_refs);return address_cells; }
+static const __be32 *of_get_property(struct device_node *n,const char *key,int *bytes) { static __be32 cells[2];assert(n&&node_refs&&!strcmp(key,"reg"));*bytes=reg_bytes;cells[0]=address_cells==2?cpu_ids[n->cpu]>>32:cpu_ids[n->cpu];cells[1]=cpu_ids[n->cpu];return cells; }
+static u64 of_read_number(const __be32 *reg,int cells) { assert(node_refs&&cells>=1&&cells<=2);return cells==1?reg[0]:((u64)reg[0]<<32)|reg[1]; }
+static void of_node_put(struct device_node *node) { assert(node&&node_refs);node_refs--; }
 static bool cpu_possible(unsigned int cpu) { return cpu<cpus; }
 static unsigned int smp_processor_id(void) { return current_cpu; }
 static void lock(raw_spinlock_t *l) { assert(!lock_depth&&!*l);lock_depth=1;*l=1; }
@@ -118,17 +126,18 @@ static int perf_pmu_unregister(struct pmu *pmu) {
     assert(!p->active);perf_live=0;perf_unregs++;return 0;
 }
 static void reset(void) {
-    assert(!notifier_live&&!perf_live&&!lock_depth);free(allocation);allocation=NULL;registered=NULL;
+    assert(!notifier_live&&!perf_live&&!lock_depth&&!node_refs);free(allocation);allocation=NULL;registered=NULL;
     memset(registers,0,sizeof(registers));for(unsigned int i=0;i<8;i++)cpu_ids[i]=i*0x100;
     cpus=8;current_cpu=0;writes=clears=timer_starts=timer_cancels=notifier_regs=notifier_unregs=perf_regs=perf_unregs=0;
     map_error=notifier_error=perf_error=0;alloc_error=false;
+    address_cells=1;reg_bytes=4;missing_cpu=-1;
 }
 static struct resource resource={0x24095000,0x240952ff};
 static struct platform_device device(void) { return (struct platform_device){.resource=&resource}; }
 static struct perf_event event(struct sm7675_llcc_pmu *p,int cpu) { struct perf_event e={.pmu=&p->pmu,.cpu=cpu,.hw={.idx=-1}};e.attr.type=p->pmu.type;e.attr.config=0x1000;return e; }
 static void tick(struct sm7675_llcc_pmu *p,bool expected) { assert(p->timer.fn(&p->timer)==(expected?HRTIMER_RESTART:HRTIMER_NORESTART)); }
 int main(void) {
-    for(unsigned int fault=0;fault<10;fault++) {
+    for(unsigned int fault=0;fault<13;fault++) {
         reset();struct platform_device dev=device();int expected=-EINVAL;
         switch(fault) {
         case 0:dev.resource=NULL;break;
@@ -141,6 +150,9 @@ int main(void) {
         case 7:reg(0x200,1);expected=-EBUSY;break;
         case 8:notifier_error=-EAGAIN;expected=-EAGAIN;break;
         case 9:perf_error=-EIO;expected=-EIO;break;
+        case 10:missing_cpu=7;break;
+        case 11:address_cells=3;break;
+        case 12:reg_bytes=8;break;
         }assert(llcc_probe(&dev)==expected&&!dev.dev.data&&!perf_live&&!notifier_live&&!writes);
         assert(notifier_unregs==(fault==9));
     }
@@ -181,9 +193,9 @@ int main(void) {
     llcc_del(&a,0);assert(!p->events[0]&&a.hw.idx==-1&&p->active==1);
     reg(0x224,1);llcc_del(&b,0);assert(!p->active&&b.hw.idx==-1);tick(p,false);assert(!(readl(registers+0x200)&255));
     a=event(p,7);assert(!llcc_add(&a,PERF_EF_START));reg(0x23c,9);llcc_remove(&dev);assert(!perf_live&&!notifier_live&&perf_unregs==1&&notifier_unregs==1&&!p->active&&a.count==72&&!p->timer.armed);
-    reset();dev=device();for(unsigned int i=0;i<8;i++)cpu_ids[i]=(7-i)*0x100;
+    reset();dev=device();address_cells=2;reg_bytes=8;for(unsigned int i=0;i<8;i++)cpu_ids[i]=(7-i)*0x100;
     assert(!llcc_probe(&dev));p=dev.dev.data;for(unsigned int i=0;i<8;i++)assert(p->bank[i]==7-i);llcc_remove(&dev);reset();
-    puts("Actual LLCC perf: 10 probe faults, CPU bijection, event refusals, exclusive banks, scaled/polled counts, stop/restart, idle, sleep and active-event removal pass; host only");
+    puts("Actual LLCC perf: 13 probe faults, one/two-cell CPU bijection and references, event refusals, exclusive banks, scaled/polled counts, stop/restart, idle, sleep and active-event removal pass; host only");
 }
 C
 "${CC:-clang}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter \
