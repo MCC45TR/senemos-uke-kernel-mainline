@@ -85,9 +85,25 @@ static int run()
         u64 mask = 1ULL << cpu;
         long r = call(122, 0, sizeof(mask), reinterpret_cast<long>(&mask));
         if (r < 0) return error("affinity", r);
+        u64 window_before[8], window_after[8];
+        for (unsigned counter = 0; counter < 8; ++counter)
+            if (call(63, events.fd[counter], reinterpret_cast<long>(&window_before[counter]), 8) != 8)
+                return error("window_initial_count", 0);
         for (unsigned pass = 0; pass < 2; ++pass)
             for (unsigned i = 0; i < sizeof(data) / sizeof(data[0]); i += 8)
                 data[i] = data[i] + i + cpu + pass;
+        unsigned dominant = 0;
+        u64 maximum = 0;
+        text("workload_cpu="); number(cpu);
+        for (unsigned counter = 0; counter < 8; ++counter) {
+            if (call(63, events.fd[counter], reinterpret_cast<long>(&window_after[counter]), 8) != 8 ||
+                window_after[counter] < window_before[counter] || (window_after[counter] & 7))
+                return error("window_count_contract", 0);
+            u64 delta = window_after[counter] - window_before[counter];
+            text(" counter"); number(counter); text("="); number(delta);
+            if (delta > maximum) { maximum = delta; dominant = counter; }
+        }
+        text(" dominant_counter="); number(dominant); text("\n");
     }
     u64 total = 0;
     for (unsigned cpu = 0; cpu < 8; ++cpu) {

@@ -361,7 +361,7 @@
     },
     {
       "path": "tests/llcc-live-check.cpp",
-      "sha256": "5be86d78af80c8f73f3646ee3e8d839983ad444430c90bfec200ad0995edd886"
+      "sha256": "f7b1c8714aeb358934f5d5077561439385238d2c1b1767745ec235a59406c9e3"
     },
     {
       "path": "tests/llcc-pmu-contract.sh",
