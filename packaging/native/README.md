@@ -316,6 +316,14 @@ Thirteen OEM emergency cooling maps are connected to the three standard
 cpufreq cooling devices. The OEM 110 degree junction triggers and respective
 8/10 degree hysteresis remain unchanged. Vendor CPU pause is replaced by
 frequency cooling; the complete OEM skin and BCL policy is not implemented.
+Candidate 37 adds the proposed Qualcomm BCL hwmon driver and the matching
+standard emergency attributes. The retained Uke PM7550BA node is admitted
+only with its exact parent, register/IRQ layout and measured revision metadata.
+PMXR2230 remains separate. Probe preserves firmware enable state and thresholds;
+it does not implement the vendor current/voltage thermal proxies or MEMLAT.
+Unavailable ADC samples return `ENODATA`, and alarm work/wake cleanup is serialized.
+Host fault fixtures and AArch64 object compilation are separate from a matched
+candidate boot, measurement accuracy, physical alarms and policy acceptance.
 The exact release 4 COPR bundle boots normally. Its 23 IIO channels, ten board
 thermal consumers and thirteen CPU cooling bindings are present. The full
 installation has 67 readable hwmon temperature inputs and 51 thermal zones,

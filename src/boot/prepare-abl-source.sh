@@ -90,6 +90,17 @@ bash "$here/../../tests/bwmon-dt-contract.sh"
 bash "$here/../../tests/l3-provider-contract.sh" "$kernel"
 bash "$here/../../tests/opp-bandwidth-transaction-contract.sh" "$kernel"
 bash "$here/../../tests/cpu-bwmon-dt-contract.sh"
+# The BCL proposal depends on the matching hwmon core emergency attributes.
+for bcl_patch in 0038-hwmon-emergency-attributes.patch \
+    0035-qcom-bcl-hwmon-binding.patch 0036-qcom-bcl-hwmon-driver.patch \
+    0037-bcl-report-unavailable-voltage.patch 0039-bcl-alarm-wake-lifetime.patch \
+    0040-uke-pm7550ba-bcl-admission.patch; do
+    git -C "$kernel" apply --check "$here/../../patches/boot/$bcl_patch"
+    git -C "$kernel" apply "$here/../../patches/boot/$bcl_patch"
+done
+bash "$here/../../tests/bcl-hwmon-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+bash "$here/../../tests/bcl-alarm-lifetime-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+bash "$here/../../tests/bcl-uke-admission-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"

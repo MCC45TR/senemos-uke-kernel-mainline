@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 36
+%global senemos_build_release 37
 %else
 %global senemos_build_release 1
 %endif
@@ -213,6 +213,10 @@ CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
 CC=clang bash native-profile/tests/llcc-boot-fdt-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-pmu-contract.sh
+CC=clang bash native-profile/tests/bcl-hwmon-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+CXX=clang++ bash native-profile/tests/bcl-alarm-lifetime-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+CXX=clang++ bash native-profile/tests/bcl-uke-admission-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/hwmon/qcom-bcl-hwmon.ko.zst
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst
 modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst | grep -Fx 'of:N*T*Cqcom,sm7675-llcc-pmuC*'
 test "$(cat native-generated/llcc-profile)" = native-v1
@@ -404,6 +408,12 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-37
+- Add native PM7550BA BCL hwmon with exact Uke revision and resource admission.
+- Preserve unavailable voltage samples and serialize alarm work/wake cleanup.
+- Backport the matching standard hwmon emergency attributes and ABI documentation.
+- Retain existing thermal references; MEMLAT/CDSP/microphone acceptance remains open.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-36
 - Bound the SM7675 ICC boot floor to its firmware LUT capacity.
 - Preserve strict rejection of real client overvotes and existing platforms.
