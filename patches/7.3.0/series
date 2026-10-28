@@ -121,3 +121,4 @@
 0120-msm-shrinker-blocking-control.patch
 0121-msm-uke-nonblocking-reclaim.patch
 0122-uke-battery-status-notification.patch
+0123-uke-readonly-desktop-thresholds.patch

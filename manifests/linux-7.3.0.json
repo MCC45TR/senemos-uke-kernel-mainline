@@ -500,6 +500,10 @@
     {
       "path": "patches/7.3.0/0122-uke-battery-status-notification.patch",
       "sha256": "9ae02caf93213fa8bcc7abc0862fcc18c2361ce14d6f640c90aee0f95b59f0c3"
+    },
+    {
+      "path": "patches/7.3.0/0123-uke-readonly-desktop-thresholds.patch",
+      "sha256": "52ca760246228fead36716d6fb390187a01202a59df7f230f459c7554d80ec6e"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

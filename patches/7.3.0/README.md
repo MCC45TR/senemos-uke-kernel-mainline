@@ -149,3 +149,7 @@ they do not qualify this upstream update on Uke hardware.
 28 October 2026: patch0122 restores the OEM Xiaomi battery-status notification
 to the standard power-supply event path. It changes no charging controls and
 does not identify electrical bypass. Host routing and device acceptance are separate.
+
+28 October 2026: patch0123 exposes observed start/end thresholds without granting
+write permission and checks retained OEM bounds before any firmware operation.
+Original KDE provides the threshold fields; no replacement UI is needed.
