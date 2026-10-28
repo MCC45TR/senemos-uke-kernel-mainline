@@ -12,7 +12,10 @@ new contact groups, retains interior electrode coordinates and filters
 single-finger contact-patch roll. A separate RAM module on POCO Pad X1 with
 Fedora Rawhide and kernel `7.3.0-31` improved three-finger gestures and closed
 each of three test windows with one tap; deliberate dragging remained usable.
-The complete release-33 kernel still requires boot acceptance. Original KDE
+On 28 October, the complete signed release-33 kernel was installed through DNF,
+staged with the guarded updater, rebooted and accepted with matching modules.
+External-only boot health also passed with hardware support 1.8.5. Physical
+touch qualification on the complete new kernel remains open. Original KDE
 and Qt remain unchanged. The desktop top-left selection defect and Focus Pen /
 Focus Keyboard driver acceptance remain open. Disabling the optional KWin
 Touch Points visualization removed the reported multifinger rendering stall;
