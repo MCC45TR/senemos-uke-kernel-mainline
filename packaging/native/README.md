@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+28 October 2026, Linux 7.3.0-39 source candidate: select the bounded VP9 empty
+NOSHOW completion correction in both decode orders. Recycle only a valid unused
+linear capture buffer; preserve corruption, overflow, ownership, LAST/PSC and
+queue submission errors. The preceding source fails eight modeled checks;
+the candidate passes35. This selects the complete change against release38,
+including the initial handler absent from the earlier incremental patch file.
+Signed delivery and current Chrome/session acceptance remain separate gates.
+
 27 October 2026, Linux 7.3.0-28 source candidate: restore reviewed MDT, FastRPC
 coherent-buffer and transport-stop safeguards absent from the 7.3 queue. Bound
 ELF32 metadata before copying and validate carveout geometry before PAS setup.

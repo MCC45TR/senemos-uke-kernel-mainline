@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-25",
+  "date": "2026-10-28",
   "base_commit": "470d18160dac9f9adf65ee8ff6f86472573504c1",
   "upstream_version": "7.3.0",
   "prior_candidate": "67c9ee7a02ad27f76beecd7d2590dffa11575acf",
@@ -74,6 +74,10 @@
     {
       "path": "patches/video/0017-cliffs-video-config-clocks.patch",
       "sha256": "c5796ac0342b7a7cb2cae95a130ccd1e0880e28a1cc5aa68f2426a820d6121ca"
+    },
+    {
+      "path": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
+      "sha256": "b94e1c8259b08d245613e3dd9c6d2619298cb0c55af9f87e57293c9a5da21893"
     }
   ],
   "checks": {
@@ -196,5 +200,5 @@
   ],
   "native_prepare_active": true,
   "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
-  "candidate_kernel_release": "7.3.0-16"
+  "candidate_kernel_release": "7.3.0-39"
 }
