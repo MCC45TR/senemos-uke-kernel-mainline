@@ -20,16 +20,20 @@ enum { DP_LINK_STATUS_SIZE=6,DP_DSC_ENABLE=0x160,DP_DECOMPRESSION_EN=1,
  DP_FEC_ERR_COUNT_SEL_MASK=14,DP_FEC_UNCORR_BLK_ERROR_COUNT=2,
  DP_FEC_ERROR_COUNT_LSB=0x281,DP_FEC_ERR_COUNT_VALID=128,DP_FEC_ERROR_COUNT_MASK=127 };
 struct drm_dsc_config {unsigned bits_per_pixel;};
-struct msm_dp_dsc_config {drm_dsc_config dsc;};
+struct msm_dp_dsc_config {drm_dsc_config dsc;unsigned dto_count,compression_ctrl;};
 struct drm_bridge_state {};
-struct drm_bridge {};
+struct msm_dp;
+struct drm_bridge {msm_dp *msm_dp_display=nullptr;};
+#define to_dp_bridge(p) (p)
 struct packet {u8 db[32];};
 struct msm_dp_bridge_state {drm_bridge_state base;msm_dp_dsc_config dsc;packet hdr_sdp,vsc_sdp;bool hdr_enabled,vsc_enabled;int bpp;unsigned colorspace;};
-struct drm_atomic_commit {drm_bridge_state *bridge;};
+struct drm_connector_state;
+struct drm_atomic_commit {drm_bridge_state *bridge;drm_bridge_state *old_bridge=nullptr;drm_connector_state *old_conn=nullptr;};
 struct drm_display_mode {unsigned clock;};
+struct drm_crtc_state {drm_atomic_commit *state;drm_display_mode adjusted_mode;bool mode_changed;};
 struct drm_display_info {unsigned bpc,max_tmds_clock;bool is_hdmi;};
 struct drm_connector {drm_display_info display_info;};
-struct drm_connector_state {drm_connector *connector;unsigned max_requested_bpc,colorspace;void *hdr_output_metadata;};
+struct drm_connector_state {drm_connector *connector;unsigned max_requested_bpc,colorspace;void *hdr_output_metadata;drm_atomic_commit *state=nullptr;void *crtc=nullptr;};
 struct device {void *data,*of_node;};
 struct drm_device {bool registered;unsigned refs;};
 struct device_attribute {};
@@ -73,6 +77,9 @@ static bool sysfs_streq(const char *a,const char *b) {return !strncmp(a,b,strlen
 static int kstrtobool(const char *text,bool *value) {if(!strcmp(text,"1\n")){*value=true;return 0;}if(!strcmp(text,"0\n")){*value=false;return 0;}return -EINVAL;}
 static bool of_device_is_compatible(void*,const char*) {return compatible;}
 static drm_bridge_state *drm_atomic_get_new_bridge_state(drm_atomic_commit *state,drm_bridge*) {return state->bridge;}
+[[maybe_unused]] static drm_bridge_state *drm_atomic_get_old_bridge_state(drm_atomic_commit *state,drm_bridge*) {return state->old_bridge;}
+static drm_connector_state *drm_atomic_get_old_connector_state(drm_atomic_commit *state,drm_connector*) {return state->old_conn;}
+static bool drm_connector_atomic_hdr_metadata_equal(drm_connector_state *a,drm_connector_state *b) {return a->hdr_output_metadata==b->hdr_output_metadata;}
 static void drm_connector_set_link_status_property(drm_connector*,unsigned status) {assert(status==DRM_MODE_LINK_STATUS_BAD);bad_status++;}
 static void drm_kms_helper_connector_hotplug_event(drm_connector*) {notified++;}
 static void msm_dp_mst_report_link_failure(msm_dp*,bool notify) {assert(notify);}
@@ -90,6 +97,9 @@ static int drm_dp_dpcd_read_data(void*,unsigned reg,u8 *out,size_t len) {assert(
 CPP
 for name in uke_dp_dsc_store msm_dp_get_dsc_config msm_dp_display_set_link_failure msm_dp_display_link_status_work msm_dp_display_dsc_health msm_dp_display_dsc_health_work msm_dp_display_atomic_check; do
  awk -v name="$name" '$0 ~ "^(static )?(ssize_t|int|void|struct drm_dsc_config \\*) ?" name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$source" >> "$work/test.cpp"
+done
+for name in msm_dp_color_managed msm_dp_bridge_atomic_check; do
+ awk -v name="$name" '$0 ~ "^static (bool|int) " name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$(dirname -- "$source")/dp_drm.c" >> "$work/test.cpp"
 done
 cat >> "$work/test.cpp" <<'CPP'
 int main() {
@@ -165,6 +175,27 @@ int main() {
  assert(panel.dsc_failed&&panel.dsc_last_error==-EIO&&panel.dsc_fallbacks==2&&polled==1);
  aux_reads=0;msm_dp_display_dsc_health_work(&dp.dsc_health_work.work);assert(!aux_reads);
  assert(uke_dp_dsc_store(&dev,nullptr,"0\n",2)==2&&!panel.dsc_requested);
+ bridge.msm_dp_display=&dp.msm_dp_display;
+ msm_dp_bridge_state old_stream{},new_stream{};
+ auto old_conn=conn;
+ drm_atomic_commit transition{&new_stream.base,&old_stream.base,&old_conn};
+ drm_crtc_state crtc{&transition,{200000},false};
+ conn.state=&transition;conn.crtc=&crtc;uncompressed=30;
+ old_stream.bpp=30;panel.dsc_requested=true;panel.dsc_force=true;panel.dsc_failed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&crtc.mode_changed);
+ old_stream=new_stream;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&!crtc.mode_changed);
+ old_stream.dsc.dto_count=1;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&crtc.mode_changed);
+ old_stream=new_stream;panel.dsc_requested=false;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&crtc.mode_changed);
+ old_stream=new_stream;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&!crtc.mode_changed);
+ uncompressed=24;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&crtc.mode_changed);
+ old_stream=new_stream;crtc.mode_changed=false;
+ assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn)&&!crtc.mode_changed);
+ conn.crtc=nullptr;assert(!msm_dp_bridge_atomic_check(&bridge,&new_stream.base,&crtc,&conn));
 }
 CPP
 "${CXX:-c++}" -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \

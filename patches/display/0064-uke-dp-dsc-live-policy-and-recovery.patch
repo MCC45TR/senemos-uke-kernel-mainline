@@ -436,7 +436,18 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  
 --- a/drivers/gpu/drm/msm/dp/dp_ctrl.c
 +++ b/drivers/gpu/drm/msm/dp/dp_ctrl.c
-@@ -1960,9 +1960,20 @@
+@@ -618,8 +618,9 @@
+ 	if (msm_dp_panel->msm_dp_mode.out_fmt_is_yuv_420)
+ 		config |= DP_CONFIGURATION_CTRL_RGB_YUV; /* YUV420 */
+ 
++	/* DSC packetizer words are 24 bits; PPS retains the input depth. */
+ 	tbd = msm_dp_link_get_test_bits_depth(ctrl->link,
+-					      msm_dp_panel->msm_dp_mode.bpp);
++			msm_dp_panel->dsc.dsc.bits_per_pixel ? 24 : msm_dp_panel->msm_dp_mode.bpp);
+ 
+ 	config |= tbd << DP_CONFIGURATION_CTRL_BPC_SHIFT;
+ 
+@@ -1960,9 +1961,20 @@
  		if (!(status & DP_FEC_DECODE_EN_DETECTED))
  			continue;
  		ret = drm_dp_dpcd_write_byte(ctrl->aux, DP_DSC_ENABLE, DP_DECOMPRESSION_EN);
@@ -460,7 +471,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  	}
  	return -ETIMEDOUT;
  }
-@@ -2003,7 +2014,9 @@
+@@ -2003,7 +2015,9 @@
  		msm_dp_write_link(ctrl, REG_DP_MAINLINK_CTRL,
  			msm_dp_read_link(ctrl, REG_DP_MAINLINK_CTRL) & ~BIT(12));
  		WRITE_ONCE(panel->dsc_active, false);
@@ -471,3 +482,35 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  		if (ret)
  			return ret;
  		/* Detection flags are latched; require a fresh enable event. */
+--- a/drivers/gpu/drm/msm/dp/dp_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_drm.c
+@@ -5,6 +5,7 @@
+ 
+ #include <linux/string_choices.h>
+ #include <linux/of.h>
++#include <linux/string.h>
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_bridge.h>
+@@ -52,6 +53,8 @@
+ 				      struct drm_connector_state *conn_state)
+ {
+ 	struct drm_connector_state *old;
++	struct drm_bridge_state *old_bridge;
++	const struct msm_dp_bridge_state *stream = to_dp_bridge_state(bridge_state);
+ 	int ret;
+ 
+ 	if (to_dp_bridge(bridge)->msm_dp_display->mst_active && conn_state->crtc)
+@@ -63,6 +66,12 @@
+ 					 to_dp_bridge_state(bridge_state));
+ 	if (ret)
+ 		return ret;
++	old_bridge = drm_atomic_get_old_bridge_state(conn_state->state, bridge);
++	/* Stream packing changes also require the CRTC mode_set_nofb path. */
++	if (old_bridge &&
++	    (to_dp_bridge_state(old_bridge)->bpp != stream->bpp ||
++	     memcmp(&to_dp_bridge_state(old_bridge)->dsc, &stream->dsc, sizeof(stream->dsc))))
++		crtc_state->mode_changed = true;
+ 	old = drm_atomic_get_old_connector_state(conn_state->state, conn_state->connector);
+ 	if (old && (old->max_requested_bpc != conn_state->max_requested_bpc ||
+ 		    old->colorspace != conn_state->colorspace ||

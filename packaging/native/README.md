@@ -1,5 +1,15 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-45 source candidate: use eight-bit packetizer
+transport for DSC, retaining input depth in PPS/MSA. Mark changes in selected
+stream bpp or normalized DSC parameters as mode changes so CRTC programming
+runs during attached on/off and fallback. Actual-function fixtures reproduce
+both preceding omissions and pass after correction. Four translation units
+pass AArch64 header syntax checks. Release-42 tablet trials reach decoder
+enable but fail FEC and visible-image acceptance; manual display disable/enable
+restores uncompressed output without USB removal. Neither source nor package
+checks establish that release 45 corrects those physical failures.
+
 29 October 2026, Linux 7.3.0-44 source candidate: retain a DRM device reference
 through attached policy changes and refuse missing, unregistered or replaced
 bindings before altering state. Stop policy/health work before component

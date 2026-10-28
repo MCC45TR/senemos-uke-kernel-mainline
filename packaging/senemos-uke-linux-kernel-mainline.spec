@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 44
+%global senemos_build_release 45
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-45
+- Program DSC packetizer words at eight bits per component while retaining PPS input depth.
+- Force complete CRTC programming when selected stream packing or DSC parameters change.
+
 * Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-44
 - Hold the DRM device across attached DSC requests and refuse missing/unregistered bindings.
 - Stop policy notifications and receiver monitoring before component teardown.

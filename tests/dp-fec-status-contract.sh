@@ -17,13 +17,19 @@ cat <<'C'
 typedef uint8_t u8; typedef uint32_t u32;
 #define __packed __attribute__((packed))
 #define BIT(n) (1U<<(n))
+#define GENMASK(h,l) ((~0U<<(l))&(~0U>>(31-(h))))
 #define WRITE_ONCE(v,n) ((v)=(n))
 #define drm_dbg_dp(...) ((void)0)
 C
 sed '/^#include /d' "$(dirname -- "$source")/../../../../../include/drm/display/drm_dp.h"
 sed '/^#include /d' "$registers"
 cat <<'C'
-struct msm_dp_panel { bool dsc_active; u8 fec_cap; };
+struct msm_dp_panel {
+ bool dsc_active; u8 fec_cap; unsigned stream_id;
+ struct {struct {unsigned bits_per_pixel;} dsc;} dsc;
+ struct {unsigned bpp; bool out_fmt_is_yuv_420;} msm_dp_mode;
+ struct {unsigned version;} psr_cap;
+};
 struct msm_dp_link { unsigned sink_request; };
 struct msm_dp_ctrl_private { bool fec_prepared; void *aux,*drm_dev; struct msm_dp_link *link; };
 static u32 mainlink;
@@ -33,6 +39,16 @@ static int write_error,read_error,training_error;
 static u32 addresses[8]; static u8 values[8];
 static u32 rejected_readback;
 static int readback_error;
+static u32 stream_config[2];
+static u32 msm_dp_read_stream_link(void *ctrl,unsigned id,u32 reg) {
+ (void)ctrl;assert(id<2&&reg==REG_DP_CONFIGURATION_CTRL);return stream_config[id];
+}
+static void msm_dp_write_stream_link(void *ctrl,unsigned id,u32 reg,u32 value) {
+ (void)ctrl;assert(id<2&&reg==REG_DP_CONFIGURATION_CTRL);stream_config[id]=value;
+}
+static u32 msm_dp_link_get_test_bits_depth(void *link,unsigned bpp) {
+ (void)link;assert(bpp==18||bpp==24||bpp==30);return bpp/6-3;
+}
 static u32 msm_dp_read_link(void *p,u32 reg) { (void)p; assert(reg==REG_DP_MAINLINK_CTRL); return mainlink; }
 static void msm_dp_write_link(void *p,u32 reg,u32 value) { (void)p; assert(reg==REG_DP_MAINLINK_CTRL); mainlink=value; }
 static void msm_dp_ctrl_mainlink_enable(void *p) { (void)p; mainlink|=BIT(0); }
@@ -65,8 +81,8 @@ static int msm_dp_ctrl_link_train(struct msm_dp_ctrl_private *ctrl,struct msm_dp
  return training_error;
 }
 C
-for name in msm_dp_ctrl_fec_enable msm_dp_ctrl_setup_main_link; do
-    awk -v name="$name" '$0 ~ "^static int " name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$source"
+for name in msm_dp_ctrl_config_ctrl_streams msm_dp_ctrl_fec_enable msm_dp_ctrl_setup_main_link; do
+    awk -v name="$name" '$0 ~ "^static (int|void) " name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$source"
 done
 cat <<'C'
 static void reset(void) {
@@ -77,6 +93,19 @@ static void reset(void) {
 int main(void) {
  struct msm_dp_link link={0};struct msm_dp_ctrl_private ctrl={.link=&link};
  struct msm_dp_panel panel={0};int step=0;
+ for(unsigned id=0;id<2;id++)for(unsigned bpp=18;bpp<=30;bpp+=6)
+  for(unsigned compressed=0;compressed<2;compressed++) {
+   if(compressed&&bpp==18)continue;
+   panel.stream_id=id;panel.msm_dp_mode.bpp=bpp;
+   panel.dsc.dsc.bits_per_pixel=compressed?128:0;
+   stream_config[id]=BIT(31)|DP_CONFIGURATION_CTRL_BPC_MASK|
+    DP_CONFIGURATION_CTRL_RGB_YUV_MASK|DP_CONFIGURATION_CTRL_SEND_VSC;
+   stream_config[1-id]=BIT(7);
+   msm_dp_ctrl_config_ctrl_streams(&ctrl,&panel);
+   assert(stream_config[id]==(BIT(31)|((compressed?1:bpp/6-3)<<DP_CONFIGURATION_CTRL_BPC_SHIFT)));
+   assert(stream_config[1-id]==BIT(7));
+  }
+ panel=(struct msm_dp_panel){0};
  reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
  assert(!writes && training==1 && status==3);
  ctrl.fec_prepared=true;link.sink_request=DP_TEST_LINK_PHY_TEST_PATTERN;
@@ -109,7 +138,7 @@ int main(void) {
  reset();training_error=-ETIMEDOUT;
  assert(msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step)==-ETIMEDOUT);
  assert(training==1 && !status && !panel.dsc_active);
- puts("Production FEC READY/status-clear ordering, stale-ACK refusal, fresh ACK and failure propagation: PASS; host only.");
+ puts("Production DSC packetizer depth/stream isolation and FEC READY/status-clear, stale/fresh ACK and error propagation: PASS; host only.");
 }
 C
 } > "$work/test.c"
