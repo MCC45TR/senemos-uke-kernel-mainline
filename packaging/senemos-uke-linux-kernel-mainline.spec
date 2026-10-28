@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 43
+%global senemos_build_release 44
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-44
+- Hold the DRM device across attached DSC requests and refuse missing/unregistered bindings.
+- Stop policy notifications and receiver monitoring before component teardown.
+
 * Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-43
 - Recompute SST admission after training negotiates a lower lane count or rate.
 - Preserve DSC eligibility for a bandwidth retry instead of latching a protocol fault.

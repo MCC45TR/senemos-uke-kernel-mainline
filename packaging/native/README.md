@@ -1,5 +1,12 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-44 source candidate: retain a DRM device reference
+through attached policy changes and refuse missing, unregistered or replaced
+bindings before altering state. Stop policy/health work before component
+teardown. Production-function fixtures include an unbind during lock acquisition
+and check balanced references. This is source evidence, not a physical hot-unbind
+or compressed-image qualification.
+
 28 October 2026, Linux 7.3.0-43 source candidate: apply negotiated link-budget
 reduction to SST as well as MST. Recheck atomic admission after a smaller
 trained link and keep DSC eligible for that bandwidth retry. Reset the retry

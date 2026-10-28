@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Execute production policy, atomic selection, receiver health and recovery functions.
 set -Eeuo pipefail
+ulimit -c 0
 source=${1:?Pass prepared dp_display.c}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
@@ -30,6 +31,7 @@ struct drm_display_info {unsigned bpc,max_tmds_clock;bool is_hdmi;};
 struct drm_connector {drm_display_info display_info;};
 struct drm_connector_state {drm_connector *connector;unsigned max_requested_bpc,colorspace;void *hdr_output_metadata;};
 struct device {void *data,*of_node;};
+struct drm_device {bool registered;unsigned refs;};
 struct device_attribute {};
 struct platform_device {device dev;};
 struct msm_dp {bool is_edp;unsigned active_stream_cnt;bool mst_active;platform_device *pdev;drm_bridge *bridge;drm_connector *connector;};
@@ -39,9 +41,9 @@ struct delayed_work {work_struct work;};
 struct link_info {unsigned rate,num_lanes;};
 struct msm_dp_link {link_info link_caps,link_params;bool vsc_sdp_supported;};
 struct msm_dp_display_private {
- msm_dp msm_dp_display;msm_dp_panel *panel;msm_dp_link *link;void *aux,*drm_dev;
+ msm_dp msm_dp_display;msm_dp_panel *panel;msm_dp_link *link;void *aux;drm_device *drm_dev;
  bool plugged_lock,plugged,stream_pm_active,stream_link_attempted;
- bool link_failed,link_status_notified,dsc_policy_changed,wide_bus_supported;
+ bool link_failed,link_status_notified,dsc_policy_changed,wide_bus_supported,dsc_control_bound;
  work_struct link_status_work;delayed_work dsc_health_work;
 };
 #define container_of(p,type,field) reinterpret_cast<type*>(reinterpret_cast<char*>(p)-offsetof(type,field))
@@ -59,8 +61,11 @@ static unsigned queued,polled,notified,bad_status,aux_reads;
 static int uncompressed=30,prepare_error,aux_error,aux_fail_at;
 static bool eq_ok=true,decoder_on=true,fec_ready=true;
 static unsigned fec_selector,counter;static bool counter_valid;
-static void drm_modeset_lock_all(void*) {assert(!modeset_locked);modeset_locked=true;}
-static void drm_modeset_unlock_all(void*) {assert(modeset_locked);modeset_locked=false;}
+static bool unbind_during_lock;static msm_dp_display_private *selected_dp;
+static void drm_dev_get(drm_device *drm) {assert(drm&&drm->registered);drm->refs++;}
+static void drm_dev_put(drm_device *drm) {assert(drm&&drm->refs==1);drm->refs--;}
+static void drm_modeset_lock_all(drm_device *drm) {assert(drm&&drm->refs==1&&!modeset_locked);modeset_locked=true;if(unbind_during_lock)selected_dp->dsc_control_bound=false;}
+static void drm_modeset_unlock_all(drm_device*) {assert(modeset_locked);modeset_locked=false;}
 static void schedule_work(work_struct*) {assert(!modeset_locked);queued++;}
 static void schedule_delayed_work(delayed_work*,unsigned delay) {assert(delay==HZ);polled++;}
 static msm_dp_display_private *dev_get_dp_display_private(device *dev) {return static_cast<msm_dp_display_private*>(dev->data);}
@@ -91,14 +96,21 @@ int main() {
  platform_device pdev{};drm_bridge bridge;msm_dp_panel panel{};msm_dp_link link{{540000,2},{540000,2},true};
  drm_connector connector{{10,320000,true}};
  msm_dp_display_private dp{};dp.panel=&panel;dp.link=&link;dp.wide_bus_supported=true;
+ drm_device drm{true,0};dp.drm_dev=&drm;dp.dsc_control_bound=true;selected_dp=&dp;
  dp.msm_dp_display.pdev=&pdev;dp.msm_dp_display.bridge=&bridge;dp.msm_dp_display.connector=&connector;
  device dev{&dp,nullptr};
+ dp.drm_dev=nullptr;assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==-ENODEV&&!modeset_locked&&!drm.refs);dp.drm_dev=&drm;
+ drm.registered=false;assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==-ENODEV&&!drm.refs);drm.registered=true;
+ dp.dsc_control_bound=false;assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==-ENODEV);dp.dsc_control_bound=true;
+ unbind_during_lock=true;assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==-ENODEV&&!drm.refs&&!panel.dsc_requested);
+ unbind_during_lock=false;dp.dsc_control_bound=true;
  assert(uke_dp_dsc_store(&dev,nullptr,"bad",3)==-EINVAL&&!panel.dsc_requested&&!modeset_locked);
  for(unsigned attached=0;attached<2;attached++) {
   dp.plugged=attached;dp.msm_dp_display.active_stream_cnt=attached;dp.stream_pm_active=attached;dp.stream_link_attempted=attached;
   const auto before=queued;
   assert(uke_dp_dsc_store(&dev,nullptr,"1\n",2)==2&&panel.dsc_requested&&panel.dsc_force&&!dp.plugged_lock&&!modeset_locked);
   assert(queued==before+attached);
+  assert(!drm.refs);
  }
  dp.msm_dp_display.mst_active=true;
  assert(uke_dp_dsc_store(&dev,nullptr,"0\n",2)==-EBUSY&&panel.dsc_requested&&!modeset_locked);
@@ -138,6 +150,7 @@ int main() {
  msm_dp_display_link_status_work(&dp.link_status_work);assert(notified==notices+1);
  aux_reads=0;msm_dp_display_dsc_health_work(&dp.dsc_health_work.work);assert(!aux_reads);
  panel.dsc_active=true;aux_reads=0;
+ dp.dsc_control_bound=false;msm_dp_display_dsc_health_work(&dp.dsc_health_work.work);assert(!aux_reads);dp.dsc_control_bound=true;
  msm_dp_display_dsc_health_work(&dp.dsc_health_work.work);assert(aux_reads==3&&polled==1);
  for(unsigned fail=1;fail<=3;fail++) {aux_reads=0;aux_fail_at=fail;aux_error=-ETIMEDOUT;assert(msm_dp_display_dsc_health(&dp)==-ETIMEDOUT);}
  aux_fail_at=0;eq_ok=false;assert(msm_dp_display_dsc_health(&dp)==-ENOLINK);eq_ok=true;
