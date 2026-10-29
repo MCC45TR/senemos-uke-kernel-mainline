@@ -504,6 +504,10 @@
     {
       "path": "patches/7.3.0/0123-uke-readonly-desktop-thresholds.patch",
       "sha256": "52ca760246228fead36716d6fb390187a01202a59df7f230f459c7554d80ec6e"
+    },
+    {
+      "path": "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch",
+      "sha256": "6e953578edaed6e0e793f1c7b4c6157a2b7ab03a1c8ff987461898e5806b9ede"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

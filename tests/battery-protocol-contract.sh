@@ -208,6 +208,12 @@ int main(void) {
  reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)-500000,0); assert(b.status.current_now==-500000);
  b.variant=QCOM_BATTMGR_UKE;
  reply(&b,BATTMGR_BAT_PROPERTY_GET,4,1250,0); assert(b.status.percent==12);
+ /* Cycle zero is a reported count, not a transport-unavailable sentinel. */
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,7,0); assert(!b.error && b.info.cycle_count==7);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,0,0); assert(!b.error && !b.info.cycle_count);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,INT_MAX,0); assert(!b.error && b.info.cycle_count==INT_MAX);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,UINT_MAX,0); assert(b.error==-ENODATA && b.info.cycle_count==INT_MAX);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,0,EPERM); assert(b.error==-EREMOTEIO && b.info.cycle_count==INT_MAX);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,12,1000000,0); assert(b.error==-ENODATA && (int)b.status.temperature==-50);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,28,9,0); assert(b.error==-ENODATA);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,1000,EPERM); assert(b.error==-EREMOTEIO && (int)b.status.temperature==-50);

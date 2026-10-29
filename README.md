@@ -5,6 +5,12 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 **Development target:** Linux 7.3.x · AArch64 · Fedora Rawhide
 
+29 October 2026: the battery candidate preserves a successfully reported zero
+cycle count. Invalid/sentinel values and firmware errors remain unavailable.
+This does not qualify the counter's lifetime or health semantics. Host callback
+checks cover zero, positive, signed-range boundaries and error replies;
+installed tablet validation remains separate.
+
 [Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.3.0.json)
 
 27 October 2026: candidate `7.3.0-33` preserves held touch identities, qualifies
