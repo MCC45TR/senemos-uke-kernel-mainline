@@ -37,7 +37,7 @@ if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1
 fi
-grep -F 'git archive HEAD src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests' "$root/Makefile"
+grep -F 'git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests' "$root/Makefile"
 grep -Ex '(hdmi-only|speakers)' "$root/packaging/native/audio-profile"
 grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
 grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"

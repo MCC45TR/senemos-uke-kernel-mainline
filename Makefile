@@ -3,12 +3,14 @@ SHELL := /bin/bash
 .ONESHELL:
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
 version := 7.3.0
+patch_count := $(if $(filter 7.3.0,$(version)),122,120)
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash -n tests/dp-dsc-contract.sh tests/dp-dsc-state-contract.sh
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh
 	bash -n tests/dp-mst-payload-contract.sh tests/dp-mst-control-contract.sh tests/dp-altmode-retimer-contract.sh
 	bash -n tests/lid-wake-contract.sh
+	bash -n tests/msm-shrinker-policy-contract.sh
 	bash -n tests/dp-eld-notification-contract.sh
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
@@ -17,11 +19,13 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/rgb-supplier.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
 	bash tests/uke-build-scope-contract.sh
+	bash -n src/performance/prepare-source.sh tests/llcc-pmu-contract.sh
+	CC=clang bash tests/llcc-pmu-contract.sh
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
 	bash -n tests/audio-probe-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.3.0
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 120) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == $(patch_count)) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
@@ -47,6 +51,8 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/bwmon-counter-contract.sh tests/bwmon-dt-contract.sh
 	bash -n tests/l3-provider-contract.sh
 	bash -n tests/opp-bandwidth-transaction-contract.sh
+	bash -n tests/cpu-bwmon-dt-contract.sh
+	CXX=clang++ bash tests/cpu-bwmon-dt-contract.sh
 	CXX=clang++ bash tests/bwmon-dt-contract.sh
 	bash -n tests/mdt-memory-admission-contract.sh tests/mdt-metadata-contract.sh tests/fastrpc-buffer-lifetime-contract.sh tests/rproc-edge-stop-contract.sh
 	bash -n tests/qup-interconnect-contract.sh tests/uke-rpmh-resource-contract.sh tests/wpss-proxy-contract.sh
@@ -107,7 +113,7 @@ srpm: validate
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
+	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"

@@ -11,6 +11,8 @@ Linux kernel adaptations, device trees and Fedora RPM packaging for Xiaomi Pad 7
 > This is an experimental kernel. Keep a working boot image and matching modules before updating. Not every source change has been tested on the tablet.
 
 ## Development status
+**29 October 2026 source update:** the retained release-50 DisplayPort and bandwidth candidate is now in main. This is source consolidation; it does not add a tablet acceptance result or replace the documented release-33 device check.
+
 
 **Last documented device check: 28 October 2026 — POCO Pad X1.**
 

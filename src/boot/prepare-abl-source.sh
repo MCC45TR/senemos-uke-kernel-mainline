@@ -80,11 +80,27 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0030-osm-l3-admit-clock
 git -C "$kernel" apply "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch"
 git -C "$kernel" apply --check "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch"
 bash "$here/../../tests/bwmon-vote-error-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-counter-contract.sh" "$kernel/drivers/soc/qcom/icc-bwmon.c"
 bash "$here/../../tests/bwmon-dt-contract.sh"
 bash "$here/../../tests/l3-provider-contract.sh" "$kernel"
 bash "$here/../../tests/opp-bandwidth-transaction-contract.sh" "$kernel"
+bash "$here/../../tests/cpu-bwmon-dt-contract.sh"
+# The BCL proposal depends on the matching hwmon core emergency attributes.
+for bcl_patch in 0038-hwmon-emergency-attributes.patch \
+    0035-qcom-bcl-hwmon-binding.patch 0036-qcom-bcl-hwmon-driver.patch \
+    0037-bcl-report-unavailable-voltage.patch 0039-bcl-alarm-wake-lifetime.patch \
+    0040-uke-pm7550ba-bcl-admission.patch 0042-bcl-report-empty-current.patch; do
+    git -C "$kernel" apply --check "$here/../../patches/boot/$bcl_patch"
+    git -C "$kernel" apply "$here/../../patches/boot/$bcl_patch"
+done
+bash "$here/../../tests/bcl-hwmon-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+bash "$here/../../tests/bcl-alarm-lifetime-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+bash "$here/../../tests/bcl-uke-admission-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
@@ -102,6 +118,7 @@ install -m644 "$here/uke-ufs.h" "$kernel/arch/arm64/kernel/uke-ufs.h"
 install -m644 "$here/uke-identity.c" "$kernel/arch/arm64/kernel/uke-identity.c"
 install -m644 "$here/uke-hardware.h" "$kernel/arch/arm64/kernel/uke-hardware.h"
 install -m644 "$here/uke-bwmon.h" "$kernel/arch/arm64/kernel/uke-bwmon.h"
+install -m644 "$here/uke-cpu-bwmon.h" "$kernel/arch/arm64/kernel/uke-cpu-bwmon.h"
 install -Dm644 "$here/bindings/firmware/xiaomi,uke-ssc-sensors.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
 install -Dm644 "$here/bindings/firmware/xiaomi,uke-accessory-profile.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-accessory-profile.yaml"
 install -m644 "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc.h"
@@ -159,6 +176,7 @@ sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-bwmon.h" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/uke-cpu-bwmon.h" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch" >> "$output/abl-source-SHA256SUMS"
@@ -177,6 +195,8 @@ sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.pa
 sha256sum "$here/../../patches/boot/0029-sm7675-bwmon-byte-units-and-read-recovery.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0030-osm-l3-admit-clocks-lut-and-graph.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0031-opp-restore-bandwidth-and-retry-incomplete-votes.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0032-sm7675-paired-cpu-l3-bandwidth.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0034-sm7675-l3-bound-initial-icc-floor.patch" >> "$output/abl-source-SHA256SUMS"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch \
     0025-cliffs-nsp-crypto-suppliers.patch 0026-cliffs-proxy-and-pas-stop-ownership.patch \

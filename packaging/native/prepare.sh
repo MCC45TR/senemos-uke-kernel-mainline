@@ -15,6 +15,7 @@ bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/u
 bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
 bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
+bash "$profile/tests/msm-shrinker-policy-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gem_shrinker.c"
 bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
@@ -38,6 +39,7 @@ alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" \
     -o "$output/POCO-Pad-X1-tplg.bin"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
+bash "$profile/src/performance/prepare-source.sh" "$kernel"
 bash "$profile/src/nfc/prepare-source.sh" "$kernel"
 git -C "$kernel" apply --check "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
 git -C "$kernel" apply "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
@@ -88,6 +90,9 @@ for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
     git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
     git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
 done
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-nfc
+git -C "$kernel" apply --check "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
+git -C "$kernel" apply "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
 bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"

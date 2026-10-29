@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 33
+%global senemos_build_release 50
 %else
 %global senemos_build_release 1
 %endif
@@ -212,6 +212,13 @@ bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
 CC=clang bash native-profile/tests/llcc-boot-fdt-contract.sh "$PWD"
+CC=clang bash native-profile/tests/llcc-pmu-contract.sh
+CC=clang bash native-profile/tests/bcl-hwmon-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+CXX=clang++ bash native-profile/tests/bcl-alarm-lifetime-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+CXX=clang++ bash native-profile/tests/bcl-uke-admission-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/hwmon/qcom-bcl-hwmon.ko.zst
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst | grep -Fx 'of:N*T*Cqcom,sm7675-llcc-pmuC*'
 test "$(cat native-generated/llcc-profile)" = native-v1
 grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
@@ -297,7 +304,7 @@ CC=clang bash native-profile/tests/o82-panel-contract.sh native-profile/src/disp
 CC=clang bash native-profile/tests/o82-readback-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/o82-refresh-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CXX=clang++ bash native-profile/tests/o82-pll-bias-contract.sh "$PWD" %{_uke_out}
-CXX=clang++ bash native-profile/tests/dpu-dsi-timing-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-data.h native-profile/src/display/panel-xiaomi-o82.c
+CXX=clang++ bash native-profile/tests/dpu-dsi-timing-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_vid.c drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-data.h native-profile/src/display/panel-xiaomi-o82.c drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
 
 CXX=clang++ bash native-profile/tests/o82-dfps-host-contract.sh drivers/gpu/drm/msm/dsi/dsi_host.c native-profile/src/display/o82-mode.h native-profile/src/display/o82-data.h
 CC=clang bash native-profile/tests/o82-dfps-atomic-contract.sh drivers/gpu/drm/msm/msm_atomic.c
@@ -401,6 +408,85 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-49
+- Hold DTO force ACK through stream setup and release it before video starts.
+- Quiesce the SM7675 DTO before pixel-clock shutdown, including failed enables.
+- Check actual ACK register sequencing, clock-domain guards and stream cleanup.
+
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-48
+- Match OEM external-stream timing control in the existing SM7675 setup path.
+- Check compressed/plain programming and unrelated-bit preservation in the real packet fixture.
+
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-47
+- Trigger continuous PPS transmission with the OEM flush bit and clear stale one-shot mode.
+- Check the actual flush register with both initial modes and unrelated bits retained.
+- Use arithmetic three-byte line padding and model kernel power-of-two alignment correctly.
+
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-46
+- Program matching active and display data windows for compressed DisplayPort streams.
+- Check real interface timing registers at FHD, QHD and UHD while retaining O82 timing coverage.
+
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-45
+- Program DSC packetizer words at eight bits per component while retaining PPS input depth.
+- Force complete CRTC programming when selected stream packing or DSC parameters change.
+
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-44
+- Hold the DRM device across attached DSC requests and refuse missing/unregistered bindings.
+- Stop policy notifications and receiver monitoring before component teardown.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-43
+- Recompute SST admission after training negotiates a lower lane count or rate.
+- Preserve DSC eligibility for a bandwidth retry instead of latching a protocol fault.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-42
+- Negotiate attached DSC policy through atomic state and DRM link-status recovery.
+- Check receiver enable readback and monitor link, decoder and FEC state.
+- Retain a failed-compression latch and separate source from physical acceptance.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-41
+- Select the proposed upstream GEM nonblocking-reclaim control for Uke latency.
+- Preserve inactive eviction and swap, and report completed shrinker progress.
+- Retain VP9/BCL safeguards; the THP-only release40 trial was canceled.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-40
+- Restrict the default transparent-hugepage policy to advised mappings.
+- Reduce measured reclaim stalls during loaded internal-panel transitions.
+- Retain release-39 VP9 and release-38 BCL safeguards and separate device gates.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-39
+- Recycle valid empty VP9 non-display capture buffers in both output orders.
+- Retain corrupt, overflow, firmware ownership and queue submission errors.
+- Keep release-38 BCL protection and separate package from device validation.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-38
+- Return ENODATA for an empty PM7550BA current ADC sample without renewing its cache.
+- Preserve valid current samples, firmware thresholds and other PMIC descriptors.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-37
+- Add native PM7550BA BCL hwmon with exact Uke revision and resource admission.
+- Preserve unavailable voltage samples and serialize alarm work/wake cleanup.
+- Backport the matching standard hwmon emergency attributes and ABI documentation.
+- Retain existing thermal references; MEMLAT/CDSP/microphone acceptance remains open.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-36
+- Bound the SM7675 ICC boot floor to its firmware LUT capacity.
+- Preserve strict rejection of real client overvotes and existing platforms.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-35
+- Use exported OF CPU lookup with balanced references for modular LLCC counters.
+- Admit the exact OEM NFC L7E provider while retaining POCO-only tag transport.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-34
+- Integrate the running release-33 audio and native touch source fixes.
+- Preserve paired CPU/L3 bandwidth admission and complete-path OPP recovery.
+- Add the count-only SM7675 LLCC perf provider with exclusive per-CPU events.
+- Use a distinct tuple for the combined source lineage.
+
+* Wed Oct 28 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
+- Admit exact CPU/LLCC monitor resources with both OEM primary and L3 OPP votes.
+- Preserve existing GEM requests while adding AMC/WAKE-only monitor votes.
+- Use the shared L3 page and existing CPUfreq clock pair; reject unmet L3 floors.
+- Retain OPP rollback/retry guards and require distinct physical acceptance.
 * Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
 - Preserve held touch identities and qualify coherent new contact groups.
 - Retain interior electrode coordinates and filter single-contact patch roll.

@@ -108,7 +108,8 @@ int msm_dp_dsc_prepare(const u8 caps[DP_DSC_RECEIVER_CAP_SIZE], u8 fec,
 	/* shortcut: 8 bpp and even RGB width need no DTO phase padding; extend before other rates. */
 	bytes_per_line = dsc->slice_chunk_size * dsc->slice_count;
 	config.dto_count = DIV_ROUND_UP(bytes_per_line, 6) - 1;
-	config.compression_ctrl = BIT(0) | ((ALIGN(bytes_per_line, 3) - bytes_per_line) << 3) |
+	config.compression_ctrl = BIT(0) |
+		((DIV_ROUND_UP(bytes_per_line, 3) * 3 - bytes_per_line) << 3) |
 		((dsc->slice_count - 1) << 5) | (10 << 10) | (dsc->slice_chunk_size << 16);
 	*result = config;
 	return 0;

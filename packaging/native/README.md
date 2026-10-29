@@ -1,5 +1,124 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-50 source candidate: keep FEC error counting
+disabled during link training and enable it after verified decoder/FEC startup.
+Read back the requested selector before publishing active compression. Every
+valid nonzero active count still triggers recovery; no error threshold or
+periodic reset is added. The timing fixture also imports the actual component
+encoding. Release 49 boots, produces visible independent compressed SMPTE and
+tiles patterns, and restores visible plain output without USB removal, but
+nonzero receiver counts leave full DSC acceptance open. Release-50 native
+delivery and physical qualification remain pending.
+
+29 October 2026, Linux 7.3.0-49 source candidate: restore the matched Uke OEM
+DTO force-ACK lifecycle during setup and pixel-clock shutdown. The packet
+fixture reproduces the preceding missing ACK state and checks held/released
+register values. Real clock-shutdown tests cover power, platform, stream bounds
+and duplicate cleanup. AArch64 syntax checks pass; native delivery and tablet
+qualification remain pending. Installed release 48 confirms the timing-control
+correction and automatic visible fallback, but compressed pixels still fail
+with and without VSC metadata. No physical DSC acceptance is claimed.
+
+29 October 2026, Linux 7.3.0-48 source candidate: restore the exact Uke OEM and
+same-SoC OnePlus bit-8 timing-control write during external stream setup. The
+existing caller restricts this function to SM7675. Read-modify-write retains
+other bits for both compressed and plain streams. The real packet fixture
+fails on release 47's missing write and passes after correction. This is a
+bounded source candidate; the bit's role in the remaining failure is unproved.
+Installed release 47 has corrected PPS/padding/data windows, but QHD60 10-bpc,
+QHD75 8-bpc and FHD60 10-bpc compressed trials remain black with valid FEC errors.
+Automatic visible fallback works without USB removal. No DSC acceptance is claimed.
+
+29 October 2026, Linux 7.3.0-47 source candidate: trigger PPS transmission with
+flush bit 0 and clear one-shot bit 2, matching the Uke OEM continuous-PPS
+configuration. The preceding implementation sets only bit 2; release-45
+register capture confirms that value. A real packet-programming assertion
+fails before correction and passes afterward for both initial modes, 8/10 bpc
+and preserved unrelated bits. This includes the release-46 data-window fix;
+three-byte end-of-line padding also uses arithmetic rounding, since kernel
+ALIGN requires a power of two. The corrected fixture reproduces the missing
+QHD padding seen in the tablet register dump. Its superseded release-46 COPR
+build is canceled before delivery. Physical compression
+remains unaccepted until a fresh signed-package and tablet trial.
+
+29 October 2026, Linux 7.3.0-46 source candidate: match the active and display
+data windows for compressed DisplayPort, following the exact Uke OEM and
+same-SoC OnePlus interface contract. Release-45 register capture shows the
+display window programmed and the active window zero while compressed output
+is black. The real timing function fails the new assertion before correction
+and passes afterward at FHD/QHD/UHD, 8/10 bpc; existing O82 and uncompressed
+checks remain. This source correction requires separate physical qualification.
+
+29 October 2026, Linux 7.3.0-45 source candidate: use eight-bit packetizer
+transport for DSC, retaining input depth in PPS/MSA. Mark changes in selected
+stream bpp or normalized DSC parameters as mode changes so CRTC programming
+runs during attached on/off and fallback. Actual-function fixtures reproduce
+both preceding omissions and pass after correction. Four translation units
+pass AArch64 header syntax checks. Release-42 tablet trials reach decoder
+enable but fail FEC and visible-image acceptance; manual display disable/enable
+restores uncompressed output without USB removal. Neither source nor package
+checks establish physical success. Subsequent release-45 tablet and webcam
+trials confirm automatic visible uncompressed recovery without USB removal;
+compressed pixels still fail with a valid uncorrected FEC count.
+
+29 October 2026, Linux 7.3.0-44 source candidate: retain a DRM device reference
+through attached policy changes and refuse missing, unregistered or replaced
+bindings before altering state. Stop policy/health work before component
+teardown. Production-function fixtures include an unbind during lock acquisition
+and check balanced references. This is source evidence, not a physical hot-unbind
+or compressed-image qualification.
+
+28 October 2026, Linux 7.3.0-43 source candidate: apply negotiated link-budget
+reduction to SST as well as MST. Recheck atomic admission after a smaller
+trained link and keep DSC eligible for that bandwidth retry. Reset the retry
+notification only after strict budget progress; receiver faults retain the
+compression-failure latch. Host regression covers the formerly missed SST
+case. Actual trained-link downshift and compressed output remain separate
+physical validation gates.
+
+28 October 2026, Linux 7.3.0-42 source candidate: select DSC automatically only
+when uncompressed output cannot preserve the admitted precision/bandwidth.
+The attached root policy supports auto/on/off through a full DRM modeset;
+failed DSC is latched out until a fresh attachment or explicit policy request.
+Read back receiver decoder/FEC enable, monitor lane status and qualified FEC
+counters, and request bounded uncompressed recovery on failure. Existing
+USB-PD and lane routing are retained. Host source tests do not qualify a
+visible compressed image, cable-free recovery or sustained tablet operation.
+
+28 October 2026, Linux7.3.0-41 source candidate: retain Rob Clark's proposed
+GEM blocking control and select nonblocking reclamation for the Uke kernel.
+Keep inactive eviction, normal swap, reservation ownership, active-buffer
+checks and no-progress errors. Report freed pages even when a scanned LRU
+becomes empty, as required by the actual MM caller. The actual policy/scan
+fixture has32 checks; the old source fails10 and the candidate passes all.
+This is source/model validation, not physical acceptance of the new policy.
+
+The runtime control disabling all GEM eviction avoids multi-second stalls in
+three loaded panel cycles, but removes normal swapping as well. That control
+is restored after measurement. Release41 uses the narrower proposed upstream
+mechanism. Restore the preceding THP default: release40's first comparison
+improves, but repeated MADVISE trials still stall22.6seconds. Release40/COPR
+11219571 is canceled before publication and does not establish a fix.
+
+28 October 2026, canceled Linux7.3.0-40 source trial: default transparent huge pages
+to advised mappings instead of all anonymous mappings. A kernel38/Plasma6.8.2
+panel-transition trace records21.6-second direct reclaim and22-second display
+gaps under the preceding policy. A bounded runtime madvise comparison records
+1.151ms maximum direct reclaim and413ms maximum DP presentation gap; repeat
+and fresh-boot acceptance remain separate. Retain THP for applications that
+request it, all normal allocation errors and the existing swap configuration.
+No CMA size, GPU capability, firmware, timeout or board value is changed.
+
+28 October 2026, Linux 7.3.0-39 source candidate: select the bounded VP9 empty
+NOSHOW completion correction in both decode orders. Recycle only a valid unused
+linear capture buffer; preserve corruption, overflow, ownership, LAST/PSC and
+queue submission errors. The preceding source fails eight modeled checks;
+the candidate passes35. The fresh release38 baseline has17 failed assertions;
+the earlier eight-failure count refers only to the preceding trial comparison.
+This selects the complete change against release38,
+including the initial handler absent from the earlier incremental patch file.
+Signed delivery and current Chrome/session acceptance remain separate gates.
+
 27 October 2026, Linux 7.3.0-28 source candidate: restore reviewed MDT, FastRPC
 coherent-buffer and transport-stop safeguards absent from the 7.3 queue. Bound
 ELF32 metadata before copying and validate carveout geometry before PAS setup.
@@ -328,6 +447,17 @@ Thirteen OEM emergency cooling maps are connected to the three standard
 cpufreq cooling devices. The OEM 110 degree junction triggers and respective
 8/10 degree hysteresis remain unchanged. Vendor CPU pause is replaced by
 frequency cooling; the complete OEM skin and BCL policy is not implemented.
+Candidate 37 adds the proposed Qualcomm BCL hwmon driver and the matching
+standard emergency attributes. The retained Uke PM7550BA node is admitted
+only with its exact parent, register/IRQ layout and measured revision metadata.
+PMXR2230 remains separate. Probe preserves firmware enable state and thresholds;
+it does not implement the vendor current/voltage thermal proxies or MEMLAT.
+Unavailable ADC samples return `ENODATA`, and alarm work/wake cleanup is serialized.
+Host fault fixtures and AArch64 object compilation are separate from a matched
+candidate boot, measurement accuracy, physical alarms and policy acceptance.
+Candidate 38 also rejects empty PM7550BA current samples with `ENODATA`,
+following the OEM invalid-zero contract. Release 37 booted and exposed voltage,
+thresholds and three IRQs; its zero current samples did not establish zero load.
 The exact release 4 COPR bundle boots normally. Its 23 IIO channels, ten board
 thermal consumers and thirteen CPU cooling bindings are present. The full
 installation has 67 readable hwmon temperature inputs and 51 thermal zones,

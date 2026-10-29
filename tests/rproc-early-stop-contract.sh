@@ -14,7 +14,7 @@ struct device {};
 struct rproc;
 struct rproc_ops { int (*stop)(rproc *)=nullptr; int (*prepare_stop)(rproc *)=nullptr; };
 struct model { int prepare_error=0,table_error=0,stop_error=0; unsigned int prepares=0,stops=0,sub_stops=0,tables=0,sub_unprepares=0; bool quiesced=false,removed_before_quiesce=false,expect_early=true,crashed=false; };
-struct rproc { device dev; const rproc_ops *ops; model *test; int state=RPROC_RUNNING; const char *name="fixture"; };
+struct rproc { device dev; const rproc_ops *ops; model *test; int state=RPROC_RUNNING; const char *name="fixture"; bool boot_cleanup_pending=false; };
 template<class... T> void dev_err(device *,const char *,T...) {}
 template<class... T> void dev_info(device *,const char *,T...) {}
 static int early(rproc *r) { auto &m=*r->test; m.prepares++; if(m.prepare_error) return m.prepare_error; m.quiesced=true; return 0; }
@@ -23,7 +23,7 @@ static void rproc_stop_subdevices(rproc *r,bool crashed) { auto &m=*r->test; m.s
 static int rproc_reset_rsc_table_on_stop(rproc *r) { r->test->tables++; return r->test->table_error; }
 static void rproc_unprepare_subdevices(rproc *r) { r->test->sub_unprepares++; }
 CPP
-awk '/^static int rproc_stop\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$source_file" >> "$work/check.cpp"
+awk '/^static int rproc_stop\(.*\)$/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$source_file" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
 int main() {
     rproc_ops ops{stop,early}; model m; rproc r{{},&ops,&m};
