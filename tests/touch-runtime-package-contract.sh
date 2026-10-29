@@ -4,7 +4,7 @@ set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
-sed -n '/^\[\[ -s \$source_modules\/kernel\/drivers\/media\/spi\/nt36532-uke\/nt36532-uke-thp.ko.zst/,$p' \
+sed -n '/^\[\[ -s \$source_modules\/kernel\/drivers\/media\/spi\/nt36532-uke\/nt36532-uke-thp.ko.zst/,+2p' \
     "$root/src/boot/build-payload.sh" > "$stage/production.sh"
 [[ $(wc -l < "$stage/production.sh") == 3 ]]
 export kernel=$stage/kernel out=$stage/out source_modules=$stage/modules

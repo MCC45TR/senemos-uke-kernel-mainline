@@ -27,7 +27,7 @@ cp "$root/packaging/SINGLEBOOT.md" "$work/SOURCES/SINGLEBOOT.md"
 cp "$root/LICENSE" "$work/SOURCES/singleboot-LICENSE"
 {
     printf '%%global debug_package %%{nil}\n%%global __os_install_post %%{nil}\n%%global krel fixture\nName: %s\nVersion: 1\nRelease: 1\nSummary: Host metadata fixture\nLicense: MIT\nSource7: SINGLEBOOT.md\nSource8: singleboot-LICENSE\n%%description\nHost metadata fixture; no kernel or hardware.\n%%package singleboot\nSummary: Host profile fixture\nLicense: MIT\n%%description singleboot\nHost profile fixture.\n%%prep\n%%build\n%%install\n' "$base"
-    awk '/^%install$/{copy=1;next} copy&&/^export ARCH=/{exit} copy' "$spec"
+    awk '/^install -Dm644 %\{SOURCE7\}/{copy=1} copy&&/^export ARCH=/{exit} copy' "$spec"
     printf '\n%%files\n'
     awk '/^%files singleboot$/{copy=1} copy&&/^%changelog$/{exit} copy' "$spec"
 } > "$work/SPECS/profile.spec"

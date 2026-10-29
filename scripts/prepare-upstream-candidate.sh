@@ -4,9 +4,11 @@ set -Eeuo pipefail
 release_fields() {
     local metadata=$1
     jq -er '
-      .latest_stable.version as $v |
+      . as $metadata |
+      [.releases[] | select(.version | test("^7[.]3([.][0-9]+)?$"))] |
+      sort_by(.version | split(".") | map(tonumber)) | last.version as $v |
       if ($v|test("^[0-9]+[.][0-9]+([.][0-9]+)?$")) then
-        [.releases[] | select(.version==$v)] as $r |
+        [$metadata.releases[] | select(.version==$v)] as $r |
         if ($r|length)==1 and ($r[0].moniker|IN("mainline","stable","longterm")) and
            $r[0].source==("https://cdn.kernel.org/pub/linux/kernel/v"+($v|split(".")[0])+".x/linux-"+$v+".tar.xz") and
            $r[0].pgp==("https://cdn.kernel.org/pub/linux/kernel/v"+($v|split(".")[0])+".x/linux-"+$v+".tar.sign") and
@@ -14,7 +16,7 @@ release_fields() {
            ($r[0].released.timestamp|.>0 and .==floor and .<=now) then
           [$v, $r[0].source, $r[0].pgp, ($r[0].released.timestamp|tostring)]|@tsv
         else error("Unadmitted upstream release metadata") end
-      else error("Invalid upstream version") end' "$metadata"
+      else error("No admitted Linux 7.3 release") end' "$metadata"
 }
 matching_build() {
     jq -cer --arg package "$2" --arg evr "$3" '
@@ -91,6 +93,9 @@ prepare_common() {
     spec=packaging/senemos-uke-linux-kernel-mainline.spec
     current=$(rpmspec -q --srpm --qf '%{VERSION}' "$spec")
     release=$(rpmspec --define 'dist %{nil}' -q --srpm --qf '%{RELEASE}' "$spec")
+    [[ $current =~ ^7[.]3[.][0-9]+$ ]] || {
+        echo 'Automatic updates require an already reviewed Linux 7.3 source queue' >&2; return 1;
+    }
     if [[ $(printf '%s\n' "$current" "$next" | sort -V | tail -1) == "$current" ]]; then
         printf 'unchanged\t%s-%s\n' "$current" "$release"; return;
     fi

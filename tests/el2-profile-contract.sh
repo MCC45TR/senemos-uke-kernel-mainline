@@ -14,6 +14,6 @@ grep -Fx 'CONFIG_ANDROID_BINDERFS=y' "$root/packaging/native/native.config"
 grep -Fx 'CONFIG_ANDROID_BINDER_DEVICES=""' "$root/packaging/native/native.config"
 grep -Fq 'x23, x0' "$root/src/boot/uke-el2-entry.S"
 grep -Fq 'sigaction(SIGALRM' "$root/src/kvm/probe.cpp"
-if grep -Eq '^%(post|posttrans|pre|pretrans)' "$root/packaging/senemos-uke-linux-kernel-mainline.spec"; then
+if grep -Eq '^%(post|posttrans|pre|pretrans)($|[[:space:]])' "$root/packaging/senemos-uke-linux-kernel-mainline.spec"; then
     echo 'Experimental kernel must not activate itself' >&2; exit 1
 fi
