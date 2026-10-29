@@ -8,16 +8,18 @@ for symbol in ARCH_QCOM PINCTRL_CLIFFS PINCTRL_QCOM_SPMI_PMIC SM_GCC_CLIFFS \
     QCOM_UKE_ABL_DT QCOM_UKE_PLATFORM_PROFILE ACPI_PLATFORM_PROFILE \
     EFI EFI_STUB INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
     EXT4_FS F2FS_FS XFS_FS BTRFS_FS F2FS_FS_SECURITY SECURITY_SELINUX SCSI_UFSHCD SCSI_UFS_CRYPTO \
-    PM THERMAL CGROUPS NAMESPACES SECCOMP SECCOMP_FILTER KVM DEBUG_INFO_NONE; do
+    PM THERMAL CGROUPS NAMESPACES SECCOMP SECCOMP_FILTER KVM DEBUG_INFO_NONE LIRC \
+    RESET_CONTROLLER USB_WCD939X_UKE; do
     grep -Fxq "CONFIG_$symbol=y" "$config" || { echo "Missing Uke/platform setting: $symbol" >&2; exit 1; }
 done
 grep -Fxq 'CONFIG_NR_CPUS=8' "$config"
 for symbol in SM_GPUCC_CLIFFS SM_DISPCC_8550 DRM_MSM DRM_PANEL_XIAOMI_O82 BACKLIGHT_KTZ8866 \
     I2C_QCOM_GENI SPI_QCOM_GENI QCOM_GPI_DMA QCOM_Q6V5_PAS QCOM_FASTRPC \
-    BATTERY_QCOM_BATTMGR QCOM_SPMI_ADC5_GEN3 INPUT_QCOM_SMP2P_SWITCH VIDEO_NT36532_UKE_THP \
+    BATTERY_QCOM_BATTMGR QCOM_SPMI_ADC5_GEN3 INPUT_QCOM_SMP2P_SWITCH TOUCHSCREEN_NT36532_UKE \
     SND_SOC_UKE SND_SEQUENCER USB_UAS USB_STORAGE USB_SERIAL_CP210X USB_SERIAL_FTDI_SIO \
     USB_DWC3_QCOM USB_PHY_QCOM_UKE USB_REPEATER_QCOM_UKE TYPEC UCSI_PMIC_GLINK \
-    PHY_QCOM_QMP_COMBO SCSI_UFS_QCOM UHID; do
+    PHY_QCOM_QMP_COMBO SCSI_UFS_QCOM UHID RC_CORE IR_SPI FM19511_UKE HW_RANDOM_QCOM \
+    PINCTRL_PALAWAN_LPASS_LPI TYPEC_MUX_UKE_WCD939X; do
     grep -Eq "^CONFIG_$symbol=[ym]$" "$config" || { echo "Missing Uke/peripheral driver: $symbol" >&2; exit 1; }
 done
 for symbol in ARCH_BCM ARCH_MICROCHIP ARCH_NXP MTD ATA SCSI_HISI_SAS SCSI_MPT3SAS \
@@ -28,14 +30,21 @@ for symbol in ARCH_BCM ARCH_MICROCHIP ARCH_NXP MTD ATA SCSI_HISI_SAS SCSI_MPT3SA
         echo "Unrelated board driver enabled: $symbol" >&2; exit 1
     fi
 done
+if grep -Eq '^CONFIG_SM_VIDEOCC_8550=[ym]$' "$config"; then
+    for symbol in SM_VIDEOCC_8550 VIDEO_QCOM_IRIS; do
+        grep -Fxq "CONFIG_$symbol=m" "$config" || {
+            echo 'Native video requires the reviewed modular VIDEOCC/Iris pair' >&2; exit 1;
+        }
+    done
+fi
 while IFS= read -r setting; do
     symbol=${setting%%=*}
     case $symbol in
         CONFIG_SM_*CC_*|CONFIG_CLK_*CC*|CONFIG_IPQ_*|CONFIG_MSM_*CC_*|CONFIG_SC_*CC_*|CONFIG_SDM_*CC_*|CONFIG_PINCTRL_*|CONFIG_INTERCONNECT_QCOM_*)
             case $symbol in
-                CONFIG_SM_GCC_CLIFFS|CONFIG_SM_GPUCC_CLIFFS|CONFIG_SM_DISPCC_8550|\
+                CONFIG_SM_GCC_CLIFFS|CONFIG_SM_GPUCC_CLIFFS|CONFIG_SM_DISPCC_8550|CONFIG_SM_VIDEOCC_8550|\
                 CONFIG_PINCTRL|CONFIG_PINCTRL_MSM|CONFIG_PINCTRL_CLIFFS|CONFIG_PINCTRL_QCOM_SPMI_PMIC|\
-                CONFIG_PINCTRL_LPASS_LPI|CONFIG_PINCTRL_SM8650_LPASS_LPI|CONFIG_PINCTRL_SINGLE|CONFIG_PINCTRL_GENERIC|\
+                CONFIG_PINCTRL_LPASS_LPI|CONFIG_PINCTRL_SM8650_LPASS_LPI|CONFIG_PINCTRL_PALAWAN_LPASS_LPI|CONFIG_PINCTRL_SINGLE|CONFIG_PINCTRL_GENERIC|\
                 CONFIG_INTERCONNECT_QCOM_BCM_VOTER|CONFIG_INTERCONNECT_QCOM_RPMH_POSSIBLE|CONFIG_INTERCONNECT_QCOM_RPMH|CONFIG_INTERCONNECT_QCOM_CLIFFS_USB) ;;
                 *) echo "Unreviewed SoC supplier: $setting" >&2; exit 1;;
             esac;;
@@ -54,8 +63,8 @@ for path in drivers/clk/qcom/dispcc-sm8550 drivers/clk/qcom/gpucc-cliffs \
     drivers/soc/qcom/pmic_glink_altmode drivers/power/supply/qcom_battmgr; do
     grep -Fxq "$path.ko.zst" "$early" || { echo "Missing early Uke driver: $path" >&2; exit 1; }
 done
-if grep -E 'qcom_q6v5_pas|^drivers/(ata/|pci/|nvme/|platform/chrome/|scsi/mpt3sas/)' "$early"; then
-    echo 'Early modules include PAS or an unrelated board driver' >&2; exit 1
+if grep -E 'qcom_q6v5_pas|videocc-sm8550|^drivers/media/platform/qcom/iris/|^drivers/(ata/|pci/|nvme/|platform/chrome/|scsi/mpt3sas/)' "$early"; then
+    echo 'Early modules include PAS/video or an unrelated board driver' >&2; exit 1
 fi
 if [[ $# == 2 ]]; then
     modules=$2

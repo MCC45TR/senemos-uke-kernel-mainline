@@ -5,17 +5,17 @@
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.2.12
-%if "%{version}" == "7.2.12"
-%global senemos_build_release 20
+Version: 7.3.0
+%if "%{version}" == "7.3.0"
+%global senemos_build_release 33
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Uke kernel with the O82 display profile
-License: GPL-2.0-only AND MIT
-SourceLicense: GPL-2.0-only AND MIT AND GPL-3.0-or-later AND Apache-2.0
+Summary: Mainline Linux 7.3 Uke kernel with O82 display and Cliffs video
+License: GPL-2.0-only AND MIT AND BSD-3-Clause
+SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: linux-%{version}.tar.xz
 Source1: senemos-uke-adaptation-%{version}.tar.xz
@@ -26,20 +26,22 @@ Source5: senemos-uke-boot-recipe.tar.xz
 Source6: boot-payload.json
 Source7: SINGLEBOOT.md
 Source8: singleboot-LICENSE
-Source9: senemos-uke-touch-runtime-1.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
+BuildRequires: libasan libubsan
 BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
+BuildRequires: libfdt-devel
 BuildRequires: python3
 BuildRequires: dracut systemd systemd-udev util-linux coreutils grep sed findutils binutils ripgrep gzip cpio f2fs-tools
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
+Recommends: uke-displayport-audio >= 0.1.0-6
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -59,14 +61,15 @@ Image with the matching source-built initramfs, configuration and source record.
 
 %package modules
 Summary: Matching Uke kernel modules
-License: GPL-2.0-only AND GPL-3.0-or-later AND MIT AND Apache-2.0
+License: GPL-2.0-only AND MIT AND BSD-3-Clause
 Requires: %{name}-core = %{version}-%{release}
 Requires: kmod
+Requires: uke-firmware >= 3.0.304.0
 Provides: installonlypkg(kernel)
 
 %description modules
 Modules from the same native-profile source and configuration as the raw Image.
-The separately licensed calibrated touch processor is matched to this release.
+The native touchscreen reports input without a userspace contact processor.
 
 %package dtbs
 Summary: Uke compile-stage device tree and native overlay
@@ -84,8 +87,7 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: uke-kernel-update >= 1.3.1
 Requires: uke-kernel-update(guarded-automatic) >= 1
-Requires: uke-kernel-update(kernel-touch-client-v1) >= 1
-Requires: uke-boot-integration(kernel-touch-dispatch-v1) >= 1
+Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
 
@@ -107,6 +109,7 @@ Image, modules, DTBs and both root profiles are built once. Installation
 performs no boot activation, partition write, slot selection or reboot.
 
 %prep
+uke_prep_start=$SECONDS
 expected=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .source_sha256)
 test "$(sha256sum %{SOURCE0} | cut -d ' ' -f1)" = "$expected"
 signer=$(tar -xOJf %{SOURCE1} senemos-adaptation/source-lock.json | jq -er .signer)
@@ -117,7 +120,7 @@ gpg --homedir "$keyring" --batch --import %{SOURCE3}
 xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
-%setup -q -n linux-%{version}
+%setup -q -n linux-7.3
 tar -xJf %{SOURCE1}
 jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
 cmp senemos-expected-patches.txt senemos-adaptation/patches/series
@@ -148,10 +151,11 @@ bash native-profile/prepare.sh "$PWD"
 tar -xJf %{SOURCE5}
 cmp boot-recipe/lock.json %{SOURCE6}
 (cd boot-recipe; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
-tar -xJf %{SOURCE9}
-(cd touch-runtime; sha256sum --check --strict SOURCE-SHA256SUMS)
+
+printf 'UKE_BUILD_STAGE source_prepare elapsed_s=%d\n' "$((SECONDS-uke_prep_start))"
 
 %build
+uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
 export SOURCE_DATE_EPOCH=1791725270
@@ -163,34 +167,40 @@ fi
 test "$(cat %{uke_boot_userspace}/kernel-release)" = '%{krel}'
 (cd %{uke_boot_userspace}; sha256sum -c base-files.sha256)
 jobs=%{?_smp_build_ncpus}%{!?_smp_build_ncpus:4}
-if test -n "${UKE_PREBUILT_TOUCH_CAPTURE:-}"; then
-    # Cross builds compile this AArch64 client on the target-architecture worker.
-    test -f "$UKE_PREBUILT_TOUCH_CAPTURE" && test ! -L "$UKE_PREBUILT_TOUCH_CAPTURE" || exit 1
-    install -m755 "$UKE_PREBUILT_TOUCH_CAPTURE" native-generated/uke-touch-capture
-else
-    g++ %{build_cxxflags} -std=c++20 -Wall -Wextra -Werror -ffile-prefix-map=$PWD=. \
-        touch-runtime/capture/touch-capture.cpp touch-runtime/capture/upstream/nt36532-thp/nvt_touch_core.cpp \
-        -lcrypto -lsystemd -o native-generated/uke-touch-capture %{build_ldflags}
-fi
-readelf -h native-generated/uke-touch-capture | grep -E 'Machine:.*AArch64'
+test "$jobs" -le 8 || jobs=8
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs"
 for requirement in CONFIG_QCOM_UKE_ABL_DT=y CONFIG_PSI=y CONFIG_DRM_MSM=m \
     CONFIG_DRM_PANEL_XIAOMI_O82=m CONFIG_SM_DISPCC_8550=m \
+    CONFIG_VIDEO_QCOM_IRIS=m CONFIG_SM_VIDEOCC_8550=m \
     CONFIG_DRM_FBDEV_EMULATION=y CONFIG_BACKLIGHT_KTZ8866=m \
     CONFIG_EXT4_FS=y CONFIG_F2FS_FS=y CONFIG_XFS_FS=y CONFIG_BTRFS_FS=y \
     CONFIG_QCOM_UKE_PLATFORM_PROFILE=y CONFIG_ACPI_PLATFORM_PROFILE=y \
-    CONFIG_SND_SEQUENCER=m; do
+    CONFIG_SND_SEQUENCER=m CONFIG_SND_SOC_UKE=m CONFIG_SND_SOC_FS19XX=m \
+    CONFIG_PINCTRL_SM8650_LPASS_LPI=m CONFIG_PINCTRL_PALAWAN_LPASS_LPI=m CONFIG_FM19511_UKE=m \
+    CONFIG_RC_CORE=m CONFIG_LIRC=y CONFIG_IR_SPI=m CONFIG_HW_RANDOM_QCOM=m \
+    CONFIG_BLK_INLINE_ENCRYPTION=y CONFIG_SCSI_UFS_CRYPTO=y \
+    CONFIG_QCOM_INLINE_CRYPTO_ENGINE=m; do
     grep -Fx "$requirement" %{_uke_out}/.config
 done
 grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
+bash native-profile/tests/usbss-kconfig-contract.sh "$PWD" "%{_uke_out}/scripts/kconfig/conf"
+
+printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
 
 %check
+uke_check_start=$SECONDS
+bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
+bash native-profile/tests/mainline-boot-status-contract.sh
 bash native-profile/tests/touch-runtime-package-contract.sh
-grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
-test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst
-test -x %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
-test "$(sha256sum %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture | cut -d ' ' -f1)" = "$(sed -n 's/^touch_client_sha256=//p' %{_uke_out}/boot-manifest)"
+CC=clang bash native-profile/tests/touch-protocol-contract.sh
+CC=clang bash native-profile/tests/touch-transport-contract.sh
+grep -Fx 'CONFIG_TOUCHSCREEN_NT36532_UKE=m' %{_uke_out}/.config
+test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst
+modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst | grep -Fx 'spi:nt36532-uke-touch'
+CC=clang bash native-profile/tests/spi-geni-completion-contract.sh drivers/spi/spi-geni-qcom.c
+test ! -e %{buildroot}/usr/lib/modules/%{krel}/uke/uke-touch-capture
+! grep -q '^touch_client_sha256=' %{_uke_out}/boot-manifest
 CC=clang bash native-profile/tests/resin-wake-contract.sh "$PWD"
 bash boot-recipe/tests/early-modules-contract.sh
 CC=clang bash native-profile/tests/platform-profile-contract.sh
@@ -215,6 +225,10 @@ CC=clang bash native-profile/tests/battery-protocol-contract.sh "$PWD"
 CC=clang bash native-profile/tests/qrtr-handshake-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-coordinator-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-transport.sh "$PWD"
+CC=clang bash native-profile/tests/dp-dsc-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/dp-dsc-state-contract.sh drivers/gpu/drm/msm/dp/dp_display.c
+CC=clang bash native-profile/tests/dp-fec-status-contract.sh drivers/gpu/drm/msm/dp/dp_ctrl.c
+CC=clang bash native-profile/tests/dp-dsc-tu-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-control-guard-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-protection-contract.sh "$PWD"
 CC=clang bash native-profile/tests/battery-settings-contract.sh "$PWD"
@@ -235,6 +249,11 @@ CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-probe-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
 test -s %{_uke_out}/sound/core/seq/snd-seq.ko
 bash native-profile/tests/audio-services-fdt-contract.sh
 CXX=clang++ bash native-profile/tests/offline-boot-contract.sh
@@ -267,6 +286,7 @@ CC=clang bash native-profile/tests/lucid-reset-rate-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-contract.sh "$PWD"
 CC=clang bash native-profile/tests/o82-avr-retime-contract.sh drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 CC=clang bash native-profile/tests/o82-vrr-capability-contract.sh "$PWD"
+CC=clang bash native-profile/tests/o82-vrr-floor-contract.sh "$PWD"
 CC=clang bash native-profile/tests/dpu-watchdog-lifecycle-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/dsi-panel-sequence-contract.sh drivers/gpu/drm/msm/dsi/dsi_manager.c
 CXX=clang++ bash native-profile/tests/dp-connector-state-contract.sh drivers/gpu/drm/msm/dp/dp_drm.c
@@ -284,6 +304,8 @@ CC=clang bash native-profile/tests/o82-dfps-atomic-contract.sh drivers/gpu/drm/m
 CC=clang bash native-profile/tests/o82-dfps-lifetime-contract.sh drivers/gpu/drm/msm/msm_atomic.c drivers/gpu/drm/msm/dsi/dsi_manager.c
 CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src/display/panel-xiaomi-o82.c native-profile/src/display/o82-data.h native-profile/src/display/o82-mode.h native-profile/src/display/qcom-uke-display.h
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
+
+printf 'UKE_BUILD_STAGE package_checks elapsed_s=%d\n' "$((SECONDS-uke_check_start))"
 
 %install
 install -Dm644 %{SOURCE7} %{buildroot}%{_docdir}/%{name}-singleboot/SINGLEBOOT.md
@@ -319,6 +341,10 @@ install -m644 native-profile/SHA256SUMS native-profile/source-commit native-prof
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
 install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-HDMI-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-HDMI-tplg.bin
+install -Dm644 native-generated/POCO-Pad-X1-tplg.bin \
+    %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-tplg.bin
 test -z "$(find %{buildroot} -type f \( -name '*.py' -o -name '*.pyc' -o -name 'python*' \) -print -quit)"
 bundle=%{buildroot}/usr/lib/senemos/kernel-updates/%{krel}
 mkdir -p "$bundle"
@@ -340,6 +366,7 @@ fi
 %files
 %doc native-profile/README.md
 %license COPYING
+%license native-profile/src/audio/LICENSE.audioreach-topology
 
 %files core
 %dir /usr/lib/modules/%{krel}
@@ -352,8 +379,6 @@ fi
 /usr/lib/firmware/%{krel}/
 
 %files modules
-%license touch-runtime/capture/LICENSE.GPL-3.0 touch-runtime/capture/LICENSE.MIT touch-runtime/capture/upstream/nt36532-thp/LICENSE
-/usr/lib/modules/%{krel}/uke/
 /usr/lib/modules/%{krel}/kernel/
 /usr/lib/modules/%{krel}/modules.alias*
 /usr/lib/modules/%{krel}/modules.dep*
@@ -376,10 +401,173 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-20
-- Restrict DT compilation and fixed-board drivers to the Uke source profile.
-- Preserve Uke DISPCC through its actual Cliffs GCC dependency.
-- Reduce the early module inventory while retaining matched dependencies.
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-33
+- Preserve held touch identities and qualify coherent new contact groups.
+- Retain interior electrode coordinates and filter single-contact patch roll.
+- Keep the matched release-31 audio corrections and reviewed L3/OPP safeguards.
+- Original KDE and Qt remain unchanged; desktop cancellation and Focus input acceptance remain open.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-32
+- Restore all owned OPP bandwidth requests after a failed multi-path vote.
+- Retain rollback uncertainty and retry incomplete OPP/BWMON cached targets.
+- Own the bandwidth snapshot with its paths and propagate allocation failures.
+- Keep CPU/LLCC DT admission and physical acceptance open.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-31
+- Reject invalid native L3 clocks and zero/descending frequency tables.
+- Retain native frequency width and unwind failed ICC link allocation.
+- Exercise actual L3 probe/set/remove ownership and errors during preparation.
+- Paired CPU/LLCC votes, multi-path OPP recovery and physical acceptance remain open.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-30
+- Derive native DDR BWMON OPPs from exact Uke frequencies and byte units.
+- Preserve existing MC requests while adding AMC/WAKE-only monitor votes.
+- Recover owned counter-read faults without committing a failed sample.
+- CPU/LLCC secondary L3 voting and physical bandwidth/lifecycle checks remain open.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-29
+- Restore the Cliffs NSP/crypto suppliers and two/three-rail proxy ownership.
+- Preserve PAS stop errors and prepare target shutdown before client removal.
+- Track each proxy enable reference when bulk rollback can itself fail.
+- Retain real Sysmon ACKs and test retry and legacy paths during source preparation.
+- Native CDSP activation and physical lifecycle acceptance remain unqualified.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-28
+- Restore MDT, FastRPC buffer and remote transport lifetime guards in the 7.3 source queue.
+- Bound ELF32 metadata copies and admit firmware geometry before PAS operations.
+- Run actual-code host fault and sanitizer checks during source preparation.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-27
+- Apply reset, pin and supply dependencies to the Type-C USBSS module.
+- Retain the separate fixed USB2 driver dependency scope and check both real Kconfig stanzas.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-26
+- Preserve the last applied BWMON bandwidth after failed OPP transactions.
+- Exercise actual IRQ-thread vote errors, retries, OPP references and rearming on the host.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-25
+- Reuse the reviewed LPASS providers and coordinated codec reset with the current speaker graph.
+- Keep one exact SM7675 pin provider and preserve the speaker TDM mux slots.
+- Preserve codec supplier errors and release partial reset children before power-down.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-24
+- Map the admitted Cliffs MCQ configuration, operation and status regions separately.
+- Bound capability-derived queues and unwind mapping failures before SDB fallback.
+- Retain native main-IRQ completion handling and poll-queue exclusion.
+- Preserve working SDB buffers and queue metadata until all MCQ DMA allocations commit.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-23
+- Connect the exact firmware-initialized Uke RNG to the upstream TRNG driver.
+- Admit the exact UFS ICE/HWKM resources and retain the native host clock/power path.
+- Require matching resources and retain disabled or unqualified hardware paths.
+
+* Tue Oct 27 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-22
+- Preserve SKU identity, report the processor and LPDDR5X, and describe SSC-owned sensors.
+- Add the POCO-only FM19511 tag transport and Uke infrared through upstream LIRC.
+- Remove unreferenced panel and false fingerprint templates; physical acceptance remains pending.
+
+* Tue Oct 27 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-21
+- Contain FS19xx clock, thermal, register and stream-lifecycle failures.
+- Enforce the uncalibrated volume ceiling and propagate invalid AudioReach setup.
+- Require the combined-card desktop policy; microphone capture remains unavailable.
+
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-18
+- Process Uke THP matrices in kernel input with a live baseline and tracked multitouch slots.
+- Read touch identity, dimensions and shared electrode mapping from DT; retain lost-IRQ recovery.
+- Require native boot acceptance support and run input/lifecycle fixtures in the RPM build.
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-17
+- Report touchscreen coordinates through native input and load shared model firmware directly.
+- Remove the matched userspace touch processor from the kernel payload.
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-16
+- Add two-stream RGB8 SDR MST with payload and shared-link failure cleanup.
+- Bound DP training by negotiated Type-C lanes and preserve unchanged IRQ routing.
+
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-15
+- Require a fresh FEC receiver event before admitting compressed DisplayPort.
+- Exercise stale detection, failed status clearing and actual compressed TU calculations.
+
+* Mon Oct 26 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-14
+- Add default-off RGB DSC with checked FEC, bounded PPS registers and atomic resource state.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-13
+- Drain serialized battery requests before marking the Uke transport suspended.
+- Keep ambiguous delivery blocked and test the in-flight reply during suspend.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
+- Keep initialized touch firmware for gesture entry after panel blanking.
+- Enforce the advertised downstream HDMI TMDS budget for DP color selection.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
+- Add checked gesture retention and selective lid-open dispatch for s2idle wake trials.
+- Preserve the release-10 display, video, AUX and ELD changes.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-10
+- Notify the registered Uke DP PCM ELD control when its cached bytes change.
+- Retain the reviewed video prerequisites and receiver diagnostic interface.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
+- Expose the standard DP AUX interface for receiver capability diagnostics.
+- Retain the video implementation and reviewed OEM video configuration gates.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-8
+- Restore the exact OEM video configuration gates before GCC registration.
+- Propagate both register-write failures; retain release-6 native video integration.
+- Keep the separate Main10 source work and physical codec acceptance open.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-6
+- Integrate the checked native Cliffs Iris, VIDEOCC and shared SMMU path.
+- Preserve the published release-4/5 display, USB and RGB source changes.
+- Require private firmware before codec registration; target acceptance remains open.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-5
+- Validate the registered LED device name instead of its optional input name.
+- Cover the RGB supplier probe with NULL-name and identity refusal fixtures.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-4
+- Keep the single internal and external Uke pipelines on separate CRTCs.
+- Prefer the spare color mixer and preserve another stream's DSPP ownership.
+- Bound UCSI debugfs responses to the negotiated protocol payload size.
+- Own the RGB LED through a kernel consumer with battery and camera policy.
+- Provide bounded color-test and HEX control ioctls without changing LPG electrical limits.
+- Refuse competing multicolor sysfs writes while the consumer owns the LED.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-3
+- Keep the temporary framebuffer out of the native DSI connector namespace.
+- Use the SM7675 catalog mixer width for uncompressed display topology.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-2
+- Integrate admitted PMXR2230 torch/RGB providers and bounded flash cleanup.
+- Expose real torch brightness steps without raising the current ceiling.
+
+* Sun Oct 25 2026 Senemos Contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-1
+- Prepare the matched normal and userdata family from the reviewed Linux 7.3 port.
+- Initialize DSI and DP connector states through the Linux 7.3 factory.
+- Preserve guarded activation and parallel module packaging.
+
+* Sun Oct 25 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-12
+- Carry the reviewed USB/DP routing, audio, HDR and lane-ceiling changes from 7.2.12.
+- Retain the WLAN lifetime fix, early console and bounded boot observations.
+- Preserve Linux 7.3 API adaptations and the non-activating unstable singleboot tuple.
+
+* Sat Oct 24 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-11
+- Avoid blocking optional SMMU fault capture behind GPU recovery's mutex.
+- Check actual capture and fault-completion lock-cycle behavior before building.
+- Use the buffered touch source exporter and first-valid-frame readiness.
+- Preserve the existing unstable profile and device policies.
+
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-9
+- Export the native touchscreen SPI alias for standard module autoload.
+- Preserve SPI-core byte accounting after successful GENI GPI DMA transfers.
+- Check the built alias and actual DMA callback success and failure paths.
+
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-8
+- Scope fixed-board drivers and DTB compilation to Uke with explicit clock suppliers.
+- Retain the family boot, touch, QRTR and singleboot contracts with early dependency validation.
+* Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-7
+- Carry the matched touch runtime and transport-ready QRTR handshake from mainline19.
+- Retain Linux 7.3 compatibility changes and the registration-only audio baseline.
+- Preserve the unstable ABI and absence of activation scriptlets.
+
 * Fri Oct 23 2026 Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com> - 7.2.12-18
 - Pair the Uke SPI/IRQ capture driver and DT with its calibrated C++ processor.
 - Validate the versioned processor digest with the matching module RPM.

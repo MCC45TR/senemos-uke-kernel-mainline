@@ -7,11 +7,29 @@
 	fragment@240 {
 		target-path = "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0";
 		__overlay__ {
-			compatible = "novatek,nt36532-uke-thp";
+			compatible = "novatek,nt36532-uke-touch";
 			interrupt-parent = <&tlmm>;
 			interrupts = <54 IRQ_TYPE_EDGE_RISING>;
 			panel-id-gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 			panel = <&uke_panel>;
+			label = "Xiaomi Pad 7 Touchscreen";
+			/* Shared CSOT config c02d1956: separable electrode maps, tenfold units. */
+			touchscreen-size-x = <32000>;
+			touchscreen-size-y = <21360>;
+			touchscreen-x-mm = <237>;
+			touchscreen-y-mm = <158>;
+			touchscreen-inverted-y;
+			novatek,row-map = <270 810 1350 1890 2430 2970 3510 4050
+				4580 5110 5640 6170 6700 7230 7760 8290 8820 9350 9880 10410
+				10940 11470 12000 12530 13060 13590 14120 14650 15180 15710
+				16240 16770 17310 17850 18390 18930 19470 20010 20550 21090>;
+			novatek,column-map = <270 810 1350 1890 2430 2970 3510 4050
+				4590 5130 5660 6190 6720 7250 7780 8310 8840 9370 9900 10430
+				10960 11490 12020 12550 13080 13610 14140 14670 15200 15730
+				16260 16790 17320 17850 18380 18910 19440 19970 20500 21030
+				21560 22090 22620 23150 23680 24210 24740 25270 25800 26330
+				26870 27410 27950 28490 29030 29570 30110 30650 31190 31730>;
+			wakeup-source;
 		};
 	};
 };

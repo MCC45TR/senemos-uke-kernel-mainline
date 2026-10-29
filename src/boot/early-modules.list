@@ -77,7 +77,6 @@ fs/netfs/netfs.ko.zst
 fs/overlayfs/overlay.ko.zst
 lib/crypto/libchacha.ko.zst
 lib/crypto/libdes.ko.zst
-lib/crypto/libgf128hash.ko.zst
 lib/crypto/libmd5.ko.zst
 lib/crypto/libsha3.ko.zst
 lib/crypto/libsm3.ko.zst
@@ -88,3 +87,4 @@ net/qrtr/qrtr-mhi.ko.zst
 net/qrtr/qrtr-smd.ko.zst
 net/qrtr/qrtr-tun.ko.zst
 net/qrtr/qrtr.ko.zst
+drivers/char/hw_random/qcom-rng.ko.zst

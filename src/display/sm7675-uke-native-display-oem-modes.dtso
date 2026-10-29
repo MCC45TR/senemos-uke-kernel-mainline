@@ -22,3 +22,9 @@
 #ifdef UKE_AUDIO_CARD
 #include "../audio/sm7675-uke-audio-card.dtsi"
 #endif
+#ifdef UKE_AUDIO_HDMI
+#include "../audio/sm7675-uke-hdmi-audio.dtsi"
+#endif
+#ifdef UKE_AUDIO_SPEAKERS
+#include "../audio/sm7675-uke-speaker-audio.dtsi"
+#endif

@@ -10,7 +10,12 @@ export UKE_LLCC_PROFILE
 UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
 bash "$profile/tests/wcd939x-status-contract.sh"
+bash "$profile/tests/wlan-regulator-lifetime-contract.sh" "$kernel"
+bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/ucsi/ucsi.c"
+bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
+bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"
 bash "$profile/tests/gpu-load-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu_devfreq.c"
+bash "$profile/tests/gpu-fault-capture-contract.sh" "$kernel/drivers/gpu/drm/msm/msm_gpu.c"
 export UKE_USB_PROFILE
 UKE_USB_PROFILE=$(cat "$profile/usb-profile")
 case $UKE_USB_PROFILE in peripheral|typec-v1) ;; *) exit 2;; esac
@@ -20,20 +25,83 @@ case $(cat "$profile/audio-profile") in
     disabled) ;;
     services-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1);;
     registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
+    hdmi-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_HDMI=1);;
+    speakers) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_SPEAKERS=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
+alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
+    -o "$output/POCO-Pad-X1-HDMI-tplg.bin"
+alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" \
+    -o "$output/POCO-Pad-X1-tplg.bin"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
+bash "$profile/src/nfc/prepare-source.sh" "$kernel"
+git -C "$kernel" apply --check "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
+git -C "$kernel" apply "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
+bash "$profile/tests/lid-wake-contract.sh" "$kernel"
+git -C "$kernel" apply --check "$profile/patches/boot/0010-qcom-flash-bounded-cleanup.patch"
+git -C "$kernel" apply "$profile/patches/boot/0010-qcom-flash-bounded-cleanup.patch"
+bash "$profile/tests/light-cleanup.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
+git -C "$kernel" apply --check "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
+git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
+bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
+bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
+bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
+bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
+bash "$profile/tests/dpu-color-topology-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c"
+bash "$profile/tests/firmware-connector-identity-contract.sh" "$kernel/drivers/gpu/drm/sysfb/simpledrm.c"
+bash "$profile/tests/output-bits-contract.sh" "$kernel"
+bash "$profile/tests/dpu-output-affinity-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
+bash "$profile/tests/ucsi-debugfs-bounds-contract.sh" "$kernel/drivers/usb/typec/ucsi/debugfs.c"
+bash "$profile/tests/dpu-mixer-reservation-contract.sh" "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_rm.c"
+bash "$profile/tests/dp-hdr-contract.sh" "$kernel"
+bash "$profile/tests/dsi-connector-state-contract.sh" "$kernel"
+bash "$profile/tests/dsi-color-depth-contract.sh" "$kernel/drivers/gpu/drm/msm/dsi/dsi_manager.c"
+bash "$profile/tests/dp-connector-state-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_drm.c"
+bash "$profile/tests/dp-stream-lifetime-contract.sh" "$kernel"
+bash "$profile/tests/dp-mst-payload-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_mst_drm.c"
+bash "$profile/tests/dp-mst-control-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_ctrl.c"
+bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
+if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
+    git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
+    bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
+    sha256sum "$profile/patches/boot/0009-uke-displayport-dma-scope.patch" >> "$output/abl-source-SHA256SUMS"
+    if [[ $(jq -er .version "$kernel/senemos-adaptation/source-lock.json") == 7.3.0 ]]; then
+        git -C "$kernel" apply --check "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
+        git -C "$kernel" apply "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
+        bash "$profile/tests/dp-eld-notification-contract.sh" "$kernel/sound/soc/codecs/hdmi-codec.c"
+    fi
+fi
+bash "$profile/src/video/prepare-source.sh" "$kernel"
+# NSP shares SH1 with the native display and video paths prepared above.
+for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
+    0026-cliffs-proxy-and-pas-stop-ownership.patch 0027-remoteproc-early-stop.patch \
+    0028-cliffs-proxy-per-rail-ownership.patch; do
+    git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
+    git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
+done
+bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
+SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+bash "$profile/tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
     "${usb_cpp[@]}" \
     -I "$kernel/include" "$profile/src/display/sm7675-uke-native-display-oem-modes.dtso" > "$output/display.dts"
+cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" \
+    "$profile/src/video/sm7675-uke-native-video.dtso" > "$output/video.dts"
+# One overlay application keeps the existing display/USB adaptation transaction.
+sed '/^\/dts-v1\/;/d; /^\/plugin\/;/d' "$output/video.dts" >> "$output/display.dts"
 dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
 {
     printf '#define UKE_NATIVE_PANEL_SELECTOR "msm_drm.dsi_display0=qcom,mdss_dsi_o82_42_02_0b_dualdsi_dsc_vid:"\n'
@@ -42,4 +110,12 @@ dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
     printf '};\n'
 } > "$kernel/arch/arm64/kernel/uke-native-display.h"
 fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
+if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
+    bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
+    bash "$profile/tests/dp-audio-topology-contract.sh"
+fi
+if [[ $(cat "$profile/audio-profile") == speakers ]]; then
+    bash "$profile/tests/speaker-audio-fdt-contract.sh" "$kernel"
+    bash "$profile/tests/speaker-audio-topology-contract.sh"
+fi
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'

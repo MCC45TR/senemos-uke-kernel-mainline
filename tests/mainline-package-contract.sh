@@ -6,7 +6,7 @@ spec=${1:-$root/packaging/senemos-uke-linux-kernel-mainline.spec}
 command -v rpmspec >/dev/null
 future=$(mktemp)
 trap 'rm -f "$future"' EXIT
-sed 's/^Version: .*/Version: 7.2.13/' "$spec" > "$future"
+sed 's/^Version: .*/Version: 7.3.1/' "$spec" > "$future"
 future_release=$(rpmspec -q --srpm --qf '%{RELEASE}' --target aarch64 "$future")
 [[ $future_release == 1 || $future_release == 1.* ]]
 expected=senemos-uke-linux-kernel-mainline
@@ -14,29 +14,31 @@ names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot"$'\n'"$expected-singleboot" ]]
 # Query expanded payload paths rather than retaining the old shared module ABI.
 parsed=$(rpmspec --parse "$spec")
-grep -Eq '^Provides: kernel-uname-r\(7\.2\.12-[1-9][0-9]*\)$' <<< "$parsed"
+grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
 # Flags 12 are an ordinary >= dependency; scriptlet-only requirements expire.
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
 grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.3.1' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(guarded-automatic)\t12\t1' <<< "$requires"
-grep -Fxq "$expected-boot"$'\tuke-kernel-update(kernel-touch-client-v1)\t12\t1' <<< "$requires"
-grep -Fxq "$expected-boot"$'\tuke-boot-integration(kernel-touch-dispatch-v1)\t12\t1' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-boot-integration(kernel-touch-input-v2)\t12\t1' <<< "$requires"
+if grep -Eq 'kernel-touch-(client|dispatch)|^Source9:' <<< "$parsed"; then
+    echo 'Native input must not require the userspace capture processor' >&2; exit 1
+fi
 if grep -E '^Obsoletes:|^Conflicts:|^%post([[:space:]]|$)|^%pre([[:space:]]|$)|^Requires:.*(python|pypy)|senemos-uke-linux-kernel-mainline-native' <<< "$parsed"; then
     echo 'Mainline source packages must preserve installed boot and fallback kernels' >&2
     exit 1
 fi
 [[ $(grep -c '^%posttrans boot -p /bin/sh$' "$spec") == 1 ]]
 grep -Fx "if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then" "$spec"
-grep -Fx 'Source4: senemos-native-profile-7.2.12.tar.xz' <<< "$parsed"
+grep -Fx 'Source4: senemos-native-profile-7.3.0.tar.xz' <<< "$parsed"
 grep -F 'CONFIG_INITRAMFS_SOURCE=""' "$root/packaging/native/native.config"
 bash "$root/tests/native-firewall-contract.sh"
 if grep -Fq 'qcom_q6v5_pas' "$root/src/boot/early-modules.list"; then
     echo 'PAS must wait for OEM firmware on the real root' >&2
     exit 1
 fi
-grep -F 'git archive HEAD src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot tests' "$root/Makefile"
-grep -Fx 'registration-only' "$root/packaging/native/audio-profile"
+grep -F 'git archive HEAD src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests' "$root/Makefile"
+grep -Ex '(hdmi-only|speakers)' "$root/packaging/native/audio-profile"
 grep -Fx 'native-v1' "$root/packaging/native/llcc-profile"
 grep -F 'packaging/native/llcc-profile "$$assets/"' "$root/Makefile"
 grep -Fx 'UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")' "$root/packaging/native/prepare.sh"

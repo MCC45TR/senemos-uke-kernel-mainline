@@ -3,50 +3,149 @@
 Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 (`uke`, Qualcomm SM7675).
 
-**Development target:** Linux 7.3 · AArch64 · Fedora Rawhide
+**Development target:** Linux 7.3.x · AArch64 · Fedora Rawhide
 
-[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Linux 7.3 source](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/codex/display-isolation73-20261025)
+[Hardware status](https://github.com/MCC45TR/uke-linux#hardware-support) · [Development COPR](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-test/) · [Source profile](manifests/linux-7.3.0.json)
 
-The earlier 18 October source targets Linux 7.2.11 with USB,
-battery and VRR adaptations. Its native charger-boot handoff selects a separately
-packaged minimal charging interface only from an explicit bootloader signal.
-It does not qualify charge cutoff, bypass or physical offline charging. Tablet
-results below retain their exact older kernel identities until separately tested.
+27 October 2026: candidate `7.3.0-33` preserves held touch identities, qualifies
+new contact groups, retains interior electrode coordinates and filters
+single-finger contact-patch roll. A separate RAM module on POCO Pad X1 with
+Fedora Rawhide and kernel `7.3.0-31` improved three-finger gestures and closed
+each of three test windows with one tap; deliberate dragging remained usable.
+On 28 October, the complete signed release-33 kernel was installed through DNF,
+staged with the guarded updater, rebooted and accepted with matching modules.
+External-only boot health also passed with hardware support 1.8.5. Physical
+touch qualification on the complete new kernel remains open. Original KDE
+and Qt remain unchanged. The desktop top-left selection defect and Focus Pen /
+Focus Keyboard driver acceptance remain open. Disabling the optional KWin
+Touch Points visualization removed the reported multifinger rendering stall;
+it does not change input processing or desktop selection.
 
-## Status — 26 October 2026
+The 26 October source targets signed Linux 7.3 with the retained Uke display,
+USB, battery and video adaptations. Signed normal release 13 boots on POCO
+Pad X1 through DNF with matching modules, desktop and touchscreen services.
+Battery telemetry remains synchronized after one RTC-woken s2idle trial;
+release 12's physical USB mouse wake is a separate earlier result.
+Signed release 14 delivers disconnected, default-off RGB DSC/FEC controls
+through COPR/DNF and boots with matching modules. Candidate 15 additionally
+clears latched FEC detection before training and checks stale/fresh events and
+actual compressed TU calculations. Host capability, PPS register-boundary,
+failure and atomic-state checks pass; release-15 delivery and physical
+compression validation remain pending. Double-tap gesture entry, four-lane negotiation, DDC/CI and
+sustained accessory stability remain open. Historical results below retain
+their exact older kernel identities.
 
-POCO Pad X1, 8 GB / 512 GB, Fedora Rawhide AArch64 and original KDE normally
-boots signed Linux `7.3.0-15`, [COPR 11207395](https://copr.fedorainfracloud.org/coprs/build/11207395/).
-Matching modules, boot-image readback and the existing boot-health gate pass.
-The normal source is on [the display-isolation branch](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/codex/display-isolation73-20261025).
-Separate experimental branches are not automatically qualified by this boot.
+On 27 October, source candidate `7.3.0-29` restores the Cliffs NSP/crypto
+suppliers and two/three-rail proxy ownership. PAS stop errors retain pending
+resources, and an optional preparation hook lets the Cliffs CDSP contract
+halt before transport removal. Host tests reproduce the previous stop-error
+and duplicate Sysmon-request failures and pass with the corrections. No new
+CDSP match or firmware start is enabled. Source-package, AArch64 build and
+physical lifecycle results require separate evidence; forced removal,
+startup failure and exported-buffer teardown remain open.
 
-HDMI works on Linux 7.3, confirmed on 26 October. Earlier Linux 7.2.12-31 tests
-establish Juo monitor sound and Gigabit Ethernet connectivity. Internal display,
-normal touch, fixed refresh modes, Wi-Fi, selected Bluetooth and sensors have
-dated working results. The bounded RGB color test passes on Linux 7.3.0-5.
-On kernel 15, native Iris produces 30 exact-reference constrained-baseline H.264
-frames at 320x240 with locally provisioned VPU firmware; High produces a corrupt
-frame and firmware errors. Browser video, other codecs, encoder output and
-sustained media operation remain unqualified.
+Source candidate `7.3.0-30` adds native DDR bandwidth monitoring with exact
+Uke frequency/width OPPs and decimal ICC units. Existing MC requests retain
+their endpoints and tags; the monitor uses AMC/WAKE-only votes. Actual-source
+fault/unit tests and four retained full Type-C/display graph checks pass on
+the host. CPU/LLCC secondary L3 voting, MEMLAT and physical bandwidth/lifecycle
+acceptance remain open. On 27 October, signed COPR 11215488 installs this
+six-package cohort on POCO Pad X1, Fedora Rawhide AArch64. Boot B write/readback
+and the retained release-27 backup verify. No reboot is performed; the tablet
+still runs `7.3.0-27`, with candidate-30 boot and hardware acceptance open.
 
-VRR remains disabled after input/display faults. External DSC/FEC is experimental
-and disabled by default. HDR, DDC/CI, four-lane/MST operation, suspend, charging
-protection, internal audio and cameras retain separate open gates. Working HDMI
-does not establish any of those functions. The observed firmware handoff is EL1;
-a KVM package does not establish EL2 or guest execution.
+Source candidate `7.3.0-31` adds the native L3 provider prerequisite: per-probe
+clock rates, zero/descending LUT refusal, native frequency width and cleanup
+after an ICC link allocation failure. Actual probe/set/remove fault fixtures
+cover clock, mapping, allocation, graph and provider failures on the host.
+CPU/LLCC BWMON activation still requires paired L3 votes and complete multi-path
+OPP failure handling. No new L3 node or monitor is enabled by this prerequisite.
 
-The [full hardware table](https://github.com/MCC45TR/uke-linux#hardware-support)
-distinguishes older successful observations from current-kernel tests and exact
-exported-image acceptance. The [published source checkpoint](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/publish/source-snapshot-20261026)
-preserves pending 7.2.12 source separately from the normal 7.3 delivery.
+On 27 October 2026, POCO Pad X1 running Fedora Rawhide and `7.3.0-30`
+has all required speaker packages and the exact preset, but no ALSA card.
+The strict buffer loader rejects valid shared-memory endpoint widgets. Four
+amplifiers initially NACK; a later controlled reprobe identifies all four as
+0x2900/0x00a3 and loads their expected presets. Candidate `7.3.0-31` admits
+the two endpoint types, defers transient amplifier detection failures and
+restores the reviewed speaker-rotation patch omitted from the release-30
+source lineage. Actual-callback host regression and protection tests pass;
+automatic boot recovery and physical playback require separate tablet evidence.
+
+Source candidate `7.3.0-32` retains a bandwidth snapshot with each OPP path set,
+restores all paths after failure and keeps incomplete transitions retryable.
+BWMON retries even when the next sample returns to the last successful target.
+Actual-function host fixtures cover initial/removal votes, failed rollback,
+OPP-cache suppression and owned path/snapshot allocation and release. CPU/LLCC
+DT admission, matched full build/package and physical acceptance remain open.
+
+## Status — 18 October 2026
+
+Signed COPR 11167990 installs `7.2.10-27` through DNF on POCO Pad X1, Fedora
+Rawhide AArch64 and original KDE. The guarded updater verifies boot B by
+readback and preserves Android boot A unchanged. A normal reboot reaches the
+desktop through native O82 DPU/DSI. Touch is active with zero service restarts;
+the saved VRR policy and balanced power profile persist. The previous DP
+connector-state Oops and UCSI initialization timeout are absent. Brief
+white-flash behavior and long-duration stability remain unqualified.
+
+With the powered Juo dock attached, USB 2 and 5-Gbit/s USB 3 hub trees, a
+YICHIP HID receiver and an RTL8153 Ethernet adapter enumerate. Evdev records
+mouse motion and the user confirms pointer operation. The standard Type-C
+interface reports host data role, sink power role and USB-PD mode while the
+tablet charges. This does not establish a negotiated voltage, wattage or all
+charging protocols. Ethernet has no cable/carrier test yet. HDMI remains
+disconnected. A PMIC probe warning and optional front-color startup failure
+remain open; this is not a clean-log or complete dock acceptance result.
+
+The current internal path uses RGB101010 and 10-bpc DSC; KDE scans out AR30.
+Selectable internal 8/10/12-bpc link profiles are not implemented. Advertised
+12-bit panel capability does not identify a qualified 12-bpc transport or FRC
+path. External DP exposes a 6..10 max-bpc property. No unsupported color-depth
+or RGB-range choice is advertised for DSI.
+
+Release 27 corrects the UCSI type-2 notification path. On that kernel, a
+controlled HDMI reconnect also produces a type-2, 32-byte DP notification on
+the separate alternate-mode channel. Its callback still applies a global
+type-1-only filter. The release-28 source candidate dispatches that channel's
+notification types separately from strict write acknowledgements. It retains
+owner, payload-parser, bounded queue and lifecycle guards. It also enables
+standard XZ/Zstandard firmware loading: Fedora supplies the requested Realtek
+firmware as an XZ file, while release 27 cannot decode compressed firmware.
+Source checks, native packaging and physical HDMI/Ethernet results remain
+separate validation stages.
+
+Signed COPR 11168191 subsequently provides release 28. Exact source/payload,
+signature, module and initramfs checks pass. DNF installs the matched bundle;
+boot B readback matches and Android A is unchanged. A normal reboot returns to
+SSH and the original KDE session. Touch service readiness and zero restarts
+are verified; the user confirms physical display and touch operation. The first KDE
+policy is Automatic; the previous Always preference is restored through
+KScreen and persisted. With 144 Hz selected, DPU measurement reports about
+30 Hz at idle with VRR enabled; this is not optical panel metrology.
+
+The earlier Realtek missing-firmware error is absent after the compressed-loader
+change, and ethtool reports `rtl8153b-2 v2 04/27/23`. Carrier is zero and Ethernet
+traffic is untested. DP remains disconnected;
+an initial alternate-mode mux error is recorded with the unpowered dock. The
+user reports this Juo dock requires PD power for HDMI even on a laptop, so an
+unpowered display trial is inconclusive. Powered HDMI testing is deferred while
+battery termination and system-power behavior remain unqualified. No battery
+bypass control or electrical-protection acceptance is claimed.
+
+CDC defaults off in the matched full-profile boot/root pair; explicit ACM
+opt-in is provided by the separate native management package. Charging services
+remain disabled and the shipped qualification profile is unqualified. No raw
+PD/voltage, gauge or factory command is supplied. See the
+[Type-C profile](docs/USB-TYPEC-FULL-PROFILE-20261018.md) and
+[charging protocol limits](docs/CHARGING-PROTOCOLS-20261018.md).
+
+The user accepts the existing VRR/touch baseline on 18 October 2026. This does
+not establish a new instrumented 30–144 Hz panel-cadence measurement or acceptance
+of the combined candidates. Seven fixed modes remain distinct from variable
+refresh. Suspend is unqualified. The accepted previous boot image and matching
+modules remain available for recovery.
 
 ## Earlier native display and sensor results
-
-The following records describe the earlier 14–18 October baseline. The later
-VRR/input regression supersedes its unrestricted VRR acceptance. Current
-function-level status and exact-kernel limits are listed above and in the
-main project's hardware table.
 
 The signed COPR `7.2.10-10` development bundle installs through DNF and reaches
 original Fedora KDE through native O82 DPU/DSI after a normal KDE reboot.
@@ -175,13 +274,6 @@ the embedded specification. The source package supplies Image, matched modules, 
 with an embedded, source-generated initramfs. No OEM firmware or per-device
 calibration is a package source input.
 
-The 23 October 2026 release-20 source candidate builds only the Uke DTB and
-native display overlay. Its configuration removes unrelated fixed-board
-drivers and reduces the early module list while preserving generic USB
-accessories, root filesystems, firewall, virtualization and diagnostics.
-The build checks the retained suppliers and early dependency closure.
-Source/build validation does not establish tablet boot or a measured speedup.
-
 `senemos.sh` retains the historical container build and stock-DT inspection
 tools. Its host specification remains the earlier revision 1.39 profile; it
 does not reproduce the consolidated native boot image. Its `latest` option
@@ -218,16 +310,20 @@ for reproducible bugs and [SECURITY.md](SECURITY.md) for vulnerabilities.
 
 Project tooling and documentation use [MIT](LICENSE). Linux code and derived
 patches retain their original SPDX and GPL-compatible licenses.
-## Release channels
 
-25 October 2026: the normal mainline package and its matched singleboot child
-follow Linux 7.3.x. The scheduled selector uses the newest admitted 7.3 release,
-including upstream's `7.3` spelling, and retains signed-source verification.
-An older source queue requires a reviewed port before automatic updates.
-The common package builds its own singleboot child in the same COPR transaction;
-the separate historical metadata branch is not advanced for this channel.
+## Branch policy
 
-The unstable channel is reserved for Linux 7.4-rcN. Its source recipe refuses
-the retained 7.3 tree before installing build dependencies. A new RC still needs
-its signed archive, reviewed adaptation and package checks; the channel change
-does not qualify an unreleased kernel or establish tablet support.
+29 October 2026: development uses three branches:
+
+| Branch | Purpose |
+| --- | --- |
+| `main` | Integrated normal Linux 7.3 source and matched singleboot package |
+| `KVM` | Isolated KVM/EL2 source and matched singleboot package |
+| `UNSTABLE` | Reviewed Linux 7.4-rcN ports only; retained 7.3 inputs cannot produce an unstable build |
+
+Historical branch tips are retained under `archive/2026-10-29/` tags before
+branch removal. An archive preserves research; it does not qualify that code
+for production. Singleboot is a package profile, not a separate development
+branch. Configure external COPR SCM sources to use these branch names before
+requesting new builds. The unstable branch remains build-gated until a reviewed
+RC source archive, signature, adaptation and package identity are committed.

@@ -7,6 +7,61 @@ kernel=${3:?Pass the prepared kernel source}
 [[ $(awk '/ctx->panel.prepare_prev_first = true;/ {ready=1} /drm_panel_add\(&ctx->panel\)/ {print ready+0; exit}' "$source_file") == 1 ]]
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
+cat > "$work/registration.c" <<'C'
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <errno.h>
+#define __init
+#define __exit
+#define THIS_MODULE ((void *)1)
+#define MODULE_DESCRIPTION(...)
+#define MODULE_LICENSE(...)
+#define module_init(fn) static int (*test_init)(void) = fn
+static void (*test_exit)(void);
+#define module_exit(fn) static void __attribute__((constructor)) expose_exit(void) { test_exit = fn; }
+struct mipi_dsi_device { int unused; };
+struct mipi_dsi_driver {
+    int (*probe)(struct mipi_dsi_device *);
+    void (*remove)(struct mipi_dsi_device *), (*shutdown)(struct mipi_dsi_device *);
+    struct { const char *name; const void *of_match_table, *dev_groups;
+             bool suppress_bind_attrs; } driver;
+};
+static int o82_probe(struct mipi_dsi_device *d) { (void)d; return 0; }
+static void o82_remove(struct mipi_dsi_device *d) { (void)d; }
+static void o82_shutdown(struct mipi_dsi_device *d) { (void)d; }
+static const int o82_match[1], o82_groups[1];
+static int registration_error;
+static struct mipi_dsi_driver *registered;
+static int mipi_dsi_driver_register_full(struct mipi_dsi_driver *d, void *owner) {
+    assert(owner == THIS_MODULE && !registered);
+    if (!registration_error) registered = d;
+    return registration_error;
+}
+static void __attribute__((unused)) mipi_dsi_driver_unregister(struct mipi_dsi_driver *d) {
+    assert(registered == d); registered = NULL;
+}
+C
+# Use the selected kernel's registration helpers, including their exit semantics.
+for definition in 'module_driver' 'mipi_dsi_driver_register' 'module_mipi_dsi_driver'; do
+    awk -v name="$definition" '$1=="#define" && index($2,name "(")==1 {emit=1;found=1}
+        emit {print; if ($0 !~ /\\$/) exit} END {if(!found)exit 1}' \
+        "$kernel/include/linux/device/driver.h" "$kernel/include/drm/drm_mipi_dsi.h" >> "$work/registration.c"
+done
+sed -n '/^static struct mipi_dsi_driver o82_driver = {/,/^MODULE_LICENSE/p' "$source_file" >> "$work/registration.c"
+cat >> "$work/registration.c" <<'C'
+int main(void) {
+    registration_error = -EIO;
+    assert(test_init() == -EIO && !registered);
+    registration_error = 0;
+    assert(test_init() == 0 && registered == &o82_driver);
+    assert(!test_exit && registered->driver.suppress_bind_attrs);
+    assert(registered->probe == o82_probe && registered->remove == o82_remove);
+    assert(registered->shutdown == o82_shutdown);
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/registration.c" -o "$work/registration"
+"$work/registration"
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <stdbool.h>
@@ -38,6 +93,10 @@ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define ALIGN(n,a) (((n)+(a)-1)&~((a)-1))
 #define BIT(n) (1U<<(n))
+#define GENMASK(h,l) (((~0U) << (l)) & ((~0U) >> (31-(h))))
+#define NOTIFY_STOP 0x8001
+#define UKE_O82_TOUCH_RETAIN 1
+#define UKE_O82_TOUCH_RELEASE 2
 #define dev_err(dev,fmt,...) ((void)snprintf(last_error,sizeof(last_error),fmt,##__VA_ARGS__))
 #define dev_info(dev,fmt,...) info(fmt,##__VA_ARGS__)
 #define dev_warn(...) ((void)0)
@@ -75,8 +134,12 @@ typedef struct {u64 value;} atomic64_t;
 static u64 atomic64_read(const atomic64_t *state) {return state->value;}
 static void atomic64_set(atomic64_t *state,u64 value) {state->value=value;}
 struct blocking_notifier_head {u64 last; unsigned int calls;};
+static int gesture_notify_result, gesture_retains, gesture_releases;
 static int blocking_notifier_call_chain(struct blocking_notifier_head *head,unsigned long event,void *data) {
-    assert(head && event==0 && data); head->last=*(u64 *)data; ++head->calls; return 0;
+    assert(head && data);
+    if(event==UKE_O82_TOUCH_RETAIN) {++gesture_retains; return gesture_notify_result;}
+    if(event==UKE_O82_TOUCH_RELEASE) {++gesture_releases; return 0;}
+    assert(!event); head->last=*(u64 *)data; ++head->calls; return 0;
 }
 static void sysfs_notify(int *kobj,const char *directory,const char *name) {
     assert(kobj&&!directory&&!strcmp(name,"touch_reset_state"));
@@ -418,6 +481,7 @@ cat >> "$work/check.c" <<'C'
     return 0;
 }
 static struct o82_panel context(int variant,int mode) {
+    gesture_notify_result=gesture_retains=gesture_releases=0;
     static const struct drm_panel_funcs funcs={.enable=o82_enable,.disable=o82_disable};
     static struct host_ops ops={transfer};
     static struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
@@ -462,6 +526,24 @@ static struct o82_panel context(int variant,int mode) {
     return ctx;
 }
 int main(void) {
+    {
+        struct o82_panel c=context(0,3);
+        assert(!o82_prepare(&c.panel));
+        gesture_notify_result=NOTIFY_STOP;
+        assert(!o82_unprepare(&c.panel));
+        assert(!c.prepared && c.gesture_retained && gesture_retains==1);
+        for(int i=0;i<3;i++) assert(balance[i]==1);
+        assert(!o82_unprepare(&c.panel) && gesture_retains==1);
+        const int released=gesture_releases;
+        pps_start=transfers+2*c.active->on_count-pps_transfers;
+        assert(!o82_prepare(&c.panel) && !c.gesture_retained);
+        assert(gesture_releases==released+1);
+        for(int i=0;i<3;i++) assert(balance[i]==1);
+        assert(!o82_unprepare(&c.panel) && c.gesture_retained);
+        c.removing=true;
+        assert(!o82_unprepare(&c.panel) && !c.gesture_retained);
+        for(int i=0;i<3;i++) assert(!balance[i]);
+    }
     for(int result=0;result<4;result++) {
         struct o82_panel ctx=context(0,3);
         probe_backlight=result==0 ? ctx.backlight:result==1 ? NULL:ERR_PTR(result==2 ? -EIO:-ENODEV);

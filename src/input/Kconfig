@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-config VIDEO_NT36532_UKE_THP
-	tristate "Uke NT36532 raw THP capture"
-	depends on SPI && OF && GPIOLIB && VIDEO_DEV && POWER_SUPPLY && DRM_PANEL_XIAOMI_O82
+config TOUCHSCREEN_NT36532_UKE
+	tristate "Uke NT36532 native touchscreen"
+	depends on SPI && OF && GPIOLIB && INPUT_TOUCHSCREEN && POWER_SUPPLY && DRM_PANEL_XIAOMI_O82
 	select VIDEOBUF2_VMALLOC
 	select CRYPTO_LIB_SHA256
 	help
-	  Capture complete Uke NT36532 normal-firmware packets as V4L2 metadata.
-	  This requires the matching privileged contact processor and private
-	  stock firmware. It does not decode contacts or support gesture wake.
-	  Leave disabled until the replacement and rollback paths are qualified.
+	  Load qualified shared CSOT firmware and report multitouch directly
+	  through Linux input. No userspace contact processor or private baseline
+	  is required. Firmware gestures report KEY_WAKEUP.

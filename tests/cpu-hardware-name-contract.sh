@@ -5,7 +5,7 @@ set -Eeuo pipefail
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
 awk '/^static int c_show\(/{copy=1} /^static void \*c_start\(/{copy=0} copy' "$1" > "$work/show.inc"
-grep -Fq 'Hardware\t: Qualcomm Snapdragon 7+ Gen 3 (SM7675)' "$work/show.inc"
+grep -Fq 'Hardware\t: Qualcomm Snapdragon 7+ Gen 3' "$work/show.inc"
 cat > "$work/test.c" <<'C'
 #include <assert.h>
 #include <stdbool.h>
@@ -43,7 +43,7 @@ static void seq_printf(struct seq_file* m,const char* format,...){
 static void seq_puts(struct seq_file* m,const char* text){seq_printf(m,"%s",text);}
 #include "show.inc"
 int main(void){
- const char field[]="Hardware\t: Qualcomm Snapdragon 7+ Gen 3 (SM7675)\n";
+ const char field[]="Hardware\t: Qualcomm Snapdragon 7+ Gen 3\n";
  for(int compat=0;compat<2;++compat)for(int cpu=0;cpu<=7;cpu+=7){
   task.personality=compat?PER_LINUX32:0;
   struct cpuinfo_arm64 info={.reg_midr=0x410fd800};
@@ -52,7 +52,15 @@ int main(void){
    struct seq_file out={.index=cpu};uke=board;sm7675=soc;assert(!c_show(&out,&info));
    char* extra=strstr(out.text,field);assert((extra!=NULL)==(board&&soc));
    if(extra)memmove(extra,extra+strlen(field),strlen(extra+strlen(field))+1);
-   assert(!strcmp(out.text,base.text));
+   char expected[4096];strcpy(expected,base.text);
+   if(board&&soc){
+    const char model[]="model name\t: Qualcomm Snapdragon 7+ Gen 3\n";
+    char* product=strstr(out.text,model);assert(product);
+    memmove(product,product+strlen(model),strlen(product+strlen(model))+1);
+    char* old=strstr(expected,"model name\t:");
+    if(old){char* end=strchr(old,'\n');assert(end);memmove(old,end+1,strlen(end+1)+1);}
+   }
+   assert(!strcmp(out.text,expected));
   }
  }
  puts("Actual cpuinfo formatter: Uke/SM7675 gate, other boards, compat and unchanged core fields passed.");

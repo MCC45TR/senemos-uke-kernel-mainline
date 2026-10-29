@@ -13,9 +13,7 @@ ln -s aarch64 "$work/link"
 mkdir "$work/directory"
 sed -n '/^if \[\[ -n ${UKE_PREBUILT_SWITCH_ROOT:-}/,/^readelf -h/p' \
     "$root/src/boot/build-payload.sh" > "$work/switch-root.sh"
-sed -n '/^if test -n "${UKE_PREBUILT_TOUCH_CAPTURE:-}"/,/^readelf -h/p' \
-    "$root/packaging/senemos-uke-linux-kernel-mainline.spec" > "$work/touch-capture.sh"
-for helper in switch-root touch-capture; do
+for helper in switch-root; do
     [[ $(grep -c '^readelf -h' "$work/$helper.sh") == 1 ]]
 done
 compile_fixture() {
@@ -29,7 +27,7 @@ compile_fixture() {
 clang++() { compile_fixture "$@"; }
 g++() { compile_fixture "$@"; }
 export -f compile_fixture clang++ g++
-for helper in switch-root touch-capture; do
+for helper in switch-root; do
     case $helper in
         switch-root) variable=UKE_PREBUILT_SWITCH_ROOT; binary=uke-offline-switch-root;;
         touch-capture) variable=UKE_PREBUILT_TOUCH_CAPTURE; binary=uke-touch-capture;;

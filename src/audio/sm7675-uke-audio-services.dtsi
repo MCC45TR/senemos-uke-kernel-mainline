@@ -11,7 +11,7 @@
 		reg = <1>;
 		#sound-dai-cells = <0>;
 
-		bedais {
+		uke_q6apm_bedais: bedais {
 			compatible = "qcom,q6apm-lpass-dais";
 			#sound-dai-cells = <1>;
 			status = "disabled";
@@ -32,7 +32,7 @@
 		compatible = "qcom,q6prm";
 		reg = <2>;
 
-		clock-controller {
+		uke_q6prm_clocks: clock-controller {
 			compatible = "qcom,q6prm-lpass-clocks";
 			#clock-cells = <2>;
 		};

@@ -29,15 +29,11 @@ jobs:
       matrix:
         include:
           - role: common
-            branch: codex/display-isolation73-20261025
+            branch: main
             package: senemos-uke-linux-kernel-mainline
-            metadata_branch: copr/mainline-singleboot
-            metadata_role: singleboot
           - role: kvm
-            branch: copr/mainline-kvm
+            branch: KVM
             package: senemos-uke-linux-kernel-mainline-kvm
-            metadata_branch: copr/mainline-kvm-singleboot
-            metadata_role: kvm-singleboot
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -83,18 +79,3 @@ jobs:
             sleep 60
           done
           echo 'Matching common build or COPR webhook is unavailable' >&2; exit 1
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        if: matrix.role == 'kvm'
-        with:
-          ref: ${{ matrix.metadata_branch }}
-          path: metadata
-      - name: Advance metadata only after the matching common build
-        if: matrix.role == 'kvm'
-        env:
-          ROLE: ${{ matrix.metadata_role }}
-          EVR: ${{ steps.candidate.outputs.evr }}
-          BRANCH: ${{ matrix.metadata_branch }}
-        run: |
-          set -Eeuo pipefail
-          bash automation/scripts/prepare-upstream-candidate.sh "$GITHUB_WORKSPACE/metadata" "$ROLE" "$EVR" | tee "$GITHUB_WORKSPACE/metadata.log"
-          if [[ $(tail -1 "$GITHUB_WORKSPACE/metadata.log") == prepared$'\t'* ]]; then cd metadata; git push origin "HEAD:refs/heads/$BRANCH"; fi

@@ -44,4 +44,16 @@ fi
 rpm -qpl "${packages[0]}" > "$work/files"
 grep -Fxq "/usr/share/doc/$base-singleboot/SINGLEBOOT.md" "$work/files"
 grep -Fxq "/usr/share/licenses/$base-singleboot/LICENSE" "$work/files"
+case $base in
+    senemos-uke-linux-kernel-mainline) prefix= ;;
+    senemos-uke-linux-kernel-mainline-kvm) prefix=kvm- ;;
+    senemos-uke-linux-kernel-mainline-unstable) prefix=unstable- ;;
+    *) exit 1 ;;
+esac
+for path in "/usr/share/senemos/uke/${prefix}singleboot.json" "/usr/lib/senemos/${prefix}default-boot.img"; do
+    grep -Fxq "$path" "$work/files" || {
+        echo 'Kernel family owns a conflicting profile namespace' >&2
+        exit 1
+    }
+done
 printf '%s\n' 'One source family, six children, exact singleboot tuple, installed documentation and no activation scriptlet passed.'

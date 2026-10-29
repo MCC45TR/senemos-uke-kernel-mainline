@@ -67,6 +67,7 @@ struct o82_panel {
 	unsigned int loaded_supplies;
 	bool reset_output;
 	bool prepared;
+	bool gesture_retained;
 	bool first_frame_initialized;
 	bool removing;
 	bool initial_60hz_only;
@@ -91,6 +92,18 @@ static void o82_touch_state(struct o82_panel *ctx, bool reset, bool ready)
 	blocking_notifier_call_chain(&ctx->touch_notifiers, 0, &state);
 	sysfs_notify(&ctx->dsi[0]->dev.kobj, NULL, "touch_reset_state");
 	mutex_unlock(&ctx->touch_lock);
+}
+
+static int o82_touch_gesture(struct o82_panel *ctx, unsigned long event)
+{
+	u64 state;
+	int ret;
+
+	mutex_lock(&ctx->touch_lock);
+	state = atomic64_read(&ctx->touch_state);
+	ret = blocking_notifier_call_chain(&ctx->touch_notifiers, event, &state);
+	mutex_unlock(&ctx->touch_lock);
+	return ret;
 }
 
 static int o82_send(struct o82_panel *ctx, const struct o82_command *cmd, bool lpm)
@@ -241,6 +254,8 @@ static int o82_power_off(struct o82_panel *ctx)
 {
 	int i, ret, first_error = 0;
 
+	o82_touch_gesture(ctx, UKE_O82_TOUCH_RELEASE);
+	ctx->gesture_retained = false;
 	o82_touch_state(ctx, false, false);
 	if (ctx->reset_output)
 		gpiod_set_value_cansleep(ctx->reset, 0);
@@ -359,6 +374,11 @@ static int o82_prepare_locked(struct drm_panel *panel)
 	    ctx->dsc.first_line_bpg_offset != 13 ||
 	    ctx->dsc.rc_range_params[0].range_max_qp != 8)
 		return -EINVAL;
+	if (ctx->gesture_retained) {
+		ret = o82_power_off(ctx);
+		if (ret)
+			return ret;
+	}
 	/* Do not accumulate enable references after a failed power-down. */
 	if (ctx->enabled_supplies || ctx->loaded_supplies)
 		return -EBUSY;
@@ -628,9 +648,18 @@ static int o82_unprepare(struct drm_panel *panel)
 
 	mutex_lock(&ctx->lock);
 	o82_disable_locked(ctx);
+	if (ctx->gesture_retained && !ctx->removing)
+		goto out;
 	if (!ctx->prepared && !ctx->enabled_supplies && !ctx->loaded_supplies)
 		goto out;
 	ret = ctx->prepared ? o82_off(ctx) : 0;
+	if (!ret && !ctx->removing &&
+	    ctx->enabled_supplies == GENMASK(ARRAY_SIZE(ctx->supplies) - 1, 0) &&
+	    o82_touch_gesture(ctx, UKE_O82_TOUCH_RETAIN) == NOTIFY_STOP) {
+		ctx->gesture_retained = true;
+		ctx->prepared = false;
+		goto out;
+	}
 	power_ret = o82_power_off(ctx);
 	ctx->prepared = false;
 	ret = ret ? ret : power_ret;
@@ -949,8 +978,13 @@ static struct mipi_dsi_driver o82_driver = {
 	.remove = o82_remove,
 	.shutdown = o82_shutdown,
 	.driver = { .name = "panel-xiaomi-o82", .of_match_table = o82_match,
-		    .dev_groups = o82_groups },
+		    .dev_groups = o82_groups, .suppress_bind_attrs = true },
 };
-module_mipi_dsi_driver(o82_driver);
+/* shortcut: no live panel removal until MSM GEM/bridge teardown is safe. */
+static int __init o82_init(void)
+{
+	return mipi_dsi_driver_register(&o82_driver);
+}
+module_init(o82_init);
 MODULE_DESCRIPTION("Xiaomi O82 dual-DSI panel with OEM timing groups");
 MODULE_LICENSE("GPL");
