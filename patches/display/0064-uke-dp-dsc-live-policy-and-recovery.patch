@@ -411,7 +411,17 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  }
 --- a/drivers/gpu/drm/msm/dp/dp_panel.c
 +++ b/drivers/gpu/drm/msm/dp/dp_panel.c
-@@ -934,6 +934,7 @@
+@@ -597,7 +597,8 @@
+ 	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO, BIT(0) | BIT(3) | (1 << 8) | (3 << 16));
+ 	msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, config->compression_ctrl);
+ 	flush = msm_dp_read_link(panel, REG_DP_SDP_FLUSH);
+-	msm_dp_write_link(panel, REG_DP_SDP_FLUSH, flush | BIT(2));
++	/* Keep PPS repeating after the receiver decoder becomes enabled. */
++	msm_dp_write_link(panel, REG_DP_SDP_FLUSH, (flush & ~BIT(2)) | BIT(0));
+ }
+ 
+ static void msm_dp_panel_send_sdp(struct msm_dp_panel_private *panel,
+@@ -934,6 +935,7 @@
  	msm_dp_panel = &panel->msm_dp_panel;
  	msm_dp_panel->max_bw_code = DP_LINK_BW_8_1;
  	msm_dp_panel->lane_limit = 4;

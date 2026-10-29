@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 46
+%global senemos_build_release 47
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-47
+- Trigger continuous PPS transmission with the OEM flush bit and clear stale one-shot mode.
+- Check the actual flush register with both initial modes and unrelated bits retained.
+- Use arithmetic three-byte line padding and model kernel power-of-two alignment correctly.
+
 * Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-46
 - Program matching active and display data windows for compressed DisplayPort streams.
 - Check real interface timing registers at FHD, QHD and UHD while retaining O82 timing coverage.

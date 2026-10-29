@@ -1,5 +1,17 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-47 source candidate: trigger PPS transmission with
+flush bit 0 and clear one-shot bit 2, matching the Uke OEM continuous-PPS
+configuration. The preceding implementation sets only bit 2; release-45
+register capture confirms that value. A real packet-programming assertion
+fails before correction and passes afterward for both initial modes, 8/10 bpc
+and preserved unrelated bits. This includes the release-46 data-window fix;
+three-byte end-of-line padding also uses arithmetic rounding, since kernel
+ALIGN requires a power of two. The corrected fixture reproduces the missing
+QHD padding seen in the tablet register dump. Its superseded release-46 COPR
+build is canceled before delivery. Physical compression
+remains unaccepted until a fresh signed-package and tablet trial.
+
 29 October 2026, Linux 7.3.0-46 source candidate: match the active and display
 data windows for compressed DisplayPort, following the exact Uke OEM and
 same-SoC OnePlus interface contract. Release-45 register capture shows the

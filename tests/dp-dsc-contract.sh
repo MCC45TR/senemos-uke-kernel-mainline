@@ -35,7 +35,7 @@ typedef uint64_t u64; typedef int64_t s64;
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 #define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
 #define DIV_ROUND_UP_ULL(n,d) DIV_ROUND_UP(n,d)
-#define ALIGN(n,a) (DIV_ROUND_UP(n,a)*(a))
+#define ALIGN(n,a) (((n)+((a)-1))&~((a)-1))
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 #define cpu_to_be16(v) htobe16(v)
@@ -140,6 +140,7 @@ int main(void) {
   for(unsigned i=88;i<128;i++)assert(!bytes[i]);
   struct msm_dp_panel_private panel={.msm_dp_panel.dsc=out};
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++)link_regs[i]=0xdeadbeef;
+  link_regs[REG_DP_SDP_FLUSH/4]=hz==60?0x40000008:0x4000000c;
   memset(p0_regs,0,sizeof(p0_regs)); link_writes=p0_writes=0;
   msm_dp_panel_config_dsc(&panel.msm_dp_panel);
   assert(link_regs[REG_DP_PPS_HEADER/4]==0x7f1000);
@@ -147,6 +148,7 @@ int main(void) {
   assert(link_regs[REG_DP_COMPRESSION_MODE_CTRL/4]==out.compression_ctrl);
   assert(p0_regs[MMSS_DP_DSC_DTO_COUNT/4]==426 && p0_regs[MMSS_DP_DSC_DTO/4]==0x30109);
   assert(link_writes==34 && p0_writes==3);
+  assert(link_regs[REG_DP_SDP_FLUSH/4]==0x40000009);
   for(unsigned i=0;i<22;i++)assert(link_regs[(REG_DP_PPS_DATA/4)+i]==get_unaligned_le32(bytes+i*4));
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++) {
    u32 offset=i*4;
