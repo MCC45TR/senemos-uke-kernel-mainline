@@ -231,7 +231,7 @@
     },
     {
       "path": "patches/7.2.12/0056-soc-qcom-pmic-altmode-events.patch",
-      "sha256": "2a128a33ab3a71229979ccee73401fefcb5d4a0f2cad7a435280a06da0d897bf"
+      "sha256": "a56b1b532137ec081e1bb46e6ee25cbcb40341599f62ca8570e9e931832c1c2d"
     },
     {
       "path": "patches/7.2.12/0057-drm-msm-uke-dp-hbr2-limit.patch",
@@ -416,6 +416,34 @@
     {
       "path": "patches/7.2.12/0102-uke-clock-kconfig-dependencies.patch",
       "sha256": "4c2f9ab5d776def85fcd7dc7642bf048dad03baba5288361f37ff4554cfed488"
+    },
+    {
+      "path": "patches/7.2.12/0103-spi-geni-gpi-core-completion.patch",
+      "sha256": "d9dcfbfcb6a37df8f0175fe7edb1bff6ce16bbbf711da6c3ac81bd74f585471a"
+    },
+    {
+      "path": "patches/7.2.12/0104-uke-confirm-sdp-budget-readback.patch",
+      "sha256": "9ee8a56d5968923bc51b13efb41860540ccb4413c8540506eb10609c161fffae"
+    },
+    {
+      "path": "patches/7.2.12/0105-msm-fault-capture-nonblocking.patch",
+      "sha256": "1a8d250037e8e54fcaf902ff4e995c3a24c70e1f01d37890e8c3219f4d0d837f"
+    },
+    {
+      "path": "patches/7.2.12/0106-usb-ucsi-preserve-partner-altmode.patch",
+      "sha256": "088b13cbc6cfda5403b4c2e5379e0396ab583488730221193101abe1bd809df5"
+    },
+    {
+      "path": "patches/7.2.12/0107-phy-qmp-accept-combined-dp-usb-modes.patch",
+      "sha256": "54fc314824967a2f88fc71178904991ea59ca1ef5cfd184dc7a8a4e787b19e99"
+    },
+    {
+      "path": "patches/7.2.12/0108-typec-dynamic-route-diagnostics.patch",
+      "sha256": "44ac8b9c5d3da8c880a116311215b4ee7ac66c9e383bd33a79e46179c33b00a3"
+    },
+    {
+      "path": "patches/7.2.12/0109-pmic-altmode-suppress-duplicate-hpd-levels.patch",
+      "sha256": "64102c1a2efd355d911659056147b65a3531a59c2102b9ef7bc3b85f319736bb"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -427,7 +455,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "72f662666fa0e38f3dac0ef223265e20a43e8df0851edbe097a79f097ad2e012"
+      "sha256": "5c28306be43511b8b8ac3005ee281c871cb4752c77e3540021d11d5eb7a36bc1"
     },
     {
       "path": "configs/fedora.config",
