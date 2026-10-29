@@ -6,9 +6,14 @@ dsi=${2:?Pass prepared dsi_host.c}
 modes=${3:?Pass generated o82-data.h}
 panel=${4:?Pass panel-xiaomi-o82.c}
 intf_source=${5:?Pass prepared dpu_hw_intf.c}
+msm_source=${intf_source%/disp/dpu1/dpu_hw_intf.c}
+bpc8=$(sed -n '/<enum name="mdp_bpc">/,/<\/enum>/p' "$msm_source/registers/display/mdp_common.xml" |
+    sed -n 's/.*<value name="BPC8" value="\([0-9]*\)".*/\1/p')
+[[ $bpc8 =~ ^[0-9]+$ ]]
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
-cat > "$work/check.cpp" <<'CPP'
+printf '#define BPC8 %s\n' "$bpc8" > "$work/check.cpp"
+cat >> "$work/check.cpp" <<'CPP'
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -18,7 +23,6 @@ cat > "$work/check.cpp" <<'CPP'
 #define DPU_ERROR(...) ((void)0)
 #define BIT(n) (1U<<(n))
 #define MSM_FORMAT_IS_YUV(fmt) false
-#define BPC8 0
 #define DRM_MODE_FLAG_NHSYNC 1
 #define DRM_MODE_FLAG_NVSYNC 2
 using u32=uint32_t;
@@ -116,7 +120,7 @@ int main() {
         encoder.dsc=true;
     }
     mdss_version version{10}; intf.mdss_ver=&version;
-    msm_format format{};
+    msm_format format{BPC8,BPC8,BPC8};
     const drm_display_mode dp_modes[] = {
         {241500,2560,2608,2640,2720,1440,1443,1448,1481},
         {148500,1920,2008,2052,2200,1080,1084,1089,1125},
@@ -134,6 +138,7 @@ int main() {
             assert(timing.width==static_cast<unsigned>(mode.hdisplay)/2);
             intf.hw={};
             dpu_hw_intf_setup_timing_engine(&intf,&timing,&format);
+            assert(intf.hw.regs[INTF_PANEL_FORMAT/4]==0x213f);
             const unsigned start=(mode.htotal-mode.hdisplay)/2;
             const unsigned data_width=compressed?DIV_ROUND_UP(mode.hdisplay,6):mode.hdisplay/2;
             const auto window=((start+data_width-1)<<16)|start;
@@ -148,6 +153,7 @@ int main() {
     drm_mode_to_intf_timing_params(&physical,&o82_modes[3].mode,&timing);
     intf.hw={}; dpu_hw_intf_setup_timing_engine(&intf,&timing,&format);
     assert(!intf.hw.regs[INTF_ACTIVE_DATA_HCTL/4]);
+    assert(intf.hw.regs[INTF_PANEL_FORMAT/4]==0x213f);
 }
 CPP
 } >> "$work/check.cpp"
