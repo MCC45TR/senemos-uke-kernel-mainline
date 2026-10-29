@@ -3,9 +3,10 @@ SHELL := /bin/bash
 .ONESHELL:
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
 version := 7.3.0
-patch_count := $(if $(filter 7.3.0,$(version)),125,120)
+patch_count := $(if $(filter 7.3.0,$(version)),126,120)
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
+	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-notification-contract.sh
 	bash -n tests/dp-dsc-contract.sh tests/dp-dsc-state-contract.sh
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh

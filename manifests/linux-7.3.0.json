@@ -508,6 +508,10 @@
     {
       "path": "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch",
       "sha256": "6e953578edaed6e0e793f1c7b4c6157a2b7ab03a1c8ff987461898e5806b9ede"
+    },
+    {
+      "path": "patches/7.3.0/0125-uke-ucsi-contract-cache.patch",
+      "sha256": "36c311604ca834a303a97effe4f50623cd4378c1e1ad6e829d44cec3900611e7"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

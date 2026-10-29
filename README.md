@@ -5,6 +5,16 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 **Development target:** Linux 7.3.x · AArch64 · Fedora Rawhide
 
+29 October 2026 integration candidate: patch0125 adds coherent, read-only UCSI
+PDO/RDO cache observation after the battery notification, threshold getter and
+zero-cycle corrections. It preserves the older charging patch byte for byte
+under a free queue number; patch0114 remains the suspend-drain correction.
+Actual getter fixtures, ARM64 UCSI object compilation and repository validation
+pass. This branch is based on the earlier release-41 battery candidate and
+requires reconciliation with the accepted kernel/display baseline before any
+new binary delivery. No full kernel, installed tablet or electrical acceptance
+is claimed.
+
 29 October 2026: the battery candidate preserves a successfully reported zero
 cycle count. Invalid/sentinel values and firmware errors remain unavailable.
 This does not qualify the counter's lifetime or health semantics. Host callback
