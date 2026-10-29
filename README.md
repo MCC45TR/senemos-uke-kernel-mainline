@@ -5,6 +5,13 @@ Linux kernel, device trees and Fedora packages for Xiaomi Pad 7 and POCO Pad X1
 
 **Development target:** Linux 7.3.x · AArch64 · Fedora Rawhide
 
+29 October 2026 protocol source candidate: patch0126 adds a root-only, fixed
+USB7/USB11 GET pair behind a new default-off EXPERT option. It preserves USB6
+reporting and adds no protocol, voltage, current or authentication writer.
+Host fixtures and ARM64 translation pass with the option on and off. Active
+firmware ABI, electrical sessions and current-baseline binary integration remain
+unqualified; no tablet operation or firmware replacement was performed.
+
 29 October 2026 integration candidate: patch0125 adds coherent, read-only UCSI
 PDO/RDO cache observation after the battery notification, threshold getter and
 zero-cycle corrections. It preserves the older charging patch byte for byte

@@ -512,6 +512,10 @@
     {
       "path": "patches/7.3.0/0125-uke-ucsi-contract-cache.patch",
       "sha256": "36c311604ca834a303a97effe4f50623cd4378c1e1ad6e829d44cec3900611e7"
+    },
+    {
+      "path": "patches/7.3.0/0126-uke-protocol-observation.patch",
+      "sha256": "f258a703f61b8ed94f59c59debd2b125e90464303f48e3cc99076c77c1efe716"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

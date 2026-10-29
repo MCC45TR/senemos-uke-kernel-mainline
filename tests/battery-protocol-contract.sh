@@ -245,6 +245,19 @@ int main(void) {
  /* Wire7 independently confirms the adapter; it never replaces wire6. */
  reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,POWER_SUPPLY_USB_TYPE_SDP,0);
  assert(!b.error && b.usb.adapter_type==POWER_SUPPLY_USB_TYPE_SDP && b.usb.usb_type==POWER_SUPPLY_USB_TYPE_UNKNOWN);
+ {
+  const u32 reported[]={0,9,128,129,130,131,132,UINT32_MAX};
+  for(unsigned i=0;i<ARRAY_SIZE(reported);i++){
+   reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,reported[i],0);
+   assert(!b.error&&b.usb.real_type==reported[i]);
+  }
+  reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,130,EIO);
+  assert(b.error==-EREMOTEIO&&b.usb.real_type==UINT32_MAX);
+  b.variant=QCOM_BATTMGR_SM8350;
+  reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,130,0);
+  assert(b.error==-EOPNOTSUPP&&b.usb.real_type==UINT32_MAX);
+  b.variant=QCOM_BATTMGR_UKE;
+ }
  struct power_supply usb={.drvdata=&b};
  union power_supply_propval budget={.intval=500000};
  assert(qcom_battmgr_usb_is_writeable(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT));
