@@ -301,7 +301,7 @@
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "b551bc6e9e8ba11affd9bb1bb5457a81b1e8da7dc6612c3c6d36c62125f45a5c"
+      "sha256": "ae7790f0dd1bb40c8131af27f6dc1c896b9b6d39b60c230d875f13e994f36bae"
     },
     {
       "path": "tests/dp-dsc-state-contract.sh",
@@ -317,7 +317,7 @@
     },
     {
       "path": "tests/dp-fec-status-contract.sh",
-      "sha256": "d88dfa2b6188599a83f0e2f57b3ea900bfea8c95bea051a32a15a2190661c858"
+      "sha256": "f7763f37fa97b892ddcef25d6b1b4d992c57d8d7db35567d9a95f88286ef10e6"
     },
     {
       "path": "tests/dp-mst-control-contract.sh",
@@ -545,7 +545,7 @@
     },
     {
       "path": "patches/display/0064-uke-dp-dsc-live-policy-and-recovery.patch",
-      "sha256": "e5d99fd03fd8128fde923363a27dadb60bdcb4d5effc0db61519e61ea7694224"
+      "sha256": "e6e0ec427e4321a626761eb22d3149692838796a3ee1bf98987452f0595d7dd0"
     },
     {
       "path": "tests/dp-stream-lifetime-contract.sh",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-49",
+  "kernel_release": "7.3.0-50",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

@@ -1,5 +1,15 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-50 source candidate: keep FEC error counting
+disabled during link training and enable it after verified decoder/FEC startup.
+Read back the requested selector before publishing active compression. Every
+valid nonzero active count still triggers recovery; no error threshold or
+periodic reset is added. The timing fixture also imports the actual component
+encoding. Release 49 boots, produces visible independent compressed SMPTE and
+tiles patterns, and restores visible plain output without USB removal, but
+nonzero receiver counts leave full DSC acceptance open. Release-50 native
+delivery and physical qualification remain pending.
+
 29 October 2026, Linux 7.3.0-49 source candidate: restore the matched Uke OEM
 DTO force-ACK lifecycle during setup and pixel-clock shutdown. The packet
 fixture reproduces the preceding missing ACK state and checks held/released

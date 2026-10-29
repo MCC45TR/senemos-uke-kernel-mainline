@@ -54,11 +54,12 @@ static void clk_disable_unprepare(void *clock) {
  *live=false;clock_stops++;
 }
 static u32 mainlink;
-static u8 status;
+static u8 status, receiver_config, receiver_decoder;
 static unsigned writes,reads,training,detect_after;
 static int write_error,read_error,training_error;
 static u32 addresses[8]; static u8 values[8];
 static u32 rejected_readback;
+static bool reject_selector;
 static int readback_error;
 static u32 stream_config[2];
 static u32 msm_dp_read_stream_link(void *ctrl,unsigned id,u32 reg) {
@@ -77,7 +78,8 @@ static int drm_dp_dpcd_write_byte(void *aux,u32 reg,u8 value) {
  (void)aux; assert(writes<8); addresses[writes]=reg; values[writes++]=value;
  if(write_error && writes==(unsigned)write_error)return -EIO;
  if(reg==DP_FEC_STATUS)status&=~value;
- else assert(reg==DP_FEC_CONFIGURATION || reg==DP_DSC_ENABLE);
+ else if(reg==DP_FEC_CONFIGURATION)receiver_config=value;
+ else {assert(reg==DP_DSC_ENABLE);receiver_decoder=value;}
  return 0;
 }
 static int drm_dp_dpcd_read_byte(void *aux,u32 reg,u8 *value) {
@@ -85,7 +87,9 @@ static int drm_dp_dpcd_read_byte(void *aux,u32 reg,u8 *value) {
  if(reg!=DP_FEC_STATUS) {
   assert(reg==DP_DSC_ENABLE || reg==DP_FEC_CONFIGURATION);
   if(readback_error)return readback_error;
-  *value=reg==rejected_readback?0:1;return 0;
+  *value=reg==rejected_readback?0:(reg==DP_DSC_ENABLE?receiver_decoder:receiver_config);
+  if(reg==DP_FEC_CONFIGURATION&&reject_selector)*value&=~DP_FEC_ERR_COUNT_SEL_MASK;
+  return 0;
  }
  reads++;
  if(read_error)return read_error;
@@ -96,8 +100,7 @@ static void usleep_range(unsigned lo,unsigned hi) { assert(lo==900 && hi==1000);
 static int msm_dp_ctrl_link_train(struct msm_dp_ctrl_private *ctrl,struct msm_dp_panel *panel,int *step) {
  (void)panel; (void)step; training++;
  if(ctrl->fec_prepared)assert(!status && writes==2 &&
-  addresses[0]==DP_FEC_CONFIGURATION && values[0]==(DP_FEC_READY |
-   ((panel->fec_cap&DP_FEC_UNCORR_BLK_ERROR_COUNT_CAP)?DP_FEC_UNCORR_BLK_ERROR_COUNT:0)) &&
+  addresses[0]==DP_FEC_CONFIGURATION && values[0]==DP_FEC_READY &&
   addresses[1]==DP_FEC_STATUS && values[1]==(DP_FEC_DECODE_EN_DETECTED|DP_FEC_DECODE_DIS_DETECTED));
  return training_error;
 }
@@ -109,6 +112,7 @@ cat <<'C'
 static void reset(void) {
  status=DP_FEC_DECODE_EN_DETECTED|DP_FEC_DECODE_DIS_DETECTED;
  writes=reads=training=detect_after=0;write_error=read_error=training_error=0;
+ receiver_config=receiver_decoder=0;reject_selector=false;
  mainlink=BIT(6)|BIT(12);
 }
 int main(void) {
@@ -138,11 +142,22 @@ int main(void) {
  assert(reads==3 && writes==2 && !panel.dsc_active);
  reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
  detect_after=2;assert(!msm_dp_ctrl_fec_enable(&ctrl,&panel));
- assert(reads==2 && writes==3 && addresses[2]==DP_DSC_ENABLE &&
+ assert(reads==2 && writes==4 && addresses[2]==DP_DSC_ENABLE &&
   values[2]==DP_DECOMPRESSION_EN && panel.dsc_active);
+ assert(addresses[3]==DP_FEC_CONFIGURATION&&values[3]==DP_FEC_READY);
  panel.fec_cap=DP_FEC_UNCORR_BLK_ERROR_COUNT_CAP;reset();
  assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
- assert(values[0]==(DP_FEC_READY|DP_FEC_UNCORR_BLK_ERROR_COUNT));panel.fec_cap=0;
+ assert(values[0]==DP_FEC_READY);detect_after=1;
+ assert(!msm_dp_ctrl_fec_enable(&ctrl,&panel)&&panel.dsc_active);
+ assert(writes==4&&addresses[3]==DP_FEC_CONFIGURATION&&
+  values[3]==(DP_FEC_READY|DP_FEC_UNCORR_BLK_ERROR_COUNT));
+ reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
+ detect_after=1;reject_selector=true;
+ assert(msm_dp_ctrl_fec_enable(&ctrl,&panel)==-EIO&&!panel.dsc_active);
+ reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
+ detect_after=1;write_error=4;
+ assert(msm_dp_ctrl_fec_enable(&ctrl,&panel)==-EIO&&!panel.dsc_active);
+ panel.fec_cap=0;
  for(unsigned reg=DP_FEC_CONFIGURATION;reg<=DP_DSC_ENABLE;reg+=DP_DSC_ENABLE-DP_FEC_CONFIGURATION) {
   reset();assert(!msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step));
   detect_after=1;rejected_readback=reg;

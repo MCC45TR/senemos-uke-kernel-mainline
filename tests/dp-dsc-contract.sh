@@ -70,7 +70,7 @@ sed '/^#include /d' "$root/src/display/dp_dsc.h"
 sed '/^#include /d' "$root/src/display/dp_dsc.c"
 sed '/^#include /d' "$kernel/drivers/gpu/drm/msm/dp/dp_reg.h"
 cat <<'C'
-struct msm_dp_panel { struct msm_dp_dsc_config dsc; bool dsc_active; };
+struct msm_dp_panel { struct msm_dp_dsc_config dsc; bool dsc_active; u8 fec_cap; };
 struct msm_dp_panel_private { struct msm_dp_panel msm_dp_panel; };
 struct msm_dp_ctrl_private { bool fec_prepared,link_clks_on; void *aux,*drm_dev; };
 static u32 link_regs[0x500/4],p0_regs[0x100/4];
@@ -221,7 +221,8 @@ int main(void) {
  assert(!msm_dp_ctrl_fec_enable(&ctrl,&panel) && !reads && !aux_writes && !delays);
  ctrl.fec_prepared=true; detect_after=3; link_regs[REG_DP_MAINLINK_CTRL/4]=BIT(6);
  assert(!msm_dp_ctrl_fec_enable(&ctrl,&panel) && reads==3 && delays==3);
- assert(panel.dsc_active && aux_writes==1 && aux_registers[0]==DP_DSC_ENABLE && aux_values[0]==DP_DECOMPRESSION_EN);
+ assert(panel.dsc_active && aux_writes==2 && aux_registers[0]==DP_DSC_ENABLE && aux_values[0]==DP_DECOMPRESSION_EN);
+ assert(aux_registers[1]==DP_FEC_CONFIGURATION&&aux_values[1]==DP_FEC_READY);
  assert(link_regs[REG_DP_MAINLINK_CTRL/4]&BIT(6));
  aux_writes=0; assert(!msm_dp_ctrl_fec_disable(&ctrl,&panel));
  assert(!panel.dsc_active && !ctrl.fec_prepared && aux_writes==2);
