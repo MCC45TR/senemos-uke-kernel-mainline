@@ -496,6 +496,26 @@
     {
       "path": "patches/7.3.0/0121-msm-uke-nonblocking-reclaim.patch",
       "sha256": "5551d9fd7a5e5ea9d5e75f8904e722de70adfac3143973bfb104b197195e0884"
+    },
+    {
+      "path": "patches/7.3.0/0122-uke-battery-status-notification.patch",
+      "sha256": "9ae02caf93213fa8bcc7abc0862fcc18c2361ce14d6f640c90aee0f95b59f0c3"
+    },
+    {
+      "path": "patches/7.3.0/0123-uke-readonly-desktop-thresholds.patch",
+      "sha256": "52ca760246228fead36716d6fb390187a01202a59df7f230f459c7554d80ec6e"
+    },
+    {
+      "path": "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch",
+      "sha256": "6e953578edaed6e0e793f1c7b4c6157a2b7ab03a1c8ff987461898e5806b9ede"
+    },
+    {
+      "path": "patches/7.3.0/0125-uke-ucsi-contract-cache.patch",
+      "sha256": "36c311604ca834a303a97effe4f50623cd4378c1e1ad6e829d44cec3900611e7"
+    },
+    {
+      "path": "patches/7.3.0/0126-uke-protocol-observation.patch",
+      "sha256": "f258a703f61b8ed94f59c59debd2b125e90464303f48e3cc99076c77c1efe716"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

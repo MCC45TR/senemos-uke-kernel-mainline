@@ -208,6 +208,12 @@ int main(void) {
  reply(&b,BATTMGR_BAT_PROPERTY_GET,9,(uint32_t)-500000,0); assert(b.status.current_now==-500000);
  b.variant=QCOM_BATTMGR_UKE;
  reply(&b,BATTMGR_BAT_PROPERTY_GET,4,1250,0); assert(b.status.percent==12);
+ /* Cycle zero is a reported count, not a transport-unavailable sentinel. */
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,7,0); assert(!b.error && b.info.cycle_count==7);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,0,0); assert(!b.error && !b.info.cycle_count);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,INT_MAX,0); assert(!b.error && b.info.cycle_count==INT_MAX);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,UINT_MAX,0); assert(b.error==-ENODATA && b.info.cycle_count==INT_MAX);
+ reply(&b,BATTMGR_BAT_PROPERTY_GET,16,0,EPERM); assert(b.error==-EREMOTEIO && b.info.cycle_count==INT_MAX);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,12,1000000,0); assert(b.error==-ENODATA && (int)b.status.temperature==-50);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,28,9,0); assert(b.error==-ENODATA);
  reply(&b,BATTMGR_BAT_PROPERTY_GET,13,1000,EPERM); assert(b.error==-EREMOTEIO && (int)b.status.temperature==-50);
@@ -239,6 +245,19 @@ int main(void) {
  /* Wire7 independently confirms the adapter; it never replaces wire6. */
  reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,POWER_SUPPLY_USB_TYPE_SDP,0);
  assert(!b.error && b.usb.adapter_type==POWER_SUPPLY_USB_TYPE_SDP && b.usb.usb_type==POWER_SUPPLY_USB_TYPE_UNKNOWN);
+ {
+  const u32 reported[]={0,9,128,129,130,131,132,UINT32_MAX};
+  for(unsigned i=0;i<ARRAY_SIZE(reported);i++){
+   reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,reported[i],0);
+   assert(!b.error&&b.usb.real_type==reported[i]);
+  }
+  reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,130,EIO);
+  assert(b.error==-EREMOTEIO&&b.usb.real_type==UINT32_MAX);
+  b.variant=QCOM_BATTMGR_SM8350;
+  reply(&b,BATTMGR_USB_PROPERTY_GET,UKE_USB_REAL_TYPE,130,0);
+  assert(b.error==-EOPNOTSUPP&&b.usb.real_type==UINT32_MAX);
+  b.variant=QCOM_BATTMGR_UKE;
+ }
  struct power_supply usb={.drvdata=&b};
  union power_supply_propval budget={.intval=500000};
  assert(qcom_battmgr_usb_is_writeable(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT));
