@@ -75,6 +75,8 @@ struct msm_dp_panel_private { struct msm_dp_panel msm_dp_panel; };
 struct msm_dp_ctrl_private { bool fec_prepared,link_clks_on; void *aux,*drm_dev; };
 static u32 link_regs[0x500/4],p0_regs[0x100/4];
 static unsigned link_writes,p0_writes,reads,aux_writes,delays;
+static u32 first_dto;
+static bool dto_seen;
 static int read_error,write_error; static unsigned detect_after;
 static u32 aux_registers[8]; static u8 aux_values[8];
 static void msm_dp_write_link(void *p,u32 offset,u32 value) {
@@ -85,6 +87,7 @@ static u32 msm_dp_read_link(void *p,u32 offset) {
  (void)p; assert(!(offset&3) && offset<sizeof(link_regs)); return link_regs[offset/4];
 }
 static void msm_dp_write_pn(void *p,u32 offset,u32 value) {
+ if(offset==MMSS_DP_DSC_DTO && !dto_seen) {first_dto=value;dto_seen=true;}
  (void)p; assert(!(offset&3) && offset<sizeof(p0_regs)); p0_regs[offset/4]=value; p0_writes++;
 }
 static __attribute__((unused)) u32 msm_dp_read_pn(void *p,u32 offset) {
@@ -110,7 +113,7 @@ static int drm_dp_dpcd_write_byte(void *aux,u32 reg,u8 value) {
 static bool msm_dp_aux_is_link_connected(void *aux) { (void)aux; return true; }
 static void usleep_range(unsigned lo,unsigned hi) { assert(lo==900 && hi==1000); delays++; }
 C
-for name in msm_dp_panel_clear_dsc_dto msm_dp_panel_config_dsc; do
+for name in msm_dp_panel_config_dto msm_dp_panel_clear_dsc_dto msm_dp_panel_config_dsc; do
     extract "$kernel/drivers/gpu/drm/msm/dp/dp_panel.c" "$name"
 done
 for name in msm_dp_ctrl_fec_enable msm_dp_ctrl_fec_disable; do
@@ -144,15 +147,18 @@ int main(void) {
   struct msm_dp_panel_private panel={.msm_dp_panel.dsc=out};
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++)link_regs[i]=0xdeadbeef;
   link_regs[REG_DP_SDP_FLUSH/4]=hz==60?0x40000008:0x4000000c;
-  memset(p0_regs,0,sizeof(p0_regs)); link_writes=p0_writes=0;
+  memset(p0_regs,0,sizeof(p0_regs)); link_writes=p0_writes=0; dto_seen=false;
   p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]=0x80000001;
   msm_dp_panel_config_dsc(&panel.msm_dp_panel);
+  assert(dto_seen && first_dto==BIT(1));
+  assert(p0_regs[MMSS_DP_DSC_DTO/4]==0x3010b);
+  msm_dp_panel_config_dto(&panel.msm_dp_panel,false);
   assert(link_regs[REG_DP_PPS_HEADER/4]==0x7f1000);
   assert(link_regs[REG_DP_PPS_HEADER_PARITY/4]==0xa22300);
   assert(link_regs[REG_DP_COMPRESSION_MODE_CTRL/4]==out.compression_ctrl);
   assert(p0_regs[MMSS_DP_DSC_DTO_COUNT/4]==426 && p0_regs[MMSS_DP_DSC_DTO/4]==0x30109);
   assert(p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]==0x80000101);
-  assert(link_writes==34 && p0_writes==4);
+  assert(link_writes==34 && p0_writes==5);
   assert(link_regs[REG_DP_SDP_FLUSH/4]==0x40000009);
   for(unsigned i=0;i<22;i++)assert(link_regs[(REG_DP_PPS_DATA/4)+i]==get_unaligned_le32(bytes+i*4));
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++) {
@@ -162,11 +168,18 @@ int main(void) {
    assert(link_regs[i]==0xdeadbeef);
   }
   memset(&panel.msm_dp_panel.dsc,0,sizeof(panel.msm_dp_panel.dsc));
-  link_writes=p0_writes=0; p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]&=~BIT(8);
+  link_writes=p0_writes=0; dto_seen=false; p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]&=~BIT(8);
   msm_dp_panel_config_dsc(&panel.msm_dp_panel);
+  assert(dto_seen && first_dto==BIT(1) && p0_regs[MMSS_DP_DSC_DTO/4]==BIT(1));
+  msm_dp_panel_config_dto(&panel.msm_dp_panel,false);
   assert(!link_regs[REG_DP_COMPRESSION_MODE_CTRL/4] && !p0_regs[MMSS_DP_DSC_DTO/4]);
   assert(p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]==0x80000101);
-  assert(link_writes==1 && p0_writes==2);
+  assert(link_writes==1 && p0_writes==3);
+  p0_regs[MMSS_DP_DSC_DTO/4]=0x8003010b;
+  msm_dp_panel_config_dto(&panel.msm_dp_panel,false);
+  assert(p0_regs[MMSS_DP_DSC_DTO/4]==0x80030109);
+  msm_dp_panel_config_dto(&panel.msm_dp_panel,true);
+  assert(p0_regs[MMSS_DP_DSC_DTO/4]==BIT(1));
  }
  mode=(struct drm_display_mode){.clock=594000,.hdisplay=3840,.vdisplay=2160};
  assert(!msm_dp_dsc_prepare(receiver,1,&mode,10,540000,2,&out));

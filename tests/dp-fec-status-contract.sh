@@ -12,6 +12,7 @@ cat <<'C'
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <errno.h>
 #include <stdio.h>
 typedef uint8_t u8; typedef uint32_t u32;
@@ -20,6 +21,7 @@ typedef uint8_t u8; typedef uint32_t u32;
 #define GENMASK(h,l) ((~0U<<(l))&(~0U>>(31-(h))))
 #define WRITE_ONCE(v,n) ((v)=(n))
 #define drm_dbg_dp(...) ((void)0)
+#define container_of(p,type,member) ((type *)((char *)(p)-offsetof(type,member)))
 C
 sed '/^#include /d' "$(dirname -- "$source")/../../../../../include/drm/display/drm_dp.h"
 sed '/^#include /d' "$registers"
@@ -31,7 +33,26 @@ struct msm_dp_panel {
  struct {unsigned version;} psr_cap;
 };
 struct msm_dp_link { unsigned sink_request; };
-struct msm_dp_ctrl_private { bool fec_prepared; void *aux,*drm_dev; struct msm_dp_link *link; };
+struct msm_dp_ctrl { int unused; };
+struct device { void *of_node; };
+struct msm_dp_ctrl_private {
+ struct msm_dp_ctrl msm_dp_ctrl;
+ bool fec_prepared,link_clks_on,stream_clks_on[2];
+ void *aux,*drm_dev,*pixel_clk[2];struct msm_dp_link *link;
+ struct device *dev;unsigned num_pixel_clks;
+};
+static bool sm7675,clock_live[2],expect_ack;
+static unsigned dto_acks,clock_stops;
+static bool of_device_is_compatible(void *node,const char *name) {
+ (void)node;(void)name;return sm7675;
+}
+static void msm_dp_panel_config_dto(struct msm_dp_panel *panel,bool ack) {
+ assert(ack&&panel->stream_id<2&&clock_live[panel->stream_id]);dto_acks++;
+}
+static void clk_disable_unprepare(void *clock) {
+ bool *live=clock;assert(*live&&dto_acks==(expect_ack?1U:0U));
+ *live=false;clock_stops++;
+}
 static u32 mainlink;
 static u8 status;
 static unsigned writes,reads,training,detect_after;
@@ -81,8 +102,8 @@ static int msm_dp_ctrl_link_train(struct msm_dp_ctrl_private *ctrl,struct msm_dp
  return training_error;
 }
 C
-for name in msm_dp_ctrl_config_ctrl_streams msm_dp_ctrl_fec_enable msm_dp_ctrl_setup_main_link; do
-    awk -v name="$name" '$0 ~ "^static (int|void) " name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$source"
+for name in msm_dp_ctrl_config_ctrl_streams msm_dp_ctrl_fec_enable msm_dp_ctrl_setup_main_link msm_dp_ctrl_off_pixel_clk; do
+    awk -v name="$name" '$0 ~ "^(static )?(int|void) " name "\\(" {emit=1} emit{print} emit&&/^}/{exit}' "$source"
 done
 cat <<'C'
 static void reset(void) {
@@ -138,9 +159,25 @@ int main(void) {
  reset();training_error=-ETIMEDOUT;
  assert(msm_dp_ctrl_setup_main_link(&ctrl,&panel,&step)==-ETIMEDOUT);
  assert(training==1 && !status && !panel.dsc_active);
- puts("Production DSC packetizer depth/stream isolation and FEC READY/status-clear, stale/fresh ACK and error propagation: PASS; host only.");
+ struct device dev={0};ctrl.dev=&dev;ctrl.num_pixel_clks=2;
+ for(unsigned managed=0;managed<2;managed++)for(unsigned link_on=0;link_on<2;link_on++)
+  for(unsigned id=0;id<2;id++) {
+   sm7675=managed;ctrl.link_clks_on=link_on;expect_ack=managed&&link_on;
+   panel.stream_id=id;ctrl.stream_clks_on[id]=clock_live[id]=true;
+   ctrl.pixel_clk[id]=&clock_live[id];dto_acks=clock_stops=0;
+   msm_dp_ctrl_off_pixel_clk(&ctrl.msm_dp_ctrl,&panel);
+   assert(!ctrl.stream_clks_on[id]&&!clock_live[id]&&clock_stops==1);
+   assert(dto_acks==(expect_ack?1U:0U));
+   dto_acks=clock_stops=0;msm_dp_ctrl_off_pixel_clk(&ctrl.msm_dp_ctrl,&panel);
+   assert(!dto_acks&&!clock_stops);
+  }
+ msm_dp_ctrl_off_pixel_clk(&ctrl.msm_dp_ctrl,NULL);
+ panel.stream_id=2;msm_dp_ctrl_off_pixel_clk(&ctrl.msm_dp_ctrl,&panel);
+ panel.stream_id=~0U;msm_dp_ctrl_off_pixel_clk(&ctrl.msm_dp_ctrl,&panel);
+ assert(!dto_acks&&!clock_stops);
+ puts("Production DSC packetizer, FEC ACK/errors and clock-guarded DTO quiescence: PASS; host only.");
 }
 C
 } > "$work/test.c"
-"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/test.c" -o "$work/test"
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/test.c" -o "$work/test"
 "$work/test"

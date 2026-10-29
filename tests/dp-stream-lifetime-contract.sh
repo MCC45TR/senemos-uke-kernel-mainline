@@ -63,7 +63,7 @@ static void msm_dp_ctrl_off_link(msm_dp_ctrl*,msm_dp_panel*) { ++link_off; }
 static void msm_dp_ctrl_reinit_phy(msm_dp_ctrl*) {}
 static void msm_dp_link_psm_config(msm_dp_link*,LinkInfo*,bool) {}
 static int msm_dp_ctrl_on_stream(msm_dp_ctrl*,msm_dp_panel *p,const msm_dp_bridge_state *color,bool mst) { assert((color!=nullptr)==(!mst&&managed));pixel[p->stream_id]=true;return stream_error; }
-static void msm_dp_ctrl_off_pixel_clk(msm_dp_ctrl*,unsigned id) { pixel[id]=false; }
+static void msm_dp_ctrl_off_pixel_clk(msm_dp_ctrl*,msm_dp_panel *panel) { pixel[panel->stream_id]=false; }
 static void msm_dp_panel_disable_vsc_sdp(msm_dp_panel *p) { assert(pixel[p->stream_id]);++vscoff; }
 static void msm_dp_panel_disable_hdr_sdp(msm_dp_panel *p) { assert(pixel[p->stream_id]);++hdroff; }
 static bool of_device_is_compatible(void*,const char*) { return managed; }

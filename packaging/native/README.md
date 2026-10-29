@@ -1,5 +1,14 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-49 source candidate: restore the matched Uke OEM
+DTO force-ACK lifecycle during setup and pixel-clock shutdown. The packet
+fixture reproduces the preceding missing ACK state and checks held/released
+register values. Real clock-shutdown tests cover power, platform, stream bounds
+and duplicate cleanup. AArch64 syntax checks pass; native delivery and tablet
+qualification remain pending. Installed release 48 confirms the timing-control
+correction and automatic visible fallback, but compressed pixels still fail
+with and without VSC metadata. No physical DSC acceptance is claimed.
+
 29 October 2026, Linux 7.3.0-48 source candidate: restore the exact Uke OEM and
 same-SoC OnePlus bit-8 timing-control write during external stream setup. The
 existing caller restricts this function to SM7675. Read-modify-write retains

@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 48
+%global senemos_build_release 49
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-49
+- Hold DTO force ACK through stream setup and release it before video starts.
+- Quiesce the SM7675 DTO before pixel-clock shutdown, including failed enables.
+- Check actual ACK register sequencing, clock-domain guards and stream cleanup.
+
 * Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-48
 - Match OEM external-stream timing control in the existing SM7675 setup path.
 - Check compressed/plain programming and unrelated-bit preservation in the real packet fixture.
