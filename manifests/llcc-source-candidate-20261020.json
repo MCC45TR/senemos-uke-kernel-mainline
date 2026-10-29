@@ -301,7 +301,7 @@
     },
     {
       "path": "tests/dp-dsc-contract.sh",
-      "sha256": "886a2b5ca18fd05441fee4ccdc2ea06a5aa8247cbf58f853528e4a9d493cc8c6"
+      "sha256": "298463bc1bbb191c3fee4ef366c72972fbedc1cbe7d562439c0f16e30f9d1639"
     },
     {
       "path": "tests/dp-dsc-state-contract.sh",
@@ -545,7 +545,7 @@
     },
     {
       "path": "patches/display/0064-uke-dp-dsc-live-policy-and-recovery.patch",
-      "sha256": "645b35647a96f57b1759a290fedc53e64a06dd99a2ae3cb14f053901c32a59be"
+      "sha256": "54cdbf776bf4b77a1fb074244c200be59b8424680266f1244cfdfda9f7fef384"
     },
     {
       "path": "tests/dp-stream-lifetime-contract.sh",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-47",
+  "kernel_release": "7.3.0-48",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

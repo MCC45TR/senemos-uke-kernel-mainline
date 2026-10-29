@@ -87,6 +87,9 @@ static u32 msm_dp_read_link(void *p,u32 offset) {
 static void msm_dp_write_pn(void *p,u32 offset,u32 value) {
  (void)p; assert(!(offset&3) && offset<sizeof(p0_regs)); p0_regs[offset/4]=value; p0_writes++;
 }
+static __attribute__((unused)) u32 msm_dp_read_pn(void *p,u32 offset) {
+ (void)p; assert(!(offset&3) && offset<sizeof(p0_regs)); return p0_regs[offset/4];
+}
 static u32 get_unaligned_le32(const void *p) { u32 value; memcpy(&value,p,4); return le32toh(value); }
 static int drm_dp_dpcd_read_byte(void *aux,u32 reg,u8 *value) {
  (void)aux;
@@ -142,12 +145,14 @@ int main(void) {
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++)link_regs[i]=0xdeadbeef;
   link_regs[REG_DP_SDP_FLUSH/4]=hz==60?0x40000008:0x4000000c;
   memset(p0_regs,0,sizeof(p0_regs)); link_writes=p0_writes=0;
+  p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]=0x80000001;
   msm_dp_panel_config_dsc(&panel.msm_dp_panel);
   assert(link_regs[REG_DP_PPS_HEADER/4]==0x7f1000);
   assert(link_regs[REG_DP_PPS_HEADER_PARITY/4]==0xa22300);
   assert(link_regs[REG_DP_COMPRESSION_MODE_CTRL/4]==out.compression_ctrl);
   assert(p0_regs[MMSS_DP_DSC_DTO_COUNT/4]==426 && p0_regs[MMSS_DP_DSC_DTO/4]==0x30109);
-  assert(link_writes==34 && p0_writes==3);
+  assert(p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]==0x80000101);
+  assert(link_writes==34 && p0_writes==4);
   assert(link_regs[REG_DP_SDP_FLUSH/4]==0x40000009);
   for(unsigned i=0;i<22;i++)assert(link_regs[(REG_DP_PPS_DATA/4)+i]==get_unaligned_le32(bytes+i*4));
   for(unsigned i=0;i<ARRAY_SIZE(link_regs);i++) {
@@ -157,9 +162,11 @@ int main(void) {
    assert(link_regs[i]==0xdeadbeef);
   }
   memset(&panel.msm_dp_panel.dsc,0,sizeof(panel.msm_dp_panel.dsc));
-  link_writes=p0_writes=0; msm_dp_panel_config_dsc(&panel.msm_dp_panel);
+  link_writes=p0_writes=0; p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]&=~BIT(8);
+  msm_dp_panel_config_dsc(&panel.msm_dp_panel);
   assert(!link_regs[REG_DP_COMPRESSION_MODE_CTRL/4] && !p0_regs[MMSS_DP_DSC_DTO/4]);
-  assert(link_writes==1 && p0_writes==1);
+  assert(p0_regs[MMSS_DP_TIMING_ENGINE_EN/4]==0x80000101);
+  assert(link_writes==1 && p0_writes==2);
  }
  mode=(struct drm_display_mode){.clock=594000,.hdisplay=3840,.vdisplay=2160};
  assert(!msm_dp_dsc_prepare(receiver,1,&mode,10,540000,2,&out));

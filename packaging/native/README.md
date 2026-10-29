@@ -1,5 +1,15 @@
 # Mainline native source profile
 
+29 October 2026, Linux 7.3.0-48 source candidate: restore the exact Uke OEM and
+same-SoC OnePlus bit-8 timing-control write during external stream setup. The
+existing caller restricts this function to SM7675. Read-modify-write retains
+other bits for both compressed and plain streams. The real packet fixture
+fails on release 47's missing write and passes after correction. This is a
+bounded source candidate; the bit's role in the remaining failure is unproved.
+Installed release 47 has corrected PPS/padding/data windows, but QHD60 10-bpc,
+QHD75 8-bpc and FHD60 10-bpc compressed trials remain black with valid FEC errors.
+Automatic visible fallback works without USB removal. No DSC acceptance is claimed.
+
 29 October 2026, Linux 7.3.0-47 source candidate: trigger PPS transmission with
 flush bit 0 and clear one-shot bit 2, matching the Uke OEM continuous-PPS
 configuration. The preceding implementation sets only bit 2; release-45

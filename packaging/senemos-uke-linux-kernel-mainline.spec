@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 47
+%global senemos_build_release 48
 %else
 %global senemos_build_release 1
 %endif
@@ -408,6 +408,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-48
+- Match OEM external-stream timing control in the existing SM7675 setup path.
+- Check compressed/plain programming and unrelated-bit preservation in the real packet fixture.
+
 * Thu Oct 29 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-47
 - Trigger continuous PPS transmission with the OEM flush bit and clear stale one-shot mode.
 - Check the actual flush register with both initial modes and unrelated bits retained.

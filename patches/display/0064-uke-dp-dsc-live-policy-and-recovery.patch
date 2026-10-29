@@ -411,7 +411,22 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  }
 --- a/drivers/gpu/drm/msm/dp/dp_panel.c
 +++ b/drivers/gpu/drm/msm/dp/dp_panel.c
-@@ -597,7 +597,8 @@
+@@ -570,10 +570,13 @@
+ 	u8 parity[28] = {}, *payload = (u8 *)&pps, *hb = (u8 *)&header;
+ 	u8 header_parity[4];
+ 	unsigned int i;
+-	u32 flush;
++	u32 flush, timing;
+ 
+ 	BUILD_BUG_ON(REG_DP_PPS_DATA + MSM_DP_DSC_RGB_PPS_BYTES > MMSS_DP_AUDIO_CFG);
++	/* Match the OEM external-stream timing control before DSC setup. */
++	timing = msm_dp_read_pn(panel, MMSS_DP_TIMING_ENGINE_EN);
++	msm_dp_write_pn(panel, MMSS_DP_TIMING_ENGINE_EN, timing | BIT(8));
+ 	msm_dp_panel_clear_dsc_dto(msm_dp_panel);
+ 	msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, 0);
+ 	if (!config->dsc.bits_per_pixel)
+ 		return;
+@@ -597,7 +600,8 @@
  	msm_dp_write_pn(panel, MMSS_DP_DSC_DTO, BIT(0) | BIT(3) | (1 << 8) | (3 << 16));
  	msm_dp_write_link(panel, REG_DP_COMPRESSION_MODE_CTRL, config->compression_ctrl);
  	flush = msm_dp_read_link(panel, REG_DP_SDP_FLUSH);
@@ -421,7 +436,7 @@ Signed-off-by: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
  }
  
  static void msm_dp_panel_send_sdp(struct msm_dp_panel_private *panel,
-@@ -934,6 +935,7 @@
+@@ -934,6 +938,7 @@
  	msm_dp_panel = &panel->msm_dp_panel;
  	msm_dp_panel->max_bw_code = DP_LINK_BW_8_1;
  	msm_dp_panel->lane_limit = 4;
