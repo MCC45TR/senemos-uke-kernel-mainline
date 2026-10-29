@@ -4,6 +4,10 @@ SHELL := /bin/bash
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
 version := 7.3.0
 outdir ?= $(CURDIR)/build/srpm
+.PHONY: require-unstable-series
+require-unstable-series:
+	bash scripts/require-unstable-series.sh "$(version)"
+validate srpm: require-unstable-series
 validate: test-touch-protocol test-touch-transport
 	bash -n tests/dp-dsc-contract.sh tests/dp-dsc-state-contract.sh
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh
