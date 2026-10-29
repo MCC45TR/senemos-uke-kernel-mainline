@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-28",
+  "date": "2026-10-29",
   "base_commit": "470d18160dac9f9adf65ee8ff6f86472573504c1",
   "upstream_version": "7.3.0",
   "prior_candidate": "67c9ee7a02ad27f76beecd7d2590dffa11575acf",
@@ -78,6 +78,22 @@
     {
       "path": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
       "sha256": "b94e1c8259b08d245613e3dd9c6d2619298cb0c55af9f87e57293c9a5da21893"
+    },
+    {
+      "path": "patches/video/0019-sm7675-decoder-operating-budget.patch",
+      "sha256": "f810bc0efd23f1dbf9df60e2d8fc63dc661de110f001cc7908128e476052fa7f"
+    },
+    {
+      "path": "patches/video/0020-sm7675-cached-capture.patch",
+      "sha256": "983d80d8a0d7369abb6edbfe59cecabf3aefbc280d1091641883b4deafa71e35"
+    },
+    {
+      "path": "patches/video/0021-sm7675-serial-uhd-budget.patch",
+      "sha256": "332c351cbfd257320a9638e702ff047ad4cd4e098b35785680f2fc92b3f36442"
+    },
+    {
+      "path": "patches/video/0022-sm7675-decode-order-stage.patch",
+      "sha256": "57d73611286561d1ca568d630fb1985becbb3393da09e43aa4ba0e3d4023997f"
     }
   ],
   "checks": {
@@ -196,9 +212,10 @@
     "Complete native graph preparation and gated source activation",
     "Full kernel/RPM and recoverable native V4L2 validation",
     "Main10 encode, extended controls, lifecycle, performance and application matrix",
-    "Failed PAS/power teardown during administrative removal remains unqualified"
+    "Failed PAS/power teardown during administrative removal remains unqualified",
+    "Assign a fresh signed package release after original-profile sustained 4K60, error/lifecycle and HDR acceptance; matched release49 modules are runtime diagnostics only"
   ],
   "native_prepare_active": true,
   "integration_base_commit": "9b56bd4894fb72680d87c56cf500ccb1b54c3b11",
-  "candidate_kernel_release": "7.3.0-39"
+  "candidate_kernel_release": "7.3.0-49"
 }

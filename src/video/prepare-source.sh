@@ -19,7 +19,8 @@ done < <(jq -er '.patches[] | [.path,.sha256] | @tsv' "$manifest")
 iris=$kernel/drivers/media/platform/qcom/iris
 for fixture in iris-2p-lifecycle iris-boot-status iris-power-domain iris-resource-fault \
                iris-va-order iris-fw-memory iris-fw-lifetime iris-fw-queue \
-               iris-sm7675-power iris-oneshot-irq iris-sm7675-caps iris-vp9-nonshow; do
+               iris-sm7675-power iris-oneshot-irq iris-sm7675-caps iris-vp9-nonshow \
+               iris-capture-cache iris-serial-budget iris-decode-order-stage; do
     bash "$root/tests/$fixture-contract.sh" "$iris"
 done
 bash "$root/tests/iris-smmu-contract.sh" "$kernel/drivers/iommu/arm/arm-smmu"
