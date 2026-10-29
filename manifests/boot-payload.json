@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "date": "2026-10-28",
+  "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Candidate41 retains release39 VP9 and release38 BCL safeguards, adopts the proposed upstream GEM blocking control with the Uke kernel default nonblocking, and preserves inactive eviction/swap. Report positive freed progress even with an empty LRU. The THP-only trial40 was canceled after repeated stalls; prior THP default restored. Source/model, package and fresh physical validation remain separate.",
+  "source_origin": "Release53 retains the release52 source tuple and adds the documented module-signing and integrity hardening candidate. Native COPR builds keep the optional prebuilt handoff disabled. Physical acceptance remains separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "b537d564af0a9898aaf21697434d5e9e0094c668fd1a65eb506b22b4842189b8"
+      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -121,7 +121,7 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "024a133eed5f6f989abe710fd9b6cdff127dadb023b4b10a5df1ca4692f05b90"
+      "sha256": "e4ee96afa6626dc56998da83ebd273fa9a6ac89ba19b971e06e9e53bbb61f380"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -490,6 +490,10 @@
     {
       "path": "patches/boot/0042-bcl-report-empty-current.patch",
       "sha256": "1f510eb8b1ef471d6f77924d36f04e76b02bfe2db179f28a71b848830f621fa8"
+    },
+    {
+      "path": "tests/kernel-hardening-config-contract.sh",
+      "sha256": "226e0f37b887624bbf6e8569eb06a926ac81e24f04d8d5d99332bfcb6f9e7eda"
     }
   ],
   "root_selector_capability": {

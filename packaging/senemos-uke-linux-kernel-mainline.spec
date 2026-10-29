@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 52
+%global senemos_build_release 53
 %else
 %global senemos_build_release 1
 %endif
@@ -30,7 +30,7 @@ ExclusiveArch: aarch64
 BuildRequires: bash bc bison flex clang llvm lld make gcc gcc-c++ perl
 BuildRequires: compiler-rt
 BuildRequires: libasan libubsan
-BuildRequires: elfutils-libelf-devel openssl-devel ncurses-devel
+BuildRequires: elfutils-libelf-devel openssl-devel openssl ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
@@ -158,6 +158,7 @@ printf 'UKE_BUILD_STAGE source_prepare elapsed_s=%d\n' "$((SECONDS-uke_prep_star
 %build
 uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
+test -z "${UKE_PREBUILT_SWITCH_ROOT:-}"
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
 export SOURCE_DATE_EPOCH=1791725270
 export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
@@ -191,6 +192,10 @@ printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start)
 
 %check
 uke_check_start=$SECONDS
+bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.config
+bash native-profile/tests/kernel-module-signatures-contract.sh "$PWD" \
+    %{buildroot}/usr/lib/modules/%{krel} %{buildroot}/usr/share/senemos/uke/%{krel}/module-signing.x509
+test ! -e %{_uke_out}/certs/signing_key.pem
 test -s %{buildroot}%{_docdir}/%{name}/%{krel}/README.md
 test ! -e %{buildroot}%{_docdir}/%{name}/README.md
 bash native-profile/tests/unstable-upstream-contract.sh "$PWD"
@@ -349,6 +354,7 @@ depmod -b %{buildroot} -m /usr/lib/modules -a %{krel}
 identity=%{buildroot}/usr/share/senemos/uke/%{krel}
 mkdir -p "$identity"
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
+install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
 install -Dm644 native-generated/POCO-Pad-X1-AudioReach-tplg.bin \
     %{buildroot}/usr/lib/firmware/%{krel}/qcom/sm7675/POCO-Pad-X1-AudioReach-tplg.bin
@@ -412,6 +418,11 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-53
+- Require matching module signatures and retain only the build's public certificate.
+- Enable integrity lockdown, FORTIFY, hardened usercopy, Yama and restricted logs.
+- Verify every packaged module and reject unsigned, tampered and wrong-key controls.
+
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-52
 - Install documentation under the exact kernel release so retained kernels can coexist.
 - Mark the selection package as install-only alongside its matching payloads.

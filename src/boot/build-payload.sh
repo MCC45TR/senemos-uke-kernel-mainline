@@ -55,6 +55,7 @@ localversion=-${release#*-}
 export ARCH=arm64 LLVM=1
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
+bash "$here/../../tests/kernel-hardening-config-contract.sh" "$out/.config"
 bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config"
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
 for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
@@ -108,7 +109,12 @@ printf 'UKE_BUILD_STAGE initramfs elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_
 uke_stage_start=$SECONDS
 bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
+bash "$here/../../tests/kernel-hardening-config-contract.sh" "$out/.config"
 make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
+# Keep only the public certificate as a deliverable. The same key signed the
+# stripped modules before compression and is built into both Image passes.
+install -m644 "$out/certs/signing_key.x509" "$out/module-signing.x509"
+rm -- "$out/certs/signing_key.pem"
 printf 'UKE_BUILD_STAGE embedded_image elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
 bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
