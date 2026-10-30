@@ -513,7 +513,7 @@
     },
     {
       "path": "tests/dpu-reservation-contract.sh",
-      "sha256": "09b5d434682c3a1e29f9ab240f08e7e142d86cb7495e05389c4017dda1a45f1b"
+      "sha256": "79bbcbad890740e7ef7c1b1d7076842fba8b840644ab23beecac168bcd70349a"
     }
   ],
   "root_selector_capability": {

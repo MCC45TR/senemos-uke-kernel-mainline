@@ -44,7 +44,7 @@ struct drm_crtc_state {
  bool vrr_enabled,planes_changed,zpos_changed;unsigned encoder_mask;int adjusted_mode;
 };
 struct mixer {struct dpu_hw_blk *hw_lm,*lm_ctl,*hw_dspp;};
-struct dpu_crtc_state {struct drm_crtc_state base;int num_mixers;struct mixer mixers[2];int new_perf;};
+struct dpu_crtc_state {struct drm_crtc_state base;unsigned num_mixers;struct mixer mixers[2];int new_perf;};
 struct drm_atomic_commit {struct drm_device *dev;bool allow_modeset;struct dpu_crtc_state old,next;};
 struct drm_encoder {struct drm_device *dev;struct drm_crtc *crtc;};
 struct drm_connector_state {void *writeback_job;};
@@ -71,7 +71,7 @@ struct drm_plane_state {bool visible;};
 struct dpu_plane_state {struct drm_plane_state base;bool needs_dirtyfb;};
 static struct dpu_global_state global;
 static struct dpu_crtc dummy_crtc={"fixture"};
-static struct dpu_encoder_virt encoder;
+static struct dpu_encoder_virt fixture_encoder;
 static struct dpu_encoder_phys physical[2];
 static struct dpu_kms kms;
 static struct msm_drm_private priv;
@@ -107,7 +107,7 @@ static void log_message(const char *message,...) {(void)message;}
 #define IS_ERR(p) ((uintptr_t)(p) > UINTPTR_MAX-4095)
 #define IS_ERR_OR_NULL(p) (!(p)||IS_ERR(p))
 #define PTR_ERR(p) ((int)(intptr_t)(p))
-#define drm_for_each_encoder_mask(e,d,m) for((e)=((void)(d),(m)&1?&encoder.base:NULL);(e);(e)=NULL)
+#define drm_for_each_encoder_mask(e,d,m) for((e)=((void)(d),(m)&1?&fixture_encoder.base:NULL);(e);(e)=NULL)
 #define for_each_oldnew_crtc_in_state(s,c,o,n,i) \
  for((i)=0;(i)<1&&(((c)=&crtc),(void)(c),((o)=&(s)->old.base),((n)=&(s)->next.base),1);++(i))
 #define drm_atomic_crtc_state_for_each_plane_state(p,s,c) \
@@ -145,20 +145,20 @@ static int mode_check(struct msm_kms *k,struct drm_atomic_commit *s) {(void)k;re
 static const struct msm_kms_funcs funcs={mode_check};
 static int drm_atomic_helper_check(struct drm_device *d,struct drm_atomic_commit *s) {(void)d;return dpu_crtc_atomic_check(&crtc,s);}
 static void reset(void) {
- memset(&encoder,0,sizeof(encoder));memset(physical,0,sizeof(physical));memset(&commit,0,sizeof(commit));
+ memset(&fixture_encoder,0,sizeof(fixture_encoder));memset(physical,0,sizeof(physical));memset(&commit,0,sizeof(commit));
  memset(counts,0,sizeof(counts));reserves=releases=reserve_error=bounds_error=perf_error=mst_error=0;
  dfps_failed=dfps_pending=encoder_modeset=false;modesets=seamless=0;
  kms=(struct dpu_kms){.base={&funcs}};priv=(struct msm_drm_private){&kms.base};dev.dev_private=&priv;
  crtc=(struct drm_crtc){.dev=&dev,.base={1}};commit.dev=&dev;
  commit.old.base=(struct drm_crtc_state){.crtc=&crtc,.state=&commit,.active=true,.enable=true,.encoder_mask=1};
  commit.next.base=commit.old.base;
- encoder.base=(struct drm_encoder){&dev,&crtc};encoder.num_phys_encs=2;encoder.cur_master=&physical[0];
+ fixture_encoder.base=(struct drm_encoder){&dev,&crtc};fixture_encoder.num_phys_encs=2;fixture_encoder.cur_master=&physical[0];
  connector=(struct drm_connector_state){0};
  for(int t=0;t<BLOCK_TYPES;t++)for(int i=0;i<2;i++)blocks[t][i].idx=i;
  for(int i=0;i<2;i++) {
-  encoder.phys_encs[i]=&physical[i];physical[i].ops.atomic_mode_set=fake_modeset;physical[i].ops.seamless_mode_set=fake_seamless;
+  fixture_encoder.phys_encs[i]=&physical[i];physical[i].ops.atomic_mode_set=fake_modeset;physical[i].ops.seamless_mode_set=fake_seamless;
   physical[i].hw_ctl=&blocks[DPU_HW_BLK_CTL][0];
-  encoder.hw_cwb[i]=&blocks[DPU_HW_BLK_CWB][i];encoder.hw_dsc[i]=&blocks[DPU_HW_BLK_DSC][i];
+  fixture_encoder.hw_cwb[i]=&blocks[DPU_HW_BLK_CWB][i];fixture_encoder.hw_dsc[i]=&blocks[DPU_HW_BLK_DSC][i];
   commit.old.mixers[i]=(struct mixer){&blocks[DPU_HW_BLK_LM][i],&blocks[DPU_HW_BLK_CTL][0],&blocks[DPU_HW_BLK_DSPP][i]};
  }
  commit.old.num_mixers=2;commit.next=commit.old;
@@ -186,12 +186,12 @@ static void run(const char *which) {
   if(which&&strcmp(which,name))continue;
   for(int count=0;count<3;count++) {
    reset();counts[DPU_HW_BLK_CWB]=counts[DPU_HW_BLK_DSC]=count;
-   encoder.disp_info.intf_type=type==1?INTF_DSI:INTF_WB;commit.next.base.clone=true;
-   dpu_encoder_virt_atomic_mode_set(&encoder.base,&commit.next.base,&connector);
+   fixture_encoder.disp_info.intf_type=type==1?INTF_DSI:INTF_WB;commit.next.base.clone=true;
+   dpu_encoder_virt_atomic_mode_set(&fixture_encoder.base,&commit.next.base,&connector);
    assert(modesets==2);
-   if(type==0)for(int i=0;i<2;i++)assert(encoder.hw_cwb[i]==(i<count?&blocks[DPU_HW_BLK_CWB][i]:NULL));
+   if(type==0)for(int i=0;i<2;i++)assert(fixture_encoder.hw_cwb[i]==(i<count?&blocks[DPU_HW_BLK_CWB][i]:NULL));
    if(type==1)assert(!physical[0].hw_cdm);
-   if(type==2)for(int i=0;i<2;i++)assert(encoder.hw_dsc[i]==(i<count?&blocks[DPU_HW_BLK_DSC][i]:NULL));
+   if(type==2)for(int i=0;i<2;i++)assert(fixture_encoder.hw_dsc[i]==(i<count?&blocks[DPU_HW_BLK_DSC][i]:NULL));
   }
  }
  if(which)return;
@@ -207,8 +207,8 @@ static void run(const char *which) {
  reset();mst_error=-ERANGE;assert(msm_atomic_check(&dev,&commit)==-ERANGE);
  reset();encoder_modeset=true;assert(!msm_atomic_check(&dev,&commit)&&commit.next.base.mode_changed);
  reset();commit.next.base.clone=true;assert(!msm_atomic_check(&dev,&commit)&&commit.next.base.mode_changed);
- reset();dfps_pending=true;encoder.disp_info.intf_type=INTF_DP;counts[DPU_HW_BLK_CDM]=1;
- dpu_encoder_virt_atomic_mode_set(&encoder.base,&commit.next.base,&connector);
+ reset();dfps_pending=true;fixture_encoder.disp_info.intf_type=INTF_DP;counts[DPU_HW_BLK_CDM]=1;
+ dpu_encoder_virt_atomic_mode_set(&fixture_encoder.base,&commit.next.base,&connector);
  assert(modesets==2&&seamless==2&&physical[0].hw_cdm==&blocks[DPU_HW_BLK_CDM][0]);
  puts("Actual DPU color/resource admission, caller modeset flag, stale CWB/CDM/DSC/DSPP and Uke/MST/error paths passed; no hardware opened");
 }
