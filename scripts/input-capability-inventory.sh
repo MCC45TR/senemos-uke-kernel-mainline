@@ -7,6 +7,17 @@ set -Eeuo pipefail
 }
 input_root=$2
 command -v jq >/dev/null
+[[ -r $input_root && -x $input_root ]] || {
+    echo 'Input sysfs root is not readable/searchable; no inventory emitted' >&2
+    exit 1
+}
+# A shell glob can look empty when directory enumeration failed. Capture and
+# check find's status, including errors after partial output, before any report.
+entries=$(find "$input_root"/. -regextype posix-extended -mindepth 1 -maxdepth 1 \
+    -regex '.*/event[0-9]+' -printf '%f\n') || {
+    echo 'Input sysfs enumeration failed; no inventory emitted' >&2
+    exit 1
+}
 # Deliberately omit name, phys, uniq, full paths and driver uevents: those can
 # contain personal names, addresses or device identifiers. Bus/vendor/product/
 # version are shared type IDs, not a unit identity. Bitmap words stay opaque;
@@ -27,11 +38,10 @@ read_hex() {
     fi
     printf '%s' "$value"
 }
-shopt -s nullglob
 records='[]'
-for entry in "$input_root"/event*; do
-    node=${entry##*/}
+while IFS= read -r node; do
     [[ $node =~ ^event[0-9]+$ ]] || continue
+    entry=$input_root/$node
     [[ -d $entry/device ]] || { echo 'Input node changed during inventory' >&2; exit 1; }
     ids='{}' caps='{}'
     for key in bustype vendor product version; do
@@ -46,6 +56,6 @@ for entry in "$input_root"/event*; do
     [[ -d $entry/device ]] || exit 1
     records=$(jq -c --arg node "$node" --argjson ids "$ids" --argjson caps "$caps" \
         '. + [{node:$node,type_ids:$ids,capability_hex_words:$caps}]' <<< "$records")
-done
+done <<< "$entries"
 jq -n --argjson records "$records" '{schema:1,source:"linux-input-sysfs",snapshot_atomic:false,
   device_nodes_opened:false,physical_capabilities_verified:false,input_nodes:$records}'

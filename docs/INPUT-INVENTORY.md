@@ -6,11 +6,13 @@
 bash scripts/input-capability-inventory.sh --sysfs-input /sys/class/input
 ```
 
-It requires Bash, jq and head. It does not open event/hidraw nodes, record
+It requires Bash, jq, GNU find and head. It does not open event/hidraw nodes, record
 keystrokes, grab devices, rebind drivers, load firmware or write settings.
 No elevated privilege is requested. An inaccessible, malformed or disappearing
 node refuses the report; the tool emits JSON only after all enumerated nodes
-pass. An empty inventory is possible and is not a capability result.
+pass. Root read/search access and enumeration completion are checked explicitly;
+failed or partial enumeration cannot become an empty successful inventory.
+An empty inventory is possible and is not a capability result.
 
 Output includes event-node labels, shared bus/vendor/product/version IDs and
 opaque hexadecimal capability words. It excludes names, physical paths, unique

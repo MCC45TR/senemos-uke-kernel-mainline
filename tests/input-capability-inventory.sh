@@ -12,6 +12,29 @@ reject() {
 }
 bash "$repo/scripts/input-capability-inventory.sh" --sysfs-input "$fixture/empty" > "$fixture/empty.json"
 jq -e '.input_nodes==[] and .physical_capabilities_verified==false' "$fixture/empty.json" >/dev/null
+# Permission denial is exercised by non-root runners. Root can bypass mode
+# bits, so the injected enumeration failures below are mandatory for everyone.
+mkdir "$fixture/denied"
+chmod 000 "$fixture/denied"
+if [[ ! -r $fixture/denied || ! -x $fixture/denied ]]; then
+ if bash "$repo/scripts/input-capability-inventory.sh" --sysfs-input "$fixture/denied" > "$fixture/denied.json" 2>/dev/null; then
+  chmod 700 "$fixture/denied"; exit 1
+ fi
+ [[ ! -s $fixture/denied.json ]]
+fi
+chmod 700 "$fixture/denied"
+mkdir "$fixture/bin"
+cat > "$fixture/bin/find" <<'SH'
+#!/usr/bin/env bash
+# Simulate inaccessible enumeration and interrupted traversal after one entry.
+[[ ${INVENTORY_PARTIAL:-0} != 1 ]] || printf 'event0\n'
+exit 1
+SH
+chmod +x "$fixture/bin/find"
+for partial in 0 1; do
+ if PATH="$fixture/bin:$PATH" INVENTORY_PARTIAL=$partial bash "$repo/scripts/input-capability-inventory.sh" --sysfs-input "$fixture/empty" > "$fixture/denied.json" 2>/dev/null; then exit 1; fi
+ [[ ! -s $fixture/denied.json ]]
+done
 mkdir -p "$fixture/input/event0/device/"{id,capabilities}
 for key in bustype vendor product version; do printf '0001\n' > "$fixture/input/event0/device/id/$key"; done
 for key in ev key rel abs msc led snd ff sw; do printf '0\n' > "$fixture/input/event0/device/capabilities/$key"; done
@@ -42,4 +65,4 @@ cp "$fixture/abs" "$fixture/device/device/capabilities/abs"
 # A second incomplete node must refuse the whole report, not emit partial data.
 mkdir -p "$fixture/input/event1/device"
 reject
-printf 'Input inventory: empty/symlinked metadata, opaque bitmap preservation, private field exclusion, malformed/oversized/missing/FIFO and incomplete-node refusal passed; no device opened\n'
+printf 'Input inventory: checked root enumeration, empty/symlinked metadata, opaque bitmap preservation, private field exclusion, malformed/oversized/missing/FIFO and incomplete-node refusal passed; no device opened\n'
