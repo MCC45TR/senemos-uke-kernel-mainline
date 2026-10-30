@@ -34,7 +34,7 @@ index edee040..37b0fdc 100644
  	disp/dpu1/dpu_encoder_phys_cmd.o \
  	disp/dpu1/dpu_encoder_phys_vid.o \
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
-index df9df05..5716533 100644
+index df9df05..3da56fe 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
 @@ -1020,6 +1020,7 @@ static void dpu_crtc_destroy_state(struct drm_crtc *crtc,
@@ -45,6 +45,17 @@ index df9df05..5716533 100644
  	DRM_DEBUG_ATOMIC("crtc%d\n", crtc->base.id);
  
  	__drm_atomic_helper_crtc_destroy_state(state);
+@@ -1069,8 +1070,8 @@ static int dpu_crtc_kickoff_clone_mode(struct drm_crtc *crtc)
+ 		return -EINVAL;
+ 	}
+ 
+-	dpu_encoder_prepare_for_kickoff(wb_encoder);
+-	dpu_encoder_prepare_for_kickoff(rt_encoder);
++	dpu_encoder_prepare_for_kickoff(wb_encoder, true);
++	dpu_encoder_prepare_for_kickoff(rt_encoder, true);
+ 
+ 	dpu_vbif_clear_errors(dpu_kms);
+ 
 @@ -1092,12 +1093,13 @@ static int dpu_crtc_kickoff_clone_mode(struct drm_crtc *crtc)
   * dpu_crtc_commit_kickoff - trigger kickoff of the commit for this crtc
   * @crtc: Pointer to drm crtc object
@@ -68,6 +79,15 @@ index df9df05..5716533 100644
 +		return false;
  
  	DPU_ATRACE_BEGIN("crtc_commit");
+ 
+@@ -1127,7 +1129,7 @@ void dpu_crtc_commit_kickoff(struct drm_crtc *crtc)
+ 		 */
+ 		drm_for_each_encoder_mask(encoder, crtc->dev,
+ 				crtc->state->encoder_mask)
+-			dpu_encoder_prepare_for_kickoff(encoder);
++			dpu_encoder_prepare_for_kickoff(encoder, false);
+ 
+ 		dpu_vbif_clear_errors(dpu_kms);
  
 @@ -1138,6 +1140,7 @@ void dpu_crtc_commit_kickoff(struct drm_crtc *crtc)
  		}
@@ -564,7 +584,7 @@ index 0000000..54c4612
 +	return stopped;
 +}
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
-index 923739c..4d8a415 100644
+index 923739c..f30f948 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 @@ -180,6 +180,7 @@ struct dpu_encoder_virt {
@@ -606,7 +626,29 @@ index 923739c..4d8a415 100644
  	if (ret)
  		DPU_ERROR_ENC(dpu_enc, "DSI video stop failed: %d\n", ret);
  
-@@ -2606,7 +2617,8 @@ void dpu_encoder_helper_phys_cleanup(struct dpu_encoder_phys *phys_enc)
+@@ -2378,7 +2389,7 @@ static void dpu_encoder_prep_dsc(struct dpu_encoder_virt *dpu_enc,
+  *	Delayed: Block until next trigger can be issued.
+  * @drm_enc:	encoder pointer
+  */
+-void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
++void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc, bool clone_mode)
+ {
+ 	struct dpu_encoder_virt *dpu_enc;
+ 	struct dpu_encoder_phys *phys;
+@@ -2393,6 +2404,12 @@ void dpu_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc)
+ 	DPU_ATRACE_BEGIN("enc_prepare_for_kickoff");
+ 	for (i = 0; i < dpu_enc->num_phys_encs; i++) {
+ 		phys = dpu_enc->phys_encs[i];
++		if (phys->intf_mode == INTF_MODE_WB_LINE) {
++			struct dpu_encoder_phys_wb *wb =
++				container_of(phys, struct dpu_encoder_phys_wb, base);
++
++			WRITE_ONCE(wb->clone_mode, clone_mode);
++		}
+ 		if (phys->ops.prepare_for_kickoff)
+ 			phys->ops.prepare_for_kickoff(phys);
+ 		if (phys->enable_state == DPU_ENC_ERR_NEEDS_HW_RESET)
+@@ -2606,7 +2623,8 @@ void dpu_encoder_helper_phys_cleanup(struct dpu_encoder_phys *phys_enc)
  
  	dpu_enc = to_dpu_encoder_virt(phys_enc->parent);
  
@@ -616,7 +658,7 @@ index 923739c..4d8a415 100644
  
  	dpu_encoder_helper_reset_mixers(phys_enc);
  
-@@ -3251,6 +3263,51 @@ int dpu_encoder_wait_for_tx_complete(struct drm_encoder *drm_enc)
+@@ -3251,6 +3269,51 @@ int dpu_encoder_wait_for_tx_complete(struct drm_encoder *drm_enc)
  	return ret;
  }
  
@@ -669,9 +711,18 @@ index 923739c..4d8a415 100644
   * dpu_encoder_get_intf_mode - get interface mode of the given encoder
   * @encoder: Pointer to drm encoder object
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
-index f8917f6..2b7356d 100644
+index f8917f6..7f1358b 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.h
+@@ -49,7 +49,7 @@ void dpu_encoder_assign_crtc(struct drm_encoder *encoder,
+ void dpu_encoder_toggle_vblank_for_crtc(struct drm_encoder *encoder,
+ 					struct drm_crtc *crtc, bool enable);
+ 
+-void dpu_encoder_prepare_for_kickoff(struct drm_encoder *encoder);
++void dpu_encoder_prepare_for_kickoff(struct drm_encoder *encoder, bool clone_mode);
+ 
+ void dpu_encoder_trigger_kickoff_pending(struct drm_encoder *encoder);
+ 
 @@ -60,6 +60,8 @@ int dpu_encoder_vsync_time(struct drm_encoder *drm_enc, ktime_t *wakeup_time);
  int dpu_encoder_wait_for_commit_done(struct drm_encoder *drm_encoder);
  
@@ -746,7 +797,7 @@ index 3f2f1b9..1ef9875 100644
  }
  
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_wb.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_wb.c
-index daeb7e5..fb14d09 100644
+index daeb7e5..0d582ff 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_wb.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder_phys_wb.c
 @@ -8,6 +8,7 @@
@@ -876,7 +927,7 @@ index daeb7e5..fb14d09 100644
  	wait_info.wq = &phys_enc->pending_kickoff_wq;
  	wait_info.atomic_cnt = &phys_enc->pending_kickoff_cnt;
  	wait_info.timeout_ms = KICKOFF_TIMEOUT_MS;
-@@ -473,21 +499,40 @@ static void dpu_encoder_phys_wb_prepare_for_kickoff(
+@@ -473,21 +499,39 @@ static void dpu_encoder_phys_wb_prepare_for_kickoff(
  	struct dpu_encoder_phys_wb *wb_enc = to_dpu_encoder_phys_wb(phys_enc);
  	struct drm_connector *drm_conn;
  	struct drm_connector_state *state;
@@ -917,14 +968,13 @@ index daeb7e5..fb14d09 100644
 +	}
 +	prepared->dev = phys_enc->parent->dev;
 +	drm_dev_get(prepared->dev);
-+	wb_enc->clone_mode = drm_crtc_in_clone_mode(phys_enc->parent->crtc->state);
 +	drm_writeback_queue_job(wb_enc->wb_conn, state);
 +	wb_enc->active_conn = wb_enc->wb_conn;
 +	spin_unlock_irqrestore(phys_enc->enc_spinlock, flags);
  
  	_dpu_encoder_phys_wb_update_flush(phys_enc);
  }
-@@ -552,7 +597,13 @@ static void dpu_encoder_phys_wb_disable(struct dpu_encoder_phys *phys_enc)
+@@ -552,7 +596,13 @@ static void dpu_encoder_phys_wb_disable(struct dpu_encoder_phys *phys_enc)
  	 */
  	if (phys_enc->dpu_kms->catalog->mdss_ver->core_major_ver >= 5)
  		dpu_encoder_helper_phys_cleanup(phys_enc);
@@ -938,7 +988,7 @@ index daeb7e5..fb14d09 100644
  	phys_enc->enable_state = DPU_ENC_DISABLED;
  }
  
-@@ -560,21 +611,25 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
+@@ -560,21 +610,25 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
  		struct drm_writeback_job *job)
  {
  	const struct msm_format *format;
@@ -968,7 +1018,7 @@ index daeb7e5..fb14d09 100644
  		return ret;
  	}
  
-@@ -584,6 +639,7 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
+@@ -584,6 +638,7 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
  	if (ret) {
  		DPU_DEBUG("failed to populate plane sizes%d\n", ret);
  		msm_framebuffer_cleanup(job->fb, false);
@@ -976,7 +1026,7 @@ index daeb7e5..fb14d09 100644
  		return ret;
  	}
  
-@@ -605,33 +661,33 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
+@@ -605,33 +660,33 @@ static int dpu_encoder_phys_wb_prepare_wb_job(struct dpu_encoder_phys *phys_enc,
  			wb_cfg->dest.plane_pitch[0], wb_cfg->dest.plane_pitch[1],
  			wb_cfg->dest.plane_pitch[2], wb_cfg->dest.plane_pitch[3]);
  

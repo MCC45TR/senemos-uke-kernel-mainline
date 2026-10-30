@@ -60,7 +60,8 @@ struct drm_connector_state {struct drm_writeback_job *writeback_job;};
 struct drm_connector {struct drm_connector_state *state;};
 struct drm_writeback_connector {struct drm_connector base;struct drm_writeback_job *queued;unsigned signals;int status;};
 struct drm_writeback_job {struct drm_framebuffer *fb;struct drm_writeback_connector *connector;void *priv;};
-struct dpu_hw_fmt_layout {unsigned width,height,num_planes,plane_addr[3],plane_pitch[3];};
+/* DPU_MAX_PLANES is four in the pinned dpu_hw_mdss.h. */
+struct dpu_hw_fmt_layout {unsigned width,height,num_planes,plane_addr[4],plane_pitch[4];};
 struct dpu_hw_wb_cfg {struct dpu_hw_fmt_layout dest;};
 struct dpu_hw_ctl;
 struct dpu_hw_ctl {struct {void (*clear_pending_flush)(struct dpu_hw_ctl *);} ops;};
@@ -122,6 +123,7 @@ static struct sample *sample(void) {
 }
 static void queue(struct sample *s) {
  assert(!dpu_encoder_phys_wb_prepare_wb_job(physical,&s->job[0]));s->state.writeback_job=&s->job[0];assert(dpu_encoder_phys_wb_is_valid_for_commit(physical));
+ s->wb.clone_mode=drm_crtc_in_clone_mode(&s->crtc_state);
  dpu_encoder_phys_wb_prepare_for_kickoff(physical);assert(s->conn.queued==&s->job[0]&&s->dev.refs==2&&prepared_id==1);physical->pending_kickoff_cnt=1;hardware_busy=true;
 }
 static void *complete_thread(void *p) {dpu_encoder_phys_wb_complete(p,0);return NULL;}

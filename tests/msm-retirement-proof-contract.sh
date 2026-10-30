@@ -31,7 +31,7 @@ static void reinit_completion(int *c) {++*c;}
 enum dpu_intf_mode {INTF_MODE_VIDEO,INTF_MODE_CMD,INTF_MODE_WB_LINE,INTF_MODE_UNKNOWN};
 struct drm_crtc_state {bool active,clone,modeset;unsigned encoder_mask;};
 struct dpu_crtc_state {struct drm_crtc_state base;unsigned num_mixers;};
-struct drm_device {unsigned nencoders;};
+struct drm_device {unsigned nencoders;struct {int encoder_list;} mode_config;};
 struct drm_crtc {struct drm_device *dev;struct drm_crtc_state *state;};
 struct dpu_crtc {struct drm_crtc base;bool enabled,failed,quarantined;atomic_t frame_pending;unsigned play_count;int frame_done_comp;};
 struct drm_encoder {struct drm_crtc *crtc;};
@@ -48,8 +48,8 @@ static struct dpu_kms backend;
 #define to_dpu_encoder_virt(e) container_of(e,struct dpu_encoder_virt,base)
 #define to_dpu_kms(k) ((void)(k),&backend)
 #define drm_for_each_encoder_mask(e,d,m) for(unsigned _i=0;_i<(d)->nencoders;++_i) if(((m)&(1U<<_i))&&((e)=&encoders[_i].base))
-#define list_for_each_entry(e,h,member) for(unsigned _i=0;_i<backend.dev->nencoders&&((e)=&encoders[_i].base);++_i)
-#define for_each_crtc_mask(d,c,m) for(unsigned _once=0;_once<1&&((c)=&current_crtc->base);++_once)
+#define list_for_each_entry(e,h,member) for(unsigned _i=((void)(h),0);_i<backend.dev->nencoders&&((e)=&encoders[_i].base);++_i)
+#define for_each_crtc_mask(d,c,m) for(unsigned _once=((void)(d),(void)(m),0);_once<1&&((c)=&current_crtc->base);++_once)
 struct drm_atomic_commit {struct drm_crtc_state *new_state;};
 #define for_each_new_crtc_in_state(s,c,n,i) for((i)=0;(i)<1&&(((c)=&current_crtc->base),((n)=(s)->new_state),1);++(i))
 static bool drm_atomic_crtc_needs_modeset(struct drm_crtc_state *s) {return s->modeset;}
@@ -61,7 +61,7 @@ static unsigned kickoffs,waits,tx_waits,flush_calls;
 static bool flush_valid,flush_one_shot;
 static int dpu_crtc_kickoff_clone_mode(struct drm_crtc *c) {(void)c;if(!clone_error)kickoffs+=2;return clone_error;}
 static bool dpu_encoder_is_valid_for_commit(struct drm_encoder *e) {(void)e;return valid_encoder;}
-static void dpu_encoder_prepare_for_kickoff(struct drm_encoder *e) {(void)e;}
+static void dpu_encoder_prepare_for_kickoff(struct drm_encoder *e,bool clone) {(void)e;assert(!clone);}
 static void dpu_vbif_clear_errors(struct dpu_kms *k) {(void)k;}
 static void dpu_encoder_kickoff(struct drm_encoder *e) {(void)e;++kickoffs;}
 static void dpu_encoder_start_frame_done_timer(struct drm_encoder *e) {(void)e;}
