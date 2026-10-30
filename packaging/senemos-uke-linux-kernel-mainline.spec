@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 2
+%global senemos_build_release 3
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-3
+- Admit 7.3.1 in the retained alternate KMS compile check without changing drivers.
+- Check actual release admission before the full build with a shell-only fixture.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2
 - Bind the native stable port to the exact published 122-patch adaptation queue.
 - Preserve the separate canonical 127-patch source profile and its provenance.

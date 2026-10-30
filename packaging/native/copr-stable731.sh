@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-2
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-3
 output=$(realpath -m "${1:?COPR result directory}")
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 make -C "$owner" validate
@@ -45,7 +45,7 @@ while IFS=$'\t' read -r path expected; do
 done < <(jq -r '.patches[],.configs[]|[.path,.sha256]|@tsv' "$adaptation/source-lock.json")
 sha256sum -c "$stage/patches.sha256"
 cp "$profile/source-composition.json" "$profile/source-composition-parent60.json"
-overlays=(packaging/native/prepare.sh src/boot/prepare-abl-source.sh src/display/prepare-source.sh src/video/prepare-source.sh tests/mainline-package-contract.sh)
+overlays=(packaging/native/prepare.sh src/boot/prepare-abl-source.sh src/display/prepare-source.sh src/video/prepare-source.sh tests/mainline-package-contract.sh tests/msm-kms-alternate-build.sh tests/msm-kms-release-contract.sh)
 for relative in "${overlays[@]}"; do
     destination=$relative
     [[ $relative != packaging/native/prepare.sh ]] || destination=prepare.sh
@@ -57,7 +57,7 @@ done
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq -n --arg commit "$commit" \
- '{schema_version:1,source_mode:"signed-stable-upgrade-with-explicit-profile-overlay",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11230581,parent_srpm_sha256:"b6352bcfd676eaeaa60c92577a3a53c5cb870a2310fb9dc8bbb58548a7987394",parent_composition:"source-composition-parent60.json",adaptation_patches_unchanged:true,overlays:["prepare.sh","src/boot/prepare-abl-source.sh","src/display/prepare-source.sh","src/video/prepare-source.sh","tests/mainline-package-contract.sh"],physical_acceptance:false}' > "$profile/source-composition.json"
+ '{schema_version:1,source_mode:"signed-stable-upgrade-with-explicit-profile-overlay",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11230581,parent_srpm_sha256:"b6352bcfd676eaeaa60c92577a3a53c5cb870a2310fb9dc8bbb58548a7987394",parent_composition:"source-composition-parent60.json",adaptation_patches_unchanged:true,overlays:["prepare.sh","src/boot/prepare-abl-source.sh","src/display/prepare-source.sh","src/video/prepare-source.sh","tests/mainline-package-contract.sh","tests/msm-kms-alternate-build.sh","tests/msm-kms-release-contract.sh"],physical_acceptance:false}' > "$profile/source-composition.json"
 install -m644 "$owner/manifests/boot-payload.json" "$boot/lock.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c -)
@@ -78,4 +78,4 @@ find "$output" -maxdepth 1 -type f \( -name 'linux-7.3.0.tar.*' -o -name 'senemo
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/retained.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-2
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-3

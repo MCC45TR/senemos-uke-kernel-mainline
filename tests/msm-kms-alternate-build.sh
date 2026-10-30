@@ -5,7 +5,7 @@ kernel=$(realpath "${1:?Prepared source}")
 output=$(realpath "${2:?Completed native output}")
 root=$(realpath "${3:?Staged package root}")
 release=${4:?Versioned kernel release}
-[[ $release =~ ^7[.]3[.]0-[1-9][0-9]*$ ]]
+[[ $release =~ ^7[.]3[.](0|1)-[1-9][0-9]*$ ]]
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 [[ ! -e $output/certs/signing_key.pem ]]

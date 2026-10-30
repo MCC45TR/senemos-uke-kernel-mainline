@@ -529,7 +529,7 @@
     },
     {
       "path": "tests/msm-kms-alternate-build.sh",
-      "sha256": "2c89f91797bdf11dd9beb4975409065e502b2954e02b7f74a63ae8118b238723"
+      "sha256": "79bc932fcbb1a85665ab736f3631317de77c6608cd1d5c1ce6c8536bec5dbca4"
     },
     {
       "path": "manifests/kms57-parent-files.sha256",
