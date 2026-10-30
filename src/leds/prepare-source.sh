@@ -2,6 +2,11 @@
 set -Eeuo pipefail
 kernel=$(realpath "${1:?prepared kernel}")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
+mkdir -p "$kernel/native-generated"
+cp "$kernel/drivers/leds/flash/leds-qcom-flash.c" "$kernel/native-generated/qcom-flash-before-safety.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0043-qcom-flash-preserve-thermal-errors.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0043-qcom-flash-preserve-thermal-errors.patch"
+bash "$here/../../tests/flash-thermal-errors.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c" "$kernel/native-generated/qcom-flash-before-safety.c"
 install -m644 "$here/leds-uke-rgb.c" "$kernel/drivers/leds/"
 install -m644 "$here/leds-uke-torch.c" "$here/uke-torch-uapi.h" "$kernel/drivers/leds/"
 install -m644 "$here/uke-torch-uapi.h" "$kernel/include/uapi/linux/uke-torch.h"

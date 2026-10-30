@@ -26,7 +26,7 @@ validate: test-touch-protocol test-touch-transport
 	bash tests/rgb-supplier.sh
 	bash tests/torch-lifetime.sh
 	bash tests/torch-supplier.sh
-	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
+	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh tests/flash-thermal-errors.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/performance/prepare-source.sh tests/llcc-pmu-contract.sh
 	CC=clang bash tests/llcc-pmu-contract.sh

@@ -6,6 +6,12 @@ not a proven intrinsic hardware ceiling. Exact Uke OEM source admits more
 current targets; RGB PWM and the unqualified torch hardware-strobe route remain
 separate. This review changes no current limit or runtime driver.
 
+The [OSS safety comparison](../../docs/TORCH-OSS-SAFETY-20261030.md) traces the
+actual battery-query, thermal and duration paths. A native provider patch
+preserves thermal transaction errors and refuses a budget below the physical
+minimum. Current/threshold limits remain unchanged; higher-current continuous
+operation still requires separate qualification.
+
 30 October 2026. The existing RGB consumer owns notification policy. The torch
 consumer adds a separate `senemos,uke-torch` DT node and `/dev/uke-torch` ABI 1.
 Both use managed LED suppliers; neither accesses PMIC registers directly.
