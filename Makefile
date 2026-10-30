@@ -8,6 +8,7 @@ outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash tests/copr-source-guards-contract.sh
 	bash -n tests/msm-retirement-contract.sh tests/msm-writeback-contract.sh tests/msm-retirement-proof-contract.sh
+	bash -n tests/o82-avr-contract.sh tests/dpu-video-timing-contract.sh
 	bash -n tests/msm-kms-lifecycle-contract.sh tests/msm-kms-unwind-contract.sh tests/msm-kms-alternate-build.sh
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh

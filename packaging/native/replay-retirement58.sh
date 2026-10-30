@@ -5,7 +5,7 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 sources=$(realpath "${1:?Parent sources}")
 profile=$(realpath "${2:?Parent profile}")
 fixture=$(realpath -m "${3:?New replay directory}")
-manifest=$owner/manifests/retirement58-parent-files.sha256
+manifest=${4:-$owner/manifests/retirement58-parent-files.sha256}
 bash "$owner/packaging/native/replay-kms57.sh" "$sources" "$profile" "$fixture" "$manifest" > /dev/null
 includes=();files=()
 while read -r hash path;do

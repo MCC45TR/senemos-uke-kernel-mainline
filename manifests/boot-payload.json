@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release59 retains exact58 kernel source assets and routes the boot RPM hook through the guarded selected-profile transaction. The58 binary build was canceled before publication; complete59 native and physical acceptance remain separate.",
+  "source_origin": "Release60 preserves the59 driver patches and selected-profile transaction. Updated AVR and video-disable fixture models run on sixteen replayed input files before source generation and again before kernel compilation. Native/package/physical acceptance remain separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "d2e20adc6e76498d43b2a42999ba83662838f0bef2bf72f2a8b893d7d4cc873f"
+      "sha256": "c1635d2f665530ad86b6ec73b671383143e7d0587fba74b5b69eff97a5a5d606"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -554,6 +554,18 @@
     {
       "path": "tests/msm-retirement-proof-contract.sh",
       "sha256": "060ac6b7469c32125359bf8ca86f7c0c649a5c8d909d160239e5c565f1146f62"
+    },
+    {
+      "path": "tests/o82-avr-contract.sh",
+      "sha256": "d84a5845ff6c40d4daf9f929738bc47b071a742e66a53620c8788b1cf599c465"
+    },
+    {
+      "path": "tests/dpu-video-timing-contract.sh",
+      "sha256": "7802fea64a1b08098a00c7a67f516224069d178a03deb8828a0d6f4057f6ef33"
+    },
+    {
+      "path": "manifests/retirement60-parent-files.sha256",
+      "sha256": "e9d0d78f438f4bd79b62a8bc7c5848c714b2dd89dbf7d1f2599ae5569fd9eb40"
     }
   ],
   "root_selector_capability": {
