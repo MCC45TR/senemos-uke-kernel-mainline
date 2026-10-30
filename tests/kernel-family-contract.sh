@@ -31,7 +31,8 @@ cp "$root/LICENSE" "$work/SOURCES/singleboot-LICENSE"
     printf '\n%%files\n'
     awk '/^%files singleboot$/{copy=1} copy&&/^%changelog$/{exit} copy' "$spec"
 } > "$work/SPECS/profile.spec"
-if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS" "$work/SPECS/profile.spec" > "$work/build.log" 2>&1; then
+if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS" \
+    --define "_tmppath $work" "$work/SPECS/profile.spec" > "$work/build.log" 2>&1; then
     cat "$work/build.log" >&2;exit 1
 fi
 shopt -s nullglob globstar
