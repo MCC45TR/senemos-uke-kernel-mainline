@@ -57,6 +57,13 @@ git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+reservation_baseline=$output/dpu-reservation-before56
+for relative in drivers/gpu/drm/msm/msm_atomic.c drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c; do
+    install -Dm644 "$kernel/$relative" "$reservation_baseline/$relative"
+done
+git -C "$kernel" apply --check "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
+git -C "$kernel" apply "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
+CC=clang bash "$profile/tests/dpu-reservation-contract.sh" "$kernel" "$reservation_baseline"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
