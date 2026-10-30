@@ -1,0 +1,26 @@
+From: Uke Linux project <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] cpufreq: qcom-hw: retain the Uke OEM boost permission
+
+Uke and the same-SoC OnePlus OSS driver enable CPUFreq boost by default.
+Restore that permission for the exact Uke/SM7675 machine before policies
+are registered. Keep other machines unchanged and leave runtime control
+with the standard CPUFreq boost interface.
+
+This does not add frequencies, voltages or minimum-frequency requests.
+Only firmware LUT rows already admitted by the existing EPSS parser are
+available. A domain without reduced-core boost rows gains no extra OPP.
+
+Sources (GPL-2.0-only):
+MiCode/Xiaomi_Kernel_OpenSource 5712080a4b0c0b1a879e6d145c601c649ddaddfd
+OnePlusOSS/android_kernel_oneplus_sm7675 fc892483f1d61f245924681eb5abd563564d9cba
+drivers/cpufreq/qcom-cpufreq-hw.c, cpufreq_qcom_hw_driver.boost_enabled
+
+--- a/drivers/cpufreq/qcom-cpufreq-hw.c
++++ b/drivers/cpufreq/qcom-cpufreq-hw.c
+@@ -990,1 +990,6 @@ static int qcom_cpufreq_hw_driver_probe(struct platform_device *pdev)
++	/* Preserve the OEM permission without changing the fused EPSS table. */
++	if (of_machine_is_compatible("xiaomi,uke") &&
++	    of_machine_is_compatible("qcom,sm7675"))
++		cpufreq_qcom_hw_driver.boost_enabled = true;
++
+ 	ret = cpufreq_register_driver(&cpufreq_qcom_hw_driver);

@@ -112,6 +112,9 @@ SANITIZE=1 bash "$here/../../tests/fastrpc-buffer-lifetime-contract.sh" "$kernel
 SANITIZE=1 bash "$here/../../tests/rproc-edge-stop-contract.sh" "$kernel/drivers/remoteproc/qcom_common.c"
 git -C "$kernel" apply --check "$here/../../patches/boot/0008-uke-platform-profile.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0008-uke-platform-profile.patch"
+git -C "$kernel" apply --check "$here/../../patches/boot/0044-uke-epss-default-boost.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0044-uke-epss-default-boost.patch"
+bash "$here/../../tests/cpu-boost-default-contract.sh" "$kernel/drivers/cpufreq/qcom-cpufreq-hw.c"
 install -m644 "$here/../power/uke-platform-profile.c" "$kernel/drivers/soc/qcom/uke-platform-profile.c"
 install -m644 "$here/uke-abl.c" "$kernel/arch/arm64/kernel/uke-abl.c"
 install -m644 "$here/uke-ufs.h" "$kernel/arch/arm64/kernel/uke-ufs.h"
@@ -182,6 +185,8 @@ sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/
 sha256sum "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0008-uke-platform-profile.patch" \
     "$here/../power/uke-platform-profile.c" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0044-uke-epss-default-boost.patch" \
+    "$here/../../tests/cpu-boost-default-contract.sh" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
     "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../audio/sm7675-uke-audio-providers.dtsi" \
