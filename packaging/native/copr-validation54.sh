@@ -37,11 +37,12 @@ install -m644 "$owner/packaging/native/prepare.sh" "$profile/prepare.sh"
 install -m644 "$owner/packaging/native/prepare.sh" "$boot/packaging/native/prepare.sh"
 install -m644 "$owner/tests/wlan-power-contract.sh" "$profile/tests/wlan-power-contract.sh"
 install -m644 "$owner/tests/mainline-package-contract.sh" "$profile/tests/mainline-package-contract.sh"
+install -m644 "$owner/tests/kernel-family-contract.sh" "$profile/tests/kernel-family-contract.sh"
 install -m644 "$owner/tests/wlan-power-contract.sh" "$boot/tests/wlan-power-contract.sh"
 install -m644 "$owner/manifests/boot-payload.json" "$boot/lock.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq -n --arg commit "$commit" \
-    '{schema_version:1,source_mode:"pinned-parent-with-explicit-overlay",source_commit:$commit,parent_copr_build:11228820,parent_srpm_sha256:"06410380de4efda7e6a02f0416b1809a4263b2b76a8467f542edd308b9593f0b",parent_composition:"source-composition-parent53.json",overlays:["prepare.sh","tests/wlan-power-contract.sh","tests/mainline-package-contract.sh"],source_validation:"make validate on COPR source worker",physical_acceptance:false}' \
+    '{schema_version:1,source_mode:"pinned-parent-with-explicit-overlay",source_commit:$commit,parent_copr_build:11228820,parent_srpm_sha256:"06410380de4efda7e6a02f0416b1809a4263b2b76a8467f542edd308b9593f0b",parent_composition:"source-composition-parent53.json",overlays:["prepare.sh","tests/wlan-power-contract.sh","tests/mainline-package-contract.sh","tests/kernel-family-contract.sh"],source_validation:"make validate on COPR source worker",physical_acceptance:false}' \
     > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
