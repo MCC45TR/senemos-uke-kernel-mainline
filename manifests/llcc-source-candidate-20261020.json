@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
+      "sha256": "3f3fd0c5937543990062e84ab22cdda9a6d657796e4d116badb8f74cc06c513d"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-54",
+  "kernel_release": "7.3.0-72",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

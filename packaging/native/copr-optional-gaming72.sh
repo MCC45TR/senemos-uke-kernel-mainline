@@ -34,12 +34,13 @@ cp "$profile/source-composition.json" "$profile/source-composition-parent54.json
 install -m644 "$owner/packaging/native/native.config" "$profile/native.config"
 install -m644 "$owner/packaging/native/native.config" "$boot/packaging/native/native.config"
 install -m644 "$owner/tests/optional-gaming-platform.sh" "$profile/tests/optional-gaming-platform.sh"
+install -m644 "$owner/manifests/llcc-source-candidate-20261020.json" "$profile/manifests/llcc-source-candidate-20261020.json"
 install -m644 "$owner/docs/OPTIONAL-GAMING.md" "$profile/OPTIONAL-GAMING.md"
 install -m644 "$owner/manifests/boot-payload.json" "$boot/lock.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq -n --arg commit "$commit" \
-    '{schema_version:1,source_mode:"pinned-parent-with-explicit-overlay",source_commit:$commit,parent_copr_build:11228863,parent_srpm_sha256:"615b362bd44b15ec267c16532e986629df422966658769f6bb715004bfa7c1b0",parent_composition:"source-composition-parent54.json",overlays:["native.config","tests/optional-gaming-platform.sh","OPTIONAL-GAMING.md"],source_validation:"make validate on COPR source worker",physical_acceptance:false}' \
+    '{schema_version:1,source_mode:"pinned-parent-with-explicit-overlay",source_commit:$commit,parent_copr_build:11228863,parent_srpm_sha256:"615b362bd44b15ec267c16532e986629df422966658769f6bb715004bfa7c1b0",parent_composition:"source-composition-parent54.json",overlays:["native.config","manifests/llcc-source-candidate-20261020.json","tests/optional-gaming-platform.sh","OPTIONAL-GAMING.md"],source_validation:"make validate on COPR source worker",physical_acceptance:false}' \
     > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[] | .sha256 + "  " + .path' lock.json | sha256sum -c -)
