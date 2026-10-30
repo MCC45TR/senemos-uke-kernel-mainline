@@ -32,6 +32,7 @@ validate: test-touch-protocol test-touch-transport
 	CC=clang bash tests/llcc-pmu-contract.sh
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
 	bash -n tests/audio-probe-contract.sh
+	bash -n tests/microphone-audio-{card,fdt,topology}-contract.sh tests/wcd939x-io-contract.sh tests/soundwire-resume-clock-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.3.1
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == $(patch_count)) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
@@ -98,6 +99,15 @@ test-ufs-mcq:
 test-root-capability:
 	test -n "$(kernel_source)"
 	bash tests/root-selector-note-contract.sh "$(kernel_source)" manifests/boot-payload.json
+.PHONY: test-microphones
+test-microphones:
+	test -n "$(kernel_source)"
+	bash tests/microphone-audio-fdt-contract.sh "$(kernel_source)"
+	bash tests/microphone-audio-topology-contract.sh
+	bash tests/microphone-audio-card-contract.sh
+	bash tests/wcd939x-reset-consumer-contract.sh "$(kernel_source)"
+	bash tests/wcd939x-io-contract.sh "$(kernel_source)"
+	bash tests/soundwire-resume-clock-contract.sh "$(kernel_source)"
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"

@@ -2,6 +2,8 @@
 # Synthetic overlay check for the internal-speaker profile; no device access.
 set -Eeuo pipefail
 kernel=${1:?Pass prepared kernel tree}
+profile=${2:-speakers}
+case $profile in speakers|microphones) ;; *) exit 2;; esac
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
@@ -13,6 +15,9 @@ cat > "$work/base.dts" <<'DTS'
  soc {
   #address-cells = <1>; #size-cells = <1>; ranges;
   wcd_usbss: usbss {};
+  intc: interrupt-controller { interrupt-controller; #interrupt-cells = <4>; };
+  pmxr2230_l7: regulator-l7 { compatible = "regulator-fixed"; regulator-name = "l7"; regulator-min-microvolt = <1800000>; regulator-max-microvolt = <1800000>; };
+  pmxr2230_bob: regulator-bob { compatible = "regulator-fixed"; regulator-name = "bob"; regulator-min-microvolt = <3296000>; regulator-max-microvolt = <3296000>; };
   apps_smmu: iommu@15000000 { compatible = "qcom,sm7675-boot-smmu"; reg = <0x15000000 0x1000>; #iommu-cells = <2>; };
   tlmm: pinctrl@f000000 { compatible = "qcom,cliffs-pinctrl"; reg = <0xf000000 0x1000>; gpio-controller; #gpio-cells = <2>; };
   gpi_dma1: dma-controller@a00000 { reg = <0xa00000 0x1000>; #dma-cells = <3>; };
@@ -36,6 +41,9 @@ cat > "$work/base.dts" <<'DTS'
 };
 DTS
 printf '/dts-v1/;\n/plugin/;\n#include "%s/src/audio/sm7675-uke-audio-services.dtsi"\n#include "%s/src/audio/sm7675-uke-speaker-audio.dtsi"\n' "$root" "$root" > "$work/spk.dts"
+if [[ $profile == microphones ]]; then
+ printf '#include "%s/src/audio/sm7675-uke-microphone-audio.dtsi"\n' "$root" >> "$work/spk.dts"
+fi
 cpp -nostdinc -undef -DUKE_AUDIO_SERVICES=1 -I "$kernel/include" -x assembler-with-cpp "$work/spk.dts" > "$work/spk.pp.dts"
 dtc -q -@ -I dts -O dtb -o "$work/base.dtb" "$work/base.dts"
 dtc -q -@ -I dts -O dtb -o "$work/spk.dtbo" "$work/spk.pp.dts"
@@ -75,9 +83,14 @@ if fdtget "$work/result.dtb" "$fe" xiaomi,registration-only >/dev/null 2>&1; the
 smmu=$(fdtget -t x "$work/result.dtb" /soc/iommu@15000000 phandle)
 test "$(fdtget -t x "$work/result.dtb" "$fe" iommus)" = "$smmu 1001 80 $smmu 1061 0"
 card=/sound-uke
-test "$(fdtget -t s "$work/result.dtb" $card compatible)" = xiaomi,uke-speaker-audio-card
+if [[ $profile == microphones ]]; then
+ test "$(fdtget -t s "$work/result.dtb" $card compatible)" = xiaomi,uke-microphone-audio-card
+ test "$(fdtget -l "$work/result.dtb" $card | sort | tr '\n' ' ')" = 'hdmi-dai-link microphone-dai-link speaker-dai-link '
+else
+ test "$(fdtget -t s "$work/result.dtb" $card compatible)" = xiaomi,uke-speaker-audio-card
+ test "$(fdtget -l "$work/result.dtb" $card | sort | tr '\n' ' ')" = 'hdmi-dai-link speaker-dai-link '
+fi
 test "$(fdtget -t s "$work/result.dtb" $card model)" = POCO-Pad-X1
-test "$(fdtget -l "$work/result.dtb" $card | sort | tr '\n' ' ')" = 'hdmi-dai-link speaker-dai-link '
 test "$(fdtget -t x "$work/result.dtb" $card/hdmi-dai-link/cpu sound-dai)" = "$(fdtget -t x "$work/result.dtb" "$be" phandle) 68"
 # SECONDARY_TDM_RX_0 is 40 (0x28); the card checks the same identity.
 test "$(fdtget -t x "$work/result.dtb" $card/speaker-dai-link/cpu sound-dai)" = "$(fdtget -t x "$work/result.dtb" "$be" phandle) 28"
@@ -88,4 +101,5 @@ for addr in 34 35 36 37; do
 done
 test "$codecs " = "$want"
 test "$(fdtget -t x "$work/result.dtb" $card pinctrl-0)" = "$(fdtget -t x "$work/result.dtb" "$pins" phandle)"
-printf 'Speaker audio FDT: amp bus, four active-low resets, LPI TDM pins and two-link card passed; host only\n'
+[[ -z ${3:-} ]] || cp "$work/result.dtb" "$3"
+printf 'Speaker audio FDT: amp bus, four active-low resets, LPI TDM pins and retained playback links passed; host only\n'

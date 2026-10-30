@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Uke DisplayPort and internal speaker playback, plus the closed registration profile. */
+/* Uke playback, experimental mono capture and closed registration profiles. */
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
@@ -10,6 +10,7 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include "common.h"
+#include "sdw.h"
 
 static int uke_hdmi_late_probe(struct snd_soc_card *card)
 {
@@ -100,10 +101,24 @@ static int uke_hdmi_probe(struct platform_device *pdev)
 #define UKE_SPEAKER_SLOTS	4
 #define UKE_SPEAKER_SLOT_WIDTH	32
 
+struct uke_speaker_data {
+	struct snd_soc_jack jack;
+	bool microphones;
+	bool capture_prepared;
+};
+
+static int uke_speaker_hdmi_init(struct snd_soc_pcm_runtime *rtd)
+{
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
+
+	return qcom_snd_dp_jack_setup(rtd, &data->jack, 0);
+}
+
 static int uke_speaker_late_probe(struct snd_soc_card *card)
 {
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(card);
 	struct snd_soc_pcm_runtime *rtd;
-	unsigned int frontends = 0, backends = 0, seen = 0;
+	unsigned int frontends = 0, backends = 0, seen = 0, fe_seen = 0;
 
 	for_each_card_rtds(card, rtd) {
 		struct snd_soc_dai *cpu = snd_soc_rtd_to_cpu(rtd, 0);
@@ -113,18 +128,134 @@ static int uke_speaker_late_probe(struct snd_soc_card *card)
 				seen |= BIT(0);
 			else if (cpu->id == SECONDARY_TDM_RX_0)
 				seen |= BIT(1);
-			else
+			else if (data->microphones && cpu->id == TX_CODEC_DMA_TX_3) {
+				if (!snd_soc_rtd_to_codec(rtd, 1)->driver->capture.channels_min)
+					return -EINVAL;
+				seen |= BIT(2);
+			} else {
 				return -EINVAL;
+			}
 			backends++;
 		} else {
-			if (!rtd->dai_link->dynamic || cpu->id > 1 ||
-			    cpu->driver->capture.channels_min)
+			if (!rtd->dai_link->dynamic || cpu->id < 0 ||
+			    cpu->id > (data->microphones ? 2 : 1) ||
+			    (fe_seen & BIT(cpu->id)))
 				return -EINVAL;
+			if (cpu->id == 2) {
+				if (cpu->driver->playback.channels_min ||
+				    cpu->driver->capture.channels_min != 1 ||
+				    cpu->driver->capture.channels_max != 1)
+					return -EINVAL;
+			} else if (cpu->driver->capture.channels_min) {
+				return -EINVAL;
+			}
+			fe_seen |= BIT(cpu->id);
 			frontends++;
 		}
 	}
-	return frontends == 2 && backends == 2 && seen == 3 ? 0 : -EINVAL;
+	if (data->microphones)
+		return frontends == 3 && backends == 3 && seen == 7 &&
+		       fe_seen == 7 ? 0 : -EINVAL;
+	return frontends == 2 && backends == 2 && seen == 3 &&
+	       fe_seen == 3 ? 0 : -EINVAL;
 }
+
+static void uke_capture_clear_stream(struct snd_pcm_substream *substream)
+{
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct snd_soc_dai *codec;
+	int i;
+
+	for_each_rtd_codec_dais(rtd, i, codec)
+		snd_soc_dai_set_stream(codec, NULL, substream->stream);
+}
+
+static int uke_capture_startup(struct snd_pcm_substream *substream)
+{
+	int ret;
+
+	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
+		return -EINVAL;
+	ret = qcom_snd_sdw_startup(substream);
+	/* The shared helper releases its allocation on a partial startup error. */
+	if (ret)
+		uke_capture_clear_stream(substream);
+	return ret;
+}
+
+static int uke_capture_fixup(struct snd_soc_pcm_runtime *rtd,
+			     struct snd_pcm_hw_params *params)
+{
+	struct snd_interval *rate = hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE);
+	struct snd_interval *channels = hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
+	struct snd_mask *format = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
+
+	rate->min = rate->max = 48000;
+	channels->min = channels->max = 1;
+	snd_mask_none(format);
+	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S16_LE);
+	return 0;
+}
+
+static int uke_capture_hw_params(struct snd_pcm_substream *substream,
+				 struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	unsigned int tx_num = 0, tx_mask = 0, rx_num = 0, rx_mask = 0;
+	int ret;
+
+	if (params_rate(params) != 48000 || params_channels(params) != 1 ||
+	    params_format(params) != SNDRV_PCM_FORMAT_S16_LE)
+		return -EINVAL;
+
+	/*
+	 * The TX macro returns a decimator bitmask, not a channel-slot array.
+	 * DEC0 alone agrees with the mono DMA default physical mask, BIT(0).
+	 * Sparse or multiple decimators require a separately qualified DMA map.
+	 */
+	ret = snd_soc_dai_get_channel_map(snd_soc_rtd_to_codec(rtd, 2),
+					  &tx_num, &tx_mask, &rx_num, &rx_mask);
+	if (ret)
+		return ret;
+	if (tx_num != 1 || tx_mask != BIT(0) || rx_num)
+		return dev_err_probe(rtd->dev, -EINVAL,
+				     "Mono capture requires TX_AIF1 DEC0 only\n");
+	return 0;
+}
+
+static int uke_capture_prepare(struct snd_pcm_substream *substream)
+{
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
+	struct sdw_stream_runtime *stream = qcom_snd_sdw_get_stream(substream);
+
+	if (IS_ERR_OR_NULL(stream))
+		return stream ? PTR_ERR(stream) : -ENODEV;
+	return qcom_snd_sdw_prepare(substream, &data->capture_prepared);
+}
+
+static int uke_capture_hw_free(struct snd_pcm_substream *substream)
+{
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
+
+	return qcom_snd_sdw_hw_free(substream, &data->capture_prepared);
+}
+
+static void uke_capture_shutdown(struct snd_pcm_substream *substream)
+{
+	uke_capture_hw_free(substream);
+	qcom_snd_sdw_shutdown(substream);
+	uke_capture_clear_stream(substream);
+}
+
+static const struct snd_soc_ops uke_capture_ops = {
+	.startup = uke_capture_startup,
+	.hw_params = uke_capture_hw_params,
+	.prepare = uke_capture_prepare,
+	.hw_free = uke_capture_hw_free,
+	.shutdown = uke_capture_shutdown,
+};
 
 /*
  * Four 32-bit TDM slots at 48 kHz, one slot per amplifier. Samples stay 16-bit:
@@ -163,26 +294,28 @@ static bool uke_backend_owned(struct snd_soc_dai_link *link)
 static int uke_speaker_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct snd_soc_dai_link *hdmi = NULL, *speaker = NULL, *link;
+	struct snd_soc_dai_link *hdmi = NULL, *speaker = NULL, *capture = NULL, *link;
 	struct snd_soc_card *card;
-	struct snd_soc_jack *jack;
+	struct uke_speaker_data *data;
 	struct device_node *frontend;
 	unsigned int i;
 	int ret;
 
 	card = devm_kzalloc(dev, sizeof(*card), GFP_KERNEL);
-	jack = devm_kzalloc(dev, sizeof(*jack), GFP_KERNEL);
-	if (!card || !jack)
+	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
+	if (!card || !data)
 		return -ENOMEM;
+	data->microphones = of_device_is_compatible(dev->of_node,
+						    "xiaomi,uke-microphone-audio-card");
 	card->dev = dev;
 	card->owner = THIS_MODULE;
 	card->driver_name = "sm7675";
 	card->late_probe = uke_speaker_late_probe;
-	snd_soc_card_set_drvdata(card, jack);
+	snd_soc_card_set_drvdata(card, data);
 	ret = qcom_snd_parse_of(card);
 	if (ret)
 		return ret;
-	if (card->num_links != 2 || card->num_aux_devs ||
+	if (card->num_links != (data->microphones ? 3 : 2) || card->num_aux_devs ||
 	    strcmp(card->name, "POCO-Pad-X1"))
 		return -EINVAL;
 
@@ -191,6 +324,8 @@ static int uke_speaker_probe(struct platform_device *pdev)
 			hdmi = link;
 		else if (link->id == SECONDARY_TDM_RX_0 && !speaker)
 			speaker = link;
+		else if (data->microphones && link->id == TX_CODEC_DMA_TX_3 && !capture)
+			capture = link;
 		else
 			return -EINVAL;
 	}
@@ -203,6 +338,23 @@ static int uke_speaker_probe(struct platform_device *pdev)
 		if (!of_device_is_compatible(speaker->codecs[i].of_node, "foursemi,fs19xx"))
 			return -EINVAL;
 
+	if (data->microphones) {
+		if (!capture || !uke_backend_owned(capture) || capture->num_codecs != 3 ||
+		    capture->cpus[0].of_node != hdmi->cpus[0].of_node ||
+		    !of_device_is_compatible(capture->codecs[0].of_node, "qcom,wcd9390-codec") ||
+		    !of_device_is_compatible(capture->codecs[1].of_node, "qcom,soundwire-v2.0.0") ||
+		    !of_device_is_compatible(capture->codecs[2].of_node,
+					     "qcom,sm8550-lpass-tx-macro") ||
+		    !capture->codecs[0].dai_name || !capture->codecs[1].dai_name ||
+		    !capture->codecs[2].dai_name ||
+		    strcmp(capture->codecs[0].dai_name, "wcd939x-sdw-tx") ||
+		    strcmp(capture->codecs[1].dai_name, "SDW Pin1") ||
+		    strcmp(capture->codecs[2].dai_name, "tx_macro_tx1"))
+			return -EINVAL;
+		capture->be_hw_params_fixup = uke_capture_fixup;
+		capture->ops = &uke_capture_ops;
+	}
+
 	frontend = of_get_compatible_child(hdmi->platforms[0].of_node, "qcom,q6apm-dais");
 	ret = frontend && of_device_is_available(frontend) &&
 		of_property_read_bool(frontend, "xiaomi,hdmi-only") &&
@@ -211,7 +363,7 @@ static int uke_speaker_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	hdmi->init = uke_hdmi_init;
+	hdmi->init = uke_speaker_hdmi_init;
 	hdmi->be_hw_params_fixup = uke_hdmi_fixup;
 	speaker->init = uke_speaker_init;
 	speaker->be_hw_params_fixup = uke_speaker_fixup;
@@ -243,7 +395,8 @@ static int uke_audio_probe(struct platform_device *pdev)
 		return -ENODEV;
 	if (of_device_is_compatible(dev->of_node, "xiaomi,uke-hdmi-audio-card"))
 		return uke_hdmi_probe(pdev);
-	if (of_device_is_compatible(dev->of_node, "xiaomi,uke-speaker-audio-card"))
+	if (of_device_is_compatible(dev->of_node, "xiaomi,uke-speaker-audio-card") ||
+	    of_device_is_compatible(dev->of_node, "xiaomi,uke-microphone-audio-card"))
 		return uke_speaker_probe(pdev);
 
 	card = devm_kzalloc(dev, sizeof(*card), GFP_KERNEL);
@@ -279,6 +432,7 @@ static const struct of_device_id uke_audio_match[] = {
 	{ .compatible = "xiaomi,uke-audio-card" },
 	{ .compatible = "xiaomi,uke-hdmi-audio-card" },
 	{ .compatible = "xiaomi,uke-speaker-audio-card" },
+	{ .compatible = "xiaomi,uke-microphone-audio-card" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, uke_audio_match);
