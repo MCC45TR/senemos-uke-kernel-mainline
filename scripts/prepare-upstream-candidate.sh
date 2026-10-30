@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Host-only candidate preparation. Call in an isolated, clean source checkout.
+# Source metadata preparation only; COPR owns source RPMs and native checks.
 set -Eeuo pipefail
 release_fields() {
     local metadata=$1
@@ -73,9 +73,6 @@ prepare_metadata() {
     if [[ $role == singleboot ]]; then
         sed -i '/^Release [0-9].*requires the exact/,$d' packaging/SINGLEBOOT.md
         printf '\nThe exact current tuple is recorded in the installed JSON descriptor.\nThe common kernel and physical acceptance retain their separate evidence.\n' >> packaging/SINGLEBOOT.md
-        make singleboot-srpm
-    else
-        make kvm-singleboot-srpm
     fi
     git add "$spec" "$json"
     for contract in tests/singleboot-package-contract.sh tests/kvm-singleboot-package-contract.sh packaging/SINGLEBOOT.md; do
@@ -143,8 +140,6 @@ prepare_common() {
     fi
     git add Makefile "$spec" "$profile" "patches/$next" configs/keys/linux-stable.asc tests/mainline-package-contract.sh manifests/llcc-source-candidate-20261020.json
     git -c core.hooksPath=/dev/null -c commit.gpgsign=false -c user.name='Senemos Automation' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Prepare signed Linux $raw source candidate"
-    make srpm
-    rpmbuild -bp --nodeps --target aarch64 --define "_topdir $PWD/build/srpm/rpmbuild" build/srpm/rpmbuild/SPECS/senemos-uke-linux-kernel-mainline.spec
     printf 'prepared\t%s-1\n' "$next"
 }
 main() {
