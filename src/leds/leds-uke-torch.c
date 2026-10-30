@@ -199,7 +199,7 @@ static int torch_shutdown_event(struct notifier_block *nb, unsigned long event, 
 static bool torch_supplier_valid(struct platform_device *pdev, struct led_classdev *led)
 {
 	struct device_node *node, *parent;
-	u32 channels[2], current, reg;
+	u32 channels[2], current_ua, reg;
 	bool valid;
 
 	if (strcmp(dev_name(led->dev), "uke:white:torch") || led->max_brightness != 2 ||
@@ -212,7 +212,7 @@ static bool torch_supplier_valid(struct platform_device *pdev, struct led_classd
 		!of_property_read_u32(parent, "reg", &reg) && reg == 0xee00 &&
 		of_property_count_u32_elems(node, "led-sources") == 2 &&
 		!of_property_read_u32_array(node, "led-sources", channels, 2) && channels[0] == 1 && channels[1] == 4 &&
-		!of_property_read_u32(node, "led-max-microamp", &current) && current == UKE_TORCH_MAX_UA &&
+		!of_property_read_u32(node, "led-max-microamp", &current_ua) && current_ua == UKE_TORCH_MAX_UA &&
 		!of_property_present(node, "flash-max-microamp");
 	of_node_put(parent);
 	of_node_put(node);

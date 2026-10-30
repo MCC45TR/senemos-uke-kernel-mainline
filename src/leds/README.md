@@ -30,3 +30,8 @@ The generic OEM node alone does not prove the fitted board's channel selection;
 the retained FDT checks in `tests/light-dt.sh` remain required. The implementation
 uses the upstream LED consumer, synchronous brightness and device-link APIs,
 retaining the original QCOM flash driver's current programming.
+
+The first isolated native check (COPR 11230969) compiled Control and its SELinux
+policy, then correctly refused the module: a local variable named `current`
+collided with the kernel's task macro. The variable is now `current_ua`. A fresh
+check release is required; the failed build is not a module or hardware result.
