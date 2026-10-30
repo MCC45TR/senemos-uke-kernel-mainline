@@ -76,7 +76,7 @@ static struct dpu_encoder_phys physical[2];
 static struct dpu_kms kms;
 static struct msm_drm_private priv;
 static struct drm_device dev;
-static struct drm_crtc crtc;
+static struct drm_crtc fixture_crtc;
 static struct drm_atomic_commit commit;
 static struct drm_connector_state connector;
 static struct dpu_hw_blk blocks[BLOCK_TYPES][2];
@@ -109,7 +109,7 @@ static void log_message(const char *message,...) {(void)message;}
 #define PTR_ERR(p) ((int)(intptr_t)(p))
 #define drm_for_each_encoder_mask(e,d,m) for((e)=((void)(d),(m)&1?&fixture_encoder.base:NULL);(e);(e)=NULL)
 #define for_each_oldnew_crtc_in_state(s,c,o,n,i) \
- for((i)=0;(i)<1&&(((c)=&crtc),(void)(c),((o)=&(s)->old.base),((n)=&(s)->next.base),1);++(i))
+ for((i)=0;(i)<1&&(((c)=&fixture_crtc),(void)(c),((o)=&(s)->old.base),((n)=&(s)->next.base),1);++(i))
 #define drm_atomic_crtc_state_for_each_plane_state(p,s,c) \
  for((p)=NULL,(s)=NULL;(void)(c),(p)!=NULL;)
 static struct dpu_kms *_dpu_crtc_get_kms(struct drm_crtc *c) {(void)c;return &kms;}
@@ -143,16 +143,16 @@ static void fake_modeset(struct dpu_encoder_phys *p,struct drm_crtc_state *s,str
 static void fake_seamless(struct dpu_encoder_phys *p) {(void)p;++seamless;}
 static int mode_check(struct msm_kms *k,struct drm_atomic_commit *s) {(void)k;return dpu_crtc_check_mode_changed(&s->old.base,&s->next.base);}
 static const struct msm_kms_funcs funcs={mode_check};
-static int drm_atomic_helper_check(struct drm_device *d,struct drm_atomic_commit *s) {(void)d;return dpu_crtc_atomic_check(&crtc,s);}
+static int drm_atomic_helper_check(struct drm_device *d,struct drm_atomic_commit *s) {(void)d;return dpu_crtc_atomic_check(&fixture_crtc,s);}
 static void reset(void) {
  memset(&fixture_encoder,0,sizeof(fixture_encoder));memset(physical,0,sizeof(physical));memset(&commit,0,sizeof(commit));
  memset(counts,0,sizeof(counts));reserves=releases=reserve_error=bounds_error=perf_error=mst_error=0;
  dfps_failed=dfps_pending=encoder_modeset=false;modesets=seamless=0;
  kms=(struct dpu_kms){.base={&funcs}};priv=(struct msm_drm_private){&kms.base};dev.dev_private=&priv;
- crtc=(struct drm_crtc){.dev=&dev,.base={1}};commit.dev=&dev;
- commit.old.base=(struct drm_crtc_state){.crtc=&crtc,.state=&commit,.active=true,.enable=true,.encoder_mask=1};
+ fixture_crtc=(struct drm_crtc){.dev=&dev,.base={1}};commit.dev=&dev;
+ commit.old.base=(struct drm_crtc_state){.crtc=&fixture_crtc,.state=&commit,.active=true,.enable=true,.encoder_mask=1};
  commit.next.base=commit.old.base;
- fixture_encoder.base=(struct drm_encoder){&dev,&crtc};fixture_encoder.num_phys_encs=2;fixture_encoder.cur_master=&physical[0];
+ fixture_encoder.base=(struct drm_encoder){&dev,&fixture_crtc};fixture_encoder.num_phys_encs=2;fixture_encoder.cur_master=&physical[0];
  connector=(struct drm_connector_state){0};
  for(int t=0;t<BLOCK_TYPES;t++)for(int i=0;i<2;i++)blocks[t][i].idx=i;
  for(int i=0;i<2;i++) {
@@ -168,17 +168,17 @@ static void reset(void) {
 static void run(const char *which) {
  if(!which||!strcmp(which,"permission")) {
   reset();for(int i=0;i<2;i++)commit.old.mixers[i].hw_dspp=NULL;
-  commit.next=commit.old;commit.next.base.ctm=&crtc;commit.next.base.color_mgmt_changed=true;
+  commit.next=commit.old;commit.next.base.ctm=&fixture_crtc;commit.next.base.color_mgmt_changed=true;
   assert(msm_atomic_check(&dev,&commit)==0);assert(!commit.allow_modeset);
   assert(commit.next.base.mode_changed);
  }
  if(!which||!strcmp(which,"color")) {
-  reset();commit.old.base.ctm=commit.next.base.ctm=&crtc;commit.next.base.color_mgmt_changed=true;
+  reset();commit.old.base.ctm=commit.next.base.ctm=&fixture_crtc;commit.next.base.color_mgmt_changed=true;
   assert(msm_atomic_check(&dev,&commit)==0);
   assert(commit.next.mixers[0].lm_ctl==physical[0].hw_ctl);assert(!reserves&&!releases);
  }
  if(!which||!strcmp(which,"dspp")) {
-  reset();assert(dpu_crtc_assign_resources(&crtc,&commit.next.base)==0);
+  reset();assert(dpu_crtc_assign_resources(&fixture_crtc,&commit.next.base)==0);
   assert(!commit.next.mixers[0].hw_dspp&&!commit.next.mixers[1].hw_dspp);
  }
  for(int type=0;type<3;type++) {
@@ -197,7 +197,7 @@ static void run(const char *which) {
  if(which)return;
  for(int color=0;color<4;color++)for(int mixers=0;mixers<3;mixers++)for(int hole=0;hole<2;hole++) {
   reset();commit.old.num_mixers=mixers;if(hole&&mixers)commit.old.mixers[mixers-1].hw_dspp=NULL;
-  commit.next=commit.old;commit.next.base.ctm=color&1?&crtc:NULL;commit.next.base.gamma_lut=color&2?&crtc:NULL;
+  commit.next=commit.old;commit.next.base.ctm=color&1?&fixture_crtc:NULL;commit.next.base.gamma_lut=color&2?&fixture_crtc:NULL;
   assert(!dpu_crtc_check_mode_changed(&commit.old.base,&commit.next.base));
   assert(commit.next.base.mode_changed==!!(color&&(mixers==0||hole)));
  }
