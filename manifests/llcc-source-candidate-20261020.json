@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "b537d564af0a9898aaf21697434d5e9e0094c668fd1a65eb506b22b4842189b8"
+      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "950d9cf5de4826b664c8a47e61c3586d39b901fc7afbbcef806655ccea102335"
+      "sha256": "c91e9aed1bcae89b2ad1f39407b1b93d72223950256e27cc7e76cfa7f1c5dbf8"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-50",
+  "kernel_release": "7.3.0-54",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",
@@ -692,5 +692,6 @@
       "date": "2026-10-23",
       "change": "The native preparer also stages the paired touch transport. LLCC policy and the original release-14 selection record are unchanged."
     }
-  ]
+  ],
+  "validation_date": "2026-10-30"
 }
