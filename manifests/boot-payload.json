@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "3734c227b2d3f1a9cc1e6512625c79830cf76a9b6568692d3b7cf7d3e8c89673"
+      "sha256": "211628820ebb7e4e010008c95d14ba18f25c5a145ca9da03f131fed679f17899"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -514,6 +514,26 @@
     {
       "path": "tests/dpu-reservation-contract.sh",
       "sha256": "c3bb8396ba174a38a22e96055bd09469a9af31627b116780bbe9f813cd63be06"
+    },
+    {
+      "path": "patches/display/0067-msm-kms-lifecycle-unwind.patch",
+      "sha256": "4988793a1c1786d482211b3f3b88c46d158d070f94f683ad263951b15465336a"
+    },
+    {
+      "path": "tests/msm-kms-lifecycle-contract.sh",
+      "sha256": "b9971d15b979cf62654303b39d977009644a0ef60022074f9d861cd4ba1e37e5"
+    },
+    {
+      "path": "tests/msm-kms-unwind-contract.sh",
+      "sha256": "f021010a8ad562e241886af554e1fcde207f7b1133ce4ee0d0229e5a2fc92314"
+    },
+    {
+      "path": "tests/msm-kms-alternate-build.sh",
+      "sha256": "2c89f91797bdf11dd9beb4975409065e502b2954e02b7f74a63ae8118b238723"
+    },
+    {
+      "path": "manifests/kms57-parent-files.sha256",
+      "sha256": "a35acd82660a48375071b40e22ad3d7ad73352f6de990fcfd33bdd1aad01711f"
     }
   ],
   "root_selector_capability": {

@@ -64,6 +64,15 @@ done
 git -C "$kernel" apply --check "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
 git -C "$kernel" apply "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
 CC=clang bash "$profile/tests/dpu-reservation-contract.sh" "$kernel" "$reservation_baseline"
+lifecycle_baseline=$output/msm-kms-before57
+(cd "$kernel"; sha256sum --check --strict --quiet "$profile/kms57-parent-files.sha256")
+while IFS= read -r relative; do
+    install -Dm644 "$kernel/$relative" "$lifecycle_baseline/$relative"
+done < <(sed 's/^[0-9a-f]*  //' "$profile/kms57-parent-files.sha256")
+git -C "$kernel" apply --check "$profile/patches/display/0067-msm-kms-lifecycle-unwind.patch"
+git -C "$kernel" apply "$profile/patches/display/0067-msm-kms-lifecycle-unwind.patch"
+CC=clang bash "$profile/tests/msm-kms-lifecycle-contract.sh" "$kernel" "$lifecycle_baseline"
+CC=clang bash "$profile/tests/msm-kms-unwind-contract.sh" "$kernel" "$lifecycle_baseline"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"
