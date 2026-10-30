@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 58
+%global senemos_build_release 59
 %else
 %global senemos_build_release 1
 %endif
@@ -418,6 +418,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-59
+- Route boot RPM hooks through the guarded installed-profile transaction.
+- Retain the reviewed scanout sources with a fresh kernel and signing identity.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-58
 - Retain scanout and writeback pins until completion is proved.
 - Check timer flush ordering, failed teardown and destination ownership in COPR.
