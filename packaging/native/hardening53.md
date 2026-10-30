@@ -8,3 +8,8 @@ key and must retain its own matched Image/modules/certificate tuple. This does
 not establish Secure Boot or physical tablet acceptance. Integrity lockdown
 restricts unsigned external modules and some debugfs operations. The existing
 optional prebuilt switch-root path remains disabled for the native COPR build.
+
+Current source workers reject a published kernel NVR or an older release before
+building. Keep the original matched artifacts for recovery and submit each new
+release once. Direct administrative resubmission of a historical SRPM must also
+use a fresh release; the source-worker guard cannot intercept that separate path.
