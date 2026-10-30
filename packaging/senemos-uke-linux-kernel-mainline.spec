@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 57
+%global senemos_build_release 58
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-58
+- Retain scanout and writeback pins until completion is proved.
+- Check timer flush ordering, failed teardown and destination ownership in COPR.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-57
 - Unwind partial KMS initialization and drain display producers before teardown.
 - Verify actual failure and concurrent-withdrawal paths in COPR.
