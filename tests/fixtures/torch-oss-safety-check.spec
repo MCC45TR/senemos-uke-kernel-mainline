@@ -1,6 +1,8 @@
+%global debug_package %{nil}
+
 Name: uke-torch-oss-safety-check
 Version: 1.0.0
-Release: 0.1%{?dist}
+Release: 0.2%{?dist}
 Summary: Isolated QCOM flash thermal error and Uke torch validation
 License: GPL-2.0-only AND (GPL-2.0-only WITH Linux-syscall-note)
 Source0: %{name}-%{version}.tar.gz
