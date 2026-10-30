@@ -1,5 +1,23 @@
 # Mainline native source profile
 
+30 October 2026, release61 isolated boot-reset candidate: retain the accepted
+release54 source baseline and add a bounded Gunyah watchdog handoff. The signed
+Image declares a separate reset capability note. Only the exact userdata
+`senemos.boot_reset=1` wrapper enables the early watchdog, 180-second kernel
+ownership deadline, original systemd's 30-second watchdog and the initramfs
+startup deadline. Normal Linux and legacy userdata wrappers retain their policy.
+The paired updater 1.9.0 preserves the accepted slot, selects three trial
+attempts, and bounds the unaccepted real-root startup. Kernel watchdog sysfs
+inspection is enabled without probing or altering board-specific registers.
+
+The upstream Gunyah driver at Linux c03c1a14507dfaf8b856c2608f9ac216021fc222
+stops the watchdog at probe. The opt-in patch starts it and transfers its running
+state to the original watchdog core; its existing SMCCC ABI and 32-second
+hardware maximum are unchanged. Source fixtures exercise the actual probe and
+parser. Boot failures before this probe require independently verified firmware
+coverage. Hardware reset, bootloader retry exhaustion, both slot directions,+suspend and recovery remain physical qualification gates. This candidate does
+not activate or reboot the tablet during source generation or package checking.
+
 30 October 2026, Linux 7.3.0-53 security candidate: enforce matching module
 signatures, integrity lockdown, FORTIFY, hardened usercopy, Yama and restricted
 kernel logs. COPR verifies final compressed modules with the exported build

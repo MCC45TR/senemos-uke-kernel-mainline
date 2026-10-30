@@ -117,6 +117,7 @@ install -m644 "$out/certs/signing_key.x509" "$out/module-signing.x509"
 rm -- "$out/certs/signing_key.pem"
 printf 'UKE_BUILD_STAGE embedded_image elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
 bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
+bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image" reset
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
 "$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
@@ -130,7 +131,7 @@ image=$(sha256sum "$out/linux.img" | cut -d ' ' -f1)
 userdata_image=$(sha256sum "$out/userdata.img" | cut -d ' ' -f1)
 raw=$(sha256sum "$out/arch/arm64/boot/Image" | cut -d ' ' -f1)
 inventory=$(sha256sum "$out/modules.sha256" | cut -d ' ' -f1)
-printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\n' \
+printf 'format=1\nkernel_release=%s\nlinux_image_sha256=%s\nuserdata_image_sha256=%s\nlinux_kernel_sha256=%s\nuserdata_kernel_sha256=%s\nmodules_sha256=%s\nroot_selector_capability=uke-elfnote-v2\nboot_reset_capability=uke-gunyah-reset-v1\n' \
     "$release" "$image" "$userdata_image" "$raw" "$raw" "$inventory" > "$out/boot-manifest"
 [[ -s $source_modules/kernel/drivers/input/touchscreen/nt36532-uke/nt36532-uke-touch.ko.zst ]]
 [[ ! -e $source_modules/uke/uke-touch-capture ]]

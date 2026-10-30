@@ -9,6 +9,8 @@
 /* Compiler emits the note; the kernel NOTES linker rule retains it. */
 ELFNOTE64("UKE", 0x554b4501,
 	  "root-selector-v2;userdata=f2fs,ext4,xfs,btrfs;slot=a,b;vrr-min=0,30");
+ELFNOTE64("UKE", 0x554b4502,
+	  "boot-reset-v1;watchdog=gunyah;open-timeout=180;runtime-timeout=30");
 #endif
 
 static int UKE_INIT uke_cmdline_space(char value)
@@ -25,11 +27,13 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 	static const char userdata[] = "root=PARTLABEL=userdata";
 	static const char fstypes[] = "rootfstype=ext4,f2fs,xfs,btrfs";
 	static const char panic[] = "panic=0";
+	static const char reset_args[] = " senemos.boot_reset=1 gunyah_wdt.boot_enabled=1 watchdog.open_timeout=180 systemd.watchdog_sec=30";
 	size_t pos = 0, length = 0, root = 0, roots = 0;
 	size_t fstype = 0, fstype_count = 0, panic_pos = 0, panic_count = 0;
 	const char *slot = NULL, *vrr = NULL;
 	size_t slot_bytes = 0, vrr_bytes = 0, extra, shrink;
 	int selected = 0;
+	int boot_reset = 0;
 
 	if (!cmdline || !capacity || bytes > 8192 || (!handoff && bytes))
 		return -1;
@@ -44,6 +48,14 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		while (pos < bytes - 1 && !uke_cmdline_space(handoff[pos]))
 			pos++;
 		count = pos - start;
+		if (count >= sizeof("senemos.boot_reset=") - 1 &&
+		    !memcmp(handoff + start, "senemos.boot_reset=", sizeof("senemos.boot_reset=") - 1)) {
+			if (boot_reset || count != sizeof("senemos.boot_reset=1") - 1 ||
+			    memcmp(handoff + start, "senemos.boot_reset=1", count))
+				return -1;
+			boot_reset = 1;
+			continue;
+		}
 		if (count >= sizeof("androidboot.slot_suffix=") - 1 &&
 		    !memcmp(handoff + start, "androidboot.slot_suffix=",
 			    sizeof("androidboot.slot_suffix=") - 1)) {
@@ -82,7 +94,7 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		else
 			return -1;
 	}
-	if (vrr && selected != 2)
+	if ((vrr || boot_reset) && selected != 2)
 		return -1;
 	while (length < capacity && cmdline[length])
 		length++;
@@ -98,6 +110,11 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		while (pos < length && !uke_cmdline_space(cmdline[pos]))
 			pos++;
 		count = pos - start;
+		if ((count >= sizeof("senemos.boot_reset=") - 1 && !memcmp(cmdline + start, "senemos.boot_reset=", sizeof("senemos.boot_reset=") - 1)) ||
+		    (count >= sizeof("gunyah_wdt.boot_enabled=") - 1 && !memcmp(cmdline + start, "gunyah_wdt.boot_enabled=", sizeof("gunyah_wdt.boot_enabled=") - 1)) ||
+		    (count >= sizeof("watchdog.open_timeout=") - 1 && !memcmp(cmdline + start, "watchdog.open_timeout=", sizeof("watchdog.open_timeout=") - 1)) ||
+		    (count >= sizeof("systemd.watchdog_sec=") - 1 && !memcmp(cmdline + start, "systemd.watchdog_sec=", sizeof("systemd.watchdog_sec=") - 1)))
+			return -1;
 		if (count >= sizeof("rootfstype=") - 1 &&
 		    !memcmp(cmdline + start, "rootfstype=", sizeof("rootfstype=") - 1)) {
 			if (++fstype_count != 1 || count != sizeof(fstypes) - 1 ||
@@ -132,7 +149,7 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		return -1;
 	shrink = selected == 2 ? 0 : sizeof(",f2fs,xfs,btrfs") - 1;
 	extra = (selected == 2 ? sizeof(userdata) - sizeof(standard) + 1 : 0) +
-		(slot ? 1 + slot_bytes : 0) + (vrr ? 1 + vrr_bytes : 0);
+		(slot ? 1 + slot_bytes : 0) + (vrr ? 1 + vrr_bytes : 0) + (boot_reset ? sizeof(reset_args) - 1 : 0);
 	if (extra >= shrink && capacity - length <= extra - shrink)
 		return -1;
 	/* Keep the admitted probe list for userdata; legacy Linux remains EXT4. */
@@ -167,6 +184,10 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		cmdline[length++] = ' ';
 		memcpy(cmdline + length, vrr, vrr_bytes);
 		length += vrr_bytes;
+	}
+	if (boot_reset) {
+		memcpy(cmdline + length, reset_args, sizeof(reset_args) - 1);
+		length += sizeof(reset_args) - 1;
 	}
 	cmdline[length] = 0;
 	return selected == 2;

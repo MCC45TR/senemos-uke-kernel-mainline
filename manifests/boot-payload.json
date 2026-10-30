@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release54 retains release53 signing and integrity hardening and adds the managed-regulator power fixture. Source and native validation run on COPR; physical acceptance remains open.",
+  "source_origin": "Accepted release54 source with opt-in Gunyah boot watchdog, bounded initramfs startup and signed reset capability. COPR validation only; physical reset, retry exhaustion, pre-probe coverage and fallback remain unqualified.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
+      "sha256": "6ad0b0122887b33b2e3dd1cc306a8d459993ca5553bafd02892ec54a12c2647e"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -121,15 +121,15 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "e4ee96afa6626dc56998da83ebd273fa9a6ac89ba19b971e06e9e53bbb61f380"
+      "sha256": "8032772d09ccbccbc39857ecc1f481dc25fc9d7766e243a31efc910e4726bad3"
     },
     {
       "path": "src/boot/check-root-capability.sh",
-      "sha256": "7468095172c7a770b8d3de266524e209804cbbba23ae0e0dc0a493a2456e7326"
+      "sha256": "049a6f8c449e136bdb03088f726ba070f7642688cf184b618affc7b67b8bca27"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "a819ba0b47fddb2a04ba79a3f890ea46cf08817543abd15bc2c17cc63c606c2e"
+      "sha256": "16323e93a1e201d531a949b49f47d76d19a3624a2a863c4cb0e6df381aa63174"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
@@ -193,7 +193,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
+      "sha256": "e83bdc16e75920889e85e9845204eadc2fcaa597840d0c0d42fb0ab1860e65c9"
     },
     {
       "path": "src/boot/uke-bwmon.h",
@@ -205,7 +205,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "sha256": "d2c2471495f45d9ab33b480003a250447ffa07d0e0dd6ac64ae3d451d8e50dc7"
     },
     {
       "path": "src/boot/userdata-grow.cpp",
@@ -498,6 +498,26 @@
     {
       "path": "tests/wlan-power-contract.sh",
       "sha256": "c2dbfe20a8926b3653cc76c46597c67742e71fa7f0afb42f97d8adaf69baa08d"
+    },
+    {
+      "path": "patches/boot/0045-gunyah-arm-bounded-boot-watchdog.patch",
+      "sha256": "6bdf38e6bdafa853e0779eaf01d09a15014bf6cff970c8367fe7f19b82dfe370"
+    },
+    {
+      "path": "src/boot/dracut/uke-initrd-deadline.service",
+      "sha256": "77338311fac076dc3e4a98a727ec060368e440d4e2aacaf4a15cf621b3f27078"
+    },
+    {
+      "path": "tests/gunyah-boot-watchdog-contract.sh",
+      "sha256": "95b824eaccc0c5d97cacb4c4f45c6d4ff2aca2a6c8e91e742541bb86b2875a90"
+    },
+    {
+      "path": "tests/root-selector-contract.cpp",
+      "sha256": "cc2ba3cc80e2e9c1af407a2917694ffd0a861bc4605e339d190f8f5fa5ffcc00"
+    },
+    {
+      "path": "tests/root-selector-note-contract.sh",
+      "sha256": "a82d80bc3165190c4581c286559c85c910f5aef0a941b8d5f16f455e91d33ef1"
     }
   ],
   "root_selector_capability": {
@@ -526,5 +546,15 @@
     "original_ppd_version": "0.30",
     "tablet_tested": false,
     "backend_retired": false
+  },
+  "boot_reset_capability": {
+    "name": "UKE",
+    "type": "0x554b4502",
+    "descriptor": "boot-reset-v1;watchdog=gunyah;open-timeout=180;runtime-timeout=30",
+    "manifest_value": "uke-gunyah-reset-v1",
+    "initramfs_deadline_seconds": 180,
+    "trial_deadline_seconds": 300,
+    "physical_reset_qualified": false,
+    "pre_probe_reset_qualified": false
   }
 }

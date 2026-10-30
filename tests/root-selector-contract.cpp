@@ -26,6 +26,25 @@ int main() {
     check("root=/dev/invalid init=/unsafe androidboot.slot_suffix=_a", 0, base, " androidboot.slot_suffix=_a");
     check("senemos.root=linux", 0);
     check("senemos.root=userdata", 1);
+    const char *reset=" senemos.boot_reset=1 gunyah_wdt.boot_enabled=1 watchdog.open_timeout=180 systemd.watchdog_sec=30";
+    check("senemos.root=userdata senemos.boot_reset=1", 1, base, reset);
+    check("senemos.boot_reset=1 senemos.root=userdata", 1, base, reset);
+    for(const auto *args:{"senemos.boot_reset=1", "senemos.root=linux senemos.boot_reset=1",
+                         "senemos.root=userdata senemos.boot_reset=0", "senemos.root=userdata senemos.boot_reset=2",
+                         "senemos.root=userdata senemos.boot_reset=1 senemos.boot_reset=1"})check(args,-1);
+    for(const auto *argument:{"senemos.boot_reset=1", "gunyah_wdt.boot_enabled=0", "watchdog.open_timeout=0", "systemd.watchdog_sec=0"}) {
+        const auto modified=std::string(base)+" "+argument;
+        check("senemos.root=userdata senemos.boot_reset=1",-1,modified.c_str());
+    }
+    {
+        const char args[]="senemos.root=userdata senemos.boot_reset=1";
+        const auto wanted=std::string("rdinit=/usr/lib/systemd/systemd root=PARTLABEL=userdata rw rootfstype=ext4,f2fs,xfs,btrfs panic=10 console=tty0")+reset;
+        std::vector<char> exact(wanted.size()+1);std::strcpy(exact.data(),base);
+        assert(uke_select_root(exact.data(),exact.size()-1,args,sizeof(args))==-1);
+        assert(!std::strcmp(exact.data(),base));
+        assert(uke_select_root(exact.data(),exact.size(),args,sizeof(args))==1);
+        assert(exact.data()==wanted);
+    }
     check("\tsenemos.root=userdata\nandroidboot.slot_suffix=_b root=/dev/invalid", 1, base, " androidboot.slot_suffix=_b");
     check("senemos.root=userdata msm.o82_vrr_test_min_hz=30 androidboot.slot_suffix=_a", 1, base,
           " androidboot.slot_suffix=_a msm.o82_vrr_test_min_hz=30");
