@@ -537,7 +537,7 @@
     },
     {
       "path": "patches/display/0068-msm-scanout-retirement.patch",
-      "sha256": "f169605790ecf9ef4ba8ea850fceed8e08ba587f2deab30dd25f207b112e6e29"
+      "sha256": "1fe7ef2c9b07f4e79b615a0aaccfc9746223ec88a50b99a785de4ed717a0ca31"
     },
     {
       "path": "tests/msm-retirement-contract.sh",
@@ -545,7 +545,7 @@
     },
     {
       "path": "tests/msm-writeback-contract.sh",
-      "sha256": "b7ede44f02e28127f500b421c4a811cbef2809da990af0be87ddc180f5f94833"
+      "sha256": "ba8e33059484b113af987d06f1300757ca378e239147bc42e29d5048e977c68a"
     },
     {
       "path": "manifests/retirement58-parent-files.sha256",
@@ -553,7 +553,7 @@
     },
     {
       "path": "tests/msm-retirement-proof-contract.sh",
-      "sha256": "65656245c1e5ba5fd6cb649c79608478a31ed0ab4af5054f96abb8c8d4015ad6"
+      "sha256": "3f4a5f3b34d9b550826c15bb27e1faf94db4f0a5b1241546b0df78b4ef1306fd"
     }
   ],
   "root_selector_capability": {

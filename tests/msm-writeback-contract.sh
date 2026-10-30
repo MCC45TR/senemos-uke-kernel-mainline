@@ -29,7 +29,8 @@ typedef uint32_t u32;
 #define READ_ONCE(x) __atomic_load_n(&(x),__ATOMIC_RELAXED)
 #define WRITE_ONCE(x,v) __atomic_store_n(&(x),(v),__ATOMIC_RELAXED)
 #define WARN_ON_ONCE(x) (x)
-#define DPU_DEBUG(...) ((void)0)
+static void debug_log(const char *fmt,...) {(void)fmt;}
+#define DPU_DEBUG(...) debug_log(__VA_ARGS__)
 #define DPU_ERROR(...) ((void)0)
 #define DPU_ENCODER_FRAME_EVENT_ERROR 1
 #define DPU_ENCODER_FRAME_EVENT_DONE 0
@@ -150,7 +151,7 @@ int main(void) {
   assert(!pthread_create(&a,NULL,complete_thread,physical)&&!pthread_create(&b,NULL,complete_thread,physical));assert(!pthread_join(a,NULL)&&!pthread_join(b,NULL));
   assert(s->conn.signals==1&&s->conn.status==-ETIMEDOUT&&!s->fb[0].pins&&s->dev.refs==1&&!allocations);
  }
- puts("Actual WB timeout keeps the queued pin; DONE/reset arbitrate one error completion; preallocation and per-job configuration pass");
+ assert(unpin_calls>=64);puts("Actual WB timeout keeps the queued pin; DONE/reset arbitrate one error completion; preallocation and per-job configuration pass");
 }
 C
 "${CC:-clang}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function \

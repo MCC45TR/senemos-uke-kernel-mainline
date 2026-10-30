@@ -103,7 +103,8 @@ int main(void) {
  encoders[0].mode=INTF_MODE_VIDEO;phys.ops.wait_for_commit_done=NULL;dpu_kms_retire_flush(&kms,1);assert(!flush_valid);phys.ops.wait_for_commit_done=phys_wait;
  wait_result=-ETIMEDOUT;dpu_kms_wait_flush(&kms,1);wait_result=0;dpu_kms_wait_flush(&kms,1);dpu_kms_retire_flush(&kms,1);assert(!flush_valid&&crtc.quarantined);
  struct drm_atomic_commit atomic={.new_state=&state.base};state.base.modeset=true;assert(dpu_kms_commit_failed(&kms,&atomic,true)&&dpu_kms_commit_failed(&kms,&atomic,false));
- crtc.quarantined=false;assert(!dpu_kms_commit_failed(&kms,&atomic,true)&&dpu_kms_commit_failed(&kms,&atomic,false));crtc.failed=false;assert(!dpu_kms_commit_failed(&kms,&atomic,false));
+ crtc.quarantined=false;assert(!dpu_kms_commit_failed(&kms,&atomic,true)&&dpu_kms_commit_failed(&kms,&atomic,false)&&crtc.quarantined);
+ crtc.failed=crtc.quarantined=false;assert(!dpu_kms_commit_failed(&kms,&atomic,false));
  encoders[0].base.crtc=NULL;assert(dpu_kms_wait_for_commit_done(&kms,&crtc.base)==-ENODEV);dpu_kms_retire_flush(&kms,1);assert(!flush_valid);encoders[0].base.crtc=&crtc.base;
  encoders[0].enabled=false;phys.enable_state=DPU_ENC_DISABLED;assert(dpu_encoder_retire_stopped(&encoders[0].base));
  phys.retire_disable_error=-EIO;assert(!dpu_encoder_retire_stopped(&encoders[0].base));phys.retire_disable_error=0;encoders[0].retire_stop_error=-EIO;assert(!dpu_encoder_retire_stopped(&encoders[0].base));encoders[0].retire_stop_error=0;

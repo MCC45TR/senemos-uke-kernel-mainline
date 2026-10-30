@@ -1021,7 +1021,7 @@ index daeb7e5..fb14d09 100644
  
  /**
 diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
-index 9ff366c..0f64d29 100644
+index 9ff366c..c7d879e 100644
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
 @@ -17,6 +17,7 @@
@@ -1099,7 +1099,7 @@ index 9ff366c..0f64d29 100644
  }
  
  static void dpu_kms_wait_flush(struct msm_kms *kms, unsigned crtc_mask)
-@@ -536,7 +537,93 @@ static void dpu_kms_wait_flush(struct msm_kms *kms, unsigned crtc_mask)
+@@ -536,7 +537,97 @@ static void dpu_kms_wait_flush(struct msm_kms *kms, unsigned crtc_mask)
  	struct drm_crtc *crtc;
  
  	for_each_crtc_mask(dpu_kms->dev, crtc, crtc_mask)
@@ -1128,8 +1128,12 @@ index 9ff366c..0f64d29 100644
 +	for_each_new_crtc_in_state(state, crtc, new, i)
 +		if (dpu_crtc_retire_quarantined(crtc) ||
 +		    (dpu_crtc_retire_failed(crtc) &&
-+		     (!allow_modeset || !drm_atomic_crtc_needs_modeset(new))))
++		     (!allow_modeset || !drm_atomic_crtc_needs_modeset(new)))) {
++			/* A modeset which did not prove stop cannot be retried unboundedly. */
++			if (!allow_modeset)
++				dpu_crtc_retire_wait_status(crtc, -EIO);
 +			return true;
++		}
 +	return false;
 +}
 +
@@ -1194,7 +1198,7 @@ index 9ff366c..0f64d29 100644
  }
  
  static const char *dpu_vsync_sources[] = {
-@@ -927,8 +1014,10 @@ static void dpu_kms_self_refresh_cleanup(struct dpu_kms *dpu_kms)
+@@ -927,8 +1018,10 @@ static void dpu_kms_self_refresh_cleanup(struct dpu_kms *dpu_kms)
  {
  	struct drm_crtc *crtc;
  
@@ -1206,7 +1210,7 @@ index 9ff366c..0f64d29 100644
  }
  
  static void _dpu_kms_hw_destroy(struct dpu_kms *dpu_kms)
-@@ -1127,6 +1216,10 @@ static const struct msm_kms_funcs kms_funcs = {
+@@ -1127,6 +1220,10 @@ static const struct msm_kms_funcs kms_funcs = {
  	.enable_commit   = dpu_kms_enable_commit,
  	.disable_commit  = dpu_kms_disable_commit,
  	.check_mode_changed = dpu_kms_check_mode_changed,
