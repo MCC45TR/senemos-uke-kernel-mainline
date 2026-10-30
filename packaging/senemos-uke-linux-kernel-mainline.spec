@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 60
+%global senemos_build_release 61
 %else
 %global senemos_build_release 1
 %endif
@@ -86,9 +86,10 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.8.7
+Requires: uke-kernel-update >= 1.8.8
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: uke-kernel-update(transaction-v1) >= 1
+Requires: uke-kernel-update(final-transaction-v2) >= 1
 Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
@@ -418,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-61
+- Require final DNF singleboot staging and preserve the accepted rollback slot.
+- Rebuild the exact release-60 driver sources with a distinct module ABI.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-60
 - Preserve the reviewed drivers and update stop-proof regression fixture models.
 - Run final-source AVR and video-disable contracts before kernel compilation.
