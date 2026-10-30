@@ -1,5 +1,11 @@
 # Uke kernel light ownership
 
+The [30 October OSS PWM/current review](../../docs/TORCH-PWM-RESEARCH-20261030.md)
+clarifies that two torch steps follow the current native 20 mA total policy,
+not a proven intrinsic hardware ceiling. Exact Uke OEM source admits more
+current targets; RGB PWM and the unqualified torch hardware-strobe route remain
+separate. This review changes no current limit or runtime driver.
+
 30 October 2026. The existing RGB consumer owns notification policy. The torch
 consumer adds a separate `senemos,uke-torch` DT node and `/dev/uke-torch` ABI 1.
 Both use managed LED suppliers; neither accesses PMIC registers directly.
