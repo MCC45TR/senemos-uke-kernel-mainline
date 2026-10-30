@@ -521,7 +521,7 @@
     },
     {
       "path": "tests/msm-kms-lifecycle-contract.sh",
-      "sha256": "b9971d15b979cf62654303b39d977009644a0ef60022074f9d861cd4ba1e37e5"
+      "sha256": "f24cca3e21e98f5f60fb1a9862595f185619d5b6e9b9c575a12852e0a01f8cf7"
     },
     {
       "path": "tests/msm-kms-unwind-contract.sh",

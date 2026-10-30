@@ -32,7 +32,6 @@ cat > "$work/preamble.c" <<'C'
 #define PTR_ERR(p) ((int)(intptr_t)(p))
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define IRQ_NOTCONNECTED 0x80000000U
-#define HRTIMER_MODE_ABS 0
 #define BUG_ON(x) assert(!(x))
 #define DRM_ERROR(...) ((void)0)
 #define DRM_DEV_ERROR(...) ((void)0)
@@ -61,9 +60,11 @@ static void await(bool *flag) {
  while(!*flag)assert(!pthread_cond_timedwait(&changed,&gate,&deadline));
 }
 struct kthread_work {void (*function)(struct kthread_work *);};
+typedef void (*kthread_work_func_t)(struct kthread_work *);
 struct kthread_worker {bool alive;int kind,queued;void *task;};
 struct hrtimer;
 enum hrtimer_restart {HRTIMER_NORESTART};
+enum hrtimer_mode {HRTIMER_MODE_ABS};
 struct hrtimer {bool initialized,active;enum hrtimer_restart (*function)(struct hrtimer *);};
 struct msm_hrtimer_work {struct hrtimer timer;struct kthread_work work;struct kthread_worker *worker;};
 struct msm_kms;
@@ -251,7 +252,7 @@ compile() {
     extract "$msm/msm_kms.c" msm_drm_kms_destroy_event_threads true >> "$work/$output.c"
     for function in msm_drm_kms_uninit msm_drm_kms_init; do extract "$msm/msm_kms.c" "$function" >> "$work/$output.c"; done
     cat "$work/cases.c" >> "$work/$output.c"
-    "${CC:-clang}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-function -Wno-sign-compare -Wno-misleading-indentation \
+    "${CC:-clang}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare -Wno-misleading-indentation \
         -pthread -fsanitize=undefined -fsanitize-undefined-trap-on-error "$work/$output.c" -o "$work/$output"
 }
 compile "$candidate" candidate
