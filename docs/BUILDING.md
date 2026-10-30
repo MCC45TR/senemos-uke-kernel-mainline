@@ -1,9 +1,10 @@
 # Senemos Uke kernel build entry
 
 30 October 2026. The active source producer targets signed upstream Linux 7.3.1
-with the retained 127-patch Uke adaptation series and explicit native-profile
-compatibility changes. The COPR stable731 worker binds the release60 parent
-SRPM, upstream commit, archive digest and updated source assets. Kernel boot
+with explicit native-profile compatibility changes. The canonical source
+builder retains its 127-patch queue. The COPR stable731 worker separately binds
+the exact published release60 122-patch adaptation, parent SRPM, upstream commit,
+archive digest and updated source assets. Kernel boot
 packages require updater 1.8.8 and final-transaction-v2. Package success remains
 separate from POCO Pad X1 update, reboot and rollback acceptance.
 

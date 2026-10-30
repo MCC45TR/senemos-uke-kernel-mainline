@@ -6,7 +6,11 @@
 
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
+%if "%{version}" == "7.3.1"
+%global senemos_build_release 2
+%else
 %global senemos_build_release 1
+%endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Linux 7.3.1 Uke kernel with O82 display and Cliffs video
@@ -415,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2
+- Bind the native stable port to the exact published 122-patch adaptation queue.
+- Preserve the separate canonical 127-patch source profile and its provenance.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1
 - Move to signed upstream Linux 7.3.1 with the reviewed Uke patch queue.
 - Retain final DNF singleboot staging and the accepted rollback slot.

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release60 preserves the59 driver patches and selected-profile transaction. Updated AVR and video-disable fixture models run on sixteen replayed input files before source generation and again before kernel compilation. Native/package/physical acceptance remain separate.",
+  "source_origin": "Signed Linux 7.3.1 with the exact published release60 122-patch adaptation and native profile, explicit version-admission helpers and final DNF singleboot staging. The canonical 127-patch Git source profile is separate. Native, package and physical acceptance remain distinct.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,

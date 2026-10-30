@@ -34,6 +34,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
 	test "$(version)" = 7.3.1
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == $(patch_count)) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .patch_series == "$(patch_series)" and .parent_copr_build == 11230581 and (.patches | length == 122)' manifests/native-linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(patch_series)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
