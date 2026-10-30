@@ -33,7 +33,6 @@ struct wcd939x_priv {
  struct gpio_desc *reset_gpio;struct reset_control *reset;
  struct wcd_mbhc_config mbhc_cfg;struct wcd_common common;
 };
-static const char *const wcd939x_supplies[]={"vdd-rxtx","vdd-io","vdd-buck","vdd-mic-bias","vdd-px"};
 static struct gpio_desc gpio;
 static struct reset_control reset;
 static bool has_reset,has_gpio;
@@ -48,8 +47,8 @@ static struct gpio_desc *devm_gpiod_get(struct device *d,const char *name,int fl
 {(void)d;assert(!strcmp(name,"reset") && flags==0);gpio_gets++;return gpio_error?ERR_PTR(gpio_error):&gpio;}
 static int dev_err_probe(struct device *d,int error,const char *message)
 {(void)d;(void)message;return error;}
-static int devm_regulator_bulk_get_enable(struct device *d,unsigned count,const char *const *names)
-{(void)d;assert(count==5 && names==wcd939x_supplies);supply_calls++;return supply_error;}
+static int wcd939x_enable_supplies(struct device *d)
+{(void)d;supply_calls++;return supply_error;}
 static int wcd_dt_parse_micbias_info(struct wcd_common *c)
 {(void)c;bias_calls++;return bias_error;}
 static void wcd_dt_parse_mbhc_data(struct device *d,struct wcd_mbhc_config *cfg)

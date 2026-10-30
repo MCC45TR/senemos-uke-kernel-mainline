@@ -126,6 +126,10 @@ done
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-nfc
 git -C "$kernel" apply --check "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
 git -C "$kernel" apply "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-audio
+git -C "$kernel" apply --check "$profile/patches/boot/0044-uke-microphone-bob-supply.patch"
+git -C "$kernel" apply "$profile/patches/boot/0044-uke-microphone-bob-supply.patch"
+sha256sum "$profile/patches/boot/0044-uke-microphone-bob-supply.patch" >> "$output/abl-source-SHA256SUMS"
 bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"

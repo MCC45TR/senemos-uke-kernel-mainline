@@ -69,6 +69,9 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/pas-stop-ownership-contract.sh tests/rproc-early-stop-contract.sh tests/sysmon-stop-preparation-contract.sh
 	bash -n tests/wcd939x-channel-switch-contract.sh tests/wcd939x-probe-error-contract.sh \
 	    tests/wcd939x-reset-consumer-contract.sh tests/wcd939x-reset-contract.sh \
+	    tests/wcd939x-micbias-contract.sh \
+	    tests/wcd939x-supply-order-contract.sh \
+	    tests/wcd939x-chip-info-contract.sh \
 	    tests/usbss-reset-lifetime-contract.sh tests/soundwire-probe-error-contract.sh \
 	    tests/lpass-sm7675-pins-contract.sh tests/audio-providers-fdt-contract.sh
 	bash -n src/nfc/prepare-source.sh tests/nfc-syntax.sh tests/ir-spi-contract.sh

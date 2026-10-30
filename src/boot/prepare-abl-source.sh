@@ -61,13 +61,17 @@ bash "$here/../../tests/ufs-mcq-contract.sh" "$kernel"
 bash "$here/../../tests/ufs-mcq-allocation-contract.sh" "$kernel"
 for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
     0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
-    0020-soundwire-probe-errors.patch; do
+    0020-soundwire-probe-errors.patch 0043-wcd939x-micbias-errors.patch \
+    0045-wcd939x-uke-supply-order.patch 0046-wcd939x-chip-identification-errors.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$audio_patch"
     git -C "$kernel" apply "$here/../../patches/boot/$audio_patch"
 done
 bash "$here/../../tests/wcd939x-channel-switch-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-probe-error-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-reset-consumer-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-micbias-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-supply-order-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-chip-info-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-reset-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
 bash "$here/../../tests/usbss-reset-lifetime-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
 bash "$here/../../tests/soundwire-probe-error-contract.sh" "$kernel"
@@ -190,7 +194,8 @@ sha256sum "$here/../audio/sm7675-uke-audio-providers.dtsi" \
     "$here/../audio/sm7675-uke-speaker-audio.dtsi" >> "$output/abl-source-SHA256SUMS"
 for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
     0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
-    0020-soundwire-probe-errors.patch; do
+    0020-soundwire-probe-errors.patch 0043-wcd939x-micbias-errors.patch \
+    0045-wcd939x-uke-supply-order.patch 0046-wcd939x-chip-identification-errors.patch; do
     sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
 done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"
