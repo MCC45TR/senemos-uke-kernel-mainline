@@ -1,6 +1,6 @@
 Name: uke-control-kernel-check
 Version: 2.4.0
-Release: 0.3%{?dist}
+Release: 0.4%{?dist}
 Summary: Isolated source validation for Uke Control and torch ownership
 License: MIT AND Apache-2.0 AND GPL-2.0-only AND (GPL-2.0-only WITH Linux-syscall-note)
 Source0: %{name}-%{version}.tar.gz
