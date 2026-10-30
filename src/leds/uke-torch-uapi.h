@@ -7,6 +7,7 @@
 #define UKE_TORCH_ABI 1
 #define UKE_TORCH_MAX_UA 20000
 struct uke_torch_request {
+	/* SET: 0 is off; every integer 1..100 is retained before provider rounding. */
 	__u32 abi, value, reserved[2];
 };
 struct uke_torch_status {

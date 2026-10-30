@@ -1,6 +1,6 @@
 Name: uke-control-kernel-check
 Version: 2.4.0
-Release: 0.6%{?dist}
+Release: 0.7%{?dist}
 Summary: Isolated source validation for Uke Control and torch ownership
 License: MIT AND Apache-2.0 AND GPL-2.0-only AND (GPL-2.0-only WITH Linux-syscall-note)
 Source0: %{name}-%{version}.tar.gz
@@ -44,7 +44,9 @@ make -j2 -C hardware/uke-desktop-metas test-applet-load test-light-client test-a
 bash hardware/uke-control/tests/kernel-lights-source.sh
 bash kernel/tests/torch-lifetime.sh
 bash kernel/tests/torch-supplier.sh
+for name in policy lifetime supplier; do bash kernel/tests/rgb-$name.sh; done
 cmp hardware/uke-control/shared/uke-torch.h kernel/src/leds/uke-torch-uapi.h
+cmp hardware/uke-control/shared/uke-rgb.h kernel/src/leds/uke-rgb-uapi.h
 %install
 printf 'Native Control/applet checks and simulated kernel fixtures are mandatory before this RPM is emitted. Module compilation uses the recorded Fedora headers. No full Uke kernel, installation or physical acceptance.\n' > CHECK-RESULT.txt
 install -Dm644 CHECK-RESULT.txt %{buildroot}%{_datadir}/doc/%{name}/CHECK-RESULT.txt

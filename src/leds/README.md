@@ -24,6 +24,18 @@ physical validation. The existing kernel release number is not allocated to
 this candidate; any later runtime build needs a fresh release and recovery plan.
 
 The electrical graph remains the accepted `src/boot/sm7675-uke-lights.dtsi`.
+
+Percentage requests now use Nabu's upward scaling convention, implemented in
+the kernel: `(percent * max_brightness + 99) / 100`. Every integer 1–100 is
+remembered. With the admitted scale 2, requests 1–50 select 10 mA total and
+51–100 select 20 mA total. The Nabu reference uses a 255 software scale and a
+200 mA single-channel DT ceiling; neither is evidence for 100 physical current
+steps or permission to raise Uke's current. No software PWM is added.
+
+The existing RGB UAPI already encodes three 8-bit channels as `0xRRGGBB` and a
+separate 0–100 brightness request. The updated broker also exposes a bounded
+four-unsigned-integer D-Bus method for decimal clients. Camera/battery priority,
+exclusive writer, syscall allowlists and the 8/511 PWM ceiling remain intact.
 The reviewed Uke OEM DT source is MiCode/kernel_devicetree commit
 `94c84aeb9e517dbde546fc732033c184094c8e57`, including `qcom/pmxr2230.dtsi`.
 The generic OEM node alone does not prove the fitted board's channel selection;

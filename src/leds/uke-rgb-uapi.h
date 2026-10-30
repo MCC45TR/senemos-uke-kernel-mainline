@@ -12,6 +12,7 @@ enum uke_rgb_mode {
 	UKE_RGB_CRITICAL_BATTERY, UKE_RGB_FRONT_CAMERA, UKE_RGB_TEST,
 };
 struct uke_rgb_color {
+	/* rgb is 0xRRGGBB, each channel 0..255; brightness_percent is 0..100. */
 	__u32 abi, rgb, brightness_percent, reserved;
 };
 struct uke_rgb_status {

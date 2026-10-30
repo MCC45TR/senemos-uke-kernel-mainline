@@ -28,7 +28,7 @@ typedef uint32_t u32;
 #define container_of(ptr,type,member) ((type *)((char *)(ptr) - __builtin_offsetof(type,member)))
 struct kref {unsigned refs;};
 struct mutex {bool locked;};
-struct led_classdev {unsigned brightness;};
+struct led_classdev {unsigned brightness,max_brightness;};
 struct miscdevice {};
 struct notifier_block {};
 struct inode {};
@@ -63,7 +63,7 @@ static struct uke_torch *new_torch(struct led_classdev *led){
 }
 int main(void){
     assert(sizeof(struct uke_torch_request)==16 && sizeof(struct uke_torch_status)==32);
-    struct led_classdev led={0};struct uke_torch *t=new_torch(&led);
+    struct led_classdev led={.max_brightness=2};struct uke_torch *t=new_torch(&led);
     struct inode inode={};struct file writer={&t->misc,FMODE_READ|FMODE_WRITE},other={&t->misc,FMODE_WRITE},reader={&t->misc,FMODE_READ};
     assert(!torch_open(&inode,&writer) && t->writer_open && t->ref.refs==2 && !led.brightness);
     const unsigned n=writes;
@@ -76,7 +76,7 @@ int main(void){
     assert(torch_ioctl(&writer,UKE_TORCH_SET,(unsigned long)&bad)==-EINVAL);
     bad.abi=1;bad.reserved[1]=1;assert(torch_ioctl(&writer,UKE_TORCH_SET,(unsigned long)&bad)==-EINVAL);
     copy_error=true;assert(request(&writer,UKE_TORCH_SET,50)==-EFAULT && writes==n);copy_error=false;
-    for(unsigned p=1;p<=100;++p){assert(!request(&writer,UKE_TORCH_SET,p));assert(t->requested_percent==p && led.brightness==(p<100?1:2));}
+    for(unsigned p=1;p<=100;++p){assert(!request(&writer,UKE_TORCH_SET,p));assert(t->requested_percent==p && led.brightness==(p<=50?1:2));}
     assert(!request(&writer,UKE_TORCH_SET,17) && !request(&writer,UKE_TORCH_SET,0) && !led.brightness && t->requested_percent==17);
     assert(!request(&writer,UKE_TORCH_ENABLE,1) && led.brightness==1);
     assert(!request(&writer,UKE_TORCH_ENABLE,0) && !led.brightness && t->requested_percent==17);

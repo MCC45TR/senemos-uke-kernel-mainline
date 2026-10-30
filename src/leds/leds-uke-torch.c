@@ -45,7 +45,8 @@ static int torch_output(struct uke_torch *torch, u32 brightness)
 
 static int torch_apply(struct uke_torch *torch, u32 percent)
 {
-	u32 brightness = percent ? max_t(u32, 1, percent * 2 / 100) : 0;
+	/* Match Nabu's percentage scaling without increasing Uke's current ceiling. */
+	u32 brightness = (percent * torch->led->max_brightness + 99) / 100;
 	int ret = torch_output(torch, brightness);
 
 	if (ret) {
