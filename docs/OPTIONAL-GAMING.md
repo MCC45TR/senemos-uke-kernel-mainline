@@ -29,3 +29,32 @@ checks. A successful build does not establish Wine application compatibility,
 SGSR pixel quality, VRS rendering correctness, HUD metrics or an FPS gain.
 The current device kernel, matching rollback and explicit boot approval remain
 separate from the staged candidate.
+
+## Package validation receipt
+
+COPR build [11232037](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11232037/)
+succeeded for `fedora-rawhide-aarch64`, using source commit
+`99a773f8d26e3059e8d1bbf15a68aeb5dc839a96`. Release `7.3.0-72.fc46` is
+isolated in `uke-linux-unstable:custom:optional-gaming-20261030`; it is not
+published into the ordinary update path. The existing project source definition
+was not changed.
+
+The native build verified all 823 module signatures and refused tampered,
+unsigned and wrong-key controls. Downloaded binary RPMs passed signature and
+digest verification with the project's single pinned key
+`2204A661EA630A5303500085538797E72A3E4ECA`. Both new modules are AArch64 ELF,
+have matching `7.3.0-72` vermagic and carry the build's kernel-module signature.
+The SRPM is unsigned; its SHA256 digest is
+`1687e7c6c4d9a1d8d0f21169c3751350d37337023f9e1d87aebea607418212e8`.
+
+The on-device DNF preview resolves five parallel kernel packages and one
+singleton metadata upgrade, with no old kernel removal or application install.
+The release-49 umbrella predates its install-only provider; appending its
+package name to `installonlypkgs` for this transaction preserves that version.
+The global DNF configuration is unchanged.
+
+No installation, boot write, module load or reboot has been performed for this
+candidate. The installed updater's `automatic=1` setting makes the boot RPM's
+post-transaction hook activate a boot bundle, so deployment awaits the user's
+explicit boot/restart decision. Release-54 image digest checks passed; this
+does not constitute a new physical rollback trial or release-72 acceptance.
