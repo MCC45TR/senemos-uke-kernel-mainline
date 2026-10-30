@@ -150,14 +150,3 @@ diff --git a/sound/soc/codecs/wcd939x.c b/sound/soc/codecs/wcd939x.c
  
  	pm_runtime_put(dev);
  
-@@ -3264,6 +3313,10 @@
- #endif /* CONFIG_TYPEC */
- 	int ret;
- 
-+	if (of_machine_is_compatible("xiaomi,uke") &&
-+	    !of_property_present(dev->of_node, "resets"))
-+		return dev_err_probe(dev, -EINVAL, "Uke requires coordinated codec reset\n");
-+
- 	if (of_property_present(dev->of_node, "resets")) {
- 		if (of_property_present(dev->of_node, "reset-gpios"))
- 			return -EINVAL;
