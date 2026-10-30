@@ -109,7 +109,7 @@ if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
     sha256sum "$profile/patches/boot/0009-uke-displayport-dma-scope.patch" >> "$output/abl-source-SHA256SUMS"
-    if [[ $(jq -er .version "$kernel/senemos-adaptation/source-lock.json") == 7.3.0 ]]; then
+    if [[ $(jq -er .version "$kernel/senemos-adaptation/source-lock.json") == 7.3.[01] ]]; then
         git -C "$kernel" apply --check "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
         git -C "$kernel" apply "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
         bash "$profile/tests/dp-eld-notification-contract.sh" "$kernel/sound/soc/codecs/hdmi-codec.c"

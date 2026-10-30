@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c1635d2f665530ad86b6ec73b671383143e7d0587fba74b5b69eff97a5a5d606"
+      "sha256": "2c09d49e792134a5546f969bcc79aace4dcc8739536c412d39511d8f0f98bbbd"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -193,7 +193,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
+      "sha256": "6378e4e8e11861cdcf60dc204c1d766df6128f1282b5cd3548abe1c8a626b820"
     },
     {
       "path": "src/boot/uke-bwmon.h",

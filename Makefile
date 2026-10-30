@@ -2,8 +2,9 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
-version := 7.3.0
-patch_count := $(if $(filter 7.3.0,$(version)),127,120)
+version := 7.3.1
+patch_series := 7.3.0
+patch_count := 127
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash tests/copr-source-guards-contract.sh
@@ -31,9 +32,9 @@ validate: test-touch-protocol test-touch-transport
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
 	bash -n tests/audio-probe-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
-	test "$(version)" = 7.3.0
+	test "$(version)" = 7.3.1
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == $(patch_count)) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
-	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
+	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(patch_series)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
@@ -112,15 +113,15 @@ srpm: validate
 	grep -F "[GNUPG:] VALIDSIG $$(jq -er .signer manifests/linux-$(version).json) " "$$top/signature.txt"
 	rm -rf "$$top/adaptation"
 	mkdir -p "$$top/adaptation/senemos-adaptation"/{patches,configs}
-	cp patches/$(version)/* "$$top/adaptation/senemos-adaptation/patches/"
+	cp patches/$(patch_series)/* "$$top/adaptation/senemos-adaptation/patches/"
 	cp configs/{arm64-qcom,uke,fedora}.config "$$top/adaptation/senemos-adaptation/configs/"
 	cp manifests/linux-$(version).json "$$top/adaptation/senemos-adaptation/source-lock.json"
-	cp patches/$(version)/README.md "$$top/adaptation/senemos-adaptation/README.md"
+	cp patches/$(patch_series)/README.md "$$top/adaptation/senemos-adaptation/README.md"
 	tar --sort=name --mtime=@$$(jq -er .source_date_epoch manifests/linux-$(version).json) --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
+	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(patch_series) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"

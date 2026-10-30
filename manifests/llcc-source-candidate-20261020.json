@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c1635d2f665530ad86b6ec73b671383143e7d0587fba74b5b69eff97a5a5d606"
+      "sha256": "2c09d49e792134a5546f969bcc79aace4dcc8739536c412d39511d8f0f98bbbd"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -161,7 +161,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
+      "sha256": "6378e4e8e11861cdcf60dc204c1d766df6128f1282b5cd3548abe1c8a626b820"
     },
     {
       "path": "src/boot/sm7675-uke-ufs.dtso",
@@ -213,7 +213,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "4707dd0927de64a116f2f62f81e44bcd4b7a868eb7ebe16da59ba6514b00ceb8"
+      "sha256": "2ee3e0b1bdca1d6aaf46b53aac2379a5ffe2765a4d96d2df48f2f9249760704f"
     },
     {
       "path": "src/display/uke-abl-native.h",
@@ -672,7 +672,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-73",
+  "kernel_release": "7.3.1-1",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

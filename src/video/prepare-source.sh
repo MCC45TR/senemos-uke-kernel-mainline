@@ -5,7 +5,8 @@ kernel=$(realpath "${1:?Pass the prepared Linux 7.3 kernel source}")
 root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 manifest=$root/manifests/video-linux73-candidate-20261025.json
 jq -e '.upstream_version == "7.3.0"' "$manifest" >/dev/null
-[[ $(awk '/^VERSION =/{v=$3} /^PATCHLEVEL =/{p=$3} /^SUBLEVEL =/{s=$3} END{print v "." p "." s}' "$kernel/Makefile") == 7.3.0 ]]
+version=$(awk '/^VERSION =/{v=$3} /^PATCHLEVEL =/{p=$3} /^SUBLEVEL =/{s=$3} END{print v "." p "." s}' "$kernel/Makefile")
+case $version in 7.3.0|7.3.1) ;; *) exit 1;; esac
 [[ ! -e $kernel/include/linux/qcom-uke-video.h ]]
 mkdir -p "$kernel/native-generated"
 : > "$kernel/native-generated/video-source-SHA256SUMS"

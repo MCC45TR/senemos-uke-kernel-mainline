@@ -13,7 +13,9 @@ case $llcc_profile in
     *) echo 'Unknown LLCC source profile' >&2; exit 2;;
 esac
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
-case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
+case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0|7.3.1) ;; *) exit 1;; esac
+series=$(jq -er '.patch_series // .version' "$kernel/senemos-adaptation/source-lock.json")
+case $series in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
@@ -171,8 +173,8 @@ sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-
     "$here/../../patches/boot/0013-sm7675-trng-binding.patch" \
     "$here/uke-ufs-mcq.h" "$here/../../patches/boot/0014-uke-ufs-mcq-resources.patch" \
     "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch" \
-    "$here/../../patches/$version/0036-uke-adreno732-render.patch" \
-    "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
+    "$here/../../patches/$series/0036-uke-adreno732-render.patch" \
+    "$here/../../patches/$series/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-bwmon.h" >> "$output/abl-source-SHA256SUMS"

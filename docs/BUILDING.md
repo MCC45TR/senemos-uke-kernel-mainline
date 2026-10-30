@@ -1,5 +1,12 @@
 # Senemos Uke kernel build entry
 
+30 October 2026. The active source producer targets signed upstream Linux 7.3.1
+with the retained 127-patch Uke adaptation series and explicit native-profile
+compatibility changes. The COPR stable731 worker binds the release60 parent
+SRPM, upstream commit, archive digest and updated source assets. Kernel boot
+packages require updater 1.8.8 and final-transaction-v2. Package success remains
+separate from POCO Pad X1 update, reboot and rollback acceptance.
+
 Run this repository's standalone entry, `senemos.sh`, from its
 root. It prepares host prerequisites, verifies the stable source signature,
 builds in an isolated Fedora toolchain and produces AArch64 RPMs and an SRPM.

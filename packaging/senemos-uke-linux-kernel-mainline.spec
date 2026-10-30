@@ -5,15 +5,11 @@
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.3.0
-%if "%{version}" == "7.3.0"
-%global senemos_build_release 73
-%else
+Version: 7.3.1
 %global senemos_build_release 1
-%endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Linux 7.3 Uke kernel with O82 display and Cliffs video
+Summary: Mainline Linux 7.3.1 Uke kernel with O82 display and Cliffs video
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
 SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -123,7 +119,7 @@ gpg --homedir "$keyring" --batch --import %{SOURCE3}
 xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
-%setup -q -n linux-7.3
+%setup -q -n linux-%{version}
 tar -xJf %{SOURCE1}
 jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
 cmp senemos-expected-patches.txt senemos-adaptation/patches/series
@@ -162,7 +158,7 @@ uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 test -z "${UKE_PREBUILT_SWITCH_ROOT:-}"
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
-export SOURCE_DATE_EPOCH=1791725270
+export SOURCE_DATE_EPOCH=1793362198
 export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
 mkdir -p %{_uke_out}
 if test ! -e %{uke_boot_userspace}; then
@@ -419,6 +415,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1
+- Move to signed upstream Linux 7.3.1 with the reviewed Uke patch queue.
+- Retain final DNF singleboot staging and the accepted rollback slot.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-73
 - Require final DNF singleboot staging and preserve the accepted rollback slot.
 - Rebuild the exact release-60 driver sources with a distinct module ABI.
