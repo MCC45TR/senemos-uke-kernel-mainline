@@ -85,8 +85,9 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.3.1
+Requires: uke-kernel-update >= 1.8.8
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: uke-kernel-update(transaction-v1) >= 1
 Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
@@ -366,9 +367,7 @@ cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-b
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
+/usr/bin/uke-kernel-update transaction /usr/lib/senemos/kernel-updates/%{krel} || exit 1
 
 %files
 %doc native-profile/README.md

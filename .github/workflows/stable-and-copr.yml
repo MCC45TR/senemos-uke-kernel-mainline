@@ -17,6 +17,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y jq rpm binutils
       - run: bash -n scripts/prepare-upstream-candidate.sh && bash tests/upstream-candidate-contract.sh
       - run: bash tests/prebuilt-helpers-contract.sh
+      - run: bash tests/mainline-package-contract.sh
   common:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: check

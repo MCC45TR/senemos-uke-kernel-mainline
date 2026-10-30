@@ -18,8 +18,9 @@ grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
 # Flags 12 are an ordinary >= dependency; scriptlet-only requirements expire.
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
-grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.3.1' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.8.8' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(guarded-automatic)\t12\t1' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-kernel-update(transaction-v1)\t12\t1' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-boot-integration(kernel-touch-input-v2)\t12\t1' <<< "$requires"
 if grep -Eq 'kernel-touch-(client|dispatch)|^Source9:' <<< "$parsed"; then
     echo 'Native input must not require the userspace capture processor' >&2; exit 1
@@ -29,7 +30,8 @@ if grep -E '^Obsoletes:|^Conflicts:|^%post([[:space:]]|$)|^%pre([[:space:]]|$)|^
     exit 1
 fi
 [[ $(grep -c '^%posttrans boot -p /bin/sh$' "$spec") == 1 ]]
-grep -Fx "if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then" "$spec"
+grep -Fx '/usr/bin/uke-kernel-update transaction /usr/lib/senemos/kernel-updates/%{krel} || exit 1' "$spec"
+if grep -Fq '/usr/bin/uke-kernel-update apply ' "$spec"; then exit 1; fi
 grep -Fx 'Source4: senemos-native-profile-7.3.0.tar.xz' <<< "$parsed"
 grep -F 'CONFIG_INITRAMFS_SOURCE=""' "$root/packaging/native/native.config"
 bash "$root/tests/native-firewall-contract.sh"
