@@ -216,6 +216,7 @@ int main(void) {
  assert(warnings>=2);puts("Actual retirement ownership, timer flush ordering, missing-state controls and running-worker drain pass");
 #endif
  (void)drm_atomic_helper_cleanup_planes;(void)worker;(void)off_thread;
+ (void)warnings;(void)cleanups;(void)entered_cleanup;(void)off_done;(void)flushing;
 }
 C
  flags=();[[ $variant != baseline ]] || flags+=(-DPARENT_CONTROL)

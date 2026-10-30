@@ -541,11 +541,11 @@
     },
     {
       "path": "tests/msm-retirement-contract.sh",
-      "sha256": "621ef9b1a436c3c0654e77994c492539e4c8bde745dfcc76aea18f6b9f73af04"
+      "sha256": "f52666fdbba8a48430e1e05ec2a92e166cf896562dcb9f69330ee28432a632e4"
     },
     {
       "path": "tests/msm-writeback-contract.sh",
-      "sha256": "bc7c7f57fd15b9032832d9b2c30ed0f226cc98c84c0c1448711abc9542b1b866"
+      "sha256": "b7ede44f02e28127f500b421c4a811cbef2809da990af0be87ddc180f5f94833"
     },
     {
       "path": "manifests/retirement58-parent-files.sha256",

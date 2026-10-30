@@ -167,6 +167,7 @@ int main(void) {
  struct drm_framebuffer fb={.pins=1};struct drm_writeback_job job={.fb=&fb};struct drm_writeback_connector conn={.queued=&job};
  struct dpu_encoder_phys_wb wb={.base={.parent=&enc,.enc_spinlock=&lock,.pending_kickoff_cnt=1},.wb_conn=&conn};
  physical=&wb.base;hardware_busy=true;_dpu_encoder_phys_wb_handle_wbdone_timeout(physical);assert(!conn.signals&&fb.pins==1);
+ (void)allocations;(void)pin_calls;(void)unpin_calls;(void)prepared_id;(void)vblanks;
 }
 C
 "${CC:-clang}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function \
