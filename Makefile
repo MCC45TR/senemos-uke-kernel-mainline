@@ -6,6 +6,7 @@ version := 7.3.0
 patch_count := $(if $(filter 7.3.0,$(version)),127,120)
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
+	bash -n tests/optional-gaming-platform.sh packaging/native/copr-optional-gaming72.sh
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh
 	bash -n tests/battery-notification-contract.sh
