@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.0-61
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.0-73
 output=$(realpath -m "${1:?COPR result directory}")
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 make -C "$owner" validate
@@ -22,5 +22,5 @@ printf '%s  %s\n' ecf44522bbfd183da3751aa48701c264fe4e51266caeb4f44c688a13175fc7
 find "$output" -maxdepth 1 -type f ! -name "$spec" -print0 | sort -z | xargs -0 sha256sum > "$stage/unchanged.sha256"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/unchanged.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.0-61
-printf 'Release61 packaging source: %s; all non-spec release60 sources unchanged\n' "$(git -C "$owner" rev-parse HEAD)"
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.0-73
+printf 'Release73 packaging source: %s; all non-spec release60 sources unchanged\n' "$(git -C "$owner" rev-parse HEAD)"

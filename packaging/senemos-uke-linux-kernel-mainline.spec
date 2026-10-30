@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 61
+%global senemos_build_release 73
 %else
 %global senemos_build_release 1
 %endif
@@ -419,7 +419,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-61
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-73
 - Require final DNF singleboot staging and preserve the accepted rollback slot.
 - Rebuild the exact release-60 driver sources with a distinct module ABI.
 
