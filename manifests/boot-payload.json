@@ -561,7 +561,7 @@
     },
     {
       "path": "tests/dpu-video-timing-contract.sh",
-      "sha256": "7802fea64a1b08098a00c7a67f516224069d178a03deb8828a0d6f4057f6ef33"
+      "sha256": "07ec8430e807e924da9875359f7b6bf8e453094493c9457c34e37c322d85a9d4"
     },
     {
       "path": "manifests/retirement60-parent-files.sha256",

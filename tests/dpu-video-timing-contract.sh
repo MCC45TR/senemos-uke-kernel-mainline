@@ -50,6 +50,7 @@ struct dpu_hw_intf;
 struct intf_ops {
     void (*enable_timing)(dpu_hw_intf *,u8);
     void (*get_status)(dpu_hw_intf *,dpu_hw_intf_status *);
+    void (*avr_trigger)(dpu_hw_intf *){};
 };
 struct dpu_hw_intf {dpu_intf idx;intf_ops ops;bool enabled;
     bool stick_on{};int status_reads{};std::vector<bool> status_sequence{};};
@@ -91,6 +92,7 @@ struct dpu_encoder_virt {
     drm_encoder base;dpu_encoder_phys *phys_encs[2];unsigned int num_phys_encs;
     int enc_spinlock;unsigned long frame_busy_mask[1];dpu_encoder_phys *cur_master;
     dpu_encoder_phys *cur_slave{};msm_display_info disp_info{};
+    bool avr_enabled{};
 };
 struct dpu_encoder_wait_info {int *wq,*atomic_cnt;unsigned int timeout_ms;};
 struct msm_format {};
