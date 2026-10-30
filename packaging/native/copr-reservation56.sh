@@ -15,7 +15,7 @@ curl --fail --location --silent --show-error --retry 3 --proto '=https' --proto-
 printf '%s  %s\n' 4ba244078f2419e3af731cfdb09dcb432c2031b594af95410dacb08ece918ef1 "$stage/base.src.rpm" | sha256sum -c -
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
 cpio -t --quiet < "$stage/base.cpio" > "$stage/entries"
-! awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit !bad}' "$stage/entries"
+awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/entries"
 mkdir -p "$output" "$stage/unpacked" "$stage/fixture" "$stage/baseline"
 (cd "$output"; cpio -idm --quiet --no-absolute-filenames < "$stage/base.cpio")
 spec=senemos-uke-linux-kernel-mainline.spec

@@ -14,7 +14,9 @@ while ((offset < 10000)); do
         https://copr.fedorainfracloud.org/api_3/build/list > "$work/builds.json"
     jq -e '(.items|type)=="array"' "$work/builds.json" > /dev/null
     mapfile -t versions < <(jq -r --arg name "$name" \
-        '.items[]|select(.state=="succeeded" and .source_package.name==$name)|.source_package.version' "$work/builds.json")
+        '.items[]|select(.source_package.name==$name and
+          (.state=="succeeded" or (.source_package.url | type=="string" and length>0)))|
+          .source_package.version' "$work/builds.json")
     for published in "${versions[@]}"; do
         # Whitelist the complete value before passing it to rpm's Lua evaluator.
         [[ $published =~ ^[0-9]+([.][0-9]+)*-[0-9]+([.][a-zA-Z0-9]+)*$ ]] || {

@@ -107,3 +107,5 @@ for role in singleboot kvm-singleboot common; do
     esac
 done
 echo 'Changed common/singleboot/KVM metadata paths passed with build tools forbidden; mocked upstream transport/signature only'
+# The existing source-only CI entry also checks source-worker admission failures.
+bash "$root/tests/copr-source-guards-contract.sh"
