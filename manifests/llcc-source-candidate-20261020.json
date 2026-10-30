@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
+      "sha256": "6ad0b0122887b33b2e3dd1cc306a8d459993ca5553bafd02892ec54a12c2647e"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -161,7 +161,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
+      "sha256": "e83bdc16e75920889e85e9845204eadc2fcaa597840d0c0d42fb0ab1860e65c9"
     },
     {
       "path": "src/boot/sm7675-uke-ufs.dtso",
@@ -189,7 +189,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "sha256": "d2c2471495f45d9ab33b480003a250447ffa07d0e0dd6ac64ae3d451d8e50dc7"
     },
     {
       "path": "src/boot/uke-ufs-mcq.h",
@@ -405,7 +405,7 @@
     },
     {
       "path": "tests/root-selector-contract.cpp",
-      "sha256": "ba1d6730de0c1f889ace858e6eff5b03c117457642b9e07b91ca907150915261"
+      "sha256": "cc2ba3cc80e2e9c1af407a2917694ffd0a861bc4605e339d190f8f5fa5ffcc00"
     },
     {
       "path": "tests/rproc-early-stop-contract.sh",
