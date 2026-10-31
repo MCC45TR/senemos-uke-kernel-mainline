@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 101
+%global senemos_build_release 102
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-102
+- Preserve contiguous codec-DMA microphone IDs through the frontend converter.
+- Require the corrected raw-channel capability for desktop capture.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-101
 - Admit the unmodified TX negative-control source with its existing sign warning.
 

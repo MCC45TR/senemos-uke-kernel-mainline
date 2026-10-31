@@ -565,7 +565,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "7cbd293e851b39bccc9368499dc592b20ee57e85f975944c8c40d20131d25e1f"
+      "sha256": "3f3e4a1b8d10862e861ccaf91597bb3f7f8aa7cdbd06cb9abace52149ad2370a"
     },
     {
       "path": "packaging/native/audio-profile",
@@ -581,7 +581,7 @@
     },
     {
       "path": "src/audio/uke-audio-card.c",
-      "sha256": "a3b3a543d064d1de06340cb3a30ef9c8b16ff4376bf7469483e60c0ff0980d55"
+      "sha256": "147178cd631375768e2b83018b0ae5d90fbf2f4c0bddc7a828ecc3a7e0cd560f"
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
@@ -702,6 +702,14 @@
     {
       "path": "tests/lpass-tx-multichannel-contract.sh",
       "sha256": "1a5094c56b5b87dcd1591221319c39a6bda48c57e6f4acf060ae8ebeb0331c74"
+    },
+    {
+      "path": "patches/boot/0056-q6apm-uke-raw-microphone-channel-map.patch",
+      "sha256": "631d04a6efccbad63e1584b339e78d45daff9af158e74b1de4b7b432686cd98f"
+    },
+    {
+      "path": "tests/microphone-channel-map-contract.sh",
+      "sha256": "b55ba7b92b5f9a57743785a7e4409ca6c1ad9e7fd1b43657b573d4760352ee48"
     }
   ],
   "root_selector_capability": {
