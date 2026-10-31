@@ -6,6 +6,10 @@ version := 7.3.1
 patch_series := 7.3.0
 patch_count := 127
 outdir ?= $(CURDIR)/build/srpm
+.PHONY: require-unstable-series
+require-unstable-series:
+	bash scripts/require-unstable-series.sh "$(version)"
+validate srpm: require-unstable-series
 validate: test-touch-protocol test-touch-transport
 	bash tests/copr-source-guards-contract.sh
 	bash -n tests/msm-retirement-contract.sh tests/msm-writeback-contract.sh tests/msm-retirement-proof-contract.sh
