@@ -549,7 +549,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "be8ed1cdde326642a110592e3d155582c70a95ecb590d788ba2192d9997cffb2"
+      "sha256": "bd64e0eabd9875efe7e582acd57e25d8114031d9050411aafdd4a8a57dc300ea"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -602,6 +602,14 @@
     {
       "path": "tests/scmi-no-negotiation-contract.sh",
       "sha256": "16ca1437d16685b71ade3914006e40556a3250b681024f6522585255023fc73a"
+    },
+    {
+      "path": "patches/boot/0055-cpufreq-lmh-policy-lifecycle.patch",
+      "sha256": "f78d5c342e2b8239196974c9b575ffe6e88899854fed7da731d5d4aed269ff0f"
+    },
+    {
+      "path": "tests/cpufreq-lmh-lifecycle-contract.sh",
+      "sha256": "1ce87b238505ced6940bd4883d9d66f095787fd787d04ce0f309ac1eca2ca1df"
     }
   ],
   "baseline_files": [
@@ -724,7 +732,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.1-12",
+  "kernel_release": "7.3.1-14",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

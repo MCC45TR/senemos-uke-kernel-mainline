@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 12
+%global senemos_build_release 14
 %else
 %global senemos_build_release 1
 %endif
@@ -423,6 +423,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-14
+- Balance LMH interrupt ownership across policy hotplug and polling.
+- Restore feedback after online and clear canceled/inactive policy pressure.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-12
 - Preserve the release-10 capture-completion wire fix in the combined power trial.
 - Retain strict CPUCP reads, guarded clock ownership and boost-state rollback.
