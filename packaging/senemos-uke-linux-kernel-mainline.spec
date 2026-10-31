@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 56
+%global senemos_build_release 57
 %else
 %global senemos_build_release 1
 %endif
@@ -195,6 +195,7 @@ uke_check_start=$SECONDS
 bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.config
 bash native-profile/tests/kernel-module-signatures-contract.sh "$PWD" \
     %{buildroot}/usr/lib/modules/%{krel} %{buildroot}/usr/share/senemos/uke/%{krel}/module-signing.x509
+bash native-profile/tests/msm-kms-alternate-build.sh "$PWD" %{_uke_out} %{buildroot} '%{krel}'
 test ! -e %{_uke_out}/certs/signing_key.pem
 test -s %{buildroot}%{_docdir}/%{name}/%{krel}/README.md
 test ! -e %{buildroot}%{_docdir}/%{name}/README.md
@@ -418,6 +419,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-57
+- Unwind partial KMS initialization and drain display producers before teardown.
+- Verify actual failure and concurrent-withdrawal paths in COPR.
+
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-56
 - Keep color updates on the encoder's reserved control blocks and clear stale resources.
 - Preserve caller modeset permission and validate the actual paths in COPR.
