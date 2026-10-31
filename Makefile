@@ -24,7 +24,9 @@ validate: test-touch-protocol test-touch-transport
 	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh
 	bash tests/rgb-policy.sh
 	bash tests/rgb-supplier.sh
-	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
+	bash tests/torch-lifetime.sh
+	bash tests/torch-supplier.sh
+	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh tests/flash-thermal-errors.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/performance/prepare-source.sh tests/llcc-pmu-contract.sh
 	CC=clang bash tests/llcc-pmu-contract.sh
