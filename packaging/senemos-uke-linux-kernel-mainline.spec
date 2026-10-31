@@ -34,7 +34,7 @@ BuildRequires: libasan libubsan
 BuildRequires: elfutils-libelf-devel openssl-devel openssl ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
-BuildRequires: alsa-lib-devel alsa-utils python3-dtschema
+BuildRequires: alsa-lib-devel alsa-utils dt-schema
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: libfdt-devel
 BuildRequires: python3
