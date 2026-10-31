@@ -84,7 +84,8 @@ check_graph() {
  check_native_output "$f"
 }
 check_graph "$work/result.dtb"
-gain_schema=$root/src/audio/xiaomi,uke-microphone-gain.yaml
+gain_schema=$work/schemas/sound/xiaomi,uke-microphone-gain.yaml
+install -Dm644 "$root/src/audio/xiaomi,uke-microphone-gain.yaml" "$gain_schema"
 dt-doc-validate "$gain_schema"
 dt-validate -s "$gain_schema" -l xiaomi,uke-microphone-gain "$work/result.dtb" > "$work/gain-positive.log" 2>&1
 test ! -s "$work/gain-positive.log"

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with the qualified release102 capture graph. Candidate103 adds bounded pre-capture DT gains and kernel-owned versioned desktop audio data. Physical candidate acceptance remains pending; no stock firmware or private calibration is added.",
+  "source_origin": "Signed Linux 7.3.1 with the qualified release102 capture graph. Candidate104 adds bounded pre-capture DT gains and kernel-owned versioned desktop audio data. Physical candidate acceptance remains pending; no stock firmware or private calibration is added.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "58cfddca0eef0744ee30f864b2d1955dbe86283dfd8db7b60188a07de329c13a"
+      "sha256": "7fbc003200a3ef6bd044a4dcfd08f149ee050d214343cacb04513763b81c8fc6"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -641,7 +641,7 @@
     },
     {
       "path": "tests/microphone-audio-fdt-contract.sh",
-      "sha256": "10702b70fa3750b96cd17afd59e72481381fb91aee025c42f7928008b19c474d"
+      "sha256": "2ba853db063f762ca88f6327e3bcded5352f711ca0823b80ae30f4f426996ab7"
     },
     {
       "path": "tests/microphone-audio-topology-contract.sh",
@@ -717,7 +717,7 @@
     },
     {
       "path": "src/audio/xiaomi,uke-microphone-gain.yaml",
-      "sha256": "05193e3c7adb6347a08c13ecf5acc6203da6a0d0d0a7030358deff5ce1ef1f29"
+      "sha256": "7be538f696f79c114f2e140b3cbb72d8288dd2fc2558db8b690cd916771718f8"
     },
     {
       "path": "tests/microphone-gain-contract.sh",

@@ -38,11 +38,11 @@ properties:
       maximum: 8
 
   xiaomi,microphone-digital-gain-db:
-    $ref: /schemas/types.yaml#/definitions/uint32-array
     description: Initial DEC0 through DEC3 digital gain in dB.
     minItems: 4
     maxItems: 4
     items:
+      minimum: 0
       maximum: 24
 
 required:
