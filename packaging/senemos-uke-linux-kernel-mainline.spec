@@ -200,6 +200,8 @@ printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start)
 
 %check
 uke_check_start=$SECONDS
+bash native-profile/tests/optional-gaming-platform.sh %{_uke_out}/.config \
+    %{buildroot}/usr/lib/modules/%{krel} %{krel} %{_uke_out}
 bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.config
 bash native-profile/tests/kernel-module-signatures-contract.sh "$PWD" \
     %{buildroot}/usr/lib/modules/%{krel} %{buildroot}/usr/share/senemos/uke/%{krel}/module-signing.x509
@@ -560,6 +562,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 - Prepare opt-in early Gunyah watchdog ownership and bounded initramfs startup.
 - Declare the signed boot-reset capability for guarded automatic A/B trials.
 - Retain release54 source inputs; physical reset and fallback remain unqualified.
+* Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-72
+- Provide NTSYNC and binfmt_misc as optional modules for Windows runtimes.
+- Preserve the exact release-54 hardware source and avoid gaming application dependencies.
+
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-54
 - Run the actual WLAN power-sequence fixture with independently managed storage.
 - Validate the complete public source recipe on the COPR source worker.
