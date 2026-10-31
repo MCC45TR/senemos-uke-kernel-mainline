@@ -24,6 +24,10 @@ done
 mkdir "$work/bin"
 cat > "$work/bin/curl" <<'SH'
 #!/usr/bin/env bash
+if [[ ${UKE_GUARD_TEST_ONLY:-0} == 1 && "$*" != *'projectname=uke-linux-test'* ]]; then
+    printf '{"items":[]}\n'
+    exit 0
+fi
 cat "$UKE_GUARD_RESPONSE"
 SH
 chmod 755 "$work/bin/curl"
@@ -53,4 +57,13 @@ for kind in unsourced malformed missing_url;do
  set -e
  if [[ $kind == unsourced ]];then [[ $status == 0 ]];else [[ $status != 0 ]];fi
 done
+# The same NVR/key rule includes custom directories in the testing project.
+export UKE_GUARD_TEST_ONLY=1
+jq -n --arg name "$name" '{items:[{state:"running",source_package:{name:$name,
+ version:"7.3.0-58",url:"https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test:custom:power/srpm-builds/1/kernel.src.rpm"}}]}' > "$work/builds.json"
+if PATH="$work/bin:$PATH" bash "$release_guard" "$name" 7.3.0-58 > "$work/result" 2>&1; then
+    echo 'A testing-directory NVR was incorrectly admitted for reuse' >&2
+    exit 1
+fi
+unset UKE_GUARD_TEST_ONLY
 printf 'Actual source-worker path refusals and consumed-source NVR guards pass; no compilation or network\n'
