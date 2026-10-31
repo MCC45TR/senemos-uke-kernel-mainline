@@ -11,6 +11,7 @@ UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
 bash "$profile/tests/wcd939x-status-contract.sh"
 bash "$profile/tests/wlan-regulator-lifetime-contract.sh" "$kernel"
+CXX=clang++ bash "$profile/tests/wlan-power-contract.sh" "$kernel/drivers/net/wireless/ath/ath11k/ahb.c"
 bash "$profile/tests/ucsi-partner-mode-contract.sh" "$kernel/drivers/usb/typec/ucsi/ucsi.c"
 bash "$profile/tests/dispcc-dp-votes-contract.sh" "$profile/src/display/uke-dispcc-votes.c"
 bash "$profile/tests/dp-aux-ddc-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_aux.c" "$kernel/drivers/gpu/drm/display/drm_dp_helper.c"

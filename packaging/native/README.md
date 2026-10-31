@@ -1,5 +1,12 @@
 # Mainline native source profile
 
+30 October 2026, Linux 7.3.0-53 security candidate: enforce matching module
+signatures, integrity lockdown, FORTIFY, hardened usercopy, Yama and restricted
+kernel logs. COPR verifies final compressed modules with the exported build
+certificate and rejects tampered payloads and wrong keys. The generated private
+key is removed after the final Image build. This candidate is not activated or
+physically qualified; its trust does not establish Secure Boot.
+
 29 October 2026, Linux 7.3.0-50 source candidate: keep FEC error counting
 disabled during link training and enable it after verified decoder/FEC startup.
 Read back the requested selector before publishing active compression. Every

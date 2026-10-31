@@ -120,6 +120,7 @@ srpm: validate
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
+	jq -n --arg commit "$$(git rev-parse HEAD)" '{schema_version:1,source_mode:"git-archive",source_commit:$$commit}' > "$$assets/source-composition.json"
 	(cd "$$assets"; find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS)
 	tar --sort=name --mtime=@$$(jq -er .source_date_epoch manifests/linux-$(version).json) --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-native-profile-$(version).tar.xz" -C "$$(dirname "$$assets")" native-profile
 	sed "s/^Version: .*/Version: $(version)/" packaging/senemos-uke-linux-kernel-mainline.spec > "$$top/SPECS/senemos-uke-linux-kernel-mainline.spec"

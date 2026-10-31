@@ -42,7 +42,7 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
           path: source
-      - run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils gcc g++ make device-tree-compiler libfdt-dev
+      - run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils
       - name: Verify upstream and prepare the actual source queue
         id: candidate
         env:
@@ -71,7 +71,7 @@ jobs:
             case $state in
               succeeded)
                 id=$(jq -r .id <<< "$build")
-                chroot=$(curl -fsSL --connect-timeout 20 --max-time 90 "https://copr.fedorainfracloud.org/api_3/build-chroot/$id/fedora-rawhide-aarch64")
+                chroot=$(curl -fsSL --connect-timeout 20 --max-time 90 "https://copr.fedorainfracloud.org/api_3/build-chroot?build_id=$id&chrootname=fedora-rawhide-aarch64")
                 jq -e --arg url "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test/fedora-rawhide-aarch64/$id-$PACKAGE/" '.state=="succeeded" and .result_url==$url' <<< "$chroot"
                 exit 0;;
               failed|canceled|skipped) echo "Matching common build is $state" >&2; exit 1;;

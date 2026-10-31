@@ -15,7 +15,7 @@ names=$(rpmspec -q --qf '%{NAME}\n' --target aarch64 "$spec")
 # Query expanded payload paths rather than retaining the old shared module ABI.
 parsed=$(rpmspec --parse "$spec")
 grep -Eq '^Provides: kernel-uname-r\(7\.3\.0-[1-9][0-9]*\)$' <<< "$parsed"
-[[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 4 ]]
+[[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 5 ]]
 # Flags 12 are an ordinary >= dependency; scriptlet-only requirements expire.
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
 grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.3.1' <<< "$requires"

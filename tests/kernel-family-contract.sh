@@ -25,10 +25,12 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work"/{SOURCES,SPECS}
 cp "$root/packaging/SINGLEBOOT.md" "$work/SOURCES/SINGLEBOOT.md"
 cp "$root/LICENSE" "$work/SOURCES/singleboot-LICENSE"
+cp "$root/packaging/native/README.md" "$work/SOURCES/native-README.md"
 {
-    printf '%%global debug_package %%{nil}\n%%global __os_install_post %%{nil}\n%%global krel fixture\nName: %s\nVersion: 1\nRelease: 1\nSummary: Host metadata fixture\nLicense: MIT\nSource7: SINGLEBOOT.md\nSource8: singleboot-LICENSE\n%%description\nHost metadata fixture; no kernel or hardware.\n%%package singleboot\nSummary: Host profile fixture\nLicense: MIT\n%%description singleboot\nHost profile fixture.\n%%prep\n%%build\n%%install\n' "$base"
+    printf '%%global debug_package %%{nil}\n%%global __os_install_post %%{nil}\n%%global krel fixture\nName: %s\nVersion: 1\nRelease: 1\nSummary: Host metadata fixture\nLicense: MIT\nSource0: native-README.md\nSource7: SINGLEBOOT.md\nSource8: singleboot-LICENSE\n%%description\nHost metadata fixture; no kernel or hardware.\n%%package singleboot\nSummary: Host profile fixture\nLicense: MIT\n%%description singleboot\nHost profile fixture.\n%%prep\nmkdir -p native-profile\ncp %%{SOURCE0} native-profile/README.md\n%%build\n%%install\n' "$base"
     awk '/^%install$/{copy=1;next} copy&&/^export ARCH=/{exit} copy' "$spec"
     printf '\n%%files\n'
+    awk '/^%files$/{copy=1;next} copy&&/^%files /{exit} copy&&/^%doc /{print}' "$spec"
     awk '/^%files singleboot$/{copy=1} copy&&/^%changelog$/{exit} copy' "$spec"
 } > "$work/SPECS/profile.spec"
 if ! rpmbuild -bb --nodeps --define "_topdir $work" --define "_rpmdir $work/RPMS" "$work/SPECS/profile.spec" > "$work/build.log" 2>&1; then
@@ -44,6 +46,17 @@ fi
 rpm -qpl "${packages[0]}" > "$work/files"
 grep -Fxq "/usr/share/doc/$base-singleboot/SINGLEBOOT.md" "$work/files"
 grep -Fxq "/usr/share/licenses/$base-singleboot/LICENSE" "$work/files"
+main_count=0
+for package in "$work"/RPMS/**/*.rpm; do
+    [[ $(rpm -qp --qf '%{NAME}' "$package") == "$base" ]] || continue
+    main_count=$((main_count + 1))
+    rpm -qpl "$package" > "$work/main-files"
+    grep -Fxq "/usr/share/doc/$base/fixture/README.md" "$work/main-files"
+    if grep -Fxq "/usr/share/doc/$base/README.md" "$work/main-files"; then
+        echo 'Main kernel documentation would conflict across releases' >&2; exit 1
+    fi
+done
+[[ $main_count == 1 ]]
 case $base in
     senemos-uke-linux-kernel-mainline) prefix= ;;
     senemos-uke-linux-kernel-mainline-kvm) prefix=kvm- ;;
