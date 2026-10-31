@@ -28,6 +28,8 @@ install() {
     ln -s ../uke-userdata-grow.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-userdata-grow.service"
     mkdir -p "$initdir$systemdsystemunitdir/initrd.target.wants"
     ln -s ../uke-initrd-screen.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-initrd-screen.service"
+    inst_simple "$moddir/uke-initrd-deadline.service" "$systemdsystemunitdir/uke-initrd-deadline.service"
+    ln -s ../uke-initrd-deadline.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-initrd-deadline.service"
     # Keep the existing peripheral debug shell available when UFS/root fails.
     for unit in uke-cdc-acm uke-cdc-shell; do
         inst_simple "$moddir/$unit.service" "$systemdsystemunitdir/$unit.service"

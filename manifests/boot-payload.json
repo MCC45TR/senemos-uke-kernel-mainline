@@ -2,14 +2,14 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with integrated power diagnostics, LMH lifecycle recovery, multichannel microphone TX lifecycle, bounded pre-capture DT gains and versioned desktop audio policy. Physical candidate acceptance remains pending; no stock firmware or private calibration is added.",
+  "source_origin": "Signed Linux 7.3.1 with integrated power diagnostics, LMH lifecycle recovery, multichannel microphone TX lifecycle, bounded pre-capture DT gains and versioned desktop audio policy. Physical candidate acceptance remains pending; no stock firmware or private calibration is added. Optional bounded boot-reset support is included; physical watchdog reset, retry exhaustion and fallback remain unqualified.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
   "source_assets": [
     {
       "path": "packaging/native/native.config",
-      "sha256": "b7014d73f95db1a0a017eb363bcf2e999408a8bdf3cfc2b627f6ba007fe31328"
+      "sha256": "e51a7f290cca4a6f0d0d4520507e3df27aa18ad39f916360653a791371b8baf9"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -121,15 +121,15 @@
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "e4ee96afa6626dc56998da83ebd273fa9a6ac89ba19b971e06e9e53bbb61f380"
+      "sha256": "8032772d09ccbccbc39857ecc1f481dc25fc9d7766e243a31efc910e4726bad3"
     },
     {
       "path": "src/boot/check-root-capability.sh",
-      "sha256": "7468095172c7a770b8d3de266524e209804cbbba23ae0e0dc0a493a2456e7326"
+      "sha256": "049a6f8c449e136bdb03088f726ba070f7642688cf184b618affc7b67b8bca27"
     },
     {
       "path": "src/boot/dracut/module-setup.sh",
-      "sha256": "a819ba0b47fddb2a04ba79a3f890ea46cf08817543abd15bc2c17cc63c606c2e"
+      "sha256": "16323e93a1e201d531a949b49f47d76d19a3624a2a863c4cb0e6df381aa63174"
     },
     {
       "path": "src/boot/dracut/root-guard.sh",
@@ -201,7 +201,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "sha256": "d2c2471495f45d9ab33b480003a250447ffa07d0e0dd6ac64ae3d451d8e50dc7"
     },
     {
       "path": "src/boot/userdata-grow.cpp",
@@ -565,7 +565,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "bd64e0eabd9875efe7e582acd57e25d8114031d9050411aafdd4a8a57dc300ea"
+      "sha256": "ac05c576f97e366c5192b6ba3f47b04bf39a9c5ee87f76b6c7af070f8c2e72bc"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -581,7 +581,7 @@
     },
     {
       "path": "tests/mainline-package-contract.sh",
-      "sha256": "c89b035bd0a4bae3f444a79489a1b405246cf16e01d2211ce4ccadd91d5f3d22"
+      "sha256": "4c06140b9d248fce45657025ec4054bf7207620be466f97e0a9ce69546e2af9f"
     },
     {
       "path": "src/boot/uke-clock-debug.h",
@@ -629,7 +629,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "a5d9500de9226921b78de29c87fdb4d73a69c310f7c4cafbcbab0f435f5751e1"
+      "sha256": "a60d5a902f2affbe32738460404c00393cf5a0b077149f80fefaea73f74a3bb1"
     },
     {
       "path": "src/audio/uke-audio-card.c",
@@ -874,6 +874,26 @@
     {
       "path": "src/audio/desktop/wireplumber/80-uke-microphone-array.conf",
       "sha256": "699cf71e340dde4f9a3115b4153bf402ba5b8b00ea4ff90ac225dd0da22bade9"
+    },
+    {
+      "path": "patches/boot/0045-gunyah-arm-bounded-boot-watchdog.patch",
+      "sha256": "6bdf38e6bdafa853e0779eaf01d09a15014bf6cff970c8367fe7f19b82dfe370"
+    },
+    {
+      "path": "src/boot/dracut/uke-initrd-deadline.service",
+      "sha256": "77338311fac076dc3e4a98a727ec060368e440d4e2aacaf4a15cf621b3f27078"
+    },
+    {
+      "path": "tests/gunyah-boot-watchdog-contract.sh",
+      "sha256": "95b824eaccc0c5d97cacb4c4f45c6d4ff2aca2a6c8e91e742541bb86b2875a90"
+    },
+    {
+      "path": "tests/root-selector-contract.cpp",
+      "sha256": "cc2ba3cc80e2e9c1af407a2917694ffd0a861bc4605e339d190f8f5fa5ffcc00"
+    },
+    {
+      "path": "tests/root-selector-note-contract.sh",
+      "sha256": "a82d80bc3165190c4581c286559c85c910f5aef0a941b8d5f16f455e91d33ef1"
     }
   ],
   "root_selector_capability": {

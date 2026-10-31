@@ -91,10 +91,11 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.8.11
+Requires: uke-kernel-update >= 1.9.0
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: uke-kernel-update(transaction-v1) >= 1
 Requires: uke-kernel-update(final-transaction-v2) >= 1
+Requires: uke-kernel-update(boot-reset-v1) >= 1
 Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
@@ -555,6 +556,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 - Keep color updates on the encoder's reserved control blocks and clear stale resources.
 - Preserve caller modeset permission and validate the actual paths in COPR.
 
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-61
+- Prepare opt-in early Gunyah watchdog ownership and bounded initramfs startup.
+- Declare the signed boot-reset capability for guarded automatic A/B trials.
+- Retain release54 source inputs; physical reset and fallback remain unqualified.
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-54
 - Run the actual WLAN power-sequence fixture with independently managed storage.
 - Validate the complete public source recipe on the COPR source worker.

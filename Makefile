@@ -16,6 +16,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/o82-avr-contract.sh tests/dpu-video-timing-contract.sh
 	bash -n tests/msm-kms-lifecycle-contract.sh tests/msm-kms-unwind-contract.sh tests/msm-kms-alternate-build.sh
 	bash tests/msm-kms-release-contract.sh
+	bash -n tests/gunyah-boot-watchdog-contract.sh packaging/native/copr-boot-watchdog61.sh
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh
 	bash -n tests/battery-notification-contract.sh

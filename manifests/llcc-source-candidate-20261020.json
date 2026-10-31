@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "08d6d0b9320dd489231a41c057c22797f85108474a3ec7ddeaff56afc3c5e3d2"
+      "sha256": "e51a7f290cca4a6f0d0d4520507e3df27aa18ad39f916360653a791371b8baf9"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -185,7 +185,7 @@
     },
     {
       "path": "src/boot/uke-root-selector.h",
-      "sha256": "c9d89868ba59eb70d042bbb3f70f8c036a3b45004e9f82c2a2accd1bb7cde94d"
+      "sha256": "d2c2471495f45d9ab33b480003a250447ffa07d0e0dd6ac64ae3d451d8e50dc7"
     },
     {
       "path": "src/boot/uke-ufs-mcq.h",
@@ -401,7 +401,7 @@
     },
     {
       "path": "tests/root-selector-contract.cpp",
-      "sha256": "ba1d6730de0c1f889ace858e6eff5b03c117457642b9e07b91ca907150915261"
+      "sha256": "cc2ba3cc80e2e9c1af407a2917694ffd0a861bc4605e339d190f8f5fa5ffcc00"
     },
     {
       "path": "tests/rproc-early-stop-contract.sh",
@@ -549,7 +549,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "bd64e0eabd9875efe7e582acd57e25d8114031d9050411aafdd4a8a57dc300ea"
+      "sha256": "ac05c576f97e366c5192b6ba3f47b04bf39a9c5ee87f76b6c7af070f8c2e72bc"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -593,7 +593,7 @@
     },
     {
       "path": "tests/mainline-package-contract.sh",
-      "sha256": "c89b035bd0a4bae3f444a79489a1b405246cf16e01d2211ce4ccadd91d5f3d22"
+      "sha256": "4c06140b9d248fce45657025ec4054bf7207620be466f97e0a9ce69546e2af9f"
     },
     {
       "path": "patches/boot/0052-scmi-protocol-negotiation-opt-out.patch",

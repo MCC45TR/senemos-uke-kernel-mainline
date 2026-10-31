@@ -19,6 +19,9 @@ case $series in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
+git -C "$kernel" apply --check "$here/../../patches/boot/0045-gunyah-arm-bounded-boot-watchdog.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0045-gunyah-arm-bounded-boot-watchdog.patch"
+bash "$here/../../tests/gunyah-boot-watchdog-contract.sh" "$kernel/drivers/watchdog/gunyah_wdt.c"
 if [[ $llcc_native == 1 ]]; then
     bash "$here/../../tests/llcc-sm7675-contract.sh" "$kernel"
     bash "$here/../../tests/llcc-gpu-startup-contract.sh" "$kernel/drivers/gpu/drm/msm/adreno/adreno_device.c"
@@ -205,6 +208,7 @@ sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-bwmon.h" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-cpu-bwmon.h" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-root-selector.h" "$here/../../patches/boot/0005-uke-root-selector.patch" >> "$output/abl-source-SHA256SUMS"
+sha256sum "$here/../../patches/boot/0045-gunyah-arm-bounded-boot-watchdog.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0006-uke-uart-wake-order.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0007-uke-cpu-hardware-name.patch" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../../patches/boot/0008-uke-platform-profile.patch" \

@@ -44,8 +44,10 @@ if [[ $("$compiler" --version) == *clang* ]]; then set -- "$@" -fuse-ld=lld; fi
 "$work/entry"
 check=$root/src/boot/check-root-capability.sh
 bash "$check" "$work/entry"
+bash "$check" "$work/entry" reset
 objcopy --dump-section .note.UKE="$work/note" "$work/entry"
 bash "$check" "$work/note"
+bash "$check" "$work/note" reset
 sed '/^#define __KERNEL__/d' "$work/entry.c" > "$work/absent.c"
 "$compiler" "$@" -I"$work/include" -I"$root/src/boot" "$work/absent.c" \
     -Wl,--gc-sections -Wl,-T,"$work/notes.lds" -o "$work/absent"
@@ -54,7 +56,8 @@ reject "$work/absent"
 cat "$work/note" "$work/note" > "$work/duplicate"
 reject "$work/duplicate"
 cp "$work/note" "$work/bad-header"
-printf '\0' | dd of="$work/bad-header" bs=1 seek=0 conv=notrunc status=none
+root_offset=$(LC_ALL=C grep -aFob 'root-selector-v2;userdata=' "$work/note" | cut -d: -f1)
+printf '\0' | dd of="$work/bad-header" bs=1 seek="$((root_offset-16))" conv=notrunc status=none
 reject "$work/bad-header"
 head -c 20 "$work/note" > "$work/truncated"
 reject "$work/truncated"
