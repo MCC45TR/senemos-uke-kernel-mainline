@@ -629,7 +629,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "a60d5a902f2affbe32738460404c00393cf5a0b077149f80fefaea73f74a3bb1"
+      "sha256": "580bef3ef23e923cc0f71edb0caa6f9161f4bfa66b64bc8951f894a8b38bad95"
     },
     {
       "path": "src/audio/uke-audio-card.c",

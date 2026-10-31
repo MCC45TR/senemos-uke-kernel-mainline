@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 105
+%global senemos_build_release 106
 %else
 %global senemos_build_release 1
 %endif
@@ -114,8 +114,10 @@ Requires: uke-kernel-update(root-filesystem-v2) >= 1
 
 %description singleboot
 Selects the userdata image from this source family's exact kernel tuple.
-Image, modules, DTBs and both root profiles are built once. Installation
-performs no boot activation, partition write, slot selection or reboot.
+Image, modules, DTBs and both root profiles are built once. This metadata
+subpackage has no activation scriptlet. The matched boot package requests
+guarded inactive-slot staging through the transactional updater, subject to
+its installed policy and validation. Installation does not request a reboot.
 
 %prep
 uke_prep_start=$SECONDS
@@ -226,7 +228,7 @@ CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==true' %{buildroot}/usr/share/senemos/uke/singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -353,7 +355,7 @@ cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
   "root_filesystem": "f2fs",
   "boot_selector": "senemos.root=userdata",
   "boot_image": "/usr/lib/senemos/kernel-updates/%{krel}/userdata.img",
-  "automatic_kernel_activation": false
+  "automatic_kernel_activation": true
 }
 EOF
 ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
@@ -446,6 +448,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-106
+- Make guarded automatic boot staging the singleboot package contract.
+- Require the updater whose default enables verified inactive-slot delivery.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-105
 - Deliver the kernel-owned microphone array through the requested unstable channel.
 

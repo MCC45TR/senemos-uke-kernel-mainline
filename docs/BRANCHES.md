@@ -28,7 +28,7 @@ The ordinary `make validate`/`make srpm` channel admission still refuses the
 retained Linux 7.3.1 version: the inherited unstable-channel policy requires a
 separately reviewed Linux 7.4-rcN source queue. The source-contract body was
 checked separately without authorizing a build. Do not treat this as release
-admission or publish the retained release105 identity with changed binaries.
+admission or publish the retained release106 identity with changed binaries.
 Choose and recheck a fresh release immediately before a separately authorized
 build; no release number is reserved by source consolidation.
 
@@ -37,3 +37,10 @@ pinned-parent trials, not a supported producer for the combined source. Use
 the original archived commit to reproduce those trials; their overlay lists
 must be revalidated against the complete source lock before reuse. The
 canonical source entry and its channel refusal remain unchanged.
+
+The refreshed PR #46 tip declares automatic inactive-slot delivery in package
+metadata. The boot package retains the stronger updater 1.9.0 requirement and
+all final-transaction and boot-reset capability requirements. This source change
+does not install packages, activate a slot or enable a main-push build workflow.
+Existing COPR webhook configuration is separate from GitHub Actions triggers;
+it was not changed or independently qualified by this consolidation.
