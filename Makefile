@@ -8,6 +8,7 @@ outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash tests/copr-source-guards-contract.sh
 	bash -n tests/msm-retirement-contract.sh tests/msm-writeback-contract.sh tests/msm-retirement-proof-contract.sh
+	bash -n tests/o82-avr-contract.sh tests/dpu-video-timing-contract.sh
 	bash -n tests/msm-kms-lifecycle-contract.sh tests/msm-kms-unwind-contract.sh tests/msm-kms-alternate-build.sh
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh
@@ -23,7 +24,9 @@ validate: test-touch-protocol test-touch-transport
 	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh
 	bash tests/rgb-policy.sh
 	bash tests/rgb-supplier.sh
-	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh
+	bash tests/torch-lifetime.sh
+	bash tests/torch-supplier.sh
+	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh tests/flash-thermal-errors.sh
 	bash tests/uke-build-scope-contract.sh
 	bash -n src/performance/prepare-source.sh tests/llcc-pmu-contract.sh
 	CC=clang bash tests/llcc-pmu-contract.sh

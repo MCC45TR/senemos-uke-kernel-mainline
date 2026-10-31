@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 59
+%global senemos_build_release 60
 %else
 %global senemos_build_release 1
 %endif
@@ -418,6 +418,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-60
+- Preserve the reviewed drivers and update stop-proof regression fixture models.
+- Run final-source AVR and video-disable contracts before kernel compilation.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-59
 - Route boot RPM hooks through the guarded installed-profile transaction.
 - Retain the reviewed scanout sources with a fresh kernel and signing identity.
