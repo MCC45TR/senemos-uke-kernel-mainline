@@ -121,7 +121,10 @@ for variant in fixed original; do
   cat "$work/function.c" >> "$work/$variant.c"
  done
  cat "$work/footer.c" >> "$work/$variant.c"
- ${CC:-cc} -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -fsanitize=address,undefined "$work/$variant.c" -o "$work/$variant"
+ extra=()
+ # The unchanged native scalar comparison has a pre-existing sign warning.
+ [[ $variant != original ]] || extra=(-Wno-sign-compare)
+ ${CC:-cc} -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter "${extra[@]}" -fsanitize=address,undefined "$work/$variant.c" -o "$work/$variant"
 done
 "$work/fixed"
 for mode in mixer mute-only; do

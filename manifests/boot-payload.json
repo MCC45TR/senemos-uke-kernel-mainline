@@ -701,7 +701,7 @@
     },
     {
       "path": "tests/lpass-tx-multichannel-contract.sh",
-      "sha256": "7c6ad936144e1b1726b9e39eda07334df911451fa9b91326a2700515a4679423"
+      "sha256": "1a5094c56b5b87dcd1591221319c39a6bda48c57e6f4acf060ae8ebeb0331c74"
     }
   ],
   "root_selector_capability": {
