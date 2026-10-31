@@ -1,5 +1,13 @@
 # Uke CPU and power source review
 
+31 October update: Linux 7.3.1-3 is now installed. Its three boost lists are
+empty, and the standard global write returns EINVAL because no policy
+supports boost. The proposed initializer is held and removed from source
+preparation. Its guard fixtures established machine scope, not hardware
+capability. Setting the global bit cannot add a missing firmware LUT entry.
+The original global/policy bits and all CPU min/max bounds were restored
+after the rejected attempt. The observations below remain dated history.
+
 30 October 2026. The observed POCO Pad X1 runs Linux 7.3.0-54 with
 `qcom-cpufreq-hw`, three shared policies and the `uke-qos` balanced profile.
 The requested 7.3.1-3 COPR candidate is a separate build; these changes do
