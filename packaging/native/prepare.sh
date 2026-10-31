@@ -6,6 +6,10 @@ profile=$(cd -- "$(dirname -- "$0")" && pwd)
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
+cp "$kernel/drivers/gpu/drm/msm/msm_fb.c" "$output/msm-framebuffer-before55.c"
+git -C "$kernel" apply --check "$profile/patches/display/0065-msm-framebuffer-pin-state.patch"
+git -C "$kernel" apply "$profile/patches/display/0065-msm-framebuffer-pin-state.patch"
+CC=clang bash "$profile/tests/msm-framebuffer-pin-contract.sh" "$kernel" "$output/msm-framebuffer-before55.c"
 export UKE_LLCC_PROFILE
 UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac
@@ -53,6 +57,34 @@ git -C "$kernel" apply "$profile/patches/boot/0011-qcom-flash-torch-steps.patch"
 bash "$profile/tests/light-brightness.sh" "$kernel/drivers/leds/flash/leds-qcom-flash.c"
 bash "$profile/src/leds/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-source.sh" "$kernel"
+reservation_baseline=$output/dpu-reservation-before56
+for relative in drivers/gpu/drm/msm/msm_atomic.c drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c; do
+    install -Dm644 "$kernel/$relative" "$reservation_baseline/$relative"
+done
+git -C "$kernel" apply --check "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
+git -C "$kernel" apply "$profile/patches/display/0066-msm-dpu-reservation-ownership.patch"
+CC=clang bash "$profile/tests/dpu-reservation-contract.sh" "$kernel" "$reservation_baseline"
+lifecycle_baseline=$output/msm-kms-before57
+(cd "$kernel"; sha256sum --check --strict --quiet "$profile/kms57-parent-files.sha256")
+while IFS= read -r relative; do
+    install -Dm644 "$kernel/$relative" "$lifecycle_baseline/$relative"
+done < <(sed 's/^[0-9a-f]*  //' "$profile/kms57-parent-files.sha256")
+git -C "$kernel" apply --check "$profile/patches/display/0067-msm-kms-lifecycle-unwind.patch"
+git -C "$kernel" apply "$profile/patches/display/0067-msm-kms-lifecycle-unwind.patch"
+CC=clang bash "$profile/tests/msm-kms-lifecycle-contract.sh" "$kernel" "$lifecycle_baseline"
+CC=clang bash "$profile/tests/msm-kms-unwind-contract.sh" "$kernel" "$lifecycle_baseline"
+retirement_baseline=$output/msm-retirement-before58
+(cd "$kernel"; sha256sum --check --strict --quiet "$profile/retirement60-parent-files.sha256")
+while IFS= read -r relative; do
+    install -Dm644 "$kernel/$relative" "$retirement_baseline/$relative"
+done < <(sed 's/^[0-9a-f]*  //' "$profile/retirement60-parent-files.sha256")
+git -C "$kernel" apply --check "$profile/patches/display/0068-msm-scanout-retirement.patch"
+git -C "$kernel" apply "$profile/patches/display/0068-msm-scanout-retirement.patch"
+CC=clang bash "$profile/tests/msm-retirement-contract.sh" "$kernel" "$retirement_baseline"
+CC=clang bash "$profile/tests/msm-writeback-contract.sh" "$kernel" "$retirement_baseline"
+CC=clang bash "$profile/tests/msm-retirement-proof-contract.sh" "$kernel"
+CC=clang bash "$profile/tests/o82-avr-contract.sh" "$kernel"
+CXX=clang++ bash "$profile/tests/dpu-video-timing-contract.sh" "$kernel"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"

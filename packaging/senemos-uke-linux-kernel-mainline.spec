@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 54
+%global senemos_build_release 60
 %else
 %global senemos_build_release 1
 %endif
@@ -86,8 +86,9 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.3.1
+Requires: uke-kernel-update >= 1.8.7
 Requires: uke-kernel-update(guarded-automatic) >= 1
+Requires: uke-kernel-update(transaction-v1) >= 1
 Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
@@ -195,6 +196,7 @@ uke_check_start=$SECONDS
 bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.config
 bash native-profile/tests/kernel-module-signatures-contract.sh "$PWD" \
     %{buildroot}/usr/lib/modules/%{krel} %{buildroot}/usr/share/senemos/uke/%{krel}/module-signing.x509
+bash native-profile/tests/msm-kms-alternate-build.sh "$PWD" %{_uke_out} %{buildroot} '%{krel}'
 test ! -e %{_uke_out}/certs/signing_key.pem
 test -s %{buildroot}%{_docdir}/%{name}/%{krel}/README.md
 test ! -e %{buildroot}%{_docdir}/%{name}/README.md
@@ -376,9 +378,7 @@ cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-b
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %posttrans boot -p /bin/sh
-if grep -Fxq 'automatic=1' /etc/senemos/kernel-update.conf 2>/dev/null; then
-    /usr/bin/uke-kernel-update apply /usr/lib/senemos/kernel-updates/%{krel} || exit 1
-fi
+/usr/bin/uke-kernel-update transaction /usr/lib/senemos/kernel-updates/%{krel} || exit 1
 
 %files
 %doc %{_docdir}/%{name}/%{krel}/README.md
@@ -418,6 +418,26 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-60
+- Preserve the reviewed drivers and update stop-proof regression fixture models.
+- Run final-source AVR and video-disable contracts before kernel compilation.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-59
+- Route boot RPM hooks through the guarded installed-profile transaction.
+- Retain the reviewed scanout sources with a fresh kernel and signing identity.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-58
+- Retain scanout and writeback pins until completion is proved.
+- Check timer flush ordering, failed teardown and destination ownership in COPR.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-57
+- Unwind partial KMS initialization and drain display producers before teardown.
+- Verify actual failure and concurrent-withdrawal paths in COPR.
+
+* Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-56
+- Keep color updates on the encoder's reserved control blocks and clear stale resources.
+- Preserve caller modeset permission and validate the actual paths in COPR.
+
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-54
 - Run the actual WLAN power-sequence fixture with independently managed storage.
 - Validate the complete public source recipe on the COPR source worker.

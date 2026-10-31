@@ -24,6 +24,8 @@ dtc -q -@ -I dts -O dtb -o "$output/lights.dtbo" "$output/expanded.dts"
 fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/lights.dtbo"
 file=$output/candidate.dtb
 torch=$pmic/led-controller@ee00/led-0
+[[ $(fdtget -t s "$file" /torch-control compatible) == senemos,uke-torch ]]
+[[ $(fdtget -t x "$file" /torch-control leds) == "$(fdtget -t x "$file" "$torch" phandle)" ]]
 [[ $(fdtget -t u "$file" "$torch" led-max-microamp) == 20000 ]]
 [[ $(fdtget -t u "$file" "$torch" led-sources) == '1 4' ]]
 [[ $(fdtget -t s "$file" "$torch" default-state) == off ]]

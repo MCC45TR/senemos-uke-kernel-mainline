@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release54 retains release53 signing and integrity hardening and adds the managed-regulator power fixture. Source and native validation run on COPR; physical acceptance remains open.",
+  "source_origin": "Release60 preserves the59 driver patches and selected-profile transaction. Updated AVR and video-disable fixture models run on sixteen replayed input files before source generation and again before kernel compilation. Native/package/physical acceptance remain separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c91e9aed1bcae89b2ad1f39407b1b93d72223950256e27cc7e76cfa7f1c5dbf8"
+      "sha256": "c1635d2f665530ad86b6ec73b671383143e7d0587fba74b5b69eff97a5a5d606"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -498,6 +498,74 @@
     {
       "path": "tests/wlan-power-contract.sh",
       "sha256": "c2dbfe20a8926b3653cc76c46597c67742e71fa7f0afb42f97d8adaf69baa08d"
+    },
+    {
+      "path": "patches/display/0065-msm-framebuffer-pin-state.patch",
+      "sha256": "f253a2e174b48cb3142f2b9b2bd94c224d44cbc90595a02efccfe9df61798a7a"
+    },
+    {
+      "path": "tests/msm-framebuffer-pin-contract.sh",
+      "sha256": "bffcc388a25987eb15218ae5bd87419e1c1c1710f7d476c7ac2cf795975ab81e"
+    },
+    {
+      "path": "patches/display/0066-msm-dpu-reservation-ownership.patch",
+      "sha256": "c28dbab277b3906c4849c2d2a49d477da1a2f7373d30972597aea63ecd093cf8"
+    },
+    {
+      "path": "tests/dpu-reservation-contract.sh",
+      "sha256": "c3bb8396ba174a38a22e96055bd09469a9af31627b116780bbe9f813cd63be06"
+    },
+    {
+      "path": "patches/display/0067-msm-kms-lifecycle-unwind.patch",
+      "sha256": "4988793a1c1786d482211b3f3b88c46d158d070f94f683ad263951b15465336a"
+    },
+    {
+      "path": "tests/msm-kms-lifecycle-contract.sh",
+      "sha256": "f24cca3e21e98f5f60fb1a9862595f185619d5b6e9b9c575a12852e0a01f8cf7"
+    },
+    {
+      "path": "tests/msm-kms-unwind-contract.sh",
+      "sha256": "f021010a8ad562e241886af554e1fcde207f7b1133ce4ee0d0229e5a2fc92314"
+    },
+    {
+      "path": "tests/msm-kms-alternate-build.sh",
+      "sha256": "2c89f91797bdf11dd9beb4975409065e502b2954e02b7f74a63ae8118b238723"
+    },
+    {
+      "path": "manifests/kms57-parent-files.sha256",
+      "sha256": "a35acd82660a48375071b40e22ad3d7ad73352f6de990fcfd33bdd1aad01711f"
+    },
+    {
+      "path": "patches/display/0068-msm-scanout-retirement.patch",
+      "sha256": "4aebef3ba5e0532a1c4e5184972163816f6689404b7b3ce283750a2db7ec5d49"
+    },
+    {
+      "path": "tests/msm-retirement-contract.sh",
+      "sha256": "f52666fdbba8a48430e1e05ec2a92e166cf896562dcb9f69330ee28432a632e4"
+    },
+    {
+      "path": "tests/msm-writeback-contract.sh",
+      "sha256": "c7caabb9a0c5f07defa1d881fa30a59229ecf35d3efeec9dd81702fef1ab481c"
+    },
+    {
+      "path": "manifests/retirement58-parent-files.sha256",
+      "sha256": "d90e6f4d71f1754640bc7f50648d1d1fd9f61e4382c95fdb5c4d412b650c8a3f"
+    },
+    {
+      "path": "tests/msm-retirement-proof-contract.sh",
+      "sha256": "060ac6b7469c32125359bf8ca86f7c0c649a5c8d909d160239e5c565f1146f62"
+    },
+    {
+      "path": "tests/o82-avr-contract.sh",
+      "sha256": "d84a5845ff6c40d4daf9f929738bc47b071a742e66a53620c8788b1cf599c465"
+    },
+    {
+      "path": "tests/dpu-video-timing-contract.sh",
+      "sha256": "07ec8430e807e924da9875359f7b6bf8e453094493c9457c34e37c322d85a9d4"
+    },
+    {
+      "path": "manifests/retirement60-parent-files.sha256",
+      "sha256": "e9d0d78f438f4bd79b62a8bc7c5848c714b2dd89dbf7d1f2599ae5569fd9eb40"
     }
   ],
   "root_selector_capability": {

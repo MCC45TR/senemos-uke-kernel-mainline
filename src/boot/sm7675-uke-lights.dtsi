@@ -31,7 +31,7 @@
 		reg = <0xee00>;
 		status = "okay";
 
-		led-0 {
+		uke_torch_led: led-0 {
 			label = "uke:white:torch";
 			function = LED_FUNCTION_TORCH;
 			color = <LED_COLOR_ID_WHITE>;
@@ -63,6 +63,11 @@
 };
 
 &{/} {
+	torch-control {
+		compatible = "senemos,uke-torch";
+		leds = <&uke_torch_led>;
+	};
+
 	rgb-notifications {
 		compatible = "senemos,uke-rgb";
 		leds = <&uke_rgb_led>;
