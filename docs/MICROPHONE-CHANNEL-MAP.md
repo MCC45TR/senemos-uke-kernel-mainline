@@ -30,6 +30,11 @@ microphones and provides no explicit association between `builtin_mic_*` and
 AMIC inputs. Its coordinates, response curves and sensitivity values are not
 accepted as Uke geometry or installed as processing calibration.
 
+The manufacturer's POCO Pad X1 repair manual shows separate microphone flex
+assemblies on pages 28 and 39, with assembly views on pages 44 and 50. These
+mechanical views do not label AMIC nets or PCM channels. Retain them as
+location research; they cannot complete the electrical-to-aperture mapping.
+
 Each current mono recording has channel zero for the selected input. This
 does not define a four-channel order. When simultaneous capture is added,
 record the actual PCM index, decimator and analog input together, and verify
@@ -50,4 +55,6 @@ Sources: Uke mixer overlay
 [`87f59fc5`](https://github.com/delano-git/android_vendor_xiaomi_uke/blob/87f59fc5c2ef1ee04e494e5258853d36a3346059/proprietary/odm/etc/audio/sku_cliffs/mixer_paths_overlay_static.xml),
 common vendor characteristics
 [`475e955b`](https://github.com/delano-git/android_vendor_xiaomi_sm8635-common/blob/475e955b3780aee6dd007178e08bf8a231143681/proprietary/vendor/etc/microphone_characteristics.xml),
+the [manufacturer's repair manual](https://cdn.shopify.com/s/files/1/0955/8360/0979/files/O82P_POCO_Pad_X1_ERP_Manual.pdf?v=1768881135)
+(SHA256 `cb5877be56009060d64a90447f36ccd1cade4a926b633eb89076f4d655202b39`),
 and the [Android microphone coordinate contract](https://android.googlesource.com/platform/hardware/interfaces/+/android16-qpr2-release/audio/7.0/types.hal).
