@@ -42,6 +42,10 @@ alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
     -o "$output/POCO-Pad-X1-HDMI-tplg.bin"
 if [[ $(cat "$profile/audio-profile") == microphones ]]; then
+    git -C "$kernel" apply --check "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch"
+    bash "$profile/tests/microphone-pcm-limits-contract.sh" "$kernel"
+    sha256sum "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch" >> "$output/abl-source-SHA256SUMS"
     cat "$profile/src/audio/POCO-Pad-X1.conf" \
         "$profile/src/audio/POCO-Pad-X1-Microphone-Capture.conf" > "$output/POCO-Pad-X1.conf"
     alsatplg -c "$output/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
