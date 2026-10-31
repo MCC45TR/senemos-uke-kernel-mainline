@@ -577,7 +577,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "7bbeffa18f257d22297608c723a270dc5b968d26f784b686707085ec079428c4"
+      "sha256": "4207c6c86b800e4d9ad67f6824108fca17595a0fdb6d8fe3c8e351f22f78baaf"
     },
     {
       "path": "src/audio/uke-audio-card.c",
@@ -678,6 +678,14 @@
     {
       "path": "tests/wcd939x-supply-order-contract.sh",
       "sha256": "a5c1dfdcc39e9572ac3c6ecad669b38ed0df264de36e508fb04dc082e0f4b916"
+    },
+    {
+      "path": "src/boot/uke-clock-debug.h",
+      "sha256": "4ad3b02863856cd46430daf832c6f3cfdc7b9997b40c3a5c7d80e86ca444340f"
+    },
+    {
+      "path": "tests/clock-debug-fdt-contract.sh",
+      "sha256": "5948924e9e6c6351d2155b559745cba8ebe3e5b8c30f66bf27dda1f1701c567d"
     }
   ],
   "root_selector_capability": {
