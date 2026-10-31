@@ -1,5 +1,20 @@
 # Mainline native source profile
 
+31 October 2026, Linux 7.3.1-13 microphone candidate: release 10 records nonzero
+mono data and reopens on POCO Pad X1. This candidate adds the four OEM analog
+input/bias routes and native ADC bridges for individual mono trials. The
+48 kHz S16_LE mono frontend, DEC0-only admission, supplies, reset, pins and
+playback graphs remain. Other inputs, independent multichannel capture,
+desktop policy and physical acoustic localization remain unqualified.
+
+30 October 2026, isolated microphone source candidate: the optional
+`microphones` profile retains speaker/DP playback and adds a restricted mono
+AMIC1/ADC1/DEC0 capture graph. The default remains `speakers`. DT/topology,
+memory-only callbacks and twelve AArch64 audio objects pass focused checks.
+No candidate installation, raw capture or four-microphone qualification is
+claimed. See [the bring-up record](../../docs/MICROPHONE-BRINGUP-20261030.md)
+for source provenance, activation gates and rollback requirements.
+
 30 October 2026, Linux 7.3.0-53 security candidate: enforce matching module
 signatures, integrity lockdown, FORTIFY, hardened usercopy, Yama and restricted
 kernel logs. COPR verifies final compressed modules with the exported build

@@ -5,15 +5,15 @@
 %global uke_boot_userspace %{_topdir}/boot-userspace
 
 Name: senemos-uke-linux-kernel-mainline
-Version: 7.3.0
-%if "%{version}" == "7.3.0"
-%global senemos_build_release 60
+Version: 7.3.1
+%if "%{version}" == "7.3.1"
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
 Release: %{senemos_build_release}%{?dist}
-Summary: Mainline Linux 7.3 Uke kernel with O82 display and Cliffs video
+Summary: Mainline Linux 7.3.1 Uke kernel with O82 display and Cliffs video
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
 SourceLicense: GPL-2.0-only AND MIT AND BSD-3-Clause AND GPL-3.0-or-later AND Apache-2.0
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -86,9 +86,10 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.8.7
+Requires: uke-kernel-update >= 1.8.11
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: uke-kernel-update(transaction-v1) >= 1
+Requires: uke-kernel-update(final-transaction-v2) >= 1
 Requires: uke-boot-integration(kernel-touch-input-v2) >= 1
 Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profile-backend)
 Provides: installonlypkg(kernel)
@@ -122,7 +123,7 @@ gpg --homedir "$keyring" --batch --import %{SOURCE3}
 xz -cd %{SOURCE0} | gpg --homedir "$keyring" --batch --status-fd=1 \
     --verify %{SOURCE2} - > %{_topdir}/source-verification.txt
 grep -F "[GNUPG:] VALIDSIG $signer " %{_topdir}/source-verification.txt
-%setup -q -n linux-7.3
+%setup -q -n linux-%{version}
 tar -xJf %{SOURCE1}
 jq -r '.patches[].path | split("/") | last' senemos-adaptation/source-lock.json > senemos-expected-patches.txt
 cmp senemos-expected-patches.txt senemos-adaptation/patches/series
@@ -161,7 +162,7 @@ uke_build_start=$SECONDS
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 test -z "${UKE_PREBUILT_SWITCH_ROOT:-}"
 export KBUILD_BUILD_USER=senemos KBUILD_BUILD_HOST=copr-builder KBUILD_BUILD_VERSION=1
-export SOURCE_DATE_EPOCH=1791725270
+export SOURCE_DATE_EPOCH=1793362198
 export KBUILD_BUILD_TIMESTAMP="$(date -u -d "@$SOURCE_DATE_EPOCH" '+%%Y-%%m-%%d %%H:%%M:%%S UTC')"
 mkdir -p %{_uke_out}
 if test ! -e %{uke_boot_userspace}; then
@@ -228,6 +229,10 @@ CXX=clang++ bash native-profile/tests/bcl-alarm-lifetime-contract.sh drivers/hwm
 CXX=clang++ bash native-profile/tests/bcl-uke-admission-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/hwmon/qcom-bcl-hwmon.ko.zst
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst
+observer_module=%{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/firmware/arm_scmi/uke-cpucp-observe.ko.zst
+test -s "$observer_module"
+observer_aliases=$(modinfo -F alias "$observer_module")
+test -z "$observer_aliases"
 modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst | grep -Fx 'of:N*T*Cqcom,sm7675-llcc-pmuC*'
 test "$(cat native-generated/llcc-profile)" = native-v1
 grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
@@ -418,6 +423,71 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-16
+- Preserve the release-13 individual microphone routes in the power trial.
+- Retain LMH lifecycle recovery, strict CPUCP reads and guarded clock ownership.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-14
+- Balance LMH interrupt ownership across policy hotplug and polling.
+- Restore feedback after online and clear canceled/inactive policy pressure.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-13
+- Add the four OEM analog input/bias routes and native ADC output bridges.
+- Keep strict mono admission and qualify the remaining inputs separately.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-12
+- Preserve the release-10 capture-completion wire fix in the combined power trial.
+- Retain strict CPUCP reads, guarded clock ownership and boost-state rollback.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-11
+- Combine strict CPUCP GET diagnostics and power ownership changes with the retained microphone profile.
+- Preserve mono PCM limits, the 122-patch adaptation and all ignore-unused workarounds.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-10
+- Match the 56-byte AudioReach read-completion V2 ABI and timestamp layout.
+- Keep strict reply-size, status, token, address and data-size checks.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-9
+- Match the component minimum to the restricted Uke mono capture frontend.
+- Preserve other cards, graphs and playback limits; physical capture remains pending.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-8
+- Skip automatic version negotiation for the strictly admitted read-only vendor client.
+- Preserve the canceled release-7 source identity and standard SCMI behavior.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-7
+- Stage the isolated power candidate on the accepted release-4 composition.
+- Retire the unused debug measurement consumer and preserve boost metadata on error.
+- Build a signed, manually loaded CPUCP GET observer; retain all power workarounds.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-6
+- Connect mono capture to the actual native WCD939x ADC1 output widget.
+- Reject the incompatible OEM aggregate output in the prepared-source FDT check.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-5
+- Retain the release4 profile and add guarded mono microphone capture.
+- Preserve four-channel speaker and stereo DisplayPort paths; hardware testing remains pending.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-4
+- Admit the optional Uke PM8010 N using validated firmware population and resources.
+- Preserve populated variants, generic SPMI errors and the accepted rollback slot.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-3
+- Admit 7.3.1 in the retained alternate KMS compile check without changing drivers.
+- Check actual release admission before the full build with a shell-only fixture.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2
+- Bind the native stable port to the exact published 122-patch adaptation queue.
+- Preserve the separate canonical 127-patch source profile and its provenance.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1
+- Move to signed upstream Linux 7.3.1 with the reviewed Uke patch queue.
+- Retain final DNF singleboot staging and the accepted rollback slot.
+
+* Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-73
+- Require final DNF singleboot staging and preserve the accepted rollback slot.
+- Rebuild the exact release-60 driver sources with a distinct module ABI.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-60
 - Preserve the reviewed drivers and update stop-proof regression fixture models.
 - Run final-source AVR and video-disable contracts before kernel compilation.

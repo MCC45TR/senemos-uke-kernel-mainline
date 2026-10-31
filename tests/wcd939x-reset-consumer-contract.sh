@@ -33,13 +33,14 @@ struct wcd939x_priv {
  struct gpio_desc *reset_gpio;struct reset_control *reset;
  struct wcd_mbhc_config mbhc_cfg;struct wcd_common common;
 };
-static const char *const wcd939x_supplies[]={"vdd-rxtx","vdd-io","vdd-buck","vdd-mic-bias","vdd-px"};
 static struct gpio_desc gpio;
 static struct reset_control reset;
-static bool has_reset,has_gpio;
+static bool has_reset,has_gpio,is_uke;
 static int reset_error,gpio_error,supply_error,bias_error;
 static unsigned reset_gets,gpio_gets,supply_calls,bias_calls,mbhc_calls,pulses,gpio_sets,delays;
 static int reset_result;
+static bool of_machine_is_compatible(const char *name)
+{assert(!strcmp(name,"xiaomi,uke"));return is_uke;}
 static bool of_property_present(void *node,const char *name)
 {(void)node;if(!strcmp(name,"resets"))return has_reset;assert(!strcmp(name,"reset-gpios"));return has_gpio;}
 static struct reset_control *devm_reset_control_get_exclusive(struct device *d,const char *name)
@@ -48,8 +49,8 @@ static struct gpio_desc *devm_gpiod_get(struct device *d,const char *name,int fl
 {(void)d;assert(!strcmp(name,"reset") && flags==0);gpio_gets++;return gpio_error?ERR_PTR(gpio_error):&gpio;}
 static int dev_err_probe(struct device *d,int error,const char *message)
 {(void)d;(void)message;return error;}
-static int devm_regulator_bulk_get_enable(struct device *d,unsigned count,const char *const *names)
-{(void)d;assert(count==5 && names==wcd939x_supplies);supply_calls++;return supply_error;}
+static int wcd939x_enable_supplies(struct device *d)
+{(void)d;supply_calls++;return supply_error;}
 static int wcd_dt_parse_micbias_info(struct wcd_common *c)
 {(void)c;bias_calls++;return bias_error;}
 static void wcd_dt_parse_mbhc_data(struct device *d,struct wcd_mbhc_config *cfg)
@@ -64,7 +65,7 @@ awk '/^static int (wcd939x_populate_dt_data|wcd939x_reset)\(/ {emit=1}
  emit {print} emit && /^}/ {emit=0}' "$kernel/sound/soc/codecs/wcd939x.c" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 static void clear(struct wcd939x_priv *w) {
- memset(w,0,sizeof(*w));has_reset=has_gpio=false;
+ memset(w,0,sizeof(*w));has_reset=has_gpio=is_uke=false;
  reset_error=gpio_error=supply_error=bias_error=reset_result=0;
  reset_gets=gpio_gets=supply_calls=bias_calls=mbhc_calls=pulses=gpio_sets=delays=0;
 }
@@ -90,6 +91,14 @@ int main(void) {
  }
  clear(&w);gpio_error=-ENOENT;
  assert(wcd939x_populate_dt_data(&w,&dev)==-ENOENT && !supply_calls);
+ for(unsigned gpio_present=0;gpio_present<2;gpio_present++) {
+  clear(&w);is_uke=true;has_gpio=gpio_present;
+  assert(wcd939x_populate_dt_data(&w,&dev)==-EINVAL);
+  assert(!gpio_gets && !reset_gets && !supply_calls && !bias_calls && !pulses);
+ }
+ clear(&w);is_uke=true;has_reset=true;
+ assert(wcd939x_populate_dt_data(&w,&dev)==0);
+ assert(reset_gets==1 && !gpio_gets && supply_calls==1);
  clear(&w);has_reset=true;supply_error=-517;
  assert(wcd939x_populate_dt_data(&w,&dev)==-517 && !bias_calls && !pulses);
  clear(&w);has_reset=true;bias_error=-EINVAL;

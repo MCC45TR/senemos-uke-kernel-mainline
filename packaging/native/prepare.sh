@@ -33,6 +33,7 @@ case $(cat "$profile/audio-profile") in
     registration-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_CARD=1);;
     hdmi-only) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_HDMI=1);;
     speakers) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_SPEAKERS=1);;
+    microphones) usb_cpp+=(-DUKE_AUDIO_SERVICES=1 -DUKE_AUDIO_SPEAKERS=1 -DUKE_AUDIO_MICROPHONES=1);;
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
@@ -40,8 +41,21 @@ alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
     -o "$output/POCO-Pad-X1-HDMI-tplg.bin"
-alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" \
-    -o "$output/POCO-Pad-X1-tplg.bin"
+if [[ $(cat "$profile/audio-profile") == microphones ]]; then
+    git -C "$kernel" apply --check "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch"
+    git -C "$kernel" apply --check "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch"
+    CC=clang bash "$profile/tests/audio-graph-response-contract.sh" "$kernel"
+    bash "$profile/tests/microphone-pcm-limits-contract.sh" "$kernel"
+    sha256sum "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch" >> "$output/abl-source-SHA256SUMS"
+    sha256sum "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch" >> "$output/abl-source-SHA256SUMS"
+    cat "$profile/src/audio/POCO-Pad-X1.conf" \
+        "$profile/src/audio/POCO-Pad-X1-Microphone-Capture.conf" > "$output/POCO-Pad-X1.conf"
+    alsatplg -c "$output/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
+else
+    alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
+fi
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/performance/prepare-source.sh" "$kernel"
@@ -104,12 +118,12 @@ bash "$profile/tests/dp-mst-control-contract.sh" "$kernel/drivers/gpu/drm/msm/dp
 bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
 bash "$profile/src/input/prepare-source.sh" "$kernel"
 bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
-if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers)$ ]]; then
+if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers|microphones)$ ]]; then
     git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
     bash "$profile/tests/dp-audio-admission-contract.sh" "$kernel"
     sha256sum "$profile/patches/boot/0009-uke-displayport-dma-scope.patch" >> "$output/abl-source-SHA256SUMS"
-    if [[ $(jq -er .version "$kernel/senemos-adaptation/source-lock.json") == 7.3.0 ]]; then
+    if [[ $(jq -er .version "$kernel/senemos-adaptation/source-lock.json") == 7.3.[01] ]]; then
         git -C "$kernel" apply --check "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
         git -C "$kernel" apply "$profile/patches/display/0057-uke-displayport-eld-notification.patch"
         bash "$profile/tests/dp-eld-notification-contract.sh" "$kernel/sound/soc/codecs/hdmi-codec.c"
@@ -126,6 +140,10 @@ done
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-nfc
 git -C "$kernel" apply --check "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
 git -C "$kernel" apply "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-audio
+git -C "$kernel" apply --check "$profile/patches/boot/0044-uke-microphone-bob-supply.patch"
+git -C "$kernel" apply "$profile/patches/boot/0044-uke-microphone-bob-supply.patch"
+sha256sum "$profile/patches/boot/0044-uke-microphone-bob-supply.patch" >> "$output/abl-source-SHA256SUMS"
 bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
@@ -152,8 +170,13 @@ if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
     bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
     bash "$profile/tests/dp-audio-topology-contract.sh"
 fi
-if [[ $(cat "$profile/audio-profile") == speakers ]]; then
+if [[ $(cat "$profile/audio-profile") =~ ^(speakers|microphones)$ ]]; then
     bash "$profile/tests/speaker-audio-fdt-contract.sh" "$kernel"
     bash "$profile/tests/speaker-audio-topology-contract.sh"
+fi
+if [[ $(cat "$profile/audio-profile") == microphones ]]; then
+    bash "$profile/tests/microphone-audio-fdt-contract.sh" "$kernel"
+    bash "$profile/tests/microphone-audio-topology-contract.sh"
+    bash "$profile/tests/microphone-audio-card-contract.sh"
 fi
 printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'

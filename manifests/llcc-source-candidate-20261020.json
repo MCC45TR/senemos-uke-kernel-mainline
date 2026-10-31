@@ -29,11 +29,11 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
+      "sha256": "08d6d0b9320dd489231a41c057c22797f85108474a3ec7ddeaff56afc3c5e3d2"
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c1635d2f665530ad86b6ec73b671383143e7d0587fba74b5b69eff97a5a5d606"
+      "sha256": "199dbb9a7fc9dc6d753a08aa5a6c78686de3cf6e68eece136ef1e2a9e31c82d2"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -160,16 +160,12 @@
       "sha256": "b7002b6f3945db914bdb291be5fd84dccf65b31fb82c1075d3c88952dfb0617c"
     },
     {
-      "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "b7dbb24fd52485bc7f9bad4085bd27269d22a9e3c7903bcd679d1eca6358d428"
-    },
-    {
       "path": "src/boot/sm7675-uke-ufs.dtso",
       "sha256": "a11f87cd28729a0652584e738bf02e40896192a0d05d2e4d6be4fa861945e424"
     },
     {
       "path": "src/boot/uke-abl.c",
-      "sha256": "962717cc365e9b6731e799f9b001a3fdde37a98c73fa9b0620f91cdbc3bd152c"
+      "sha256": "d2f6ac36261f6374d03e2775564a24a3df3ea6072aadbed208f8c54b7726a3da"
     },
     {
       "path": "src/boot/uke-bwmon.h",
@@ -213,7 +209,7 @@
     },
     {
       "path": "src/display/prepare-source.sh",
-      "sha256": "4707dd0927de64a116f2f62f81e44bcd4b7a868eb7ebe16da59ba6514b00ceb8"
+      "sha256": "2ee3e0b1bdca1d6aaf46b53aac2379a5ffe2765a4d96d2df48f2f9249760704f"
     },
     {
       "path": "src/display/uke-abl-native.h",
@@ -469,7 +465,7 @@
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",
-      "sha256": "051c682933d1ef561a57943057e8299df9740a11aab321ee910ae6dbb4f0b8eb"
+      "sha256": "d23a55bab65b970c9637b32abec20a6d0476b5f5c5fe3a051d43d0c33a142a48"
     },
     {
       "path": "tests/usb-typec-fdt-check.cpp",
@@ -493,7 +489,7 @@
     },
     {
       "path": "tests/wcd939x-reset-consumer-contract.sh",
-      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
+      "sha256": "d50f14ae40f33b6bad65644ca550b8d11842b0c399d500e801804794d97cfe1b"
     },
     {
       "path": "tests/wcd939x-reset-contract.sh",
@@ -550,6 +546,70 @@
     {
       "path": "tests/dp-stream-lifetime-contract.sh",
       "sha256": "d8e798cfdea10fa325cccac23f5adde38ef087f2ed5ef3020cade8e0966e9e0b"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "bd64e0eabd9875efe7e582acd57e25d8114031d9050411aafdd4a8a57dc300ea"
+    },
+    {
+      "path": "src/power/uke-pm8010.h",
+      "sha256": "70548e41cd0b3d610c3298f3e8b88d3212d8195eaa0916873c861408af445cf4"
+    },
+    {
+      "path": "patches/boot/0043-uke-pm8010-firmware-population.patch",
+      "sha256": "77eb8b1d8e719df55035ee1ebb92078cef6c3eb796d810d9a66cd539abc449a2"
+    },
+    {
+      "path": "tests/pm8010-population-contract.sh",
+      "sha256": "d1c85a96b167b6820373da95bebd3a37b8c1eefa10cb2da319a9f958c8b7c511"
+    },
+    {
+      "path": "src/boot/uke-clock-debug.h",
+      "sha256": "4ad3b02863856cd46430daf832c6f3cfdc7b9997b40c3a5c7d80e86ca444340f"
+    },
+    {
+      "path": "tests/clock-debug-fdt-contract.sh",
+      "sha256": "5948924e9e6c6351d2155b559745cba8ebe3e5b8c30f66bf27dda1f1701c567d"
+    },
+    {
+      "path": "src/power/prepare-cpucp-observe.sh",
+      "sha256": "deb2d631f5481574d43288a421ac6a6eb82cf08ffae1426872039b7c194ff42d"
+    },
+    {
+      "path": "src/power/uke-cpucp-observe.c",
+      "sha256": "9421e566eb706788884011d465929bf550387f55000152675b46ad6a2465d907"
+    },
+    {
+      "path": "patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch",
+      "sha256": "346967803f13f56147b2da3e99d21f9588260809d5a07581e5f89713c447399b"
+    },
+    {
+      "path": "tests/cpufreq-boost-error-contract.sh",
+      "sha256": "5253ffca630e6136242bd9af5941eb14d79cfd31ef410e12124ee81843e72ae2"
+    },
+    {
+      "path": "tests/memlat-scmi-probe-contract.sh",
+      "sha256": "335b8e97ae06c996dbbf73f15bbbca56dd05d10c91d118da61d7a8c6588c752f"
+    },
+    {
+      "path": "tests/mainline-package-contract.sh",
+      "sha256": "c89b035bd0a4bae3f444a79489a1b405246cf16e01d2211ce4ccadd91d5f3d22"
+    },
+    {
+      "path": "patches/boot/0052-scmi-protocol-negotiation-opt-out.patch",
+      "sha256": "ca122e655b1e0248c9205aeb61eaf5c3809ac7a2bef67d1475037506bddce4cc"
+    },
+    {
+      "path": "tests/scmi-no-negotiation-contract.sh",
+      "sha256": "16ca1437d16685b71ade3914006e40556a3250b681024f6522585255023fc73a"
+    },
+    {
+      "path": "patches/boot/0055-cpufreq-lmh-policy-lifecycle.patch",
+      "sha256": "f78d5c342e2b8239196974c9b575ffe6e88899854fed7da731d5d4aed269ff0f"
+    },
+    {
+      "path": "tests/cpufreq-lmh-lifecycle-contract.sh",
+      "sha256": "1ce87b238505ced6940bd4883d9d66f095787fd787d04ce0f309ac1eca2ca1df"
     }
   ],
   "baseline_files": [
@@ -672,7 +732,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.0-60",
+  "kernel_release": "7.3.1-16",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

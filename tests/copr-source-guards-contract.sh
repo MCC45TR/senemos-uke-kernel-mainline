@@ -6,7 +6,7 @@ recipes=${1:-$owner/packaging/native}
 release_guard=${2:-$owner/packaging/native/refuse-published-release.sh}
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
-for recipe in copr-framebuffer55 copr-reservation56 copr-lifecycle57 copr-retirement58 copr-transaction59 copr-regression60;do
+for recipe in copr-framebuffer55 copr-reservation56 copr-lifecycle57 copr-retirement58 copr-transaction59 copr-regression60 copr-transaction73 copr-stable731;do
  path_check=$(awk '/awk .*bad/ && index($0,"\"$stage/entries\"") {print;found++} END {if(found!=1)exit 1}' "$recipes/$recipe.sh")
  printf 'set -Eeuo pipefail\nstage=${1:?}\n%s\nprintf reached\n' "$path_check" > "$work/entry-check.sh"
  for path in './safe/file' 'safe/../escape' '/absolute' '../escape' './safe/../../escape' './safe/.../file';do
@@ -24,6 +24,10 @@ done
 mkdir "$work/bin"
 cat > "$work/bin/curl" <<'SH'
 #!/usr/bin/env bash
+if [[ ${UKE_GUARD_TEST_ONLY:-0} == 1 && "$*" != *'projectname=uke-linux-test'* ]]; then
+    printf '{"items":[]}\n'
+    exit 0
+fi
 cat "$UKE_GUARD_RESPONSE"
 SH
 chmod 755 "$work/bin/curl"
@@ -53,4 +57,13 @@ for kind in unsourced malformed missing_url;do
  set -e
  if [[ $kind == unsourced ]];then [[ $status == 0 ]];else [[ $status != 0 ]];fi
 done
+# The same NVR/key rule includes custom directories in the testing project.
+export UKE_GUARD_TEST_ONLY=1
+jq -n --arg name "$name" '{items:[{state:"running",source_package:{name:$name,
+ version:"7.3.0-58",url:"https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test:custom:power/srpm-builds/1/kernel.src.rpm"}}]}' > "$work/builds.json"
+if PATH="$work/bin:$PATH" bash "$release_guard" "$name" 7.3.0-58 > "$work/result" 2>&1; then
+    echo 'A testing-directory NVR was incorrectly admitted for reuse' >&2
+    exit 1
+fi
+unset UKE_GUARD_TEST_ONLY
 printf 'Actual source-worker path refusals and consumed-source NVR guards pass; no compilation or network\n'

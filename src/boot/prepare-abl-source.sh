@@ -13,7 +13,9 @@ case $llcc_profile in
     *) echo 'Unknown LLCC source profile' >&2; exit 2;;
 esac
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
-case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
+case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0|7.3.1) ;; *) exit 1;; esac
+series=$(jq -er '.patch_series // .version' "$kernel/senemos-adaptation/source-lock.json")
+case $series in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 bash "$here/../../tests/resin-wake-contract.sh" "$kernel"
@@ -59,16 +61,25 @@ bash "$here/../../tests/ufs-mcq-contract.sh" "$kernel"
 bash "$here/../../tests/ufs-mcq-allocation-contract.sh" "$kernel"
 for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
     0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
-    0020-soundwire-probe-errors.patch; do
+    0020-soundwire-probe-errors.patch 0043-wcd939x-micbias-errors.patch \
+    0045-wcd939x-uke-supply-order.patch 0046-wcd939x-chip-identification-errors.patch \
+    0047-wcd939x-uke-reset-required.patch 0048-uke-soundwire-machine-dependency.patch \
+    0049-wcd939x-io-errors.patch \
+    0050-soundwire-resume-clock-error.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$audio_patch"
     git -C "$kernel" apply "$here/../../patches/boot/$audio_patch"
 done
 bash "$here/../../tests/wcd939x-channel-switch-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-probe-error-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-reset-consumer-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-micbias-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-supply-order-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-chip-info-contract.sh" "$kernel"
+bash "$here/../../tests/wcd939x-io-contract.sh" "$kernel"
 bash "$here/../../tests/wcd939x-reset-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
 bash "$here/../../tests/usbss-reset-lifetime-contract.sh" "$here/../usb/wcd939x-uke-typec.c"
 bash "$here/../../tests/soundwire-probe-error-contract.sh" "$kernel"
+bash "$here/../../tests/soundwire-resume-clock-contract.sh" "$kernel"
 bash "$here/../../tests/lpass-sm7675-pins-contract.sh" "$kernel"
 bash "$here/../../tests/audio-providers-fdt-contract.sh" "$kernel"
 bash "$here/../../tests/speaker-audio-fdt-contract.sh" "$kernel"
@@ -101,6 +112,20 @@ done
 bash "$here/../../tests/bcl-hwmon-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 bash "$here/../../tests/bcl-alarm-lifetime-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 bash "$here/../../tests/bcl-uke-admission-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0043-uke-pm8010-firmware-population.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0043-uke-pm8010-firmware-population.patch"
+install -m644 "$here/../power/uke-pm8010.h" "$kernel/drivers/mfd/uke-pm8010.h"
+bash "$here/../../tests/pm8010-population-contract.sh" "$kernel"
+git -C "$kernel" apply --check "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
+bash "$here/../../tests/cpufreq-boost-error-contract.sh" "$kernel/drivers/cpufreq/cpufreq.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0055-cpufreq-lmh-policy-lifecycle.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0055-cpufreq-lmh-policy-lifecycle.patch"
+bash "$here/../../tests/cpufreq-lmh-lifecycle-contract.sh" "$kernel/drivers/cpufreq/qcom-cpufreq-hw.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0052-scmi-protocol-negotiation-opt-out.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0052-scmi-protocol-negotiation-opt-out.patch"
+bash "$here/../../tests/scmi-no-negotiation-contract.sh" "$kernel/drivers/firmware/arm_scmi/driver.c"
+bash "$here/../power/prepare-cpucp-observe.sh" "$kernel"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
@@ -127,6 +152,8 @@ install -m644 "$here/uke-root-selector.h" "$kernel/arch/arm64/kernel/uke-root-se
 install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h"
 install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
 install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-thermal.h"
+install -m644 "$here/uke-clock-debug.h" "$kernel/arch/arm64/kernel/uke-clock-debug.h"
+bash "$here/../../tests/clock-debug-fdt-contract.sh" "$kernel"
 install -m644 "$here/uke-hall.h" "$kernel/arch/arm64/kernel/uke-hall.h"
 install -m644 "$here/uke-lights.h" "$kernel/arch/arm64/kernel/uke-lights.h"
 install -m644 "$here/../usb/wcd939x-uke-typec.c" "$kernel/drivers/usb/typec/mux/wcd939x-uke-typec.c"
@@ -171,8 +198,8 @@ sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-
     "$here/../../patches/boot/0013-sm7675-trng-binding.patch" \
     "$here/uke-ufs-mcq.h" "$here/../../patches/boot/0014-uke-ufs-mcq-resources.patch" \
     "$here/../../patches/boot/0015-ufs-mcq-preserve-sdb-on-allocation-failure.patch" \
-    "$here/../../patches/$version/0036-uke-adreno732-render.patch" \
-    "$here/../../patches/$version/0037-uke-gpu-interconnect.patch" \
+    "$here/../../patches/$series/0036-uke-adreno732-render.patch" \
+    "$here/../../patches/$series/0037-uke-gpu-interconnect.patch" \
     "$here/sm7675-uke-adreno732.dtsi" "$header" > "$output/abl-source-SHA256SUMS"
 sha256sum "$here/sm7675-uke-pinctrl.dtsi" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/uke-bwmon.h" >> "$output/abl-source-SHA256SUMS"
@@ -185,10 +212,15 @@ sha256sum "$here/../../patches/boot/0008-uke-platform-profile.patch" \
 sha256sum "$here/uke-llcc.h" "$kernel/arch/arm64/kernel/uke-llcc-profile.h" \
     "$output/llcc-profile" >> "$output/abl-source-SHA256SUMS"
 sha256sum "$here/../audio/sm7675-uke-audio-providers.dtsi" \
-    "$here/../audio/sm7675-uke-speaker-audio.dtsi" >> "$output/abl-source-SHA256SUMS"
+    "$here/../audio/sm7675-uke-speaker-audio.dtsi" \
+    "$here/../audio/sm7675-uke-microphone-audio.dtsi" >> "$output/abl-source-SHA256SUMS"
 for audio_patch in 0016-wcd939x-channel-switches.patch 0017-wcd939x-provider-errors.patch \
     0018-wcd939x-coordinated-reset.patch 0019-sm7675-lpass-pinctrl.patch \
-    0020-soundwire-probe-errors.patch; do
+    0020-soundwire-probe-errors.patch 0043-wcd939x-micbias-errors.patch \
+    0045-wcd939x-uke-supply-order.patch 0046-wcd939x-chip-identification-errors.patch \
+    0047-wcd939x-uke-reset-required.patch 0048-uke-soundwire-machine-dependency.patch \
+    0049-wcd939x-io-errors.patch \
+    0050-soundwire-resume-clock-error.patch; do
     sha256sum "$here/../../patches/boot/$audio_patch" >> "$output/abl-source-SHA256SUMS"
 done
 sha256sum "$here/../../patches/boot/0021-bwmon-preserve-applied-vote-on-error.patch" >> "$output/abl-source-SHA256SUMS"

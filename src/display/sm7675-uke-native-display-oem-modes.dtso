@@ -28,3 +28,6 @@
 #ifdef UKE_AUDIO_SPEAKERS
 #include "../audio/sm7675-uke-speaker-audio.dtsi"
 #endif
+#ifdef UKE_AUDIO_MICROPHONES
+#include "../audio/sm7675-uke-microphone-audio.dtsi"
+#endif

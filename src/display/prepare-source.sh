@@ -5,7 +5,7 @@ set -Eeuo pipefail
 kernel=$(realpath "$1")
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 version=$(jq -er .version "$kernel/senemos-adaptation/source-lock.json")
-case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0) ;; *) exit 1;; esac
+case $version in 7.2.9|7.2.10|7.2.11|7.2.12|7.3.0|7.3.1) ;; *) exit 1;; esac
 [[ $(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "$kernel/Makefile") == "$version" ]]
 cmp "$kernel/senemos-applied-patches.txt" <(jq -er '.patches[].path | split("/") | last' "$kernel/senemos-adaptation/source-lock.json")
 patch=$here/../../patches/display/7.2.10/0001-native-display-providers.patch
@@ -22,7 +22,7 @@ paths=(
     include/drm/uke-o82-mode.h
     include/drm/uke-o82-avr.h
 )
-if [[ $version == 7.3.0 ]]; then
+if [[ $version == 7.3.0 || $version == 7.3.1 ]]; then
     paths+=(drivers/gpu/drm/msm/dp/dp_dsc.c drivers/gpu/drm/msm/dp/dp_dsc.h)
 fi
 for path in "${paths[@]}"; do [[ ! -e $kernel/$path ]]; done
@@ -89,7 +89,7 @@ for candidate in 0007-native-dsc-full-ich-precision.patch 0008-native-o82-video-
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"
 done
-if [[ $version == 7.3.0 ]]; then
+if [[ $version == 7.3.0 || $version == 7.3.1 ]]; then
     patch=$here/../../patches/display/0059-uke-displayport-rgb-dsc-fec.patch
     git -C "$kernel" apply --check "$patch"
     git -C "$kernel" apply "$patch"

@@ -2,17 +2,25 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 .ONESHELL:
 .PHONY: validate srpm test-touch-protocol test-touch-transport test-touch-dt
-version := 7.3.0
-patch_count := $(if $(filter 7.3.0,$(version)),127,120)
+version := 7.3.1
+patch_series := 7.3.0
+patch_count := 127
 outdir ?= $(CURDIR)/build/srpm
 validate: test-touch-protocol test-touch-transport
 	bash tests/copr-source-guards-contract.sh
 	bash -n tests/msm-retirement-contract.sh tests/msm-writeback-contract.sh tests/msm-retirement-proof-contract.sh
 	bash -n tests/o82-avr-contract.sh tests/dpu-video-timing-contract.sh
 	bash -n tests/msm-kms-lifecycle-contract.sh tests/msm-kms-unwind-contract.sh tests/msm-kms-alternate-build.sh
+	bash tests/msm-kms-release-contract.sh
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh
 	bash -n tests/battery-notification-contract.sh
+	bash -n tests/pm8010-population-contract.sh
+	bash -n tests/clock-debug-fdt-contract.sh tests/cpufreq-boost-error-contract.sh
+	bash -n src/power/prepare-cpucp-observe.sh
+	bash -n tests/scmi-no-negotiation-contract.sh
+	bash -n tests/cpufreq-lmh-lifecycle-contract.sh
+	CC=cc bash tests/memlat-scmi-probe-contract.sh src/power/uke-cpucp-observe.c
 	bash -n tests/dp-dsc-contract.sh tests/dp-dsc-state-contract.sh
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh
 	bash -n tests/dp-mst-payload-contract.sh tests/dp-mst-control-contract.sh tests/dp-altmode-retimer-contract.sh
@@ -32,10 +40,12 @@ validate: test-touch-protocol test-touch-transport
 	CC=clang bash tests/llcc-pmu-contract.sh
 	CC=cc bash tests/audio-fs19xx-lifecycle-contract.sh
 	bash -n tests/audio-probe-contract.sh
+	bash -n tests/microphone-audio-{card,fdt,topology}-contract.sh tests/wcd939x-io-contract.sh tests/soundwire-resume-clock-contract.sh
 	bash -n src/boot/check-root-capability.sh tests/root-selector-note-contract.sh
-	test "$(version)" = 7.3.0
+	test "$(version)" = 7.3.1
 	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == $(patch_count)) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
-	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
+	jq -e '.version == "$(version)" and .patch_series == "$(patch_series)" and .parent_copr_build == 11230581 and (.patches | length == 122)' manifests/native-linux-$(version).json >/dev/null
+	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(patch_series)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
@@ -68,6 +78,9 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/pas-stop-ownership-contract.sh tests/rproc-early-stop-contract.sh tests/sysmon-stop-preparation-contract.sh
 	bash -n tests/wcd939x-channel-switch-contract.sh tests/wcd939x-probe-error-contract.sh \
 	    tests/wcd939x-reset-consumer-contract.sh tests/wcd939x-reset-contract.sh \
+	    tests/wcd939x-micbias-contract.sh \
+	    tests/wcd939x-supply-order-contract.sh \
+	    tests/wcd939x-chip-info-contract.sh \
 	    tests/usbss-reset-lifetime-contract.sh tests/soundwire-probe-error-contract.sh \
 	    tests/lpass-sm7675-pins-contract.sh tests/audio-providers-fdt-contract.sh
 	bash -n src/nfc/prepare-source.sh tests/nfc-syntax.sh tests/ir-spi-contract.sh
@@ -94,6 +107,15 @@ test-ufs-mcq:
 test-root-capability:
 	test -n "$(kernel_source)"
 	bash tests/root-selector-note-contract.sh "$(kernel_source)" manifests/boot-payload.json
+.PHONY: test-microphones
+test-microphones:
+	test -n "$(kernel_source)"
+	bash tests/microphone-audio-fdt-contract.sh "$(kernel_source)"
+	bash tests/microphone-audio-topology-contract.sh
+	bash tests/microphone-audio-card-contract.sh
+	bash tests/wcd939x-reset-consumer-contract.sh "$(kernel_source)"
+	bash tests/wcd939x-io-contract.sh "$(kernel_source)"
+	bash tests/soundwire-resume-clock-contract.sh "$(kernel_source)"
 srpm: validate
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"
@@ -114,15 +136,15 @@ srpm: validate
 	grep -F "[GNUPG:] VALIDSIG $$(jq -er .signer manifests/linux-$(version).json) " "$$top/signature.txt"
 	rm -rf "$$top/adaptation"
 	mkdir -p "$$top/adaptation/senemos-adaptation"/{patches,configs}
-	cp patches/$(version)/* "$$top/adaptation/senemos-adaptation/patches/"
+	cp patches/$(patch_series)/* "$$top/adaptation/senemos-adaptation/patches/"
 	cp configs/{arm64-qcom,uke,fedora}.config "$$top/adaptation/senemos-adaptation/configs/"
 	cp manifests/linux-$(version).json "$$top/adaptation/senemos-adaptation/source-lock.json"
-	cp patches/$(version)/README.md "$$top/adaptation/senemos-adaptation/README.md"
+	cp patches/$(patch_series)/README.md "$$top/adaptation/senemos-adaptation/README.md"
 	tar --sort=name --mtime=@$$(jq -er .source_date_epoch manifests/linux-$(version).json) --owner=0 --group=0 --numeric-owner -cJf "$$top/SOURCES/senemos-uke-adaptation-$(version).tar.xz" -C "$$top/adaptation" senemos-adaptation
 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
 	mkdir -p "$$assets"
-	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(version) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
+	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(patch_series) patches/display patches/boot patches/input tests | tar -xf - -C "$$assets"
 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
 	install -m755 packaging/native/prepare.sh "$$assets/"
 	git rev-parse HEAD > "$$assets/source-commit"
