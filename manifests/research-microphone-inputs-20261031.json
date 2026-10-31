@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-31",
-  "scope": "Individual analog input research; not physical position or multichannel acceptance",
+  "scope": "Stable analog input identities and OEM route aliases; physical geometry and multichannel qualification pending",
   "sources": [
     {
       "id": "uke-static-mic-routes",
@@ -39,30 +39,56 @@
   "board_reference": "Live unmodified OEM audio-routing property; bias voltages unchanged",
   "inputs": [
     {
+      "id": "uke-amic1",
+      "oem_route_alias": "sidebottom-mic",
+      "physical_position": null,
+      "position_verified": false,
       "amic": 1,
       "adc": 1,
       "bias": 1,
       "swr_input": 0
     },
     {
+      "id": "uke-amic3",
+      "oem_route_alias": "top-mic",
+      "physical_position": null,
+      "position_verified": false,
       "amic": 3,
       "adc": 3,
       "bias": 3,
       "swr_input": 2
     },
     {
+      "id": "uke-amic4",
+      "oem_route_alias": "back-mic",
+      "physical_position": null,
+      "position_verified": false,
       "amic": 4,
       "adc": 4,
       "bias": 3,
       "swr_input": 3
     },
     {
+      "id": "uke-amic5",
+      "oem_route_alias": "sidetop-mic",
+      "physical_position": null,
+      "position_verified": false,
       "amic": 5,
       "adc": 2,
       "bias": 4,
       "swr_input": 1
     }
   ],
+  "geometry_review": {
+    "source": "delano-git/android_vendor_xiaomi_sm8635-common",
+    "commit": "475e955b3780aee6dd007178e08bf8a231143681",
+    "file": "proprietary/vendor/etc/microphone_characteristics.xml",
+    "sha256": "618133e7ddd73dba10d45036856127b91b9e649299e1fd8b30fcb2e1002744bb",
+    "matches_live_read_only_vendor_file": true,
+    "accepted_as_uke_geometry": false,
+    "reason": "Two declared microphones share identical coordinates/orientation; no explicit builtin_mic ID to AMIC association or qualified Uke body-frame mapping",
+    "raw_response_and_geometry_values_redistributed": false
+  },
   "native_policy": {
     "channels": 1,
     "rate": 48000,
@@ -73,6 +99,8 @@
     "Only AMIC1 raw data/reopen tested before this source candidate",
     "Ambient fan reported; no audio audition or controlled source comparison",
     "Other inputs and physical position pending device qualification",
+    "OEM route aliases are provisional descriptions, not measured aperture locations",
+    "The current mono stream channel zero identifies the selected input only; future multichannel ordering must be qualified separately",
     "No proprietary preset/calibration or sparse Android decimator values copied"
   ]
 }
