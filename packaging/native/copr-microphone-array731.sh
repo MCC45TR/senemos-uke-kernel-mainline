@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# COPR-only: bounded microphone capture on the qualified Linux 7.3.1-104 profile.
+# COPR-only: DT microphone gains and kernel audio data over qualified release102.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-104
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-105
 CC=clang bash "$owner/tests/microphone-gain-contract.sh"
 CXX=clang++ bash "$owner/tests/kernel-audio-policy-contract.sh"
 make -C "$owner" validate
@@ -95,4 +95,4 @@ done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/retained.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-104
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-105

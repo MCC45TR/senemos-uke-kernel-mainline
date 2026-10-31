@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with the qualified release102 capture graph. Candidate104 adds bounded pre-capture DT gains and kernel-owned versioned desktop audio data. Physical candidate acceptance remains pending; no stock firmware or private calibration is added.",
+  "source_origin": "Signed Linux 7.3.1 with the qualified release102 capture graph. Candidate105 adds bounded pre-capture DT gains and kernel-owned versioned desktop audio data. Physical candidate acceptance remains pending; no stock firmware or private calibration is added.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "7fbc003200a3ef6bd044a4dcfd08f149ee050d214343cacb04513763b81c8fc6"
+      "sha256": "a5d9500de9226921b78de29c87fdb4d73a69c310f7c4cafbcbab0f435f5751e1"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
