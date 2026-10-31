@@ -28,7 +28,11 @@ if [[ ${UKE_GUARD_TEST_ONLY:-0} == 1 && "$*" != *'projectname=uke-linux-test'* ]
     printf '{"items":[]}\n'
     exit 0
 fi
-cat "$UKE_GUARD_RESPONSE"
+if [[ -n ${UKE_GUARD_TEST_RESPONSE:-} && " $* " == *' projectname=uke-linux-test '* ]]; then
+ cat "$UKE_GUARD_TEST_RESPONSE"
+else
+ cat "$UKE_GUARD_RESPONSE"
+fi
 SH
 chmod 755 "$work/bin/curl"
 export UKE_GUARD_RESPONSE=$work/builds.json
@@ -66,4 +70,19 @@ if PATH="$work/bin:$PATH" bash "$release_guard" "$name" 7.3.0-58 > "$work/result
     exit 1
 fi
 unset UKE_GUARD_TEST_ONLY
+# A version consumed in either project must refuse even if the other is empty.
+export UKE_GUARD_TEST_RESPONSE=$work/test-builds.json
+for consuming_project in unstable test; do
+ printf '{"items":[]}' > "$work/builds.json"
+ printf '{"items":[]}' > "$work/test-builds.json"
+ if [[ $consuming_project == test ]]; then destination=$work/test-builds.json; else destination=$work/builds.json; fi
+ jq -n --arg name "$name" '{items:[{state:"running",source_package:{name:$name,version:"7.3.1-14",url:"https://example.invalid/kernel.src.rpm"}}]}' > "$destination"
+ for proposed in 7.3.1-14 7.3.1-15; do
+  set +e
+  PATH="$work/bin:$PATH" bash "$release_guard" "$name" "$proposed" > "$work/result" 2>&1
+  status=$?
+  set -e
+  if [[ $proposed == 7.3.1-15 ]]; then [[ $status == 0 ]]; else [[ $status != 0 ]]; fi
+ done
+done
 printf 'Actual source-worker path refusals and consumed-source NVR guards pass; no compilation or network\n'

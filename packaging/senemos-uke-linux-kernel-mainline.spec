@@ -7,11 +7,12 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 16
+%global senemos_build_release 105
 %else
 %global senemos_build_release 1
 %endif
 %global krel %{version}-%{senemos_build_release}
+%global uke_audio_driver %(printf 'uke%%s' '%{krel}' | tr '.' '_')
 Release: %{senemos_build_release}%{?dist}
 Summary: Mainline Linux 7.3.1 Uke kernel with O82 display and Cliffs video
 License: GPL-2.0-only AND MIT AND BSD-3-Clause
@@ -33,6 +34,7 @@ BuildRequires: libasan libubsan
 BuildRequires: elfutils-libelf-devel openssl-devel openssl ncurses-devel
 BuildRequires: pkgconfig(libsystemd)
 BuildRequires: alsa-topology-utils
+BuildRequires: alsa-lib-devel alsa-utils dt-schema
 BuildRequires: rsync tar xz zstd kmod git-core jq gnupg2 dtc
 BuildRequires: libfdt-devel
 BuildRequires: python3
@@ -42,7 +44,6 @@ Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
 Requires: %{name}-boot = %{version}-%{release}
 Provides: installonlypkg(kernel)
-Recommends: uke-displayport-audio >= 0.1.0-6
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -56,6 +57,10 @@ Summary: Uke kernel Image and source identity
 Provides: installonlypkg(kernel)
 Provides: kernel-uname-r(%{krel})
 Provides: uke-kernel(platform-profile-qos-v1) = 1
+Provides: uke-displayport-audio = 0.1.0-13%{?dist}
+Requires: (wireplumber >= 0.5 if wireplumber)
+Requires: (pipewire-pulseaudio >= 1.6.10-1.uke1 if pipewire-pulseaudio)
+Recommends: alsa-ucm
 
 %description core
 Image with the matching source-built initramfs, configuration and source record.
@@ -271,6 +276,8 @@ CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
 CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
 CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
 CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/microphone-gain-contract.sh
+CXX=clang++ bash native-profile/tests/kernel-audio-policy-contract.sh
 CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
 CC=clang bash native-profile/tests/audio-probe-contract.sh "$PWD"
@@ -360,6 +367,7 @@ install -m644 native-generated/display.dtbo "$module_dir/dtb/overlays/uke-o82-oe
 depmod -b %{buildroot} -m /usr/lib/modules -a %{krel}
 identity=%{buildroot}/usr/share/senemos/uke/%{krel}
 mkdir -p "$identity"
+bash native-profile/src/audio/desktop/install-policy.sh '%{buildroot}' '%{krel}'
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
 install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
 install -m644 senemos-adaptation/source-lock.json senemos-applied-patches.txt "$identity/"
@@ -399,6 +407,18 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/modules/%{krel}/modules.order
 /usr/share/senemos/uke/%{krel}/
 /usr/lib/firmware/%{krel}/
+%dir /usr/share/alsa/ucm2/Qualcomm/sm7675
+/usr/share/alsa/ucm2/Qualcomm/sm7675/*.conf
+%dir /usr/share/alsa/ucm2/conf.d/sm7675
+/usr/share/alsa/ucm2/conf.d/sm7675/*.conf
+/usr/share/alsa/ucm2/Qualcomm/%{uke_audio_driver}/
+/usr/share/alsa/ucm2/conf.d/%{uke_audio_driver}/
+/usr/share/wireplumber/wireplumber.conf.d/75-uke-thp-not-camera.conf
+/usr/share/wireplumber/wireplumber.conf.d/80-uke-microphone-array.conf
+/usr/share/wireplumber/wireplumber.conf.d/95-uke-microphone-array-%{krel}.conf
+%dir /usr/share/senemos/uke/audio
+/usr/share/senemos/uke/audio/microphone-layout.json
+%license /usr/share/licenses/uke-kernel-audio-%{krel}/LICENSE
 
 %files modules
 /usr/lib/modules/%{krel}/kernel/
@@ -423,6 +443,33 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-105
+- Deliver the kernel-owned microphone array through the requested unstable channel.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-104
+- Correct the gain schema unit suffix and validation path before kernel compilation.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-103
+- Apply bounded DT microphone gains before codec power-up, with register rollback on errors.
+- Deliver one named four-channel input and matching desktop data with the kernel.
+- Preserve legacy audio data and version new policy files for parallel-kernel rollback.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-102
+- Preserve contiguous codec-DMA microphone IDs through the frontend converter.
+- Require the corrected raw-channel capability for desktop capture.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-101
+- Admit the unmodified TX negative-control source with its existing sign warning.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-100
+- Track each TX decimator independently and mute every selected capture channel.
+- Gate shared microphone desktop profiles on the corrected capture lifecycle.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-16
+- Preserve selected 1/2/4-channel capture at 48 kHz S16_LE.
+- Require exact contiguous TX decimator counts and masks matching the DMA format.
+- Advertise the bounded microphone capability in the running ALSA card components.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-16
 - Preserve the release-13 individual microphone routes in the power trial.
 - Retain LMH lifecycle recovery, strict CPUCP reads and guarded clock ownership.

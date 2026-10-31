@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# COPR-only: add isolated mono capture to the retained Linux 7.3.1-4 profile.
+# COPR-only: bounded microphone capture on the retained Linux 7.3.1-4 profile.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-13
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-102
 make -C "$owner" validate
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -44,6 +44,8 @@ overlays=(
  patches/boot/0049-wcd939x-io-errors.patch patches/boot/0050-soundwire-resume-clock-error.patch
  patches/boot/0053-q6apm-uke-mono-capture.patch tests/microphone-pcm-limits-contract.sh
  patches/boot/0054-audioreach-read-completion-v2-layout.patch tests/audio-graph-response-contract.sh
+ patches/boot/0055-lpass-tx-macro-multichannel-state.patch tests/lpass-tx-multichannel-contract.sh
+ patches/boot/0056-q6apm-uke-raw-microphone-channel-map.patch tests/microphone-channel-map-contract.sh
  tests/audio-services-fdt-contract.sh tests/mainline-package-contract.sh
  tests/microphone-audio-card-contract.sh tests/microphone-audio-fdt-contract.sh
  tests/microphone-audio-topology-contract.sh tests/soundwire-resume-clock-contract.sh
@@ -74,7 +76,7 @@ commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq -Rn '[inputs]' < "$stage/overlays" > "$stage/overlays.json"
 jq -n --arg commit "$commit" --slurpfile overlays "$stage/overlays.json" \
- '{schema_version:1,source_mode:"retained-stable-profile-with-individual-mono-inputs",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11233851,parent_srpm_sha256:"9352f9906a315bdcc1be596f8318d5097cfda191c1f6544e8e38df9fca9e1f5b",parent_composition:"source-composition-parent7314.json",adaptation_patches_unchanged:true,overlays:$overlays[0],audio_profile:"microphones",capture_channels:1,capture_analog_inputs:[1,3,4,5],input_qualification:"pending_individual_device_trials",physical_acceptance:false}' > "$profile/source-composition.json"
+ '{schema_version:1,source_mode:"retained-stable-profile-with-bounded-multichannel-inputs",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11233851,parent_srpm_sha256:"9352f9906a315bdcc1be596f8318d5097cfda191c1f6544e8e38df9fca9e1f5b",parent_composition:"source-composition-parent7314.json",adaptation_patches_unchanged:true,overlays:$overlays[0],audio_profile:"microphones",capture_channels:4,capture_channel_counts:[1,2,4],capture_analog_inputs:[1,3,4,5],input_qualification:"individual_mono_data_verified_release13_simultaneous_pending",physical_acceptance:false}' > "$profile/source-composition.json"
 install -m644 "$owner/manifests/boot-payload.json" "$boot/lock.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c -)
@@ -88,4 +90,4 @@ done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/retained.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-13
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-102

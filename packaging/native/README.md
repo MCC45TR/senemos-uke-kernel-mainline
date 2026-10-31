@@ -1,11 +1,21 @@
 # Mainline native source profile
 
-31 October 2026, Linux 7.3.1-13 microphone candidate: release 10 records nonzero
-mono data and reopens on POCO Pad X1. This candidate adds the four OEM analog
-input/bias routes and native ADC bridges for individual mono trials. The
-48 kHz S16_LE mono frontend, DEC0-only admission, supplies, reset, pins and
-playback graphs remain. Other inputs, independent multichannel capture,
-desktop policy and physical acoustic localization remain unqualified.
+31 October 2026, unstable kernel105 candidate: preserve release102's four isolated
+capture channels and deliver one named four-channel input with the kernel.
+Bounded ADC/TX defaults move to DT and apply before capture power-up, including
+after ALSA state restore. Per-release ALSA/WirePlumber data coexists with older
+kernels, while frozen legacy data permits removing the separate audio RPM.
+Source preparation is complete; COPR and installed kernel105 acceptance remain
+pending. The preceding pre-start ADC8/TX24 trial on102 records four clean
+channels; it is not kernel105 validation or measured SNR improvement.
+
+31 October 2026, POCO Pad X1, Fedora Rawhide AArch64: release 13 produces
+complete nonzero mono recordings from each AMIC1/3/4/5 individually, with the
+selected ADC/route active and controls restored. The release 16 source
+candidate preserves selected 1/2/4-channel requests at 48 kHz S16_LE and requires
+the exact matching contiguous TX decimator mask. Supplies, reset, pins, IRQs
+and playback graphs remain. Simultaneous independent capture, desktop policy
+and physical aperture positions require separate device validation.
 
 30 October 2026, isolated microphone source candidate: the optional
 `microphones` profile retains speaker/DP playback and adds a restricted mono

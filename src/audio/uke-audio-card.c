@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Uke playback, experimental mono capture and closed registration profiles. */
+/* Uke playback, bounded microphone capture and closed registration profiles. */
 #include <linux/module.h>
+#include <linux/build_bug.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
 #include <sound/jack.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
+#include <generated/utsrelease.h>
 #include "common.h"
 #include "sdw.h"
+#include "uke-microphone-gain.h"
 
 static int uke_hdmi_late_probe(struct snd_soc_card *card)
 {
@@ -105,6 +109,8 @@ struct uke_speaker_data {
 	struct snd_soc_jack jack;
 	bool microphones;
 	bool capture_prepared;
+	u32 microphone_analog_gain[4];
+	u32 microphone_digital_gain[4];
 };
 
 static int uke_speaker_hdmi_init(struct snd_soc_pcm_runtime *rtd)
@@ -144,7 +150,7 @@ static int uke_speaker_late_probe(struct snd_soc_card *card)
 			if (cpu->id == 2) {
 				if (cpu->driver->playback.channels_min ||
 				    cpu->driver->capture.channels_min != 1 ||
-				    cpu->driver->capture.channels_max != 1)
+				    cpu->driver->capture.channels_max != 4)
 					return -EINVAL;
 			} else if (cpu->driver->capture.channels_min) {
 				return -EINVAL;
@@ -172,10 +178,17 @@ static void uke_capture_clear_stream(struct snd_pcm_substream *substream)
 
 static int uke_capture_startup(struct snd_pcm_substream *substream)
 {
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
 	int ret;
 
 	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
 		return -EINVAL;
+	/* Apply the board defaults before power-up, including after ALSA state restore. */
+	ret = uke_microphone_apply_gain(rtd, data->microphone_analog_gain,
+					data->microphone_digital_gain);
+	if (ret)
+		return ret;
 	ret = qcom_snd_sdw_startup(substream);
 	/* The shared helper releases its allocation on a partial startup error. */
 	if (ret)
@@ -190,8 +203,11 @@ static int uke_capture_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 	struct snd_mask *format = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
 
+	/* Preserve the selected FE channel count for the matching DMA format. */
+	if (channels->min != channels->max ||
+	    (channels->min != 1 && channels->min != 2 && channels->min != 4))
+		return -EINVAL;
 	rate->min = rate->max = 48000;
-	channels->min = channels->max = 1;
 	snd_mask_none(format);
 	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S16_LE);
 	return 0;
@@ -202,24 +218,27 @@ static int uke_capture_hw_params(struct snd_pcm_substream *substream,
 {
 	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
 	unsigned int tx_num = 0, tx_mask = 0, rx_num = 0, rx_mask = 0;
+	unsigned int channels = params_channels(params);
 	int ret;
 
-	if (params_rate(params) != 48000 || params_channels(params) != 1 ||
+	if (params_rate(params) != 48000 ||
+	    (channels != 1 && channels != 2 && channels != 4) ||
 	    params_format(params) != SNDRV_PCM_FORMAT_S16_LE)
 		return -EINVAL;
 
 	/*
 	 * The TX macro returns a decimator bitmask, not a channel-slot array.
-	 * DEC0 alone agrees with the mono DMA default physical mask, BIT(0).
-	 * Sparse or multiple decimators require a separately qualified DMA map.
+	 * AudioReach's default 1/2/4-channel mapping occupies consecutive DMA
+	 * positions. Require the same DEC0..N-1 mask and exact channel count;
+	 * Android's sparse decimators are not compatible with this mapping.
 	 */
 	ret = snd_soc_dai_get_channel_map(snd_soc_rtd_to_codec(rtd, 2),
 					  &tx_num, &tx_mask, &rx_num, &rx_mask);
 	if (ret)
 		return ret;
-	if (tx_num != 1 || tx_mask != BIT(0) || rx_num)
+	if (tx_num != channels || tx_mask != BIT(channels) - 1 || rx_num)
 		return dev_err_probe(rtd->dev, -EINVAL,
-				     "Mono capture requires TX_AIF1 DEC0 only\n");
+				     "Capture requires matching contiguous TX_AIF1 decimators\n");
 	return 0;
 }
 
@@ -318,6 +337,9 @@ static int uke_speaker_probe(struct platform_device *pdev)
 	if (card->num_links != (data->microphones ? 3 : 2) || card->num_aux_devs ||
 	    strcmp(card->name, "POCO-Pad-X1"))
 		return -EINVAL;
+	/* UCM discovers the bounded capture capability from this card instance. */
+	if (data->microphones)
+		card->components = "mic:uke-4ch-v3";
 
 	for_each_card_prelinks(card, i, link) {
 		if (link->id == DISPLAY_PORT_RX_0 && !hdmi)
@@ -351,6 +373,28 @@ static int uke_speaker_probe(struct platform_device *pdev)
 		    strcmp(capture->codecs[1].dai_name, "SDW Pin1") ||
 		    strcmp(capture->codecs[2].dai_name, "tx_macro_tx1"))
 			return -EINVAL;
+		if (of_property_count_u32_elems(dev->of_node,
+			"xiaomi,microphone-analog-gain") != 4 ||
+		    of_property_count_u32_elems(dev->of_node,
+			"xiaomi,microphone-digital-gain-db") != 4 ||
+		    of_property_read_u32_array(dev->of_node,
+			"xiaomi,microphone-analog-gain", data->microphone_analog_gain, 4) ||
+		    of_property_read_u32_array(dev->of_node,
+			"xiaomi,microphone-digital-gain-db", data->microphone_digital_gain, 4) ||
+		    !uke_microphone_gain_valid(data->microphone_analog_gain,
+					 data->microphone_digital_gain))
+			return dev_err_probe(dev, -EINVAL, "Invalid board microphone gains\n");
+		/* Per-release discovery lets parallel kernels retain their own UCM data. */
+		BUILD_BUG_ON(sizeof("uke" UTS_RELEASE) > 16);
+		card->driver_name = "uke" UTS_RELEASE;
+		card->components = "mic:uke-4ch-v4 kernel:" UTS_RELEASE;
+		{
+			const char *model;
+
+			if (!of_property_read_string(of_root, "model", &model) &&
+			    (!strcmp(model, "POCO Pad X1") || !strcmp(model, "Xiaomi Pad 7")))
+				card->long_name = model;
+		}
 		capture->be_hw_params_fixup = uke_capture_fixup;
 		capture->ops = &uke_capture_ops;
 	}

@@ -37,6 +37,7 @@ case $(cat "$profile/audio-profile") in
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
+install -m644 "$profile/src/audio/uke-microphone-gain.h" "$kernel/sound/soc/qcom/uke-microphone-gain.h"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
@@ -46,10 +47,20 @@ if [[ $(cat "$profile/audio-profile") == microphones ]]; then
     git -C "$kernel" apply "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch"
     git -C "$kernel" apply --check "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch"
     git -C "$kernel" apply "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch"
+    cp "$kernel/sound/soc/codecs/lpass-tx-macro.c" "$output/lpass-tx-macro-before0055.c"
+    git -C "$kernel" apply --check "$profile/patches/boot/0055-lpass-tx-macro-multichannel-state.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0055-lpass-tx-macro-multichannel-state.patch"
+    CC=clang bash "$profile/tests/lpass-tx-multichannel-contract.sh" "$kernel" "$output/lpass-tx-macro-before0055.c"
+    cp "$kernel/sound/soc/qcom/qdsp6/q6apm-dai.c" "$output/q6apm-dai-before0056.c"
+    git -C "$kernel" apply --check "$profile/patches/boot/0056-q6apm-uke-raw-microphone-channel-map.patch"
+    git -C "$kernel" apply "$profile/patches/boot/0056-q6apm-uke-raw-microphone-channel-map.patch"
+    CC=clang bash "$profile/tests/microphone-channel-map-contract.sh" "$kernel" "$output/q6apm-dai-before0056.c"
     CC=clang bash "$profile/tests/audio-graph-response-contract.sh" "$kernel"
     bash "$profile/tests/microphone-pcm-limits-contract.sh" "$kernel"
     sha256sum "$profile/patches/boot/0053-q6apm-uke-mono-capture.patch" >> "$output/abl-source-SHA256SUMS"
     sha256sum "$profile/patches/boot/0054-audioreach-read-completion-v2-layout.patch" >> "$output/abl-source-SHA256SUMS"
+    sha256sum "$profile/patches/boot/0055-lpass-tx-macro-multichannel-state.patch" >> "$output/abl-source-SHA256SUMS"
+    sha256sum "$profile/patches/boot/0056-q6apm-uke-raw-microphone-channel-map.patch" >> "$output/abl-source-SHA256SUMS"
     cat "$profile/src/audio/POCO-Pad-X1.conf" \
         "$profile/src/audio/POCO-Pad-X1-Microphone-Capture.conf" > "$output/POCO-Pad-X1.conf"
     alsatplg -c "$output/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"

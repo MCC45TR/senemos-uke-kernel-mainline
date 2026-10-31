@@ -7,8 +7,8 @@ candidate=${2:?Pass the proposed version-release without the Fedora suffix}
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 for project in uke-linux uke-linux-test uke-linux-unstable; do
-offset=0
-while ((offset < 10000)); do
+ offset=0
+ while ((offset < 10000)); do
     curl --fail --silent --show-error --location --max-time 45 --get \
         --data-urlencode ownername=mcc45tr --data-urlencode "projectname=$project" \
         --data-urlencode "packagename=$name" --data-urlencode limit=100 --data-urlencode "offset=$offset" \
@@ -26,7 +26,7 @@ while ((offset < 10000)); do
         comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$published\", \"$candidate\"))}")
         [[ $comparison =~ ^-?[0-9]+$ ]]
         if ((comparison >= 0)); then
-            printf 'Refusing %s: published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$published" >&2
+            printf 'Refusing %s: %s published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$project" "$published" >&2
             exit 1
         fi
     done
@@ -35,7 +35,10 @@ while ((offset < 10000)); do
         break
     fi
     offset=$((offset + 100))
+ done
+ ((offset < 10000)) || {
+  echo 'Build history limit reached; review before rebuilding' >&2
+  exit 1
+ }
 done
-((offset < 10000)) || { echo 'Build history limit reached; review before rebuilding' >&2; exit 1; }
-done
-printf 'Fresh kernel release admitted across project directories: %s\n' "$candidate"
+printf 'Fresh kernel release admitted across all COPR projects: %s\n' "$candidate"
