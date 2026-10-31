@@ -15,6 +15,7 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/ucsi-pd-contract.sh
 	bash -n tests/battery-protocol-inspect.sh
 	bash -n tests/battery-notification-contract.sh
+	bash -n tests/pm8010-population-contract.sh
 	bash -n tests/dp-dsc-contract.sh tests/dp-dsc-state-contract.sh
 	bash -n tests/dp-fec-status-contract.sh tests/dp-dsc-tu-contract.sh
 	bash -n tests/dp-mst-payload-contract.sh tests/dp-mst-control-contract.sh tests/dp-altmode-retimer-contract.sh

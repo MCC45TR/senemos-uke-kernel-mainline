@@ -103,6 +103,10 @@ done
 bash "$here/../../tests/bcl-hwmon-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 bash "$here/../../tests/bcl-alarm-lifetime-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
 bash "$here/../../tests/bcl-uke-admission-contract.sh" "$kernel/drivers/hwmon/qcom-bcl-hwmon.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0043-uke-pm8010-firmware-population.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0043-uke-pm8010-firmware-population.patch"
+install -m644 "$here/../power/uke-pm8010.h" "$kernel/drivers/mfd/uke-pm8010.h"
+bash "$here/../../tests/pm8010-population-contract.sh" "$kernel"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
