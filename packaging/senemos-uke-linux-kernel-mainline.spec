@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 105
+%global senemos_build_release 106
 %else
 %global senemos_build_release 1
 %endif
@@ -91,7 +91,7 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.8.11
+Requires: uke-kernel-update >= 1.8.13
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: uke-kernel-update(transaction-v1) >= 1
 Requires: uke-kernel-update(final-transaction-v2) >= 1
@@ -223,7 +223,7 @@ CC=clang bash native-profile/tests/platform-profile-contract.sh
 CC=clang bash native-profile/tests/platform-profile-framework-contract.sh "$PWD"
 bash native-profile/tests/identity-contract.sh
 test "$(readlink %{buildroot}/usr/lib/senemos/default-boot.img)" = kernel-updates/%{krel}/userdata.img
-jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==false' %{buildroot}/usr/share/senemos/uke/singleboot.json
+jq -e '.kernel_release=="%{krel}" and .automatic_kernel_activation==true' %{buildroot}/usr/share/senemos/uke/singleboot.json
 bash native-profile/tests/native-firewall-contract.sh %{_uke_out}/.config %{_uke_out}
 CC=clang bash native-profile/tests/llcc-sm7675-contract.sh "$PWD"
 CC=clang bash native-profile/tests/llcc-gpu-startup-contract.sh drivers/gpu/drm/msm/adreno/adreno_device.c
@@ -346,7 +346,7 @@ cat > %{buildroot}/usr/share/senemos/uke/singleboot.json <<'EOF'
   "root_filesystem": "f2fs",
   "boot_selector": "senemos.root=userdata",
   "boot_image": "/usr/lib/senemos/kernel-updates/%{krel}/userdata.img",
-  "automatic_kernel_activation": false
+  "automatic_kernel_activation": true
 }
 EOF
 ln -s kernel-updates/%{krel}/userdata.img %{buildroot}/usr/lib/senemos/default-boot.img
@@ -439,6 +439,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-106
+- Make guarded automatic boot staging the singleboot package contract.
+- Require the updater whose default enables verified inactive-slot delivery.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-105
 - Deliver the kernel-owned microphone array through the requested unstable channel.
 

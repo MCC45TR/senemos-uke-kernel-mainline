@@ -14,7 +14,7 @@ grep -Fxq "$base-singleboot"$'\t'"$base"$'\t=\t'"$release" <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-installation-profile\t>=\t1.3.1' <<< "$requirements"
 grep -Fxq "$base-singleboot"$'\tuke-kernel-update(root-filesystem-v2)\t>=\t1' <<< "$requirements"
 parsed=$(rpmspec --target aarch64 --parse "$spec")
-grep -Fq '"automatic_kernel_activation": false' <<< "$parsed"
+grep -Fq '"automatic_kernel_activation": true' <<< "$parsed"
 grep -Fq 'ln -s kernel-updates/' <<< "$parsed"
 if grep -E '^%(post|pre|preun|postun|posttrans|pretrans).*singleboot' <<< "$parsed"; then
     echo 'Singleboot metadata must not activate a boot image' >&2; exit 1
