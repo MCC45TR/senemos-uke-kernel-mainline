@@ -565,7 +565,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "9be4d8403d29c8dc972855e28fb972c2191105dc8a515ecebf96a8add629a8d3"
+      "sha256": "c504917a59ec5faae5d7e0526e9ec80dcbcfa1a1a7b3cc5a621f823d5aa02382"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -601,7 +601,7 @@
     },
     {
       "path": "src/power/uke-cpucp-observe.c",
-      "sha256": "444d9104c4db583a4e7867f2ead2e5ae8eb54f4c4688ed2c46ecdb74f55bcc7c"
+      "sha256": "9421e566eb706788884011d465929bf550387f55000152675b46ad6a2465d907"
     },
     {
       "path": "patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch",
@@ -614,6 +614,14 @@
     {
       "path": "tests/memlat-scmi-probe-contract.sh",
       "sha256": "335b8e97ae06c996dbbf73f15bbbca56dd05d10c91d118da61d7a8c6588c752f"
+    },
+    {
+      "path": "patches/boot/0052-scmi-protocol-negotiation-opt-out.patch",
+      "sha256": "ca122e655b1e0248c9205aeb61eaf5c3809ac7a2bef67d1475037506bddce4cc"
+    },
+    {
+      "path": "tests/scmi-no-negotiation-contract.sh",
+      "sha256": "16ca1437d16685b71ade3914006e40556a3250b681024f6522585255023fc73a"
     }
   ],
   "root_selector_capability": {

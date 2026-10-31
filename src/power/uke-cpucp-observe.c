@@ -144,6 +144,8 @@ static const struct scmi_protocol uke_memlat_protocol = {
 	.ops = &uke_memlat_ops,
 	.vendor_id = "Qualcomm",
 	.supported_version = 0x10000,
+	/* Legacy 0x10 is SET, not a standard version-negotiation message. */
+	.no_version_negotiation = true,
 };
 
 static int uke_memlat_probe(struct scmi_device *sdev)

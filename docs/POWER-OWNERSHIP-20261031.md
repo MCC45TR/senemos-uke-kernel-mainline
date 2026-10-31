@@ -42,7 +42,7 @@ ignore-unused workarounds still need separate ownership and physical checks.
 
 ## Isolated kernel candidate
 
-Release 7.3.1-7 retains the exact release-4 source RPM and its 122 adaptation
+Release 7.3.1-8 retains the exact release-4 source RPM and its 122 adaptation
 patches. The separate microphone release-6 build is not an input. Explicit
 overlays add this clock candidate, the cpufreq boost-error rollback correction
 and a signed `uke-cpucp-observe` module. PM debug messages are enabled for the
@@ -54,6 +54,13 @@ protocol version with an actual standard VERSION transfer, then permits only
 MEMLAT timestamp/raw-frequency GETs and the exact C1DCVS enable GET. Fixed-size
 replies retain an overlength sentinel; malformed/error replies leave output
 unknown. No firmware configuration, start/stop or raw command interface exists.
+
+The internal SCMI descriptor disables automatic negotiation for this observer.
+Qualcomm's legacy message 0x10 is SET, so an unsupported higher firmware version
+must be rejected by strict read admission before the core can negotiate it.
+Existing standard protocol descriptors retain their negotiation behavior.
+Release-7 source build 11234274 was canceled after this call-chain finding;
+its emitted source RPM consumes that NVR and was not installed or loaded.
 
 The candidate is intended for the separate
 `uke-linux-test:custom:power-20261031` COPR directory, Rawhide AArch64 only.

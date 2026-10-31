@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 7
+%global senemos_build_release 8
 %else
 %global senemos_build_release 1
 %endif
@@ -423,6 +423,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-8
+- Skip automatic version negotiation for the strictly admitted read-only vendor client.
+- Preserve the canceled release-7 source identity and standard SCMI behavior.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-7
 - Stage the isolated power candidate on the accepted release-4 composition.
 - Retire the unused debug measurement consumer and preserve boost metadata on error.

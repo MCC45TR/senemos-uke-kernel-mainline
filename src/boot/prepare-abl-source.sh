@@ -110,6 +110,9 @@ bash "$here/../../tests/pm8010-population-contract.sh" "$kernel"
 git -C "$kernel" apply --check "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
 git -C "$kernel" apply "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
 bash "$here/../../tests/cpufreq-boost-error-contract.sh" "$kernel/drivers/cpufreq/cpufreq.c"
+git -C "$kernel" apply --check "$here/../../patches/boot/0052-scmi-protocol-negotiation-opt-out.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0052-scmi-protocol-negotiation-opt-out.patch"
+bash "$here/../../tests/scmi-no-negotiation-contract.sh" "$kernel/drivers/firmware/arm_scmi/driver.c"
 bash "$here/../power/prepare-cpucp-observe.sh" "$kernel"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do

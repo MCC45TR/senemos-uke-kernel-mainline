@@ -6,7 +6,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-7
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-8
 make -C "$owner" validate
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -39,6 +39,7 @@ overlays=(
  packaging/native/native.config src/boot/prepare-abl-source.sh src/boot/uke-abl.c
  src/boot/uke-clock-debug.h src/power/prepare-cpucp-observe.sh src/power/uke-cpucp-observe.c
  patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch
+ patches/boot/0052-scmi-protocol-negotiation-opt-out.patch tests/scmi-no-negotiation-contract.sh
  tests/clock-debug-fdt-contract.sh tests/cpufreq-boost-error-contract.sh
  tests/memlat-scmi-probe-contract.sh tests/mainline-package-contract.sh
 )
@@ -59,17 +60,21 @@ while read -r expected relative; do
         printf '%s  %s\n' "$expected" "$profile/$relative" | sha256sum -c -
     fi
 done < "$stage/parent-profile.sha256"
-# Run the real new wire operations and core rollback before source RPM emission.
+# Check wire operations, version admission and core rollback before SRPM emission.
 bash "$owner/tests/memlat-scmi-probe-contract.sh" "$owner/src/power/uke-cpucp-observe.c"
 mkdir -p "$stage/fixture"
-tar -xJf "$output/linux-7.3.1.tar.xz" --strip-components=1 -C "$stage/fixture" linux-7.3.1/drivers/cpufreq/cpufreq.c
+tar -xJf "$output/linux-7.3.1.tar.xz" --strip-components=1 -C "$stage/fixture" \
+ linux-7.3.1/drivers/cpufreq/cpufreq.c linux-7.3.1/drivers/firmware/arm_scmi/driver.c \
+ linux-7.3.1/drivers/firmware/arm_scmi/protocols.h
 git -C "$stage/fixture" apply "$owner/patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
 bash "$owner/tests/cpufreq-boost-error-contract.sh" "$stage/fixture/drivers/cpufreq/cpufreq.c"
+git -C "$stage/fixture" apply "$owner/patches/boot/0052-scmi-protocol-negotiation-opt-out.patch"
+bash "$owner/tests/scmi-no-negotiation-contract.sh" "$stage/fixture/drivers/firmware/arm_scmi/driver.c"
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq -Rn '[inputs]' < "$stage/overlays" > "$stage/overlays.json"
 jq -n --arg commit "$commit" --slurpfile overlays "$stage/overlays.json" \
- '{schema_version:1,source_mode:"retained-stable-profile-with-power-ownership-candidate",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11233851,parent_srpm_sha256:"9352f9906a315bdcc1be596f8318d5097cfda191c1f6544e8e38df9fca9e1f5b",parent_composition:"source-composition-parent7314.json",adaptation_patches_unchanged:true,overlays:$overlays[0],audio_profile:"speakers",cpucp_observer:"manual-get-only",boost_default_changed:false,ignore_unused_removed:[],pm_debug_messages:true,physical_acceptance:false}' > "$profile/source-composition.json"
+ '{schema_version:1,source_mode:"retained-stable-profile-with-power-ownership-candidate",source_commit:$commit,upstream_version:"7.3.1",upstream_commit:"79a907609d53d5cd645b42c11550d295d43abf99",upstream_sha256:"fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231",patch_series:"7.3.0",adaptation_patch_count:122,parent_copr_build:11233851,parent_srpm_sha256:"9352f9906a315bdcc1be596f8318d5097cfda191c1f6544e8e38df9fca9e1f5b",parent_composition:"source-composition-parent7314.json",adaptation_patches_unchanged:true,overlays:$overlays[0],audio_profile:"speakers",cpucp_observer:"manual-get-only",cpucp_version_negotiation:false,cpucp_required_version:"1.0",boost_default_changed:false,ignore_unused_removed:[],pm_debug_messages:true,physical_acceptance:false}' > "$profile/source-composition.json"
 install -m644 "$owner/manifests/boot-payload.json" "$boot/lock.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c -)
@@ -80,4 +85,4 @@ done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/retained.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-7
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-8
