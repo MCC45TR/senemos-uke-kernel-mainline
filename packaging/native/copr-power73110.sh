@@ -41,7 +41,7 @@ overlays=(
  patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch
  patches/boot/0052-scmi-protocol-negotiation-opt-out.patch tests/scmi-no-negotiation-contract.sh
  tests/clock-debug-fdt-contract.sh tests/cpufreq-boost-error-contract.sh
- tests/memlat-scmi-probe-contract.sh tests/mainline-package-contract.sh
+ tests/memlat-scmi-probe-contract.sh tests/memlat-scmi-live-probe.c tests/mainline-package-contract.sh
 )
 : > "$stage/overlays"
 for relative in "${overlays[@]}"; do
@@ -62,6 +62,7 @@ while read -r expected relative; do
 done < "$stage/parent-profile.sha256"
 # Check wire operations, version admission and core rollback before SRPM emission.
 bash "$owner/tests/memlat-scmi-probe-contract.sh" "$owner/src/power/uke-cpucp-observe.c"
+bash "$owner/tests/memlat-scmi-probe-contract.sh" "$owner/tests/memlat-scmi-live-probe.c"
 mkdir -p "$stage/fixture"
 tar -xJf "$output/linux-7.3.1.tar.xz" --strip-components=1 -C "$stage/fixture" \
  linux-7.3.1/drivers/cpufreq/cpufreq.c linux-7.3.1/drivers/firmware/arm_scmi/driver.c \
