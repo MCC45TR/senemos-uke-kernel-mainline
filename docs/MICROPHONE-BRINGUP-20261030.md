@@ -1,5 +1,23 @@
 # Uke internal microphone bring-up, 31 October 2026
 
+## Current qualification boundary
+
+31 October 2026. POCO Pad X1, Fedora Rawhide AArch64, kernel7.3.1-102: four
+independent paths feed one named four-channel input. Pre-start ADC indices8
+and TX24dB give operator-accepted normal speech; the complete770048-frame
+recording has no full-scale samples. Later handling transients demonstrate
+that this does not establish unlimited headroom or thirty clean cycles.
+
+Signed COPR11237692 produces candidate105 with DT-bound gains before capture
+power-up and audio data owned by kernel-core. All six signed RPMs, complete
+Images,822 module hashes, gain properties and legacy-data compatibility pass
+package admission. The operator installs105; the guarded updater writes and
+verifies A while retaining accepted102/B. Candidate boot and microphone
+acceptance remain pending. Fresh106 declares automatic singleboot delivery.
+These pinned candidates do not qualify the complete combined main source.
+
+## Historical mono bring-up record
+
 POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-10. Its native card
 exposes two playback PCMs and one mono capture PCM. Two 10-second raw mono
 recordings contain nonzero samples without clipping; the second opens as an

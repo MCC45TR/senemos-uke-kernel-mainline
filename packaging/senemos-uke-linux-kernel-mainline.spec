@@ -49,8 +49,8 @@ Provides: installonlypkg(kernel)
 Source-built kernel with the reviewed O82 native display profile.
 The boot subpackage contains a source-built initramfs and Android v4 container
 with matching modules. It contains no OEM firmware or device-private data.
-Boot writes require the explicitly enabled native updater. Build success does
-not establish physical tablet acceptance.
+The guarded native updater stages the selected singleboot kernel during DNF
+transactions. Build success does not establish physical tablet acceptance.
 
 %package core
 Summary: Uke kernel Image and source identity
@@ -101,9 +101,10 @@ Requires: (uke-power-profile-backend(native-handoff-v1) >= 1 if uke-power-profil
 Provides: installonlypkg(kernel)
 
 %description boot
-Kernel-only Android v4 image for boot_b and PARTLABEL=linux. The native updater
-checks package identities, module digests, physical storage and power, preserves
-the previous image, and verifies write readback. Android A is not an update target.
+Matched kernel-only Android v4 images for Linux-root and singleboot userdata
+profiles. The native updater checks package identities, module digests, physical
+storage and power and verifies write readback. Singleboot alternates between
+Linux boot slots while preserving the accepted image and matched modules.
 
 %package singleboot
 Summary: Matched Uke userdata boot profile

@@ -1,9 +1,13 @@
 # Development branches
 
-31 October 2026. `main` holds integrated source, `KVM` retains the isolated
-KVM/EL2 package producer, and `TEST` retains its test integration history.
+31 October 2026. `main` is the continuation branch, `kvm` retains the isolated
+KVM/EL2 package producer, and `test` retains its test integration history.
 These are the three retained development branches. Source integration does not
 establish package, VM or tablet acceptance.
+
+The former `KVM` and `TEST` tips are retained exactly by the lowercase branch
+renames. The microphone106 source tip is reachable from main through merged
+PR #46. A merged topic branch can therefore be removed without losing commits.
 
 Historical branch heads remain in `archive/branch-prune-20261031/` tags.
 The completed one-time pruning workflow is not an active maintenance mechanism.

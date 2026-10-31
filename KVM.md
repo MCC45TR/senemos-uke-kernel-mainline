@@ -2,7 +2,7 @@
 
 31 October 2026. Main integrates the KVM helper, admission, assembly, patch and
 research sources without selecting an experimental entry in ordinary packages.
-The retained `KVM` branch is the isolated package producer; its separate package
+The retained `kvm` branch is the isolated package producer; its separate package
 namespace, module ABI and no-activation policy are not replacements for main's
 normal producer. Do not use main's `make srpm` as an EL2 build command.
 
