@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with the verified release3 native profile, unchanged 122-patch adaptation, and guarded Uke PM8010 population admission. Canonical 127-patch Git source remains separate; physical validation is recorded independently.",
+  "source_origin": "Signed Linux 7.3.1 with the retained release4 profile, unchanged 122-patch adaptation, PM8010 population guard and isolated mono microphone source overlay. Compilation runs only on COPR; physical capture remains untested.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -10,10 +10,6 @@
     {
       "path": "packaging/native/native.config",
       "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
-    },
-    {
-      "path": "packaging/native/prepare.sh",
-      "sha256": "2c09d49e792134a5546f969bcc79aace4dcc8739536c412d39511d8f0f98bbbd"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -408,10 +404,6 @@
       "sha256": "22a361acedc93654beb343b48929ba9f62e77234d6ba4354a2c5bb703fd338ed"
     },
     {
-      "path": "tests/uke-rpmh-resource-contract.sh",
-      "sha256": "051c682933d1ef561a57943057e8299df9740a11aab321ee910ae6dbb4f0b8eb"
-    },
-    {
       "path": "tests/usb-typec-fdt-check.cpp",
       "sha256": "68e325e38739ebce77a9f73fa0ce8aef63de562367d2423eb8d563560779b1f3"
     },
@@ -434,10 +426,6 @@
     {
       "path": "tests/wcd939x-probe-error-contract.sh",
       "sha256": "fcfdbbc4cdf05d5117139244a695435d03da7f4d19089917158eb7e70d629ce9"
-    },
-    {
-      "path": "tests/wcd939x-reset-consumer-contract.sh",
-      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
     },
     {
       "path": "tests/wcd939x-reset-contract.sh",
@@ -564,10 +552,6 @@
       "sha256": "e9d0d78f438f4bd79b62a8bc7c5848c714b2dd89dbf7d1f2599ae5569fd9eb40"
     },
     {
-      "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "ed39d0a4a1fcd5ce76d97050187e9615af86a9b41560f4777bba70417c0312d0"
-    },
-    {
       "path": "src/power/uke-pm8010.h",
       "sha256": "70548e41cd0b3d610c3298f3e8b88d3212d8195eaa0916873c861408af445cf4"
     },
@@ -580,8 +564,120 @@
       "sha256": "d1c85a96b167b6820373da95bebd3a37b8c1eefa10cb2da319a9f958c8b7c511"
     },
     {
+      "path": "packaging/native/prepare.sh",
+      "sha256": "5eba1548bb2e7ac911138a0a0fdc19fdf2dfa137eb8e6d44287dd4b21837ab4e"
+    },
+    {
+      "path": "packaging/native/audio-profile",
+      "sha256": "27176f29dece83b5b990357f4b0116717d1024addf43e32b33a14945d268c1d0"
+    },
+    {
+      "path": "packaging/native/README.md",
+      "sha256": "3b9747c8965d80aa02489f79c5a64bbe054baa225340881ab0289949fa00b45a"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "7bbeffa18f257d22297608c723a270dc5b968d26f784b686707085ec079428c4"
+    },
+    {
+      "path": "src/audio/uke-audio-card.c",
+      "sha256": "6fa96fb9f327f05bb0b6c2ed484b5136bd2fb80d704c2a7532fc256f22dab830"
+    },
+    {
+      "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
+      "sha256": "78ab1b094dc238f76173c49644ab662ffc2feea73a58bd275d5f9e64b9508741"
+    },
+    {
+      "path": "src/audio/POCO-Pad-X1-Microphone-Capture.conf",
+      "sha256": "ad7ad7906a9f7fd3647a2c2f7ba5b8ba5bd14e3e1b05099ba4c70191022a93c3"
+    },
+    {
+      "path": "src/display/sm7675-uke-native-display-oem-modes.dtso",
+      "sha256": "64e7fa9fe66534f04df807c7ef80a24400760b7040a9ad48dfc5920b14681cf3"
+    },
+    {
+      "path": "patches/boot/0043-wcd939x-micbias-errors.patch",
+      "sha256": "d1163060bfabcae546e6ebe6ddb390da016c1a6dac6a5d9bfc666c2facaccd5a"
+    },
+    {
+      "path": "patches/boot/0044-uke-microphone-bob-supply.patch",
+      "sha256": "1c13893c068ee2bda37795b2813a2a66d78b767cca1d8541f457a23289af4dff"
+    },
+    {
+      "path": "patches/boot/0045-wcd939x-uke-supply-order.patch",
+      "sha256": "20bf635e05979a3cc397c653eb95ca2c18903a24e28362115f7b775c9fb87693"
+    },
+    {
+      "path": "patches/boot/0046-wcd939x-chip-identification-errors.patch",
+      "sha256": "d8db53edd89df4b2875336dc6480bec8e62d5ef2a673213e6e674b42bea0b8c7"
+    },
+    {
+      "path": "patches/boot/0047-wcd939x-uke-reset-required.patch",
+      "sha256": "742fde1ada6c988772af1b4f396da491386f30045ba2af312b57d35e3ff18a9f"
+    },
+    {
+      "path": "patches/boot/0048-uke-soundwire-machine-dependency.patch",
+      "sha256": "933be7f4be49c89f1f0fcea4c92f0caa79cf86c0657997fb80a2252bff781930"
+    },
+    {
+      "path": "patches/boot/0049-wcd939x-io-errors.patch",
+      "sha256": "f4e7fd11bf8396db12fa0e53dd4cdb8659820c9e1862d9be1a1762bf83973148"
+    },
+    {
+      "path": "patches/boot/0050-soundwire-resume-clock-error.patch",
+      "sha256": "75aa7c7a3ba8d95478bb56af1f0c94a0974c2e44893579940ea5bf676437d6f2"
+    },
+    {
+      "path": "tests/audio-services-fdt-contract.sh",
+      "sha256": "87480c018e8b4b3888752e73923fe46bc093385ab239c83ce3cd9c0e55d37967"
+    },
+    {
       "path": "tests/mainline-package-contract.sh",
-      "sha256": "290e93fee6f42aba54e9833380e2214054a726704aa9a4f6b695c988120a1202"
+      "sha256": "c89b035bd0a4bae3f444a79489a1b405246cf16e01d2211ce4ccadd91d5f3d22"
+    },
+    {
+      "path": "tests/microphone-audio-card-contract.sh",
+      "sha256": "79634bb4feb5761e943d8d841578e018dd3c8d4fbb1f1af0bfc356664a80883b"
+    },
+    {
+      "path": "tests/microphone-audio-fdt-contract.sh",
+      "sha256": "e8087ed5043bdfafb967d56d8b9d0ddc1dfe843950b968bcd1bed27feaeab724"
+    },
+    {
+      "path": "tests/microphone-audio-topology-contract.sh",
+      "sha256": "52118de7bdd8a4456e1abfb1da9cce28196088ed617f65522b841f2b1caaa76b"
+    },
+    {
+      "path": "tests/soundwire-resume-clock-contract.sh",
+      "sha256": "8d59ed86588b439ddc7e888abfe1394bad0cf918b6b70d5547f4e722944cff5d"
+    },
+    {
+      "path": "tests/speaker-audio-fdt-contract.sh",
+      "sha256": "4f9b747b1ad02b2b0bc3f84fcaea1d99339e61ab21f47ad160ad02e0f7be30ec"
+    },
+    {
+      "path": "tests/uke-rpmh-resource-contract.sh",
+      "sha256": "d23a55bab65b970c9637b32abec20a6d0476b5f5c5fe3a051d43d0c33a142a48"
+    },
+    {
+      "path": "tests/wcd939x-chip-info-contract.sh",
+      "sha256": "83861bfd35e7f9876d45a420cd3d6ab5143c825fd9edcb8511d306252fa05aef"
+    },
+    {
+      "path": "tests/wcd939x-io-contract.sh",
+      "sha256": "f36ba5f550976b7568b28b77225a34f6f8605e6acf933c357f20b3b4741b9c28"
+    },
+    {
+      "path": "tests/wcd939x-micbias-contract.sh",
+      "sha256": "a9b0fd8c69f8e7c1bcf478250dcdbcbd9fd60075730299150b80d8d52b32c740"
+    },
+    {
+      "path": "tests/wcd939x-reset-consumer-contract.sh",
+      "sha256": "d50f14ae40f33b6bad65644ca550b8d11842b0c399d500e801804794d97cfe1b"
+    },
+    {
+      "path": "tests/wcd939x-supply-order-contract.sh",
+      "sha256": "a5c1dfdcc39e9572ac3c6ecad669b38ed0df264de36e508fb04dc082e0f4b916"
     }
   ],
   "root_selector_capability": {

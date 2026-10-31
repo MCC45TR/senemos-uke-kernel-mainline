@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 4
+%global senemos_build_release 5
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-5
+- Retain the release4 profile and add guarded mono microphone capture.
+- Preserve four-channel speaker and stereo DisplayPort paths; hardware testing remains pending.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-4
 - Admit the optional Uke PM8010 N using validated firmware population and resources.
 - Preserve populated variants, generic SPMI errors and the accepted rollback slot.

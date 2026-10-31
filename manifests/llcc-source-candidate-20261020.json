@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "2c09d49e792134a5546f969bcc79aace4dcc8739536c412d39511d8f0f98bbbd"
+      "sha256": "5eba1548bb2e7ac911138a0a0fdc19fdf2dfa137eb8e6d44287dd4b21837ab4e"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -465,7 +465,7 @@
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",
-      "sha256": "051c682933d1ef561a57943057e8299df9740a11aab321ee910ae6dbb4f0b8eb"
+      "sha256": "d23a55bab65b970c9637b32abec20a6d0476b5f5c5fe3a051d43d0c33a142a48"
     },
     {
       "path": "tests/usb-typec-fdt-check.cpp",
@@ -489,7 +489,7 @@
     },
     {
       "path": "tests/wcd939x-reset-consumer-contract.sh",
-      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
+      "sha256": "d50f14ae40f33b6bad65644ca550b8d11842b0c399d500e801804794d97cfe1b"
     },
     {
       "path": "tests/wcd939x-reset-contract.sh",
@@ -549,7 +549,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "ed39d0a4a1fcd5ce76d97050187e9615af86a9b41560f4777bba70417c0312d0"
+      "sha256": "7bbeffa18f257d22297608c723a270dc5b968d26f784b686707085ec079428c4"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -684,7 +684,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.1-4",
+  "kernel_release": "7.3.1-5",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

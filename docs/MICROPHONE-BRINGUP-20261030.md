@@ -1,6 +1,6 @@
-# Uke internal microphone bring-up, 30 October 2026
+# Uke internal microphone bring-up, 31 October 2026
 
-POCO Pad X1 runs Fedora Rawhide and Linux 7.3.0-54. Its native card still
+POCO Pad X1 runs Fedora Rawhide and Linux 7.3.1-3. Its native card still
 exposes playback only. No internal microphone capture has been obtained.
 The objective remains independent operation of all four physical microphones.
 
@@ -17,8 +17,8 @@ capture fragment to the existing playback source, with distinct module,
 container and subgraph IDs. Its format is 48 kHz, S16_LE, one channel.
 The machine rejects other decimator masks and multi-channel capture.
 
-The default package profile remains `speakers`. Selecting `microphones`
-is an engineering build choice, not an accepted release configuration.
+This isolated candidate selects `microphones`. The accepted distribution
+profile remains `speakers`. The selection is not a hardware acceptance claim.
 No UCM capture entry is added before raw capture works.
 
 Both SoundWire slaves and the WCD compound codec are described. The exact
@@ -40,6 +40,14 @@ state before watchdog/MBHC setup. Patch 0050 checks the SoundWire interface
 clock before changing the wake IRQ or accessing controller registers.
 
 ## Reproduction and validation
+
+Run `packaging/native/copr-microphones731.sh` only in a COPR source worker.
+The producer verifies the pinned release4 SRPM, retains its signed Linux
+7.3.1 source and all 122 adaptation patches, and overlays the listed microphone
+files. Other native-profile files remain byte-identical, including the PM8010
+population guard. Kernel 7.3.0-73 is historical build evidence and must not
+replace the accepted 7.3.1 baseline. All compilation and schema validation
+for this candidate runs on COPR. No local build is permitted.
 
 Use a separately prepared Linux 7.3 tree with the locked core series and
 native audio patches. Run:
