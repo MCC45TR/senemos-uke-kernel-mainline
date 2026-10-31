@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "date": "2026-10-30",
+  "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with the exact published release60 122-patch adaptation and native profile, explicit version-admission helpers and final DNF singleboot staging. The canonical 127-patch Git source profile is separate. Native, package and physical acceptance remain distinct.",
+  "source_origin": "Signed Linux 7.3.1 with the verified release3 native profile, unchanged 122-patch adaptation, and guarded Uke PM8010 population admission. Canonical 127-patch Git source remains separate; physical validation is recorded independently.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -190,10 +190,6 @@
     {
       "path": "src/boot/offline/io.hpp",
       "sha256": "a237d32ebb451c8abcaeebea2531a95ed8b93126274b20911ab07ae487e01766"
-    },
-    {
-      "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "6378e4e8e11861cdcf60dc204c1d766df6128f1282b5cd3548abe1c8a626b820"
     },
     {
       "path": "src/boot/uke-bwmon.h",
@@ -566,6 +562,26 @@
     {
       "path": "manifests/retirement60-parent-files.sha256",
       "sha256": "e9d0d78f438f4bd79b62a8bc7c5848c714b2dd89dbf7d1f2599ae5569fd9eb40"
+    },
+    {
+      "path": "src/boot/prepare-abl-source.sh",
+      "sha256": "ed39d0a4a1fcd5ce76d97050187e9615af86a9b41560f4777bba70417c0312d0"
+    },
+    {
+      "path": "src/power/uke-pm8010.h",
+      "sha256": "70548e41cd0b3d610c3298f3e8b88d3212d8195eaa0916873c861408af445cf4"
+    },
+    {
+      "path": "patches/boot/0043-uke-pm8010-firmware-population.patch",
+      "sha256": "77eb8b1d8e719df55035ee1ebb92078cef6c3eb796d810d9a66cd539abc449a2"
+    },
+    {
+      "path": "tests/pm8010-population-contract.sh",
+      "sha256": "d1c85a96b167b6820373da95bebd3a37b8c1eefa10cb2da319a9f958c8b7c511"
+    },
+    {
+      "path": "tests/mainline-package-contract.sh",
+      "sha256": "290e93fee6f42aba54e9833380e2214054a726704aa9a4f6b695c988120a1202"
     }
   ],
   "root_selector_capability": {

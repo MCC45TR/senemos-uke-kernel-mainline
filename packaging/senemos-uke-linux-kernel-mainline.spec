@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 3
+%global senemos_build_release 4
 %else
 %global senemos_build_release 1
 %endif
@@ -86,7 +86,7 @@ Summary: Matched native-display boot bundle for Uke
 Requires: %{name}-core = %{version}-%{release}
 Requires: %{name}-modules = %{version}-%{release}
 Requires: %{name}-dtbs = %{version}-%{release}
-Requires: uke-kernel-update >= 1.8.8
+Requires: uke-kernel-update >= 1.8.11
 Requires: uke-kernel-update(guarded-automatic) >= 1
 Requires: uke-kernel-update(transaction-v1) >= 1
 Requires: uke-kernel-update(final-transaction-v2) >= 1
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-4
+- Admit the optional Uke PM8010 N using validated firmware population and resources.
+- Preserve populated variants, generic SPMI errors and the accepted rollback slot.
+
 * Fri Oct 30 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-3
 - Admit 7.3.1 in the retained alternate KMS compile check without changing drivers.
 - Check actual release admission before the full build with a shell-only fixture.

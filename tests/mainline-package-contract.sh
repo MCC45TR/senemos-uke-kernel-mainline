@@ -18,7 +18,7 @@ grep -Eq '^Provides: kernel-uname-r\(7\.3\.1-[1-9][0-9]*\)$' <<< "$parsed"
 [[ $(grep -c '^Provides: installonlypkg(kernel)$' <<< "$parsed") == 5 ]]
 # Flags 12 are an ordinary >= dependency; scriptlet-only requirements expire.
 requires=$(rpmspec -q --target aarch64 --qf '[%{=NAME}\t%{REQUIRENAME}\t%{REQUIREFLAGS}\t%{REQUIREVERSION}\n]' "$spec")
-grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.8.8' <<< "$requires"
+grep -Fxq "$expected-boot"$'\tuke-kernel-update\t12\t1.8.11' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(guarded-automatic)\t12\t1' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(transaction-v1)\t12\t1' <<< "$requires"
 grep -Fxq "$expected-boot"$'\tuke-kernel-update(final-transaction-v2)\t12\t1' <<< "$requires"
