@@ -1,8 +1,10 @@
 # Uke internal microphone bring-up, 31 October 2026
 
-POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-9. Its native card
-exposes two playback PCMs and one mono capture PCM. No sample data or
-correlated internal microphone recording has been obtained.
+POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-10. Its native card
+exposes two playback PCMs and one mono capture PCM. Two 10-second raw mono
+recordings contain nonzero samples without clipping; the second opens as an
+unprivileged user after closing the first. A known acoustic stimulus and the
+remaining three physical inputs have not been verified.
 The objective remains independent operation of all four physical microphones.
 
 ## Source candidate
@@ -38,9 +40,15 @@ and expects 60. Release 10 removes that field and the synthetic-offset check,
 matching the official AudioReach API pinned in
 [the protocol source record](../manifests/research-audioreach-20261031.json).
 Full reply-size, status, token, address and data-size checks remain. COPR
-must accept an independent 56-byte response with a nonzero timestamp and
-reject shorter or hostile replies. Physical recording still requires a
-separate recoverable device trial.
+accepts an independent 56-byte response with a nonzero timestamp and rejects
+shorter or hostile replies. The release 10 device trial produces two complete
+48 kHz S16_LE mono WAVs, each with 480,000 samples. DSP completions reach ALSA,
+and DAPM reports AMIC1, ADC1, MIC BIAS1 and the TX path active during capture.
+The stream closes, all nine changed controls match their original values,
+and the original audio services restart. This establishes raw data flow and
+reopen, not acoustic response, microphone position, all four inputs or measured
+electrical levels. Known-stimulus correlation is the next gate before additional
+inputs and UCM.
 
 Both SoundWire slaves and the WCD compound codec are described. The exact
 OEM L7B/BOB phandles are retained: 1.8 V and 3.296 V respectively, with
