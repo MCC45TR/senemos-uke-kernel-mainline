@@ -133,6 +133,8 @@ install -m644 "$here/uke-root-selector.h" "$kernel/arch/arm64/kernel/uke-root-se
 install -m644 "$here/uke-bluetooth.h" "$kernel/arch/arm64/kernel/uke-bluetooth.h"
 install -m644 "$here/uke-pmic-adc.h" "$kernel/arch/arm64/kernel/uke-pmic-adc.h"
 install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-thermal.h"
+install -m644 "$here/uke-clock-debug.h" "$kernel/arch/arm64/kernel/uke-clock-debug.h"
+bash "$here/../../tests/clock-debug-fdt-contract.sh" "$kernel"
 install -m644 "$here/uke-hall.h" "$kernel/arch/arm64/kernel/uke-hall.h"
 install -m644 "$here/uke-lights.h" "$kernel/arch/arm64/kernel/uke-lights.h"
 install -m644 "$here/../usb/wcd939x-uke-typec.c" "$kernel/drivers/usb/typec/mux/wcd939x-uke-typec.c"

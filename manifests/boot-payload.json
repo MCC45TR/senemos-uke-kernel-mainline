@@ -565,7 +565,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "ed39d0a4a1fcd5ce76d97050187e9615af86a9b41560f4777bba70417c0312d0"
+      "sha256": "f731091bab37a1b75458712c21f76504eb2c9af5d5ec3eee78d9027adcc3e679"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -582,6 +582,14 @@
     {
       "path": "tests/mainline-package-contract.sh",
       "sha256": "290e93fee6f42aba54e9833380e2214054a726704aa9a4f6b695c988120a1202"
+    },
+    {
+      "path": "src/boot/uke-clock-debug.h",
+      "sha256": "4ad3b02863856cd46430daf832c6f3cfdc7b9997b40c3a5c7d80e86ca444340f"
+    },
+    {
+      "path": "tests/clock-debug-fdt-contract.sh",
+      "sha256": "5948924e9e6c6351d2155b559745cba8ebe3e5b8c30f66bf27dda1f1701c567d"
     }
   ],
   "root_selector_capability": {
