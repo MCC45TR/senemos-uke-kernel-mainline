@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.0
 %if "%{version}" == "7.3.0"
-%global senemos_build_release 55
+%global senemos_build_release 56
 %else
 %global senemos_build_release 1
 %endif
@@ -418,6 +418,10 @@ fi
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-56
+- Keep color updates on the encoder's reserved control blocks and clear stale resources.
+- Preserve caller modeset permission and validate the actual paths in COPR.
+
 * Fri Oct 30 2026 Uke Linux project <75160848+MCC45TR@users.noreply.github.com> - 7.3.0-54
 - Run the actual WLAN power-sequence fixture with independently managed storage.
 - Validate the complete public source recipe on the COPR source worker.

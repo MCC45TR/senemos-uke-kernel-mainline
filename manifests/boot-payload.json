@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release55 retains the exact release54 inputs and adds framebuffer pin serialisation, prepare failure unwind and DPU writeback error propagation. Native checks run in COPR; scanout retirement and physical acceptance remain open.",
+  "source_origin": "Release56 retains exact55 inputs and fixes DPU color/resource ownership and stale CWB/CDM/DSC/DSPP pointers. COPR-only native validation remains separate from scanout retirement and physical acceptance.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "07b698c2b184fc0f9b1f1b77469061d10da5353d2f6b6eceb8c315814ebaf9cf"
+      "sha256": "3734c227b2d3f1a9cc1e6512625c79830cf76a9b6568692d3b7cf7d3e8c89673"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -506,6 +506,14 @@
     {
       "path": "tests/msm-framebuffer-pin-contract.sh",
       "sha256": "bffcc388a25987eb15218ae5bd87419e1c1c1710f7d476c7ac2cf795975ab81e"
+    },
+    {
+      "path": "patches/display/0066-msm-dpu-reservation-ownership.patch",
+      "sha256": "c28dbab277b3906c4849c2d2a49d477da1a2f7373d30972597aea63ecd093cf8"
+    },
+    {
+      "path": "tests/dpu-reservation-contract.sh",
+      "sha256": "c3bb8396ba174a38a22e96055bd09469a9af31627b116780bbe9f813cd63be06"
     }
   ],
   "root_selector_capability": {
