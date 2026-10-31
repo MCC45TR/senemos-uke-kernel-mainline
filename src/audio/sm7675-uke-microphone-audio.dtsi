@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
 /*
- * Experimental AMIC1 capture, included after the existing speaker profile.
+ * Individual onboard AMIC capture, included after the existing speaker profile.
  * Uke live OEM DT: L7B 1.8 V, BOB 3.296 V, MICBIAS 2.75 V, LPI pins/IRQs.
  * SoundWire v2 transport/port ABI: upstream SM8650 at 4056b3c9.
- * Port policy follows mainline WCD939x ADC1 -> SWR_INPUT0, not Android DEC1.
- * Wake routing, fitted codec and electrical/physical operation are untested.
+ * Native ADC1-4 use SWR_INPUT0-3; each selected input still uses mono DEC0.
+ * Physical position and electrical behavior require separate qualification.
  */
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
@@ -132,10 +132,22 @@
 
 	sound-uke {
 		compatible = "xiaomi,uke-microphone-audio-card";
-		widgets = "Microphone", "Analog Mic1", "Speaker", "DP0 Jack";
+		widgets = "Microphone", "Analog Mic1",
+			  "Microphone", "Analog Mic3",
+			  "Microphone", "Analog Mic4",
+			  "Microphone", "Analog Mic5", "Speaker", "DP0 Jack";
 		audio-routing = "AMIC1", "Analog Mic1",
 				"AMIC1", "MIC BIAS1",
-				"TX SWR_INPUT0", "ADC1_OUTPUT";
+				"AMIC3", "Analog Mic3",
+				"AMIC3", "MIC BIAS3",
+				"AMIC4", "Analog Mic4",
+				"AMIC4", "MIC BIAS3",
+				"AMIC5", "Analog Mic5",
+				"AMIC5", "MIC BIAS4",
+				"TX SWR_INPUT0", "ADC1_OUTPUT",
+				"TX SWR_INPUT1", "ADC2_OUTPUT",
+				"TX SWR_INPUT2", "ADC3_OUTPUT",
+				"TX SWR_INPUT3", "ADC4_OUTPUT";
 
 		microphone-dai-link {
 			link-name = "TX_CODEC_DMA_TX_3";

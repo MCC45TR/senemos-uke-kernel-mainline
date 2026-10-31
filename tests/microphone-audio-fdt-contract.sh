@@ -5,15 +5,29 @@ kernel=${1:?Pass prepared kernel tree}
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
+expected_routes=(
+ AMIC1 'Analog Mic1' AMIC1 'MIC BIAS1'
+ AMIC3 'Analog Mic3' AMIC3 'MIC BIAS3'
+ AMIC4 'Analog Mic4' AMIC4 'MIC BIAS3'
+ AMIC5 'Analog Mic5' AMIC5 'MIC BIAS4'
+ 'TX SWR_INPUT0' ADC1_OUTPUT 'TX SWR_INPUT1' ADC2_OUTPUT
+ 'TX SWR_INPUT2' ADC3_OUTPUT 'TX SWR_INPUT3' ADC4_OUTPUT
+)
 bash "$root/tests/speaker-audio-fdt-contract.sh" "$kernel" microphones "$work/result.dtb"
 check_native_output() {
- local routing output
+ local routing output rest slot
  routing=$(fdtget -t s "$1" /sound-uke audio-routing)
- output=${routing##* }
- test "${routing% *}" = 'AMIC1 Analog Mic1 AMIC1 MIC BIAS1 TX SWR_INPUT0' || return 1
  # Resolve the board endpoint against this build's actual codec widgets.
  # The OEM aggregate WCD_TX_OUTPUT does not exist in native WCD939x.
- grep -Fq "SND_SOC_DAPM_OUTPUT(\"$output\")" "$kernel/sound/soc/codecs/wcd939x.c"
+ for slot in 0 1 2 3; do
+  rest=${routing#*"TX SWR_INPUT$slot "}
+  [[ $rest != "$routing" ]] || return 1
+  output=${rest%% *}
+  grep -Fq "SND_SOC_DAPM_OUTPUT(\"$output\")" "$kernel/sound/soc/codecs/wcd939x.c" || return 1
+ done
+ for bias in 1 3 4; do
+  grep -Fq "SND_SOC_DAPM_SUPPLY(\"MIC BIAS$bias\"" "$kernel/sound/soc/codecs/wcd939x.c" || return 1
+ done
 }
 check_graph() {
  local f=$1 codec=/audio-codec reset l7 bob tx rx provider
@@ -63,17 +77,22 @@ check_graph() {
  test "$(fdtget -t x "$f" /sound-uke/microphone-dai-link/codec sound-dai)" = "$(fdtget -t x "$f" "$codec" phandle) 1 $(fdtget -t x "$f" "$tx" phandle) 1 $(fdtget -t x "$f" /soc/codec@6ae0000 phandle) 0"
  local be=/soc/remoteproc-adsp@03000000/glink-edge/qcom,gpr/service@1/bedais
  test "$(fdtget -t x "$f" /sound-uke/microphone-dai-link/cpu sound-dai)" = "$(fdtget -t x "$f" "$be" phandle) 78"
+ test "$(fdtget -t s "$f" /sound-uke widgets)" = 'Microphone Analog Mic1 Microphone Analog Mic3 Microphone Analog Mic4 Microphone Analog Mic5 Speaker DP0 Jack'
+ test "$(fdtget -t s "$f" /sound-uke audio-routing)" = "${expected_routes[*]}"
  check_native_output "$f"
 }
 check_graph "$work/result.dtb"
-cp "$work/result.dtb" "$work/oem-only-output.dtb"
-fdtput -t s "$work/oem-only-output.dtb" /sound-uke audio-routing \
- AMIC1 'Analog Mic1' AMIC1 'MIC BIAS1' 'TX SWR_INPUT0' WCD_TX_OUTPUT
-if check_native_output "$work/oem-only-output.dtb"; then
- printf 'An output absent from the native codec was accepted\n' >&2
- exit 1
-fi
-printf 'Native codec output resolved; the historical OEM-only output is rejected.\n'
+for endpoint in 17 19 21 23; do
+ cp "$work/result.dtb" "$work/oem-only-output.dtb"
+ mutated=("${expected_routes[@]}")
+ mutated[$endpoint]=WCD_TX_OUTPUT
+ fdtput -t s "$work/oem-only-output.dtb" /sound-uke audio-routing "${mutated[@]}"
+ if check_native_output "$work/oem-only-output.dtb"; then
+  printf 'An output absent from the native codec was accepted\n' >&2
+  exit 1
+ fi
+done
+printf 'All four native codec outputs resolve; each OEM-only replacement is rejected.\n'
 if [[ -n ${2:-} ]]; then
  printf '/dts-v1/;\n/plugin/;\n#include "%s/src/audio/sm7675-uke-audio-services.dtsi"\n#include "%s/src/audio/sm7675-uke-speaker-audio.dtsi"\n#include "%s/src/audio/sm7675-uke-microphone-audio.dtsi"\n' "$root" "$root" "$root" > "$work/overlay.dts"
  cpp -nostdinc -undef -x assembler-with-cpp -I "$kernel/include" "$work/overlay.dts" > "$work/overlay.pp.dts"

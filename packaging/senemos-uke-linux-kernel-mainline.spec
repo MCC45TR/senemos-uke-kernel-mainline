@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 14
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -423,9 +423,17 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-15
+- Preserve the release-13 individual microphone routes in the power trial.
+- Retain LMH lifecycle recovery, strict CPUCP reads and guarded clock ownership.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-14
 - Balance LMH interrupt ownership across policy hotplug and polling.
 - Restore feedback after online and clear canceled/inactive policy pressure.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-13
+- Add the four OEM analog input/bias routes and native ADC output bridges.
+- Keep strict mono admission and qualify the remaining inputs separately.
 
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-12
 - Preserve the release-10 capture-completion wire fix in the combined power trial.

@@ -1,12 +1,11 @@
 # Mainline native source profile
 
-31 October 2026, Linux 7.3.1-10 microphone candidate: release 9 opens and
-prepares mono capture on POCO Pad X1. DSP completions arrive, but the native
-V2 reply layout has an extra field and rejects their 56-byte payloads. This
-candidate matches the official AudioReach wire structure and preserves strict
-size, status, token, address and data-size bounds. COPR tests an independent
-reply with a nonzero timestamp. Raw samples, the remaining physical inputs
-and independent multichannel capture remain unqualified.
+31 October 2026, Linux 7.3.1-13 microphone candidate: release 10 records nonzero
+mono data and reopens on POCO Pad X1. This candidate adds the four OEM analog
+input/bias routes and native ADC bridges for individual mono trials. The
+48 kHz S16_LE mono frontend, DEC0-only admission, supplies, reset, pins and
+playback graphs remain. Other inputs, independent multichannel capture,
+desktop policy and physical acoustic localization remain unqualified.
 
 30 October 2026, isolated microphone source candidate: the optional
 `microphones` profile retains speaker/DP playback and adds a restricted mono

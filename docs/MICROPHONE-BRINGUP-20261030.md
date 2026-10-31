@@ -1,15 +1,35 @@
 # Uke internal microphone bring-up, 31 October 2026
 
-POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-9. Its native card
-exposes two playback PCMs and one mono capture PCM. No sample data or
-correlated internal microphone recording has been obtained.
+POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-10. Its native card
+exposes two playback PCMs and one mono capture PCM. Two 10-second raw mono
+recordings contain nonzero samples without clipping; the second opens as an
+unprivileged user after closing the first. Subsequent recordings use reported
+ambient fan noise. Spectrograms show persistent low-frequency noise; no audio
+audition or controlled fan on/off comparison is claimed. The remaining three
+physical inputs have not been verified.
 The objective remains independent operation of all four physical microphones.
 
 ## Source candidate
 
-The isolated `microphones` native profile adds one mono capture path:
+The isolated `microphones` native profile retains the verified mono path:
 
 `AMIC1 -> ADC1 -> WCD939x TX -> SoundWire -> TX DEC0 -> TX_CODEC_DMA_TX_3 -> MultiMedia3 Capture`.
+
+Release 13 adds the following board routes for one-at-a-time qualification:
+
+| Analog input | ADC | OEM bias | Native TX input |
+| --- | --- | --- | --- |
+| AMIC1 | ADC1 | MIC BIAS1 | SWR_INPUT0 |
+| AMIC3 | ADC3 | MIC BIAS3 | SWR_INPUT2 |
+| AMIC4 | ADC4 | MIC BIAS3 | SWR_INPUT3 |
+| AMIC5 | ADC2 | MIC BIAS4 | SWR_INPUT1 |
+
+The native codec exposes all four ADC outputs. The live OEM route property
+confirms the bias associations; exact Android input selections are pinned in
+[the input-source record](../manifests/research-microphone-inputs-20261031.json).
+Select one ADC and its corresponding SWR input into DEC0. Do not transfer the
+Android sparse decimators or assume its labels prove physical body positions.
+This candidate keeps mono admission; multichannel capture is a later gate.
 
 The existing four-channel speaker and stereo DisplayPort graphs, frontend
 IDs 1/0 and card name remain. The capture frontend is ID 2; the backend DAI
@@ -38,9 +58,18 @@ and expects 60. Release 10 removes that field and the synthetic-offset check,
 matching the official AudioReach API pinned in
 [the protocol source record](../manifests/research-audioreach-20261031.json).
 Full reply-size, status, token, address and data-size checks remain. COPR
-must accept an independent 56-byte response with a nonzero timestamp and
-reject shorter or hostile replies. Physical recording still requires a
-separate recoverable device trial.
+accepts an independent 56-byte response with a nonzero timestamp and rejects
+shorter or hostile replies. The release 10 device trial produces two complete
+48 kHz S16_LE mono WAVs, each with 480,000 samples. DSP completions reach ALSA,
+and DAPM reports AMIC1, ADC1, MIC BIAS1 and the TX path active during capture.
+The stream closes, all nine changed controls match their original values,
+and the original audio services restart. This establishes raw data flow and
+reopen, not acoustic response, microphone position, all four inputs or measured
+electrical levels. The user subsequently identifies ambient fan noise as the
+test reference. Disabling the analog input stops sample delivery; restoring
+AMIC1 permits another complete nonzero recording. Additional inputs are now
+prepared for individual tests with that reported ambience; all-four operation
+and controlled acoustic comparison remain open.
 
 Both SoundWire slaves and the WCD compound codec are described. The exact
 OEM L7B/BOB phandles are retained: 1.8 V and 3.296 V respectively, with
