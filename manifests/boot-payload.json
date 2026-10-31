@@ -565,7 +565,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "f30aef3afa2b27073f085cdcd3afd1e6c3644de5237c42678cf6a4b40c5da3de"
+      "sha256": "199dbb9a7fc9dc6d753a08aa5a6c78686de3cf6e68eece136ef1e2a9e31c82d2"
     },
     {
       "path": "packaging/native/audio-profile",
@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "e050d1e9cecb5ba2d34df1b6b41388a03e208ef2d7ba0bd41cb47b2412ab2c20"
+      "sha256": "1e1b8b3a473abfc14033c771692c1f499e9f62fec4adea10761d3ebf6fabd2b0"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -686,6 +686,14 @@
     {
       "path": "patches/boot/0053-q6apm-uke-mono-capture.patch",
       "sha256": "d57dcc4dbad1e48563476cb5216e5dc74db64edf478406134f82f8ac7204faae"
+    },
+    {
+      "path": "patches/boot/0054-audioreach-read-completion-v2-layout.patch",
+      "sha256": "afafe82aa4b676c005360c1fd85af971d2587ed14f573a3c9d78c7e0cb0ecfc7"
+    },
+    {
+      "path": "tests/audio-graph-response-contract.sh",
+      "sha256": "0c2ccb90141bba4b3a2a39d8aa52b3d9ba57cb2ec89b1075629c0699a4d7fc73"
     }
   ],
   "root_selector_capability": {

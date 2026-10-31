@@ -11,6 +11,7 @@ cat > "$work/check.c" <<'C'
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 typedef uint32_t u32;
 typedef uint64_t phys_addr_t;
 #define __packed __attribute__((packed))
@@ -29,7 +30,7 @@ struct gpr_resp_pkt {struct gpr_hdr hdr;void *payload;int payload_size;};
 struct gpr_ibasic_rsp_result_t {u32 opcode,status;};
 C
 awk '/^#define (APM_EVENT_MODULE_TO_CLIENT|EVENT_ID_SH_MEM_PULL_PUSH_MODE_WATERMARK|DATA_CMD_RSP_WR_SH_MEM_EP_DATA_BUFFER_DONE_V2|DATA_CMD_RSP_RD_SH_MEM_EP_DATA_BUFFER_V2|DATA_CMD_WR_SH_MEM_EP_EOS_RENDERED|APM_CMD_SHARED_MEM_MAP_REGIONS|DATA_CMD_WR_SH_MEM_EP_MEDIA_FORMAT|APM_CMD_REGISTER_MODULE_EVENTS|APM_CMD_SET_CFG)[[:space:]]/ {print}
- /^struct (apm_module_event|data_cmd_rsp_wr_sh_mem_ep_data_buffer_done_v2|data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2) \{/ {emit=1}
+ /^struct (apm_module_event|data_cmd_rsp_wr_sh_mem_ep_data_buffer_done_v2|data_cmd_rsp_rd_sh_mem_ep_data_buffer_done|data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2) \{/ {emit=1}
  emit {print} emit && /^} __packed;/ {emit=0}' "$kernel/sound/soc/qcom/qdsp6/audioreach.h" >> "$work/check.c"
 awk '/^#define (APM_CLIENT_EVENT_(WATERMARK_EVENT|DATA_WRITE_DONE|DATA_READ_DONE|CMD_EOS_DONE)|APM_WRITE_TOKEN_(MASK|LEN_SHIFT))[[:space:]]/ {print}' "$kernel/sound/soc/qcom/qdsp6/q6apm.h" >> "$work/check.c"
 awk '/^#define GPR_BASIC_RSP_RESULT[[:space:]]/ {print}' "$kernel/include/linux/soc/qcom/apr.h" >> "$work/check.c"
@@ -62,7 +63,21 @@ int main(void){
  assert(graph_callback(&r,&g,0)==0 && calls==1 && g.rx_data.hw_ptr==1);
  r.hdr.token=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1);
  g.rx_data.buf=NULL;r.hdr.token=0;assert(graph_callback(&r,&g,0)==0 && calls==1);g.rx_data.buf=buffers;
- struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2 rd={.buf_addr_lsw=lower_32_bits(buffers[0].phys),.buf_addr_msw=upper_32_bits(buffers[0].phys)};
+ _Static_assert(sizeof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2)==56,"V2 wire reply is 14 words");
+ _Static_assert(offsetof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2,timestamp_lsw)==20,"V2 has no offset");
+ _Static_assert(offsetof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2,md_status)==36,"V2 metadata status");
+ _Static_assert(offsetof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2,md_size)==52,"V2 metadata size");
+ _Static_assert(sizeof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done)==40,"V1 unchanged");
+ _Static_assert(offsetof(struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done,offset)==20,"V1 retains offset");
+ /* Independent 56-byte protocol vector; timestamp is not a data offset. */
+ const unsigned char wire[56]={
+  0,0,0,0, 0x89,0x67,0x45,0x23, 1,0,0,0, 0,0,0,0,
+  0,0x10,0,0, 0xef,0xbe,0xad,0xde, 0x78,0x56,0x34,0x12, 0,0,0,0x80,
+  1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0
+ };
+ struct data_cmd_rsp_rd_sh_mem_ep_data_buffer_done_v2 rd;
+ memcpy(&rd,wire,sizeof(rd));
+ assert(rd.data_size==4096 && rd.timestamp_lsw==0xdeadbeef && rd.timestamp_msw==0x12345678);
  r=(struct gpr_resp_pkt){.hdr={DATA_CMD_RSP_RD_SH_MEM_EP_DATA_BUFFER_V2,1},.payload=&rd,.payload_size=sizeof(rd)};
  assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr && !g.lock.held);
  for(int len=-1;len<(int)sizeof(rd);len++){r.payload_size=len;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1);}
@@ -72,8 +87,7 @@ int main(void){
  assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);rd.buf_addr_lsw^=1;
  rd.status=7;assert(graph_callback(&r,&g,0)==-EIO && calls==1 && !g.tx_data.hw_ptr);rd.status=0;
  rd.data_size=4097;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);
- rd.data_size=1;rd.offset=4096;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);
- rd.offset=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);rd.offset=0;rd.data_size=4096;
+ rd.data_size=UINT32_MAX;assert(graph_callback(&r,&g,0)==-EINVAL && calls==1 && !g.tx_data.hw_ptr);rd.data_size=4096;
  assert(graph_callback(&r,&g,0)==0 && calls==2 && g.tx_data.hw_ptr==1);
  g.tx_data.num_periods=0;assert(graph_callback(&r,&g,0)==-EINVAL && calls==2);g.tx_data.num_periods=1;
  struct {struct apm_module_event event;u32 word;} event={{EVENT_ID_SH_MEM_PULL_PUSH_MODE_WATERMARK,4},0};
@@ -92,4 +106,4 @@ C
 ${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable \
     -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
 "$work/check"
-printf 'Graph actual-source event/DMA response bounds, period tokens and null client fixtures passed.\n'
+printf 'Graph actual-source 56-byte V2 wire reply, nonzero timestamp, response bounds, period tokens and null client fixtures passed.\n'

@@ -1,12 +1,12 @@
 # Mainline native source profile
 
-31 October 2026, Linux 7.3.1-9 microphone candidate: release6 registers the
-codec, both SoundWire slaves and a mono capture PCM on POCO Pad X1. A bounded
-device trace finds an invalid channel interval of [2,1] at PCM open. This
-candidate lowers the component minimum only for graph2 on the Uke microphone
-card. COPR checks the actual assignment against other cards, graphs and both
-stream directions. Physical raw mono, the remaining inputs and independent
-multichannel capture remain unqualified.
+31 October 2026, Linux 7.3.1-10 microphone candidate: release 9 opens and
+prepares mono capture on POCO Pad X1. DSP completions arrive, but the native
+V2 reply layout has an extra field and rejects their 56-byte payloads. This
+candidate matches the official AudioReach wire structure and preserves strict
+size, status, token, address and data-size bounds. COPR tests an independent
+reply with a nonzero timestamp. Raw samples, the remaining physical inputs
+and independent multichannel capture remain unqualified.
 
 30 October 2026, isolated microphone source candidate: the optional
 `microphones` profile retains speaker/DP playback and adds a restricted mono

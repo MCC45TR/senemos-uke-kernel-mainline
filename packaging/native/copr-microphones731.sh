@@ -6,7 +6,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-9
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-10
 make -C "$owner" validate
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -43,6 +43,7 @@ overlays=(
  patches/boot/0047-wcd939x-uke-reset-required.patch patches/boot/0048-uke-soundwire-machine-dependency.patch
  patches/boot/0049-wcd939x-io-errors.patch patches/boot/0050-soundwire-resume-clock-error.patch
  patches/boot/0053-q6apm-uke-mono-capture.patch tests/microphone-pcm-limits-contract.sh
+ patches/boot/0054-audioreach-read-completion-v2-layout.patch tests/audio-graph-response-contract.sh
  tests/audio-services-fdt-contract.sh tests/mainline-package-contract.sh
  tests/microphone-audio-card-contract.sh tests/microphone-audio-fdt-contract.sh
  tests/microphone-audio-topology-contract.sh tests/soundwire-resume-clock-contract.sh
@@ -87,4 +88,4 @@ done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 install -m644 "$owner/packaging/$spec" "$output/$spec"
 sha256sum -c "$stage/retained.sha256"
-test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-9
+test "$(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$output/$spec")" = 7.3.1-10
