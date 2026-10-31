@@ -30,13 +30,15 @@ static size_t reply_size;
 static unsigned char tx[32],rx[16];
 static struct scmi_xfer transfer;
 static int get(const struct scmi_protocol_handle *ph,u32 command,size_t ts,size_t rs,struct scmi_xfer **out) {
-    assert(ph&&command==0x11&&(ts==16||ts==28)&&(rs==4||rs==8));gets++;
+    assert(ph&&command==0x11&&(ts==16||ts==28)&&rs==(ts==16?12:8));gets++;
     if(alloc_error)return alloc_error;
     memset(tx,0xa5,sizeof(tx));memset(rx,0x3c,sizeof(rx));
     transfer=(struct scmi_xfer){.tx={tx,ts},.rx={rx,rs}};*out=&transfer;return 0;
 }
 static int perform(const struct scmi_protocol_handle *ph,struct scmi_xfer *t) {
-    assert(ph&&t==&transfer);xfers++;t->rx.len=reply_size;return xfer_error;
+    /* Native shmem_fetch_response() clips oversized replies to RX capacity. */
+    assert(ph&&t==&transfer);xfers++;
+    t->rx.len=reply_size<t->rx.len?reply_size:t->rx.len;return xfer_error;
 }
 static void put(const struct scmi_protocol_handle *ph,struct scmi_xfer *t) { assert(ph&&t==&transfer);puts_count++; }
 static const struct scmi_xfer_ops ops={get,perform,put};
@@ -57,6 +59,13 @@ int main(void) {
     reset();reply_size=4;memcpy(out,unchanged,8);
     assert(!uke_memlat_get(&ph,35,request,12,out,4)&&puts_count==1);
     assert(!memcmp(tx+16,request,12)&&!memcmp(out+4,unchanged+4,4));
+    for(size_t actual=0;actual<=16;actual++) {
+        reset();reply_size=actual;memcpy(out,unchanged,8);
+        int ret=uke_memlat_get(&ph,35,request,12,out,4);
+        assert(gets==1&&xfers==1&&puts_count==1);
+        if(actual==4)assert(ret==0);
+        else assert(ret==-EPROTO&&!memcmp(out,unchanged,8));
+    }
     for(int i=0;i<10;i++) {
         reset();memcpy(out,unchanged,8);int ret;
         if(i<3) { reply_size=i;ret=uke_memlat_get(&ph,38,NULL,0,out,8);assert(ret==-EPROTO); }
