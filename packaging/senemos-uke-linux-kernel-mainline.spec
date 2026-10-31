@@ -423,7 +423,7 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-10
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-11
 - Combine strict CPUCP GET diagnostics and power ownership changes with the retained microphone profile.
 - Preserve mono PCM limits, the 122-patch adaptation and all ignore-unused workarounds.
 

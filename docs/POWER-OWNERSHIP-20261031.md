@@ -42,7 +42,7 @@ ignore-unused workarounds still need separate ownership and physical checks.
 
 ## Isolated kernel candidate
 
-Release 7.3.1-10 retains the exact release-9 microphone source RPM and its 122
+Release 7.3.1-11 retains the exact release-9 microphone source RPM and its 122
 adaptation patches, including native mono PCM constraints. Explicit
 overlays add this clock candidate, the cpufreq boost-error rollback correction
 and a signed `uke-cpucp-observe` module. PM debug messages are enabled for the
