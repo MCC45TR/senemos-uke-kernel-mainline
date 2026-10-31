@@ -52,9 +52,9 @@ int main(void)
  original_wcd=wcd;original_tx=tx;
  assert(!uke_microphone_apply_gain(&rtd,analog,digital));
  for(unsigned i=0;i<4;i++){
-  assert(wcd.registers[0x300e+i]==0xabcdef08);
+  assert(wcd.registers[0x300e + i]==0xabcdef08);
   assert(tx.registers[0x040c+0x80*i]==0x12340018);
-  wcd.registers[0x300e+i]=original_wcd.registers[0x300e+i];
+  wcd.registers[0x300e + i]=original_wcd.registers[0x300e + i];
   tx.registers[0x040c+0x80*i]=original_tx.registers[0x040c+0x80*i];
  }
  assert(!memcmp(&wcd,&original_wcd,sizeof(wcd)));

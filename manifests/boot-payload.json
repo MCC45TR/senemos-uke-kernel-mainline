@@ -721,7 +721,7 @@
     },
     {
       "path": "tests/microphone-gain-contract.sh",
-      "sha256": "8db256d5814858b02291f8220d420435c64f0830a0fc0822cac2ea24f32f5bc7"
+      "sha256": "701542a3569d52a8ab41c0f68721954c694d15251a7aac1cac3a652f112d75f5"
     },
     {
       "path": "tests/kernel-audio-policy-contract.sh",
