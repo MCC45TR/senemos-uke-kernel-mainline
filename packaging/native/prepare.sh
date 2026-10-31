@@ -73,6 +73,16 @@ git -C "$kernel" apply --check "$profile/patches/display/0067-msm-kms-lifecycle-
 git -C "$kernel" apply "$profile/patches/display/0067-msm-kms-lifecycle-unwind.patch"
 CC=clang bash "$profile/tests/msm-kms-lifecycle-contract.sh" "$kernel" "$lifecycle_baseline"
 CC=clang bash "$profile/tests/msm-kms-unwind-contract.sh" "$kernel" "$lifecycle_baseline"
+retirement_baseline=$output/msm-retirement-before58
+(cd "$kernel"; sha256sum --check --strict --quiet "$profile/retirement58-parent-files.sha256")
+while IFS= read -r relative; do
+    install -Dm644 "$kernel/$relative" "$retirement_baseline/$relative"
+done < <(sed 's/^[0-9a-f]*  //' "$profile/retirement58-parent-files.sha256")
+git -C "$kernel" apply --check "$profile/patches/display/0068-msm-scanout-retirement.patch"
+git -C "$kernel" apply "$profile/patches/display/0068-msm-scanout-retirement.patch"
+CC=clang bash "$profile/tests/msm-retirement-contract.sh" "$kernel" "$retirement_baseline"
+CC=clang bash "$profile/tests/msm-writeback-contract.sh" "$kernel" "$retirement_baseline"
+CC=clang bash "$profile/tests/msm-retirement-proof-contract.sh" "$kernel"
 bash "$profile/tests/altmode-worker-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/dp-altmode-retimer-contract.sh" "$kernel/drivers/soc/qcom/pmic_glink_altmode.c"
 bash "$profile/tests/usb-qmp-mux-contract.sh" "$kernel/drivers/phy/qualcomm/phy-qcom-qmp-combo.c"

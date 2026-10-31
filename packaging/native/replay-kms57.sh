@@ -9,6 +9,10 @@ mkdir -p "$fixture"
 files=(drivers/gpu/drm/msm/{msm_atomic.c,msm_drv.c,msm_io_utils.c,msm_iommu.c,msm_kms.c,msm_kms.h,msm_mmu.h}
  drivers/gpu/drm/msm/disp/msm_disp_snapshot.c
  drivers/gpu/drm/msm/disp/{dpu1/dpu_kms,mdp4/mdp4_kms,mdp5/mdp5_kms}.{c,h})
+if [[ $# == 4 ]]; then
+ mapfile -t files < <(sed 's/^[0-9a-f]*  //' "${4:?Parent file manifest}")
+ [[ ${#files[@]} -gt 0 ]]
+fi
 paths=();includes=();for file in "${files[@]}";do paths+=("linux-7.3/$file");includes+=("--include=$file");done
 tar -xJf "$sources/linux-7.3.0.tar.xz" -C "$fixture" --strip-components=1 "${paths[@]}"
 tar -xJf "$sources/senemos-uke-adaptation-7.3.0.tar.xz" -C "$fixture"

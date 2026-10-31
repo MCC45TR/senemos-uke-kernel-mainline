@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release56 retains exact55 inputs and fixes DPU color/resource ownership and stale CWB/CDM/DSC/DSPP pointers. COPR-only native validation remains separate from scanout retirement and physical acceptance.",
+  "source_origin": "Release58 retains the exact inputs from successful build57 and adds deferred scanout and writeback ownership. COPR-only native validation, physical retirement proof and historical fault attribution remain separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "211628820ebb7e4e010008c95d14ba18f25c5a145ca9da03f131fed679f17899"
+      "sha256": "d2e20adc6e76498d43b2a42999ba83662838f0bef2bf72f2a8b893d7d4cc873f"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -534,6 +534,26 @@
     {
       "path": "manifests/kms57-parent-files.sha256",
       "sha256": "a35acd82660a48375071b40e22ad3d7ad73352f6de990fcfd33bdd1aad01711f"
+    },
+    {
+      "path": "patches/display/0068-msm-scanout-retirement.patch",
+      "sha256": "4aebef3ba5e0532a1c4e5184972163816f6689404b7b3ce283750a2db7ec5d49"
+    },
+    {
+      "path": "tests/msm-retirement-contract.sh",
+      "sha256": "f52666fdbba8a48430e1e05ec2a92e166cf896562dcb9f69330ee28432a632e4"
+    },
+    {
+      "path": "tests/msm-writeback-contract.sh",
+      "sha256": "c7caabb9a0c5f07defa1d881fa30a59229ecf35d3efeec9dd81702fef1ab481c"
+    },
+    {
+      "path": "manifests/retirement58-parent-files.sha256",
+      "sha256": "d90e6f4d71f1754640bc7f50648d1d1fd9f61e4382c95fdb5c4d412b650c8a3f"
+    },
+    {
+      "path": "tests/msm-retirement-proof-contract.sh",
+      "sha256": "060ac6b7469c32125359bf8ca86f7c0c649a5c8d909d160239e5c565f1146f62"
     }
   ],
   "root_selector_capability": {
