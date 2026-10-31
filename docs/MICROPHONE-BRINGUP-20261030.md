@@ -15,7 +15,7 @@ The isolated `microphones` native profile retains the verified mono path:
 
 `AMIC1 -> ADC1 -> WCD939x TX -> SoundWire -> TX DEC0 -> TX_CODEC_DMA_TX_3 -> MultiMedia3 Capture`.
 
-Release 12 adds the following board routes for one-at-a-time qualification:
+Release 13 adds the following board routes for one-at-a-time qualification:
 
 | Analog input | ADC | OEM bias | Native TX input |
 | --- | --- | --- | --- |

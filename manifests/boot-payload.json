@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "819baedb72f2c080f06ae9788dcbf46f8b5846ca7409b3ae0eacf5b91e491352"
+      "sha256": "afc0afe44f8f592ed875fab85738adb65d362dfdb7dafb90ba05d20ba684ff43"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",

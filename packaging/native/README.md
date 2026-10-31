@@ -1,6 +1,6 @@
 # Mainline native source profile
 
-31 October 2026, Linux 7.3.1-12 microphone candidate: release 10 records nonzero
+31 October 2026, Linux 7.3.1-13 microphone candidate: release 10 records nonzero
 mono data and reopens on POCO Pad X1. This candidate adds the four OEM analog
 input/bias routes and native ADC bridges for individual mono trials. The
 48 kHz S16_LE mono frontend, DEC0-only admission, supplies, reset, pins and
