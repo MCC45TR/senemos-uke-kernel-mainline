@@ -1,0 +1,93 @@
+name: One-time archive and prune obsolete branches
+on:
+  push:
+    branches: [TEST]
+    paths:
+      - .github/workflows/one-time-branch-prune.yml
+
+permissions:
+  contents: write
+
+jobs:
+  archive-and-prune:
+    if: github.repository == 'MCC45TR/senemos-uke-kernel-mainline' && github.ref == 'refs/heads/TEST'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Preserve every branch head as a tag, then prune to main/KVM/TEST
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          repo="$GITHUB_REPOSITORY"
+          declare -a names=()
+          declare -A expected=()
+          while IFS=$'\t' read -r name sha; do
+            [[ -n "$name" ]] || continue
+            names+=("$name")
+            expected["$name"]="$sha"
+          done <<'SNAPSHOT'
+          UNSTABLE	a3f7e7ad94c7cba876d1a4fa2ac9ef5fd43eec17
+          codex/control-kernel-ownership-20261030	cde25d60958c89685bb68fe60aab3aa0aba44e1f
+          feat/boot-watchdog-20261030	b4eddaadcb8ed7c37bc240f9b1304f967cb06d76
+          feat/optional-gaming-platform-20261030	7f6b725ea8d69e65a6fd9efae86c23bd18ffbc7d
+          fix/dnf-kernel61-20261030	dfa1603d045582a79cc1106a082c8fd9b44f1595
+          fix/dnf-kernel73-20261030	0c4265d5bb94db5b087da59ed0763e2993e3f10c
+          fix/dnf-kernel731-20261030	a4570c876a940615b68efad45c7e7be7f643af99
+          fix/kernel-transaction-20261030	caf38e2b66878e3f444267b9cb9e6f1b2d885519
+          fix/spmi-pm8010-20261031	ec382e6083ff5d622e28146e137e99a26f8482f8
+          goal/cpu-power-20261031	b271f5ee72ec23681a9f883aafbb747bc04f06ac
+          goal/power-microphone-20261031	8f192c0bc87bce4015e08e5486f7f212f8bb75af
+          release/disable60-20261030	9ab7939b6fbd37c6200c4f8f0586fbb7aaf0f1b8
+          release/dpu-reservation56-20261030	8b82de12e45b61e3dcfff545d1e1d166dbf125f8
+          release/framebuffer-pin55-20261030	4f6fefc9a13eac95f33703734c41fa2562635afe
+          release/kms-lifecycle57-20261030	35112c72390f90df8ac689c93e49a81332b76257
+          release/scanout-retirement58-20261030	846b61997615bbec74b7db53da885094eb9d194d
+          release/scanout-retirement58-copr-20261030	11403b5ad521d9df5276380f0364206f96c4016e
+          release/transaction59-20261030	f71cc6fd97c3ebf11c2480845d487dcbed496b26
+          release/unstable-coinstall-20261030	57f6c53036d15376a08db7967d4ba619d9300627
+          source/youtube51-copr-20261029	cd7b128cfc31511d8dd56390e8840f562bd17c30
+          work/microphones731-20261031	06ce7d72bb07dc999cfd48cef64918439ba9aea1
+          SNAPSHOT
+
+          # Abort before any deletion if an observed branch has moved.
+          for name in "${names[@]}"; do
+            actual="$(gh api "repos/$repo/git/ref/heads/$name" --jq '.object.sha')"
+            if [[ "$actual" != "${expected[$name]}" ]]; then
+              echo "::error::Branch $name changed (expected ${expected[$name]}, got $actual). No branches deleted."
+              exit 1
+            fi
+          done
+
+          # Preserve ALL old refs, including unmerged commits from PRs #46-48.
+          for name in "${names[@]}"; do
+            tag="archive/branch-prune-20261031/$name"
+            if existing="$(gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
+              if [[ "$existing" != "${expected[$name]}" ]]; then
+                echo "::error::Archive tag $tag already points to unexpected $existing. Abort."
+                exit 1
+              fi
+              echo "Archive tag already exists: $tag"
+            else
+              gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${expected[$name]}" >/dev/null
+              echo "Archived $name at $tag"
+            fi
+          done
+
+          # Delete only the exact checked refs. Never touch main, KVM or TEST.
+          for name in "${names[@]}"; do
+            actual="$(gh api "repos/$repo/git/ref/heads/$name" --jq '.object.sha')"
+            [[ "$actual" == "${expected[$name]}" ]] || { echo "::error::Ref $name moved; refusing deletion"; exit 1; }
+            gh api -X DELETE "repos/$repo/git/refs/heads/$name" >/dev/null
+            echo "Removed obsolete branch $name"
+          done
+
+          actual="$(gh api "repos/$repo/branches?per_page=100" --jq '.[].name' | LC_ALL=C sort)"
+          wanted="$(printf '%s\n' 'main' 'KVM' 'TEST' | LC_ALL=C sort)"
+          if [[ "$actual" != "$wanted" ]]; then
+            echo "::error::Unexpected branches remain:"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+          echo "Verified: only main, KVM, TEST remain."
