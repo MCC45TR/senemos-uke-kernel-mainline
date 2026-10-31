@@ -326,7 +326,7 @@ static int uke_speaker_probe(struct platform_device *pdev)
 		return -EINVAL;
 	/* UCM discovers the bounded capture capability from this card instance. */
 	if (data->microphones)
-		card->components = "mic:uke-4ch";
+		card->components = "mic:uke-4ch-v2";
 
 	for_each_card_prelinks(card, i, link) {
 		if (link->id == DISPLAY_PORT_RX_0 && !hdmi)

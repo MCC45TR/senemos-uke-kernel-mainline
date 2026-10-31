@@ -565,7 +565,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "199dbb9a7fc9dc6d753a08aa5a6c78686de3cf6e68eece136ef1e2a9e31c82d2"
+      "sha256": "7cbd293e851b39bccc9368499dc592b20ee57e85f975944c8c40d20131d25e1f"
     },
     {
       "path": "packaging/native/audio-profile",
@@ -581,7 +581,7 @@
     },
     {
       "path": "src/audio/uke-audio-card.c",
-      "sha256": "a736bfbe5918151e62b7e25a4d2054a7ccb66daf38606af716d2c9d34b351f8a"
+      "sha256": "a3b3a543d064d1de06340cb3a30ef9c8b16ff4376bf7469483e60c0ff0980d55"
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
@@ -694,6 +694,14 @@
     {
       "path": "tests/audio-graph-response-contract.sh",
       "sha256": "0c2ccb90141bba4b3a2a39d8aa52b3d9ba57cb2ec89b1075629c0699a4d7fc73"
+    },
+    {
+      "path": "patches/boot/0055-lpass-tx-macro-multichannel-state.patch",
+      "sha256": "550abc57b6b942e0e4704cb5d963fbc29ca25335dec77badd3faddbec05cf5e7"
+    },
+    {
+      "path": "tests/lpass-tx-multichannel-contract.sh",
+      "sha256": "7c6ad936144e1b1726b9e39eda07334df911451fa9b91326a2700515a4679423"
     }
   ],
   "root_selector_capability": {
