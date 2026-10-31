@@ -117,11 +117,11 @@
     },
     {
       "path": "src/boot/boot-status.cpp",
-      "sha256": "273fbb864a6fd5b78abf1d7b8c3d0b53b780c9ebcee075a7574715575b6f2246"
+      "sha256": "ab071b245e2c67931bf2164854b5fd9455919bf62889ca4f8b392b31d9583102"
     },
     {
       "path": "src/boot/build-payload.sh",
-      "sha256": "8032772d09ccbccbc39857ecc1f481dc25fc9d7766e243a31efc910e4726bad3"
+      "sha256": "39cde971324e909d4c4cdba54eeb749890eb42781eb15f839fc415d4990d56e9"
     },
     {
       "path": "src/boot/check-root-capability.sh",
@@ -177,7 +177,7 @@
     },
     {
       "path": "src/boot/make-initramfs-base.sh",
-      "sha256": "b9192132b7d5965e644dba4e279582771ba93e498c81842cc19143e3a14b7b4f"
+      "sha256": "e85368a4a9dbf8f452cbacc8d9a51c117d74f56e9a0ef69011a0ad6759741772"
     },
     {
       "path": "src/boot/offline-switch-root.cpp",
@@ -317,7 +317,7 @@
     },
     {
       "path": "tests/mainline-boot-status-contract.sh",
-      "sha256": "234c8a761f99bf1894349214a333192182f71d5bcbe46166bd6b5404e3ab4c69"
+      "sha256": "30261481f37fe7932601cb046549db00a71fa397c4f2d39ed46b4a30500927ab"
     },
     {
       "path": "tests/mdt-memory-admission-contract.sh",

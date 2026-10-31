@@ -42,7 +42,7 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
           path: source
-      - run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils
+      - run: sudo apt-get update && sudo apt-get install -y jq rpm gnupg xz-utils gcc g++ make device-tree-compiler libfdt-dev
       - name: Verify upstream and prepare the actual source queue
         id: candidate
         env:
