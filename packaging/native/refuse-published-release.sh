@@ -6,10 +6,11 @@ candidate=${2:?Pass the proposed version-release without the Fedora suffix}
 [[ $name =~ ^[a-zA-Z0-9+_.-]+$ && $candidate =~ ^[0-9]+([.][0-9]+)*-[1-9][0-9]*$ ]]
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
-offset=0
-while ((offset < 10000)); do
+for project in uke-linux-unstable uke-linux-test; do
+ offset=0
+ while ((offset < 10000)); do
     curl --fail --silent --show-error --location --max-time 45 --get \
-        --data-urlencode ownername=mcc45tr --data-urlencode projectname=uke-linux-unstable \
+        --data-urlencode ownername=mcc45tr --data-urlencode "projectname=$project" \
         --data-urlencode "packagename=$name" --data-urlencode limit=100 --data-urlencode "offset=$offset" \
         https://copr.fedorainfracloud.org/api_3/build/list > "$work/builds.json"
     jq -e '(.items|type)=="array"' "$work/builds.json" > /dev/null
@@ -25,16 +26,19 @@ while ((offset < 10000)); do
         comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$published\", \"$candidate\"))}")
         [[ $comparison =~ ^-?[0-9]+$ ]]
         if ((comparison >= 0)); then
-            printf 'Refusing %s: published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$published" >&2
+            printf 'Refusing %s: %s published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$project" "$published" >&2
             exit 1
         fi
     done
     count=$(jq -er '.items|length' "$work/builds.json")
     if ((count < 100)); then
-        printf 'Fresh kernel release admitted: %s\n' "$candidate"
-        exit 0
+        break
     fi
     offset=$((offset + 100))
+ done
+ ((offset < 10000)) || {
+  echo 'Build history limit reached; review before rebuilding' >&2
+  exit 1
+ }
 done
-echo 'Build history limit reached; review before rebuilding' >&2
-exit 1
+printf 'Fresh kernel release admitted across both COPR projects: %s\n' "$candidate"

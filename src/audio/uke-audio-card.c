@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Uke playback, experimental mono capture and closed registration profiles. */
+/* Uke playback, bounded microphone capture and closed registration profiles. */
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
@@ -144,7 +144,7 @@ static int uke_speaker_late_probe(struct snd_soc_card *card)
 			if (cpu->id == 2) {
 				if (cpu->driver->playback.channels_min ||
 				    cpu->driver->capture.channels_min != 1 ||
-				    cpu->driver->capture.channels_max != 1)
+				    cpu->driver->capture.channels_max != 4)
 					return -EINVAL;
 			} else if (cpu->driver->capture.channels_min) {
 				return -EINVAL;
@@ -190,8 +190,11 @@ static int uke_capture_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 	struct snd_mask *format = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
 
+	/* Preserve the selected FE channel count for the matching DMA format. */
+	if (channels->min != channels->max ||
+	    (channels->min != 1 && channels->min != 2 && channels->min != 4))
+		return -EINVAL;
 	rate->min = rate->max = 48000;
-	channels->min = channels->max = 1;
 	snd_mask_none(format);
 	snd_mask_set_format(format, SNDRV_PCM_FORMAT_S16_LE);
 	return 0;
@@ -202,24 +205,27 @@ static int uke_capture_hw_params(struct snd_pcm_substream *substream,
 {
 	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
 	unsigned int tx_num = 0, tx_mask = 0, rx_num = 0, rx_mask = 0;
+	unsigned int channels = params_channels(params);
 	int ret;
 
-	if (params_rate(params) != 48000 || params_channels(params) != 1 ||
+	if (params_rate(params) != 48000 ||
+	    (channels != 1 && channels != 2 && channels != 4) ||
 	    params_format(params) != SNDRV_PCM_FORMAT_S16_LE)
 		return -EINVAL;
 
 	/*
 	 * The TX macro returns a decimator bitmask, not a channel-slot array.
-	 * DEC0 alone agrees with the mono DMA default physical mask, BIT(0).
-	 * Sparse or multiple decimators require a separately qualified DMA map.
+	 * AudioReach's default 1/2/4-channel mapping occupies consecutive DMA
+	 * positions. Require the same DEC0..N-1 mask and exact channel count;
+	 * Android's sparse decimators are not compatible with this mapping.
 	 */
 	ret = snd_soc_dai_get_channel_map(snd_soc_rtd_to_codec(rtd, 2),
 					  &tx_num, &tx_mask, &rx_num, &rx_mask);
 	if (ret)
 		return ret;
-	if (tx_num != 1 || tx_mask != BIT(0) || rx_num)
+	if (tx_num != channels || tx_mask != BIT(channels) - 1 || rx_num)
 		return dev_err_probe(rtd->dev, -EINVAL,
-				     "Mono capture requires TX_AIF1 DEC0 only\n");
+				     "Capture requires matching contiguous TX_AIF1 decimators\n");
 	return 0;
 }
 

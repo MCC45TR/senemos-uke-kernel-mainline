@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 13
+%global senemos_build_release 15
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-15
+- Preserve selected 1/2/4-channel capture at 48 kHz S16_LE.
+- Require exact contiguous TX decimator counts and masks matching the DMA format.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-13
 - Add the four OEM analog input/bias routes and native ADC output bridges.
 - Keep strict mono admission and qualify the remaining inputs separately.

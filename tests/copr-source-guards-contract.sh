@@ -24,7 +24,11 @@ done
 mkdir "$work/bin"
 cat > "$work/bin/curl" <<'SH'
 #!/usr/bin/env bash
-cat "$UKE_GUARD_RESPONSE"
+if [[ -n ${UKE_GUARD_TEST_RESPONSE:-} && " $* " == *' projectname=uke-linux-test '* ]]; then
+ cat "$UKE_GUARD_TEST_RESPONSE"
+else
+ cat "$UKE_GUARD_RESPONSE"
+fi
 SH
 chmod 755 "$work/bin/curl"
 export UKE_GUARD_RESPONSE=$work/builds.json
@@ -52,5 +56,20 @@ for kind in unsourced malformed missing_url;do
  status=$?
  set -e
  if [[ $kind == unsourced ]];then [[ $status == 0 ]];else [[ $status != 0 ]];fi
+done
+# A version consumed in either project must refuse even if the other is empty.
+export UKE_GUARD_TEST_RESPONSE=$work/test-builds.json
+for consuming_project in unstable test; do
+ printf '{"items":[]}' > "$work/builds.json"
+ printf '{"items":[]}' > "$work/test-builds.json"
+ if [[ $consuming_project == test ]]; then destination=$work/test-builds.json; else destination=$work/builds.json; fi
+ jq -n --arg name "$name" '{items:[{state:"running",source_package:{name:$name,version:"7.3.1-14",url:"https://example.invalid/kernel.src.rpm"}}]}' > "$destination"
+ for proposed in 7.3.1-14 7.3.1-15; do
+  set +e
+  PATH="$work/bin:$PATH" bash "$release_guard" "$name" "$proposed" > "$work/result" 2>&1
+  status=$?
+  set -e
+  if [[ $proposed == 7.3.1-15 ]]; then [[ $status == 0 ]]; else [[ $status != 0 ]]; fi
+ done
 done
 printf 'Actual source-worker path refusals and consumed-source NVR guards pass; no compilation or network\n'

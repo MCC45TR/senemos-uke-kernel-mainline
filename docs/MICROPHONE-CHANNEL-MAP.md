@@ -1,10 +1,11 @@
 # Uke microphone identities
 
 31 October 2026. POCO Pad X1, Fedora Rawhide AArch64, Linux 7.3.1 microphone
-development. AMIC1 produces nonzero raw mono recordings on release 10. The
-other three inputs, physical aperture locations and simultaneous channel order
-remain unqualified. Release 13 adds individual input routes and keeps mono
-capture admission. This document does not establish four working microphones.
+development. AMIC1/3/4/5 each produce a complete nonzero raw mono recording on
+release 13, with only the selected ADC/route active and controls restored.
+Physical aperture locations, simultaneous channel order and desktop capture
+remain unqualified. The next source candidate adds bounded 1/2/4-channel
+admission; its source changes do not establish simultaneous device operation.
 
 Keep a stable identity for each analog input across route selection and later
 processing. ADC assignments below describe the reviewed individual-input

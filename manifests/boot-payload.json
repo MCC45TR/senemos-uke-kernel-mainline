@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "afc0afe44f8f592ed875fab85738adb65d362dfdb7dafb90ba05d20ba684ff43"
+      "sha256": "6d4b42b3d673fbde79cc7bcc66a46f750e2fd9b9c103f029c3fa2641ca0e00fc"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -581,7 +581,7 @@
     },
     {
       "path": "src/audio/uke-audio-card.c",
-      "sha256": "6fa96fb9f327f05bb0b6c2ed484b5136bd2fb80d704c2a7532fc256f22dab830"
+      "sha256": "216526febdb2854e009ce2db0be6b8c694adbc8ee6d2fca723d1394000a091ab"
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
@@ -589,7 +589,7 @@
     },
     {
       "path": "src/audio/POCO-Pad-X1-Microphone-Capture.conf",
-      "sha256": "ad7ad7906a9f7fd3647a2c2f7ba5b8ba5bd14e3e1b05099ba4c70191022a93c3"
+      "sha256": "f95b4118a3def618655d877c70d76fb12149ebfc36e634f78825ceb41971a128"
     },
     {
       "path": "src/display/sm7675-uke-native-display-oem-modes.dtso",
@@ -637,15 +637,15 @@
     },
     {
       "path": "tests/microphone-audio-card-contract.sh",
-      "sha256": "79634bb4feb5761e943d8d841578e018dd3c8d4fbb1f1af0bfc356664a80883b"
+      "sha256": "b2d6878f0f75afceab55d954accf272d820bcc9212d7f6c4f0be2097326bfa31"
     },
     {
       "path": "tests/microphone-audio-fdt-contract.sh",
-      "sha256": "04ca71e4e2acca4b722ebc73816becf77237805b7ae4346cd57ed9a2b1497609"
+      "sha256": "b41439495ba6d3a6ee5b7dcba1d371dde4e1ddf725a6a2473e4ba0513b47ca37"
     },
     {
       "path": "tests/microphone-audio-topology-contract.sh",
-      "sha256": "52118de7bdd8a4456e1abfb1da9cce28196088ed617f65522b841f2b1caaa76b"
+      "sha256": "7a514e02776c4a8a18f0e2c3e5d1f81f4c4bd0703878489371392892b1c19b77"
     },
     {
       "path": "tests/soundwire-resume-clock-contract.sh",

@@ -17,6 +17,9 @@ cat > "$work/check.c" <<'C'
 #define TX_CODEC_DMA_TX_3 120
 #define SNDRV_PCM_STREAM_CAPTURE 1
 #define SNDRV_PCM_FORMAT_S16_LE 2
+#define SNDRV_PCM_HW_PARAM_CHANNELS 0
+#define SNDRV_PCM_HW_PARAM_RATE 1
+#define SNDRV_PCM_HW_PARAM_FORMAT 2
 #define ERR_PTR(e) ((void *)(intptr_t)(e))
 #define PTR_ERR(p) ((int)(intptr_t)(p))
 #define IS_ERR_OR_NULL(p) (!(p) || (uintptr_t)(p) >= (uintptr_t)-4095)
@@ -31,7 +34,10 @@ struct snd_soc_card { void *data; unsigned count; struct snd_soc_pcm_runtime *rt
 struct snd_soc_pcm_runtime { struct snd_soc_card *card; struct snd_soc_dai_link *dai_link;
  struct snd_soc_dai *cpu,*codec[3]; struct device *dev; };
 struct snd_pcm_substream { int stream; struct snd_soc_pcm_runtime *rtd; };
-struct snd_pcm_hw_params { unsigned rate,channels,format; };
+struct snd_interval { unsigned min,max; };
+struct snd_mask { unsigned format; };
+struct snd_pcm_hw_params { unsigned rate,channels,format;
+ struct snd_interval intervals[2]; struct snd_mask format_mask; };
 struct sdw_stream_runtime { int unused; };
 #define for_each_card_rtds(c,r) for(unsigned n=0;n<(c)->count && (((r)=(c)->rtd[n]),1);n++)
 #define for_each_rtd_codec_dais(r,i,d) for((i)=0;(i)<3 && (((d)=(r)->codec[i]),1);(i)++)
@@ -42,6 +48,10 @@ struct sdw_stream_runtime { int unused; };
 #define params_rate(p) ((p)->rate)
 #define params_channels(p) ((p)->channels)
 #define params_format(p) ((p)->format)
+#define hw_param_interval(p,i) (&(p)->intervals[i])
+#define hw_param_mask(p,i) (&(p)->format_mask)
+static void snd_mask_none(struct snd_mask *mask) {mask->format=0;}
+static void snd_mask_set_format(struct snd_mask *mask,unsigned format) {mask->format=format;}
 static struct sdw_stream_runtime stream;
 static void *get_stream;
 static int startup_error,map_error,prepare_error;
@@ -67,7 +77,7 @@ static void qcom_snd_sdw_shutdown(struct snd_pcm_substream *s)
 { (void)s;assert(!*prepared_state);releases++; }
 C
 awk '/^struct uke_speaker_data [{]/ {emit=1} emit {print} emit && /^};/ {exit}' "$root/src/audio/uke-audio-card.c" >> "$work/check.c"
-awk '/^static (int|void) (uke_speaker_late_probe|uke_capture_clear_stream|uke_capture_startup|uke_capture_hw_params|uke_capture_prepare|uke_capture_hw_free|uke_capture_shutdown)\(/ {emit=1}
+awk '/^static (int|void) (uke_speaker_late_probe|uke_capture_clear_stream|uke_capture_startup|uke_capture_fixup|uke_capture_hw_params|uke_capture_prepare|uke_capture_hw_free|uke_capture_shutdown)\(/ {emit=1}
  emit {print} emit && /^}/ {emit=0}' "$root/src/audio/uke-audio-card.c" >> "$work/check.c"
 cat >> "$work/check.c" <<'C'
 int main(void)
@@ -88,7 +98,7 @@ int main(void)
   for(unsigned j=0;j<3;j++)rtds[i].codec[j]=&codecs[j];
  }
  codecs[1].driver=&sdw_driver;
- drivers[4].capture=mono;drivers[4].playback.channels_min=0;
+ drivers[4].capture=(struct snd_soc_pcm_stream){1,4};drivers[4].playback.channels_min=0;
  card.count=4;assert(!uke_speaker_late_probe(&card));checks++;
  card.count=6;assert(uke_speaker_late_probe(&card)==-EINVAL);checks++;
  data.microphones=true;assert(!uke_speaker_late_probe(&card));checks++;
@@ -100,12 +110,37 @@ int main(void)
   assert(uke_speaker_late_probe(&card)==-EINVAL);checks++;
  }
  cpus[4].id=2;
- drivers[4].capture.channels_max=4;assert(uke_speaker_late_probe(&card)==-EINVAL);checks++;
- drivers[4].capture.channels_max=1;
+ drivers[4].capture.channels_max=2;assert(uke_speaker_late_probe(&card)==-EINVAL);checks++;
+ drivers[4].capture.channels_max=4;
  drivers[4].playback.channels_min=1;assert(uke_speaker_late_probe(&card)==-EINVAL);checks++;
  drivers[4].playback.channels_min=0;
  struct snd_pcm_substream sub={.stream=1,.rtd=&rtds[5]};
- struct snd_pcm_hw_params params={48000,1,2};
+ struct snd_pcm_hw_params params={.rate=48000,.channels=1,.format=2};
+ const unsigned allowed[]={1,2,4};
+ const unsigned expected_masks[]={1,3,15};
+ for(unsigned i=0;i<3;i++) {
+  struct snd_pcm_hw_params fixed={.intervals={{allowed[i],allowed[i]},{44100,96000}}};
+  assert(!uke_capture_fixup(&rtds[5],&fixed));
+  assert(fixed.intervals[0].min==allowed[i] && fixed.intervals[0].max==allowed[i]);
+  assert(fixed.intervals[1].min==48000 && fixed.intervals[1].max==48000);
+  assert(fixed.format_mask.format==SNDRV_PCM_FORMAT_S16_LE);checks++;
+ }
+ const unsigned invalid[]={0,3,5,8,32};
+ for(unsigned i=0;i<5;i++) {
+  struct snd_pcm_hw_params bad={.intervals={{invalid[i],invalid[i]},{44100,96000}}};
+  assert(uke_capture_fixup(&rtds[5],&bad)==-EINVAL);
+  assert(bad.intervals[1].min==44100 && bad.intervals[1].max==96000);checks++;
+ }
+ struct snd_pcm_hw_params range={.intervals={{1,4},{44100,96000}}};
+ assert(uke_capture_fixup(&rtds[5],&range)==-EINVAL);checks++;
+ for(unsigned i=0;i<3;i++) {
+  params.channels=allowed[i];tx_count=allowed[i];tx_mask=expected_masks[i];
+  assert(!uke_capture_hw_params(&sub,&params));checks++;
+  tx_mask<<=1;assert(uke_capture_hw_params(&sub,&params)==-EINVAL);checks++;
+  tx_mask=expected_masks[i];tx_count++;
+  assert(uke_capture_hw_params(&sub,&params)==-EINVAL);checks++;
+ }
+ params.channels=1;
  tx_count=1;tx_mask=1;
  assert(!uke_capture_hw_params(&sub,&params));checks++;
  const unsigned masks[]={0,2,3,8,255};
@@ -119,7 +154,7 @@ int main(void)
  for(unsigned i=0;i<3;i++) {
   struct snd_pcm_hw_params bad=params;
   if(i==0)bad.rate=96000;
-  if(i==1)bad.channels=4;
+  if(i==1)bad.channels=3;
   if(i==2)bad.format=99;
   assert(uke_capture_hw_params(&sub,&bad)==-EINVAL);checks++;
  }
@@ -148,5 +183,6 @@ int main(void)
  printf("Actual Uke admission/lifecycle: %u memory-only cases passed; not physical start/stop.\n",checks);
 }
 C
-${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
+# ASoC's fixup signature retains an unused runtime argument in the real body.
+${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -Wno-unused-parameter -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
 "$work/check"

@@ -101,4 +101,4 @@ if [[ -n ${2:-} ]]; then
  check_graph "$work/active-adapted.dtb"
  printf 'Active-DT copy: supply phandles and fixed voltage bounds preserved; memory only.\n'
 fi
-printf 'Microphone FDT: supplies, coordinated reset, both slaves, pins, IRQs and mono backend passed; no device activation.\n'
+printf 'Microphone FDT: supplies, coordinated reset, both slaves, pins, IRQs and capture backend passed; no device activation.\n'

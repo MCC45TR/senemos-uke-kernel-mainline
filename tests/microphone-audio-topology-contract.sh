@@ -15,7 +15,7 @@ for module in 117444609 117444611 117444612 117444629 117444644; do
  grep -Fq "token200 $module" "$work/tuples"
 done
 awk "/^SectionPCMCapabilities/ {caps=1} caps && /^\t'MultiMedia3 Capture' \\{/ {emit=1;next} emit && /^\t\\}/ {exit} emit {print}" "$work/decoded.conf" > "$work/caps"
-for want in 'channels_min 1' 'channels_max 1' 'rate_min 48000' 'rate_max 48000' "formats 'S16_LE'"; do
+for want in 'channels_min 1' 'channels_max 4' 'rate_min 48000' 'rate_max 48000' "formats 'S16_LE'"; do
  grep -Fq "$want" "$work/caps"
 done
 awk '/token200 117444644/ {emit=1} emit {print} emit && /^\t*}/ {exit}' "$work/tuples" > "$work/source"
@@ -27,4 +27,4 @@ grep -Fq "stream_name 'MultiMedia3 Capture'" "$work/decoded.conf"
 for route in 'mic.source, , TX_CODEC_DMA_TX_3 Capture' 'MultiMedia3 Mixer, TX_CODEC_DMA_TX_3, mic.source' 'mic.mfc, , MultiMedia3 Mixer' 'mic.converter, , mic.mfc' 'mic.encoder, , mic.converter' 'mic.rdsh, , mic.encoder'; do
  grep -Fq "$route" "$work/decoded.conf"
 done
-printf 'Compiled mixed topology: playback checks retained; mono FE2/BE120, unique IDs and CODEC DMA source type1/index4 to RD memory chain passed; no DSP test.\n'
+printf 'Compiled mixed topology: playback checks retained; bounded capture FE2/BE120, unique IDs and CODEC DMA source type1/index4 to RD memory chain passed; no DSP test.\n'
