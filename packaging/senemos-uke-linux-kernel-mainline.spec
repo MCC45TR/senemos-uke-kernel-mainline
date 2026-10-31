@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 11
+%global senemos_build_release 12
 %else
 %global senemos_build_release 1
 %endif
@@ -423,9 +423,17 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-12
+- Preserve the release-10 capture-completion wire fix in the combined power trial.
+- Retain strict CPUCP reads, guarded clock ownership and boost-state rollback.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-11
 - Combine strict CPUCP GET diagnostics and power ownership changes with the retained microphone profile.
 - Preserve mono PCM limits, the 122-patch adaptation and all ignore-unused workarounds.
+
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-10
+- Match the 56-byte AudioReach read-completion V2 ABI and timestamp layout.
+- Keep strict reply-size, status, token, address and data-size checks.
 
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-9
 - Match the component minimum to the restricted Uke mono capture frontend.

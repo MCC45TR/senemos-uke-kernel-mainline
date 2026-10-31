@@ -1,7 +1,8 @@
 # Uke internal microphone bring-up, 31 October 2026
 
-POCO Pad X1 runs Fedora Rawhide and the accepted Linux 7.3.1-4 baseline. Its native card still
-exposes playback only. No internal microphone capture has been obtained.
+POCO Pad X1 runs Fedora Rawhide AArch64 and Linux 7.3.1-9. Its native card
+exposes two playback PCMs and one mono capture PCM. No sample data or
+correlated internal microphone recording has been obtained.
 The objective remains independent operation of all four physical microphones.
 
 ## Source candidate
@@ -27,14 +28,27 @@ the OEM aggregate `WCD_TX_OUTPUT` is absent from the native codec. No stream
 is opened; the retained release 4 image is restored and read back. Candidate
 6 uses native `ADC1_OUTPUT`, and its prepared-source FDT check resolves the
 endpoint against the actual codec widgets and rejects the old OEM name.
-This correction remains subject to a separate device trial.
+Release 6 registers the card. Release 9 also corrects the component minimum
+from 2 to 1 only for Uke microphone-card capture graph 2; device probes confirm
+open, hw_params, SoundWire enable and both DSP starts succeed.
+
+Four status0 DSP read completions arrive at 130 ms intervals, but each carries
+56 bytes while the native V2 structure incorrectly includes an offset field
+and expects 60. Release 10 removes that field and the synthetic-offset check,
+matching the official AudioReach API pinned in
+[the protocol source record](../manifests/research-audioreach-20261031.json).
+Full reply-size, status, token, address and data-size checks remain. COPR
+must accept an independent 56-byte response with a nonzero timestamp and
+reject shorter or hostile replies. Physical recording still requires a
+separate recoverable device trial.
 
 Both SoundWire slaves and the WCD compound codec are described. The exact
 OEM L7B/BOB phandles are retained: 1.8 V and 3.296 V respectively, with
 all four bias outputs configured for 2.75 V. These are DT constraints,
 not measured voltages. Reset must use the existing USBSS-coordinated child;
 the Uke codec now refuses the legacy GPIO fallback. The native-compatible
-codec identity does not assert which supported silicon variant is fitted.
+codec identity alone does not identify fitted silicon. The checked release9
+probe reports WCD939X_2_0; electrical behavior remains unmeasured.
 
 The upstream QRD example uses SoundWire DAI 0. With the selected QCOM
 driver and one output port, DAI 0 has playback capabilities only; ASoC
