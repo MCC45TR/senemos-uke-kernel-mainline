@@ -6,6 +6,10 @@ profile=$(cd -- "$(dirname -- "$0")" && pwd)
 output=$kernel/native-generated
 mkdir -p "$output"
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
+cp "$kernel/drivers/gpu/drm/msm/msm_fb.c" "$output/msm-framebuffer-before55.c"
+git -C "$kernel" apply --check "$profile/patches/display/0065-msm-framebuffer-pin-state.patch"
+git -C "$kernel" apply "$profile/patches/display/0065-msm-framebuffer-pin-state.patch"
+CC=clang bash "$profile/tests/msm-framebuffer-pin-contract.sh" "$kernel" "$output/msm-framebuffer-before55.c"
 export UKE_LLCC_PROFILE
 UKE_LLCC_PROFILE=$(cat "$profile/llcc-profile")
 case $UKE_LLCC_PROFILE in disabled|native-v1) ;; *) echo 'Unknown LLCC package profile' >&2; exit 2;; esac

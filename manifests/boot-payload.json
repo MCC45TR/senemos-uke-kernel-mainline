@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-30",
   "source_date_epoch": 1792058622,
-  "source_origin": "Release54 retains release53 signing and integrity hardening and adds the managed-regulator power fixture. Source and native validation run on COPR; physical acceptance remains open.",
+  "source_origin": "Release55 retains the exact release54 inputs and adds framebuffer pin serialisation, prepare failure unwind and DPU writeback error propagation. Native checks run in COPR; scanout retirement and physical acceptance remain open.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "c91e9aed1bcae89b2ad1f39407b1b93d72223950256e27cc7e76cfa7f1c5dbf8"
+      "sha256": "07b698c2b184fc0f9b1f1b77469061d10da5353d2f6b6eceb8c315814ebaf9cf"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -498,6 +498,14 @@
     {
       "path": "tests/wlan-power-contract.sh",
       "sha256": "c2dbfe20a8926b3653cc76c46597c67742e71fa7f0afb42f97d8adaf69baa08d"
+    },
+    {
+      "path": "patches/display/0065-msm-framebuffer-pin-state.patch",
+      "sha256": "f253a2e174b48cb3142f2b9b2bd94c224d44cbc90595a02efccfe9df61798a7a"
+    },
+    {
+      "path": "tests/msm-framebuffer-pin-contract.sh",
+      "sha256": "bffcc388a25987eb15218ae5bd87419e1c1c1710f7d476c7ac2cf795975ab81e"
     }
   ],
   "root_selector_capability": {
