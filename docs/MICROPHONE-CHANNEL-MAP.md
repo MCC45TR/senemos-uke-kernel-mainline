@@ -1,65 +1,43 @@
 # Uke microphone identities
 
-31 October 2026. POCO Pad X1, Fedora Rawhide AArch64, Linux 7.3.1 microphone
-development. AMIC1/3/4/5 each produce a complete nonzero raw mono recording on
-release 13, with only the selected ADC/route active and controls restored.
-Physical aperture locations, simultaneous channel order and desktop capture
-remain unqualified. The next source candidate adds bounded 1/2/4-channel
-admission; its source changes do not establish simultaneous device operation.
+31 October 2026. POCO Pad X1, Fedora Rawhide AArch64, Linux7.3.1-102,
+source dcc59b39094d9875be91114cd838d85d9faa0002. All four native48kHz/S16_LE
+capture channels return independent data, reopen and close correctly. Individual
+decimator attenuation affects only the matching channel. Four simultaneous
+ordinary-user desktop captures and per-source native attenuation also pass.
 
-The bounded microphone card reports `mic:uke-4ch-v3` in its ALSA components.
-UCM must require this running-card capability before enabling the array routes.
-This describes the native transport contract, not physical aperture geometry.
+The reference view is landscape, screen facing the user, USB-C at right.
+Aperture positions were identified through the separately named KDE sources.
+They are qualitative positions; metric geometry remains unmeasured.
 
-Keep a stable identity for each analog input across route selection and later
-processing. ADC assignments below describe the reviewed individual-input
-routes; combined Android use cases can select different ADCs.
-
-| Stable identity | OEM route alias | Individual ADC | Native SWR input | MICBIAS |
+| KDE input | Stable identity | PCM index / DEC | ADC / SWR | Physical position |
 |---|---|---|---|---|
-| `uke-amic1` | `sidebottom-mic` | 1 | 0 | 1 |
-| `uke-amic3` | `top-mic` | 3 | 2 | 3 |
-| `uke-amic4` | `back-mic` | 4 | 3 | 3 |
-| `uke-amic5` | `sidetop-mic` | 2 | 1 | 4 |
+| Microphone1 | `uke-amic1` | 0 / 0 | 1 / 0 | Top edge, right |
+| Microphone2 | `uke-amic3` | 1 / 1 | 3 / 2 | Left edge |
+| Microphone3 | `uke-amic4` | 2 / 2 | 4 / 3 | Beside camera |
+| Microphone4 | `uke-amic5` | 3 / 3 | 2 / 1 | Top edge, left |
 
-These aliases come from the pinned Uke static mixer overlay, not a controlled
-aperture test. Keep physical position, orientation and microphone spacing
-unknown until corroborated. Fan ambience provides a capture reference but
-does not localize an aperture. The
+The corrected raw card advertises `mic:uke-4ch-v3`. The owning hardware-support
+package exposes four selectable mono views of one shared four-channel PCM.
+Its position labels and `senemos/uke/audio/microphone-layout.json` retain this
+mapping. The identities stay fixed when the display rotates; transforms belong
+to later position-aware processing. Front versus rear camera association is
+not established by the current aperture report.
+
+Earlier OEM aliases sidebottom/top/back/sidetop describe routing references;
+they do not replace the identified body frame. Combined Android routes can
+also select different ADCs. The
 [input manifest](../manifests/research-microphone-inputs-20261031.json) records
-the exact sources, electrical route identities and unverified position fields.
+source pins, physical identities and the current observation boundaries.
 
-The read-only stock vendor microphone characteristics file matches the pinned
-SM8635 common vendor file. It contains duplicate geometry for two declared
-microphones and provides no explicit association between `builtin_mic_*` and
-AMIC inputs. Its coordinates, response curves and sensitivity values are not
-accepted as Uke geometry or installed as processing calibration.
+The stock common microphone-characteristics file duplicates geometry and does
+not explicitly bind Android builtin_mic IDs to AMIC inputs. Its coordinates,
+frequency responses and sensitivity values are not installed as calibration.
+The manufacturer's repair manual does not label the electrical AMIC-to-hole
+association either. Neither source supplies accepted metric array geometry.
 
-The manufacturer's POCO Pad X1 repair manual shows separate microphone flex
-assemblies on pages 28 and 39, with assembly views on pages 44 and 50. These
-mechanical views do not label AMIC nets or PCM channels. Retain them as
-location research; they cannot complete the electrical-to-aperture mapping.
-
-Each current mono recording has channel zero for the selected input. This
-does not define a four-channel order. When simultaneous capture is added,
-record the actual PCM index, decimator and analog input together, and verify
-that channels are independent. Carry that verified mapping into UCM and
-PipeWire metadata without assigning speaker positions to microphone channels.
-Do not renumber identities when the screen rotates; apply a separately
-documented transform from the fixed body frame to the active display frame.
-
-Before adding Android-derived microphone improvements, qualify the raw input
-map, coordinate origin/axes/units and orientation, channel synchronization,
-gain and mute behavior. Then assess noise suppression, gain control, echo
-cancellation and directional processing individually with their actual ABI,
-licensing and calibration dependencies. Preserve a selectable raw capture
-path so processing can be compared and disabled. No proprietary DSP preset or
-unit calibration is included by this record.
-
-Sources: Uke mixer overlay
-[`87f59fc5`](https://github.com/delano-git/android_vendor_xiaomi_uke/blob/87f59fc5c2ef1ee04e494e5258853d36a3346059/proprietary/odm/etc/audio/sku_cliffs/mixer_paths_overlay_static.xml),
-common vendor characteristics
-[`475e955b`](https://github.com/delano-git/android_vendor_xiaomi_sm8635-common/blob/475e955b3780aee6dd007178e08bf8a231143681/proprietary/vendor/etc/microphone_characteristics.xml),
-the [manufacturer's repair manual](https://cdn.shopify.com/s/files/1/0955/8360/0979/files/O82P_POCO_Pad_X1_ERP_Manual.pdf?v=1768881135)
-(SHA256 `cb5877be56009060d64a90447f36ccd1cade4a926b633eb89076f4d655202b39`),
-and the [Android microphone coordinate contract](https://android.googlesource.com/platform/hardware/interfaces/+/android16-qpr2-release/audio/7.0/types.hal).
+Android routes and processed capture remain separate from raw Linux capture.
+Before adding noise suppression, gain control, echo cancellation or directional
+processing, assess each effect's ABI, licensing and calibration requirements.
+Preserve raw access. Complete suspend/resume and power-cycle regression results
+remain separate from these capture and identity observations.

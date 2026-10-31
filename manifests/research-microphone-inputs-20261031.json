@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-31",
-  "scope": "Stable analog input identities and OEM route aliases; physical geometry and multichannel qualification pending",
+  "scope": "Stable raw microphone identities and qualitative physical positions",
   "sources": [
     {
       "id": "uke-static-mic-routes",
@@ -41,42 +41,58 @@
     {
       "id": "uke-amic1",
       "oem_route_alias": "sidebottom-mic",
-      "physical_position": null,
-      "position_verified": false,
+      "physical_position": "Top edge, right",
+      "position_verified": true,
       "amic": 1,
       "adc": 1,
       "bias": 1,
-      "swr_input": 0
+      "swr_input": 0,
+      "position_evidence": "Qualitative aperture identification reported through KDE",
+      "desktop_microphone": "Microphone 1",
+      "pcm_index": 0,
+      "decimator": 0
     },
     {
       "id": "uke-amic3",
       "oem_route_alias": "top-mic",
-      "physical_position": null,
-      "position_verified": false,
+      "physical_position": "Left edge",
+      "position_verified": true,
       "amic": 3,
       "adc": 3,
       "bias": 3,
-      "swr_input": 2
+      "swr_input": 2,
+      "position_evidence": "Qualitative aperture identification reported through KDE",
+      "desktop_microphone": "Microphone 2",
+      "pcm_index": 1,
+      "decimator": 1
     },
     {
       "id": "uke-amic4",
       "oem_route_alias": "back-mic",
-      "physical_position": null,
-      "position_verified": false,
+      "physical_position": "Beside camera",
+      "position_verified": true,
       "amic": 4,
       "adc": 4,
       "bias": 3,
-      "swr_input": 3
+      "swr_input": 3,
+      "position_evidence": "Qualitative aperture identification reported through KDE",
+      "desktop_microphone": "Microphone 3",
+      "pcm_index": 2,
+      "decimator": 2
     },
     {
       "id": "uke-amic5",
       "oem_route_alias": "sidetop-mic",
-      "physical_position": null,
-      "position_verified": false,
+      "physical_position": "Top edge, left",
+      "position_verified": true,
       "amic": 5,
       "adc": 2,
       "bias": 4,
-      "swr_input": 1
+      "swr_input": 1,
+      "position_evidence": "Qualitative aperture identification reported through KDE",
+      "desktop_microphone": "Microphone 4",
+      "pcm_index": 3,
+      "decimator": 3
     }
   ],
   "geometry_review": {
@@ -106,12 +122,11 @@
     }
   },
   "validation_limits": [
-    "Each input produced complete raw mono data on release13; simultaneous capture remains pending",
-    "Ambient fan reported; no audio audition or controlled source comparison",
-    "Other inputs and physical position pending device qualification",
-    "OEM route aliases are provisional descriptions, not measured aperture locations",
-    "The current mono stream channel zero identifies the selected input only; future multichannel ordering must be qualified separately",
-    "No proprietary preset/calibration or sparse Android decimator values copied"
+    "Physical positions are qualitative user identifications in the documented body frame",
+    "Metric coordinates, spacing and orientation vectors remain unmeasured",
+    "Android builtin_mic IDs are not assigned to Linux AMIC identities",
+    "No proprietary DSP preset, response curve or unit calibration is installed",
+    "Full suspend/resume and power-cycle regression acceptance remains separate from raw capture"
   ],
   "individual_data_observation": {
     "release": "7.3.1-13",
@@ -128,5 +143,26 @@
     "clipped_samples_each": 0,
     "only_selected_adc_active": true,
     "positions_verified": false
+  },
+  "position_reference_frame": "Screen facing user, landscape, USB-C at right",
+  "geometry_measured": false,
+  "multichannel_data_observation": {
+    "release": "7.3.1-102",
+    "source_commit": "dcc59b39094d9875be91114cd838d85d9faa0002",
+    "copr_build": 11235075,
+    "channels": 4,
+    "pcm_order": [
+      "uke-amic1",
+      "uke-amic3",
+      "uke-amic4",
+      "uke-amic5"
+    ],
+    "sample_rate": 48000,
+    "format": "S16_LE",
+    "frames_per_channel": 480000,
+    "nonzero_on_all_channels": true,
+    "clipping": false,
+    "reopen_passed": true,
+    "per_decimator_isolation_passed": true
   }
 }
