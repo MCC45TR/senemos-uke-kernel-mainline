@@ -11,6 +11,7 @@ cat > "$work/check.c" <<'C'
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+typedef uint32_t u32;
 #define BIT(n) (1U << (n))
 #define DISPLAY_PORT_RX_0 104
 #define SECONDARY_TDM_RX_0 40
@@ -55,6 +56,10 @@ static void snd_mask_set_format(struct snd_mask *mask,unsigned format) {mask->fo
 static struct sdw_stream_runtime stream;
 static void *get_stream;
 static int startup_error,map_error,prepare_error;
+static int gain_error;
+static int uke_microphone_apply_gain(struct snd_soc_pcm_runtime *rtd,
+                                    const u32 *analog, const u32 *digital)
+{ assert(rtd && analog && digital);return gain_error; }
 static unsigned tx_count,tx_mask,rx_count;
 static unsigned starts,prepares,frees,releases,clears;
 static bool *prepared_state;
@@ -173,6 +178,9 @@ int main(void)
  }
  assert(releases==30 && clears==93 && frees==60);
  get_stream=NULL;unsigned before=prepares;
+ gain_error=-EIO;unsigned before_starts=starts;
+ assert(uke_capture_startup(&sub)==-EIO && starts==before_starts);checks++;
+ gain_error=0;
  assert(uke_capture_prepare(&sub)==-ENODEV && prepares==before);checks++;
  get_stream=ERR_PTR(-EIO);
  assert(uke_capture_prepare(&sub)==-EIO && prepares==before);checks++;

@@ -3,7 +3,7 @@
  * Individual onboard AMIC capture, included after the existing speaker profile.
  * Uke live OEM DT: L7B 1.8 V, BOB 3.296 V, MICBIAS 2.75 V, LPI pins/IRQs.
  * SoundWire v2 transport/port ABI: upstream SM8650 at 4056b3c9.
- * Native ADC1-4 use SWR_INPUT0-3; each selected input still uses mono DEC0.
+ * Four-channel order: ADC1/3/4/2 on SWR_INPUT0/2/3/1 and DEC0..3.
  * Physical position and electrical behavior require separate qualification.
  */
 #include <dt-bindings/interrupt-controller/arm-gic.h>
@@ -132,6 +132,9 @@
 
 	sound-uke {
 		compatible = "xiaomi,uke-microphone-audio-card";
+		/* ADC1..4 control indices; DEC0..3 digital gain in dB. */
+		xiaomi,microphone-analog-gain = <8 8 8 8>;
+		xiaomi,microphone-digital-gain-db = <24 24 24 24>;
 		widgets = "Microphone", "Analog Mic1",
 			  "Microphone", "Analog Mic3",
 			  "Microphone", "Analog Mic4",

@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Uke playback, bounded microphone capture and closed registration profiles. */
 #include <linux/module.h>
+#include <linux/build_bug.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
 #include <sound/jack.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
+#include <generated/utsrelease.h>
 #include "common.h"
 #include "sdw.h"
+#include "uke-microphone-gain.h"
 
 static int uke_hdmi_late_probe(struct snd_soc_card *card)
 {
@@ -105,6 +109,8 @@ struct uke_speaker_data {
 	struct snd_soc_jack jack;
 	bool microphones;
 	bool capture_prepared;
+	u32 microphone_analog_gain[4];
+	u32 microphone_digital_gain[4];
 };
 
 static int uke_speaker_hdmi_init(struct snd_soc_pcm_runtime *rtd)
@@ -172,10 +178,17 @@ static void uke_capture_clear_stream(struct snd_pcm_substream *substream)
 
 static int uke_capture_startup(struct snd_pcm_substream *substream)
 {
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
 	int ret;
 
 	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
 		return -EINVAL;
+	/* Apply the board defaults before power-up, including after ALSA state restore. */
+	ret = uke_microphone_apply_gain(rtd, data->microphone_analog_gain,
+					data->microphone_digital_gain);
+	if (ret)
+		return ret;
 	ret = qcom_snd_sdw_startup(substream);
 	/* The shared helper releases its allocation on a partial startup error. */
 	if (ret)
@@ -360,6 +373,28 @@ static int uke_speaker_probe(struct platform_device *pdev)
 		    strcmp(capture->codecs[1].dai_name, "SDW Pin1") ||
 		    strcmp(capture->codecs[2].dai_name, "tx_macro_tx1"))
 			return -EINVAL;
+		if (of_property_count_u32_elems(dev->of_node,
+			"xiaomi,microphone-analog-gain") != 4 ||
+		    of_property_count_u32_elems(dev->of_node,
+			"xiaomi,microphone-digital-gain-db") != 4 ||
+		    of_property_read_u32_array(dev->of_node,
+			"xiaomi,microphone-analog-gain", data->microphone_analog_gain, 4) ||
+		    of_property_read_u32_array(dev->of_node,
+			"xiaomi,microphone-digital-gain-db", data->microphone_digital_gain, 4) ||
+		    !uke_microphone_gain_valid(data->microphone_analog_gain,
+					 data->microphone_digital_gain))
+			return dev_err_probe(dev, -EINVAL, "Invalid board microphone gains\n");
+		/* Per-release discovery lets parallel kernels retain their own UCM data. */
+		BUILD_BUG_ON(sizeof("uke" UTS_RELEASE) > 16);
+		card->driver_name = "uke" UTS_RELEASE;
+		card->components = "mic:uke-4ch-v4 kernel:" UTS_RELEASE;
+		{
+			const char *model;
+
+			if (!of_property_read_string(of_root, "model", &model) &&
+			    (!strcmp(model, "POCO Pad X1") || !strcmp(model, "Xiaomi Pad 7")))
+				card->long_name = model;
+		}
 		capture->be_hw_params_fixup = uke_capture_fixup;
 		capture->ops = &uke_capture_ops;
 	}

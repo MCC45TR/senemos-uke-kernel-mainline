@@ -31,6 +31,8 @@ check_native_output() {
 }
 check_graph() {
  local f=$1 codec=/audio-codec reset l7 bob tx rx provider
+ test "$(fdtget -t u "$f" /sound-uke xiaomi,microphone-analog-gain)" = '8 8 8 8'
+ test "$(fdtget -t u "$f" /sound-uke xiaomi,microphone-digital-gain-db)" = '24 24 24 24'
  l7=$(fdtget -t s "$f" /__symbols__ pmxr2230_l7)
  bob=$(fdtget -t s "$f" /__symbols__ pmxr2230_bob)
  for spec in "$l7:1800000" "$bob:3296000"; do
@@ -82,6 +84,21 @@ check_graph() {
  check_native_output "$f"
 }
 check_graph "$work/result.dtb"
+gain_schema=$root/src/audio/xiaomi,uke-microphone-gain.yaml
+dt-doc-validate "$gain_schema"
+dt-validate -s "$gain_schema" -l xiaomi,uke-microphone-gain "$work/result.dtb" > "$work/gain-positive.log" 2>&1
+test ! -s "$work/gain-positive.log"
+for mutation in missing short analog_high digital_high; do
+ cp "$work/result.dtb" "$work/gain-negative.dtb"
+ case $mutation in
+  missing) fdtput -d "$work/gain-negative.dtb" /sound-uke xiaomi,microphone-analog-gain;;
+  short) fdtput -t u "$work/gain-negative.dtb" /sound-uke xiaomi,microphone-analog-gain 8 8 8;;
+  analog_high) fdtput -t u "$work/gain-negative.dtb" /sound-uke xiaomi,microphone-analog-gain 9 8 8 8;;
+  digital_high) fdtput -t u "$work/gain-negative.dtb" /sound-uke xiaomi,microphone-digital-gain-db 25 24 24 24;;
+ esac
+ dt-validate -s "$gain_schema" -l xiaomi,uke-microphone-gain "$work/gain-negative.dtb" > "$work/gain-negative-$mutation.log" 2>&1 || true
+ grep -q 'microphone-.*gain' "$work/gain-negative-$mutation.log"
+done
 for endpoint in 17 19 21 23; do
  cp "$work/result.dtb" "$work/oem-only-output.dtb"
  mutated=("${expected_routes[@]}")

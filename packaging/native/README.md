@@ -1,5 +1,14 @@
 # Mainline native source profile
 
+31 October 2026, kernel103 candidate: preserve release102's four isolated
+capture channels and deliver one named four-channel input with the kernel.
+Bounded ADC/TX defaults move to DT and apply before capture power-up, including
+after ALSA state restore. Per-release ALSA/WirePlumber data coexists with older
+kernels, while frozen legacy data permits removing the separate audio RPM.
+Source preparation is complete; COPR and installed kernel103 acceptance remain
+pending. The preceding pre-start ADC8/TX24 trial on102 records four clean
+channels; it is not kernel103 validation or measured SNR improvement.
+
 31 October 2026, POCO Pad X1, Fedora Rawhide AArch64: release 13 produces
 complete nonzero mono recordings from each AMIC1/3/4/5 individually, with the
 selected ADC/route active and controls restored. The release 16 source

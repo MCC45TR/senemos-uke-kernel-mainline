@@ -37,6 +37,7 @@ case $(cat "$profile/audio-profile") in
     *) printf 'Unknown audio development profile\n' >&2; exit 2;;
 esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
+install -m644 "$profile/src/audio/uke-microphone-gain.h" "$kernel/sound/soc/qcom/uke-microphone-gain.h"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \
