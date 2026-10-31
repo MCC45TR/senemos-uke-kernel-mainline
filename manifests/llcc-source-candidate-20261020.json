@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "2c09d49e792134a5546f969bcc79aace4dcc8739536c412d39511d8f0f98bbbd"
+      "sha256": "5eba1548bb2e7ac911138a0a0fdc19fdf2dfa137eb8e6d44287dd4b21837ab4e"
     },
     {
       "path": "patches/boot/0014-uke-ufs-mcq-resources.patch",
@@ -465,7 +465,7 @@
     },
     {
       "path": "tests/uke-rpmh-resource-contract.sh",
-      "sha256": "051c682933d1ef561a57943057e8299df9740a11aab321ee910ae6dbb4f0b8eb"
+      "sha256": "d23a55bab65b970c9637b32abec20a6d0476b5f5c5fe3a051d43d0c33a142a48"
     },
     {
       "path": "tests/usb-typec-fdt-check.cpp",
@@ -489,7 +489,7 @@
     },
     {
       "path": "tests/wcd939x-reset-consumer-contract.sh",
-      "sha256": "6ba616407acb09477b1456a095cadd7d2b7843b0eeee4b47b1c1b522330328f0"
+      "sha256": "d50f14ae40f33b6bad65644ca550b8d11842b0c399d500e801804794d97cfe1b"
     },
     {
       "path": "tests/wcd939x-reset-contract.sh",
@@ -549,7 +549,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "c504917a59ec5faae5d7e0526e9ec80dcbcfa1a1a7b3cc5a621f823d5aa02382"
+      "sha256": "be8ed1cdde326642a110592e3d155582c70a95ecb590d788ba2192d9997cffb2"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -593,7 +593,7 @@
     },
     {
       "path": "tests/mainline-package-contract.sh",
-      "sha256": "290e93fee6f42aba54e9833380e2214054a726704aa9a4f6b695c988120a1202"
+      "sha256": "c89b035bd0a4bae3f444a79489a1b405246cf16e01d2211ce4ccadd91d5f3d22"
     },
     {
       "path": "patches/boot/0052-scmi-protocol-negotiation-opt-out.patch",

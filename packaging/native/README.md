@@ -1,5 +1,13 @@
 # Mainline native source profile
 
+30 October 2026, isolated microphone source candidate: the optional
+`microphones` profile retains speaker/DP playback and adds a restricted mono
+AMIC1/ADC1/DEC0 capture graph. The default remains `speakers`. DT/topology,
+memory-only callbacks and twelve AArch64 audio objects pass focused checks.
+No candidate installation, raw capture or four-microphone qualification is
+claimed. See [the bring-up record](../../docs/MICROPHONE-BRINGUP-20261030.md)
+for source provenance, activation gates and rollback requirements.
+
 30 October 2026, Linux 7.3.0-53 security candidate: enforce matching module
 signatures, integrity lockdown, FORTIFY, hardened usercopy, Yama and restricted
 kernel logs. COPR verifies final compressed modules with the exported build
