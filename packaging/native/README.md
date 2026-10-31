@@ -2,7 +2,7 @@
 
 31 October 2026, POCO Pad X1, Fedora Rawhide AArch64: release 13 produces
 complete nonzero mono recordings from each AMIC1/3/4/5 individually, with the
-selected ADC/route active and controls restored. The release 15 source
+selected ADC/route active and controls restored. The release 16 source
 candidate preserves selected 1/2/4-channel requests at 48 kHz S16_LE and requires
 the exact matching contiguous TX decimator mask. Supplies, reset, pins, IRQs
 and playback graphs remain. Simultaneous independent capture, desktop policy

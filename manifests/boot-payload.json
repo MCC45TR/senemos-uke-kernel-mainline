@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "6d4b42b3d673fbde79cc7bcc66a46f750e2fd9b9c103f029c3fa2641ca0e00fc"
+      "sha256": "d734aa0f83ae88927f48b1ed2a70b634ef52b96659a2dc7dfbf325c42a433a70"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -581,7 +581,7 @@
     },
     {
       "path": "src/audio/uke-audio-card.c",
-      "sha256": "216526febdb2854e009ce2db0be6b8c694adbc8ee6d2fca723d1394000a091ab"
+      "sha256": "a736bfbe5918151e62b7e25a4d2054a7ccb66daf38606af716d2c9d34b351f8a"
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",

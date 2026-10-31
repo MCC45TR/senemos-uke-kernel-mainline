@@ -7,6 +7,10 @@ Physical aperture locations, simultaneous channel order and desktop capture
 remain unqualified. The next source candidate adds bounded 1/2/4-channel
 admission; its source changes do not establish simultaneous device operation.
 
+The bounded microphone card reports `mic:uke-4ch` in its ALSA components.
+UCM must require this running-card capability before enabling the array routes.
+This describes the native transport contract, not physical aperture geometry.
+
 Keep a stable identity for each analog input across route selection and later
 processing. ADC assignments below describe the reviewed individual-input
 routes; combined Android use cases can select different ADCs.

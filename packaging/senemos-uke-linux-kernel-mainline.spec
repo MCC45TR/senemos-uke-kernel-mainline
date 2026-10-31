@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 15
+%global senemos_build_release 16
 %else
 %global senemos_build_release 1
 %endif
@@ -419,9 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
-* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-15
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-16
 - Preserve selected 1/2/4-channel capture at 48 kHz S16_LE.
 - Require exact contiguous TX decimator counts and masks matching the DMA format.
+- Advertise the bounded microphone capability in the running ALSA card components.
 
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-13
 - Add the four OEM analog input/bias routes and native ADC output bridges.

@@ -324,6 +324,9 @@ static int uke_speaker_probe(struct platform_device *pdev)
 	if (card->num_links != (data->microphones ? 3 : 2) || card->num_aux_devs ||
 	    strcmp(card->name, "POCO-Pad-X1"))
 		return -EINVAL;
+	/* UCM discovers the bounded capture capability from this card instance. */
+	if (data->microphones)
+		card->components = "mic:uke-4ch";
 
 	for_each_card_prelinks(card, i, link) {
 		if (link->id == DISPLAY_PORT_RX_0 && !hdmi)
