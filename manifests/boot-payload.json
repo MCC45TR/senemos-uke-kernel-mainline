@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 with the retained release4 profile, unchanged 122-patch adaptation, PM8010 population guard and isolated mono microphone source overlay. Compilation runs only on COPR; physical capture remains untested.",
+  "source_origin": "Signed Linux 7.3.1 with the retained release4 profile, unchanged 122-patch adaptation, PM8010 guard and isolated mono capture. Release6 resolves the actual native ADC1 output after the release5 device route failure. All compilation runs on COPR; raw capture remains untested.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -585,7 +585,7 @@
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
-      "sha256": "78ab1b094dc238f76173c49644ab662ffc2feea73a58bd275d5f9e64b9508741"
+      "sha256": "b26a3799f41f6d983121881253563204364932bfe104a674c9bb8ed2ead13bfe"
     },
     {
       "path": "src/audio/POCO-Pad-X1-Microphone-Capture.conf",
@@ -641,7 +641,7 @@
     },
     {
       "path": "tests/microphone-audio-fdt-contract.sh",
-      "sha256": "e8087ed5043bdfafb967d56d8b9d0ddc1dfe843950b968bcd1bed27feaeab724"
+      "sha256": "2e6f9fef304e2aee51a94bc70256f55d9b2772e6df3c9646684dfe9fd0b4ac69"
     },
     {
       "path": "tests/microphone-audio-topology-contract.sh",

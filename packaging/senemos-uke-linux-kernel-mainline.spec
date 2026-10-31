@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 5
+%global senemos_build_release 6
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-6
+- Connect mono capture to the actual native WCD939x ADC1 output widget.
+- Reject the incompatible OEM aggregate output in the prepared-source FDT check.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-5
 - Retain the release4 profile and add guarded mono microphone capture.
 - Preserve four-channel speaker and stereo DisplayPort paths; hardware testing remains pending.

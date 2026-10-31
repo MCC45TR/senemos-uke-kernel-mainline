@@ -135,7 +135,7 @@
 		widgets = "Microphone", "Analog Mic1", "Speaker", "DP0 Jack";
 		audio-routing = "AMIC1", "Analog Mic1",
 				"AMIC1", "MIC BIAS1",
-				"TX SWR_INPUT0", "WCD_TX_OUTPUT";
+				"TX SWR_INPUT0", "ADC1_OUTPUT";
 
 		microphone-dai-link {
 			link-name = "TX_CODEC_DMA_TX_3";

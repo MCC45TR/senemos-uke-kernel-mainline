@@ -1,6 +1,6 @@
 # Uke internal microphone bring-up, 31 October 2026
 
-POCO Pad X1 runs Fedora Rawhide and Linux 7.3.1-3. Its native card still
+POCO Pad X1 runs Fedora Rawhide and the accepted Linux 7.3.1-4 baseline. Its native card still
 exposes playback only. No internal microphone capture has been obtained.
 The objective remains independent operation of all four physical microphones.
 
@@ -20,6 +20,14 @@ The machine rejects other decimator masks and multi-channel capture.
 This isolated candidate selects `microphones`. The accepted distribution
 profile remains `speakers`. The selection is not a hardware acceptance claim.
 No UCM capture entry is added before raw capture works.
+
+The 31 October device trial of 7.3.1-5 boots and binds both SoundWire slaves.
+The checked codec reports WCD939x 2.0. Card registration then fails because
+the OEM aggregate `WCD_TX_OUTPUT` is absent from the native codec. No stream
+is opened; the retained release 4 image is restored and read back. Candidate
+6 uses native `ADC1_OUTPUT`, and its prepared-source FDT check resolves the
+endpoint against the actual codec widgets and rejects the old OEM name.
+This correction remains subject to a separate device trial.
 
 Both SoundWire slaves and the WCD compound codec are described. The exact
 OEM L7B/BOB phandles are retained: 1.8 V and 3.296 V respectively, with
