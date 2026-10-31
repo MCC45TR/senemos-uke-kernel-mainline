@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 4
+%global senemos_build_release 7
 %else
 %global senemos_build_release 1
 %endif
@@ -229,6 +229,10 @@ CXX=clang++ bash native-profile/tests/bcl-alarm-lifetime-contract.sh drivers/hwm
 CXX=clang++ bash native-profile/tests/bcl-uke-admission-contract.sh drivers/hwmon/qcom-bcl-hwmon.c
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/hwmon/qcom-bcl-hwmon.ko.zst
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst
+observer_module=%{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/firmware/arm_scmi/uke-cpucp-observe.ko.zst
+test -s "$observer_module"
+observer_aliases=$(modinfo -F alias "$observer_module")
+test -z "$observer_aliases"
 modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/perf/qcom-sm7675-llcc-pmu.ko.zst | grep -Fx 'of:N*T*Cqcom,sm7675-llcc-pmuC*'
 test "$(cat native-generated/llcc-profile)" = native-v1
 grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
@@ -419,6 +423,11 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-7
+- Stage the isolated power candidate on the accepted release-4 composition.
+- Retire the unused debug measurement consumer and preserve boost metadata on error.
+- Build a signed, manually loaded CPUCP GET observer; retain all power workarounds.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-4
 - Admit the optional Uke PM8010 N using validated firmware population and resources.
 - Preserve populated variants, generic SPMI errors and the accepted rollback slot.

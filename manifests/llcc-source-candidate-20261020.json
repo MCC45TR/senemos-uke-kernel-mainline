@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "d744290e1d9c19684f274d44ba9f0f093a3ac983adca2271bb54cf3dfccfd2c8"
+      "sha256": "08d6d0b9320dd489231a41c057c22797f85108474a3ec7ddeaff56afc3c5e3d2"
     },
     {
       "path": "packaging/native/prepare.sh",
@@ -549,7 +549,7 @@
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
-      "sha256": "f731091bab37a1b75458712c21f76504eb2c9af5d5ec3eee78d9027adcc3e679"
+      "sha256": "9be4d8403d29c8dc972855e28fb972c2191105dc8a515ecebf96a8add629a8d3"
     },
     {
       "path": "src/power/uke-pm8010.h",
@@ -570,6 +570,30 @@
     {
       "path": "tests/clock-debug-fdt-contract.sh",
       "sha256": "5948924e9e6c6351d2155b559745cba8ebe3e5b8c30f66bf27dda1f1701c567d"
+    },
+    {
+      "path": "src/power/prepare-cpucp-observe.sh",
+      "sha256": "deb2d631f5481574d43288a421ac6a6eb82cf08ffae1426872039b7c194ff42d"
+    },
+    {
+      "path": "src/power/uke-cpucp-observe.c",
+      "sha256": "444d9104c4db583a4e7867f2ead2e5ae8eb54f4c4688ed2c46ecdb74f55bcc7c"
+    },
+    {
+      "path": "patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch",
+      "sha256": "346967803f13f56147b2da3e99d21f9588260809d5a07581e5f89713c447399b"
+    },
+    {
+      "path": "tests/cpufreq-boost-error-contract.sh",
+      "sha256": "5253ffca630e6136242bd9af5941eb14d79cfd31ef410e12124ee81843e72ae2"
+    },
+    {
+      "path": "tests/memlat-scmi-probe-contract.sh",
+      "sha256": "335b8e97ae06c996dbbf73f15bbbca56dd05d10c91d118da61d7a8c6588c752f"
+    },
+    {
+      "path": "tests/mainline-package-contract.sh",
+      "sha256": "290e93fee6f42aba54e9833380e2214054a726704aa9a4f6b695c988120a1202"
     }
   ],
   "baseline_files": [
@@ -692,7 +716,7 @@
     "requires_three_candidate_patches_preapplied": true,
     "package_selector": "packaging/native/llcc-profile"
   },
-  "kernel_release": "7.3.1-4",
+  "kernel_release": "7.3.1-7",
   "boot_argument_handoff": {
     "source_commit": "84b172c09fee0b60e901bfe40a2d7b6244aa726a",
     "integrated_commit": "3d78e6c",

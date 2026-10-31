@@ -39,3 +39,23 @@ references and GCC's proxy voltage vote even while `clk_ignore_unused` is
 present. A matched kernel, preserved rollback and measured boot/runtime/sleep
 trial are required before deployment. Other unbound consumers and all three
 ignore-unused workarounds still need separate ownership and physical checks.
+
+## Isolated kernel candidate
+
+Release 7.3.1-7 retains the exact release-4 source RPM and its 122 adaptation
+patches. The separate microphone release-6 build is not an input. Explicit
+overlays add this clock candidate, the cpufreq boost-error rollback correction
+and a signed `uke-cpucp-observe` module. PM debug messages are enabled for the
+trial; all ignore-unused settings and existing thermal/charging limits remain.
+
+The observer has no autoload alias or polling worker. Explicit module loading
+admits only Uke/SM7675 on matching Linux 7.3.1 modules. It verifies the vendor
+protocol version with an actual standard VERSION transfer, then permits only
+MEMLAT timestamp/raw-frequency GETs and the exact C1DCVS enable GET. Fixed-size
+replies retain an overlength sentinel; malformed/error replies leave output
+unknown. No firmware configuration, start/stop or raw command interface exists.
+
+The candidate is intended for the separate
+`uke-linux-test:custom:power-20261031` COPR directory, Rawhide AArch64 only.
+The ordinary package producer and repository remain separate. Full kernel,
+module/signature and physical validation are pending.

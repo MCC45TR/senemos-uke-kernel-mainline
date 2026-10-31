@@ -107,6 +107,10 @@ git -C "$kernel" apply --check "$here/../../patches/boot/0043-uke-pm8010-firmwar
 git -C "$kernel" apply "$here/../../patches/boot/0043-uke-pm8010-firmware-population.patch"
 install -m644 "$here/../power/uke-pm8010.h" "$kernel/drivers/mfd/uke-pm8010.h"
 bash "$here/../../tests/pm8010-population-contract.sh" "$kernel"
+git -C "$kernel" apply --check "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
+git -C "$kernel" apply "$here/../../patches/boot/0051-cpufreq-preserve-boost-state-on-error.patch"
+bash "$here/../../tests/cpufreq-boost-error-contract.sh" "$kernel/drivers/cpufreq/cpufreq.c"
+bash "$here/../power/prepare-cpucp-observe.sh" "$kernel"
 for cdsp_patch in 0022-mdt-admit-geometry-and-metadata.patch \
     0023-fastrpc-own-coherent-dma-handle.patch 0024-rproc-retry-transport-stop.patch; do
     git -C "$kernel" apply --check "$here/../../patches/boot/$cdsp_patch"
