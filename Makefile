@@ -11,6 +11,7 @@ require-unstable-series:
 	bash scripts/require-unstable-series.sh "$(version)"
 validate srpm: require-unstable-series
 validate: test-touch-protocol test-touch-transport
+	bash tests/input-capability-inventory.sh
 	bash tests/kvm-source-contract.sh
 	bash tests/el2-profile-contract.sh
 	bash tests/copr-source-guards-contract.sh

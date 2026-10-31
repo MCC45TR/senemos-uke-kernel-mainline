@@ -108,3 +108,27 @@ continuity then require separate tablet tests. The standalone touchscreen
 package remains necessary until that replacement is qualified.
 
 Private firmware and reference data are not distributed with this source.
+
+## Source correction, 30 October 2026
+
+The transport and integration descriptions above record the 23 October
+candidate. They do not describe the active source at `768ff06994d7bab601067a8664d63ba2502399d3`.
+`src/input/nt36532-uke-spi.c` now publishes finger contacts directly through
+the Linux input subsystem, using `input_mt_assign_slots`, `MT_TOOL_FINGER`,
+`ABS_MT_POSITION_X` and `ABS_MT_POSITION_Y`. It also exposes `KEY_WAKEUP`.
+The current driver is not the V4L2 metadata/uinput architecture described
+above. `tests/touch-runtime-package-contract.sh` checks the native-input
+payload guard used by `packaging/senemos-uke-linux-kernel-mainline.spec`.
+`manifests/touch-runtime.json` and `scripts/stage-touch-runtime.sh` retain
+the older capture-client route and must not be used to infer the current
+package architecture. Source selection does not establish the running
+tablet's driver or successful suspend/resume.
+
+This input registration does not expose `BTN_TOOL_PEN`, pressure or tilt axes.
+Finger contact tracking is therefore not evidence of Xiaomi Focus Pen
+support. Before adding pen decoding, identify any separate evdev/HID path
+and its exact packet contract on the target. Pressure, hover/contact,
+buttons, reset/disconnect release and optional tilt need independent evidence
+and fixtures. Do not substitute another tablet's coordinate constants or
+invent proximity/pressure values. No physical pen test was performed for
+this source correction.
