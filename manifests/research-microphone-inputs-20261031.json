@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "scope": "Individual analog input research; not physical position or multichannel acceptance",
+  "sources": [
+    {
+      "id": "uke-static-mic-routes",
+      "url": "https://github.com/delano-git/android_vendor_xiaomi_uke",
+      "commit": "87f59fc5c2ef1ee04e494e5258853d36a3346059",
+      "file": "proprietary/odm/etc/audio/sku_cliffs/mixer_paths_overlay_static.xml",
+      "sha256": "2cb2cfc48ff22b76e67783753203a0367f4e447b398db6d7eb61ef5a2e8a8b4c",
+      "local_path": "referances/uke-microphone-oem-20261031/mixer_paths_overlay_static.xml",
+      "classification": "uke_oem_data_reference",
+      "license": "Not established from file header; reference data not redistributed",
+      "executed": false
+    },
+    {
+      "id": "uke-resource-manager",
+      "url": "https://github.com/delano-git/android_device_xiaomi_uke",
+      "commit": "0f03fdc4432a86e8aefa0b71d395391f18dc8ad5",
+      "file": "configs/audio/resourcemanager_cliffs_mtp.xml",
+      "sha256": "ec2fd1eea221ff0d7ade65f6054055fc3bb65dc4cc95c9914b1a75a321173e7b",
+      "local_path": "referances/uke-microphone-oem-20261031/resourcemanager_cliffs_mtp.xml",
+      "classification": "uke_oem_data_reference",
+      "executed": false
+    },
+    {
+      "id": "native-wcd-adc-outputs",
+      "url": "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git",
+      "commit": "79a907609d53d5cd645b42c11550d295d43abf99",
+      "files": [
+        "sound/soc/codecs/wcd939x.c",
+        "sound/soc/codecs/wcd939x-sdw.c"
+      ],
+      "classification": "native_shared_ip",
+      "license": "GPL-2.0"
+    }
+  ],
+  "board_reference": "Live unmodified OEM audio-routing property; bias voltages unchanged",
+  "inputs": [
+    {
+      "amic": 1,
+      "adc": 1,
+      "bias": 1,
+      "swr_input": 0
+    },
+    {
+      "amic": 3,
+      "adc": 3,
+      "bias": 3,
+      "swr_input": 2
+    },
+    {
+      "amic": 4,
+      "adc": 4,
+      "bias": 3,
+      "swr_input": 3
+    },
+    {
+      "amic": 5,
+      "adc": 2,
+      "bias": 4,
+      "swr_input": 1
+    }
+  ],
+  "native_policy": {
+    "channels": 1,
+    "rate": 48000,
+    "format": "S16_LE",
+    "decimator": 0
+  },
+  "validation_limits": [
+    "Only AMIC1 raw data/reopen tested before this source candidate",
+    "Ambient fan reported; no audio audition or controlled source comparison",
+    "Other inputs and physical position pending device qualification",
+    "No proprietary preset/calibration or sparse Android decimator values copied"
+  ]
+}

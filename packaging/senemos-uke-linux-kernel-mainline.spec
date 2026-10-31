@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.3.1
 %if "%{version}" == "7.3.1"
-%global senemos_build_release 10
+%global senemos_build_release 12
 %else
 %global senemos_build_release 1
 %endif
@@ -419,6 +419,10 @@ cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-bo
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-12
+- Add the four OEM analog input/bias routes and native ADC output bridges.
+- Keep strict mono admission and qualify the remaining inputs separately.
+
 * Sat Oct 31 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-10
 - Match the 56-byte AudioReach read-completion V2 ABI and timestamp layout.
 - Keep strict reply-size, status, token, address and data-size checks.

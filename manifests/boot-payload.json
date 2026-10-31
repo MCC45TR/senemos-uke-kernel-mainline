@@ -573,7 +573,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "1e1b8b3a473abfc14033c771692c1f499e9f62fec4adea10761d3ebf6fabd2b0"
+      "sha256": "819baedb72f2c080f06ae9788dcbf46f8b5846ca7409b3ae0eacf5b91e491352"
     },
     {
       "path": "src/boot/prepare-abl-source.sh",
@@ -585,7 +585,7 @@
     },
     {
       "path": "src/audio/sm7675-uke-microphone-audio.dtsi",
-      "sha256": "b26a3799f41f6d983121881253563204364932bfe104a674c9bb8ed2ead13bfe"
+      "sha256": "83fc61a7173bc972c65d34c846f02c6ed88a811fea901b4c4fc638352c7b9989"
     },
     {
       "path": "src/audio/POCO-Pad-X1-Microphone-Capture.conf",
@@ -641,7 +641,7 @@
     },
     {
       "path": "tests/microphone-audio-fdt-contract.sh",
-      "sha256": "2e6f9fef304e2aee51a94bc70256f55d9b2772e6df3c9646684dfe9fd0b4ac69"
+      "sha256": "04ca71e4e2acca4b722ebc73816becf77237805b7ae4346cd57ed9a2b1497609"
     },
     {
       "path": "tests/microphone-audio-topology-contract.sh",
