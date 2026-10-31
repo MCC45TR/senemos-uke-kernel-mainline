@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-31",
   "source_date_epoch": 1792058622,
-  "source_origin": "Signed Linux 7.3.1 retained 122-patch adaptation, Uke PM8010 admission, native mono capture and isolated power diagnostics. Source, package and physical acceptance remain separate.",
+  "source_origin": "Signed Linux 7.3.1 with the retained release9 microphone profile, native mono PCM constraints, unchanged 122-patch adaptation, PM8010 admission and isolated power diagnostics. Physical qualification remains separate.",
   "firmware_included": false,
   "device_private_data_included": false,
   "python_target_payload": false,
@@ -13,7 +13,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "5eba1548bb2e7ac911138a0a0fdc19fdf2dfa137eb8e6d44287dd4b21837ab4e"
+      "sha256": "f30aef3afa2b27073f085cdcd3afd1e6c3644de5237c42678cf6a4b40c5da3de"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -629,7 +629,7 @@
     },
     {
       "path": "packaging/native/README.md",
-      "sha256": "3b9747c8965d80aa02489f79c5a64bbe054baa225340881ab0289949fa00b45a"
+      "sha256": "e050d1e9cecb5ba2d34df1b6b41388a03e208ef2d7ba0bd41cb47b2412ab2c20"
     },
     {
       "path": "src/audio/uke-audio-card.c",
@@ -718,6 +718,14 @@
     {
       "path": "tests/wcd939x-supply-order-contract.sh",
       "sha256": "a5c1dfdcc39e9572ac3c6ecad669b38ed0df264de36e508fb04dc082e0f4b916"
+    },
+    {
+      "path": "tests/microphone-pcm-limits-contract.sh",
+      "sha256": "99757d25d30869b798fc553bd99d464642e55740e22da9ec0006872c97189cc0"
+    },
+    {
+      "path": "patches/boot/0053-q6apm-uke-mono-capture.patch",
+      "sha256": "d57dcc4dbad1e48563476cb5216e5dc74db64edf478406134f82f8ac7204faae"
     }
   ],
   "root_selector_capability": {

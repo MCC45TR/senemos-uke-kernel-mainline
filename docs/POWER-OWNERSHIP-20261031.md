@@ -42,8 +42,8 @@ ignore-unused workarounds still need separate ownership and physical checks.
 
 ## Isolated kernel candidate
 
-Release 7.3.1-8 retains the exact release-4 source RPM and its 122 adaptation
-patches. The separate microphone release-6 build is not an input. Explicit
+Release 7.3.1-10 retains the exact release-9 microphone source RPM and its 122
+adaptation patches, including native mono PCM constraints. Explicit
 overlays add this clock candidate, the cpufreq boost-error rollback correction
 and a signed `uke-cpucp-observe` module. PM debug messages are enabled for the
 trial; all ignore-unused settings and existing thermal/charging limits remain.
@@ -64,5 +64,7 @@ its emitted source RPM consumes that NVR and was not installed or loaded.
 
 The candidate is intended for the separate
 `uke-linux-test:custom:power-20261031` COPR directory, Rawhide AArch64 only.
-The ordinary package producer and repository remain separate. Full kernel,
-module/signature and physical validation are pending.
+The ordinary package producer and repository remain separate. The earlier
+release-8 power-only build passed kernel, package and signature checks. The
+combined release-10 build and physical validation remain pending. Published
+release identities 7, 8 and 9 are preserved.
