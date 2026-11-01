@@ -7,6 +7,61 @@ kernel=${3:?Pass the prepared kernel source}
 [[ $(awk '/ctx->panel.prepare_prev_first = true;/ {ready=1} /drm_panel_add\(&ctx->panel\)/ {print ready+0; exit}' "$source_file") == 1 ]]
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
+cat > "$work/registration.c" <<'C'
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <errno.h>
+#define __init
+#define __exit
+#define THIS_MODULE ((void *)1)
+#define MODULE_DESCRIPTION(...)
+#define MODULE_LICENSE(...)
+#define module_init(fn) static int (*test_init)(void) = fn
+static void (*test_exit)(void);
+#define module_exit(fn) static void __attribute__((constructor)) expose_exit(void) { test_exit = fn; }
+struct mipi_dsi_device { int unused; };
+struct mipi_dsi_driver {
+    int (*probe)(struct mipi_dsi_device *);
+    void (*remove)(struct mipi_dsi_device *), (*shutdown)(struct mipi_dsi_device *);
+    struct { const char *name; const void *of_match_table, *dev_groups;
+             bool suppress_bind_attrs; } driver;
+};
+static int o82_probe(struct mipi_dsi_device *d) { (void)d; return 0; }
+static void o82_remove(struct mipi_dsi_device *d) { (void)d; }
+static void o82_shutdown(struct mipi_dsi_device *d) { (void)d; }
+static const int o82_match[1], o82_groups[1];
+static int registration_error;
+static struct mipi_dsi_driver *registered;
+static int mipi_dsi_driver_register_full(struct mipi_dsi_driver *d, void *owner) {
+    assert(owner == THIS_MODULE && !registered);
+    if (!registration_error) registered = d;
+    return registration_error;
+}
+static void __attribute__((unused)) mipi_dsi_driver_unregister(struct mipi_dsi_driver *d) {
+    assert(registered == d); registered = NULL;
+}
+C
+# Use the selected kernel's registration helpers, including their exit semantics.
+for definition in 'module_driver' 'mipi_dsi_driver_register' 'module_mipi_dsi_driver'; do
+    awk -v name="$definition" '$1=="#define" && index($2,name "(")==1 {emit=1;found=1}
+        emit {print; if ($0 !~ /\\$/) exit} END {if(!found)exit 1}' \
+        "$kernel/include/linux/device/driver.h" "$kernel/include/drm/drm_mipi_dsi.h" >> "$work/registration.c"
+done
+sed -n '/^static struct mipi_dsi_driver o82_driver = {/,/^MODULE_LICENSE/p' "$source_file" >> "$work/registration.c"
+cat >> "$work/registration.c" <<'C'
+int main(void) {
+    registration_error = -EIO;
+    assert(test_init() == -EIO && !registered);
+    registration_error = 0;
+    assert(test_init() == 0 && registered == &o82_driver);
+    assert(!test_exit && registered->driver.suppress_bind_attrs);
+    assert(registered->probe == o82_probe && registered->remove == o82_remove);
+    assert(registered->shutdown == o82_shutdown);
+}
+C
+"${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/registration.c" -o "$work/registration"
+"$work/registration"
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <stdbool.h>

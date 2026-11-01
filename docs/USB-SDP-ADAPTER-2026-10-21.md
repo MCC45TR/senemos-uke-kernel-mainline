@@ -48,3 +48,20 @@ FunctionFS interface would not resolve this gate by itself. Automatic activation
 remains excluded until reset, configuration-zero, detach and suspend behavior can
 be measured with an adequate recovery route. Historical logs and open hardware
 risks are retained.
+
+## Retained-budget confirmation — 23 October 2026
+
+Patch 0104 follows the existing SDP SET with a fresh input-limit GET under the
+same request lock. The reported limit must not exceed the requested ceiling,
+and the source generation must remain unchanged. A lower firmware clamp is
+allowed. A failed post-SET query, excessive readback or changed generation returns
+terminal `EREMOTEIO`, so the DWC3 readiness worker does not replay that request.
+Preflight readiness retries and all existing adapter, maximum and wet/fault
+guards remain unchanged. No new current value or setter is exposed.
+
+The actual-source host fixture first reproduced the observed SET0 ACK / GET500mA
+false success, then passed with the new confirmation. It also covers equal/lower
+readback, GET timeout/EAGAIN, pre/post source changes and no post-SET replay.
+The AArch64 battmgr object and current patch-series checks pass. These are host
+results: a reported budget is not electrical USB suspend, battery charge stop,
+70/80 hysteresis or tablet acceptance of a new kernel.

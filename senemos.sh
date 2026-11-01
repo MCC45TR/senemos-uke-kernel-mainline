@@ -50,7 +50,7 @@ Usage: ./senemos.sh --build VERSION --distro=DISTRO [options]
   --build VERSION     Explicit version, latest, or its alias lastest
   --distro DISTRO     Target distribution, independent of the build host
   --release RELEASE   Target release (Fedora defaults to rawhide)
-  --jobs N, --jN      Positive parallel job count; defaults to available CPUs
+  --jobs N            Positive parallel job limit; defaults to at most four
   --dry-run           Resolve and show the plan without installing or building
   --offline           Require cached release metadata, source and toolchain
   --test              Validate RPMs, including isolated AArch64 package lifecycle
@@ -633,7 +633,6 @@ self_test() {
     reject bash "$ROOT/senemos.sh" --build 99.99.99 --dry-run
     reject bash "$ROOT/senemos.sh" --unknown
     ok 'invalid options, path traversal and unimplemented targets'
-    bash "$ROOT/tests/parallel-jobs.sh"
     mkdir -p "$temporary/profile-fixture/manifests"
     printf '{"schema_version":1,"version":"7.2.9","patches":[]}\n' > "$temporary/profile-fixture/manifests/linux-7.2.9.json"
     incomplete_profile_fixture() {
@@ -752,7 +751,6 @@ while (($#)); do
         --distro=*) DISTRO=${1#*=}; shift;;
         --release=*) RELEASE=${1#*=}; shift;;
         --jobs=*) JOBS=${1#*=}; shift;;
-        --j[0-9]*) JOBS=${1#--j}; shift;;
         --dry-run) DRY_RUN=1; shift;;
         --offline) OFFLINE=1; shift;;
         --test) TEST=1; shift;;
@@ -780,8 +778,15 @@ architecture=$(uname -m)
 BASE_IMAGE=$(jq -er --arg a "$architecture" '.fedora_rawhide_images[$a]' "$RULES")
 WORK=$BUILDER/build/fedora-rawhide/$VERSION
 ARTIFACTS=$BUILDER/artifacts/fedora-rawhide/$VERSION
+cpus=$(getconf _NPROCESSORS_ONLN)
+memory_jobs=$(awk '/MemAvailable:/ {n=int($2/2097152); print (n>0?n:1)}' /proc/meminfo)
+resource_jobs=$((cpus < memory_jobs ? cpus : memory_jobs))
 if [[ -z $JOBS ]]; then
-    JOBS=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN)
+    default_jobs=$(jq -er .default_max_jobs "$RULES")
+    JOBS=$((resource_jobs < default_jobs ? resource_jobs : default_jobs))
+elif ((JOBS > resource_jobs)); then
+    say "Reducing requested concurrency to $resource_jobs workers for available CPU/RAM"
+    JOBS=$resource_jobs
 fi
 say "Target $DISTRO/$RELEASE AArch64; Linux $VERSION; $JOBS jobs; Image + Uke DTB + modules + RPM/SRPM"
 if ((DRY_RUN)); then say "Pinned build image: $BASE_IMAGE"; exit; fi

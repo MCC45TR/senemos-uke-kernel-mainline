@@ -74,7 +74,6 @@ static int uke_usbss_apply(struct uke_usbss *u, enum typec_orientation orientati
 
 	if (u->removing)
 		return -ESHUTDOWN;
-	u->applied = false;
 	if (orientation != TYPEC_ORIENTATION_NONE &&
 	    orientation != TYPEC_ORIENTATION_NORMAL &&
 	    orientation != TYPEC_ORIENTATION_REVERSE) {
@@ -96,10 +95,11 @@ static int uke_usbss_apply(struct uke_usbss *u, enum typec_orientation orientati
 		goto failed;
 	}
 
+	if (u->applied && u->orientation == orientation &&
+	    u->mode == mode && u->svid == svid)
+		return 0;
 	u->applied = false;
 	ret = regmap_clear_bits(u->regmap, SWITCH_ENABLE, AUX_EN);
-	if (ret) goto failed;
-	ret = regmap_clear_bits(u->regmap, EQUALIZER, EQ_EN);
 	if (ret) goto failed;
 	ret = regmap_update_bits(u->regmap, SWITCH_SELECT, AUX_SEL | USB_SEL,
 				0x14 | (dp ? selection : 0));
@@ -130,6 +130,7 @@ static int uke_usbss_apply(struct uke_usbss *u, enum typec_orientation orientati
 	u->last_error = 0; u->applied = true;
 	return 0;
 failed:
+	u->applied = false;
 	/* Preserve the original errno even if this best-effort isolation also fails. */
 	regmap_clear_bits(u->regmap, SWITCH_ENABLE, AUX_EN | USB_EN);
 	regmap_clear_bits(u->regmap, EQUALIZER, EQ_EN);
