@@ -28,6 +28,10 @@
 #include "reset.h"
 #include "vdd-level.h"
 
+#ifndef CAM_CC_GDSC_PM_FLAGS
+#define CAM_CC_GDSC_PM_FLAGS (POLL_CFG_GDSCR | RETAIN_FF_ENABLE)
+#endif
+
 /* Exact Cliffs supply ceilings; 2.3 GHz HIGH_L1 PLL entries are not admitted. */
 static DEFINE_VDD_REGULATORS(cam_cc_mm, VDD_NOMINAL + 1, 1, vdd_corner);
 static DEFINE_VDD_REGULATORS(cam_cc_mx, VDD_LOW_L1 + 1, 1, vdd_corner);
@@ -3191,7 +3195,7 @@ static struct gdsc cam_cc_titan_top_gdsc = {
 		.name = "cam_cc_titan_top_gdsc",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_bps_gdsc = {
@@ -3204,7 +3208,7 @@ static struct gdsc cam_cc_bps_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_ife_0_gdsc = {
@@ -3217,7 +3221,7 @@ static struct gdsc cam_cc_ife_0_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_ife_1_gdsc = {
@@ -3230,7 +3234,7 @@ static struct gdsc cam_cc_ife_1_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_ife_2_gdsc = {
@@ -3243,7 +3247,7 @@ static struct gdsc cam_cc_ife_2_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_ipe_0_gdsc = {
@@ -3256,7 +3260,7 @@ static struct gdsc cam_cc_ipe_0_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_sfe_0_gdsc = {
@@ -3269,7 +3273,7 @@ static struct gdsc cam_cc_sfe_0_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct gdsc cam_cc_sfe_1_gdsc = {
@@ -3282,7 +3286,7 @@ static struct gdsc cam_cc_sfe_1_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.parent = &cam_cc_titan_top_gdsc.pd,
-	.flags = POLL_CFG_GDSCR | RETAIN_FF_ENABLE,
+	.flags = CAM_CC_GDSC_PM_FLAGS,
 };
 
 static struct clk_regmap *cam_cc_sm7675_clocks[] = {

@@ -1,0 +1,96 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 16:00:00 +0300
+Subject: [PATCH] clk: qcom: allow a static reset provider and preserve reset errors
+
+Allow a permanent controller to register its own reset object instead of
+the common helper's managed object. Existing descriptors retain the
+managed provider by default. CAMCC needs static storage so an outstanding
+reset handle remains valid after a late driver-core bind failure.
+
+Propagate assert, completion-read and deassert errors. A pulse must stop
+when assertion fails. Preserve the completion read introduced by the
+upstream write-completion fix.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+---
+ drivers/clk/qcom/common.c |  8 +++++---
+ drivers/clk/qcom/common.h |  1 +
+ drivers/clk/qcom/reset.c  | 17 ++++++++++-------
+ 3 files changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/clk/qcom/common.c b/drivers/clk/qcom/common.c
+index 0e8f380873af0f1103da4a820bf1f3b08f83f597..82f59beb25a4b59a2267d91c21c35ed69d6070f1 100644
+--- a/drivers/clk/qcom/common.c
++++ b/drivers/clk/qcom/common.c
+@@ -367,9 +367,11 @@ int qcom_cc_really_probe(struct device *dev,
+ 	reset->regmap = regmap;
+ 	reset->reset_map = desc->resets;
+ 
+-	ret = devm_reset_controller_register(dev, &reset->rcdev);
+-	if (ret)
+-		goto put_rpm;
++	if (!desc->skip_reset_provider) {
++		ret = devm_reset_controller_register(dev, &reset->rcdev);
++		if (ret)
++			goto put_rpm;
++	}
+ 
+ 	if (desc->gdscs && desc->num_gdscs) {
+ 		scd = devm_kzalloc(dev, sizeof(*scd), GFP_KERNEL);
+diff --git a/drivers/clk/qcom/common.h b/drivers/clk/qcom/common.h
+index 9e2acfb21399f6a06049e0bb3bba3420dc0e7b7b..a8710e9f8475dc4c64aa137e0b00496a65d55426 100644
+--- a/drivers/clk/qcom/common.h
++++ b/drivers/clk/qcom/common.h
+@@ -52,6 +52,7 @@ struct qcom_cc_desc {
+ 	size_t num_icc_hws;
+ 	unsigned int icc_first_node_id;
+ 	bool use_rpm;
++	bool skip_reset_provider;
+ 	const struct qcom_cc_driver_data *driver_data;
+ };
+ 
+diff --git a/drivers/clk/qcom/reset.c b/drivers/clk/qcom/reset.c
+index d96c96a9089f40b3a111067434d4d19632505a16..a3aa4e1568766fac5a6d86ced64d8554498b4168 100644
+--- a/drivers/clk/qcom/reset.c
++++ b/drivers/clk/qcom/reset.c
+@@ -14,12 +14,14 @@
+ static int qcom_reset(struct reset_controller_dev *rcdev, unsigned long id)
+ {
+ 	struct qcom_reset_controller *rst = to_qcom_reset_controller(rcdev);
++	int ret;
+ 
+-	rcdev->ops->assert(rcdev, id);
++	ret = rcdev->ops->assert(rcdev, id);
++	if (ret)
++		return ret;
+ 	fsleep(rst->reset_map[id].udelay ?: 1); /* use 1 us as default */
+ 
+-	rcdev->ops->deassert(rcdev, id);
+-	return 0;
++	return rcdev->ops->deassert(rcdev, id);
+ }
+ 
+ static int qcom_reset_set_assert(struct reset_controller_dev *rcdev,
+@@ -28,17 +30,18 @@ static int qcom_reset_set_assert(struct reset_controller_dev *rcdev,
+ 	struct qcom_reset_controller *rst;
+ 	const struct qcom_reset_map *map;
+ 	u32 mask;
++	int ret;
+ 
+ 	rst = to_qcom_reset_controller(rcdev);
+ 	map = &rst->reset_map[id];
+ 	mask = map->bitmask ? map->bitmask : BIT(map->bit);
+ 
+-	regmap_update_bits(rst->regmap, map->reg, mask, assert ? mask : 0);
++	ret = regmap_update_bits(rst->regmap, map->reg, mask, assert ? mask : 0);
++	if (ret)
++		return ret;
+ 
+ 	/* Read back the register to ensure write completion, ignore the value */
+-	regmap_read(rst->regmap, map->reg, &mask);
+-
+-	return 0;
++	return regmap_read(rst->regmap, map->reg, &mask);
+ }
+ 
+ static int qcom_reset_assert(struct reset_controller_dev *rcdev, unsigned long id)

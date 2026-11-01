@@ -11,7 +11,7 @@ printf '%s  %s\n' \
     04c66019948835d4b0def6f96d940500a85eb3e9c277f69de06c953f7d6475d2 "$kernel/drivers/clk/qcom/gdsc.c" \
     bea8e934482c13e1318ebe59bfd881cb91536e32afd9dae2676da9514d140ae9 "$kernel/drivers/clk/qcom/gdsc.h" | sha256sum -c -
 mkdir -p "$work/drivers/clk/qcom"
-cp "$kernel/drivers/clk/qcom/"gdsc.{c,h} "$work/drivers/clk/qcom/"
+cp "$kernel/drivers/clk/qcom/"{gdsc.c,gdsc.h,common.c,common.h,reset.c} "$work/drivers/clk/qcom/"
 read -r -a flags <<< "${CAMCC_TEST_FLAGS:-}"
 for role in baseline candidate; do
     if [[ $role == candidate ]]; then

@@ -19,7 +19,7 @@
   "source_assets": [
     {
       "path": "src/camera/camcc-sm7675-data.h",
-      "sha256": "c23795bc9bdc261c909373fcf95b7014841253ca23d43ea203ec389e4fa1fab5"
+      "sha256": "6448651685d1ce7c8db8fac515d4e08f3a917eccabdf6bfc62861b5b6aea2cff"
     },
     {
       "path": "src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h",
@@ -35,7 +35,7 @@
     },
     {
       "path": "tests/camcc-power-contract.sh",
-      "sha256": "3aae6df2fef101debdeb5edf41da0e86e903a2c5ecac3ade48b268b5f02ca598"
+      "sha256": "8258b7fe7f7a5338ff1a97f686222d0ee69ff6d5a2232959993be53ec8d572df"
     },
     {
       "path": "tests/fixtures/camcc-power-check.c",
@@ -47,7 +47,7 @@
     },
     {
       "path": "src/camera/provider/camcc-sm7675-power.h",
-      "sha256": "64abce3115d67a21c06598ceb9319f4a5e5cc614f63e88cfa2a7a9f8a1ffd4ee"
+      "sha256": "f06d5555ff7c8c0fa933a4933a77f8ff038ee9ac0735cecc8970dccaed26f055"
     },
     {
       "path": "tests/camcc-provider-contract.sh",
@@ -55,11 +55,15 @@
     },
     {
       "path": "tests/fixtures/camcc-provider-check.c",
-      "sha256": "39a56e5ca69b3a98e01afc84d05116c2c948df5dd5632b532a23bd5befcdc8af"
+      "sha256": "aed86008f089e9e60bc409db980570cf1cc78960c1102bbcedec649443c020bc"
     },
     {
       "path": "tests/fixtures/camcc-provider-object.c",
       "sha256": "59441b9cf8a81647aa6c72d2d59f97a7f87b0a64228b51bfaf878fe2c0f6396a"
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "34de4effd684354939f929a713a44b942fe7e5b383d014341b4c584f386ddd10"
     }
   ],
   "sources": [
@@ -142,6 +146,22 @@
     {
       "path": "include/dt-bindings/regulator/qcom,rpmh-regulator-levels.h",
       "sha256": "77e3f7970c89c51890982a711ea6fd72803ce00b04a7e03ae0611c5e83b5469b"
+    },
+    {
+      "path": "drivers/clk/qcom/common.c",
+      "sha256": "ea4541695d6567d8a7e3b3ff450c50353c278a44777fc6565f98616a28f30949"
+    },
+    {
+      "path": "drivers/clk/qcom/common.h",
+      "sha256": "b90f77bb95ef82ade799a6d98faaf468eda3a659042e38a8408b8d63e623eea8"
+    },
+    {
+      "path": "drivers/clk/qcom/reset.c",
+      "sha256": "434e63a159118f20a49114f5b184f405739e5ba4cda4148f4e101bf6b36326e8"
+    },
+    {
+      "path": "drivers/clk/qcom/clk-regmap.c",
+      "sha256": "8e1ffc25007a64b61f59b0c20dc6077b5595125b28582c020f47925bbe8da7e4"
     }
   ],
   "voltage_policy": {
@@ -172,6 +192,10 @@
     {
       "path": "src/camera/provider/0003-clk-qcom-gdsc-registration-unwind.patch",
       "sha256": "9605851ea457c9faa5e370a07820bc9778f4de6d5bb9161d1b13acced9b857d4"
+    },
+    {
+      "path": "src/camera/provider/0004-clk-qcom-static-reset-provider-errors.patch",
+      "sha256": "fe7288cf66bf8c82b7d4d1a2bd651ebc8e0dd31a3e1391f95e828b5f0a4b89ed"
     }
   ],
   "controller_pm_lifetime_qualified": false,
@@ -180,5 +204,7 @@
   "forced_pm_hardware_tested": false,
   "last_reviewed": "2026-10-23",
   "registration_unwind_implemented": true,
-  "registration_unwind_host_tested": true
+  "registration_unwind_host_tested": true,
+  "native_provider_source_implemented": true,
+  "native_provider_host_tested": false
 }

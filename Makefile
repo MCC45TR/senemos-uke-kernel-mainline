@@ -36,7 +36,7 @@ test-camcc-power: validate-camcc-power
 	test -f "$(camcc_output)/include/generated/asm-offsets.h"
 	grep -Fx 'CONFIG_ARM64=y' "$(camcc_output)/.config"
 	mkdir -p "$(camcc_output)/camcc-power"
-	cp "$(camcc_source)/drivers/clk/qcom/"gdsc.{c,h} "$(camcc_output)/camcc-power/"
+	cp "$(camcc_source)/drivers/clk/qcom/"{gdsc.c,gdsc.h,common.c,common.h,reset.c} "$(camcc_output)/camcc-power/"
 	git init -q "$(camcc_output)/camcc-power"
 	for patch in "$(CURDIR)"/src/camera/provider/*.patch; do
 		git -C "$(camcc_output)/camcc-power" apply --check -p4 "$$patch"
@@ -52,6 +52,17 @@ test-camcc-provider: test-camcc-power
 	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-power" KCFLAGS=-Werror -j4 camcc-provider-object.o
 	readelf -h "$(camcc_output)/camcc-power/camcc-provider-object.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
 .PHONY: validate-camcc-power test-camcc-power test-camcc-provider
+test-camcc-native-object: test-camcc-provider
+	cp src/camera/camcc-sm7675.c "$(camcc_output)/camcc-power/"
+	printf '%s\n' 'obj-m += camcc-sm7675.o common.o reset.o' 'ccflags-y += -I$(CURDIR)/src/camera -I$(CURDIR)/src/camera/include -I$(camcc_output)/camcc-power -I$(camcc_source)/drivers/clk/qcom' > "$(camcc_output)/camcc-power/Makefile"
+	$(MAKE) -C "$(camcc_source)" ARCH=arm64 LLVM=1 O="$(camcc_output)" M="$(camcc_output)/camcc-power" KCFLAGS=-Werror -j2 camcc-sm7675.o common.o reset.o
+	for object in camcc-sm7675 common reset; do
+		readelf -h "$(camcc_output)/camcc-power/$$object.o" | grep -Eq 'Machine:[[:space:]]+AArch64'
+	done
+.PHONY: test-camcc-native-object
+test-camcc-native: test-camcc-native-object
+	bash tests/camcc-native-contract.sh "$(camcc_source)"
+.PHONY: test-camcc-native
 validate-camera-board:
 	jq -e '.active_series == false and .dt_enabled == false and .kernel_release_changed == false and .physical_capture == null and .eeprom_accessed == false' manifests/camera-board-candidate-20261021.json >/dev/null
 	jq -r '.source_assets[] | .sha256 + "  " + .path' manifests/camera-board-candidate-20261021.json | sha256sum -c -

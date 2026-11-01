@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdatomic.h>
 #include <string.h>
 
 #define BIT(n) (1U << (n))
@@ -14,7 +15,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define DIV_ROUND_CLOSEST(a, b) (((a) + (b) / 2) / (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
-#define WARN(condition, ...) (condition)
+#define WARN(condition, ...) warn_model(condition)
 #define pr_debug(...) ((void)0)
 #define pr_err(...) ((void)0)
 #define dev_err(...) ((void)0)
@@ -22,6 +23,9 @@
 #define EXPORT_SYMBOL(name)
 #define EXPORT_SYMBOL_GPL(name)
 #define DEFINE_MUTEX(name) int name
+#define DEFINE_SPINLOCK(name) atomic_flag name = ATOMIC_FLAG_INIT
+#define spin_lock_irqsave(lock, flags) do { (flags) = 0; model_spin_lock(lock); } while (0)
+#define spin_unlock_irqrestore(lock, flags) do { (void)(flags); atomic_flag_clear_explicit(lock, memory_order_release); } while (0)
 #define __iomem
 #define __maybe_unused
 #undef static_assert
@@ -30,13 +34,24 @@
 #define READ_ONCE(x) (x)
 #define WRITE_ONCE(x, value) ((x) = (value))
 #define IS_ERR(x) ((uintptr_t)(x) >= (uintptr_t)-4095)
+#define IS_ERR_OR_NULL(x) (!(x) || IS_ERR(x))
 #define PTR_ERR(x) ((int)(intptr_t)(x))
 #define ERR_PTR(x) ((void *)(intptr_t)(x))
 typedef uint32_t u32;
 typedef uint64_t resource_size_t;
 static void mutex_lock(int *lock) { (void)lock; }
+static bool warn_model(bool condition) { return condition; }
 static void mutex_unlock(int *lock) { (void)lock; }
 static int atomic_read(int *value) { return *value; }
+static atomic_int spin_waits;
+static void model_spin_lock(atomic_flag *lock)
+{
+	bool waited = false;
+	while (atomic_flag_test_and_set_explicit(lock, memory_order_acquire)) {
+		if (!waited) atomic_fetch_add_explicit(&spin_waits, 1, memory_order_relaxed);
+		waited = true;
+	}
+}
 
 struct device;
 struct dev_pm_ops {
@@ -50,11 +65,20 @@ struct dev_pm_ops {
 #define SYSTEM_SLEEP_PM_OPS(s, r) .suspend = (s), .resume = (r),
 struct device {
 	void *data;
+	const struct device_driver *driver;
+	struct device_node *of_node;
+	void *pm_domain;
+	int references;
 	const struct dev_pm_ops *ops;
 	struct { int usage_count, child_count; bool needs_force_resume, smart_suspend; } power;
 	bool disabled, suspended;
 };
-struct clk_hw { int unused; };
+struct clk_hw {
+	const struct clk_init_data *init;
+	unsigned long rate;
+	bool prepared, enabled;
+	unsigned int parent;
+};
 static const char *clk_hw_get_name(struct clk_hw *hw) { return "camera-model"; }
 struct clk { int count, enables, disables, error; };
 struct regulator {
@@ -77,6 +101,8 @@ struct qcom_cc_desc {
 	size_t num_clk_regulators;
 	struct gdsc **gdscs;
 	size_t num_gdscs;
+	size_t num_resets;
+	bool use_rpm, skip_reset_provider;
 };
 
 static struct regulator regulators[3];
@@ -85,9 +111,10 @@ static int get_rail_error = -1, missing_rail = -1, get_clock_error, validation_e
 static int ordinary_gets;
 static int reads, writes, operations;
 static u32 memory[0x20000 / sizeof(u32)];
+static void (*write_hook)(void);
 static void *dev_get_drvdata(struct device *dev) { return dev->data; }
 static void dev_set_drvdata(struct device *dev, void *data) { dev->data = data; }
-static struct regulator *devm_regulator_get_optional(struct device *dev, const char *name)
+static struct regulator *regulator_get_optional(struct device *dev, const char *name)
 {
 	const char *names[] = { "vdd_mm", "vdd_mx", "vdd_mxc" };
 	for (int i = 0; i < 3; i++)
@@ -101,7 +128,7 @@ static struct regulator *devm_regulator_get_optional(struct device *dev, const c
 static struct regulator *devm_regulator_get(struct device *dev, const char *name)
 {
 	static struct regulator dummy;
-	struct regulator *regulator = devm_regulator_get_optional(dev, name);
+	struct regulator *regulator = regulator_get_optional(dev, name);
 	ordinary_gets++;
 	return IS_ERR(regulator) && PTR_ERR(regulator) == -ENODEV ? &dummy : regulator;
 }
@@ -130,7 +157,10 @@ static int regulator_disable(struct regulator *r)
 	r->count--;
 	return r->disable_error;
 }
-static struct clk *devm_clk_get(struct device *dev, const char *name)
+static void regulator_put(struct regulator *regulator) { assert(!regulator->count); }
+static void clk_put(struct clk *clock) { assert(!clock->count); }
+static struct device *get_device(struct device *dev) { dev->references++; return dev; }
+static struct clk *clk_get(struct device *dev, const char *name)
 {
 	assert(!strcmp(name, "iface"));
 	return get_clock_error ? ERR_PTR(get_clock_error) : &iface;
@@ -152,7 +182,12 @@ static void clk_disable_unprepare(struct clk *clk)
 	clk->count--;
 }
 static u32 readl(void *address) { reads++; return *(u32 *)address; }
-static void writel(u32 value, void *address) { writes++; *(u32 *)address = value; }
+static void writel(u32 value, void *address)
+{
+	if (write_hook) write_hook();
+	writes++;
+	*(u32 *)address = value;
+}
 static int cam_cc_validate_voltage_data(void) { return validation_error; }
 static int pm_runtime_force_suspend(struct device *dev);
 static int pm_runtime_force_resume(struct device *dev);
@@ -169,6 +204,7 @@ static const struct qcom_cc_desc cam_cc_sm7675_desc = {
 	.num_clk_regulators = ARRAY_SIZE(cam_cc_sm7675_regulators),
 	.gdscs = cam_cc_sm7675_gdscs,
 	.num_gdscs = ARRAY_SIZE(cam_cc_sm7675_gdscs),
+	.num_resets = 2,
 };
 #include "provider-power.h"
 
@@ -179,7 +215,7 @@ static bool pm_runtime_need_not_resume(struct device *dev)
 {
 	return dev->power.usage_count <= 1 && !dev->power.child_count;
 }
-static void pm_runtime_set_suspended(struct device *dev) { dev->suspended = true; }
+static int pm_runtime_set_suspended(struct device *dev) { dev->suspended = true; return 0; }
 static bool dev_pm_smart_suspend(struct device *dev) { return dev->power.smart_suspend; }
 static void dev_pm_enable_wake_irq_check(struct device *dev, bool system) {}
 static void dev_pm_disable_wake_irq_check(struct device *dev, bool system) {}

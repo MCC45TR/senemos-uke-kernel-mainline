@@ -6,6 +6,7 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/pm_runtime.h>
+#include <linux/spinlock.h>
 
 #define CAM_CC_POWER_RAILS GENMASK(2, 0)
 
@@ -20,13 +21,21 @@ static struct {
 	int primary_error;
 	int rollback_error;
 } cam_cc_power;
+static DEFINE_SPINLOCK(cam_cc_power_lock);
 
 static int cam_cc_power_fail(int primary, int rollback, unsigned int uncertain)
 {
-	cam_cc_power.primary_error = primary;
-	cam_cc_power.rollback_error = rollback;
+	unsigned long flags;
+
+	/* Fault publication must wait for an in-flight checked MMIO transaction. */
+	spin_lock_irqsave(&cam_cc_power_lock, flags);
 	cam_cc_power.uncertain_rails |= uncertain;
-	WRITE_ONCE(cam_cc_power.fault, -EIO);
+	if (!cam_cc_power.fault) {
+		cam_cc_power.primary_error = primary;
+		cam_cc_power.rollback_error = rollback;
+		WRITE_ONCE(cam_cc_power.fault, -EIO);
+	}
+	spin_unlock_irqrestore(&cam_cc_power_lock, flags);
 	return -EIO;
 }
 
@@ -125,25 +134,30 @@ static int cam_cc_power_access(void *context, unsigned int reg)
 
 static int cam_cc_power_read(void *context, unsigned int reg, unsigned int *value)
 {
+	unsigned long flags;
 	int ret;
 
 	if (!value)
 		return -EINVAL;
+	spin_lock_irqsave(&cam_cc_power_lock, flags);
 	ret = cam_cc_power_access(context, reg);
-	if (ret)
-		return ret;
-	*value = readl(cam_cc_power.base + reg);
-	return 0;
+	if (!ret)
+		*value = readl(cam_cc_power.base + reg);
+	spin_unlock_irqrestore(&cam_cc_power_lock, flags);
+	return ret;
 }
 
 static int cam_cc_power_write(void *context, unsigned int reg, unsigned int value)
 {
-	int ret = cam_cc_power_access(context, reg);
+	unsigned long flags;
+	int ret;
 
-	if (ret)
-		return ret;
-	writel(value, cam_cc_power.base + reg);
-	return 0;
+	spin_lock_irqsave(&cam_cc_power_lock, flags);
+	ret = cam_cc_power_access(context, reg);
+	if (!ret)
+		writel(value, cam_cc_power.base + reg);
+	spin_unlock_irqrestore(&cam_cc_power_lock, flags);
+	return ret;
 }
 
 static const struct regmap_config cam_cc_power_regmap_config = {
@@ -169,22 +183,26 @@ static int cam_cc_power_init(struct device *dev, void __iomem *base, resource_si
 	ret = cam_cc_validate_voltage_data();
 	if (ret)
 		return ret;
-	iface = devm_clk_get(dev, "iface");
+	iface = clk_get(dev, "iface");
 	if (IS_ERR(iface))
 		return PTR_ERR(iface);
 	for (rail = 0; rail < ARRAY_SIZE(supplies); rail++) {
 		cam_cc_sm7675_regulators[rail]->class_name = supplies[rail];
 		cam_cc_sm7675_regulators[rail]->regulator_names[0] = supplies[rail];
 		/* Required supplies must fail on absence instead of accepting a dummy. */
-		supply = devm_regulator_get_optional(dev, supplies[rail]);
+		supply = regulator_get_optional(dev, supplies[rail]);
 		if (IS_ERR(supply)) {
+			for (rail--; rail >= 0; rail--)
+				regulator_put(cam_cc_sm7675_regulators[rail]->regulator[0]);
 			clk_regulator_deinit(&cam_cc_sm7675_desc);
+			clk_put(iface);
 			return PTR_ERR(supply);
 		}
 		cam_cc_sm7675_regulators[rail]->regulator[0] = supply;
 	}
 
-	cam_cc_power.dev = dev;
+	/* These handles outlive failed binding and ambiguous power transitions. */
+	cam_cc_power.dev = get_device(dev);
 	cam_cc_power.iface = iface;
 	cam_cc_power.base = base;
 	dev_set_drvdata(dev, &cam_cc_power);
