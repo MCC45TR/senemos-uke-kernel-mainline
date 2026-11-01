@@ -12,6 +12,9 @@ chmod 755 "$work/dracut/modules.d/92uke-abl/module-setup.sh"
 g++ -std=c++17 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
     "$here/boot-status.cpp" -o "$work/dracut/modules.d/92uke-abl/uke-boot-status"
 readelf -h "$work/dracut/modules.d/92uke-abl/uke-boot-status" | grep -E 'Machine:.*AArch64' >/dev/null
+g++ -std=c++20 -O2 -Wall -Wextra -Werror -ffile-prefix-map="$PWD"=. \
+    "$here/f2fs-grow.cpp" -o "$work/dracut/modules.d/92uke-abl/uke-f2fs-grow"
+readelf -h "$work/dracut/modules.d/92uke-abl/uke-f2fs-grow" | grep -E 'Machine:.*AArch64' >/dev/null
 command_line=$(sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' "$here/../../packaging/native/native.config")
 [[ $command_line == *'root=PARTLABEL=linux '* ]]
 # Root comes from the running kernel command line, including its admitted override.

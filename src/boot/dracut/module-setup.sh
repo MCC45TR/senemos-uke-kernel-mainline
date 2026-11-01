@@ -15,6 +15,9 @@ install() {
     inst_simple "$moddir/uke-usb-network" /usr/libexec/senemos-uke/uke-usb-network
     chmod 755 "$initdir/usr/libexec/senemos-uke/uke-usb-network"
     inst_binary "$moddir/uke-boot-status" /usr/bin/uke-boot-status
+    inst_binary "$moddir/uke-f2fs-grow" /usr/libexec/uke-f2fs-grow
+    inst_binary "$(command -v fsck.f2fs)" /usr/sbin/fsck.f2fs
+    inst_binary "$(command -v resize.f2fs)" /usr/sbin/resize.f2fs
     inst_simple "$moddir/uke-coresight-bringup.conf" /usr/lib/modprobe.d/uke-coresight-bringup.conf
     inst_simple "$moddir/root-guard.sh" /usr/libexec/uke-root-guard
     chmod 755 "$initdir/usr/libexec/uke-root-guard"

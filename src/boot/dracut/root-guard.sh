@@ -94,6 +94,9 @@ while [ "$attempt" -lt 45 ]; do
             }
         fi
         echo "UKE_ROOT_ADMITTED: unique physical $partlabel partition contains $expected"
+        if [ "$partlabel" = userdata ]; then
+            /usr/libexec/uke-f2fs-grow "$candidate"
+        fi
         exit 0
     fi
     attempt=$((attempt + 1))

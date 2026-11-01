@@ -8,7 +8,7 @@ OnFailure=emergency.target
 [Service]
 Type=oneshot
 ExecStart=/usr/libexec/uke-root-guard
-TimeoutStartSec=55
+TimeoutStartSec=10min
 RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=journal+console
