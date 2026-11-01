@@ -29,7 +29,7 @@ struct of_device_id { const char *compatible; const void *data; };
 #define BIT(n) (1UL << (n))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 enum power_supply_property { POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT };
-enum { POWER_SUPPLY_USB_TYPE_UNKNOWN, POWER_SUPPLY_USB_TYPE_SDP };
+enum { POWER_SUPPLY_USB_TYPE_UNKNOWN, POWER_SUPPLY_USB_TYPE_SDP, POWER_SUPPLY_USB_TYPE_PD };
 union power_supply_propval { int intval; };
 struct power_supply { void *drvdata; };
 static void *power_supply_get_drvdata(struct power_supply *psy) { return psy->drvdata; }
@@ -38,6 +38,7 @@ static void mutex_unlock(struct mutex *m) { assert(m->unused); m->unused=0; }
 #define cpu_to_le32(v) ((uint32_t)(v))
 #define le32_to_cpu(v) ((uint32_t)(v))
 #define dev_warn(...) ((void)0)
+#define dev_info(...) ((void)0)
 #define DIV_ROUND_CLOSEST(x,d) ({ typeof(x) v=(x); typeof(d) n=(d); (v>0 ? (v+n/2)/n : (v-n/2)/n); })
 static void complete(struct completion *c) { c->done++; }
 static void strscpy(char *dst, const char *src, size_t size) {
@@ -185,9 +186,19 @@ int main(void) {
  budget.intval=500000; b.usb.current_max=100000;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL);
  b.usb.current_max=500000; b.usb.online=false;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL);
+ before=requests;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
  b.usb.online=true; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_UNKNOWN;
- assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL);
+ before=requests;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
+ b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; b.usb.current_max=0;
+ before=requests;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before+3);
+ b.usb.current_max=500000; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_PD;
+ before=requests;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EINVAL && requests==before+3);
+ b.usb.usb_type=POWER_SUPPLY_USB_TYPE_UNKNOWN;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN);
  b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; request_result=-ETIMEDOUT;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-ETIMEDOUT && !b.lock.unused);
  request_result=0;
