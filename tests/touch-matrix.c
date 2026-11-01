@@ -41,12 +41,14 @@ static void weak_finger(unsigned int row, unsigned int column, unsigned int peak
 
 static void process(void)
 {
+	frame.counter = (u16)(frame.counter + 1);
 	assert(!nvt_uke_matrix_process(&matrix, &frame, 31999, 21359, &contacts));
 }
 
 static void initialize(void)
 {
 	memset(&matrix, 0, sizeof(matrix));
+	frame.counter = 0;frame.scan_mode = 4;
 	for (unsigned int i = 0; i < 60; i++) matrix.columns[i] = 270 + i * 530;
 	for (unsigned int i = 0; i < 40; i++) matrix.rows[i] = 270 + i * 530;
 	flat(10000);
@@ -58,7 +60,13 @@ static void initialize(void)
 int main(int argc, char **argv)
 {
 	initialize();process();assert(!contacts.active);
-	finger(20, 30);process();assert(contacts.active == 1);
+	finger(20, 30);process();assert(contacts.active == 1 && !contacts.starting);
+	assert(!nvt_uke_matrix_process(&matrix, &frame, 31999, 21359, &contacts));
+	assert(!contacts.starting); /* a duplicate packet cannot confirm a new press */
+	process();assert(contacts.starting == 1);
+	frame.counter = (u16)(frame.counter + 100);
+	process();assert(contacts.active == 1 && !contacts.starting);
+	process();assert(contacts.starting == 1);
 	assert(contacts.x[0] > 15000 && contacts.x[0] < 18000);
 	for (unsigned int i = 0; i < 2000; i++) {
 		frame.scan_mode = i & 1 ? 2 : 4;
@@ -68,9 +76,9 @@ int main(int argc, char **argv)
 	/* A held, light contact must reach the MT slot hysteresis unchanged. */
 	flat(10000);
 	put_unaligned_le16(10090, data + (20 * 60 + 30) * 2);
-	put_unaligned_le16(10050, data + (20 * 60 + 31) * 2);
+	put_unaligned_le16(10030, data + (20 * 60 + 31) * 2);
 	process();assert(contacts.active == 1 && contacts.peak[0] == 90);
-	put_unaligned_le16(10069, data + (20 * 60 + 30) * 2);
+	put_unaligned_le16(10049, data + (20 * 60 + 30) * 2);
 	process();assert(!contacts.active);
 	flat(10000);finger(20, 35);process();assert(contacts.active == 1);
 	flat(10000);process();assert(!contacts.active);
@@ -94,6 +102,14 @@ int main(int argc, char **argv)
 	for (unsigned int i = 0; i < NVT_UKE_NODES; i++) put_unaligned_le16((u16)(10000 + (i % 101)), data + i * 2);
 	process();assert(!contacts.active);
 	flat(11000);process();assert(!contacts.active); /* broad contact/palm */
+	initialize();flat(9000);
+	for (unsigned int i = 0; i < 200; i++) { process();assert(!contacts.active); }
+	flat(10000);finger(20, 30);process();assert(contacts.active == 1 && !contacts.starting);
+	process();assert(contacts.starting == 1); /* negative broad noise was not learned */
+	initialize();finger(20, 30);frame.counter = 0xfffd;
+	process();assert(!contacts.starting);
+	process();assert(contacts.starting == 1);
+	process();assert(contacts.starting == 1); /* counter wrap */
 	frame.scan_mode = 0;
 	assert(nvt_uke_matrix_process(&matrix, &frame, 31999, 21359, &contacts) == -EINVAL);
 	frame.scan_mode = 4;matrix.columns[1] = matrix.columns[0];

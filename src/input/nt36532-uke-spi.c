@@ -117,7 +117,7 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int frame_error)
 	for (i = 0; i < NVT_UKE_CONTACTS; i++) {
 		if (!(contacts.active & (1U << i)))
 			continue;
-		if (contacts.peak[i] >= NVT_UKE_PEAK_DOWN)
+		if (contacts.starting & (1U << i))
 			starting |= (u16)(1U << count);
 		touchscreen_set_mt_pos(&positions[count++], &t->prop, contacts.x[i], contacts.y[i]);
 	}

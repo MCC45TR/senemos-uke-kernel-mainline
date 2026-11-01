@@ -8,7 +8,6 @@
 #include <linux/unaligned.h>
 #include "nt36532-uke-matrix.h"
 
-#define NVT_NOISE 40
 #define NVT_NO_PARENT 0xffff
 
 void nvt_uke_matrix_reset(struct nvt_uke_matrix *m)
@@ -16,6 +15,42 @@ void nvt_uke_matrix_reset(struct nvt_uke_matrix *m)
 	memset(m->reference, 0, sizeof(m->reference));
 	m->samples = 0;
 	m->quiet = 0;
+	m->previous_count = 0;
+	m->pending_count = 0;
+	m->counter_valid = false;
+}
+
+static unsigned int nvt_distance(unsigned int a, unsigned int b)
+{
+	int x = (int)(a % NVT_UKE_COLUMNS) - (int)(b % NVT_UKE_COLUMNS);
+	int y = (int)(a / NVT_UKE_COLUMNS) - (int)(b / NVT_UKE_COLUMNS);
+
+	return (unsigned int)(x * x + y * y);
+}
+
+static bool nvt_confirmed(const struct nvt_uke_matrix *m, const u16 *roots,
+			 unsigned int count, unsigned int index, u16 down)
+{
+	unsigned int i, distance, best = 9, previous = m->previous_count;
+
+	for (i = 0; i < m->previous_count; i++) {
+		distance = nvt_distance(roots[index], m->previous_roots[i]);
+		if (distance < best) {
+			best = distance;
+			previous = i;
+		}
+	}
+	if (previous == m->previous_count)
+		return false;
+	/* One old peak cannot confirm both sides of a transient split. */
+	for (i = 0; i < count; i++) {
+		if (!(down & (1U << i)) || i == index)
+			continue;
+		distance = nvt_distance(roots[i], m->previous_roots[previous]);
+		if (distance < best || (distance == best && i < index))
+			return false;
+	}
+	return true;
 }
 
 static unsigned int nvt_root(struct nvt_uke_matrix *m, unsigned int node)
@@ -56,7 +91,10 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		unsigned int root, nodes;
 	} blobs[NVT_UKE_CONTACTS] = { 0 };
 	unsigned int node, other, root, count = 0, output = 0, i;
-	int dx, dy, row, column, next_row, next_column, top = 0;
+	unsigned int noise, up, down, total, bin, magnitude;
+	u16 histogram[32] = { 0 }, roots[NVT_UKE_CONTACTS], starting = 0;
+	bool fresh;
+	int dx, dy, row, column, next_row, next_column, top = 0, bottom = 0;
 	s32 value, best;
 
 	if (!m || !frame || !frame->matrix_le || !contacts || !max_x || !max_y ||
@@ -71,7 +109,18 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		if (m->rows[node] > max_y ||
 		    (node && m->rows[node] <= m->rows[node - 1]))
 			return -EINVAL;
+	fresh = !m->counter_valid || m->counter != frame->counter;
+	if (fresh) {
+		if (m->counter_valid && (u16)(frame->counter - m->counter) > 4)
+			m->pending_count = 0;
+		m->previous_count = m->pending_count;
+		memcpy(m->previous_roots, m->pending_roots, sizeof(m->previous_roots));
+		m->counter = frame->counter;
+		m->counter_valid = true;
+	}
 	if (m->samples < NVT_UKE_CALIBRATION_FRAMES) {
+		if (!fresh)
+			return 0;
 		for (node = 0; node < NVT_UKE_NODES; node++)
 			m->reference[node] += (s16)get_unaligned_le16(frame->matrix_le + node * 2);
 		m->samples++;
@@ -83,10 +132,33 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		m->delta[node] = value - m->reference[node] / 32;
 		if (m->delta[node] > top)
 			top = m->delta[node];
+		if (m->delta[node] < bottom)
+			bottom = m->delta[node];
+		magnitude = (u32)(m->delta[node] < 0 ? -m->delta[node] : m->delta[node]);
+		bin = magnitude / 4;
+		if (bin > 31)
+			bin = 31;
+		histogram[bin]++;
 		m->parent[node] = NVT_NO_PARENT;
 	}
+	/* Sparse fingers do not dominate the median absolute background signal. */
+	for (bin = 0, total = 0; bin < 32; bin++) {
+		total += histogram[bin];
+		if (total > NVT_UKE_NODES / 2)
+			break;
+	}
+	m->pending_count = 0;
+	if (bin == 31) {
+		m->quiet = 0;
+		return 0;
+	}
+	noise = (bin + 1) * 12;
+	if (noise < NVT_UKE_NOISE_FLOOR)
+		noise = NVT_UKE_NOISE_FLOOR;
+	up = noise * 2;
+	down = noise * 5 / 2;
 	for (node = 0; node < NVT_UKE_NODES; node++) {
-		if (m->delta[node] < NVT_NOISE)
+		if (m->delta[node] < (s32)noise)
 			continue;
 		row = (int)(node / NVT_UKE_COLUMNS);
 		column = (int)(node % NVT_UKE_COLUMNS);
@@ -109,10 +181,12 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 			}
 		}
 		m->parent[node] = (u16)root;
-		if (root == node && best >= NVT_UKE_PEAK_UP) {
+		if (root == node && best >= (s32)up) {
 			/* A broad/noisy frame must not become truncated phantom fingers. */
-			if (count == NVT_UKE_CONTACTS)
+			if (count == NVT_UKE_CONTACTS) {
+				m->quiet = 0;
 				return 0;
+			}
 			blobs[count++].root = root;
 		}
 	}
@@ -123,7 +197,7 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		for (i = 0; i < count; i++) {
 			if (blobs[i].root != root)
 				continue;
-			value = m->delta[node] - NVT_NOISE + 1;
+			value = m->delta[node] - (s32)noise + 1;
 			blobs[i].nodes++;
 			blobs[i].weight += (u32)value;
 			blobs[i].x += (u64)value * m->columns[node % NVT_UKE_COLUMNS];
@@ -139,10 +213,20 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		contacts->y[output] = nvt_axis(blobs[i].y, blobs[i].weight,
 			m->rows, NVT_UKE_ROWS, max_y);
 		contacts->peak[output] = (u16)m->delta[blobs[i].root];
+		roots[output] = (u16)blobs[i].root;
+		if (contacts->peak[output] >= down) {
+			starting |= (u16)(1U << output);
+			m->pending_roots[m->pending_count++] = roots[output];
+		}
 		contacts->active |= (u16)(1U << output++);
 	}
+	for (i = 0; i < output; i++)
+		if ((starting & (1U << i)) && nvt_confirmed(m, roots, output, i, starting))
+			contacts->starting |= (u16)(1U << i);
 	/* Adapt only after a sustained quiet interval; held fingers keep their baseline. */
-	if (top < NVT_UKE_PEAK_UP) {
+	if (!fresh)
+		return 0;
+	if (top < NVT_UKE_NOISE_FLOOR * 2 && bottom > -NVT_UKE_NOISE_FLOOR * 2 && !contacts->active) {
 		if (m->quiet < 64)
 			m->quiet++;
 		if (m->quiet == 64)
