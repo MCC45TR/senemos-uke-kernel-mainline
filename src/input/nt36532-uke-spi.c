@@ -697,7 +697,7 @@ static const struct of_device_id nvt_matches[] = {
 MODULE_DEVICE_TABLE(of, nvt_matches);
 
 static const struct spi_device_id nvt_spi_ids[] = {
-	{ "nt36532-uke-thp" }, { }
+	{ "nt36532-uke-thp", 0 }, { }
 };
 MODULE_DEVICE_TABLE(spi, nvt_spi_ids);
 

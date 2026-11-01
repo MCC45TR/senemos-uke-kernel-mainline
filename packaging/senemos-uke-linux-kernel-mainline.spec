@@ -7,7 +7,7 @@
 Name: senemos-uke-linux-kernel-mainline
 Version: 7.2.12
 %if "%{version}" == "7.2.12"
-%global senemos_build_release 22
+%global senemos_build_release 23
 %else
 %global senemos_build_release 1
 %endif
@@ -184,7 +184,7 @@ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
 test "$(make -s O=%{_uke_out} LOCALVERSION=-%{senemos_build_release} kernelrelease)" = '%{krel}'
 
 %check
-CC=clang bash native-profile/tests/geni-spi-completion-contract.sh "$PWD"
+CC=clang bash native-profile/tests/spi-geni-completion-contract.sh "$PWD"
 bash native-profile/tests/touch-runtime-package-contract.sh
 grep -Fx 'CONFIG_VIDEO_NT36532_UKE_THP=m' %{_uke_out}/.config
 test -s %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/media/spi/nt36532-uke/nt36532-uke-thp.ko.zst

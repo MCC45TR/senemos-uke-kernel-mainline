@@ -4,7 +4,7 @@
   "owner_archive_sha256": "6a16629fc21d94bdf650b05adf5ac085489e50138a7585ce7ee6c40204f389ef",
   "source_date_epoch": 1792764341,
   "private_inputs": false,
-  "kernel_release": "7.2.12-22",
+  "kernel_release": "7.2.12-23",
   "device_tested": false,
   "integration": "V4L2 MET8 capture, separately licensed calibrated C++ contact client in the exact module RPM; no firmware or calibration bytes"
 }
