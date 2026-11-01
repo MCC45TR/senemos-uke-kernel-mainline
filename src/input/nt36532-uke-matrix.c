@@ -55,7 +55,7 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 		u32 weight;
 		unsigned int root, nodes;
 	} blobs[NVT_UKE_CONTACTS] = { 0 };
-	unsigned int node, other, root, count = 0, output = 0, i;
+	unsigned int node, other, root, other_root, count = 0, output = 0, i;
 	int dx, dy, row, column, next_row, next_column, top = 0;
 	s32 value, best;
 
@@ -109,11 +109,46 @@ int nvt_uke_matrix_process(struct nvt_uke_matrix *m,
 			}
 		}
 		m->parent[node] = (u16)root;
-		if (root == node && best >= NVT_UKE_PEAK_UP) {
+	}
+	/* A shallow ridge within one footprint is not an independent finger. */
+	for (node = 0; node < NVT_UKE_NODES; node++) {
+		if (m->parent[node] == NVT_NO_PARENT)
+			continue;
+		row = (int)(node / NVT_UKE_COLUMNS);
+		column = (int)(node % NVT_UKE_COLUMNS);
+		for (dy = -1; dy <= 0; dy++) {
+			next_row = row + dy;
+			if (next_row < 0)
+				continue;
+			for (dx = -1; dx <= 1; dx++) {
+				next_column = column + dx;
+				if (next_column < 0 || next_column >= NVT_UKE_COLUMNS)
+					continue;
+				other = (unsigned int)(next_row * NVT_UKE_COLUMNS + next_column);
+				if (other >= node || m->parent[other] == NVT_NO_PARENT)
+					continue;
+				root = nvt_root(m, node);
+				other_root = nvt_root(m, other);
+				if (root == other_root)
+					continue;
+				best = m->delta[root] < m->delta[other_root] ? m->delta[root] : m->delta[other_root];
+				value = m->delta[node] < m->delta[other] ? m->delta[node] : m->delta[other];
+				if (best - value >= NVT_NOISE)
+					continue;
+				if (m->delta[root] < m->delta[other_root] ||
+				    (m->delta[root] == m->delta[other_root] && root > other_root))
+					m->parent[root] = (u16)other_root;
+				else
+					m->parent[other_root] = (u16)root;
+			}
+		}
+	}
+	for (node = 0; node < NVT_UKE_NODES; node++) {
+		if (m->parent[node] == node && m->delta[node] >= NVT_UKE_PEAK_UP) {
 			/* A broad/noisy frame must not become truncated phantom fingers. */
 			if (count == NVT_UKE_CONTACTS)
 				return 0;
-			blobs[count++].root = root;
+			blobs[count++].root = node;
 		}
 	}
 	for (node = 0; node < NVT_UKE_NODES; node++) {

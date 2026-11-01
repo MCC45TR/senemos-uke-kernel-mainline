@@ -39,6 +39,18 @@ static void weak_finger(unsigned int row, unsigned int column, unsigned int peak
 		}
 }
 
+static void ridged_finger(unsigned int row, unsigned int column, unsigned int saddle)
+{
+	for (int dy = -1; dy <= 1; dy++)
+		for (int dx = -1; dx <= 3; dx++) {
+			unsigned int node = (unsigned int)((int)row + dy) * 60 + (unsigned int)((int)column + dx);
+			put_unaligned_le16(10125, data + node * 2);
+		}
+	put_unaligned_le16(10250, data + (row * 60 + column) * 2);
+	put_unaligned_le16((u16)(10000 + saddle), data + (row * 60 + column + 1) * 2);
+	put_unaligned_le16(10248, data + (row * 60 + column + 2) * 2);
+}
+
 static void process(void)
 {
 	assert(!nvt_uke_matrix_process(&matrix, &frame, 31999, 21359, &contacts));
@@ -82,6 +94,18 @@ int main(int argc, char **argv)
 	for (unsigned int held = 0; held < 2000; held++) {
 		process();assert(contacts.active == 0x3ff);
 	}
+	/* Surface ridges below the noise floor must not add a phantom finger. */
+	for (unsigned int held = 0; held < 200; held++) {
+		flat(10000);finger(4, 4);finger(4, 40);
+		ridged_finger(20, 30, held & 1 ? 250 : 235);
+		process();assert(contacts.active == 7);
+	}
+	/* A deeper valley still separates two nearby real contacts. */
+	flat(10000);finger(4, 4);finger(4, 40);ridged_finger(20, 30, 190);
+	process();assert(contacts.active == 15);
+	flat(10000);
+	for (unsigned int i = 0; i < 10; i++) finger(4 + (i / 5) * 25, 4 + (i % 5) * 11);
+	ridged_finger(4, 4, 235);process();assert(contacts.active == 0x3ff);
 	flat(10000);
 	for (unsigned int i = 0; i < NVT_UKE_NODES; i++)
 		put_unaligned_le16((u16)(10000 + i % 45), data + i * 2);
