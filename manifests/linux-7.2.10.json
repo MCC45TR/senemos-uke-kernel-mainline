@@ -156,6 +156,14 @@
     {
       "path": "patches/7.2.10/0037-uke-gpu-interconnect.patch",
       "sha256": "134ab7cafe6c1754ad9850f51197d401fa7470dcd04ee7f205dfed8dd30e16cc"
+    },
+    {
+      "path": "patches/7.2.10/0038-uke-handoff-panel-metadata.patch",
+      "sha256": "922d01580fb3d0bcdaf7f78297e1f2fca8dedc7120526fc89e99c6dabaac8acc"
+    },
+    {
+      "path": "patches/7.2.10/0039-adreno-unbound-component-removal.patch",
+      "sha256": "70b48281c140464076776d81440f0aef54f01ef0cdcb932c9c6358d36a66eadc"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",
@@ -167,7 +175,7 @@
     },
     {
       "path": "configs/uke.config",
-      "sha256": "c544e448926e257310c86e07a4e5adb7ca50f851956942e7870bf1e5810daccb"
+      "sha256": "acb505205a7815c1bd8e698fbcf14609176f3461ec2e462441fa0a8b048d38be"
     },
     {
       "path": "configs/fedora.config",
