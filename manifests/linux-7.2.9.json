@@ -200,6 +200,14 @@
     {
       "path": "patches/7.2.9/0049-input-qcom-smp2p-switch.patch",
       "sha256": "a8295c9a7971874708784e163551e324e3f34e0737b16d198c28aa500575e28f"
+    },
+    {
+      "path": "patches/7.2.9/0050-uke-battmgr-request-lifecycle.patch",
+      "sha256": "487f29dbdd1eefef819726bb6c3143d3d20c8ec57db1c5ddd77c4741dd003ee4"
+    },
+    {
+      "path": "patches/7.2.9/0051-uke-usb-budget-generation.patch",
+      "sha256": "aa02f97c0449f924c2acd372f59298a239371895ad82a8c4e941831db6bc1657"
     }
   ],
   "dtb": "qcom/sm7675-xiaomi-uke.dtb",

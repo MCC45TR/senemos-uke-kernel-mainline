@@ -6,13 +6,17 @@ version := 7.2.10
 outdir ?= $(CURDIR)/build/srpm
 validate:
 	test "$(version)" = 7.2.10
-	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 49) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
+	jq -e '.version == "$(version)" and .hardware_tested == false and (.patches | length == 51) and (.configs | length == 3)' manifests/linux-$(version).json >/dev/null
 	cmp <(jq -r '.patches[].path | split("/") | last' manifests/linux-$(version).json) patches/$(version)/series
 	while IFS=$$'\t' read -r path expected; do
 		test "$$(sha256sum "$$path" | cut -d ' ' -f1)" = "$$expected"
 	done < <(jq -r '.patches[], .configs[] | [.path,.sha256] | @tsv' manifests/linux-$(version).json)
 	bash tests/mainline-package-contract.sh
 srpm: validate
+	if test -n "$(git status --porcelain --untracked-files=all -- Makefile manifests packaging patches src tests configs scripts)"; then
+		echo 'Commit the reviewed source snapshot before SRPM generation; git archive HEAD must match the adaptation manifest.' >&2
+		exit 1
+	fi
 	cache="$(CURDIR)/referances/releases"
 	top="$$(realpath -m "$(outdir)/rpmbuild")"
 	mkdir -p "$$cache" "$$top"/{BUILD,BUILDROOT,RPMS,SRPMS,SOURCES,SPECS}
