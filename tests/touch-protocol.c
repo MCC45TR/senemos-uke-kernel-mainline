@@ -11,10 +11,10 @@
 static u8 image[NVT_UKE_IMAGE_SIZE], ram[0x1142a0], packet[NVT_UKE_FRAME_SIZE];
 static unsigned int step, fail_step, guard_step, stop_guard, reads, writes, hashes;
 static unsigned int ready_writes, bank_writes, bank_reads, busy, scans, last_command;
-static unsigned int charger_writes, command_writes, command_reads, delay_total;
+static unsigned int charger_writes, game_writes, command_writes, command_reads, delay_total;
 static int hash_error, callback_error;
 static bool hash_bad, foreign, single, corrupt_bank, stuck_copy, stuck_boot;
-static bool bad_metadata, bad_mode, bad_charger, connected;
+static bool bad_metadata, bad_mode, bad_charger, connected, bad_game, game_enabled;
 static int guard(void *ctx)
 {
 	assert(ctx == image);
@@ -74,6 +74,7 @@ static int read_data(void *ctx, u32 address, void *data, size_t size, bool fast)
 		if (busy) { out[0] = 0xbf; busy--; }
 		if (size == 5)
 			put_unaligned_le16(last_command == 0x10 ? (connected ^ bad_charger) :
+				last_command == 0x0f ? (game_enabled ^ bad_game) :
 				bad_mode ? 2 : last_command == 1, out + 3);
 	} else {
 		assert(0 && "unreviewed read");
@@ -104,8 +105,10 @@ static int write_data(void *ctx, u32 address, const void *data, size_t size, boo
 			assert(bytes[0] == 0xbf && bytes[2] == 1);
 			last_command = bytes[1]; command_writes++;
 		} else if (size == 5) {
-			assert(bytes[0] == 0xbf && bytes[1] == 0x10 && !bytes[2] && bytes[3] <= 1 && !bytes[4]);
-			connected = bytes[3]; charger_writes++;
+			assert(bytes[0] == 0xbf && (bytes[1] == 0x10 || bytes[1] == 0x0f) &&
+			       !bytes[2] && bytes[3] <= 1 && !bytes[4]);
+			if (bytes[1] == 0x10) { connected = bytes[3]; charger_writes++; }
+			else { game_enabled = bytes[3]; game_writes++; }
 		} else {
 			assert(size == 2 && bytes[0] == 0xae && !bytes[1]);
 		}
@@ -125,11 +128,11 @@ static void reset(void)
 {
 	step = guard_step = reads = writes = hashes = ready_writes = 0;
 	bank_reads = bank_writes = busy = scans = last_command = 0;
-	charger_writes = command_writes = command_reads = delay_total = 0;
+	charger_writes = game_writes = command_writes = command_reads = delay_total = 0;
 	fail_step = stop_guard = UINT_MAX;
 	hash_error = 0; callback_error = -EREMOTEIO;
 	hash_bad = foreign = single = corrupt_bank = stuck_copy = stuck_boot = false;
-	bad_metadata = bad_mode = bad_charger = connected = false;
+	bad_metadata = bad_mode = bad_charger = connected = bad_game = game_enabled = false;
 	memset(ram, 0, sizeof(ram));
 }
 static void layout(void)
@@ -232,6 +235,19 @@ int main(void)
 	reset(); busy = 2; assert(!nvt_uke_charger(&io, true) && charger_writes == 1 && command_writes == 1);
 	reset(); bad_charger = true; assert(nvt_uke_charger(&io, true) == -EPROTO);
 	reset(); busy = 100; assert(nvt_uke_charger(&io, true) == -ETIMEDOUT && command_reads == 25);
+	reset(); assert(!nvt_uke_game_mode(&io, true) && game_enabled && game_writes == 1 && !charger_writes);
+	{
+		const unsigned int game_operations = step, game_guards = guard_step;
+		for (i = 1; i <= game_operations; i++) {
+			reset(); fail_step = i; assert(nvt_uke_game_mode(&io, true) == -EREMOTEIO && step == i);
+		}
+		for (i = 1; i <= game_guards; i++) {
+			reset(); stop_guard = i; assert(nvt_uke_game_mode(&io, true) == -ESHUTDOWN && guard_step == i);
+		}
+	}
+	reset(); assert(!nvt_uke_game_mode(&io, false) && !game_enabled && game_writes == 1);
+	reset(); bad_game = true; assert(nvt_uke_game_mode(&io, true) == -EPROTO);
+	reset(); busy = 100; assert(nvt_uke_game_mode(&io, true) == -ETIMEDOUT && command_reads == 25);
 	reset(); assert(!nvt_uke_read_frame(&io, packet));
 	reset(); stop_guard = 2; assert(nvt_uke_read_frame(&io, packet) == -ESHUTDOWN && reads == 1);
 	reset(); fail_step = 1; callback_error = 1; assert(nvt_uke_read_frame(&io, packet) == -EIO);

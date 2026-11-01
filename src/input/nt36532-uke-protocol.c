@@ -321,9 +321,9 @@ int nvt_uke_read_frame(const struct nvt_uke_io *io, u8 data[NVT_UKE_FRAME_SIZE])
 	return ret ? ret : nvt_uke_guard(io);
 }
 
-int nvt_uke_charger(const struct nvt_uke_io *io, bool connected)
+static int nvt_uke_boolean(const struct nvt_uke_io *io, u8 command, bool enabled)
 {
-	u8 request[] = { 0xbf, 0x10, 0, connected, 0 };
+	u8 request[] = { 0xbf, command, 0, enabled, 0 };
 	u16 value;
 	int ret = nvt_uke_guard(io);
 
@@ -336,8 +336,18 @@ int nvt_uke_charger(const struct nvt_uke_io *io, bool connected)
 		ret = nvt_uke_wait(io, 0x11c450, 25, 20, 0, 0);
 	}
 	if (!ret)
-		ret = nvt_uke_custom(io, 0x10, &value);
+		ret = nvt_uke_custom(io, command, &value);
 	if (ret)
 		return ret;
-	return value == connected ? nvt_uke_guard(io) : -EPROTO;
+	return value == enabled ? nvt_uke_guard(io) : -EPROTO;
+}
+
+int nvt_uke_charger(const struct nvt_uke_io *io, bool connected)
+{
+	return nvt_uke_boolean(io, 0x10, connected);
+}
+
+int nvt_uke_game_mode(const struct nvt_uke_io *io, bool enabled)
+{
+	return nvt_uke_boolean(io, 0x0f, enabled);
 }

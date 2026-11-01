@@ -1,0 +1,35 @@
+Subject: [PATCH] drm/msm: retain O82 VRR when fixed modes fall below its floor
+
+Aggregate connector VRR metadata from modes admitted by the existing encoder
+callback. A fixed mode below the requested floor must not suppress the range
+of other eligible modes. Atomic validation still rejects VRR for an ineligible
+mode; foreign hardware, an empty eligible set, inconsistent positive floors
+and a range without variation retain their refusal paths.
+
+This enables a bounded higher-floor touch experiment. It does not establish
+optical panel cadence or physical touch acceptance.
+
+Expose a read-only floor-policy API version so userspace can distinguish this
+mode-dependent range implementation from earlier all-modes-only metadata.
+
+--- a/drivers/gpu/drm/msm/dsi/dsi_manager.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_manager.c
+@@ -1197,7 +1197,9 @@
+ 		list_for_each_entry(mode, &connector->probed_modes, head) {
+ 			floor = priv->kms->funcs->get_vrr_min_hz(encoder, mode);
+-			if (!floor || (min_hz && min_hz != floor))
++			if (!floor)
++				continue;
++			if (min_hz && min_hz != floor)
+ 				return;
+ 			min_hz = floor;
+ 			max_hz = max_t(unsigned int, max_hz, drm_mode_vrefresh(mode));
+ 		}
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -227,2 +227,5 @@
+ static unsigned int o82_vrr_test_min_hz;
+ module_param(o82_vrr_test_min_hz, uint, 0400);
++static unsigned int o82_vrr_floor_api = 1;
++module_param(o82_vrr_floor_api, uint, 0400);
++MODULE_PARM_DESC(o82_vrr_floor_api, "O82 eligible-mode VRR floor policy API version");

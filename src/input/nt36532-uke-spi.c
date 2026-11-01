@@ -30,6 +30,11 @@
 #define NVT_UKE_FIRMWARE "novatek/uke/nt36532-normal.bin"
 #define NVT_UKE_WIRE_SIZE (NVT_UKE_FRAME_SIZE + 2)
 
+/* Diagnostic opt-in: compare real delivery with the OEM boolean game request. */
+static bool game_mode;
+module_param(game_mode, bool, 0400);
+MODULE_PARM_DESC(game_mode, "Request and verify OEM game mode after THP firmware initialization");
+
 struct nvt_uke_buffer {
 	struct vb2_v4l2_buffer vb;
 	struct list_head list;
@@ -251,6 +256,8 @@ static void nvt_boot_worker(struct work_struct *work)
 	if (!ret)
 		ret = nvt_uke_boot(&t->io, t->firmware->data, t->firmware->size,
 				   t->idle_reset);
+	if (!ret && game_mode)
+		ret = nvt_uke_game_mode(&t->io, true);
 	t->idle_reset = false;
 	t->watchdog = 0;
 	if (!ret) {
@@ -311,9 +318,10 @@ static irqreturn_t nvt_irq_thread(int irq, void *context)
 	ret = nvt_uke_decode(t->frame, NVT_UKE_FRAME_SIZE, &decoded);
 	if (nvt_ready(t))
 		goto out;
-	nvt_complete(t, !ret);
+	/* Watchdog packets can retain a checksum-valid header from the last frame. */
+	nvt_complete(t, !ret && !watchdog && !t->watchdog);
 	if (watchdog > 0) {
-		t->idle_reset = watchdog == 0xfd;
+		t->idle_reset = watchdog == 0xfe;
 		t->booted = false;
 		queue_work(system_long_wq, &t->boot_work);
 	}

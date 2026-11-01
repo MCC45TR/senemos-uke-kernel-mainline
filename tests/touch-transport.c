@@ -12,6 +12,8 @@
 typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef int irqreturn_t;
+#define IRQ_HANDLED 1
 #define NVT_UKE_FRAME_SIZE 5432
 #define NOTIFY_OK 1
 #define POWER_SUPPLY_PROP_ONLINE 1
@@ -28,6 +30,7 @@ struct device { struct nvt_uke_touch *touch; };
 struct work_struct { unsigned int pending; struct nvt_uke_touch *touch; };
 struct notifier_block { int unused; };
 struct nvt_uke_io { void *context; };
+struct nvt_uke_frame { int unused; };
 struct vb2_queue { unsigned int done, errors; };
 struct nvt_uke_touch {
     struct spi_device *spi;
@@ -43,7 +46,7 @@ struct nvt_uke_touch {
     bool irq_enabled, booted, idle_reset;
     bool charger_known, charger_online;
     unsigned int watchdog;
-    u8 *tx, *rx;
+    u8 *tx, *rx, *frame;
 };
 struct spi_transfer {
     const void *tx_buf; void *rx_buf;
@@ -57,6 +60,9 @@ static struct {
     unsigned int calls, fail, short_at, change_epoch, enables, disables, cancels, queues;
     unsigned int lengths[2], speeds[2];
     unsigned int charger_calls, psy_gets, warnings;
+    unsigned int frame_reads, completions, watchdog_consecutive;
+    int frame_error, watchdog_result, decode_error;
+    bool completed_valid;
     int charger_error, psy_error, online, psy_refs;
     bool psy_missing;
     u8 bytes[2][NVT_UKE_FRAME_SIZE + 2];
@@ -126,6 +132,24 @@ static int nvt_uke_charger(const struct nvt_uke_io *io, bool online) {
 }
 #define dev_warn_ratelimited(...) do { mock.warnings++; } while (0)
 
+static int nvt_uke_read_frame(const struct nvt_uke_io *io, u8 *data) {
+    assert(data == ((struct nvt_uke_touch *)io->context)->frame);
+    mock.frame_reads++; return mock.frame_error;
+}
+static int nvt_uke_watchdog(const u8 *data, size_t size, unsigned int *consecutive) {
+    assert(data && size == NVT_UKE_FRAME_SIZE && consecutive);
+    *consecutive = mock.watchdog_consecutive;
+    return mock.watchdog_result;
+}
+static int nvt_uke_decode(const u8 *data, size_t size, struct nvt_uke_frame *decoded) {
+    assert(data && size == NVT_UKE_FRAME_SIZE && decoded);
+    return mock.decode_error;
+}
+static void nvt_complete(struct nvt_uke_touch *t, bool valid) {
+    mock.completions++; mock.completed_valid = valid;
+}
+static void nvt_fault(struct nvt_uke_touch *t) { t->fault = true; }
+
 #include "production.h"
 
 static struct nvt_uke_touch touch;
@@ -145,6 +169,9 @@ static void reset(void) {
     mock.calls = mock.fail = mock.short_at = mock.change_epoch = 0;
     mock.enables = mock.disables = mock.cancels = mock.queues = 0;
     mock.charger_calls = mock.psy_gets = mock.warnings = 0;
+    mock.frame_reads = mock.completions = mock.watchdog_consecutive = 0;
+    mock.frame_error = mock.watchdog_result = mock.decode_error = 0;
+    mock.completed_valid = false;
     mock.charger_error = mock.psy_error = mock.psy_refs = 0;
     mock.online = 1; mock.psy_missing = false;
     mock.block = mock.entered = mock.proceed = false;
@@ -169,7 +196,7 @@ int main(void) {
     assert(pthread_mutex_init(&touch.io_lock, NULL) == 0);
     assert(pthread_mutex_init(&touch.irq_lock, NULL) == 0);
     assert(pthread_mutex_init(&touch.state_lock, NULL) == 0);
-    touch.spi = &spi; touch.tx = tx; touch.rx = rx; touch.boot_work.touch = &touch;
+    touch.spi = &spi; touch.tx = tx; touch.rx = rx; touch.frame = rx; touch.boot_work.touch = &touch;
     touch.charger_work.touch = &touch; touch.io.context = &touch;
     reset();
     u8 data[NVT_UKE_FRAME_SIZE];
@@ -190,6 +217,31 @@ int main(void) {
     assert(nvt_spi_io(&touch, 0x1000000, data, 1, true, false) == -EINVAL);
     assert(nvt_spi_io(&touch, 0xffffff, data, 2, true, false) == -EINVAL);
     assert(mock.calls == 0);
+    /* OEM requires idle reset for FE; FD reloads without that extra reset. */
+    const struct { int packet; bool idle; } watchdog_cases[] = {{0xfd, false}, {0xfe, true}};
+    for (unsigned int i = 0; i < 2; ++i) {
+        reset(); mock.watchdog_result = watchdog_cases[i].packet;
+        assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+        assert(mock.frame_reads == 1 && mock.completions == 1 && !mock.completed_valid);
+        assert(!touch.booted && touch.boot_work.pending == 1);
+        assert(touch.idle_reset == watchdog_cases[i].idle);
+    }
+    reset(); mock.watchdog_consecutive = 1;
+    assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+    assert(mock.completions == 1 && !mock.completed_valid);
+    assert(touch.booted && !touch.boot_work.pending);
+    reset();
+    assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+    assert(mock.completed_valid && touch.booted && !touch.boot_work.pending);
+    reset(); mock.frame_error = -EREMOTEIO;
+    assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+    assert(touch.fault && !touch.booted && touch.boot_work.pending && !mock.completions);
+    reset(); mock.frame_error = -ESHUTDOWN;
+    assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+    assert(!touch.fault && !touch.boot_work.pending && !mock.completions);
+    reset(); touch.panel_ready = false;
+    assert(nvt_irq_thread(54, &touch) == IRQ_HANDLED);
+    assert(!mock.frame_reads && !touch.boot_work.pending);
     for (unsigned int step = 1; step <= 2; ++step) {
         reset(); mock.fail = step;
         assert(nvt_spi_io(&touch, 0x11c000, data, sizeof(data), true, true) == -EREMOTEIO);
@@ -283,6 +335,6 @@ int main(void) {
         assert(race_result == -ESHUTDOWN && mock.calls == 1);
         assert(!touch.panel_ready && !touch.booted && !touch.irq_enabled);
     }
-    puts("Production SPI framing/faults, state admission, IRQ epochs and 100 in-flight panel races: PASS");
+    puts("Production SPI framing/faults, FD/FE watchdog recovery, state admission, IRQ epochs and 100 in-flight panel races: PASS");
     return 0;
 }
