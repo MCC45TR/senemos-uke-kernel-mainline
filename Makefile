@@ -14,7 +14,8 @@ validate: test-touch-protocol test-touch-transport
 	bash -n tests/dp-eld-notification-contract.sh
 	bash -n tests/dpu-output-affinity-contract.sh tests/ucsi-debugfs-bounds-contract.sh tests/dpu-mixer-reservation-contract.sh
 	bash -n src/leds/prepare-source.sh tests/rgb-policy.sh tests/rgb-lifetime.sh tests/rgb-sysfs.sh tests/rgb-syntax.sh
-	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh
+	bash -n src/video/prepare-source.sh tests/iris-sm7675-caps-contract.sh tests/iris-sm7675-schema-contract.sh tests/iris-capture-cache-contract.sh tests/iris-serial-budget-contract.sh
+	bash -n tests/iris-decode-order-stage-contract.sh
 	bash tests/rgb-policy.sh
 	bash tests/rgb-supplier.sh
 	bash -n tests/light-cleanup.sh tests/light-dt.sh tests/light-brightness.sh

@@ -70,3 +70,19 @@ separate required work.
 A failed domain `put_sync` consumes its reference and latches an error; the
 candidate retains firmware mappings instead of guessing a safe recovery.
 Administrative unbind after failed PAS or power teardown remains unqualified.
+
+## 29 October 2026: experimental synchronous decoder controls
+
+Patches `0019`-`0022` retain the SM7675 decoder operating budget, use standard
+vb2 cache maintenance for CAPTURE MMAP buffers, reserve one available OPP for
+a single queued UHD input and select the existing one-stage mode for explicitly
+requested zero-delay VP9 decoding. Other codecs retain their existing stage
+policy. Donor attribution and compatibility limits are recorded in each patch.
+
+On the signed49 source baseline, all four actual-function contracts and the
+strict full kernel/module build pass. A matched RAM-only Iris module on
+POCO Pad X1 with the installed VA GPU-copy backend passes240 NV12/P010
+CPU/Vulkan reference hashes. The Vulkan controls use the separately scoped
+FFmpeg imported-image fix. Native throughput improves; its hidden VP9 reference
+units are not presented FPS. Chrome4K60, HDR and persistent installation remain
+separate acceptance requirements. See the canonical UKE-YT-L024 lesson.
