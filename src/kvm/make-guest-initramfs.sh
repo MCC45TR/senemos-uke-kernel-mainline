@@ -19,8 +19,8 @@ while IFS= read -r name; do
     case $name in libc.so.6|libgcc_s.so.1) ;; *) echo "Unreviewed guest dependency: $name" >&2; exit 1;; esac
     library=$(ldconfig -p | awk -v name="$name" '$1 == name && !found { print $NF; found=1 }')
     [[ -f $library ]]
-    if readelf -d "$library" | sed -n 's/.*Shared library: \[\(.*\)\]/\1/p' |
-        grep -Ev '^(libc.so.6|ld-linux-aarch64.so.1)$'; then
+    transitive=$(readelf -d "$library" | sed -n 's/.*Shared library: \[\(.*\)\]/\1/p')
+    if grep -Ev '^(libc.so.6|ld-linux-aarch64.so.1)$' <<< "$transitive"; then
         echo "Unreviewed transitive guest dependency: $name" >&2
         exit 1
     fi

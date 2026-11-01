@@ -22,6 +22,8 @@ establish that stock ABL accepts its early transfer or that the tablet boots.
 Use one namespace per configuration; never substitute these modules into an
 accepted normal-kernel directory. Keep Android A, boot B, `PARTLABEL=linux`,
 original early firmware and the accepted image/module fallback.
+The RPM probe is versioned at `/usr/libexec/uke-kvm/KERNEL_RELEASE/uke-kvm-probe`
+so observer and exit packages do not contend for one executable path.
 
 `make validate`, `make kvm-probe` and `make srpm` are host operations. The SRPM
 producer verifies the pinned kernel archive/signature and source-asset hashes.

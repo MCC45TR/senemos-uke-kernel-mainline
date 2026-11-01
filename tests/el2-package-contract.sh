@@ -13,9 +13,12 @@ if grep -E '^Obsoletes:|^Conflicts:|^%(post|pre|preun|postun|posttrans|pretrans|
     exit 1
 fi
 grep -F 'native-profile/src/kvm/probe.cpp' <<< "$parsed" >/dev/null
+grep -Eq '^/usr/libexec/uke-kvm/7\.2\.11-[1-9][0-9]*-kvm/$' <<< "$parsed"
+if grep -F '/usr/bin/uke-kvm-probe' <<< "$parsed"; then exit 1; fi
 grep -F 'CONFIG_KVM=y' "$root/packaging/native/native.config" >/dev/null
 exit_parsed=$(rpmspec --parse --with gunyah_exit --target aarch64 "$spec")
 grep -Fx 'Name: uke-senemos-kernel-mainline-kvm-exit' <<< "$exit_parsed" >/dev/null
 grep -Eq '^Provides: kernel-uname-r\(7\.2\.11-[1-9][0-9]*-kvm-exit\)$' <<< "$exit_parsed"
+grep -Eq '^/usr/libexec/uke-kvm/7\.2\.11-[1-9][0-9]*-kvm-exit/$' <<< "$exit_parsed"
 if grep -E '^%(post|pre|preun|postun|posttrans|pretrans|trigger)($|[[:space:]])|uke-kernel-update apply' <<< "$exit_parsed"; then exit 1; fi
 echo 'Isolated KVM package, matching ABI and no automatic boot writer passed'

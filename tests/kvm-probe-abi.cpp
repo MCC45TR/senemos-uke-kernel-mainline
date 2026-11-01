@@ -16,6 +16,7 @@
 
 static long test_page = 4096;
 static bool bad_api = false, bad_result = false;
+static int memory_capability = 1;
 alignas(65536) static unsigned char guest_memory[65536];
 static kvm_run run_area{};
 static int test_open(const char *name, int flags, ...) {
@@ -49,7 +50,11 @@ static int test_ioctl(int fd, unsigned long request, ...) {
         if (bad_api) { errno = EACCES; result = -1; }
         else result = KVM_API_VERSION;
         break;
-    case KVM_CHECK_EXTENSION: result = 1; break;
+    case KVM_CHECK_EXTENSION:
+        assert(va_arg(arguments, int) == KVM_CAP_USER_MEMORY);
+        result = memory_capability;
+        if (result < 0) errno = EIO;
+        break;
     case KVM_CREATE_VM: result = 11; break;
     case KVM_CREATE_VCPU: result = 12; break;
     case KVM_GET_VCPU_MMAP_SIZE: result = 4096; break;
@@ -105,8 +110,13 @@ int main() {
     bad_api = true;
     assert(probe_main(1, nullptr) == 3 && errno == EACCES);
     bad_api = false;
+    memory_capability = 0;
+    assert(probe_main(1, nullptr) == 3 && errno == ENOTSUP);
+    memory_capability = -1;
+    assert(probe_main(1, nullptr) == 3 && errno == EIO);
+    memory_capability = 1;
     bad_result = true;
     assert(probe_main(1, nullptr) == 3 && errno == EPROTO);
     assert(probe_main(2, nullptr) == 64);
-    std::puts("Synthetic KVM ABI: three page sizes and four refusal paths passed");
+    std::puts("Synthetic KVM ABI: three page sizes and six refusal paths passed");
 }

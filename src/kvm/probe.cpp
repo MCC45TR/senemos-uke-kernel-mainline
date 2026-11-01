@@ -47,7 +47,9 @@ int main(int argc, char **) {
         errno = EINVAL;
         return failure("host-page-size");
     }
-    if (ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY) <= 0) {
+    const int user_memory = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY);
+    if (user_memory < 0) return failure("user-memory-capability");
+    if (user_memory == 0) {
         errno = ENOTSUP;
         return failure("user-memory-capability");
     }

@@ -212,7 +212,7 @@ CC=clang bash native-profile/tests/o82-dfps-panel-contract.sh native-profile/src
 CC=clang bash native-profile/tests/dsi-read-transaction-contract.sh "$PWD" %{_uke_out}
 
 %install
-install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_bindir}/uke-kvm-probe
+install -Dm755 %{_uke_out}/uke-kvm-probe %{buildroot}%{_libexecdir}/uke-kvm/%{krel}/uke-kvm-probe
 install -Dm644 native-profile/EL2.md %{buildroot}%{_datadir}/doc/%{name}/EL2.md
 export ARCH=arm64 LLVM=1
 mkdir -p %{buildroot}/usr/lib/modules
@@ -242,7 +242,7 @@ cp -a %{uke_boot_userspace}/licenses/. %{buildroot}/usr/share/licenses/%{name}-b
 cp -a boot-recipe/src/boot/licenses/. %{buildroot}/usr/share/licenses/%{name}-boot-%{version}-%{release}/
 
 %files
-%{_bindir}/uke-kvm-probe
+%{_libexecdir}/uke-kvm/%{krel}/
 %{_datadir}/doc/%{name}/EL2.md
 %doc native-profile/README.md
 %license COPYING
