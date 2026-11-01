@@ -36,7 +36,7 @@ enum {DECODER, ENCODER};
 struct iris_core;
 struct iris_inst;
 CPP
-for tag in 'struct platform_inst_caps' 'enum platform_inst_fw_cap_type' 'enum platform_inst_fw_cap_flags' 'struct platform_inst_fw_cap'; do
+for tag in 'struct platform_inst_caps' 'enum platform_inst_fw_cap_type' 'enum platform_inst_fw_cap_flags' 'struct platform_inst_fw_cap' 'struct bw_info' 'struct iris_inst_power' 'struct icc_vote_data'; do
     awk -v tag="$tag" '$0 == tag " {" {emit=1} emit {print} emit && /^};/ {exit}' \
         "$iris/iris_platform_common.h" >> "$work/check.cpp"
 done
@@ -45,6 +45,8 @@ struct iris_platform_data {
     platform_inst_caps *inst_caps;
     const platform_inst_caps *(*get_inst_caps)(iris_inst *, u32);
     u32 max_core_mbps, num_vpp_pipe;
+    const bw_info *bw_tbl_dec{};
+    u32 bw_tbl_dec_size{};
 };
 struct vb2_queue {bool streaming;};
 struct context {vb2_queue src{}, dst{};};
@@ -60,12 +62,17 @@ struct iris_inst {
     v4l2_format *fmt_src; v4l2_rect crop{};
     platform_inst_fw_cap fw_caps[INST_FW_CAP_MAX]{};
     context *m2m_ctx;
+    icc_vote_data icc_data{};
+    iris_inst_power power{};
 };
 CPP
 # Include the actual immutable platform table and selector, not a copied model.
 printf '#include "iris_platform_sm7675.h"\n' >> "$work/check.cpp"
+awk '/^static const struct bw_info iris_bw_table_dec_vpu3x\[\] =/ {emit=1} emit {print} emit && /^};/ {exit}' \
+    "$iris/iris_platform_vpu3x.c" >> "$work/check.cpp"
 cat >> "$work/check.cpp" <<'CPP'
-static const iris_platform_data sm7675_data{&platform_inst_cap_sm7675, sm7675_get_inst_caps, 2088960, 2};
+static const iris_platform_data sm7675_data{&platform_inst_cap_sm7675, sm7675_get_inst_caps, 2088960, 2,
+    iris_bw_table_dec_vpu3x, ARRAY_SIZE(iris_bw_table_dec_vpu3x)};
 static platform_inst_caps old_caps{96,8192,96,8192,139264,0,25,200,489583,66234,480,480};
 static const iris_platform_data legacy_data{&old_caps,nullptr,7777777,4};
 static u64 div_u64(u64 n, u32 d) {assert(d); return n/d;}
@@ -77,6 +84,8 @@ static int aggregate_error;
 static int iris_check_core_mbpf(iris_inst *) {return aggregate_error;}
 static void mutex_lock(int *) {}
 static void mutex_unlock(int *) {}
+static int interconnect_error;
+static int iris_set_interconnects(iris_inst *) { return interconnect_error; }
 #define list_for_each_entry(pos,head,member) \
     for (auto it=(head)->begin(); it!=(head)->end() && ((pos=*it),true); ++it)
 struct file {iris_inst *inst;};
@@ -96,6 +105,8 @@ extract '^int iris_check_core_mbps\(' "$iris/iris_utils.c"
 extract '^static void iris_sm7675_limit_level\(' "$iris/iris_ctrls.c"
 extract '^static void iris_sm7675_limit_caps\(' "$iris/iris_ctrls.c"
 extract '^u64 iris_vpu3x_vpu4x_calculate_frequency\(' "$iris/iris_vpu_common.c"
+extract '^static u32 iris_calc_bw\(' "$iris/iris_power.c"
+extract '^static int iris_vote_interconnects\(' "$iris/iris_power.c"
 extract '^static int iris_enum_framesizes\(' "$iris/iris_vidc.c"
 extract '^static int iris_enum_frameintervals\(' "$iris/iris_vidc.c"
 extract '^int iris_venc_s_param\(' "$iris/iris_venc.c"
@@ -221,6 +232,29 @@ int main() {
     inst.domain=DECODER; assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==ULONG_MAX);
     inst.fw_caps[PIPE].value=2;
     assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)>0);
+    format.fmt.pix_mp.width=3840; format.fmt.pix_mp.height=2160;
+    inst.codec=V4L2_PIX_FMT_VP9; inst.frame_rate=30;
+    inst.operating_rate=platform_inst_cap_sm7675.max_mbps/platform_inst_cap_sm7675.max_mbpf;
+    assert(inst.operating_rate==60);
+    assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==241156936);
+    assert(iris_vote_interconnects(&inst)==0 && inst.icc_data.fps==60 && inst.power.icc_bw==1608000);
+    inst.frame_rate=90;
+    assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==361735404);
+    assert(iris_vote_interconnects(&inst)==0 && inst.icc_data.fps==90);
+    interconnect_error=-EIO;
+    assert(iris_vote_interconnects(&inst)==-EIO);
+    interconnect_error=0; inst.frame_rate=30; inst.operating_rate=0;
+    assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==113485617);
+    assert(iris_vote_interconnects(&inst)==0 && inst.icc_data.fps==30 && inst.power.icc_bw==826000);
+    core.iris_platform_data=&legacy_data; inst.operating_rate=60;
+    assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==226971234);
+    core.iris_platform_data=&sm7675_data; inst.operating_rate=0;
+    inst.domain=ENCODER;
+    const auto encoder_frequency=iris_vpu3x_vpu4x_calculate_frequency(&inst,10000);
+    inst.operating_rate=60;
+    assert(iris_vpu3x_vpu4x_calculate_frequency(&inst,10000)==encoder_frequency);
+    assert(iris_vote_interconnects(&inst)==0 && inst.icc_data.fps==30);
+    inst.domain=DECODER;
     for (unsigned domain=0; domain<2; ++domain) {
         auto table=domain ? core.inst_fw_caps_enc : core.inst_fw_caps_dec;
         for (unsigned id=1; id<INST_FW_CAP_MAX; ++id)

@@ -78,6 +78,14 @@
     {
       "path": "patches/video/0018-iris-vp9-nonshow-recycle.patch",
       "sha256": "b94e1c8259b08d245613e3dd9c6d2619298cb0c55af9f87e57293c9a5da21893"
+    },
+    {
+      "path": "patches/video/0019-sm7675-decoder-operating-budget.patch",
+      "sha256": "f810bc0efd23f1dbf9df60e2d8fc63dc661de110f001cc7908128e476052fa7f"
+    },
+    {
+      "path": "patches/video/0020-sm7675-cached-capture.patch",
+      "sha256": "983d80d8a0d7369abb6edbfe59cecabf3aefbc280d1091641883b4deafa71e35"
     }
   ],
   "checks": {
@@ -188,6 +196,7 @@
     "python_scope": "unmodified pinned upstream host-only schema tool"
   },
   "remaining": [
+    "Recoverable operating-budget control and sustained original-profile 4K60 playback",
     "Physical controller retention, ordered reset and PM/error recovery qualification",
     "Physical native VIDEOCC domain/supply ownership validation",
     "PAS/HFI target boot and firmware UC/mmap/device-region runtime validation",
