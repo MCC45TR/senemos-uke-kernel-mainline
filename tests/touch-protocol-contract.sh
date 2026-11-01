@@ -53,11 +53,12 @@ printf '#include_next <linux/errno.h>\n' > "$stage/linux/errno.h"
     "$root/src/input/nt36532-uke-protocol.c" "${sanitize[@]}" -o "$stage/matrix"
 "$stage/matrix" "$@"
 awk '
- /^static void nvt_release_contacts\(/ || /^static void nvt_publish_contacts\(/ { copying=1 }
+ /^static void nvt_release_contacts\(/ || /^static int nvt_stable_axis\(/ || /^static void nvt_order_new_slots\(/ || /^static void nvt_publish_contacts\(/ { copying=1 }
  copying { print }
  copying && /^}/ { copying=0 }
 ' "$root/src/input/nt36532-uke-spi.c" > "$stage/production-contacts.h"
-[[ $(grep -c '^static void ' "$stage/production-contacts.h") == 2 ]]
+[[ $(grep -c '^static void ' "$stage/production-contacts.h") == 3 ]]
+[[ $(grep -c '^static int nvt_stable_axis' "$stage/production-contacts.h") == 1 ]]
 "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
     -I "$stage" "$root/tests/touch-publish.c" \
     "${sanitize[@]}" -o "$stage/publish"
