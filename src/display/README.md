@@ -1,5 +1,14 @@
 # SM7675 native display candidate
 
+The O82 panel registration is retained until reboot. Ordinary module removal
+and manual sysfs bind/unbind are disabled because live removal on kernel
+`7.2.12-22` produced late GEM and repeated KMS teardown faults. Shutdown and
+failed-probe cleanup remain available. This contains the administrative trigger;
+it does not qualify general MSM hot-unplug or forced module removal. USB-C DP
+hotplug does not require removing the internal panel. Source and host regression
+results are recorded in `docs/lessons/2026-10-24-UKE-JUO-USB-DP.md` in the
+canonical documentation repository; tablet validation remains pending.
+
 Updated on 17 October 2026. This directory contains a Linux 7.2.9/7.2.10 source
 candidate for the Xiaomi Pad 7 O82 panel and SM7675 primary display pipeline.
 It is separate from the firmware framebuffer used by the normal boot recipe.

@@ -1,5 +1,38 @@
 # Mainline display source profile
 
+24 October 2026 CPU source candidate: retain standard CPU hotplug and the
+existing EAS/AMU/schedutil path; enable task/cgroup uclamp, TEO as an alternative
+to menu, and runtime-switchable scheduler statistics. Kconfig resolution and
+four AArch64 object builds passed. No automatic core-parking policy, workload
+hints or new governor default is installed. Full package and candidate tablet
+validation remain open. See the [CPU scheduling report](../../docs/CPU-SCHEDULING-2026-10-24.md).
+
+24 October 2026 source candidate: release 25 avoids a GPU recovery/fault-capture
+lock cycle observed on POCO Pad X1 with release 22. Optional SMMU fault capture
+uses a nonblocking GPU lock so its completion can release a waiting GMU
+transaction. Ordinary fault reporting, uncontended capture and existing
+recovery remain. The actual-function host fixture fails before the change and
+passes afterward. This does not explain the initial GMU timeout or establish
+tablet recovery, suspend, graphics performance or endurance. Display, touch
+and charging settings are preserved.
+
+The touch source lock advances to existing owner `2b5530f2412a`, which buffers
+the CPIO export and reports service readiness after the first valid frame.
+Its reviewed archive and retained legacy source RPM remain hash-checked. Contact
+processing, calibration, firmware and the kernel transport are unchanged.
+
+24 October 2026 source candidate: release 24 retains the O82 connector range
+when fixed modes fall below the opted-in VRR floor. Opted-in requests from
+30 through 89 Hz now use the observed 90 Hz trial floor consistently for timing,
+DRM metadata and module-parameter readback. Zero still disables the experiment;
+fixed modes and the atomic, bonded-host and foreign-hardware checks remain.
+This carries the current diagnostic module's higher-floor behavior into the
+complete matched kernel package without a separate module loader or boot-note
+ABI change. The operator reported reduced Discover movement/resize stutter
+with the diagnostic range correction at 90 Hz; remaining stutter, continuous
+optical cadence, energy and endurance are unqualified. No permanent effect,
+governor, thermal or independent touch-rate change is included.
+
 23 October 2026 source candidate: release 21 retains the enabled boot-derived
 early framebuffer and stdout until MSM's existing firmware-aperture takeover.
 Its backlight link is removed so simpledrm neither waits for nor blanks the
@@ -313,3 +346,43 @@ description; no donor build script is executed. The output contains no
 calibration, graph endpoint or mixer and is installed below the exact kernel
 release's firmware search directory. The host ACDB metadata inspector and its
 fixtures are source/build tools only and do not enter tablet payloads.
+
+## USB and display diagnostics, 24 October 2026
+
+The native configuration already enables `CONFIG_DYNAMIC_DEBUG` and debugfs.
+Release 27 adds optional PAN event, QMP request and per-provider mux result
+messages. These sites are silent until enabled; enabling them does not change
+roles, PD policy, routing or power sequencing. Record the existing debug flags
+and `/sys/module/drm/parameters/debug` value before each controlled test.
+
+For example, enable the three routing files during a root diagnostic session:
+
+```sh
+printf '%s\n' \
+  'file drivers/usb/typec/mux.c +p' \
+  'file drivers/phy/qualcomm/phy-qcom-qmp-combo.c +p' \
+  'file drivers/soc/qcom/pmic_glink_altmode.c +p' \
+  | sudo tee /sys/kernel/debug/dynamic_debug/control
+```
+
+Existing DWC3, hub, UCSI and DP/AUX diagnostics can be selected by file or
+function as needed. Restore the previous flags and DRM mask after capture;
+use `-p` for sites whose print flag was initially disabled. Keep raw traces
+private. These messages describe control state and do not dump USB payloads.
+
+## DP stream source candidate, 24 October 2026
+
+On POCO Pad X1 with signed release 27, Juo JH925 and ViewSonic VA3209-QHD,
+HDMI reattachment produces HPD, EDID and successful HBR2 two-lane training.
+The monitor detects the connection but remains black. Both 2560x1440 at 75 Hz
+and 1920x1080 at 60 Hz fail to prepare the DP pixel clock with `-EINVAL`.
+Clock tracing shows a zero cached pixel-source rate; initial PHY parent setup
+also reports inactive pixel RCGs above their unchanged OEM Fmax limits.
+
+Release 28 defers voltage rate-change callbacks for unprepared DP pixel RCGs
+until their actual output is configured. Prepare-time validation and prepared
+clock voltage votes remain in place; clock tables and DSI behavior are unchanged.
+It also suppresses unchanged HPD-level reports without dropping firmware ACKs,
+route application or IRQs. Source-extracted fixtures pass; native package and
+tablet validation remain required. The settings overlap reported in the same
+trial is not yet causally assigned to the repeated hotplug path.

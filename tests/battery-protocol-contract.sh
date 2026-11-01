@@ -71,10 +71,20 @@ awk '/^static const struct pmic_glink_data pmic_glink_uke_data/ {emit=1}
     "$kernel/drivers/soc/qcom/pmic_glink.c" | sed '/^MODULE_DEVICE_TABLE/d'
 cat <<'C'
 static struct qcom_battmgr_property_request sent;
-static int requests, request_result, request_fail_at;
+static struct qcom_battmgr_property_request last_set;
+static int requests, set_requests, request_result, request_fail_at, readback_result, generation_change_at;
+static unsigned int readback_limit=500000;
 static int qcom_battmgr_request(struct qcom_battmgr *b, void *p, size_t n) {
  assert(b && n==sizeof(sent)); memcpy(&sent,p,n); requests++;
- return requests==request_fail_at ? -ETIMEDOUT : request_result;
+ if(sent.hdr.opcode==BATTMGR_USB_PROPERTY_SET) { set_requests++; last_set=sent; }
+ if(requests==request_fail_at) return -ETIMEDOUT;
+ if(request_result) return request_result;
+ if(sent.hdr.opcode==BATTMGR_USB_PROPERTY_GET && sent.property==USB_INPUT_CURR_LIMIT) {
+  if(readback_result) return readback_result;
+  b->usb.current_limit=readback_limit;
+ }
+ if(requests==generation_change_at) b->transaction.generation++;
+ return 0;
 }
 static bool uke_root;
 static const struct of_device_id *match_result;
@@ -235,8 +245,36 @@ int main(void) {
  before=requests;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN && requests==before);
  b.service_up=true; b.usb.usb_type=POWER_SUPPLY_USB_TYPE_SDP; b.usb.current_max=500000;
+ /* Reproduce SET0 ACK followed by a retained 500mA limit. */
+ int set_before=set_requests;
+ before=requests;
+ b.usb.current_limit=500000; budget.intval=0;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EREMOTEIO);
+ assert(requests==before+6 && set_requests==set_before+1 && last_set.value==0);
+ budget.intval=500000; before=requests;
  assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==0);
- assert(requests==before+5 && sent.hdr.opcode==BATTMGR_USB_PROPERTY_SET && sent.property==5 && sent.value==500000);
+ assert(requests==before+6 && last_set.property==5 && last_set.value==500000);
+ assert(sent.hdr.opcode==BATTMGR_USB_PROPERTY_GET && sent.property==5);
+ readback_limit=100000;
+ assert(!qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget));
+ readback_limit=0; budget.intval=0;
+ assert(!qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget));
+ readback_limit=500000; budget.intval=500000;
+ before=requests; set_before=set_requests; request_fail_at=before+6;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EREMOTEIO);
+ assert(requests==before+6 && set_requests==set_before+1); request_fail_at=0;
+ before=requests; set_before=set_requests; readback_result=-EAGAIN;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EREMOTEIO);
+ assert(requests==before+6 && set_requests==set_before+1); readback_result=0;
+ before=requests; set_before=set_requests; generation_change_at=before+6;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EREMOTEIO);
+ assert(requests==before+6 && set_requests==set_before+1); generation_change_at=0;
+ before=requests; set_before=set_requests; generation_change_at=before+4;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-EAGAIN);
+ assert(requests==before+4 && set_requests==set_before); generation_change_at=0;
+ before=requests; set_before=set_requests; request_fail_at=before+5;
+ assert(qcom_battmgr_usb_set_property(&usb,POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,&budget)==-ETIMEDOUT);
+ assert(requests==before+5 && set_requests==set_before+1); request_fail_at=0;
  const u32 adapters[]={0,2,3,6,8,UINT_MAX};
  for (unsigned i=0;i<ARRAY_SIZE(adapters);i++) {
   reply(&b,BATTMGR_USB_PROPERTY_GET,USB_ADAP_TYPE,adapters[i],0);
@@ -308,4 +346,4 @@ C
 } > "$work/check.c"
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror "$work/check.c" -o "$work/check"
 "$work/check"
-echo 'Uke battery: OEM request/reply IDs, signed temperature/current, model shape, errors and unchanged non-Uke/USB paths passed; charging hardware is unverified'
+echo 'Uke battery: OEM IDs, signed readings, retained SDP budget, terminal post-SET errors and unchanged foreign paths passed; charging hardware is unverified'
