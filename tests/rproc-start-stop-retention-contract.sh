@@ -33,7 +33,7 @@ struct rproc_subdev {
     int (*start)(rproc_subdev *);void (*stop)(rproc_subdev *,bool);void (*unprepare)(rproc_subdev *);
     int id;bool started=false,prepared=false;unsigned stops=0,unprepares=0;
 };
-struct rproc_ops { int (*start)(rproc *);int (*stop)(rproc *);int (*prepare_stop)(rproc *); };
+struct rproc_ops { int (*start)(rproc *);int (*stop)(rproc *);int (*prepare_stop)(rproc *);bool start_failure_needs_stop=false; };
 struct rproc {
     struct device dev;struct mutex lock;rproc_ops *ops;list_head subdevs;
     const char *name="fixture",*firmware="fixture.mbn";
@@ -43,7 +43,7 @@ struct rproc {
     resource_table *cached_table=nullptr,*table_ptr=nullptr;size_t table_sz=sizeof(resource_table);
 };
 static bool active,driver_power,iommu,prepared,resources,removed_live;
-static int fail_subdev,prepare_error,table_error,stop_error,segment_error;
+static int fail_subdev,prepare_error,table_error,stop_error,segment_error,start_error;
 static unsigned cleanup_count,unprepare_count,disable_count,table_frees,starts,prepare_stops,fw_requests;
 static resource_table loaded;
 static const struct firmware fw;
@@ -78,7 +78,7 @@ static void rproc_resource_cleanup(rproc *) { assert(!active&&!driver_power&&res
 static void rproc_unprepare_device(rproc *) { assert(prepared&&!resources&&!active);prepared=false;unprepare_count++; }
 static void rproc_disable_iommu(rproc *) { assert(iommu&&!resources&&!active);iommu=false;disable_count++; }
 static int rproc_reset_rsc_table_on_stop(rproc *r) { if(table_error)return table_error;r->table_ptr=r->cached_table;return 0; }
-static int start(rproc *) { starts++;active=driver_power=true;return 0; }
+static int start(rproc *) { starts++;active=driver_power=true;return start_error; }
 static int early_stop(rproc *) { prepare_stops++;if(prepare_error)return prepare_error;active=false;return 0; }
 static int stop(rproc *) { if(stop_error)return stop_error;active=driver_power=false;return 0; }
 static int sub_start(rproc_subdev *s) { assert(s->prepared);if(s->id==fail_subdev)return -EAGAIN;s->started=true;return 0; }
@@ -98,7 +98,7 @@ for f in rproc_start_subdevices rproc_stop_subdevices rproc_unprepare_subdevices
 cat >> "$work/check.cpp" <<'CPP'
 static void reset() {
     assert(!resources&&!prepared&&!iommu&&!driver_power&&!active);
-    removed_live=false;fail_subdev=-1;prepare_error=table_error=stop_error=segment_error=0;
+    removed_live=false;fail_subdev=-1;prepare_error=table_error=stop_error=segment_error=start_error=0;
     cleanup_count=unprepare_count=disable_count=table_frees=starts=prepare_stops=fw_requests=0;
 }
 static void link(rproc &r,rproc_subdev (&sub)[3]) {
@@ -150,7 +150,13 @@ int main() {
     reset();rproc load_fail;load_fail.ops=&ops;link(load_fail,sub);segment_error=-EIO;
     assert(rproc_boot(&load_fail)==-EIO&&load_fail.power==0&&!load_fail.boot_cleanup_pending);
     assert(!load_fail.cached_table&&!resources&&!prepared&&!iommu&&cleanup_count==1);
-    puts("PASS: actual remoteproc partial startup at every boundary, three stop faults/retries, power/table/DMA retention, restart refusal and legacy path; host only");
+    reset();rproc driver_fail;ops.start_failure_needs_stop=true;driver_fail.ops=&ops;link(driver_fail,sub);
+    start_error=-ETIMEDOUT;prepare_error=-EACCES;
+    assert(rproc_boot(&driver_fail)==-EACCES&&driver_fail.power==1&&driver_fail.boot_cleanup_pending);
+    assert(driver_fail.state==RPROC_CRASHED&&active&&resources&&prepared&&iommu&&!cleanup_count);
+    assert(rproc_boot(&driver_fail)==-EBUSY&&starts==1&&driver_fail.power==1);
+    prepare_error=0;assert(!__rproc_shutdown(&driver_fail,false));released(driver_fail,sub,0);
+    puts("PASS: actual remoteproc driver/partial startup, stop faults/retries, power/table/DMA retention and legacy path; host only");
 }
 CPP
 "${CXX:-c++}" -std=gnu++20 -O1 -Wall -Wextra -Werror -Wno-unused-parameter \

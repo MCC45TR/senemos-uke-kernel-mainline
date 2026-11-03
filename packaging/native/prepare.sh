@@ -149,7 +149,8 @@ bash "$profile/src/video/prepare-source.sh" "$kernel"
 # NSP shares SH1 with the native display and video paths prepared above.
 for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
     0026-cliffs-proxy-and-pas-stop-ownership.patch 0027-remoteproc-early-stop.patch \
-    0028-cliffs-proxy-per-rail-ownership.patch; do
+    0028-cliffs-proxy-per-rail-ownership.patch 0041-rproc-retain-failed-startup.patch \
+    0060-cliffs-cdsp-start-ownership.patch; do
     git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
     git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
 done
@@ -165,6 +166,8 @@ bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/q
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+bash "$profile/tests/rproc-start-stop-retention-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+bash "$profile/tests/cdsp-start-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
 # Replace only the generated graph with the explicit exact seven-mode profile.
 cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \

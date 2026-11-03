@@ -37,8 +37,13 @@ struct qcom_pas {
     phys_addr_t mem_phys=0x99900000,dtb_mem_phys=0x9ad00000;
     size_t mem_size=0x1400000,dtb_mem_size=0x80000;
     int proxy_error=0; qcom_pas_stop_phase stop_phase=QCOM_PAS_STOP_IDLE;
+    bool cdsp=false,cdsp_primary_live=false,cdsp_dtb_live=false;
+    bool cdsp_main_mapped=false,cdsp_dtb_mapped=false,cdsp_prepared=false;
+    bool cdsp_start_failed=false;
+    void *pas_ctx=nullptr,*dtb_pas_ctx=nullptr,*firmware=nullptr;
 };
 static qcom_pas *active;
+static void qcom_pas_metadata_release(void *) {}
 static unsigned int shutdown_notices;
 static void qcom_sysmon_prepare_shutdown(void *,bool) { shutdown_notices++; }
 static int primary_error,dtb_error,request_error,proxy_error,smem_error,decrypt_error;

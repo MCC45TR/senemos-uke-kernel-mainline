@@ -1,0 +1,425 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: remoteproc: qcom: retain Cliffs CDSP startup ownership
+
+Add the exact Uke CDSP descriptor and a start/stop ledger for both PAS contexts,
+mappings, clocks, proxy votes and firmware metadata. Stop before clients or
+resources are destroyed on every failed start; retain the core power reference
+when cleanup is refused. Check all three reserved regions before SCM assignment.
+
+The CDSP boot-FDT device is permanent: its dedicated platform driver suppresses
+unbind and pins this module until reboot. This avoids relying on a void remove
+callback to refuse devres cleanup. Other PAS instances keep their unload policy.
+Automatic boot remains disabled. DT conversion and firmware provisioning are
+separate requirements. This does not establish a physical compute transaction.
+
+Compared with MiCode 5712080a4b0c0b1a879e6d145c601c649ddaddfd and Linux 7.3.1.
+Retain the original Linux, Linaro, Sony and Qualcomm GPL attribution.
+
+diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
+index 406670a..33b183d 100644
+--- a/drivers/remoteproc/qcom_q6v5_pas.c
++++ b/drivers/remoteproc/qcom_q6v5_pas.c
+@@ -104,6 +104,16 @@ struct qcom_pas {
+ 	u8 proxy_enable_mask;
+ 	int proxy_error;
+ 	enum qcom_pas_stop_phase stop_phase;
++	/* Cliffs CDSP: attempted authentication can leave a live PAS context. */
++	bool cdsp;
++	bool cdsp_primary_live;
++	bool cdsp_dtb_live;
++	bool cdsp_main_mapped;
++	bool cdsp_dtb_mapped;
++	bool cdsp_prepared;
++	bool cdsp_xo_enabled;
++	bool cdsp_aggre2_enabled;
++	bool cdsp_start_failed;
+ 
+ 	const char *dtb_firmware_name;
+ 	int pas_id;
+@@ -341,6 +351,10 @@ static int qcom_pas_unprepare(struct rproc *rproc)
+ 	qcom_pas_metadata_release(pas->pas_ctx);
+ 	if (pas->dtb_pas_id)
+ 		qcom_pas_metadata_release(pas->dtb_pas_ctx);
++	if (pas->cdsp) {
++		release_firmware(pas->dtb_firmware);
++		pas->dtb_firmware = NULL;
++	}
+ 
+ 	return 0;
+ }
+@@ -374,6 +388,7 @@ static int qcom_pas_load(struct rproc *rproc, const struct firmware *fw)
+ 		if (ret) {
+ 			qcom_pas_metadata_release(pas->dtb_pas_ctx);
+ 			release_firmware(pas->dtb_firmware);
++			pas->dtb_firmware = NULL;
+ 			return ret;
+ 		}
+ 	}
+@@ -516,6 +531,19 @@ static void qcom_pas_handover(struct qcom_q6v5 *q6v5)
+ {
+ 	struct qcom_pas *pas = container_of(q6v5, struct qcom_pas, q6v5);
+ 
++	if (pas->cdsp) {
++		if (pas->cdsp_aggre2_enabled) {
++			clk_disable_unprepare(pas->aggre2_clk);
++			pas->cdsp_aggre2_enabled = false;
++		}
++		if (pas->cdsp_xo_enabled) {
++			clk_disable_unprepare(pas->xo);
++			pas->cdsp_xo_enabled = false;
++		}
++		qcom_pas_proxy_disable(pas);
++		return;
++	}
++
+ 	if (pas->px_supply)
+ 		regulator_disable(pas->px_supply);
+ 	if (pas->cx_supply)
+@@ -531,28 +559,34 @@ static int qcom_pas_halt(struct qcom_pas *pas)
+ 
+ 	switch (pas->stop_phase) {
+ 	case QCOM_PAS_STOP_IDLE:
+-		ret = qcom_q6v5_request_stop(&pas->q6v5, pas->sysmon);
++		ret = 0;
++		if (!pas->cdsp || !pas->cdsp_start_failed)
++			ret = qcom_q6v5_request_stop(&pas->q6v5, pas->sysmon);
+ 		if (ret == -ETIMEDOUT)
+ 			dev_err(pas->dev, "timed out on wait\n");
+ 		pas->stop_phase = QCOM_PAS_STOP_PRIMARY;
+ 		fallthrough;
+ 	case QCOM_PAS_STOP_PRIMARY:
+-		ret = qcom_pas_shutdown(pas->pas_id);
++		ret = 0;
++		if (!pas->cdsp || pas->cdsp_primary_live)
++			ret = qcom_pas_shutdown(pas->pas_id);
+ 		if (ret && pas->decrypt_shutdown)
+ 			ret = qcom_pas_shutdown_poll_decrypt(pas);
+ 		if (ret) {
+ 			dev_err(pas->dev, "failed to shutdown: %d\n", ret);
+ 			return ret;
+ 		}
++		pas->cdsp_primary_live = false;
+ 		pas->stop_phase = QCOM_PAS_STOP_DTB;
+ 		fallthrough;
+ 	case QCOM_PAS_STOP_DTB:
+-		if (pas->dtb_pas_id) {
++		if (pas->dtb_pas_id && (!pas->cdsp || pas->cdsp_dtb_live)) {
+ 			ret = qcom_pas_shutdown(pas->dtb_pas_id);
+ 			if (ret) {
+ 				dev_err(pas->dev, "failed to shutdown dtb: %d\n", ret);
+ 				return ret;
+ 			}
++			pas->cdsp_dtb_live = false;
+ 		}
+ 		pas->stop_phase = QCOM_PAS_STOP_RESOURCES;
+ 		return 0;
+@@ -573,7 +607,7 @@ static int qcom_pas_prepare_stop(struct rproc *rproc)
+ 	/* Cliffs CDSP must halt before FastRPC clients can lose DMA mappings. */
+ 	if (pas->proxy_regulator_level && pas->proxy_regulator_count == 3 &&
+ 	    pas->pas_id == 18) {
+-		if (pas->stop_phase == QCOM_PAS_STOP_IDLE)
++		if (pas->stop_phase == QCOM_PAS_STOP_IDLE && !pas->cdsp_start_failed)
+ 			qcom_sysmon_prepare_shutdown(pas->sysmon, rproc->state == RPROC_CRASHED);
+ 		return qcom_pas_halt(pas);
+ 	}
+@@ -593,12 +627,24 @@ static int qcom_pas_stop(struct rproc *rproc)
+ 	/* The remoteproc lock serializes stop retries with load/start/attach. */
+ 	switch (pas->stop_phase) {
+ 	case QCOM_PAS_STOP_RESOURCES:
+-		if (pas->dtb_pas_id)
++		if (pas->dtb_pas_id && (!pas->cdsp || pas->cdsp_dtb_mapped))
+ 			qcom_pas_unmap_carveout(rproc, pas->dtb_mem_phys, pas->dtb_mem_size);
+-		qcom_pas_unmap_carveout(rproc, pas->mem_phys, pas->mem_size);
+-		handover = qcom_q6v5_unprepare(&pas->q6v5);
+-		if (handover)
+-			qcom_pas_handover(&pas->q6v5);
++		if (!pas->cdsp || pas->cdsp_main_mapped)
++			qcom_pas_unmap_carveout(rproc, pas->mem_phys, pas->mem_size);
++		pas->cdsp_main_mapped = false;
++		pas->cdsp_dtb_mapped = false;
++		if (!pas->cdsp || pas->cdsp_prepared) {
++			/* Synchronizes the handover IRQ before touching its clock ledger. */
++			handover = qcom_q6v5_unprepare(&pas->q6v5);
++			pas->cdsp_prepared = false;
++			if (handover)
++				qcom_pas_handover(&pas->q6v5);
++		}
++		if (pas->cdsp) {
++			qcom_pas_metadata_release(pas->pas_ctx);
++			qcom_pas_metadata_release(pas->dtb_pas_ctx);
++			pas->firmware = NULL;
++		}
+ 		pas->stop_phase = QCOM_PAS_STOP_PROXY;
+ 		if (pas->proxy_error)
+ 			return pas->proxy_error;
+@@ -779,6 +825,94 @@ static void qcom_pas_coredump(struct rproc *rproc)
+ 	pas->mem_region = NULL;
+ }
+ 
++/*
++ * Every failure is unwound by the core's stop transaction, including failures
++ * before authentication. Never release the DTB, mappings or power while SCM
++ * may still own either image. A failed authentication attempt is conservative:
++ * a refused shutdown retains ownership until retry or reboot.
++ */
++static int qcom_cliffs_cdsp_start_inner(struct rproc *rproc)
++{
++	struct qcom_pas *pas = rproc->priv;
++	int ret;
++
++	if (!qcom_pas_boot_allowed(pas))
++		return -EBUSY;
++	pas->stop_phase = QCOM_PAS_STOP_IDLE;
++	pas->cdsp_start_failed = true;
++
++	ret = qcom_q6v5_prepare(&pas->q6v5);
++	if (ret)
++		return ret;
++	pas->cdsp_prepared = true;
++	ret = qcom_pas_proxy_enable(pas);
++	if (ret)
++		return ret;
++	ret = clk_prepare_enable(pas->xo);
++	if (ret)
++		return ret;
++	pas->cdsp_xo_enabled = true;
++	ret = clk_prepare_enable(pas->aggre2_clk);
++	if (ret)
++		return ret;
++	pas->cdsp_aggre2_enabled = true;
++
++	ret = qcom_pas_map_carveout(rproc, pas->dtb_mem_phys, pas->dtb_mem_size);
++	if (ret)
++		return ret;
++	pas->cdsp_dtb_mapped = true;
++	pas->cdsp_dtb_live = true;
++	ret = qcom_pas_prepare_and_auth_reset(pas->dtb_pas_ctx);
++	if (ret)
++		return ret;
++
++	ret = qcom_mdt_pas_load(pas->pas_ctx, pas->firmware, rproc->firmware,
++				&pas->mem_reloc);
++	if (ret)
++		return ret;
++	qcom_pil_info_store(pas->info_name, pas->mem_phys, pas->mem_size);
++	ret = qcom_pas_map_carveout(rproc, pas->mem_phys, pas->mem_size);
++	if (ret)
++		return ret;
++	pas->cdsp_main_mapped = true;
++	pas->cdsp_primary_live = true;
++	ret = qcom_pas_prepare_and_auth_reset(pas->pas_ctx);
++	if (ret)
++		return ret;
++	ret = qcom_q6v5_wait_for_start(&pas->q6v5, msecs_to_jiffies(5000));
++	if (ret)
++		return ret;
++
++	qcom_pas_metadata_release(pas->pas_ctx);
++	qcom_pas_metadata_release(pas->dtb_pas_ctx);
++	pas->firmware = NULL;
++	pas->cdsp_start_failed = false;
++	return 0;
++}
++
++static int qcom_cliffs_cdsp_start(struct rproc *rproc)
++{
++	struct qcom_pas *pas = rproc->priv;
++	int ret = qcom_cliffs_cdsp_start_inner(rproc);
++
++	/* The core releases this borrowed request_firmware reference on return. */
++	pas->firmware = NULL;
++	return ret;
++}
++
++static const struct rproc_ops qcom_cliffs_cdsp_ops = {
++	.start_failure_needs_stop = true,
++	.unprepare = qcom_pas_unprepare,
++	.start = qcom_cliffs_cdsp_start,
++	.stop = qcom_pas_stop,
++	.prepare_stop = qcom_pas_prepare_stop,
++	.da_to_va = qcom_pas_da_to_va,
++	.parse_fw = qcom_pas_parse_firmware,
++	.load = qcom_pas_load,
++	.panic = qcom_pas_panic,
++	.coredump = qcom_pas_minidump,
++};
++
+ static const struct rproc_ops qcom_pas_ops = {
+ 	.unprepare = qcom_pas_unprepare,
+ 	.start = qcom_pas_start,
+@@ -1025,6 +1159,30 @@ static void qcom_pas_unassign_memory_region(struct qcom_pas *pas)
+ 	}
+ }
+ 
++static int qcom_cliffs_cdsp_memory(struct device *dev)
++{
++	static const u64 base[] = { 0x99900000, 0x9ad00000, 0x82600000 };
++	static const u64 size[] = { 0x01400000, 0x00080000, 0x00100000 };
++	struct device_node *node;
++	struct resource res;
++	int i, ret;
++
++	if (of_count_phandle_with_args(dev->of_node, "memory-region", NULL) != 3)
++		return -EINVAL;
++	for (i = 0; i < ARRAY_SIZE(base); i++) {
++		node = of_parse_phandle(dev->of_node, "memory-region", i);
++		if (!node)
++			return -EINVAL;
++		ret = of_address_to_resource(node, 0, &res);
++		if (!of_property_present(node, "no-map"))
++			ret = -EINVAL;
++		of_node_put(node);
++		if (ret || res.start != base[i] || resource_size(&res) != size[i])
++			return dev_err_probe(dev, -EINVAL, "Unexpected Uke CDSP memory region %d\n", i);
++	}
++	return 0;
++}
++
+ static int qcom_pas_probe(struct platform_device *pdev)
+ {
+ 	const struct qcom_pas_data *desc;
+@@ -1035,6 +1193,12 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 	const struct rproc_ops *ops = &qcom_pas_ops;
+ 	int ret;
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "qcom,cliffs-cdsp-pas")) {
++		ret = qcom_cliffs_cdsp_memory(&pdev->dev);
++		if (ret)
++			return ret;
++	}
++
+ 	desc = of_device_get_match_data(&pdev->dev);
+ 	if (!desc)
+ 		return -EINVAL;
+@@ -1059,6 +1223,8 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 	if (desc->minidump_id)
+ 		ops = &qcom_pas_minidump_ops;
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "qcom,cliffs-cdsp-pas"))
++		ops = &qcom_cliffs_cdsp_ops;
+ 	rproc = devm_rproc_alloc(&pdev->dev, desc->sysmon_name, ops, fw_name, sizeof(*pas));
+ 
+ 	if (!rproc) {
+@@ -1068,11 +1234,13 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 
+ 	rproc->has_iommu = of_property_present(pdev->dev.of_node, "iommus");
+ 	rproc->auto_boot = desc->auto_boot;
+-	rproc_coredump_set_elf_info(rproc, ELFCLASS32, EM_NONE);
++	rproc_coredump_set_elf_info(rproc, ops == &qcom_cliffs_cdsp_ops ?
++				    ELFCLASS64 : ELFCLASS32, EM_NONE);
+ 
+ 	pas = rproc->priv;
+ 	pas->dev = &pdev->dev;
+ 	pas->rproc = rproc;
++	pas->cdsp = ops == &qcom_cliffs_cdsp_ops;
+ 	pas->proxy_regulator_level = desc->proxy_regulator_level;
+ 	pas->proxy_regulator_count = desc->proxy_regulator_count ?: 2;
+ 	pas->proxy_regulator_load = desc->proxy_regulator_load;
+@@ -1154,6 +1322,15 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 	pas->bam_dmux = of_platform_device_create(node, NULL, &pdev->dev);
+ 	of_node_put(node);
+ 
++	/*
++	 * This boot-FDT device is permanent. A void platform remove cannot
++	 * refuse devres teardown after a refused secure stop. Its dedicated
++	 * driver has no unbind attributes; retain its module until reboot too.
++	 * No other PAS device changes its unload policy.
++	 */
++	if (pas->cdsp && THIS_MODULE)
++		__module_get(THIS_MODULE);
++
+ 	return 0;
+ 
+ remove_ssr_sysmon:
+@@ -1844,6 +2021,28 @@ static const struct qcom_pas_data sm8550_mpss_resource = {
+ 	.region_assign_vmid = QCOM_SCM_VMID_MSS_MSA,
+ };
+ 
++static const struct qcom_pas_data cliffs_cdsp_resource = {
++	.crash_reason_smem = 601,
++	.firmware_name = "qcom/uke/cdsp/cdsp.mdt",
++	.dtb_firmware_name = "qcom/uke/cdsp/cdsp_dtb.mdt",
++	.pas_id = 18,
++	.dtb_pas_id = 0x25,
++	.minidump_id = 7,
++	.auto_boot = false,
++	.proxy_regulator_level = RPMH_REGULATOR_LEVEL_TURBO,
++	.proxy_regulator_count = 3,
++	.proxy_regulator_load = 100000,
++	.load_state = "cdsp",
++	.ssr_name = "cdsp",
++	.sysmon_name = "cdsp",
++	.ssctl_id = 0x17,
++	.smem_host_id = 5,
++	.region_assign_idx = 2,
++	.region_assign_count = 1,
++	.region_assign_shared = true,
++	.region_assign_vmid = QCOM_SCM_VMID_CDSP,
++};
++
+ static const struct qcom_pas_data cliffs_adsp_resource = {
+ 	.crash_reason_smem = 423,
+ 	.firmware_name = "adsp.mdt",
+@@ -2168,6 +2367,35 @@ static struct platform_driver qcom_pas_driver = {
+ 	},
+ };
+ 
+-module_platform_driver(qcom_pas_driver);
++static const struct of_device_id qcom_cliffs_cdsp_match[] = {
++	{ .compatible = "qcom,cliffs-cdsp-pas", .data = &cliffs_cdsp_resource },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, qcom_cliffs_cdsp_match);
++
++static struct platform_driver qcom_cliffs_cdsp_driver = {
++	.probe = qcom_pas_probe,
++	.driver = {
++		.name = "qcom_cliffs_cdsp_pas",
++		.of_match_table = qcom_cliffs_cdsp_match,
++		.suppress_bind_attrs = true,
++	},
++};
++
++static struct platform_driver * const qcom_pas_drivers[] = {
++	&qcom_pas_driver, &qcom_cliffs_cdsp_driver,
++};
++
++static int __init qcom_pas_init(void)
++{
++	return platform_register_drivers(qcom_pas_drivers, ARRAY_SIZE(qcom_pas_drivers));
++}
++module_init(qcom_pas_init);
++
++static void __exit qcom_pas_exit(void)
++{
++	platform_unregister_drivers(qcom_pas_drivers, ARRAY_SIZE(qcom_pas_drivers));
++}
++module_exit(qcom_pas_exit);
+ MODULE_DESCRIPTION("Qualcomm Peripheral Authentication Service remoteproc driver");
+ MODULE_LICENSE("GPL v2");
+diff --git a/drivers/remoteproc/remoteproc_core.c b/drivers/remoteproc/remoteproc_core.c
+index 0cbc46c..bdcb51e 100644
+--- a/drivers/remoteproc/remoteproc_core.c
++++ b/drivers/remoteproc/remoteproc_core.c
+@@ -1313,6 +1313,8 @@ static int rproc_start(struct rproc *rproc, const struct firmware *fw)
+ 	ret = rproc->ops->start(rproc);
+ 	if (ret) {
+ 		dev_err(dev, "can't start rproc %s: %d\n", rproc->name, ret);
++		if (rproc->ops->start_failure_needs_stop)
++			goto stop_rproc;
+ 		goto unprepare_subdevices;
+ 	}
+ 
+diff --git a/include/linux/remoteproc.h b/include/linux/remoteproc.h
+index 010748e..302d77d 100644
+--- a/include/linux/remoteproc.h
++++ b/include/linux/remoteproc.h
+@@ -92,6 +92,8 @@ enum rsc_handling_status {
+  *                clients and resources. Must tolerate retries after partial stop.
+  */
+ struct rproc_ops {
++	/* start() errors retain driver resources; core must call stop(). */
++	bool start_failure_needs_stop;
+ 	int (*prepare)(struct rproc *rproc);
+ 	int (*unprepare)(struct rproc *rproc);
+ 	int (*start)(struct rproc *rproc);
