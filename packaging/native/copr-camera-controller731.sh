@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1702}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1702 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1703}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1703 ]]
 bash "$owner/packaging/native/copr-camera-camss731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -22,6 +22,7 @@ cmp "$boot/lock.json" "$output/boot-payload.json"
 test -f "$profile/src/boot/uke-abl.c"
 overlays=(src/camera/provider/0005-clk-qcom-build-native-sm7675.patch
  src/camera/provider/uke-camcc-dt.h src/camera/provider/camcc-abl-hook.patch
+ src/camera/provider/camcc-scope-hook.patch
  src/camera/provider/camcc-prepare-hook.patch src/camera/prepare-controller731.sh
  tests/camcc-controller-fdt731-contract.sh tests/fixtures/camcc-controller-fdt-check.c
  tests/camcc-controller-linked731-check.sh src/camera/provider/CONTROLLER731.md)
@@ -47,12 +48,14 @@ for tree in "$profile" "$boot"; do
  ! grep -Fq 'sha256sum "$here/uke-camcc-dt.h"' "$tree/src/boot/prepare-abl-source.sh"
  printf '\n%s\n' 'sha256sum "$here/uke-camcc-dt.h" >> "$output/abl-source-SHA256SUMS"' >> "$tree/src/boot/prepare-abl-source.sh"
  bash -n "$tree/src/boot/prepare-abl-source.sh"
+ git -C "$tree" apply --check "$owner/src/camera/provider/camcc-scope-hook.patch"
+ git -C "$tree" apply "$owner/src/camera/provider/camcc-scope-hook.patch"
 done
 cmp "$profile/native.config" "$boot/packaging/native/native.config"
 ! grep -q '^CONFIG_SM_CAMCC_7675=' "$profile/native.config"
 printf '\nCONFIG_SM_CAMCC_7675=y\n' >> "$profile/native.config"
 cp "$profile/native.config" "$boot/packaging/native/native.config"
-for path in src/boot/uke-camcc-dt.h src/boot/prepare-abl-source.sh src/boot/uke-abl.c packaging/native/native.config; do
+for path in src/boot/uke-camcc-dt.h src/boot/prepare-abl-source.sh src/boot/uke-abl.c packaging/native/native.config tests/uke-build-scope-contract.sh; do
  test -f "$boot/$path" || continue
  digest=$(sha256sum "$boot/$path"); digest=${digest%% *}
  jq --arg path "$path" --arg digest "$digest" \

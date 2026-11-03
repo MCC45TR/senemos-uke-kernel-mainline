@@ -211,16 +211,9 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	if (ret < 0)
 		return cam_cc_native_quarantine(dev, ret);
 	cam_cc_native.probe_pm_held = true;
-	/* CRM owns PLL/RCG/CBC programming when firmware leaves it enabled. */
-	ret = cam_cc_crm_guard_admit();
-	if (ret)
-		return cam_cc_native_quarantine(dev, ret);
-	ret = cam_cc_native_handoff_init();
-	if (ret)
-		return cam_cc_native_quarantine(dev, ret);
-	ret = cam_cc_native_plls_configure();
-	if (ret)
-		return cam_cc_native_quarantine(dev, ret);
+	/* OEM always-on transport gates precede any CRM register access. These
+	 * gates are not the CRM-managed PLL/RCG/branch tree being admitted below.
+	 */
 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_critical_cbcrs); i++) {
 		u32 value;
 
@@ -232,6 +225,15 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 		if (ret)
 			return cam_cc_native_quarantine(dev, ret);
 	}
+	ret = cam_cc_crm_guard_admit();
+	if (ret)
+		return cam_cc_native_quarantine(dev, ret);
+	ret = cam_cc_native_handoff_init();
+	if (ret)
+		return cam_cc_native_quarantine(dev, ret);
+	ret = cam_cc_native_plls_configure();
+	if (ret)
+		return cam_cc_native_quarantine(dev, ret);
 	ret = cam_cc_owner_begin_publication();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);

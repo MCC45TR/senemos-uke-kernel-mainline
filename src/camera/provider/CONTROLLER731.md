@@ -14,8 +14,9 @@ consumers stay disabled while their native graph is implemented. The RSC/CRM
 requests for clock71 cannot be satisfied by the current native catalog. Node
 disabling changes the Linux graph; it does not stop firmware hardware.
 
-The controller probe therefore independently reads CRM mode while powered,
-before programming PLL/RCG/CBC registers. Enabled CRM refuses the direct path
+The controller probe first enables and checks the four OEM always-on transport
+gates. It checks the DRV_AHB gate at0x13318 before reading CRM mode while powered,
+then admits the CRM-managed PLL/RCG/branch tree. Enabled CRM refuses the direct path
 and retains resources in quarantine. A real active-CRM result requires the
 matched vote/LUT/IRQ implementation before capture can proceed. Disabled CRM,
 supplier admission and successful clock publication still need device evidence.

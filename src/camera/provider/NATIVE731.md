@@ -60,8 +60,10 @@ the new compatible remains absent from the current DT until that work passes.
 
 The direct-programming candidate now requires an exclusive, named `crm` MMIO
 resource at the exact Uke base0xadd7000/size0x2000. After the initial voltage
-votes and interface/runtime-PM reference, it reads CRM_ENABLE at0xc before any
-PLL/RCG/CBC programming or provider publication. Only zero admits the direct
+votes and interface/runtime-PM reference, it enables/checks the four exact OEM
+always-on transport gates. The guard verifies DRV_AHB at0x13318, then reads
+CRM_ENABLE at0xc before CRM-managed PLL/RCG/branch programming or publication.
+Only zero admits the direct
 path. Any nonzero mode is refused, retaining the controller resources in the
 existing bound fault state. Cached read-only `crm_mode` reports that observation
 without accessing an unpowered register. The guard never writes CRM or a LUT.

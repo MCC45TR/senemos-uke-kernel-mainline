@@ -11,6 +11,7 @@
 #define CAM_CC_CRM_START 0x0add7000
 #define CAM_CC_CRM_SIZE 0x2000
 #define CAM_CC_CRM_ENABLE 0xc
+#define CAM_CC_CRM_AHB_GATE 0x13318
 
 static struct {
 	void __iomem *base;
@@ -43,13 +44,19 @@ static int cam_cc_crm_guard_map(struct platform_device *pdev)
 /* Call only with the controller's rails, iface and runtime-PM reference held. */
 static int cam_cc_crm_guard_admit(void)
 {
+	unsigned int gate;
 	int ret;
 
-	if (!cam_cc_crm_guard.owned || !cam_cc_crm_guard.base)
+	if (!cam_cc_crm_guard.owned || !cam_cc_crm_guard.base || !cam_cc_power.map)
 		return -ENODEV;
 	ret = cam_cc_power_access(&cam_cc_power, 0);
 	if (ret)
 		return ret;
+	ret = regmap_read(cam_cc_power.map, CAM_CC_CRM_AHB_GATE, &gate);
+	if (ret)
+		return ret;
+	if (!(gate & BIT(0)))
+		return -EHOSTDOWN;
 	cam_cc_crm_guard.firmware_enabled =
 		readl(cam_cc_crm_guard.base + CAM_CC_CRM_ENABLE) != 0;
 	cam_cc_crm_guard.checked = true;

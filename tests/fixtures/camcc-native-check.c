@@ -217,6 +217,8 @@ static int cam_cc_crm_guard_admit(void)
 {
 	assert(crm_mapping && model_device.dev.active && model_device.dev.usage > 0);
 	assert(!configured_plls && !registered_clocks && !reset_published);
+	for (unsigned int i = 0; i < ARRAY_SIZE(cam_cc_sm7675_critical_cbcrs); i++)
+		assert(model_map.words[cam_cc_sm7675_critical_cbcrs[i] / 4] & BIT(0));
 	int ret = step(); if (ret) return ret;
 	return crm_active ? -EOPNOTSUPP : 0;
 }
@@ -419,7 +421,7 @@ static void probe_failures(void)
 	assert(!configured_plls && !registered_clocks && !reset_published && !domain_published && !clock_published);
 	assert(!cam_cc_native.ready);
 	int before_sync = steps; cam_cc_native_sync_state(&model_device.dev); assert(steps == before_sync);
-	puts("CAMCC native: active CRM refuses direct programming before PLL/RCG/CBC access or provider publication and retains powered resources");
+	puts("CAMCC native: checked always-on transport gates precede CRM reads; active CRM refuses managed clock programming/publication and retains powered resources");
 	defaults(false); busy_at_suspend = true;
 	assert(!cam_cc_native_probe(&model_device));
 	assert(cam_cc_power.fault && cam_cc_power.primary_error == -EBUSY && resources && crm_mapping);
