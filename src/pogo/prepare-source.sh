@@ -9,7 +9,7 @@ cat >> "$kernel/drivers/hid/Kconfig" <<'KCONFIG'
 
 config HID_NANOSIC_UKE
     tristate "POCO Pad X1 Nanosic WN8030 pogo keyboard"
-    depends on I2C && OF && GPIOLIB && REGULATOR && LEDS_CLASS && ARCH_QCOM
+    depends on HID && I2C && OF && GPIOLIB && REGULATOR && LEDS_CLASS && ARCH_QCOM
     select CRYPTO_LIB_SHA256
     help
       Uke-specific WN8030 RAM firmware download, HID keyboard/touchpad,

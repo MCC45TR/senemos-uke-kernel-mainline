@@ -13,8 +13,8 @@ Failed start and partial transport start use the same retryable stop
 transaction. Refused secure shutdown retains mappings, tables, proxy ownership
 and the original remoteproc power reference. New boots are refused during
 pending cleanup. The boot-FDT CDSP instance has a permanent platform driver:
-unbind is suppressed and its PAS module is retained until reboot. Other PAS
-instances keep their existing unload policy.
+unbind is suppressed and the shared PAS module is retained until reboot.
+Other PAS instances keep their existing bind/unbind interfaces.
 
 Firmware names are qcom/uke/cdsp/cdsp.mdt and cdsp_dtb.mdt, with their matching
 split segments. These private OEM files are absent from the candidate source

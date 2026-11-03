@@ -168,6 +168,7 @@ git -C "$kernel" apply --check "$profile/patches/boot/0061-uke-pogo-regulator-re
 git -C "$kernel" apply "$profile/patches/boot/0061-uke-pogo-regulator-resources.patch"
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native-pogo
 bash "$profile/tests/nanosic-protocol-contract.sh"
+bash "$profile/tests/nanosic-lifecycle-contract.sh"
 bash "$profile/tests/cdsp-pogo-fdt-contract.sh"
 bash "$profile/tests/cdsp-smmu-admission-contract.sh" "$kernel/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c"
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"

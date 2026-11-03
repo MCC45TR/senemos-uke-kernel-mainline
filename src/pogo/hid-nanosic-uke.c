@@ -44,7 +44,9 @@ struct uke_nanosic {
 	struct delayed_work rx_work, keepalive_work;
 	struct work_struct policy_work;
 	struct input_handler hall;
-	bool powered, attached, suspended, removing, caps, lid_closed;
+	bool powered, attached, suspended, removing, caps, lid_closed, folded;
+	u8 requested_backlight, auth_phase;
+	bool requested_micmute;
 	bool input_allowed, auth_pending;
 	u32 auth_epoch;
 	unsigned long auth_deadline;
@@ -189,6 +191,7 @@ static void uke_nano_release_inputs(struct uke_nanosic *n)
 static void uke_nano_invalidate_auth(struct uke_nanosic *n)
 {
 	n->auth_pending = false;
+	n->auth_phase = 0;
 	n->auth_epoch++;
 	memzero_explicit(n->uid, sizeof(n->uid));
 	memzero_explicit(n->challenge, sizeof(n->challenge));
@@ -198,7 +201,7 @@ static void uke_nano_invalidate_auth(struct uke_nanosic *n)
 static int uke_nano_restore(struct uke_nanosic *n)
 {
 	int ret;
-	bool enable = n->attached && !READ_ONCE(n->lid_closed);
+	bool enable = n->attached && !READ_ONCE(n->lid_closed) && !READ_ONCE(n->folded);
 
 	if (n->input_allowed && !enable)
 		uke_nano_release_inputs(n);
@@ -209,9 +212,9 @@ static int uke_nano_restore(struct uke_nanosic *n)
 	if (!ret)
 		ret = uke_nano_control(n, 0x2e, enable && n->caps ? 0xfd : 0xfc);
 	if (!ret)
-		ret = uke_nano_control(n, 0x2e, enable && n->micmute.brightness ? 0xf7 : 0xf3);
+		ret = uke_nano_control(n, 0x2e, enable && n->requested_micmute ? 0xf7 : 0xf3);
 	if (!ret)
-		ret = uke_nano_control(n, 0x23, enable ? n->backlight.brightness : 0);
+		ret = uke_nano_control(n, 0x23, enable ? n->requested_backlight : 0);
 	return ret;
 }
 
@@ -266,24 +269,33 @@ static void uke_nano_vendor(struct uke_nanosic *n, const u8 *p, size_t len)
 	case 0x24:
 		if (n->attached) {
 			uke_nano_invalidate_auth(n);
-			uke_nano_cmd(n, 0x4f, 0x31, (const u8 *)"MIAUTH", 6);
+			if (!uke_nano_cmd(n, 0x4f, 0x31, (const u8 *)"MIAUTH", 6)) {
+				n->auth_phase = 1;
+				n->auth_deadline = jiffies + UKE_AUTH_TIMEOUT;
+			}
 		}
 		break;
 	case 0x31:
-		if (!n->attached || len < 24)
+		if (!n->attached || len < 24 || n->auth_phase != 1 ||
+		    time_after_eq(jiffies, n->auth_deadline))
 			break;
 		uke_nano_invalidate_auth(n);
 		memcpy(n->uid, p + 8, 16);
 		get_random_bytes(n->host_challenge, 16);
 		memcpy(payload + 4, n->host_challenge, 16);
-		uke_nano_cmd(n, 0x4f, 0x32, payload, sizeof(payload));
+		if (!uke_nano_cmd(n, 0x4f, 0x32, payload, sizeof(payload))) {
+			n->auth_phase = 2;
+			n->auth_deadline = jiffies + UKE_AUTH_TIMEOUT;
+		}
 		break;
 	case 0x32:
-		if (!n->attached || len < 38)
+		if (!n->attached || len < 38 || n->auth_phase != 2 ||
+		    time_after_eq(jiffies, n->auth_deadline))
 			break;
 		memcpy(n->challenge, p + 22, 16);
 		n->auth_epoch++;
 		n->auth_pending = true;
+		n->auth_phase = 3;
 		n->auth_deadline = jiffies + UKE_AUTH_TIMEOUT;
 		sysfs_notify(&n->client->dev.kobj, NULL, "auth_request");
 		break;
@@ -446,8 +458,11 @@ static int uke_nano_backlight(struct led_classdev *led, enum led_brightness valu
 	mutex_lock(&n->lock);
 	if (n->removing)
 		ret = -ENODEV;
-	else if (!n->suspended && n->input_allowed)
-		ret = uke_nano_control(n, 0x23, value);
+	else {
+		n->requested_backlight = value;
+		if (!n->suspended && n->input_allowed)
+			ret = uke_nano_control(n, 0x23, value);
+	}
 	mutex_unlock(&n->lock);
 	return ret;
 }
@@ -460,8 +475,11 @@ static int uke_nano_micmute(struct led_classdev *led, enum led_brightness value)
 	mutex_lock(&n->lock);
 	if (n->removing)
 		ret = -ENODEV;
-	else if (!n->suspended && n->input_allowed)
-		ret = uke_nano_control(n, 0x2e, value ? 0xf7 : 0xf3);
+	else {
+		n->requested_micmute = !!value;
+		if (!n->suspended && n->input_allowed)
+			ret = uke_nano_control(n, 0x2e, value ? 0xf7 : 0xf3);
+	}
 	mutex_unlock(&n->lock);
 	return ret;
 }
@@ -547,6 +565,9 @@ static void uke_nano_hall_event(struct input_handle *handle, unsigned int type,
 	if (type == EV_SW && code == SW_LID) {
 		WRITE_ONCE(n->lid_closed, !!value);
 		schedule_work(&n->policy_work);
+	} else if (type == EV_SW && code == SW_TABLET_MODE) {
+		WRITE_ONCE(n->folded, !!value);
+		schedule_work(&n->policy_work);
 	}
 }
 
@@ -557,7 +578,8 @@ static int uke_nano_hall_connect(struct input_handler *handler, struct input_dev
 	struct input_handle *handle;
 	int ret;
 
-	if (!dev->name || strcmp(dev->name, "Uke Hall Lid"))
+	if (!dev->name || (strcmp(dev->name, "Uke Hall Lid") &&
+			  strcmp(dev->name, "Uke Hall Tablet Mode")))
 		return -ENODEV;
 	handle = kzalloc(sizeof(*handle), GFP_KERNEL);
 	if (!handle)
@@ -573,7 +595,10 @@ static int uke_nano_hall_connect(struct input_handler *handler, struct input_dev
 		input_unregister_handle(handle);
 		goto free;
 	}
-	WRITE_ONCE(n->lid_closed, test_bit(SW_LID, dev->sw));
+	if (!strcmp(dev->name, "Uke Hall Lid"))
+		WRITE_ONCE(n->lid_closed, test_bit(SW_LID, dev->sw));
+	else
+		WRITE_ONCE(n->folded, test_bit(SW_TABLET_MODE, dev->sw));
 	schedule_work(&n->policy_work);
 	return 0;
 free:
@@ -587,7 +612,10 @@ static void uke_nano_hall_disconnect(struct input_handle *handle)
 
 	input_close_device(handle);
 	input_unregister_handle(handle);
-	WRITE_ONCE(n->lid_closed, false);
+	if (!strcmp(handle->dev->name, "Uke Hall Lid"))
+		WRITE_ONCE(n->lid_closed, false);
+	else
+		WRITE_ONCE(n->folded, false);
 	schedule_work(&n->policy_work);
 	kfree(handle);
 }
@@ -595,6 +623,8 @@ static void uke_nano_hall_disconnect(struct input_handle *handle)
 static const struct input_device_id uke_nano_hall_ids[] = {
 	{ .flags = INPUT_DEVICE_ID_MATCH_EVBIT | INPUT_DEVICE_ID_MATCH_SWBIT,
 	  .evbit = { BIT_MASK(EV_SW) }, .swbit = { BIT_MASK(SW_LID) } },
+	{ .flags = INPUT_DEVICE_ID_MATCH_EVBIT | INPUT_DEVICE_ID_MATCH_SWBIT,
+	  .evbit = { BIT_MASK(EV_SW) }, .swbit = { BIT_MASK(SW_TABLET_MODE) } },
 	{ }
 };
 

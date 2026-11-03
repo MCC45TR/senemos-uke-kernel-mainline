@@ -45,10 +45,13 @@ done
 bash "$owner/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 for compiler in gcc clang; do
     CC=$compiler CFLAGS= bash "$owner/tests/nanosic-protocol-contract.sh"
+    CC=$compiler CFLAGS= bash "$owner/tests/nanosic-lifecycle-contract.sh"
     CC=$compiler CFLAGS= bash "$owner/tests/cdsp-pogo-fdt-contract.sh"
 done
 CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/nanosic-protocol-contract.sh"
+CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
+    bash "$owner/tests/nanosic-lifecycle-contract.sh"
 CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/cdsp-pogo-fdt-contract.sh"
 mkdir "$stage/objects"
