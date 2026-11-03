@@ -108,6 +108,6 @@ int main(void) {
     puts("PASS: actual auth phases/epochs/expiry, stale-token rejection, cached outputs, lid/fold and detach/remove boundaries; COPR only");
 }
 C
-"${CC:-cc}" -std=gnu11 -O1 -Wall -Wextra -Werror -Wno-sign-compare ${CFLAGS:-} \
+"${CC:-cc}" -std=gnu11 -O1 -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter ${CFLAGS:-} \
     "$work/check.c" -o "$work/check"
 "$work/check"
