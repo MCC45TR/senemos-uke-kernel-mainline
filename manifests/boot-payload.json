@@ -29,7 +29,7 @@
     },
     {
       "path": "packaging/native/native.config",
-      "sha256": "831ede0562eba19ad8713dfbbad39442d0a4aac65332ddfbc68e74402ced1343"
+      "sha256": "9177a9b9c8e5b996af4c831a8241ba27963eb1bac0627e2c5d7f253f6570a89c"
     },
     {
       "path": "packaging/native/prepare.sh",
