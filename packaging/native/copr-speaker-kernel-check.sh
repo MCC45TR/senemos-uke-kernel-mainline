@@ -31,6 +31,9 @@ bash "$owner/src/audio/prepare-speaker-formats.sh" "$kernel"
 CC=clang bash "$owner/tests/audio-pcm-formats-contract.sh" "$kernel"
 CC=gcc bash "$owner/tests/audio-pcm-formats-contract.sh" "$kernel"
 bash "$owner/tests/microphone-audio-topology-contract.sh"
+for fixture in audio-fs19xx-contract audio-fs19xx-lifecycle-contract audio-graph-lifetime-contract audio-readiness-contract audio-probe-contract audio-port-lifetime-contract; do
+ CC=clang CXX=clang++ bash "$owner/tests/$fixture.sh" "$kernel"
+done
 CC=clang bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
 CC=gcc bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
 mkdir -p "$stage/objects"
@@ -52,7 +55,7 @@ tar -czf "$output/uke-speaker-kernel-check-0.1.tar.gz" -C "$stage/receipt" .
 cat > "$output/uke-speaker-kernel-check.spec" <<'SPEC'
 Name: uke-speaker-kernel-check
 Version: 0.1
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: Source receipt for the Uke protected speaker kernel objects
 License: GPL-2.0-only
 BuildArch: noarch

@@ -100,9 +100,14 @@ static struct snd_soc_component *snd_kcontrol_chip(struct snd_kcontrol *c) { ret
 static struct fs19xx_priv *snd_soc_component_get_drvdata(struct snd_soc_component *c) { return c->data; }
 C
 sed -n '/^static const char \* const fs19xx_rotation_text\[\]/p' "$source_file" >> "$work/check.c"
+health=()
+if grep -q '^static int fs19xx_check_health' "$source_file"; then
+ printf '#define HAVE_HEALTH 1\n' >> "$work/check.c"
+ health=(fs19xx_check_health fs19xx_unmute_output)
+fi
 for fn in fs19xx_read_stable fs19xx_apply_unit fs19xx_write_tables fs19xx_reset_chip \
           fs19xx_chip_init fs19xx_set_volume_reg fs19xx_set_rotation_reg fs19xx_chip_start fs19xx_chip_stop \
-          fs19xx_unmute_work fs19xx_power_on fs19xx_power_off fs19xx_dai_startup \
+          "${health[@]}" fs19xx_unmute_work fs19xx_power_on fs19xx_power_off fs19xx_dai_startup \
           fs19xx_dai_mute fs19xx_dai_shutdown fs19xx_volume_get fs19xx_volume_put \
           fs19xx_enable_get fs19xx_enable_put fs19xx_rotation_get fs19xx_rotation_put \
           fs19xx_suspend fs19xx_resume fs19xx_detect fs19xx_i2c_remove; do
@@ -184,7 +189,11 @@ int main(void) {
     assert(sleeps-sleep_before==10);
     assert(enabled(1)==1 && amp.powered); /* same active stream resumes */
     regs.reg[FS19XX_REG_STATUS]=FS19XX_STATUS_PLLS; poll();
+    #ifdef HAVE_HEALTH
+    assert(amp.powered && amp.unmuted && amp.unmute_work.pending);
+#else
     assert(amp.powered && !amp.unmute_work.pending);
+#endif
     assert(regs.reg[FS19XX_REG_DACCTRL]==FS19XX_DACCTRL_RUN);
     assert(regs.reg[FS19XX_REG_TSCTRL]&FS19XX_TSCTRL_TSEN);
     fs19xx_dai_shutdown(NULL,&dai); stopped();
@@ -218,7 +227,12 @@ int main(void) {
     assert(volume(-1)==-EINVAL && volume(FS19XX_VOL_MAX+1)==-EINVAL);
     start(); regs.fail_write=FS19XX_REG_VOLCTRL;
     assert(volume(0x80)==-EIO && amp.volume==FS19XX_VOL_DEFAULT);
-    regs.fail_write=-1; assert(volume(0x80)==1);
+    regs.fail_write=-1;
+#ifdef HAVE_HEALTH
+    stopped(); assert(volume(0x80)==1); assert(enabled(1)==1 && amp.powered);
+#else
+    assert(volume(0x80)==1);
+#endif
     assert(regs.reg[FS19XX_REG_VOLCTRL]==0x80c0 && amp.volume==0x80);
     fs19xx_volume_get(&control,&value); assert(value.value.integer.value[0]==0x80);
     assert(enabled(-1)==-EINVAL && enabled(2)==-EINVAL);
@@ -263,7 +277,7 @@ int main(void) {
     puts("FS19xx real lifecycle: clock/thermal faults, retry, switch, shutdown, suspend and remove passed; host only");
 }
 C
-flags=(-O1 -g -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter)
+flags=(-include "$root/tests/fixtures/audio-protection-mock.h" -O1 -g -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter)
 cc=${CC:-clang}
 if ! "$cc" "${flags[@]}" -fsanitize=address,undefined -fno-sanitize-recover=undefined \
     "$work/check.c" -o "$work/check" 2>"$work/compile.log"; then

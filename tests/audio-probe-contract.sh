@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Exercise actual topology and amplifier probe callbacks with host-only inputs.
 set -Eeuo pipefail
+root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 kernel=${1:?Pass prepared kernel tree}
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
@@ -15,7 +16,7 @@ cat > "$work/check.c" <<'C'
 #define GFP_KERNEL 0
 #define GPIOD_OUT_HIGH 1
 #define FS19XX_VOL_DEFAULT 0xdf
-struct device { int unused; };
+struct device { void *of_node; };
 struct snd_soc_component { int unused; };
 struct snd_soc_tplg_vendor_array { int unused; };
 struct snd_soc_tplg_dapm_widget { int priv; };
@@ -49,13 +50,18 @@ extract audioreach_widget_load_buffer "$kernel/sound/soc/qcom/qdsp6/topology.c"
 cat >> "$work/check.c" <<'C'
 struct mutex { int unused; };
 struct delayed_work { int unused; };
-struct i2c_client { struct device dev; void *data; };
+struct i2c_client { struct device dev; void *data; unsigned addr; };
 struct fs19xx_priv {
     struct i2c_client *i2c; struct device *dev; unsigned volume, position;
     struct mutex lock; struct delayed_work unmute_work;
+    bool require_protection; struct notifier_block protection_listener;
     void *regmap, *gpio_reset, *preset;
 };
 static struct fs19xx_priv storage;
+static bool UKE_FIXTURE_UNUSED of_property_read_bool(void *node, const char *name) { (void)node;(void)name;return false; }
+static int UKE_FIXTURE_UNUSED fs19xx_protection_event(struct notifier_block *n,unsigned long mode,void *p) { (void)n;(void)mode;(void)p;return 0; }
+static void UKE_FIXTURE_UNUSED fs19xx_unregister_protection(void *p) { (void)p; }
+static int UKE_FIXTURE_UNUSED devm_add_action_or_reset(struct device *d,void (*action)(void *),void *p) { (void)d;(void)action;(void)p;return 0; }
 static unsigned registrations, presets;
 static int detect_error;
 static const int fs19xx_regmap_config, fs19xx_component, fs19xx_dai;
@@ -106,6 +112,6 @@ int main(void) {
     puts("Actual shared-memory topology admission and transient amplifier probe deferral passed; host only");
 }
 C
-"${CC:-cc}" -std=gnu11 -Wall -Wextra -Werror -fsanitize=undefined \
+"${CC:-cc}" -include "$root/tests/fixtures/audio-protection-mock.h" -std=gnu11 -Wall -Wextra -Werror -fsanitize=undefined \
     -fsanitize-undefined-trap-on-error "$work/check.c" -o "$work/check"
 "$work/check"

@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
 }
 C
 # Prefer the full sanitizers; hosts without the compiler-rt runtime still get trapping UBSan.
-flags=(-O1 -g -Wall -Wno-unused-function -Wno-unused-parameter)
+flags=(-include "$root/tests/fixtures/audio-protection-mock.h" -O1 -g -Wall -Wno-unused-function -Wno-unused-parameter)
 if ! ${CC:-clang} "${flags[@]}" -fsanitize=address,undefined -fno-sanitize-recover=undefined \
         -o "$work/check" "$work/check.c" 2>/dev/null; then
     ${CC:-clang} "${flags[@]}" -fsanitize=undefined -fsanitize-trap=all -o "$work/check" "$work/check.c"

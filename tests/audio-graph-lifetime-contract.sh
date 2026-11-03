@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Execute actual graph get/put and failed-open cleanup with synthetic firmware.
 set -euo pipefail
+root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 kernel=${1:?Pass prepared kernel tree}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
@@ -57,10 +58,18 @@ awk '/^static struct audioreach_graph \*q6apm_get_audioreach_graph\(/ {emit=1}
  /^static void q6apm_(put_audioreach_graph|purge_failed_graphs)\(/ {emit=1}
  /^static void q6apm_purge_failed_graphs\(/ {print "#define HAVE_PURGE 1"}
  emit {print} emit && /^}/ {emit=0}' "$source" >> "$work/check.c"
+if grep -Fq 'q6apm_fs19xx_claim(graph)' "$source"; then
+ printf '#define HAVE_PROTECTION_CLAIM 1\n' >> "$work/check.c"
+fi
 cat >> "$work/check.c" <<'C'
 int main(void){
  (void)acquire_mutex;(void)cleanup_mutex;(void)kref_get;(void)kref_get_unless_zero;
  struct q6apm apm={0};struct audioreach_graph_info info={0};apm.graph_info_idr.slots[3]=&info;
+#ifdef HAVE_PROTECTION_CLAIM
+ legacy_claim_error=-EACCES;
+ assert(PTR_ERR(q6apm_get_audioreach_graph(&apm,3))==-EACCES && !allocations);
+ legacy_claim_error=0;
+#endif
  send_error=-ETIMEDOUT;struct audioreach_graph *g=q6apm_get_audioreach_graph(&apm,3);
  if(!IS_ERR(g))fprintf(stderr,"Failed firmware graph open returned a live graph\n");
  assert(IS_ERR(g) && PTR_ERR(g)==-ETIMEDOUT && !apm.lock.held && !apm.cmd_lock.held);
@@ -84,6 +93,6 @@ int main(void){
  assert(!apm.lock.held && !apm.cmd_lock.held);
 }
 C
-${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
+${CC:-cc} -include "$root/tests/fixtures/audio-protection-mock.h" -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.c" -o "$work/check"
 "$work/check"
 printf 'APM actual-source graph open errors, poisoned retry, zero-ref lookup and cleanup fixtures passed.\n'

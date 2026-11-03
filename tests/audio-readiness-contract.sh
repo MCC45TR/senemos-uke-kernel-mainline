@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Host fault fixture for functions extracted from the prepared kernel.
 set -euo pipefail
+root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 kernel=${1:?Pass prepared kernel tree}
 work=$(mktemp -d)
 trap 'rm -r -- "$work"' EXIT
@@ -126,6 +127,6 @@ int main(){
  apm_remove(&first);assert(!g_apm&&!q6apm_is_adsp_ready()&&!first.svc.callback&&static_cast<q6apm*>(first.dev.data)->removing);
 }
 CPP
-${CXX:-c++} -std=c++20 -Wall -Wextra -Werror -Wno-sign-compare -include initializer_list -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.cpp" -o "$work/check"
+${CXX:-c++} -include "$root/tests/fixtures/audio-protection-mock.h" -std=c++20 -Wall -Wextra -Werror -Wno-sign-compare -include initializer_list -fsanitize=address,undefined -fno-omit-frame-pointer "$work/check.cpp" -o "$work/check"
 "$work/check"
 printf 'APM actual-source readiness, basic errors/ACK, stale/truncated replies, probe and removal fixtures passed.\n'
