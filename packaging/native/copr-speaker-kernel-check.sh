@@ -31,9 +31,14 @@ bash "$owner/src/audio/prepare-speaker-formats.sh" "$kernel"
 CC=clang bash "$owner/tests/audio-pcm-formats-contract.sh" "$kernel"
 CC=gcc bash "$owner/tests/audio-pcm-formats-contract.sh" "$kernel"
 bash "$owner/tests/microphone-audio-topology-contract.sh"
+fixture_failures=0
 for fixture in audio-fs19xx-contract audio-fs19xx-lifecycle-contract audio-graph-lifetime-contract audio-readiness-contract audio-probe-contract audio-port-lifetime-contract; do
- CC=clang CXX=clang++ bash "$owner/tests/$fixture.sh" "$kernel"
+ if ! CC=clang CXX=clang++ bash "$owner/tests/$fixture.sh" "$kernel"; then
+  printf 'Audio compatibility fixture failed: %s\n' "$fixture" >&2
+  fixture_failures=1
+ fi
 done
+[[ $fixture_failures == 0 ]]
 CC=clang bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
 CC=gcc bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
 mkdir -p "$stage/objects"

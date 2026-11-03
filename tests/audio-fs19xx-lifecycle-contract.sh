@@ -229,7 +229,9 @@ int main(void) {
     assert(volume(0x80)==-EIO && amp.volume==FS19XX_VOL_DEFAULT);
     regs.fail_write=-1;
 #ifdef HAVE_HEALTH
-    stopped(); assert(volume(0x80)==1); assert(enabled(1)==1 && amp.powered);
+    stopped(); assert(volume(0x80)==1);
+    assert(enabled(1)==0); stopped();
+    assert(enabled(0)==1); assert(enabled(1)==1 && amp.powered);
 #else
     assert(volume(0x80)==1);
 #endif

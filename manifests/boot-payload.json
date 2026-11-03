@@ -665,7 +665,7 @@
     },
     {
       "path": "tests/audio-fs19xx-lifecycle-contract.sh",
-      "sha256": "25664d03bba666ae1a17d96ebbe8cf4f218d94bdced78536ca1178bbf9c64627"
+      "sha256": "fa36bbebfbfc0386d60c7f211d69d9e72e6bf04aca2b68c4f8b03513672064ef"
     },
     {
       "path": "tests/audio-graph-response-contract.sh",
