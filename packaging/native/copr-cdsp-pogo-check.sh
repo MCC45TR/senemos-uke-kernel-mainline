@@ -14,6 +14,8 @@ printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de2
 tar -xJf "$stage/linux.tar.xz" -C "$stage"
 kernel=$stage/linux-7.3.1
 git -C "$kernel" init -q
+git -C "$kernel" apply --include=include/dt-bindings/regulator/qcom,rpmh-regulator-levels.h \
+    "$owner/patches/7.3.0/0002-uke-rpmh-regulators.patch"
 for patch in "$owner/patches/7.3.0/0014-cliffs-wpss-proxy-regulators.patch" \
     "$owner/patches/7.3.0/0020-cliffs-adsp-pas.patch" \
     "$owner/patches/boot/0026-cliffs-proxy-and-pas-stop-ownership.patch" \
@@ -25,6 +27,15 @@ for patch in "$owner/patches/7.3.0/0014-cliffs-wpss-proxy-regulators.patch" \
     git -C "$kernel" apply "$patch"
 done
 bash "$owner/src/pogo/prepare-source.sh" "$kernel"
+for patch in 0005-uke-smmu-handoff.patch 0010-uke-ufs-dma-power-admission.patch \
+    0015-uke-wlan-supplies-and-dma.patch 0023-uke-qup1-backlight-bus.patch \
+    0036-uke-adreno732-render.patch 0113-uke-display-boot-observations.patch; do
+    git -C "$kernel" apply --include=drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c \
+        "$owner/patches/7.3.0/$patch"
+done
+git -C "$kernel" apply "$owner/patches/boot/0002-uke-sensor-context-banks.patch"
+git -C "$kernel" apply "$owner/patches/boot/0062-uke-cdsp-context-admission.patch"
+bash "$owner/tests/cdsp-smmu-admission-contract.sh" "$kernel/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c"
 for compiler in g++ clang++; do
     CXX=$compiler bash "$owner/tests/cdsp-start-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
     CXX=$compiler bash "$owner/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
@@ -34,9 +45,12 @@ done
 bash "$owner/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 for compiler in gcc clang; do
     CC=$compiler CFLAGS= bash "$owner/tests/nanosic-protocol-contract.sh"
+    CC=$compiler CFLAGS= bash "$owner/tests/cdsp-pogo-fdt-contract.sh"
 done
 CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/nanosic-protocol-contract.sh"
+CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
+    bash "$owner/tests/cdsp-pogo-fdt-contract.sh"
 mkdir "$stage/objects"
 cp "$owner/packaging/native/native.config" "$stage/objects/.config"
 cat "$owner/configs/cdsp-pogo.config" >> "$stage/objects/.config"

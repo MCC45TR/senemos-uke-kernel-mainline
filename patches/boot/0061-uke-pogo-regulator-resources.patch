@@ -1,0 +1,18 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: regulator: admit the two exact Uke pogo resources
+
+Uke routes the WN8030's vdd to L22B at 3.3 V and dvdd to L23B at 1.8 V.
+Keep the OEM constraints and resource graph. This adds no voltage retuning,
+alternate-board supply or broad regulator-family admission.
+
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -2001,6 +2001,8 @@
+ 	    strcmp(aggr_vreg->resource_name, "ldob4") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob7") &&
+ 	    strcmp(aggr_vreg->resource_name, "nsp.lvl") &&
++	    strcmp(aggr_vreg->resource_name, "ldob22") &&
++	    strcmp(aggr_vreg->resource_name, "ldob23") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob17") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob3") &&
+ 	    strcmp(aggr_vreg->resource_name, "smpb2") &&

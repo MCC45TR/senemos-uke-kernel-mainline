@@ -76,6 +76,7 @@ cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/performance/prepare-source.sh" "$kernel"
 bash "$profile/src/nfc/prepare-source.sh" "$kernel"
+bash "$profile/src/pogo/prepare-source.sh" "$kernel"
 git -C "$kernel" apply --check "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
 git -C "$kernel" apply "$profile/patches/input/0001-smp2p-lid-open-wake.patch"
 bash "$profile/tests/lid-wake-contract.sh" "$kernel"
@@ -150,7 +151,7 @@ bash "$profile/src/video/prepare-source.sh" "$kernel"
 for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
     0026-cliffs-proxy-and-pas-stop-ownership.patch 0027-remoteproc-early-stop.patch \
     0028-cliffs-proxy-per-rail-ownership.patch 0041-rproc-retain-failed-startup.patch \
-    0060-cliffs-cdsp-start-ownership.patch; do
+    0060-cliffs-cdsp-start-ownership.patch 0062-uke-cdsp-context-admission.patch; do
     git -C "$kernel" apply --check "$profile/patches/boot/$cdsp_patch"
     git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
 done
@@ -163,6 +164,12 @@ git -C "$kernel" apply "$profile/patches/boot/0044-uke-microphone-bob-supply.pat
 sha256sum "$profile/patches/boot/0044-uke-microphone-bob-supply.patch" >> "$output/abl-source-SHA256SUMS"
 bash "$profile/tests/qup-interconnect-contract.sh" "$kernel/drivers/interconnect/qcom/qnoc-cliffs-usb.c" 1
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native
+git -C "$kernel" apply --check "$profile/patches/boot/0061-uke-pogo-regulator-resources.patch"
+git -C "$kernel" apply "$profile/patches/boot/0061-uke-pogo-regulator-resources.patch"
+bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" native-pogo
+bash "$profile/tests/nanosic-protocol-contract.sh"
+bash "$profile/tests/cdsp-pogo-fdt-contract.sh"
+bash "$profile/tests/cdsp-smmu-admission-contract.sh" "$kernel/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c"
 SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
 bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"

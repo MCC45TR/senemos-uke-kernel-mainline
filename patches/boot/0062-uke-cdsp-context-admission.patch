@@ -1,0 +1,36 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: iommu: admit only two exact Uke CDSP FastRPC streams
+
+The retained Uke graph has one unmasked SID per context: root 0x0c01 and
+user PD 0x0c02. Require the native child identity and single exact SID;
+leave every other CDSP context disabled. Keep translated DMA and bypass
+disabled. No remote-heap VMID assignment is added.
+
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -756,6 +756,25 @@
+ static bool qcom_uke_sensor_cb(struct device *dev)
+ {
+ 	struct iommu_fwspec *spec = dev_iommu_fwspec_get(dev);
+ 	struct device_node *node;
+ 	bool match;
++	const char *path;
++
++	if (dev->of_node && spec && spec->num_ids == 1 &&
++	    of_device_is_compatible(dev->of_node, "qcom,fastrpc-compute-cb")) {
++		switch (spec->ids[0]) {
++		case 0xc01:
++			path = "/soc/remoteproc-cdsp@32300000/glink-edge/qcom,msm_fastrpc_rpmsg/compute-cb@1";
++			break;
++		case 0xc02:
++			path = "/soc/remoteproc-cdsp@32300000/glink-edge/qcom,msm_fastrpc_rpmsg/compute-cb@2";
++			break;
++		default:
++			return false;
++		}
++		node = of_find_node_by_path(path);
++		match = dev->of_node == node;
++		of_node_put(node);
++		return match;
++	}
+ 

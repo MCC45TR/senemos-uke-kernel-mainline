@@ -9,6 +9,7 @@
 #include <linux/delay.h>
 #include <linux/firmware.h>
 #include <linux/gpio/consumer.h>
+#include <linux/hex.h>
 #include <linux/hid.h>
 #include <linux/i2c.h>
 #include <linux/input.h>

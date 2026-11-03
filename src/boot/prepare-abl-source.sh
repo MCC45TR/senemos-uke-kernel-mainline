@@ -160,6 +160,7 @@ install -m644 "$here/uke-cpu-thermal.h" "$kernel/arch/arm64/kernel/uke-cpu-therm
 install -m644 "$here/uke-clock-debug.h" "$kernel/arch/arm64/kernel/uke-clock-debug.h"
 bash "$here/../../tests/clock-debug-fdt-contract.sh" "$kernel"
 install -m644 "$here/uke-hall.h" "$kernel/arch/arm64/kernel/uke-hall.h"
+install -m644 "$here/uke-cdsp-pogo.h" "$kernel/arch/arm64/kernel/uke-cdsp-pogo.h"
 install -m644 "$here/uke-lights.h" "$kernel/arch/arm64/kernel/uke-lights.h"
 install -m644 "$here/../usb/wcd939x-uke-typec.c" "$kernel/drivers/usb/typec/mux/wcd939x-uke-typec.c"
 [[ $(sha256sum "$here/vendor/fdt_check.c" | cut -d ' ' -f1) == "$(jq -er .sha256 "$here/vendor/source.json")" ]]
@@ -195,7 +196,7 @@ printf '%s\n' "$usb_profile" > "$output/usb-profile"
 printf '%s\n' "$llcc_profile" > "$output/llcc-profile"
 (cd "$output"; sha256sum ufs.dtbo usb.dtbo lights.dtbo > overlay-SHA256SUMS)
 sha256sum "$here/uke-abl.c" "$here/uke-ufs.h" "$here/uke-identity.c" "$here/uke-hardware.h" "$here/uke-bluetooth.h" "$here/vendor/fdt_check.c" "$here/vendor/source.json" \
-    "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" \
+    "$here/uke-pmic-adc.h" "$here/uke-cpu-thermal.h" "$here/uke-hall.h" "$here/uke-cdsp-pogo.h" \
     "$here/../../patches/boot/0001-arm64-uke-abl-dt-hook.patch" \
     "$here/../../patches/boot/0002-uke-sensor-context-banks.patch" \
     "$here/../../patches/boot/0003-uke-socinfo-sensor-profile.patch" \
