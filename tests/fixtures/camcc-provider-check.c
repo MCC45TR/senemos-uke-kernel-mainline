@@ -14,7 +14,8 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define DIV_ROUND_CLOSEST(a, b) (((a) + (b) / 2) / (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
-#define WARN(condition, ...) (condition)
+static bool model_warn(bool condition) { return condition; }
+#define WARN(condition, ...) model_warn(!!(condition))
 #define pr_debug(...) ((void)0)
 #define pr_err(...) ((void)0)
 #define dev_err(...) ((void)0)
