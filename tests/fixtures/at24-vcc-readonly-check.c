@@ -38,7 +38,7 @@ static struct at24_data chip;
 static struct regulator rail;
 static bool voltage_property, supply_property, baseline_control, strict_voltage;
 static u32 requested_voltage;
-static int property_error, voltage, enable_error, vote_error, release_error;
+static int property_error, voltage, peer_voltage, enable_error, vote_error, release_error;
 static int disable_error, read_error, busy_suspend;
 static unsigned enabled, refs, votes, releases, enables, disables, reads, posts;
 static bool suspended, idle_immediate;
@@ -67,12 +67,13 @@ static int regulator_set_voltage(struct regulator *r, int low, int high)
  if (low) {
   assert(low == 1800000 && high == low); votes++; event(VOTE);
   if (vote_error) return vote_error;
+  if (peer_voltage && peer_voltage != low) return -EINVAL;
   voltage = low;
  } else {
   assert(high == INT_MAX && !enabled);
   releases++; event(RELEASE);
   if (release_error) return release_error;
-  voltage = 1620000;
+  voltage = peer_voltage ? peer_voltage : 1620000;
  }
  return 0;
 }
@@ -165,6 +166,7 @@ static void reset(void)
  baseline_control = idle_immediate = false;
  requested_voltage = 1800000; property_error = 0;
  voltage = 1620000;
+ peer_voltage = 0;
  enable_error = vote_error = release_error = disable_error = read_error = busy_suspend = 0;
  enabled = refs = votes = releases = enables = disables = reads = posts = traces = 0;
  suspended = true;
@@ -199,6 +201,13 @@ int main(int argc, char **argv)
   assert(traces == sizeof(expected)/sizeof(expected[0]) && !memcmp(trace, expected, sizeof(expected)));
  }
  reset(); assert(!at24_read(&chip, 0, buf, sizeof(buf))); closed(); assert(reads == 64);
+ reset(); voltage = peer_voltage = 1800000;
+ assert(!at24_read(&chip, 0, buf, 1));
+ assert(!enabled && !refs && suspended && !chip.vcc_voltage_held && !chip.vcc_fault);
+ assert(voltage == 1800000 && peer_voltage == 1800000 && releases == 1);
+ reset(); peer_voltage = 1620000;
+ assert(at24_read(&chip, 0, buf, 1) == -EINVAL && !enables && !reads);
+ closed(); assert(peer_voltage == 1620000);
  reset();
  const struct { unsigned off; size_t count; void *buffer; int result; } ranges[] = {
   {0, 0, NULL, 0}, {UINT_MAX, 0, NULL, 0}, {8192, 1, buf, -EINVAL},
@@ -256,7 +265,7 @@ int main(int argc, char **argv)
  for (unsigned i = 0; i < 4; i++) assert(!pthread_create(&threads[i], NULL, thread_read, NULL));
  for (unsigned i = 0; i < 4; i++) assert(!pthread_join(threads[i], NULL));
  closed(); assert(votes == 12 && enables == 12 && disables == 12 && releases == 12 && reads == 36);
- puts("Actual at24 read/PM: original unvoted read, voltage-before-enable, serialized reads, real off before withdrawal, legacy path, bounds/config refusals, PM/I2C/rail faults and sticky containment pass; synthetic bytes only");
+ puts("Actual at24 read/PM: original unvoted read, voltage-before-enable, serialized reads, owned disable before withdrawal, modeled shared-rail peer, legacy path, bounds/config refusals, PM/I2C/rail faults and sticky containment pass; synthetic bytes only");
  assert(!pthread_mutex_destroy(&chip.lock.handle));
  assert(!pthread_mutex_destroy(&chip.vcc_lock.handle));
  return 0;

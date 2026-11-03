@@ -9,8 +9,9 @@ voltage request. An explicit optional vcc-microvolt consumer property avoids
 changing the shared provider's global constraints or inventing a fixed supply.
 
 The option requires read-only and a real vcc-supply. It votes before enable,
-serializes reads through synchronous power-off, then withdraws the voltage
-request. Failed withdrawal retains the request and blocks later I/O. In-flight
+serializes reads through releasing its own enable reference, then withdraws
+the voltage request. Other shared-rail consumers may still keep VCC powered.
+Failed withdrawal retains the request and blocks later I/O. In-flight
 reads refuse forced power-off. The opted-in NVMEM provider has no write callback;
 the ordinary at24 configurations keep their existing power path. The read
 wrapper rejects overflow and invalid ranges before power or bus operations.

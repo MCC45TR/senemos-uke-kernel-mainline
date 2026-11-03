@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2003}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2003 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2004}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2004 ]]
 bash "$owner/packaging/native/copr-camera-cci731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -18,7 +18,8 @@ profile=$stage/native-profile
 overlays=(src/camera/eeprom/0001-at24-readonly-vcc.patch
  src/camera/eeprom/0002-at24-readonly-vcc-binding.patch
  src/camera/eeprom/at24-vcc-readonly.h src/camera/eeprom/README731.md
- tests/at24-vcc731-contract.sh tests/fixtures/at24-vcc-readonly-check.c)
+ tests/at24-vcc731-contract.sh tests/fixtures/at24-vcc-readonly-check.c
+ tests/camera-nvmem-privacy731-contract.sh tests/fixtures/camera-nvmem-privacy-check.c)
 for path in "${overlays[@]}"; do
  test ! -e "$profile/$path"
  install -Dm644 "$owner/$path" "$profile/$path"
@@ -59,6 +60,8 @@ awk '
   print
   print "CC=clang bash native-profile/tests/at24-vcc731-contract.sh \"$PWD/native-generated/at24-before731\" \"$PWD\""
   print "CC=clang AT24_VCC_TEST_FLAGS='\''-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'\'' bash native-profile/tests/at24-vcc731-contract.sh \"$PWD/native-generated/at24-before731\" \"$PWD\""
+  print "CC=clang bash native-profile/tests/camera-nvmem-privacy731-contract.sh \"$PWD\""
+  print "CC=clang CAMERA_NVMEM_TEST_FLAGS='\''-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'\'' bash native-profile/tests/camera-nvmem-privacy731-contract.sh \"$PWD\""
   next
  }
  /^%check$/ {

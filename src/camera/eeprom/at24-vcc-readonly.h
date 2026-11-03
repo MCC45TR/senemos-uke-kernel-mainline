@@ -64,7 +64,7 @@ static int at24_vcc_off(struct at24_data *at24)
 		return 0;
 	ret = regulator_set_voltage(at24->vcc_reg, 0, INT_MAX);
 	if (ret) {
-		/* VCC is off. Complete suspend, retain the claim and refuse new I/O. */
+		/* Our enable reference is gone. Retain the claim and refuse new I/O. */
 		WRITE_ONCE(at24->vcc_fault, ret);
 		dev_err(at24_base_client_dev(at24), "VCC voltage withdrawal failed: %d\n", ret);
 	} else {
@@ -93,7 +93,7 @@ static int at24_read(void *priv, unsigned int off, void *val, size_t count)
 	WRITE_ONCE(at24->vcc_io_active, true);
 	ret = at24_read_data(priv, off, val, count);
 	WRITE_ONCE(at24->vcc_io_active, false);
-	/* The original read dropped its PM reference. Serialize through actual off. */
+	/* The original read dropped its PM reference. Serialize through suspend. */
 	cleanup = pm_runtime_suspend(dev);
 	if (!ret) {
 		ret = READ_ONCE(at24->vcc_fault);
