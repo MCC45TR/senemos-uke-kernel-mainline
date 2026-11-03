@@ -53,6 +53,11 @@ The driver therefore adds no guessed reader, HCE, P2P, SRAM mailbox or memory
 writer. A typical NFC headphone exposes a passive pairing tag and needs a
 reader; the tablet cannot read that tag. Bluetooth audio uses Bluetooth.
 The Uke IR evidence describes an emitter, without a receiver/learning path.
+The configuration enables upstream JVC, NEC, RC5, RC6, RCMM, Sanyo, Sharp and
+Sony modules, which provide kernel encoders despite their `DECODER` Kconfig
+names. XMP has no upstream encoder and is not advertised as a scancode sender;
+applications can still supply appropriate raw pulse trains. Device-specific
+remote button databases and Bluetooth pairing policy remain userspace data.
 
 Attribution: [MiCode Uke kernel](https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd),
 `drivers/ntag/fm19511/` and `drivers/media/rc/ir-spi.c`; [MiCode Uke DT](https://github.com/MiCode/kernel_devicetree/blob/94c84aeb9e517dbde546fc732033c184094c8e57/qcom/uke-sm8635.dtsi).
