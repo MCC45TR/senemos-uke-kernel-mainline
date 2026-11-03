@@ -6,10 +6,10 @@ mode=${1:---preview}
 [[ $# -le 1 && ( $mode == --preview || $mode == --apply ) ]] || {
  echo 'Usage: deliver-speaker-candidate.sh [--preview|--apply]' >&2; exit 2;
 }
-kernel_release=2500
-kernel_build=11252402
-parent_release=1910
-parent_build=11252282
+kernel_release=2800
+kernel_build=11252451
+parent_release=2700
+parent_build=11252415
 runtime_build=11252242
 control_build=11251908
 runtime_evr=0.2-2.fc46
