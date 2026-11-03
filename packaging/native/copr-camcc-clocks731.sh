@@ -18,8 +18,15 @@ case $base_release in
   ;;
  1500)
   base_build=11251503
+  base_commit_expected=3d8702b0116c4388d3977e8f566bcca900f2d3f6
   base_header=abea001cf467330fc360543023fcb8a9fa9726a08c53fd8e966c2683a3a51478
   base_payload=60f5a60e762725b9222dce4f6e61d5e1158adde6bf51c604ebed639946c87afc
+  ;;
+ 1600)
+  base_build=11251559
+  base_commit_expected=31313e89f719b935bcd1301d48d807bd1dc27163
+  base_header=f71eea4d521b2937c08d81886c9338e0908834491ee9bb35238a2b72171f58e5
+  base_payload=b4f6340ccd8cd72fcfba6d462b869621eaf62793b28abc083bad53072838d5e7
   ;;
  *) printf 'Unqualified camera parent: %s\n' "$base_release" >&2; exit 1;;
 esac
@@ -72,12 +79,17 @@ awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/archive.entries"
 tar -xJf "$output/$archive" -C "$stage/unpacked"
 profile=$stage/unpacked/native-profile
 base_commit=$(cat "$profile/source-commit")
-if [[ $base_release == 1500 ]]; then
- [[ $base_commit == 3d8702b0116c4388d3977e8f566bcca900f2d3f6 ]]
- jq -e '.kernel_release=="7.3.1-1500" and .native_ssc_iio_abi==1 and
+if [[ $base_release != 1011 ]]; then
+ [[ $base_commit == "$base_commit_expected" ]]
+ jq -e --arg release "$base_release" '.kernel_release==("7.3.1-"+$release) and .native_ssc_iio_abi==1 and
   .binder_ipc_builtin and .binderfs_builtin and .touch_recovery_attempts_per_powered_epoch==1 and
   .native_memlat_groups==["llcc","l3"] and
   .panel_variants==["o82_36_02_0a","o82_42_02_0b"] and .touch_variants==["tianma","csot"]' \
+  "$profile/source-composition.json" >/dev/null
+fi
+if [[ $base_release == 1600 ]]; then
+ jq -e '.rtc_backend=="qseecom-uefisecapp-RTCInfo" and .rtc_qseecom_version=="0x1402000" and
+  .rtc_offset_write_readback and (.rtc_pmic_counter_writes|not) and (.rtc_sdam_writes|not)' \
   "$profile/source-composition.json" >/dev/null
 fi
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS

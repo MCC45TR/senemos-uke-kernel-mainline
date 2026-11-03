@@ -75,9 +75,10 @@ and caller/module qualification after that checkpoint; do not transfer the
 helper result to the complete new profile or physical cameras.
 
 The earlier1209/1210 qualification producers retain parent1011. The current
-CAMSS producer starts at fresh ABI1700 and retains successful COPR11251503 /
-source3d8702b / parent1500, matching the inspected running kernel. It preserves
-that complete SSC/IIO, Binder, touch, MEMLAT, display and audio source/boot
+CAMSS producer starts at fresh ABI1700 and retains successful COPR11251559 /
+source31313e8 / parent1600, preserving the newly installed secure RTC update
+alongside the inspected running1500 source. It preserves that complete secure
+RTC, SSC/IIO, Binder, touch, MEMLAT, display and audio source/boot
 recipe. Both profile and manifest-verified boot configurations enable the
 sensor modules and record the updated config digest. Pinned RPM header/payload
 digests and full remote RPM verification protect the retained source. New
