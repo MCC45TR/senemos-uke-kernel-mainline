@@ -46,6 +46,17 @@ for config in "$profile/native.config" "$boot/packaging/native/native.config"; d
     printf '\nCONFIG_QCOM_UKE_EL2_QUERY=y\n' >> "$config"
 done
 cmp "$profile/native.config" "$boot/packaging/native/native.config"
+# Retain the versioned ALSA/UCM policy, admitting the same isolated ABI.
+policy=$profile/src/audio/desktop/install-policy.sh
+old=$(sed -n '8p' "$policy")
+[[ $old == *'[0-9]+$'* && $old != *'(-kvm)?'* ]]
+new=${old/'[0-9]+$'/'[0-9]+(-kvm)?$'}
+UKE_QUERY_OLD_LINE="$old" UKE_QUERY_NEW_LINE="$new" awk '
+  $0 == ENVIRON["UKE_QUERY_OLD_LINE"] {$0=ENVIRON["UKE_QUERY_NEW_LINE"]; count++}
+  {print}
+  END {if(count!=1)exit 1}
+' "$policy" > "$work/audio-policy.sh"
+mv "$work/audio-policy.sh" "$policy"
 # The retained normal producer admits a numeric release only. Extend just its
 # two ABI guards; keep the build job-count expression and every other line.
 while read -r relative line_number; do
@@ -87,7 +98,7 @@ jq --arg commit "$commit" --arg release "$release" \
 # Unchanged parent inputs must remain byte-identical; additions are explicit above.
 while read -r expected relative; do
     relative=${relative#./}
-    case $relative in prepare.sh|native.config|source-commit|source-composition.json) continue;; esac
+    case $relative in prepare.sh|native.config|source-commit|source-composition.json|src/audio/desktop/install-policy.sh) continue;; esac
     printf '%s  %s\n' "$expected" "$profile/$relative" | sha256sum -c --quiet -
 done < "$work/parent-profile.sha256"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
@@ -141,6 +152,13 @@ awk -v revision="$revision" '
 [[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == "${release%-kvm}" ]]
 ! rpmspec --parse --target aarch64 "$spec" | grep -E '^%(post|posttrans|pre|pretrans)([[:space:]]|$)'
 dnf -y --setopt=install_weak_deps=False builddep "$spec"
+# Exercise the real install helper before the full compile, so ABI admission
+# and all generated audio policies cannot first fail after kernel production.
+bash "$profile/src/audio/desktop/install-policy.sh" "$work/audio-policy-fixture" "$release"
+audio_driver=uke${release//./_}
+[[ -s $work/audio-policy-fixture/usr/share/alsa/ucm2/Qualcomm/$audio_driver/POCO-Pad-X1.conf ]]
+[[ -s $work/audio-policy-fixture/usr/share/wireplumber/wireplumber.conf.d/95-uke-microphone-array-$release.conf ]]
+printf 'Retained audio policy packaging passed for %s\n' "$release"
 cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
     "$owner/tests/el2-query-host.c" -o "$work/el2-query-host"
 "$work/el2-query-host"
