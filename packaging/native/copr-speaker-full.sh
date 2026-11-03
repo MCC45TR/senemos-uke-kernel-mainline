@@ -6,19 +6,18 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-release=${UKE_SPEAKER_BUILD_RELEASE:-2300}
-[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 2300 ]]
+release=${UKE_SPEAKER_BUILD_RELEASE:-2310}
+[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 2310 ]]
 # The parent includes the installed1600 RTC, cumulative1710 sensors/NFC/IR and
 # normal-channel L3 admission, bound-ADSP SSC, large reports and DPU REGDMA.
-for attempt in {1..120}; do
- state=$(curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11252282 | jq -er .state)
- case $state in
-  succeeded) break;;
-  pending|starting|running|importing|waiting) printf 'Waiting for cumulative parent1910: %s\n' "$state";sleep 30;;
-  *) printf 'Cumulative parent1910 did not pass: %s\n' "$state" >&2;exit 1;;
- esac
+# Full integration can build in parallel; installation still requires1910 success.
+for qualified in 11252138 11252237; do
+ [[ $(curl -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$qualified" | jq -er .state) == succeeded ]]
 done
-[[ $state == succeeded ]]
+curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11252282 |
+ jq -e '.state as $state | (["running","succeeded","starting","importing","waiting"]|index($state))!=null and
+ .source_package.name=="senemos-uke-linux-kernel-mainline" and .source_package.version=="7.3.1-1910" and
+ .source_package.url=="https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11252282/senemos-uke-linux-kernel-mainline-7.3.1-1910.src.rpm"' >/dev/null
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline "7.3.1-$release"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -85,7 +84,8 @@ printf '%s\n' "$commit" > "$profile/source-commit"
 } | jq -Rn '[inputs]' > "$stage/audio-overlays.json"
 jq --slurpfile overlays "$stage/audio-overlays.json" --arg commit "$commit" --arg release "$release" --arg parent "$parent_sha" --arg parent_commit "$parent_commit" '. + {
  source_commit:$commit,source_mode:"retained1910-with-private-fs19xx-provisioning-and-speaker-pcm-formats",
- kernel_release:("7.3.1-"+$release),rpm_revision:$release,parent_copr_build:11252282,parent_source_commit:$parent_commit,
+ kernel_release:("7.3.1-"+$release),rpm_revision:$release,parent_copr_build:11252282,parent_binary_qualification_required:11252282,
+ qualified_source_input_checks:[11252138,11252237],parent_source_commit:$parent_commit,
  parent_srpm_sha256:$parent,parent_header_sha256:"ed9d98ecd320d9b52b27b6bb019baa7cc754e6c129effef70a6e1f6e44994fbd",
  parent_payload_sha256:"3af38154208e1e36ebb5acbd5a86bcaee63ccb7845fdb5a8d95ff8f4cc9129ae",
  parent_composition:"source-composition-before-audio.json",overlays:$overlays[0],
