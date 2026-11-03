@@ -6,7 +6,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-1811
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-1812
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 curl -fLsS --retry 2 --max-time 300 --proto '=https' --proto-redir '=https' \
@@ -57,6 +57,9 @@ tests/cdsp-smmu-admission-contract.sh
 tests/cdsp-pogo-fdt-contract.sh
 tests/nanosic-protocol-contract.sh
 tests/nanosic-lifecycle-contract.sh
+manifests/cdsp-tested-linux731.sha256
+docs/CDSP-POGO-ACCEPTANCE.md
+tests/cdsp-pogo-device-report.sh
 FILES
 git -C "$owner" ls-files src/pogo src/cdsp >> "$stage/assets"
 for tree in "$profile" "$boot"; do
@@ -110,21 +113,21 @@ while read -r file; do
     install -m644 "$stage/lock.json" "$boot/lock.json"
 done < "$stage/boot-assets"
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
-cp "$profile/source-composition.json" "$profile/source-composition-before1811.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before1812.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --arg parent "$parent" '. + {
  source_commit:$commit,source_mode:"retained1600-cdsp-pogo-candidate",
  parent_copr_build:11251559,parent_srpm_sha256:$parent,
- parent_composition:"source-composition-before1811.json",kernel_release:"7.3.1-1811",rpm_revision:"1811",
+ parent_composition:"source-composition-before1812.json",kernel_release:"7.3.1-1812",rpm_revision:"1812",
  cdsp_auto_boot:false,cdsp_context_sids:["0x0c01","0x0c02"],cdsp_secure_policy_override:false,
  cdsp_start_stop_retention:true,cdsp_permanent_platform_instance:true,
  pogo_mcu_firmware_distributed:false,pogo_report_format:"21-byte shared-protocol candidate",
  pogo_auth_provider_included:false,nfc_reader:false,ir_receive:false,
  rtc_source_retained:true,ssc_source_retained:true,binder_source_retained:true,
  physical_acceptance:false
-}' "$profile/source-composition-before1811.json" > "$profile/source-composition.json"
+}' "$profile/source-composition-before1812.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
@@ -133,7 +136,7 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$stage/unpacked" boot-recipe
 [[ $(grep -Fxc '%global senemos_build_release 1600' "$spec") == 1 ]]
 awk '
- /^%global senemos_build_release 1600$/ {$0="%global senemos_build_release 1811"}
+ /^%global senemos_build_release 1600$/ {$0="%global senemos_build_release 1812"}
  /^Name:[[:space:]]/ {print;print "Provides: uke-kernel(cdsp-pogo-candidate-v1) = 1";next}
  /^BuildRequires:[[:space:]]/ && !added {print;print "BuildRequires: libfdt-devel";added=1;next}
  /^%check$/ {
@@ -145,7 +148,7 @@ awk '
  }
  /^%changelog$/ {
    print
-   print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1811"
+   print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1812"
    print "- Add guarded native CDSP startup and exact Uke pogo transport candidate."
    print "- Retain SSC, Binder and RTC; keep firmware and physical acceptance separate."
    print "";next
@@ -154,5 +157,5 @@ awk '
 ' "$spec" > "$stage/next.spec"
 install -m644 "$stage/next.spec" "$spec"
 sha256sum -c --quiet "$stage/retained-sources.sha256"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1811 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1812 ]]
 rpmbuild -bs --define "_sourcedir $output" --define "_srcrpmdir $output" "$spec"

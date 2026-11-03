@@ -16,7 +16,7 @@ Compared with MiCode 5712080a4b0c0b1a879e6d145c601c649ddaddfd and Linux 7.3.1.
 Retain the original Linux, Linaro, Sony and Qualcomm GPL attribution.
 
 diff --git a/drivers/remoteproc/qcom_q6v5_pas.c b/drivers/remoteproc/qcom_q6v5_pas.c
-index 406670a..d22c637 100644
+index 30f8f32..2fda975 100644
 --- a/drivers/remoteproc/qcom_q6v5_pas.c
 +++ b/drivers/remoteproc/qcom_q6v5_pas.c
 @@ -104,6 +104,16 @@ struct qcom_pas {
@@ -303,10 +303,10 @@ index 406670a..d22c637 100644
  	rproc = devm_rproc_alloc(&pdev->dev, desc->sysmon_name, ops, fw_name, sizeof(*pas));
  
  	if (!rproc) {
-@@ -1068,11 +1237,13 @@ static int qcom_pas_probe(struct platform_device *pdev)
- 
- 	rproc->has_iommu = of_property_present(pdev->dev.of_node, "iommus");
- 	rproc->auto_boot = desc->auto_boot;
+@@ -1073,11 +1242,13 @@ static int qcom_pas_probe(struct platform_device *pdev)
+ 		rproc->auto_boot = true;
+ 		rproc->recovery_disabled = true;
+ 	}
 -	rproc_coredump_set_elf_info(rproc, ELFCLASS32, EM_NONE);
 +	rproc_coredump_set_elf_info(rproc, ops == &qcom_cliffs_cdsp_ops ?
 +				    ELFCLASS64 : ELFCLASS32, EM_NONE);
@@ -318,7 +318,7 @@ index 406670a..d22c637 100644
  	pas->proxy_regulator_level = desc->proxy_regulator_level;
  	pas->proxy_regulator_count = desc->proxy_regulator_count ?: 2;
  	pas->proxy_regulator_load = desc->proxy_regulator_load;
-@@ -1154,6 +1325,16 @@ static int qcom_pas_probe(struct platform_device *pdev)
+@@ -1159,6 +1330,16 @@ static int qcom_pas_probe(struct platform_device *pdev)
  	pas->bam_dmux = of_platform_device_create(node, NULL, &pdev->dev);
  	of_node_put(node);
  
@@ -335,7 +335,7 @@ index 406670a..d22c637 100644
  	return 0;
  
  remove_ssr_sysmon:
-@@ -1844,6 +2025,28 @@ static const struct qcom_pas_data sm8550_mpss_resource = {
+@@ -1849,6 +2030,28 @@ static const struct qcom_pas_data sm8550_mpss_resource = {
  	.region_assign_vmid = QCOM_SCM_VMID_MSS_MSA,
  };
  
@@ -364,7 +364,7 @@ index 406670a..d22c637 100644
  static const struct qcom_pas_data cliffs_adsp_resource = {
  	.crash_reason_smem = 423,
  	.firmware_name = "adsp.mdt",
-@@ -2168,6 +2371,35 @@ static struct platform_driver qcom_pas_driver = {
+@@ -2173,6 +2376,35 @@ static struct platform_driver qcom_pas_driver = {
  	},
  };
  

@@ -18,14 +18,19 @@ git -C "$kernel" apply --include=include/dt-bindings/regulator/qcom,rpmh-regulat
     "$owner/patches/7.3.0/0002-uke-rpmh-regulators.patch"
 for patch in "$owner/patches/7.3.0/0014-cliffs-wpss-proxy-regulators.patch" \
     "$owner/patches/7.3.0/0020-cliffs-adsp-pas.patch" \
+    "$owner/patches/7.3.0/0033-uke-charger-budget-and-startup.patch" \
     "$owner/patches/boot/0026-cliffs-proxy-and-pas-stop-ownership.patch" \
     "$owner/patches/boot/0027-remoteproc-early-stop.patch" \
     "$owner/patches/boot/0028-cliffs-proxy-per-rail-ownership.patch" \
     "$owner/patches/boot/0041-rproc-retain-failed-startup.patch" \
     "$owner/patches/boot/0060-cliffs-cdsp-start-ownership.patch"; do
-    git -C "$kernel" apply --check "$patch"
-    git -C "$kernel" apply "$patch"
+    includes=()
+    [[ $patch != */0033-uke-charger-budget-and-startup.patch ]] ||
+        includes=(--include=drivers/remoteproc/qcom_q6v5_pas.c)
+    git -C "$kernel" apply --check "${includes[@]}" "$patch"
+    git -C "$kernel" apply "${includes[@]}" "$patch"
 done
+(cd "$kernel"; sha256sum --check --strict "$owner/manifests/cdsp-tested-linux731.sha256")
 bash "$owner/src/pogo/prepare-source.sh" "$kernel"
 for patch in 0005-uke-smmu-handoff.patch 0010-uke-ufs-dma-power-admission.patch \
     0015-uke-wlan-supplies-and-dma.patch 0023-uke-qup1-backlight-bus.patch \

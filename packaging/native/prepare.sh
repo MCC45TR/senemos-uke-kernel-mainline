@@ -156,6 +156,7 @@ for cdsp_patch in 0025-cliffs-nsp-crypto-suppliers.patch \
     git -C "$kernel" apply "$profile/patches/boot/$cdsp_patch"
 done
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-nfc
+(cd "$kernel"; sha256sum --check --strict "$profile/manifests/cdsp-tested-linux731.sha256")
 git -C "$kernel" apply --check "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
 git -C "$kernel" apply "$profile/patches/boot/0033-uke-nfc-regulator-resource.patch"
 bash "$profile/tests/uke-rpmh-resource-contract.sh" "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" before-audio
