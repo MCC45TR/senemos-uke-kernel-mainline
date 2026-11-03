@@ -39,10 +39,33 @@ for config in "$profile/native.config" "$boot/packaging/native/native.config"; d
     printf '\nCONFIG_QCOM_UKE_EL2_QUERY=y\n' >> "$config"
 done
 cmp "$profile/native.config" "$boot/packaging/native/native.config"
-hash=$(sha256sum "$boot/packaging/native/native.config"); hash=${hash%% *}
-jq --arg hash "$hash" '(.source_assets[]|select(.path=="packaging/native/native.config").sha256)=$hash' \
-    "$boot/lock.json" > "$work/boot-lock.json"
-mv "$work/boot-lock.json" "$boot/lock.json"
+# The retained normal producer admits a numeric release only. Extend just its
+# two ABI guards; keep the build job-count expression and every other line.
+while read -r relative line_number; do
+    file=$boot/$relative
+    old=$(sed -n "${line_number}p" "$file")
+    [[ $old == *'[1-9][0-9]*$'* && $old != *'(-kvm)?'* ]]
+    new=${old/'[1-9][0-9]*$'/'[1-9][0-9]*(-kvm)?$'}
+    UKE_QUERY_OLD_LINE="$old" UKE_QUERY_NEW_LINE="$new" awk '
+      $0 == ENVIRON["UKE_QUERY_OLD_LINE"] {$0=ENVIRON["UKE_QUERY_NEW_LINE"]; count++}
+      {print}
+      END {if(count!=1)exit 1}
+    ' "$file" > "$work/abi-guard.sh"
+    mv "$work/abi-guard.sh" "$file"
+done <<'GUARDS'
+src/boot/make-initramfs-base.sh 4
+src/boot/build-payload.sh 8
+GUARDS
+for relative in packaging/native/native.config src/boot/make-initramfs-base.sh src/boot/build-payload.sh; do
+    hash=$(sha256sum "$boot/$relative"); hash=${hash%% *}
+    jq --arg path "$relative" --arg hash "$hash" \
+        '(.source_assets[]|select(.path==$path).sha256)=$hash' \
+        "$boot/lock.json" > "$work/boot-lock.json"
+    mv "$work/boot-lock.json" "$boot/lock.json"
+done
+release=7.3.1-2001-kvm jobs=2
+eval "$(sed -n '8p' "$boot/src/boot/build-payload.sh")"
+(set -- fixture "$release"; eval "$(sed -n '4p' "$boot/src/boot/make-initramfs-base.sh")")
 commit=$(git -c safe.directory="$owner" -C "$owner" rev-parse HEAD)
 epoch=$(git -c safe.directory="$owner" -C "$owner" show -s --format=%ct HEAD)
 release=$(jq -er .kernel_release "$lock")
