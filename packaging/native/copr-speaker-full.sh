@@ -6,8 +6,8 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-release=${UKE_SPEAKER_BUILD_RELEASE:-2310}
-[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 2310 ]]
+release=${UKE_SPEAKER_BUILD_RELEASE:-2500}
+[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 2500 ]]
 # The parent includes the installed1600 RTC, cumulative1710 sensors/NFC/IR and
 # normal-channel L3 admission, bound-ADSP SSC, large reports and DPU REGDMA.
 # Full integration can build in parallel; installation still requires1910 success.
