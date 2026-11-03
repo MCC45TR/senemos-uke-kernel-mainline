@@ -3,6 +3,12 @@
 3 November 2026. Linux 7.3.1 source candidate. Compilation runs only in COPR;
 source checks, linked packages and physical acceptance are separate results.
 
+[COPR11251492](https://copr.fedorainfracloud.org/coprs/build/11251492/) passes
+the complete 7.3.1-1401 kernel, modules, boot payload and RPM checks on AArch64.
+Its source is `118ba4b`; GCC/Clang and ASan/UBSan actual-code fixtures also pass.
+The candidate is not installed on the tablet. RF, optical and physical wake
+acceptance remain open.
+
 FM19511 is an I2C NFC tag. It does not provide an NCI reader or card-emulation
 controller. The native overlay leaves it disabled; the existing exact `ukepgl`
 identity initcall enables it only for POCO Pad X1. The driver independently
