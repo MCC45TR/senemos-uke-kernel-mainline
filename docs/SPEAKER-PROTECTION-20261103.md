@@ -24,6 +24,15 @@ four physical speaker channels, microphone graph and sample format are not
 changed. The source-check RPM is a fixture receipt and must not be described
 as a kernel candidate.
 
+COPR [11251072](https://copr.fedorainfracloud.org/coprs/build/11251072)
+passes for source `9590013` on Fedora Rawhide AArch64. Clang and GCC execute
+the independent wire/bounds fixtures and the extracted actual topology parser;
+the ACDB metadata reader also passes malformed-input and exact generic OEM
+metadata checks. The produced noarch RPM installs only a validation notice.
+No kernel translation unit, full kernel, playback or physical protection test
+is qualified by this source-check build. The earlier11251063 failure and its
+fixture correction are preserved in the central lesson journal.
+
 Remaining prerequisites, in implementation order:
 
 1. Establish the exact active FourSemi RX/TX parameters and firmware contract,
