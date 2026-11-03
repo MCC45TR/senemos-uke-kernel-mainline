@@ -17,7 +17,7 @@ for project in uke-linux-unstable uke-linux-test uke-linux; do
    --data-urlencode limit=100 --data-urlencode "offset=$offset" \
    https://copr.fedorainfracloud.org/api_3/build/list > "$stage/builds.json"
   jq -e '(.items|type)=="array" and all(.items[];
-    ((.source_package.version // "")|test("^7[.]3[.]1-1022([.]|$)"))|not)' "$stage/builds.json" >/dev/null
+    ((.source_package.version // "")|test("^7[.]3[.]1-1023([.]|$)"))|not)' "$stage/builds.json" >/dev/null
   count=$(jq -er '.items|length' "$stage/builds.json")
   ((count < 100)) && break
   offset=$((offset + 100))
@@ -55,19 +55,19 @@ install -Dm644 "$profile/src/input/nt36532-uke-spi.c" "$profile/tests/fixtures/t
 for path in src/input/nt36532-uke-spi.c tests/touch-transport.c tests/touch-transport-contract.sh; do
  install -m644 "$owner/$path" "$profile/$path"
 done
-cp "$profile/source-composition.json" "$profile/source-composition-before1022.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before1023.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" '. + {
  source_commit:$commit,source_mode:"retained1011-with-bounded-native-touch-recovery",
  parent_copr_build:11246385,parent_srpm_sha256:"84915ef98a26df47bc8f223e3751b160e40eba3c447f433fbe13b2097d6a7146",
- parent_composition:"source-composition-before1022.json",kernel_release:"7.3.1-1022",rpm_revision:"1022",
+ parent_composition:"source-composition-before1023.json",kernel_release:"7.3.1-1023",rpm_revision:"1023",
  kernel_driver_source_unchanged:false,
  changed_kernel_files:["drivers/input/touchscreen/nt36532-uke/nt36532-uke-spi.c"],
  touch_recovery_attempts_per_powered_epoch:1,firmware_payload_included:false,
  automatic_policy_unchanged:true,physical_acceptance:false
- }' "$profile/source-composition-before1022.json" > "$profile/source-composition.json"
+ }' "$profile/source-composition-before1023.json" > "$profile/source-composition.json"
 (cd "$profile"; sha256sum -c "$stage/retained-profile.sha256"
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" native-profile
@@ -76,7 +76,7 @@ for line in '%global senemos_build_release 1011' 'bash native-profile/prepare.sh
 done
 awk '
  /^Source0:/ {print;print "BuildRequires: compiler-rt";next}
- /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release 1022"}
+ /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release 1023"}
  /^bash native-profile\/prepare.sh "\$PWD"$/ {
   print
   print "cmp native-profile/src/input/nt36532-uke-spi.c drivers/input/touchscreen/nt36532-uke/nt36532-uke-spi.c"
@@ -97,7 +97,7 @@ awk '
  }
  /^%changelog$/ {
   print
-  print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1022"
+  print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1023"
   print "- Permit one verified native touch recovery per powered lifecycle."
   print "- Re-arm on panel/PM restoration and expose value-free diagnostic counters."
   print ""
@@ -108,4 +108,4 @@ awk '
 mv "$stage/next.spec" "$spec"
 sha256sum -c "$stage/retained-sources.sha256"
 [[ $(grep -Fxc 'UKE_TOUCH_SANITIZE=1 CC=clang bash native-profile/tests/touch-transport-contract.sh' "$spec") == 1 ]]
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1022 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1023 ]]

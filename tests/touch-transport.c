@@ -180,7 +180,11 @@ static void nvt_publish_contacts(struct nvt_uke_touch *t, int result) {
     assert(!result && !nvt_ready(t) && t->booted);
     mock.published++;
 }
-#define dev_warn_ratelimited(...) do { mock.warnings++; } while (0)
+__attribute__((format(printf, 2, 3)))
+static void dev_warn_ratelimited(struct device *dev, const char *format, ...) {
+    assert(dev && format);
+    mock.warnings++;
+}
 #define dev_err_ratelimited(...) do { mock.warnings++; } while (0)
 
 #include "production.h"
