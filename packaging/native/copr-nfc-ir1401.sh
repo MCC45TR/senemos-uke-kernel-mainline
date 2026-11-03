@@ -8,7 +8,7 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-1400
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-1401
 parent_hash=83b76251f124193609cb2da1f04a1f3100287875534bf1f8504e0ffa87f76d4b
 curl -fLsS --retry 2 --max-time 300 --proto '=https' --proto-redir '=https' \
     https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11251200/senemos-uke-linux-kernel-mainline-7.3.1-1301.src.rpm -o "$stage/base.src.rpm"
@@ -71,7 +71,7 @@ jq --arg hash "$config_hash" '(.source_assets[]|select(.path=="packaging/native/
     "$boot/lock.json" > "$stage/lock.json"
 install -m644 "$stage/lock.json" "$boot/lock.json"
 install -m644 "$stage/lock.json" "$output/boot-payload.json"
-cp "$profile/source-composition.json" "$profile/source-composition-before1400.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before1401.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
@@ -79,13 +79,13 @@ jq --arg commit "$commit" --arg parent_hash "$parent_hash" \
     --slurpfile overlays <(jq -R -s 'split("\n")|map(select(length>0))' "$stage/overlays") '. + {
     source_commit:$commit,source_mode:"retained1301-with-native-nfc-ir-v2",
     parent_copr_build:11251200,parent_srpm_sha256:$parent_hash,
-    parent_composition:"source-composition-before1400.json",kernel_release:"7.3.1-1400",rpm_revision:"1400",
+    parent_composition:"source-composition-before1401.json",kernel_release:"7.3.1-1401",rpm_revision:"1401",
     nfc_role:"type2-tag",nfc_reader:false,nfc_eeprom_write:false,
     nfc_atomic_memory_read:true,nfc_raw_irq_status:true,nfc_system_wakeup:true,
     ir_role:"transmitter",ir_receive:false,ir_explicit_word_bits:16,
     overlays:$overlays[0],kernel_driver_source_unchanged:false,
     automatic_policy_unchanged:true,physical_acceptance:false
-}' "$profile/source-composition-before1400.json" > "$profile/source-composition.json"
+}' "$profile/source-composition-before1401.json" > "$profile/source-composition.json"
 (cd "$profile"; sha256sum -c "$stage/retained-profile.sha256"
     find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
@@ -97,13 +97,13 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
 [[ $(grep -Fxc '%global senemos_build_release 1301' "$spec") == 1 ]]
 [[ $(grep -Fxc 'uke_build_start=$SECONDS' "$spec") == 1 ]]
 awk '
- /^%global senemos_build_release 1301$/ {$0="%global senemos_build_release 1400"}
+ /^%global senemos_build_release 1301$/ {$0="%global senemos_build_release 1401"}
  /^Name:[[:space:]]/ {print; print "Provides: uke-kernel(nfc-ir-v2) = 1"; next}
  /^uke_build_start=\$SECONDS$/ {
   print
-  print "CC=clang bash native-profile/tests/fm19511-contract.sh"
-  print "CC=clang bash native-profile/tests/fm19511-pm-contract.sh"
-  print "CC=clang bash native-profile/tests/ir-spi-contract.sh drivers/media/rc/ir-spi.c"
+  print "CC=clang CFLAGS='' bash native-profile/tests/fm19511-contract.sh"
+  print "CC=clang CFLAGS='' bash native-profile/tests/fm19511-pm-contract.sh"
+  print "CC=clang CFLAGS='' bash native-profile/tests/ir-spi-contract.sh drivers/media/rc/ir-spi.c"
   next
  }
  /^%check$/ {
@@ -116,7 +116,7 @@ awk '
  }
  /^%changelog$/ {
   print
-  print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1400"
+  print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1401"
   print "- Add read-only tag memory, raw RF event reporting and system wake support."
   print "- Bound IR frames and use explicit SPI words with validated carrier and duty."
   print ""
@@ -126,5 +126,5 @@ awk '
 ' "$spec" > "$stage/next.spec"
 mv "$stage/next.spec" "$spec"
 sha256sum -c "$stage/retained-sources.sha256"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1400 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1401 ]]
 rpmbuild -bs --define "_sourcedir $output" --define "_srcrpmdir $output" "$spec"
