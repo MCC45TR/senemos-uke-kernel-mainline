@@ -13,7 +13,7 @@ awk '
         print "    AR_TKN_U32_MODULE_CTRL_HEAP_ID \"4004\""
         tokens=0
     }
-    /^SectionVendorTuples\."spk_tdm_sink"/ {exit}
+    /^SectionVendorTuples\."spk_(mfc|tdm_sink)"/ {exit}
     /^# This graph omits/ {next}
     {print}' "$owner/POCO-Pad-X1.conf" > "$output"
 cat >> "$output" <<'CONF'
@@ -122,8 +122,7 @@ tdm spk.vi.source 0x0700100f 0x4960 0 1 0x49fd vi_device_sg vi_device_container 
 awk '
     /^SectionControlMixer\."MultiMedia2"/ {copy=1}
     copy {
-        if ($0 ~ /"spk.sink, , SECONDARY_TDM_RX_0 Audio Mixer"/) {
-            print "        \"spk.mfc, , SECONDARY_TDM_RX_0 Audio Mixer\""
+        if ($0 ~ /"spk.sink, , spk.mfc"/) {
             print "        \"spk.fs.rx, , spk.mfc\""
             print "        \"spk.sink, , spk.fs.rx\""
             print "        \"spk.fs.tx, , spk.vi.source\""

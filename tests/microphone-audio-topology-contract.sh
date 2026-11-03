@@ -9,7 +9,7 @@ cat "$root/src/audio/POCO-Pad-X1.conf" "$root/src/audio/POCO-Pad-X1-Microphone-C
 alsatplg -c "$work/mixed.conf" -o "$work/card.bin" 2>"$work/compile.log"
 alsatplg -d "$work/card.bin" -o "$work/decoded.conf" 2>"$work/decode.log"
 sed -n '/^SectionVendorTuples/,$p' "$work/decoded.conf" > "$work/tuples"
-test "$(awk '$1=="token201" {print $2}' "$work/tuples" | sort -nu | wc -l)" -eq 13
+test "$(awk '$1=="token201" {print $2}' "$work/tuples" | sort -nu | wc -l)" -eq 14
 test "$(awk '$1=="token1" {print $2}' "$work/tuples" | sort -nu | tr '\n' ' ')" = '0 1 2 40 104 120 '
 for module in 117444609 117444611 117444612 117444629 117444644; do
  grep -Fq "token200 $module" "$work/tuples"

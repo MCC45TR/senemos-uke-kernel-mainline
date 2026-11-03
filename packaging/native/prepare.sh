@@ -73,6 +73,7 @@ if [[ $(cat "$profile/audio-profile") == microphones ]]; then
 else
     alsatplg -c "$profile/src/audio/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
 fi
+bash "$profile/src/audio/prepare-speaker-formats.sh" "$kernel"
 cp "$kernel/drivers/regulator/qcom-rpmh-regulator-uke.c" "$output/rpmh-regulator-before-native.c"
 bash "$profile/src/boot/prepare-abl-source.sh" "$kernel" "$output"
 bash "$profile/src/performance/prepare-source.sh" "$kernel"

@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "8029d000f79a668e2c5728a386ca03f3ce27828df8a77d91e8f143552427d240"
+      "sha256": "3b62bd8098f14fce02b9a9f9d1bb38184881c79317fdf451678bcc7209bb4f7f"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -269,7 +269,7 @@
     },
     {
       "path": "src/audio/POCO-Pad-X1.conf",
-      "sha256": "6008c22d4a2f380d30683c38f9ef4c924651771b819a2ca0cfd456f52f43de87"
+      "sha256": "43a9ee1aaa7ae05c106421a45b0f28f6c464ea82b930fdd48a4b7e64475ee6ef"
     },
     {
       "path": "src/audio/acdb-graph-audit.cpp",
@@ -321,7 +321,7 @@
     },
     {
       "path": "src/audio/desktop/array-ucm2/Speaker-PCM.conf",
-      "sha256": "5b3a7164e7774f6077cb8f571e0f9108189e86be96bb67581cc75225b8ce33f3"
+      "sha256": "b0f866ba612c60c17aacfcb5a29a5a226fd58c91ca9b683cedf99c09b4accbc6"
     },
     {
       "path": "src/audio/desktop/install-policy.sh",
@@ -829,7 +829,7 @@
     },
     {
       "path": "tests/microphone-audio-topology-contract.sh",
-      "sha256": "7a514e02776c4a8a18f0e2c3e5d1f81f4c4bd0703878489371392892b1c19b77"
+      "sha256": "fa599414f78a8cd473010d72035c3ad341c1e09ab95c97821a69178c3413d32d"
     },
     {
       "path": "tests/microphone-channel-map-contract.sh",
@@ -1078,6 +1078,26 @@
     {
       "path": "tests/wpss-proxy-contract.sh",
       "sha256": "08886938fb787dd9a7e30cc0c20ac1c3873eac5ee5e9411e33027ef35a097061"
+    },
+    {
+      "path": "src/audio/build-protected-topology.sh",
+      "sha256": "058cb1dbccf94e01ce876e4f05347a55d403cfa5da3de638ecbcb099e66df165"
+    },
+    {
+      "path": "tests/speaker-audio-topology-contract.sh",
+      "sha256": "17af16518783c95b10ad3887c1307680dc06e6399c31d647bff636737a3fba71"
+    },
+    {
+      "path": "patches/boot/0074-uke-speaker-pcm-formats.patch",
+      "sha256": "13405d0cae170490e60f03562cd0f063e68341d61bdf14a40eaebf1b731760fd"
+    },
+    {
+      "path": "src/audio/prepare-speaker-formats.sh",
+      "sha256": "b8d5ee97a733fe2aa1a5d324b3f9672d898c6c13ea234360ff645c5b5e5773b4"
+    },
+    {
+      "path": "tests/audio-pcm-formats-contract.sh",
+      "sha256": "a3be7f36fbcb0453e5ce7759a1ac585b4f9f5be60e6832330326c21f6f2137bd"
     }
   ],
   "root_selector_capability": {

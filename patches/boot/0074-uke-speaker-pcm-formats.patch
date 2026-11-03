@@ -1,0 +1,69 @@
+diff --git a/sound/soc/qcom/qdsp6/audioreach.c b/sound/soc/qcom/qdsp6/audioreach.c
+index 0776110..ae1d56b 100644
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -1301,2 +1301,13 @@ static int audioreach_logging_set_media_format(struct q6apm_graph *graph,
+ 
++static int audioreach_pcm_word_size(const struct audioreach_module_config *cfg)
++{
++	u16 bits = cfg->bits_per_sample ? cfg->bits_per_sample : cfg->bit_width;
++
++	if ((cfg->bit_width == 16 && bits == 16) ||
++	    (cfg->bit_width == 24 && (bits == 24 || bits == 32)) ||
++	    (cfg->bit_width == 32 && bits == 32))
++		return bits;
++	return -EINVAL;
++}
++
+ static int audioreach_pcm_set_media_format(struct q6apm_graph *graph,
+@@ -1309,5 +1320,7 @@ static int audioreach_pcm_set_media_format(struct q6apm_graph *graph,
+ 	struct apm_module_param_data *param_data;
+-	int payload_size;
++	int payload_size, word_size = audioreach_pcm_word_size(mcfg);
+ 	int i, j;
+ 
++	if (word_size < 0)
++		return word_size;
+ 	if (num_channels > 4) {
+@@ -1343,3 +1356,3 @@ static int audioreach_pcm_set_media_format(struct q6apm_graph *graph,
+ 	media_cfg->q_factor = mcfg->bit_width - 1;
+-	media_cfg->bits_per_sample = mcfg->bit_width;
++	media_cfg->bits_per_sample = word_size;
+ 	/* Convert the physical mapping to a logical mapping of the channels */
+@@ -1399,2 +1412,3 @@ static int audioreach_shmem_set_media_format(struct q6apm_graph *graph,
+ 	int rc, payload_size;
++	int word_size = mcfg->fmt == SND_AUDIOCODEC_PCM ? audioreach_pcm_word_size(mcfg) : 0;
+ 	int i, j;
+@@ -1402,2 +1416,4 @@ static int audioreach_shmem_set_media_format(struct q6apm_graph *graph,
+ 
++	if (word_size < 0)
++		return word_size;
+ 	if (num_channels > 4) {
+@@ -1435,3 +1451,3 @@ static int audioreach_shmem_set_media_format(struct q6apm_graph *graph,
+ 		cfg->alignment = PCM_LSB_ALIGNED;
+-		cfg->bits_per_sample = mcfg->bit_width;
++		cfg->bits_per_sample = word_size;
+ 		cfg->q_factor = mcfg->bit_width - 1;
+diff --git a/sound/soc/qcom/qdsp6/q6apm-dai.c b/sound/soc/qcom/qdsp6/q6apm-dai.c
+index 20a992a..40109ff 100644
+--- a/sound/soc/qcom/qdsp6/q6apm-dai.c
++++ b/sound/soc/qcom/qdsp6/q6apm-dai.c
+@@ -116,3 +116,4 @@ static const struct snd_pcm_hardware q6apm_dai_hardware_playback = {
+ 				 SNDRV_PCM_INFO_BATCH),
+-	.formats =              (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE),
++	.formats =              (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE |
++				 SNDRV_PCM_FMTBIT_S32_LE),
+ 	.rates =                SNDRV_PCM_RATE_8000_192000,
+@@ -238,2 +239,3 @@ static int q6apm_dai_prepare(struct snd_soc_component *component,
+ 	cfg.bit_width = prtd->bits_per_sample;
++	cfg.bits_per_sample = snd_pcm_format_physical_width(runtime->format);
+ 	cfg.fmt = SND_AUDIOCODEC_PCM;
+@@ -551,2 +553,8 @@ static int q6apm_dai_hw_params(struct snd_soc_component *component,
+ 		break;
++	case SNDRV_PCM_FORMAT_S32_LE:
++		if (substream->stream != SNDRV_PCM_STREAM_PLAYBACK ||
++		    !(runtime->hw.formats & SNDRV_PCM_FMTBIT_S32_LE))
++			return -EINVAL;
++		prtd->bits_per_sample = 32;
++		break;
+ 	default:
