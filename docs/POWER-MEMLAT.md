@@ -64,7 +64,7 @@ L3 requests, while lower map requests succeed. The inherited OEM ceiling map
 can exceed the fitted provider's admitted range. This does not establish the
 cause of desktop pauses previously observed with kernel 1011.
 
-The proposed correction handles only the adaptive L3 consumer's ERANGE.
+The capacity correction handles only the adaptive L3 consumer's ERANGE.
 It tries strictly descending, distinct positive entries from the validated
 OEM L3 maps and caches the first admitted mapped request. Later requests above
 that ceiling use it without retrying unsupported values. A different provider
@@ -81,7 +81,19 @@ voltages, clocks, CPUCP ownership, LLCC policy and electrical limits are retaine
 Actual-function fixtures require an old-source failure, multiple synthetic
 capacities, duplicate/non-L3 row isolation, repeated-request call bounds,
 transport and release failures, suspend/resume and complete cleanup. Native
-kernel/RPM qualification and physical effectiveness remain pending.
+kernel/RPM qualification and physical effectiveness are separate requirements.
+
+[COPR build 11251976](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11251976/)
+passed on 4 November 2026 at 7.3.1-1800.fc46, source
+`cfc3d3958e20be89bb741b41f135301dacaf6b97`. The actual old-source fixture fails
+with the required assertion status 134. Corrected functions pass normal and
+ASan/UBSan runs; the complete AArch64 kernel, modules and retained package
+checks also pass. All six RPM signatures and payload digests verify. Compared
+with 1600, the retained 1710 cohort adds eight standard IR decoder modules and
+the NFC/IR v2 capability; dependencies and ordered lifecycle scripts match.
+DNF delivery and installed payload verification succeed. The candidate is
+staged while the accepted 1500 kernel remains running. No new-kernel hardware
+effectiveness, stall resolution or physical acceptance is established.
 
 The retained-source composition computes `native_config_sha256` from the actual
 `native-profile/native.config` input and names that scope explicitly. It also
