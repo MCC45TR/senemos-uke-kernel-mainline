@@ -90,8 +90,15 @@ and amplifier removal revoke the guard and mute/reset the amplifiers. Failed DSP
 configuration clears staged calibration. Successfully closed graphs retain the
 validated snapshot only in kernel RAM and reapply it before later playback.
 An asynchronous amplifier initialization/PLL/unmute fault revokes the shared
-atomic gate immediately and schedules group mute outside the codec mutex. A
+guard immediately and schedules group mute outside the codec mutex. A
 faulted group requires fresh provisioning before it can be armed again.
+
+The subsequent gain-safety hardening verifies sensing, PLL, power, gain readback
+and the guard while DAC mute is still asserted, and monitors those states during
+playback. Fault-generation tickets prevent a concurrent new fault from being
+cleared by an older provisioning transaction. The detailed admission conditions
+remain in [the volume investigation](SPEAKER-VOLUME-20261103.md); this does not
+enable a higher gain or establish physical protection effectiveness.
 
 The normal native preparation still selects the existing topology. The explicit
 candidate preparation is `src/audio/prepare-fs19xx-runtime.sh`; it must be paired
