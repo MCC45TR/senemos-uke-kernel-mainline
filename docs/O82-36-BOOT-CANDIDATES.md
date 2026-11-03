@@ -20,6 +20,9 @@ root selector and boot construction. Transport and dimming omission are coupled
 to reproduce the reference startup protocol; do not attribute any observed
 improvement to an individual packet change without another experiment.
 
+A compositor can restore a saved mode even when 60 Hz is preferred. Record the
+actual initial DRM mode before excluding the startup-rate hypothesis.
+
 The native source recipes retain the exact release1011 SRPM, SHA-256
 `84915ef98a26df47bc8f223e3751b160e40eba3c447f433fbe13b2097d6a7146`,
 and explicitly inventory their overlays. No firmware bytes are embedded.
