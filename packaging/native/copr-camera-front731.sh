@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2005}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2005 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2006}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2006 ]]
 bash "$owner/packaging/native/copr-camera-eeprom731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -31,18 +31,25 @@ for path in "${overlays[@]}"; do
 done
 for tree in "$profile" "$boot"; do
  install -m644 "$owner/src/camera/eeprom/uke-front-eeprom-dt.h" "$tree/src/boot/uke-front-eeprom-dt.h"
- for hook in front-eeprom-abl-hook.patch front-eeprom-prepare-hook.patch; do
-  git -C "$tree" apply --check "$owner/src/camera/eeprom/$hook"
-  git -C "$tree" apply "$owner/src/camera/eeprom/$hook"
- done
+ # The boot recipe consumes the already prepared kernel; unlike the native
+ # profile it does not carry every source asset listed by earlier recipes.
+ if [[ -f $tree/src/boot/uke-abl.c ]]; then
+  git -C "$tree" apply --check "$owner/src/camera/eeprom/front-eeprom-abl-hook.patch"
+  git -C "$tree" apply "$owner/src/camera/eeprom/front-eeprom-abl-hook.patch"
+ fi
+ git -C "$tree" apply --check "$owner/src/camera/eeprom/front-eeprom-prepare-hook.patch"
+ git -C "$tree" apply "$owner/src/camera/eeprom/front-eeprom-prepare-hook.patch"
  # The hardware inventory uses the canonical node path after native conversion.
- [[ $(grep -Foc '/i2c@880000/qcom,eeprom1' "$tree/src/boot/uke-hardware.h") == 1 ]]
- sed -i 's|/i2c@880000/qcom,eeprom1|/i2c@880000/eeprom@51|' "$tree/src/boot/uke-hardware.h"
+ if [[ -f $tree/src/boot/uke-hardware.h ]]; then
+  [[ $(grep -Foc '/i2c@880000/qcom,eeprom1' "$tree/src/boot/uke-hardware.h") == 1 ]]
+  sed -i 's|/i2c@880000/qcom,eeprom1|/i2c@880000/eeprom@51|' "$tree/src/boot/uke-hardware.h"
+ fi
  printf '\n%s\n' 'sha256sum "$here/uke-front-eeprom-dt.h" >> "$output/abl-source-SHA256SUMS"' >> "$tree/src/boot/prepare-abl-source.sh"
  bash -n "$tree/src/boot/prepare-abl-source.sh"
 done
 cmp "$profile/src/boot/uke-front-eeprom-dt.h" "$profile/src/camera/eeprom/uke-front-eeprom-dt.h"
 for path in src/boot/uke-front-eeprom-dt.h src/boot/prepare-abl-source.sh src/boot/uke-abl.c src/boot/uke-hardware.h; do
+ test -f "$boot/$path" || continue
  digest=$(sha256sum "$boot/$path"); digest=${digest%% *}
  jq --arg path "$path" --arg digest "$digest" \
   '.source_assets |= (map(select(.path!=$path)) + [{path:$path,sha256:$digest}])' \
