@@ -86,6 +86,7 @@ static struct clk_vdd_class *multi_rails[] = { &cam_cc_mm, &cam_cc_mxc };
 static unsigned long test_rates[VDD_NUM] = {
 	[VDD_LOWER_D1] = 100, [VDD_LOW] = 200, [VDD_NOMINAL] = 400,
 };
+static unsigned long rivian_rates[VDD_NUM] = { [VDD_LOW] = 200 };
 static const char * const test_parents[] = { "fixture-parent" };
 static struct clk_init_data original_inits[5];
 #include "provider-clocks.h"
@@ -109,7 +110,7 @@ static void clock_reset(struct device *dev, bool powered)
 	test_clocks[0].vdd_data = (struct clk_vdd_class_data) {
 		.vdd_class = &cam_cc_mxc, .rate_max = test_rates, .num_rate_max = VDD_NUM };
 	test_clocks[1].vdd_data = (struct clk_vdd_class_data) {
-		.vdd_class = &cam_cc_mm, .rate_max = test_rates, .num_rate_max = VDD_NUM };
+		.vdd_class = &cam_cc_mx, .rate_max = rivian_rates, .num_rate_max = VDD_NUM };
 	test_clocks[3].vdd_data = (struct clk_vdd_class_data) {
 		.vdd_classes = multi_rails, .num_vdd_classes = 2,
 		.rate_max = test_rates, .num_rate_max = VDD_NUM };
@@ -195,9 +196,9 @@ static void normal_clocks(void)
 	for (int i = 0; i < 5; i++) prepare_clock(i);
 	assert(cam_cc_clocks_init() == -EBUSY);
 	/* Shared generic callbacks and the PLL wrapper each vote exactly once. */
-	assert(cam_cc_mm.level_votes[VDD_LOW] == 2);
+	assert(cam_cc_mm.level_votes[VDD_LOW] == 1);
 	assert(cam_cc_mxc.level_votes[VDD_LOW] == 2);
-	assert(cam_cc_mx.level_votes[VDD_LOW] == 0);
+	assert(cam_cc_mx.level_votes[VDD_LOW] == 1);
 	for (int i = 0; i < 5; i++) {
 		struct clk_hw *hw = &test_clocks[i].hw;
 		const struct clk_ops *ops = hw->init->ops;
@@ -207,6 +208,7 @@ static void normal_clocks(void)
 	for (int i = 4; i >= 0; i--) unprepare_clock(i);
 	assert(!cam_cc_power.fault);
 	assert(!cam_cc_mm.level_votes[VDD_LOW] && !cam_cc_mxc.level_votes[VDD_LOW]);
+	assert(!cam_cc_mx.level_votes[VDD_LOW]);
 	for (int i = 0; i < 3; i++) assert(regulators[i].count == 1);
 	assert(dev.ops->runtime_suspend(&dev) == 0);
 	clock_reset(&dev, true);
@@ -310,7 +312,7 @@ int main(void)
 	struct clk_hw *hw = &test_clocks[1].hw;
 	if (hw->init->ops->prepare) assert(hw->init->ops->prepare(hw) == 0);
 	hw->prepared = true;
-	assert(cam_cc_mm.level_votes[VDD_LOW] == 1);
+	assert(cam_cc_mx.level_votes[VDD_LOW] == 1);
 #else
 	assert(original_owner_checks() == 0);
 	admission(); normal_clocks(); rate_changes(); callback_faults(); voltage_faults();

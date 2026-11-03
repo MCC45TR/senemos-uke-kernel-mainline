@@ -50,11 +50,17 @@ mv "$work/provider-power-candidate.h" "$work/provider-power.h"
 "$work/provider"
 
 [[ ${CAMCC_CLOCKS_TEST:-0} == 1 ]] || exit 0
-printf '%s  %s\n' 2438f057d67c3cd0229e710494dcf0a381bc69021591fe9cb89219734b8e633d \
+sha256sum "$kernel/drivers/clk/qcom/clk-regmap.c"
+printf '%s  %s\n' 8e1ffc25007a64b61f59b0c20dc6077b5595125b28582c020f47925bbe8da7e4 \
     "$kernel/drivers/clk/qcom/clk-regmap.c" | sha256sum -c -
 sed '/^#include /d' "$project/src/camera/provider/camcc-sm7675-clocks.h" > "$work/provider-clocks.h"
-awk '/^int clk_pre_change_regmap\(/ {copy=1}
-     copy {print}' "$kernel/drivers/clk/qcom/clk-regmap.c" > "$work/clocks-voltage.c"
+awk '/^int clk_(pre_change_regmap|post_change_regmap|prepare_regmap)\(/ ||
+     /^void clk_unprepare_regmap\(/ {copy=1}
+     copy {print; if ($0=="}")copy=0}' \
+    "$kernel/drivers/clk/qcom/clk-regmap.c" > "$work/clocks-voltage.c"
+[[ $(grep -Ec '^int clk_(pre_change_regmap|post_change_regmap|prepare_regmap)\(|^void clk_unprepare_regmap\(' "$work/clocks-voltage.c") == 4 ]]
+printf '%s  %s\n' 9783b62658f620b8e91d7b8400ec861fafddde547e79cfe1f1a00d9d101ed0d1 \
+    "$work/clocks-voltage.c" | sha256sum -c -
 "${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
     -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
     -Wno-unused-but-set-variable -I"$work" -DCLOCKS_BASELINE \
@@ -64,7 +70,7 @@ set +e
 before_status=$?
 set -e
 [[ $before_status == 134 ]]
-grep -Fq 'cam_cc_mm.level_votes[VDD_LOW] == 1' "$work/before-clocks.log"
+grep -Fq 'cam_cc_mx.level_votes[VDD_LOW] == 1' "$work/before-clocks.log"
 printf 'CAMCC clocks: native Rivian prepare lacks the required voltage vote (expected status %s)\n' "$before_status"
 "${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
     -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
