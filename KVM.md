@@ -1,5 +1,16 @@
 # Linux 7.3 Uke KVM candidate
 
+## Manual query candidate — 3 November 2026
+
+The [Actions-only EL2 query candidate](docs/EL2-QUERY-ACTIONS.md) uses retained
+7.3.1-1300 sources to build `7.3.1-2001-kvm`. It performs one SCM INFO query
+without requiring EL2 or requesting Gunyah exit. The workflow exports both
+root-profile images and matching non-activating RPMs as an Actions artifact.
+No Release or COPR publication is enabled for this experiment. The historical
+7.3.0 producer and its entry profiles below are separate from that workflow.
+
+## Historical 7.3.0 producer
+
 25 October 2026. Fedora Rawhide AArch64 source and COPR build preparation.
 No tests, tablet installation, boot or guest execution were requested for this
 preparation. All physical acceptance remains open.

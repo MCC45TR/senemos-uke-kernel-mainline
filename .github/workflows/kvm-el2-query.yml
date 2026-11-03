@@ -1,0 +1,45 @@
+name: KVM EL2 query artifact
+on:
+  push:
+    branches: [kvm]
+    paths:
+      - .github/workflows/kvm-el2-query.yml
+      - scripts/build-el2-query-actions.sh
+      - src/boot/uke-el2-query.h
+      - src/boot/prepare-el2-query-source.sh
+      - src/boot/collect-el2-query.sh
+      - patches/boot/0072-uke-el2-query.patch
+      - tests/el2-query-*
+      - manifests/el2-query-20261103.json
+      - docs/EL2-QUERY-ACTIONS.md
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kvm-el2-query
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/kvm'
+    runs-on: ubuntu-24.04-arm
+    container: registry.fedoraproject.org/fedora:rawhide
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install remote build orchestration tools
+        run: dnf -y --setopt=install_weak_deps=False install git-core curl jq rpm-build cpio tar xz dnf5-plugins
+      - name: Build retained kernel with query-only SCM observation
+        run: bash scripts/build-el2-query-actions.sh
+      - name: Upload test images and matching packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: uke-kvm-el2-query-7.3.1-2001-kvm-${{ github.sha }}
+          path: build/el2-query-artifact/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

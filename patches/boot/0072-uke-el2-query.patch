@@ -1,0 +1,34 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] firmware: qcom: observe Uke EL2 service advertisement
+
+Use the initialized SCM transport for an INFO availability query. Keep the
+normal Linux entry and never request Gunyah exit. Reading sysfs is passive.
+
+diff --git a/drivers/firmware/qcom/qcom_scm.c b/drivers/firmware/qcom/qcom_scm.c
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -9,6 +9,9 @@
+ #include <linux/cleanup.h>
+ #include <linux/clk.h>
+ #include <linux/completion.h>
++#include <linux/sysfs.h>
++#include <asm/sysreg.h>
++#include <asm/virt.h>
+ #include <linux/cpumask.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/err.h>
+@@ -2793,3 +2796,5 @@
++#include "uke-el2-query.h"
++
+ static int qcom_scm_probe(struct platform_device *pdev)
+ {
+ 	struct qcom_tzmem_pool_config pool_config;
+@@ -2900,6 +2905,8 @@
+ 	smp_store_release(&__scm, scm);
+ 
+ 	__get_convention();
++	uke_el2_query_run(scm->dev);
++
+ 
+ 	if (qcom_scm_is_pas_available()) {
+ 		qcom_pas_ops_scm.dev = scm->dev;
