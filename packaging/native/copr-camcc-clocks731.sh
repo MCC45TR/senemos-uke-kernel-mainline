@@ -34,6 +34,12 @@ case $base_release in
   base_header=1bb1e6fab32581f77f6babb69e2be7d405dfdf6a6d1513d515994d551e931f89
   base_payload=c91b0a390f73a7063bcb49221cf94d42ef2242b95e3a26f2d84b4428e7ca207f
   ;;
+ 3000)
+  base_build=11252621
+  base_commit_expected=b1e1979e16719c08b1eac1bbbbf4afc9c6facc21
+  base_header=ef3834764344db7e8cab3f9eb26c55424a65c6e1dc32153ee6651c4af0fbfcae
+  base_payload=c5956cf2b13628690d572197cc118612a67a6fc0394bc58c041d6f1cf31af69b
+  ;;
  *) printf 'Unqualified camera parent: %s\n' "$base_release" >&2; exit 1;;
 esac
 stage=$(mktemp -d)
@@ -98,11 +104,20 @@ if ((base_release >= 1600)); then
   .rtc_offset_write_readback and (.rtc_pmic_counter_writes|not) and (.rtc_sdam_writes|not)' \
   "$profile/source-composition.json" >/dev/null
 fi
-if [[ $base_release == 1900 ]]; then
+if [[ $base_release == 1900 || $base_release == 3000 ]]; then
  jq -e '.ssc_adsp_supplier_bound_gate==1 and .ssc_temperature_unit=="millicelsius" and
   .nfc_atomic_memory_read and .nfc_system_wakeup and .ir_explicit_word_bits==16 and
   .memlat_l3_capacity=="ERANGE-only-descending-OEM-map" and .memlat_strict_provider_unchanged and
   .o82_regdma_resource=={start:"0x0af80000",size:"0x7000"}' \
+  "$profile/source-composition.json" >/dev/null
+fi
+if [[ $base_release == 3000 ]]; then
+ jq -e '.qualified_ssc_large_report_check==11252237 and .ssc_report_type==1 and
+  .ssc_indication_ids==[33,34] and .ssc_payload_limit==16384 and
+  .wcd939x_telemetry_readonly==1 and .wcd939x_telemetry_getters_unchanged and
+  .wcd939x_electrical_settings_unchanged and
+  .ath11k_regulatory_status_diagnostics==1 and .ath11k_regulatory_policy_unchanged and
+  .ath11k_regulatory_decisions_unchanged and .ath11k_wire_protocol_unchanged' \
   "$profile/source-composition.json" >/dev/null
 fi
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS

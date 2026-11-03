@@ -62,7 +62,7 @@ awk '
   print
   print "* Wed Nov 04 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" ENVIRON["UKE_CAMERA_BUILD_RELEASE"]
   print "- Initialize every supported CCI completion before controller reset and IRQ."
-  print "- Preserve guarded CAMCC, native CAMSS and the complete retained 1900 cohort."
+  print "- Preserve guarded CAMCC, native CAMSS and the complete retained native cohort."
   print ""; next
  }
  {print}
