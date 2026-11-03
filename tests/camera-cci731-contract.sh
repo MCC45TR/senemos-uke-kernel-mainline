@@ -28,7 +28,9 @@ printf '%s\n' \
 # Import the unchanged source register definitions instead of duplicating them.
 awk '/^#define/ {copy=1} copy {print; if ($0 !~ /\\$/) copy=0}' "$before" > "$work/cci-registers.h"
 read -ra flags <<< "${CAMERA_CCI_TEST_FLAGS:-}"
-"${CC:-clang}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter \
+# Imported kernel bodies use signed loop variables with unsigned master counts.
+# Keep the real types and the kernel's warning policy for that existing code.
+"${CC:-clang}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare \
  "${flags[@]}" -I"$work" "$project/tests/fixtures/camera-cci-reset-check.c" -o "$work/check"
 ulimit -c 0
 set +e
