@@ -43,6 +43,7 @@ esac
 install -m644 "$profile/src/audio/uke-audio-card.c" "$kernel/sound/soc/qcom/uke-audio-card.c"
 install -m644 "$profile/src/audio/uke-microphone-gain.h" "$kernel/sound/soc/qcom/uke-microphone-gain.h"
 install -m644 "$profile/src/audio/uke-dp-eld.h" "$kernel/sound/soc/qcom/uke-dp-eld.h"
+bash "$profile/src/audio/prepare-control-links.sh" "$kernel"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-AudioReach.conf" \
     -o "$output/POCO-Pad-X1-AudioReach-tplg.bin"
 alsatplg -c "$profile/src/audio/POCO-Pad-X1-HDMI.conf" \

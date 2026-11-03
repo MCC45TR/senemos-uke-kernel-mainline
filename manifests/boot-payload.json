@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/native/prepare.sh",
-      "sha256": "ccd54f9d70701d105e56c86dbcba2b2d8cdab280f5eacd29bdf60c636fb366fb"
+      "sha256": "8029d000f79a668e2c5728a386ca03f3ce27828df8a77d91e8f143552427d240"
     },
     {
       "path": "patches/boot/0005-uke-root-selector.patch",
@@ -232,6 +232,10 @@
       "sha256": "c4077a97a3bc4ea38d4259c8505d6873d419a91b377ec85a26afe95587aa91c8"
     },
     {
+      "path": "patches/boot/0072-audioreach-control-links.patch",
+      "sha256": "a452f7ac2174ef33346d2c012c314631ec449f0406ac404a04afef057cbd8c6a"
+    },
+    {
       "path": "patches/display/0057-uke-displayport-eld-notification.patch",
       "sha256": "9de41e6e9ed819c411f61b58b4b1c0c4edb274d65c8155c25f0cbfab4bc6add1"
     },
@@ -266,6 +270,14 @@
     {
       "path": "src/audio/POCO-Pad-X1.conf",
       "sha256": "6008c22d4a2f380d30683c38f9ef4c924651771b819a2ca0cfd456f52f43de87"
+    },
+    {
+      "path": "src/audio/acdb-graph-audit.cpp",
+      "sha256": "0d5bca9a786dde8a80182eaaaabd511461616f93e51e966c75b6574825d22e78"
+    },
+    {
+      "path": "src/audio/audioreach-control-links.h",
+      "sha256": "6dba7965a260bd60741ccfd980843c461c1fc11482b5e8822d75327e0b1e8980"
     },
     {
       "path": "src/audio/desktop/LICENSE",
@@ -370,6 +382,10 @@
     {
       "path": "src/audio/desktop/wireplumber/80-uke-microphone-array.conf",
       "sha256": "699cf71e340dde4f9a3115b4153bf402ba5b8b00ea4ff90ac225dd0da22bade9"
+    },
+    {
+      "path": "src/audio/prepare-control-links.sh",
+      "sha256": "0535790e6e3e35c5edce9ad6ce17d04729e32369cc97f74576884127c9f8a5d4"
     },
     {
       "path": "src/audio/sm7675-uke-audio-providers.dtsi",
@@ -630,6 +646,18 @@
     {
       "path": "src/power/uke-pm8010.h",
       "sha256": "70548e41cd0b3d610c3298f3e8b88d3212d8195eaa0916873c861408af445cf4"
+    },
+    {
+      "path": "tests/audio-control-links-contract.sh",
+      "sha256": "ca799a4593aab6a50d23b0de2e9c6ade33e20ad07eacfef8b2bdf1bc2d93cc1b"
+    },
+    {
+      "path": "tests/audio-control-links-integration.sh",
+      "sha256": "ccafbca07dd4b249d731f01936d45d5585ee37d6ccc76b2f7d9e5c88e460f5b4"
+    },
+    {
+      "path": "tests/audio-control-links.c",
+      "sha256": "6ae6d76f1c4fc4a814d1852bd27c45e753b9568ff0c9bf426c1fb54fd3441048"
     },
     {
       "path": "tests/audio-eld-contract.sh",

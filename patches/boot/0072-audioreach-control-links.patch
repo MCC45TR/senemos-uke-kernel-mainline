@@ -1,0 +1,150 @@
+From: Senemos Contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qdsp6: encode optional AudioReach IMCL control links
+
+The exact Uke FourSemi speaker/VI metadata requires an IMCL control link,
+which the native graph-open encoder previously omitted. Add explicit topology
+properties for one intent and heap per link, validating complete endpoints and
+rejecting duplicate links before sending a graph-open command.
+
+Wire ABI: AudioReach engine b38cb85a1a25, apm_module_api.h (BSD-3-Clause).
+No active topology, tuning, calibration or amplifier level changes here.
+This transport prerequisite alone does not implement speaker protection.
+
+--- a/sound/soc/qcom/qdsp6/audioreach.h
++++ b/sound/soc/qcom/qdsp6/audioreach.h
+@@ -6,6 +6,7 @@
+ #include <linux/soc/qcom/apr.h>
+ #include <uapi/sound/snd_ar_tokens.h>
+ #include <sound/soc.h>
++#include "audioreach-control-links.h"
+ struct q6apm;
+ struct q6apm_graph;
+ 
+@@ -934,6 +935,9 @@
+ 	uint32_t dst_mod_inst_id[AR_MAX_MOD_LINKS];
+ 	uint32_t dst_mod_ip_port_id[AR_MAX_MOD_LINKS];
+ 
++	/* Optional single-intent IMCL connection, owned by this module. */
++	struct audioreach_ctrl_link ctrl_link;
++
+ 	/* Format specifics */
+ 	uint32_t ch_fmt;
+ 	uint32_t rate;
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -482,7 +482,9 @@
+ void *audioreach_alloc_graph_pkt(struct q6apm *apm,
+ 				 const struct audioreach_graph_info *info)
+ {
+-	int payload_size, sg_sz, cont_sz, ml_sz, mp_sz, mc_sz;
++	int payload_size, sg_sz, cont_sz, ml_sz, mp_sz, mc_sz, ctrl_sz, ret;
++	struct audioreach_ctrl_link ctrl_links[AR_CTRL_LINK_MAX_COUNT];
++	unsigned int num_ctrl_links = 0;
+ 	struct apm_module_param_data  *param_data;
+ 	struct apm_container_params *cont_params;
+ 	struct audioreach_container *container;
+@@ -519,6 +521,11 @@
+ 
+ 			list_for_each_entry(module, &container->modules_list, node) {
+ 				num_connections += module->num_connections;
++				if (module->ctrl_link.first_instance) {
++					if (num_ctrl_links == AR_CTRL_LINK_MAX_COUNT)
++						return ERR_PTR(-E2BIG);
++					ctrl_links[num_ctrl_links++] = module->ctrl_link;
++				}
+ 			}
+ 		}
+ 	}
+@@ -532,7 +539,10 @@
+ 	mp_sz = APM_MOD_PROP_PSIZE(mprop, num_modules);
+ 	mc_sz =	APM_MOD_CONN_PSIZE(mcon, num_connections);
+ 
+-	payload_size = sg_sz + cont_sz + ml_sz + mp_sz + mc_sz;
++	ctrl_sz = audioreach_ctrl_links_size(num_ctrl_links);
++	if (ctrl_sz < 0)
++		return ERR_PTR(ctrl_sz);
++	payload_size = sg_sz + cont_sz + ml_sz + mp_sz + mc_sz + ctrl_sz;
+ 	pkt = audioreach_alloc_apm_cmd_pkt(payload_size, APM_CMD_GRAPH_OPEN, 0);
+ 	if (IS_ERR(pkt))
+ 		return pkt;
+@@ -584,6 +594,11 @@
+ 	params.mod_conn_list_data->num_connections = num_connections;
+ 	p += mc_sz;
+ 
++	ret = audioreach_ctrl_links_pack(p, ctrl_sz, ctrl_links, num_ctrl_links);
++	if (ret < 0) {
++		kfree(pkt);
++		return ERR_PTR(ret);
++	}
+ 	audioreach_populate_graph(apm, info, &params, sg_list, num_sub_graphs);
+ 
+ 	return pkt;
+--- a/sound/soc/qcom/qdsp6/topology.c
++++ b/sound/soc/qcom/qdsp6/topology.c
+@@ -445,6 +445,8 @@
+ 	uint32_t dst_mod_inst_id[AR_MAX_MOD_LINKS] = { 0, };
+ 	uint32_t dst_mod_ip_port_id[AR_MAX_MOD_LINKS] = { 0, };
+ 	uint32_t src_mod_inst_id = 0;
++	struct audioreach_ctrl_link ctrl_link = {};
++	u32 ctrl_seen = 0;
+ 
+ 	int module_id = 0, instance_id = 0, tkn_count = 0;
+ 	const struct snd_soc_tplg_vendor_value_elem *mod_elem;
+@@ -459,7 +461,30 @@
+ 	max_tokens = le32_to_cpu(mod_array->num_elems);
+ 	while (tkn_count <= (max_tokens - 1)) {
+ 		token = le32_to_cpu(mod_elem->token);
++		if (token >= AR_TKN_U32_MODULE_CTRL_PORT_ID &&
++		    token <= AR_TKN_U32_MODULE_CTRL_HEAP_ID) {
++			u32 bit = BIT(token - AR_TKN_U32_MODULE_CTRL_PORT_ID);
++
++			if (ctrl_seen & bit)
++				return ERR_PTR(-EINVAL);
++			ctrl_seen |= bit;
++		}
+ 		switch (token) {
++		case AR_TKN_U32_MODULE_CTRL_PORT_ID:
++			ctrl_link.first_port = le32_to_cpu(mod_elem->value);
++			break;
++		case AR_TKN_U32_MODULE_CTRL_PEER_INSTANCE_ID:
++			ctrl_link.second_instance = le32_to_cpu(mod_elem->value);
++			break;
++		case AR_TKN_U32_MODULE_CTRL_PEER_PORT_ID:
++			ctrl_link.second_port = le32_to_cpu(mod_elem->value);
++			break;
++		case AR_TKN_U32_MODULE_CTRL_INTENT_ID:
++			ctrl_link.intent = le32_to_cpu(mod_elem->value);
++			break;
++		case AR_TKN_U32_MODULE_CTRL_HEAP_ID:
++			ctrl_link.heap = le32_to_cpu(mod_elem->value);
++			break;
+ 		/* common module info */
+ 		case AR_TKN_U32_MODULE_ID:
+ 			module_id = le32_to_cpu(mod_elem->value);
+@@ -569,6 +594,12 @@
+ 	if (mod) {
+ 		int pn, id = 0;
+ 
++		ctrl_link.first_instance = instance_id;
++		if (ctrl_seen && (ctrl_seen != GENMASK(4, 0) ||
++				  !audioreach_ctrl_link_valid(&ctrl_link)))
++			return ERR_PTR(-EINVAL);
++		if (ctrl_seen)
++			mod->ctrl_link = ctrl_link;
+ 		mod->module_id = module_id;
+ 		mod->max_ip_port = max_ip_port;
+ 		mod->max_op_port = max_op_port;
+--- a/include/uapi/sound/snd_ar_tokens.h
++++ b/include/uapi/sound/snd_ar_tokens.h
+@@ -341,4 +341,11 @@
+ 	__le32 data[0];	/* config data */
+ };
+ 
++/* Optional single-intent IMCL control connection. */
++#define AR_TKN_U32_MODULE_CTRL_PORT_ID		4000
++#define AR_TKN_U32_MODULE_CTRL_PEER_INSTANCE_ID	4001
++#define AR_TKN_U32_MODULE_CTRL_PEER_PORT_ID	4002
++#define AR_TKN_U32_MODULE_CTRL_INTENT_ID		4003
++#define AR_TKN_U32_MODULE_CTRL_HEAP_ID		4004
++
+ #endif /* __SND_AR_TOKENS_H__ */

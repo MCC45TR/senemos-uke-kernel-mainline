@@ -49,6 +49,12 @@ struct Graph {
     uint32_t key, value;
     std::map<uint32_t, uint32_t> modules; // instance -> module ID
     std::set<uint32_t> subgraph_ids;
+    struct ControlLink {
+        uint32_t first_instance, first_port, second_instance, second_port;
+        std::vector<uint32_t> intents;
+        uint32_t heap = 0;
+    };
+    std::vector<ControlLink> control_links;
     struct Transport {
         uint32_t instance, parameter;
         Bytes payload;
@@ -58,6 +64,40 @@ struct Graph {
     };
     std::vector<Transport> transport;
 };
+void control_links(Cursor payload, Graph &graph) {
+    const auto count = payload.count(20);
+    require(count <= 64, "too many control links");
+    for (uint32_t i = 0; i < count; ++i) {
+        Graph::ControlLink link{payload.word(), payload.word(), payload.word(),
+                                payload.word(), {}, 0};
+        require(link.first_instance && link.first_port && link.second_instance &&
+                link.second_port, "zero control-link endpoint");
+        const auto properties = payload.count(8);
+        require(properties <= 16, "too many control-link properties");
+        std::set<uint32_t> seen;
+        for (uint32_t p = 0; p < properties; ++p) {
+            const auto id = payload.word(), size = payload.word();
+            require(seen.insert(id).second, "duplicate control-link property");
+            Cursor property{payload.take(size)};
+            if (id == 0x08001062) {
+                const auto intents = property.count(4);
+                require(intents && intents <= 16, "invalid control-link intent count");
+                for (uint32_t n = 0; n < intents; ++n) {
+                    const auto intent = property.word();
+                    require(intent, "zero control-link intent");
+                    link.intents.push_back(intent);
+                }
+                property.end();
+            } else if (id == 0x0800136f) {
+                link.heap = property.word();
+                property.end();
+            }
+        }
+        require(!link.intents.empty(), "control-link intents absent");
+        graph.control_links.push_back(std::move(link));
+    }
+    payload.end();
+}
 std::map<std::string, View> chunks(View bytes) {
     Cursor file{bytes};
     require(file.word() == 0x42444341 && file.word() == 0, "not an ACDB data file");
@@ -109,6 +149,7 @@ void subgraphs(View pool, uint32_t offset, Graph &graph) {
             Cursor payload{spf.take(parameter_size)};
             spf.take((8 - parameter_size % 8) % 8);
             if (parameter == 0x08001002) module_list(payload, graph);
+            if (parameter == 0x08001061) control_links(payload, graph);
         }
     }
     table.end();
@@ -221,7 +262,7 @@ std::vector<Graph> audit(View bytes) {
                     ((first_key == 0xa2000000 && first_value == 0xa2000001) ||
                      (first_key == 0xa3000000 &&
                       (first_value == 0xa3000001 || first_value == 0xa3000009)))) {
-                    Graph graph{first_key, first_value, {}, {}, {}};
+                    Graph graph{first_key, first_value, {}, {}, {}, {}};
                     try { subgraphs(tables.at("POOL"), data_offset, graph); }
                     catch (const std::runtime_error &error) {
                         throw std::runtime_error("base graph at POOL+" + std::to_string(data_offset) +
@@ -257,6 +298,14 @@ Bytes fixture() {
     for (auto v : {1u, 0x08001001u, 4u, 0u, 0u}) append(spf, v);
     for (auto v : {1u, 0x08001002u, uint32_t(modules.size())}) append(spf, v);
     spf.insert(spf.end(), modules.begin(), modules.end());
+    // One independent known-wire IMCL link, including intent and heap properties.
+    Bytes control;
+    for (auto v : {1u, 0x4040u, 0x80000000u, 0x49fdu, 0x80000000u, 2u,
+                   0x08001062u, 8u, 1u, 0x08001231u, 0x0800136fu, 4u, 1u})
+        append(control, v);
+    for (auto v : {1u, 0x08001061u, uint32_t(control.size())}) append(spf, v);
+    spf.insert(spf.end(), control.begin(), control.end());
+    append(spf, 0); // eight-byte parameter alignment
     append(object, 0); append(object, spf.size());
     object.insert(object.end(), spf.begin(), spf.end());
     append(pool, 12 + object.size()); append(pool, 1); append(pool, 0x4000);
@@ -288,6 +337,11 @@ void self_test() {
     auto good = fixture();
     require(audit(good).at(0).modules.at(0x6000) == 0x0700100e, "module identity mismatch");
     auto graph = audit(good).at(0);
+    require(graph.control_links.size() == 1 &&
+            graph.control_links[0].first_instance == 0x4040 &&
+            graph.control_links[0].second_instance == 0x49fd &&
+            graph.control_links[0].intents == std::vector<uint32_t>{0x08001231} &&
+            graph.control_links[0].heap == 1, "control-link metadata mismatch");
     require(graph.transport.size() == 4 && graph.transport.at(0).payload.size() == 28 &&
             graph.transport.at(1).payload.size() == 12,
             "allowlisted transport metadata missing");
@@ -335,6 +389,13 @@ int main(int argc, char **argv) {
             std::cout << "Graph key=0x" << std::hex << graph.key << " value=0x" << graph.value << '\n';
             for (auto [instance, module] : graph.modules)
                 std::cout << "  module=0x" << module << " instance=0x" << instance << '\n';
+            for (const auto &link : graph.control_links) {
+                std::cout << "  control-link first=0x" << link.first_instance
+                          << ":0x" << link.first_port << " second=0x"
+                          << link.second_instance << ":0x" << link.second_port;
+                for (auto intent : link.intents) std::cout << " intent=0x" << intent;
+                std::cout << " heap=" << std::dec << link.heap << std::hex << '\n';
+            }
             for (const auto &transport : graph.transport) {
                 std::cout << "  transport instance=0x" << transport.instance << " parameter=0x"
                           << transport.parameter << " bytes=" << std::dec << transport.payload.size();
