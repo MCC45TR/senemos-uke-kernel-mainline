@@ -31,7 +31,12 @@ curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' \
 # remotely downloaded parent, rather than trusting a truncated header alone.
 [[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a ]]
 [[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == 914461682948289e960221fb64289e32ca6b6b2bf456357744afb90d591b6a42 ]]
-rpmkeys --checksig "$stage/base.src.rpm"
+curl -fLsS --max-time 45 --proto '=https' --proto-redir '=https' \
+ https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg -o "$stage/copr-pubkey.gpg"
+printf '%s  %s\n' 09612473936422a20ac218402142f6e40b903e42f78d6d9bc13c1812db435d50 "$stage/copr-pubkey.gpg" | sha256sum -c -
+rpm --dbpath "$stage/rpmdb" --initdb
+rpmkeys --dbpath "$stage/rpmdb" --import "$stage/copr-pubkey.gpg"
+rpmkeys --dbpath "$stage/rpmdb" --checksig --verbose "$stage/base.src.rpm"
 parent_sha=$(sha256sum "$stage/base.src.rpm" | cut -d ' ' -f1)
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
 cpio -t --quiet < "$stage/base.cpio" > "$stage/entries"
