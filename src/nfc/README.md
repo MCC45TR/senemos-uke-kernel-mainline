@@ -24,7 +24,7 @@ The fixed-size UAPI in `fm19511-uapi.h` adds `FM19511_IOC_INFO`,
 `FM19511_IOC_EVENTS` and `FM19511_IOC_READ_MEMORY`. The latter performs one
 serialized address/read operation, checks 16-bit address wrap and transfer size,
 and zeros unused output. Events contain an IRQ sequence, the sequence at the
-last completed status read, the last I2C error and three raw OEM IRQ bytes.
+last completed status read, the last status-read error and three raw OEM IRQ bytes.
 Reading events consumes the prior notification while retaining concurrent IRQs;
 status completion produces a second notification. Undocumented bits are not
 interpreted as decoded NFC messages. 32-bit compatibility uses identical UAPI
