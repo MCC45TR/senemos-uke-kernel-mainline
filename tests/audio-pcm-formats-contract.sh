@@ -53,7 +53,7 @@ cat >> "$work/check.c" <<'C'
 static int audioreach_set_compr_media_format(struct media_format *h,void *p,const struct audioreach_module_config *c) {(void)h;(void)p;(void)c;return -EINVAL;}
 C
 for name in audioreach_pcm_word_size audioreach_pcm_set_media_format audioreach_shmem_set_media_format; do
- extract "$q6/audioreach.c" "^static int $name\\(" >> "$work/check.c"
+ extract "$q6/audioreach.c" "^static int $name[(]" >> "$work/check.c"
 done
 cat >> "$work/check.c" <<'C'
 static uint16_t half(size_t n) { uint16_t v;memcpy(&v,sent+n,2);return v; }
