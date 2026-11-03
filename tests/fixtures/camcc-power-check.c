@@ -212,7 +212,7 @@ static struct regulator *devm_regulator_get_optional(struct device *dev, const c
 }
 static int of_genpd_add_provider_onecell(void *node, struct genpd_onecell_data *data)
 {
-	assert(!published);
+	assert(!published && !published_data);
 	if (provider_error)
 		return provider_error;
 	published = true;
