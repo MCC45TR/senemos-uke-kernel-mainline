@@ -11,11 +11,13 @@ int q6apm_fs19xx_register(struct notifier_block *listener, unsigned int position
 void q6apm_fs19xx_unregister(struct notifier_block *listener, unsigned int position);
 bool q6apm_fs19xx_configured(void);
 bool q6apm_fs19xx_running(void);
+void q6apm_fs19xx_fault(void);
 #else
 static inline int q6apm_fs19xx_register(struct notifier_block *n, unsigned int p)
 { return -EOPNOTSUPP; }
 static inline void q6apm_fs19xx_unregister(struct notifier_block *n, unsigned int p) {}
 static inline bool q6apm_fs19xx_configured(void) { return false; }
 static inline bool q6apm_fs19xx_running(void) { return false; }
+static inline void q6apm_fs19xx_fault(void) {}
 #endif
 #endif

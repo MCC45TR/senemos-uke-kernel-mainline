@@ -3,8 +3,10 @@
 #include <crypto/hash.h>
 #include <linux/capability.h>
 #include <linux/cleanup.h>
+#include <linux/hex.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
+#include <linux/workqueue.h>
 #include <sound/control.h>
 #include <sound/soc.h>
 #include <sound/uke-fs19xx-guard.h>
@@ -26,10 +28,13 @@ static DEFINE_MUTEX(fs19xx_listeners_lock);
 static BLOCKING_NOTIFIER_HEAD(fs19xx_listeners);
 static unsigned int fs19xx_positions;
 static atomic_t fs19xx_mode = ATOMIC_INIT(0);
+static atomic_t fs19xx_faulted = ATOMIC_INIT(0);
 
-bool q6apm_fs19xx_configured(void) { return atomic_read(&fs19xx_mode) >= 1; }
+bool q6apm_fs19xx_configured(void)
+{ return !atomic_read(&fs19xx_faulted) && atomic_read(&fs19xx_mode) >= 1; }
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_configured);
-bool q6apm_fs19xx_running(void) { return atomic_read(&fs19xx_mode) == 2; }
+bool q6apm_fs19xx_running(void)
+{ return !atomic_read(&fs19xx_faulted) && atomic_read(&fs19xx_mode) == 2; }
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_running);
 
 static int fs19xx_gate(unsigned int mode)
@@ -37,7 +42,7 @@ static int fs19xx_gate(unsigned int mode)
 	int ret = 0;
 
 	guard(mutex)(&fs19xx_listeners_lock);
-	if (mode && fs19xx_positions != 15)
+	if (mode && (fs19xx_positions != 15 || atomic_read(&fs19xx_faulted)))
 		return -ENODEV;
 	atomic_set(&fs19xx_mode, mode);
 	if (mode != 1)
@@ -48,6 +53,21 @@ static int fs19xx_gate(unsigned int mode)
 	}
 	return ret;
 }
+
+static void fs19xx_fault_work_fn(struct work_struct *work)
+{
+	fs19xx_gate(0);
+}
+static DECLARE_WORK(fs19xx_fault_work, fs19xx_fault_work_fn);
+
+/* Callable under a codec mutex: physical mute runs outside that mutex. */
+void q6apm_fs19xx_fault(void)
+{
+	atomic_set(&fs19xx_faulted, 1);
+	atomic_set(&fs19xx_mode, 0);
+	schedule_work(&fs19xx_fault_work);
+}
+EXPORT_SYMBOL_GPL(q6apm_fs19xx_fault);
 
 int q6apm_fs19xx_register(struct notifier_block *listener, unsigned int position)
 {
@@ -67,11 +87,14 @@ EXPORT_SYMBOL_GPL(q6apm_fs19xx_register);
 
 void q6apm_fs19xx_unregister(struct notifier_block *listener, unsigned int position)
 {
-	guard(mutex)(&fs19xx_listeners_lock);
+	mutex_lock(&fs19xx_listeners_lock);
 	atomic_set(&fs19xx_mode, 0);
 	blocking_notifier_call_chain(&fs19xx_listeners, 0, NULL);
 	blocking_notifier_chain_unregister(&fs19xx_listeners, listener);
 	fs19xx_positions &= ~position;
+	mutex_unlock(&fs19xx_listeners_lock);
+	/* All codec workers are drained before their final unregister action. */
+	flush_work(&fs19xx_fault_work);
 }
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_unregister);
 
@@ -143,6 +166,8 @@ static int fs19xx_control_put(struct snd_kcontrol *kcontrol, struct snd_ctl_elem
 		return -ENODEV;
 	ret = uke_fs19xx_provision(&fs->data, value->value.bytes.data,
 		UKE_FS19XX_FRAME_BYTES, fs->owner != NULL, fs19xx_verify, fs);
+	if (!ret && fs->data.status == UKE_FS_READY)
+		atomic_set(&fs19xx_faulted, 0);
 	/* The control core does not retain this write value; erase its copy too. */
 	memzero_explicit(value->value.bytes.data, UKE_FS19XX_FRAME_BYTES);
 	return ret ? ret : 1;
@@ -159,7 +184,7 @@ static int fs19xx_state_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_v
 	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
 	struct q6apm *apm = dev_get_drvdata(component->dev);
 	guard(mutex)(&apm->fs19xx->lock);
-	value->value.enumerated.item[0] = apm->fs19xx->data.status;
+	value->value.enumerated.item[0] = atomic_read(&fs19xx_faulted) ? UKE_FS_FAULT : apm->fs19xx->data.status;
 	return 0;
 }
 static const struct snd_kcontrol_new fs19xx_controls[] = {
@@ -200,8 +225,11 @@ int q6apm_fs19xx_claim(struct audioreach_graph *graph)
 		return -ENODATA;
 	list_for_each_entry(sg, &graph->info->sg_list, node) {
 		list_for_each_entry(container, &sg->container_list, node) {
+			if (container->capability_id != 0x0b001001 || container->proc_domain != 2 ||
+			    container->graph_pos != 4)
+				return -EINVAL;
 			list_for_each_entry(module, &container->modules_list, node) {
-				unsigned int bit;
+				unsigned int bit, instance, destination;
 				switch (module->module_id) {
 				case UKE_FS19XX_RX_MODULE:
 					if (module->instance_id != UKE_FS19XX_RX_IID ||
@@ -222,12 +250,31 @@ int q6apm_fs19xx_claim(struct audioreach_graph *graph)
 					if (module->hw_interface_type != 3 || module->hw_interface_idx ||
 					    module->slot_mask != 15 || module->nslots_per_frame != 4 ||
 					    module->slot_width != 32 || module->sync_src != 1 ||
+					    module->data_format != 1 || module->ctrl_data_out_enable != 1 ||
+					    module->sync_mode || module->ctrl_invert_sync_pulse ||
 					    module->ctrl_sync_data_delay != 1 ||
 					    module->active_lane_mask != (bit == 4 ? 2 : 1)) return -EINVAL;
 					break;
 				case MODULE_ID_MFC: bit = 16; break;
 				default: return -EINVAL;
 				}
+				switch (bit) {
+				case 1: instance = 0x4040; destination = 0x4433; break;
+				case 2: instance = 0x49fd; destination = 0; break;
+				case 4: instance = 0x4433; destination = 0; break;
+				case 8: instance = 0x4960; destination = 0x49fd; break;
+				default: instance = 0x442e; destination = 0x4040; break;
+				}
+				if (module->instance_id != instance || module->src_mod_inst_id != instance ||
+				    module->max_ip_port != (bit == 8 ? 0 : 1) ||
+				    module->max_op_port != (bit == 4 ? 0 : 1) ||
+				    module->num_connections != (destination ? 1 : 0) ||
+				    sg->direction != ((bit == 2 || bit == 8) ? 2 : 1) ||
+				    (bit != 1 && module->ctrl_link.first_instance))
+					return -EINVAL;
+				if (destination && (module->src_mod_op_port_id[0] != 1 ||
+				    module->dst_mod_inst_id[0] != destination || module->dst_mod_ip_port_id[0] != 2))
+					return -EINVAL;
 				if (found & bit) return -EINVAL;
 				found |= bit;
 			}

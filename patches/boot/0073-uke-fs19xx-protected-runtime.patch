@@ -1,5 +1,5 @@
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
-index 698507d..933d4cb 100644
+index 698507d..91ed3c4 100644
 --- a/sound/soc/codecs/fs19xx.c
 +++ b/sound/soc/codecs/fs19xx.c
 @@ -6,9 +6,9 @@
@@ -57,7 +57,16 @@ index 698507d..933d4cb 100644
  	ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &status);
  	if (ret)
  		goto stop;
-@@ -476,6 +488,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+@@ -464,6 +476,8 @@ static void fs19xx_unmute_work(struct work_struct *work)
+ 
+ stop:
+ 	dev_err(fs19xx->dev, "unmute failed: %d; amplifier reset\n", ret);
++	if (fs19xx->require_protection)
++		q6apm_fs19xx_fault();
+ 	fs19xx->powered = false;
+ 	fs19xx_chip_stop(fs19xx);
+ }
+@@ -476,6 +490,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
  		return -ENODEV;
  	if (fs19xx->suspended)
  		return -EBUSY;
@@ -66,7 +75,16 @@ index 698507d..933d4cb 100644
  	if (fs19xx->powered)
  		return 0;
  
-@@ -504,6 +518,26 @@ static void fs19xx_power_off(struct fs19xx_priv *fs19xx)
+@@ -484,6 +500,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+ 		ret = fs19xx_chip_start(fs19xx);
+ 	if (ret) {
+ 		dev_err(fs19xx->dev, "power on failed: %d\n", ret);
++		if (fs19xx->require_protection)
++			q6apm_fs19xx_fault();
+ 		fs19xx_chip_stop(fs19xx);
+ 		return ret;
+ 	}
+@@ -504,6 +522,26 @@ static void fs19xx_power_off(struct fs19xx_priv *fs19xx)
  	fs19xx_chip_stop(fs19xx);
  }
  
@@ -93,7 +111,7 @@ index 698507d..933d4cb 100644
  static int fs19xx_dai_startup(struct snd_pcm_substream *substream,
  			      struct snd_soc_dai *dai)
  {
-@@ -972,6 +1006,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -972,6 +1010,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  	fs19xx->i2c = client;
  	fs19xx->dev = dev;
  	fs19xx->volume = FS19XX_VOL_DEFAULT;
@@ -101,7 +119,7 @@ index 698507d..933d4cb 100644
  	mutex_init(&fs19xx->lock);
  	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
  	i2c_set_clientdata(client, fs19xx);
-@@ -1005,6 +1040,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -1005,6 +1044,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  			dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
  	}
  
