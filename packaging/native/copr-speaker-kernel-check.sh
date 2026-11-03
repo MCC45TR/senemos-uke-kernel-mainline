@@ -41,7 +41,7 @@ tar -czf "$output/uke-speaker-kernel-check-0.1.tar.gz" -C "$stage/receipt" .
 cat > "$output/uke-speaker-kernel-check.spec" <<'SPEC'
 Name: uke-speaker-kernel-check
 Version: 0.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Source receipt for the Uke protected speaker kernel objects
 License: GPL-2.0-only
 BuildArch: noarch

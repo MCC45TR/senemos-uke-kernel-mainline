@@ -1,5 +1,5 @@
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
-index 698507d..7669adf 100644
+index 698507d..b44561a 100644
 --- a/sound/soc/codecs/fs19xx.c
 +++ b/sound/soc/codecs/fs19xx.c
 @@ -6,9 +6,9 @@
@@ -174,13 +174,13 @@ index 698507d..7669adf 100644
  		goto stop;
  	}
 -	ret = regmap_write(fs19xx->regmap, FS19XX_REG_DACCTRL, FS19XX_DACCTRL_RUN);
--	if (ret)
--		goto stop;
--	msleep(10);
--	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &tsctrl);
 +	ret = fs19xx_unmute_output(fs19xx);
  	if (ret)
  		goto stop;
+-	msleep(10);
+-	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &tsctrl);
+-	if (ret)
+-		goto stop;
 -	if (!(tsctrl & FS19XX_TSCTRL_TSEN)) {
 -		ret = regmap_write(fs19xx->regmap, FS19XX_REG_TSCTRL,
 -				   tsctrl | FS19XX_TSCTRL_TSEN);
@@ -264,7 +264,22 @@ index 698507d..7669adf 100644
  static int fs19xx_dai_startup(struct snd_pcm_substream *substream,
  			      struct snd_soc_dai *dai)
  {
-@@ -972,6 +1084,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -615,8 +727,13 @@ static int fs19xx_volume_put(struct snd_kcontrol *kcontrol,
+ 		return 0;
+ 	if (fs19xx->powered)
+ 		ret = fs19xx_set_volume_reg(fs19xx, val);
+-	if (ret)
++	if (ret) {
++		/* A failed write leaves the effective gain uncertain; stop immediately. */
++		if (fs19xx->require_protection)
++			q6apm_fs19xx_fault();
++		fs19xx_power_off(fs19xx);
+ 		return ret;
++	}
+ 	fs19xx->volume = val;
+ 	return 1;
+ }
+@@ -972,6 +1089,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  	fs19xx->i2c = client;
  	fs19xx->dev = dev;
  	fs19xx->volume = FS19XX_VOL_DEFAULT;
@@ -272,7 +287,7 @@ index 698507d..7669adf 100644
  	mutex_init(&fs19xx->lock);
  	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
  	i2c_set_clientdata(client, fs19xx);
-@@ -1005,6 +1118,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -1005,6 +1123,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  			dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
  	}
  

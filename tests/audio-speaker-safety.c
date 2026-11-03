@@ -30,6 +30,17 @@ struct fs19xx_priv {
 	unsigned int volume, pll_polls;
 	bool powered, unmuted, require_protection;
 };
+struct snd_soc_component { struct fs19xx_priv *data; };
+struct snd_kcontrol { struct snd_soc_component *component; };
+struct snd_ctl_elem_value { struct { struct { long value[1]; } integer; } value; };
+static struct snd_soc_component *snd_kcontrol_chip(struct snd_kcontrol *control)
+{
+	return control->component;
+}
+static struct fs19xx_priv *snd_soc_component_get_drvdata(struct snd_soc_component *component)
+{
+	return component->data;
+}
 static bool configured, running;
 static unsigned int faults, next_delay, cancellations;
 static bool q6apm_fs19xx_configured(void) { return configured; }
@@ -177,6 +188,18 @@ static void gain_tests(void)
 	fs.volume = 243;
 	bus.reg[FS19XX_REG_VOLCTRL] = (243U << 8) | 0xc0;
 	assert(fs19xx_unmute_output(&fs) == -ERANGE && !bus.runs);
+	fs = initial(&bus);
+	struct snd_soc_component component = {.data = &fs};
+	struct snd_kcontrol mixer = {.component = &component};
+	struct snd_ctl_elem_value request = {.value.integer.value = {243}};
+	assert(fs19xx_volume_put(&mixer, &request) == -EINVAL && !bus.writes);
+	request.value.integer.value[0] = -1;
+	assert(fs19xx_volume_put(&mixer, &request) == -EINVAL && !bus.writes);
+	request.value.integer.value[0] = 222;
+	assert(fs19xx_volume_put(&mixer, &request) == 1 && fs.volume == 222);
+	fs = initial(&bus); bus.fail_at = 1;
+	assert(fs19xx_volume_put(&mixer, &request) == -EIO && fs.volume == 223);
+	assert_stopped(&fs, &bus);
 }
 static void guard_tests(void)
 {
