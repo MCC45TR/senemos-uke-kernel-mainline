@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1701}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1701 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1702}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1702 ]]
 bash "$owner/packaging/native/copr-camera-camss731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -30,6 +30,8 @@ for path in "${overlays[@]}"; do
  install -Dm644 "$owner/$path" "$profile/$path"
 done
 for tree in "$profile" "$boot"; do
+ printf 'Retained controller hook inputs: %s\n' "${tree##*/}"
+ sha256sum "$tree/src/boot/prepare-abl-source.sh"
  test ! -e "$tree/src/boot/uke-camcc-dt.h"
  install -m644 "$owner/src/camera/provider/uke-camcc-dt.h" "$tree/src/boot/uke-camcc-dt.h"
  if [[ -f $tree/src/boot/uke-abl.c ]]; then
@@ -40,6 +42,11 @@ for tree in "$profile" "$boot"; do
  git -C "$tree" apply --check "$owner/src/camera/provider/camcc-prepare-hook.patch"
  git -C "$tree" apply "$owner/src/camera/provider/camcc-prepare-hook.patch"
  [[ $(grep -Fxc 'install -m644 "$here/uke-camcc-dt.h" "$kernel/arch/arm64/kernel/uke-camcc-dt.h"' "$tree/src/boot/prepare-abl-source.sh") == 1 ]]
+ # Retained preparation includes producer-added SSC hooks beyond the repository
+ # preimage. Append the digest after those hooks without requiring an old EOF.
+ ! grep -Fq 'sha256sum "$here/uke-camcc-dt.h"' "$tree/src/boot/prepare-abl-source.sh"
+ printf '\n%s\n' 'sha256sum "$here/uke-camcc-dt.h" >> "$output/abl-source-SHA256SUMS"' >> "$tree/src/boot/prepare-abl-source.sh"
+ bash -n "$tree/src/boot/prepare-abl-source.sh"
 done
 cmp "$profile/native.config" "$boot/packaging/native/native.config"
 ! grep -q '^CONFIG_SM_CAMCC_7675=' "$profile/native.config"
