@@ -6,9 +6,9 @@ mode=${1:---preview}
 [[ $# -le 1 && ( $mode == --preview || $mode == --apply ) ]] || {
  echo 'Usage: deliver-speaker-candidate.sh [--preview|--apply]' >&2; exit 2;
 }
-kernel_release=2200
-kernel_build=11252316
-parent_release=1900
+kernel_release=2300
+kernel_build=11252342
+parent_release=1910
 runtime_build=11252242
 control_build=11251908
 runtime_evr=0.2-2.fc46
@@ -77,10 +77,10 @@ for build in "$kernel_build" "$runtime_build" "$control_build"; do
   jq -e --arg version "7.3.1-$kernel_release" '.source_package.name=="senemos-uke-linux-kernel-mainline" and .source_package.version==$version' <<< "$result" >/dev/null
  fi
 done
-dnf "${dnf_options[@]}" install "${userspace[@]}"
+dnf "${dnf_options[@]}" --assumeyes install "${userspace[@]}"
 /usr/libexec/uke-speaker-prepare-data
 /usr/bin/uke-speaker-runtime --check
-dnf "${dnf_options[@]}" install "${kernel[@]}"
+dnf "${dnf_options[@]}" --assumeyes install "${kernel[@]}"
 rpm -q "uke-speaker-runtime-$runtime_evr" "uke-control-$control_evr"
 for component in '' -core -modules -dtbs -boot -singleboot; do
  rpm -q "senemos-uke-linux-kernel-mainline$component-7.3.1-$kernel_release.fc46"
