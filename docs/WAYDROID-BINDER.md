@@ -16,5 +16,16 @@ scripts remain those of the parent.
 
 The native RPM checks require the effective configuration, compiled Binder and
 binderfs objects, and both initialization symbols in the linked kernel. These
-checks establish packaged kernel support. A boot into the matching kernel,+binderfs/device operations and an ARM64 Waydroid session require separate
+checks establish packaged kernel support. A boot into the matching kernel,
+binderfs/device operations and an ARM64 Waydroid session require separate
 physical validation. This change does not install or start Waydroid.
+
+[COPR11251375](https://copr.fedorainfracloud.org/coprs/build/11251375)
+completes the full native build and retained checks. All six runtime RPM
+signatures and payload digests pass. The packaged effective configuration
+differs from release1301 only by enabling Binder IPC/binderfs and selecting an
+empty static device list. Both initialization symbols are present in the
+packaged System.map. File inventories, requirements, provides and lifecycle
+scripts match the parent after normalizing both kernel and versioned UCM paths.
+The COPR producer retains the tested immutable source worker; automatic rebuild
+remains disabled. Physical boot and Waydroid acceptance remain separate.
