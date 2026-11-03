@@ -64,6 +64,8 @@ Previous branch tips remain under `archive/` tags. Singleboot is a package profi
 
 ## Documentation
 
+- [Speaker DSP and runtime calibration candidate](docs/SPEAKER-PROTECTION-20261103.md) — read-only persist integration, guarded FourSemi path and validation boundaries
+- [Speaker volume investigation](docs/SPEAKER-VOLUME-20261103.md) — native and stock limits; no gain increase
 - [Source manifest](manifests/linux-7.3.0.json) — upstream version, patches and checksums
 - [Build guide](docs/BUILDING.md) — local builds and tooling
 - [Native packaging](packaging/native/README.md) — source integration and package details
