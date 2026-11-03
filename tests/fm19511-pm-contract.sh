@@ -73,6 +73,7 @@ int main(void)
  fail_read=0;fm19511_clear_irq(&tag.clear_irq.work);
  assert(tag.status_sequence==2&&!tag.fault&&reads==before+3);
  tag.client=NULL;before=reads;fm19511_clear_irq(&tag.clear_irq.work);assert(reads==before);
+ assert(wakes==7);
  puts("Actual FM19511 IRQ/status/PM: deferred raw status, partial read failure, no sleep bus access, wake events and resume passed; no physical wake test.");
 }
 C
