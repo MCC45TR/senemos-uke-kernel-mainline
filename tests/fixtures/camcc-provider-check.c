@@ -33,6 +33,7 @@
 #define PTR_ERR(x) ((int)(intptr_t)(x))
 #define ERR_PTR(x) ((void *)(intptr_t)(x))
 typedef uint32_t u32;
+typedef uint8_t u8;
 typedef uint64_t resource_size_t;
 static void mutex_lock(int *lock) { (void)lock; }
 static void mutex_unlock(int *lock) { (void)lock; }
@@ -59,7 +60,12 @@ struct device {
 	struct { int usage_count, child_count; bool needs_force_resume, smart_suspend; } power;
 	bool disabled, suspended;
 };
+#ifdef CLOCKS_TEST
+struct clk_init_data;
+struct clk_hw { const struct clk_init_data *init; unsigned long rate; bool prepared; };
+#else
 struct clk_hw { int unused; };
+#endif
 static const char *clk_hw_get_name(struct clk_hw *hw) { return "camera-model"; }
 struct device_driver { void *owner; bool suppress_bind_attrs; const struct dev_pm_ops *pm; };
 struct clk { int count, enables, disables, error, references, managed; };

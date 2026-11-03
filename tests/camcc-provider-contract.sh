@@ -48,3 +48,26 @@ mv "$work/provider-power-candidate.h" "$work/provider-power.h"
     -Wno-unused-but-set-variable -I"$work" "${flags[@]}" \
     "$project/tests/fixtures/camcc-provider-check.c" -o "$work/provider"
 "$work/provider"
+
+[[ ${CAMCC_CLOCKS_TEST:-0} == 1 ]] || exit 0
+printf '%s  %s\n' 2438f057d67c3cd0229e710494dcf0a381bc69021591fe9cb89219734b8e633d \
+    "$kernel/drivers/clk/qcom/clk-regmap.c" | sha256sum -c -
+sed '/^#include /d' "$project/src/camera/provider/camcc-sm7675-clocks.h" > "$work/provider-clocks.h"
+awk '/^int clk_pre_change_regmap\(/ {copy=1}
+     copy {print}' "$kernel/drivers/clk/qcom/clk-regmap.c" > "$work/clocks-voltage.c"
+"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+    -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
+    -Wno-unused-but-set-variable -I"$work" -DCLOCKS_BASELINE \
+    "$project/tests/fixtures/camcc-clocks-check.c" -o "$work/before-clocks"
+set +e
+"$work/before-clocks" > "$work/before-clocks.log" 2>&1
+before_status=$?
+set -e
+[[ $before_status == 134 ]]
+grep -Fq 'cam_cc_mm.level_votes[VDD_LOW] == 1' "$work/before-clocks.log"
+printf 'CAMCC clocks: native Rivian prepare lacks the required voltage vote (expected status %s)\n' "$before_status"
+"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+    -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
+    -Wno-unused-but-set-variable -I"$work" "${flags[@]}" \
+    "$project/tests/fixtures/camcc-clocks-check.c" -o "$work/clocks"
+"$work/clocks"
