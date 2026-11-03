@@ -76,6 +76,30 @@ static void parser_tests() {
         (void)parse_calibration(binary, text);
     } while (std::next_permutation(labels.begin(), labels.end()));
 }
+static void readonly_policy_test() {
+    // COPR temporary files contain synthetic fixtures, never tablet readings.
+    char directory[] = "/tmp/uke-speaker-fixture-XXXXXX";
+    assert(mkdtemp(directory));
+    std::string root(directory);
+    std::array<uint8_t, 16> bytes{};
+    for (size_t i = 0; i < 4; ++i) uke_fs19xx_put_word(bytes.data() + 4 * i, (i + 1) * 4096);
+    const std::string text = "CH[0] TL 4096 (1.000)\nCH[1] TR 8192 (2.000)\nCH[2] BL 12288 (3.000)\nCH[3] BR 16384 (4.000)\n";
+    (void)parse_calibration(bytes, text); // both files would otherwise be valid
+    for (const char *name : {"fsalgo_rdc.bin", "fsalgo_rdc.txt"}) {
+        FILE *output = fopen((root + "/" + name).c_str(), "wb"); assert(output);
+        if (std::string_view(name).ends_with(".bin"))
+            assert(fwrite(bytes.data(), 1, bytes.size(), output) == bytes.size());
+        else assert(fwrite(text.data(), 1, text.size(), output) == text.size());
+        assert(fclose(output) == 0);
+    }
+    bool rejected = false;
+    try { auto unit = read_persist_calibration(directory); erase_calibration(unit); }
+    catch (const std::runtime_error &) { rejected = true; }
+    assert(unlink((root + "/fsalgo_rdc.bin").c_str()) == 0);
+    assert(unlink((root + "/fsalgo_rdc.txt").c_str()) == 0);
+    assert(rmdir(directory) == 0);
+    assert(rejected); // consistent data on a writable filesystem must not load
+}
 static void negative_protocol_tests() {
     uke_fs19xx_state state{};
     auto begin = frame(UKE_FS_BEGIN);
@@ -161,7 +185,7 @@ static void real_acdb_tests(const char *path) {
     assert(provision(state, frame(UKE_FS_COMMIT)) == -EINVAL && !state.calibrated);
 }
 int main(int argc, char **argv) {
-    parser_tests(); negative_protocol_tests();
+    parser_tests(); readonly_policy_test(); negative_protocol_tests();
     if (argc == 2) real_acdb_tests(argv[1]);
     std::cout << "Speaker runtime fixtures passed (synthetic unit data only).\n";
 }
