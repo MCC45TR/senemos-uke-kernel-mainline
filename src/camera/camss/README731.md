@@ -39,3 +39,12 @@ It compares512 lane-order/rate/skew cases plus invalid/timing refusals. A real
 stable generic callback is the zero-skew negative comparison. The stable7.3.1
 native source/settle helper is pinned independently. Neither donor scripts nor
 Android libraries execute; no private profile or calibration bytes enter COPR.
+
+The oracle imports parameter bit masks and the exact register-entry type from
+the same pinned `cam_csiphy_dev.h` (SHA-256
+efef1af717f54ad458a1db00c989fcaa4fdd775a8572d49ea8924cfad0ccee82).
+Its `OEM_CSIPHY_` names keep those masks separate from native CAMSS enum values.
+Native candidate tags are translated by semantic name; OEM numeric masks are
+not substituted into the native callback contract. Initial1208 stops before
+kernel compilation on a missing combo-tag fixture definition; no new PHY test
+pass or device result is claimed for that build.

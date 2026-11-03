@@ -18,11 +18,7 @@ typedef int64_t s64;
 #define BIT(n) (1U << (n))
 #define CSIPHY_DEFAULT_PARAMS 0
 #define CSIPHY_SETTLE_CNT_LOWER_BYTE 2
-#define CSIPHY_SETTLE_CNT_HIGHER_BYTE 3
 #define CSIPHY_DNP_PARAMS 4
-#define CSIPHY_2PH_REGS 5
-#define CSIPHY_3PH_REGS 6
-#define CSIPHY_LANE_ENABLE 1
 #define CSIPHY_SKEW_CAL 7
 #include "entry-type.h"
 static unsigned char registers[0x2000];
@@ -63,7 +59,7 @@ struct fake_regs { const struct csiphy_lane_regs *lane_regs; int lane_array_size
 struct csiphy_device { struct fake_regs *regs; void *base; };
 #include "native-before.h"
 #include "phy.h"
-struct csiphy_reg_t { int32_t reg_addr, reg_data, delay; uint32_t csiphy_param_type; };
+#include "oem-types.h"
 #define CAM_DBG(...) do { } while (0)
 #define cam_io_w_mb(v, p) record_write(v, p)
 static struct { void *base_address; uint8_t is_3phase; } g_phy_data[1];
@@ -123,7 +119,7 @@ static void mission_oracle(const struct csiphy_sm7675_config *config)
 	for (unsigned i = 0; i < ARRAY_SIZE(csiphy_reset_exit_reg_2_2_1); i++) {
 		struct csiphy_reg_t *entry = &csiphy_reset_exit_reg_2_2_1[i];
 
-		if (entry->csiphy_param_type != CSIPHY_2PH_REGS) continue;
+		if (entry->csiphy_param_type != OEM_CSIPHY_2PH_REGS) continue;
 		expect_write(entry->reg_addr, entry->reg_data);
 		if (entry->delay) expect_delay(entry->delay);
 	}

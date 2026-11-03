@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1208}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1208 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1209}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1209 ]]
 bash "$owner/packaging/native/copr-camera-native731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -27,9 +27,11 @@ mkdir -p "$reference"
 base=https://raw.githubusercontent.com/MiCode/vendor_qcom_opensource_camera-kernel/699fa15a98abd40fbb94f3a6fc00f91723d29d35/drivers/cam_sensor_module/cam_csiphy
 curl --fail --location --silent --show-error "$base/include/cam_csiphy_2_2_1_hwreg.h" -o "$reference/cam_csiphy_2_2_1_hwreg.h"
 curl --fail --location --silent --show-error "$base/cam_csiphy_core.c" -o "$reference/cam_csiphy_core.c"
+curl --fail --location --silent --show-error "$base/cam_csiphy_dev.h" -o "$reference/cam_csiphy_dev.h"
 (cd "$reference"; printf '%s\n' \
  '5d5bc215b97bdec610ec4698c49a297c0ccdfab211fb4c3380b8555ef63ca99a  cam_csiphy_2_2_1_hwreg.h' \
- '11f6a85cfb70ca7edbbe3a41c395fbe525c1db822f881171c527de652de78cb9  cam_csiphy_core.c' | sha256sum --check --strict)
+ '11f6a85cfb70ca7edbbe3a41c395fbe525c1db822f881171c527de652de78cb9  cam_csiphy_core.c' \
+ 'efef1af717f54ad458a1db00c989fcaa4fdd775a8572d49ea8924cfad0ccee82  cam_csiphy_dev.h' | sha256sum --check --strict)
 cp "$profile/source-composition.json" "$profile/source-composition-before-phy731.json"
 jq '. + {
  source_mode:"retained1011-with-unlinked-native-camcc-and-uke-dphy-helper",
