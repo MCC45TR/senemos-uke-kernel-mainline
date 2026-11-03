@@ -14,7 +14,7 @@ git archive HEAD src/audio/uke-speaker-runtime.cpp src/audio/uke-fs19xx-acdb.hpp
  src/audio/uke-fs19xx-protocol.h tests/audio-speaker-runtime.cpp \
  tests/audio-speaker-runtime-contract.sh LICENSE | tar -xf - -C "$stage/source"
 # The generic OEM blob is checked in the worker, then excluded from all RPMs.
-dnf -y install gcc-c++ clang compiler-rt openssl-devel alsa-lib-devel
+# Dependencies are supplied through COPR --script-builddeps and BuildRequires.
 curl -fLsS --max-time 45 'https://raw.githubusercontent.com/delano-git/android_vendor_xiaomi_uke/87f59fc5c2ef1ee04e494e5258853d36a3346059/proprietary/odm/etc/acdbdata/Forte/Forte_acdb_cal.acdb' -o "$stage/generic.acdb"
 printf '%s  %s\n' bd3f9b8834b80c23f86241756e263e36ddf92b2b8993ed83ff71c310af952f3e "$stage/generic.acdb" | sha256sum -c -
 CXX=clang++ bash "$stage/source/tests/audio-speaker-runtime-contract.sh" "$stage/generic.acdb"
