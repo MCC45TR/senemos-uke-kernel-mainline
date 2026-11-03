@@ -4,6 +4,12 @@
 acceptance remains open. The candidate retains the1900 source cohort and its
 recovery/DNF contract. No native compilation runs on the tablet.
 
+Kernel7.3.1-2313, COPR11252339, passes complete native checks, including833
+module signatures and tampered/unsigned/wrong-key refusals. Independent checks
+verify both OpenPGP signatures and header/payload digests of all six RPMs.
+The separate firmware helper0.1-2 succeeds in COPR11252345 and passes the same
+RPM checks. DNF resolution succeeds; administrator installation remains pending.
+
 Run tests/cdsp-pogo-device-report.sh for a bounded read-only inventory. It never
 starts remoteproc, uploads firmware, reads authentication attributes or writes
 LED/input controls.

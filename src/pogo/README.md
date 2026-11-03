@@ -1,6 +1,8 @@
 # Uke WN8030 kernel candidate
 
-3 November 2026: source implementation under qualification. The controller is
+4 November 2026: the candidate compiles and passes complete-package checks in
+COPR11252339, kernel7.3.1-2313. Physical accessory support remains under
+qualification. The controller is
 the exact Uke I2C SE3/0x4c route. It requires the private, locally retained
 82,740-byte Global OS3.0.304.0 MCU RAM image; no firmware is distributed here.
 

@@ -1,13 +1,18 @@
 # Uke Cliffs CDSP kernel candidate
 
-3 November 2026: source implementation and initial ownership fixtures pass on
-COPR; complete kernel/package and physical compute acceptance remain open.
+4 November 2026: kernel7.3.1-2313 succeeds in COPR11252339. All833 module
+signatures and complete-package checks pass. The six published RPMs also pass
+independent signature/digest checks. Administrator installation, firmware
+preflight and physical compute acceptance remain open.
 
 The exact Uke descriptor uses primary PAS 18, DTB PAS 0x25, three ARC proxy
 rails, the existing firmware/DTB carveouts and HLOS/CDSP global-sync memory.
 The converter admits the retained root and user contexts with unmasked SIDs
 0x0c01 and 0x0c02. It preserves native secure-channel policy and translated
 DMA; it adds no remote heap, arbitrary VMID or blanket SMMU bypass.
+OEM PD values are conversion identity checks; native FastRPC uses generic
+session allocation. Exact root/user execution and secure-device policy still
+need the first listener, shell and translated-buffer qualification.
 
 Failed start and partial transport start use the same retryable stop
 transaction. Refused secure shutdown retains mappings, tables, proxy ownership

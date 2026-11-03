@@ -155,7 +155,7 @@ awk '
  }
  /^%changelog$/ {
    print
-   print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2313"
+   print "* Wed Nov 04 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2313"
    print "- Add guarded native CDSP startup and exact Uke pogo transport candidate."
    print "- Retain SSC, Binder and RTC; keep firmware and physical acceptance separate."
    print "";next
