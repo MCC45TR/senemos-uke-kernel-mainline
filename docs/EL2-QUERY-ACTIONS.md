@@ -1,6 +1,6 @@
 # Uke EL2 service query candidate
 
-3 November 2026. This Actions artifact boots `7.3.1-2001-kvm`, based on the
+3 November 2026. This Actions artifact boots `7.3.1-21-kvm`, based on the
 retained `7.3.1-1300` source package from COPR build `11251037`. It retains that
 package's O82 supplier selection, native touch and platform adaptations. The
 only new firmware operation is one SCM INFO query about BOOT command `0x21`
@@ -62,7 +62,7 @@ uname -r
 sudo sh collect-el2-query.sh > el2-query-result.txt
 ```
 
-Expected release: `7.3.1-2001-kvm`. The snapshot is also available at
+Expected release: `7.3.1-21-kvm`. The snapshot is also available at
 `/sys/bus/platform/devices/*/uke_el2_query`, with a `UKE_EL2_QUERY:` kernel log
 message. Reads return the existing snapshot and never repeat the SCM request.
 

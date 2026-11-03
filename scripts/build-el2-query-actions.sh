@@ -6,6 +6,13 @@ set -Eeuo pipefail
 }
 owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
 lock=$owner/manifests/el2-query-20261103.json
+release=$(jq -er .kernel_release "$lock")
+revision=$(jq -er .rpm_revision "$lock")
+[[ $revision =~ ^[1-9][0-9]*$ && $release == "7.3.1-$revision-kvm" ]]
+# The retained ALSA driver uses "uke" + UTS_RELEASE in a 16-byte field.
+((3 + ${#release} + 1 <= 16)) || {
+    echo 'KVM ABI exceeds the retained ALSA driver identity field.' >&2; exit 1;
+}
 work=/tmp/uke-kvm-query-build
 [[ ! -e $work ]] || { echo 'Use a fresh Actions runner.' >&2; exit 1; }
 mkdir -p "$work"/{parent,unpacked,rpmbuild/{SOURCES,SPECS,BUILD,BUILDROOT,RPMS,SRPMS}}
@@ -63,13 +70,11 @@ for relative in packaging/native/native.config src/boot/make-initramfs-base.sh s
         "$boot/lock.json" > "$work/boot-lock.json"
     mv "$work/boot-lock.json" "$boot/lock.json"
 done
-release=7.3.1-2001-kvm jobs=2
+jobs=2
 eval "$(sed -n '8p' "$boot/src/boot/build-payload.sh")"
 (set -- fixture "$release"; eval "$(sed -n '4p' "$boot/src/boot/make-initramfs-base.sh")")
 commit=$(git -c safe.directory="$owner" -C "$owner" rev-parse HEAD)
 epoch=$(git -c safe.directory="$owner" -C "$owner" show -s --format=%ct HEAD)
-release=$(jq -er .kernel_release "$lock")
-revision=$(jq -er .rpm_revision "$lock")
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --arg release "$release" \
     --arg parent "$(jq -er .parent_srpm_sha256 "$lock")" \
@@ -133,7 +138,7 @@ awk -v revision="$revision" '
    print
  }
 ' "$parent_spec" > "$spec"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-2001 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == "${release%-kvm}" ]]
 ! rpmspec --parse --target aarch64 "$spec" | grep -E '^%(post|posttrans|pre|pretrans)([[:space:]]|$)'
 dnf -y --setopt=install_weak_deps=False builddep "$spec"
 cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \

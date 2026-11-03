@@ -38,7 +38,7 @@ jobs:
       - name: Upload test images and matching packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: uke-kvm-el2-query-7.3.1-2001-kvm-${{ github.sha }}
+          name: uke-kvm-el2-query-7.3.1-21-kvm-${{ github.sha }}
           path: build/el2-query-artifact/
           if-no-files-found: error
           compression-level: 0
