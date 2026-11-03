@@ -306,6 +306,28 @@ static void voltage_faults(void)
 	puts("CAMCC clocks: prepare/up-rate/post-rate/unprepare voltage errors on either shared rail remain visible and retain owner resources");
 }
 
+static int fail_disable_check(struct cam_cc_clock *clock)
+{
+	assert(clock->prepared);
+	return -ETIMEDOUT;
+}
+
+static void disable_observation(void)
+{
+	struct device dev;
+	clock_reset(&dev, true);
+	assert(!cam_cc_clocks_init());
+	prepare_clock(0);
+	cam_cc_clock_state[0].disable_check = fail_disable_check;
+	int calls = native_calls;
+	test_clocks[0].hw.init->ops->disable(&test_clocks[0].hw);
+	assert(native_calls == calls + 1 && cam_cc_power.primary_error == -ETIMEDOUT);
+	assert(cam_cc_clock_state[0].voted && cam_cc_clock_state[0].prepared);
+	assert(cam_cc_mxc.level_votes[VDD_LOW] == 1);
+	fault_stops_everything(&dev, 0);
+	puts("CAMCC clocks: observed void-disable failure latches fault before voltage unprepare and preserves resources");
+}
+
 int main(void)
 {
 #ifdef CLOCKS_BASELINE
@@ -318,7 +340,7 @@ int main(void)
 	assert(cam_cc_mx.level_votes[VDD_LOW] == 1);
 #else
 	assert(original_owner_checks() == 0);
-	admission(); normal_clocks(); rate_changes(); callback_faults(); voltage_faults();
+	admission(); normal_clocks(); rate_changes(); callback_faults(); voltage_faults(); disable_observation();
 #endif
 	return 0;
 }

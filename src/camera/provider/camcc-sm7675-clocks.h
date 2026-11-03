@@ -10,6 +10,7 @@ struct cam_cc_clock {
 	struct clk_init_data init;
 	bool prepared;
 	bool voted;
+	int (*disable_check)(struct cam_cc_clock *clock);
 };
 
 static struct cam_cc_clock cam_cc_clock_state[ARRAY_SIZE(cam_cc_sm7675_clocks)];
@@ -143,6 +144,7 @@ static int cam_cc_clock_enable(struct clk_hw *hw)
 static void cam_cc_clock_disable(struct clk_hw *hw)
 {
 	struct cam_cc_clock *clock = cam_cc_clock_find(hw);
+	int ret;
 
 	if (cam_cc_clock_access(clock))
 		return;
@@ -151,6 +153,13 @@ static void cam_cc_clock_disable(struct clk_hw *hw)
 		return;
 	}
 	clock->native->disable(hw);
+	if (READ_ONCE(cam_cc_power.fault))
+		return;
+	if (clock->disable_check) {
+		ret = clock->disable_check(clock);
+		if (ret)
+			cam_cc_clock_fail(ret, 0);
+	}
 }
 
 static int cam_cc_clock_set_rate(struct clk_hw *hw, unsigned long rate,
