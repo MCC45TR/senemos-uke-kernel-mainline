@@ -20,7 +20,10 @@ alsatplg -d "$output/POCO-Pad-X1-tplg.bin" -o "$output/POCO-Pad-X1-decoded.conf"
 for name in spk.fs.rx spk.fs.tx spk.vi.source 'MultiMedia3 Capture'; do
  grep -Fq "$name" "$output/POCO-Pad-X1-decoded.conf"
 done
-fdtdump "$output/usb.dtbo" 2>/dev/null > "$output/audio-protected-dt.txt"
-[[ $(grep -c 'foursemi,require-protection;' "$output/audio-protected-dt.txt") == 4 ]]
-[[ $(grep -c 'xiaomi,fs19xx-protected;' "$output/audio-protected-dt.txt") == 1 ]]
+# Audio lives in both supplier-specific embedded display overlays, not USB.
+for variant in 36 42; do
+ fdtdump "$output/display-$variant.dtbo" 2>/dev/null > "$output/audio-protected-dt-$variant.txt"
+ [[ $(grep -c 'foursemi,require-protection;' "$output/audio-protected-dt-$variant.txt") == 4 ]]
+ [[ $(grep -c 'xiaomi,fs19xx-protected;' "$output/audio-protected-dt-$variant.txt") == 1 ]]
+done
 printf '%s\n' 'Protected speaker graph prepared with unchanged four-channel raw microphone capture and gain ceiling 223'

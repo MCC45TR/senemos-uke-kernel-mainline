@@ -9,9 +9,11 @@ release=${4:?Kernel release}
 for symbol in q6apm_fs19xx_register q6apm_fs19xx_configured q6apm_fs19xx_running q6apm_fs19xx_fault; do
  awk -v symbol="$symbol" '$2==symbol {found=1} END {exit !found}' "$objects/Module.symvers"
 done
-fdtdump "$generated/usb.dtbo" 2>/dev/null > "$generated/audio-package-dt.txt"
-[[ $(grep -c 'foursemi,require-protection;' "$generated/audio-package-dt.txt") == 4 ]]
-[[ $(grep -c 'xiaomi,fs19xx-protected;' "$generated/audio-package-dt.txt") == 1 ]]
+for variant in 36 42; do
+ fdtdump "$generated/display-$variant.dtbo" 2>/dev/null > "$generated/audio-package-dt-$variant.txt"
+ [[ $(grep -c 'foursemi,require-protection;' "$generated/audio-package-dt-$variant.txt") == 4 ]]
+ [[ $(grep -c 'xiaomi,fs19xx-protected;' "$generated/audio-package-dt-$variant.txt") == 1 ]]
+done
 firmware=$root/usr/lib/firmware/$release/qcom
 first=$firmware/sm7675/POCO-Pad-X1-tplg.bin
 second=$firmware/uke$release/POCO-Pad-X1-tplg.bin
