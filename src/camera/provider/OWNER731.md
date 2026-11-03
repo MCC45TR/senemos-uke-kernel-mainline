@@ -32,17 +32,17 @@ votes, wrong ownership and detach. A separate AArch64 object checks the complete
 catalog and owner against the actual candidate kernel layout. It is not linked
 into Image or installed.
 
-[COPR11247646](https://copr.fedorainfracloud.org/coprs/build/11247646)
+[COPR build 11247646](https://copr.fedorainfracloud.org/coprs/build/11247646)
 passes on Fedora Rawhide AArch64, 3 November 2026, with tested source
-51b00abd9fb3d0eb4b7ea38ebf7e2f4d48edf904 and kernel ABI7.3.1-1014.
-The original managed-resource assertion fails with expected134; the candidate
-power/owner and91-case GDSC fixtures pass normally and under ASan/UBSan.
-The complete kernel compiles in1144seconds at jobs4; the boot bundle takes
-1219seconds and retained package checks55seconds. The real-layout owner object
+51b00abd9fb3d0eb4b7ea38ebf7e2f4d48edf904 and kernel ABI 7.3.1-1014.
+The original managed-resource assertion fails with expected exit 134; the
+candidate power/owner and 91-case GDSC fixtures pass normally and under ASan/UBSan.
+The complete kernel compiles in 1,144 seconds with four jobs; the boot bundle
+takes 1,219 seconds and retained package checks take 55 seconds. The owner object
 is AArch64, Image is unchanged and the object is absent from the payload.
 Six existing binary package names are emitted in the isolated side repository.
 No binary delivery signature review, device installation or physical camera
-test is claimed. ABI1014 is reserved; changed inputs need a fresh ABI.
+test is claimed. ABI 1014 is reserved; changed inputs need a fresh ABI.
 
 The GDSC prerequisite is compiled with its opt-in controller-PM flag. No domain
 opts in. The qualified registration unwind is retained, with the existing
