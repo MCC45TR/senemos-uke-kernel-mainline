@@ -28,11 +28,11 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Install remote build orchestration tools
+        run: dnf -y --setopt=install_weak_deps=False install git-core curl jq rpm-build cpio tar xz dnf5-plugins
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Install remote build orchestration tools
-        run: dnf -y --setopt=install_weak_deps=False install git-core curl jq rpm-build cpio tar xz dnf5-plugins
       - name: Build retained kernel with query-only SCM observation
         run: bash scripts/build-el2-query-actions.sh
       - name: Upload test images and matching packages
