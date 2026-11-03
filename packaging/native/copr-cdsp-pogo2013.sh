@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# COPR-only: retain production 1600, add the qualified source candidates.
+# COPR-only: retain production 1900, add the qualified source candidates.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-1813
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline 7.3.1-2013
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 curl -fLsS --retry 2 --max-time 300 --proto '=https' --proto-redir '=https' \
-    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11251559/senemos-uke-linux-kernel-mainline-7.3.1-1600.src.rpm \
+    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11252138/senemos-uke-linux-kernel-mainline-7.3.1-1900.src.rpm \
     -o "$stage/base.src.rpm"
-[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == f71eea4d521b2937c08d81886c9338e0908834491ee9bb35238a2b72171f58e5 ]]
-[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == b4f6340ccd8cd72fcfba6d462b869621eaf62793b28abc083bad53072838d5e7 ]]
+[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 1bb1e6fab32581f77f6babb69e2be7d405dfdf6a6d1513d515994d551e931f89 ]]
+[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == c91b0a390f73a7063bcb49221cf94d42ef2242b95e3a26f2d84b4428e7ca207f ]]
 rpmkeys --checksig --nosignature "$stage/base.src.rpm"
 parent=$(sha256sum "$stage/base.src.rpm");parent=${parent%% *}
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
@@ -30,7 +30,13 @@ for archive in senemos-native-profile-7.3.1.tar.xz senemos-uke-boot-recipe.tar.x
 done
 profile=$stage/unpacked/native-profile
 boot=$stage/unpacked/boot-recipe
-[[ $(cat "$profile/source-commit") == 31313e89f719b935bcd1301d48d807bd1dc27163 ]]
+[[ $(cat "$profile/source-commit") == aec8163b1ba0fba34e94f99accc99a18a46f8810 ]]
+jq -e '.kernel_release=="7.3.1-1900" and .ssc_adsp_supplier_bound_gate==1 and
+ .native_ssc_iio_abi==1 and .o82_regdma_resource=={start:"0x0af80000",size:"0x7000"} and
+ (.o82_color_dma_enabled|not) and (.native_hdr_advertised|not) and
+ .nfc_atomic_memory_read and .nfc_system_wakeup and .ir_explicit_word_bits==16 and
+ .rtc_backend=="qseecom-uefisecapp-RTCInfo" and .binder_ipc_builtin and .binderfs_builtin' \
+    "$profile/source-composition.json" >/dev/null
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 cat > "$stage/assets" <<'FILES'
@@ -113,30 +119,30 @@ while read -r file; do
     install -m644 "$stage/lock.json" "$boot/lock.json"
 done < "$stage/boot-assets"
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
-cp "$profile/source-composition.json" "$profile/source-composition-before1813.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before2013.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --arg parent "$parent" '. + {
- source_commit:$commit,source_mode:"retained1600-cdsp-pogo-candidate",
- parent_copr_build:11251559,parent_srpm_sha256:$parent,
- parent_composition:"source-composition-before1813.json",kernel_release:"7.3.1-1813",rpm_revision:"1813",
+ source_commit:$commit,source_mode:"retained1900-cdsp-pogo-candidate",
+ parent_copr_build:11252138,parent_srpm_sha256:$parent,
+ parent_composition:"source-composition-before2013.json",kernel_release:"7.3.1-2013",rpm_revision:"2013",
  cdsp_auto_boot:false,cdsp_context_sids:["0x0c01","0x0c02"],cdsp_secure_policy_override:false,
  cdsp_start_stop_retention:true,cdsp_permanent_platform_instance:true,
  pogo_mcu_firmware_distributed:false,pogo_report_format:"21-byte shared-protocol candidate",
  pogo_auth_provider_included:false,nfc_reader:false,ir_receive:false,
  rtc_source_retained:true,ssc_source_retained:true,binder_source_retained:true,
  physical_acceptance:false
-}' "$profile/source-composition-before1813.json" > "$profile/source-composition.json"
+}' "$profile/source-composition-before2013.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/senemos-native-profile-7.3.1.tar.xz" -C "$stage/unpacked" native-profile
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$stage/unpacked" boot-recipe
-[[ $(grep -Fxc '%global senemos_build_release 1600' "$spec") == 1 ]]
+[[ $(grep -Fxc '%global senemos_build_release 1900' "$spec") == 1 ]]
 awk '
- /^%global senemos_build_release 1600$/ {$0="%global senemos_build_release 1813"}
+ /^%global senemos_build_release 1900$/ {$0="%global senemos_build_release 2013"}
  /^Name:[[:space:]]/ {print;print "Provides: uke-kernel(cdsp-pogo-candidate-v1) = 1";next}
  /^BuildRequires:[[:space:]]/ && !added {print;print "BuildRequires: libfdt-devel";added=1;next}
  /uke-rpmh-resource-contract.sh.* native$/ {sub(/ native$/," native-pogo")}
@@ -149,7 +155,7 @@ awk '
  }
  /^%changelog$/ {
    print
-   print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1813"
+   print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2013"
    print "- Add guarded native CDSP startup and exact Uke pogo transport candidate."
    print "- Retain SSC, Binder and RTC; keep firmware and physical acceptance separate."
    print "";next
@@ -158,5 +164,5 @@ awk '
 ' "$spec" > "$stage/next.spec"
 install -m644 "$stage/next.spec" "$spec"
 sha256sum -c --quiet "$stage/retained-sources.sha256"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1813 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-2013 ]]
 rpmbuild -bs --define "_sourcedir $output" --define "_srcrpmdir $output" "$spec"
