@@ -1097,7 +1097,7 @@
     },
     {
       "path": "tests/audio-pcm-formats-contract.sh",
-      "sha256": "a3be7f36fbcb0453e5ce7759a1ac585b4f9f5be60e6832330326c21f6f2137bd"
+      "sha256": "467db5ffa2ad2dbb67669207d934387558189158654b79dd4f497ba3f11bb22d"
     }
   ],
   "root_selector_capability": {

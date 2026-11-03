@@ -44,7 +44,7 @@ C
 for name in param_id_pcm_output_format_cfg payload_pcm_output_format_cfg media_format payload_media_fmt_pcm; do
  extract "$q6/audioreach.h" "^struct $name [{]" >> "$work/check.c"
 done
-rg '^#define (DATA_FORMAT_FIXED_POINT|PCM_LSB_ALIGNED|PCM_LITTLE_ENDIAN|MEDIA_FMT_ID_PCM|PARAM_ID_PCM_OUTPUT_FORMAT_CFG|PARAM_ID_MEDIA_FORMAT|AR_PCM_MAX_NUM_CHANNEL)\b' "$q6/audioreach.h" >> "$work/check.c"
+grep -E '^#define (DATA_FORMAT_FIXED_POINT|PCM_LSB_ALIGNED|PCM_LITTLE_ENDIAN|MEDIA_FMT_ID_PCM|PARAM_ID_PCM_OUTPUT_FORMAT_CFG|PARAM_ID_MEDIA_FORMAT|AR_PCM_MAX_NUM_CHANNEL)\b' "$q6/audioreach.h" >> "$work/check.c"
 for name in apm_pcm_module_media_fmt_cmd apm_sh_module_media_fmt_cmd; do
  extract "$q6/audioreach.c" "^struct $name [{]" >> "$work/check.c"
 done
