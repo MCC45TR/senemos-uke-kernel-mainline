@@ -9,7 +9,7 @@
 static struct generic_pm_domain *cam_cc_native_domains[ARRAY_SIZE(cam_cc_sm7675_gdscs)];
 static struct qcom_reset_controller cam_cc_native_reset;
 
-static struct generic_pm_domain *cam_cc_native_domain_get(struct of_phandle_args *args,
+static struct generic_pm_domain *cam_cc_native_domain_get(const struct of_phandle_args *args,
 							 void *context)
 {
 	struct genpd_onecell_data *data = context;

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -52,6 +53,8 @@ struct clk_alpha_pll {
 struct clk_rcg2 { struct clk_regmap clkr; unsigned int cmd_rcgr, safe_src_index; u32 parked_cfg; };
 struct clk_branch { struct clk_regmap clkr; unsigned int halt_reg, halt_check, hwcg_reg; };
 #define to_clk_alpha_pll(hw) ((struct clk_alpha_pll *)(hw))
+#define to_clk_regmap(hw) ((struct clk_regmap *)(hw))
+#define container_of(p, type, member) ((type *)((char *)(p) - offsetof(type, member)))
 #define to_clk_rcg2(hw) ((struct clk_rcg2 *)(hw))
 #define to_clk_branch(hw) ((struct clk_branch *)(hw))
 struct clk { int references, enabled; unsigned long rate; struct clk_hw *hw; };
@@ -62,7 +65,7 @@ struct gdsc { struct generic_pm_domain pd; bool controller_pm_held; };
 struct of_phandle_args { unsigned int args_count, args[1]; };
 struct genpd_onecell_data {
 	struct generic_pm_domain **domains; unsigned int num_domains;
-	struct generic_pm_domain *(*xlate)(struct of_phandle_args *, void *);
+	struct generic_pm_domain *(*xlate)(const struct of_phandle_args *, void *);
 };
 struct gdsc_desc { struct device *dev; struct gdsc **scs; size_t num; struct genpd_onecell_data *permanent_data; };
 struct reset_controller_dev;

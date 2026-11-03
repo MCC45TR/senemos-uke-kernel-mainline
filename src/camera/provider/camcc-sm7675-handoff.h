@@ -165,7 +165,7 @@ static int cam_cc_native_disable_check(struct cam_cc_clock *clock)
 	}
 	if (clock->native == &clk_alpha_pll_lucid_evo_ops ||
 	    clock->native == &clk_alpha_pll_rivian_evo_ops) {
-		struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
+		struct clk_alpha_pll *pll = container_of(to_clk_regmap(hw), struct clk_alpha_pll, clkr);
 
 		ret = regmap_read(map, pll->offset + pll->regs[PLL_OFF_USER_CTL], &value);
 		if (ret)
