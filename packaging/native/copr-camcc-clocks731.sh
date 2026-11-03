@@ -9,6 +9,20 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
+base_release=${UKE_CAMCC_PARENT_RELEASE:-1011}
+case $base_release in
+ 1011)
+  base_build=11246385
+  base_header=1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a
+  base_payload=914461682948289e960221fb64289e32ca6b6b2bf456357744afb90d591b6a42
+  ;;
+ 1500)
+  base_build=11251503
+  base_header=abea001cf467330fc360543023fcb8a9fa9726a08c53fd8e966c2683a3a51478
+  base_payload=60f5a60e762725b9222dce4f6e61d5e1158adde6bf51c604ebed639946c87afc
+  ;;
+ *) printf 'Unqualified camera parent: %s\n' "$base_release" >&2; exit 1;;
+esac
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 for project in uke-linux-unstable uke-linux-test uke-linux; do
@@ -26,15 +40,18 @@ for project in uke-linux-unstable uke-linux-test uke-linux; do
  done
  ((offset < 10000))
 done
+[[ $(curl -fsSL --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$base_build" | jq -er .state) == succeeded ]]
 curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' \
- https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11246385/senemos-uke-linux-kernel-mainline-7.3.1-1011.src.rpm -o "$stage/base.src.rpm"
-printf '%s  %s\n' 84915ef98a26df47bc8f223e3751b160e40eba3c447f433fbe13b2097d6a7146 "$stage/base.src.rpm" | sha256sum -c -
-[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/base.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-1011 ]]
+ "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/$base_build/senemos-uke-linux-kernel-mainline-7.3.1-$base_release.src.rpm" -o "$stage/base.src.rpm"
+if [[ $base_release == 1011 ]]; then
+ printf '%s  %s\n' 84915ef98a26df47bc8f223e3751b160e40eba3c447f433fbe13b2097d6a7146 "$stage/base.src.rpm" | sha256sum -c -
+fi
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/base.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-$base_release ]]
 # COPR's retained SRPM is unsigned. Pin its header and payload digest, then
 # verify both over the complete remotely downloaded source RPM. This is not
 # the signature policy for built binary packages or device installation.
-[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a ]]
-[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == 914461682948289e960221fb64289e32ca6b6b2bf456357744afb90d591b6a42 ]]
+[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == "$base_header" ]]
+[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == "$base_payload" ]]
 rpmkeys --checksig --nosignature --verbose "$stage/base.src.rpm"
 parent_sha=$(sha256sum "$stage/base.src.rpm" | cut -d ' ' -f1)
 printf 'Verified retained parent SRPM SHA256: %s\n' "$parent_sha"
@@ -44,7 +61,9 @@ awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/entries"
 mkdir -p "$output" "$stage/unpacked"
 (cd "$output"; cpio -idm --quiet --no-absolute-filenames < "$stage/base.cpio")
 spec=$output/senemos-uke-linux-kernel-mainline.spec
-printf '%s  %s\n' d48ae2fc7af05df331c15068e73eb77c4c50c203a57b7cdc6b1ff1e9509a334b "$spec" | sha256sum -c -
+if [[ $base_release == 1011 ]]; then
+ printf '%s  %s\n' d48ae2fc7af05df331c15068e73eb77c4c50c203a57b7cdc6b1ff1e9509a334b "$spec" | sha256sum -c -
+fi
 archive=senemos-native-profile-7.3.1.tar.xz
 find "$output" -maxdepth 1 -type f ! -name "${spec##*/}" ! -name "$archive" \
  -print0 | sort -z | xargs -0 sha256sum > "$stage/retained-sources.sha256"
@@ -52,6 +71,15 @@ tar -tJf "$output/$archive" > "$stage/archive.entries"
 awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/archive.entries"
 tar -xJf "$output/$archive" -C "$stage/unpacked"
 profile=$stage/unpacked/native-profile
+base_commit=$(cat "$profile/source-commit")
+if [[ $base_release == 1500 ]]; then
+ [[ $base_commit == 3d8702b0116c4388d3977e8f566bcca900f2d3f6 ]]
+ jq -e '.kernel_release=="7.3.1-1500" and .native_ssc_iio_abi==1 and
+  .binder_ipc_builtin and .binderfs_builtin and .touch_recovery_attempts_per_powered_epoch==1 and
+  .native_memlat_groups==["llcc","l3"] and
+  .panel_variants==["o82_36_02_0a","o82_42_02_0b"] and .touch_variants==["tianma","csot"]' \
+  "$profile/source-composition.json" >/dev/null
+fi
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS
  find . -type f ! -name SHA256SUMS ! -name source-commit ! -name source-composition.json \
   -print0 | sort -z | xargs -0 sha256sum > "$stage/retained-profile.sha256")
@@ -75,23 +103,27 @@ cp "$profile/source-composition.json" "$profile/source-composition-before$releas
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg commit "$commit" --arg parent_sha "$parent_sha" --arg release "$release" '. + {
- source_commit:$commit,source_mode:"retained1011-with-inactive-camcc-clock-callbacks",
- parent_copr_build:11246385,parent_srpm_sha256:$parent_sha,
- parent_srpm_header_sha256:"1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a",
+jq --arg commit "$commit" --arg parent_sha "$parent_sha" --arg release "$release" \
+ --arg base_release "$base_release" --arg base_commit "$base_commit" --argjson base_build "$base_build" \
+ --arg base_header "$base_header" --arg base_payload "$base_payload" '. + {
+ source_commit:$commit,source_mode:("retained"+$base_release+"-with-inactive-camcc-clock-callbacks"),
+ camera_base_release:$base_release,camera_base_source_commit:$base_commit,camera_base_copr_build:$base_build,
+ parent_copr_build:$base_build,parent_source_commit:$base_commit,parent_srpm_sha256:$parent_sha,
+ parent_srpm_header_sha256:$base_header,parent_srpm_payload_sha256:$base_payload,
+ parent_header_sha256:$base_header,parent_payload_sha256:$base_payload,
  parent_composition:("source-composition-before"+$release+".json"),kernel_release:("7.3.1-"+$release),rpm_revision:$release,
- changed_kernel_files:["drivers/clk/qcom/gdsc.c","drivers/clk/qcom/gdsc.h"],camera_dt_activation:false,
+ changed_kernel_files:((.changed_kernel_files + ["drivers/clk/qcom/gdsc.c","drivers/clk/qcom/gdsc.h"])|unique),camera_dt_activation:false,
  controller_pm_domains_opted_in:0,camera_provider_registered:false,owner_object_installed:false,
  firmware_payload_included:false,automatic_policy_unchanged:true,physical_acceptance:false
  }' "$profile/source-composition-before$release.json" > "$profile/source-composition.json"
 (cd "$profile"; sha256sum -c "$stage/retained-profile.sha256"
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" native-profile
-for line in '%global senemos_build_release 1011' 'bash native-profile/prepare.sh "$PWD"' 'uke_build_start=$SECONDS' '%check'; do
+for line in "%global senemos_build_release $base_release" 'bash native-profile/prepare.sh "$PWD"' 'uke_build_start=$SECONDS' '%check'; do
  [[ $(grep -Fxc "$line" "$spec") == 1 ]]
 done
-awk -v release="$release" '
- /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release " release}
+awk -v release="$release" -v parent="$base_release" '
+ $0=="%global senemos_build_release " parent {$0="%global senemos_build_release " release}
  /^bash native-profile\/prepare.sh "\$PWD"$/ {
   print
   print "mkdir -p native-generated/camcc-baseline/drivers/clk/qcom"

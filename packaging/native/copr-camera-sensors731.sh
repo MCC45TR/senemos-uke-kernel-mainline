@@ -32,7 +32,7 @@ for path in "${overlays[@]}"; do
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-sensors731.json"
 jq '. + {
- source_mode:"retained1011-with-camera-sensor-modules-and-camcc-prerequisites",
+ source_mode:("retained"+(.camera_base_release // "1011")+"-with-camera-sensor-modules-and-camcc-prerequisites"),
  sensor_parent_composition:"source-composition-before-sensors731.json",
  camera_sensor_modules:["ov08d10","ov13b10"],camera_dt_activation:false,
  sensor_chip_identification:false,eeprom_access:false,calibration_included:false,
@@ -43,11 +43,16 @@ jq '. + {
 # Change the actual manifest-verified boot configuration, not an unrecorded
 # post-verification override. Preserve every other boot source byte.
 config=$boot/packaging/native/native.config
+cmp "$config" "$profile/native.config"
 for sensor in OV08D10 OV13B10; do
     [[ $(grep -Fxc "# CONFIG_VIDEO_$sensor is not set" "$config") == 1 ]]
     sed -i "s/^# CONFIG_VIDEO_$sensor is not set$/CONFIG_VIDEO_$sensor=m/" "$config"
 done
 config_sha=$(sha256sum "$config"); config_sha=${config_sha%% *}
+cp "$config" "$profile/native.config"
+jq --arg digest "$config_sha" '.native_config_sha256=$digest' \
+ "$profile/source-composition.json" > "$stage/next-composition.json"
+mv "$stage/next-composition.json" "$profile/source-composition.json"
 [[ $(jq '[.source_assets[] | select(.path=="packaging/native/native.config")]|length' "$boot/lock.json") == 1 ]]
 jq --arg digest "$config_sha" '(.source_assets[] |
  select(.path=="packaging/native/native.config").sha256)=$digest' \

@@ -193,6 +193,9 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	ret = cam_cc_native_parents_get(dev);
 	if (ret)
 		goto clean_failure;
+	ret = cam_cc_crm_guard_map(pdev);
+	if (ret)
+		goto clean_failure;
 	ret = cam_cc_clocks_init();
 	if (ret)
 		goto clean_failure;
@@ -208,6 +211,10 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	if (ret < 0)
 		return cam_cc_native_quarantine(dev, ret);
 	cam_cc_native.probe_pm_held = true;
+	/* CRM owns PLL/RCG/CBC programming when firmware leaves it enabled. */
+	ret = cam_cc_crm_guard_admit();
+	if (ret)
+		return cam_cc_native_quarantine(dev, ret);
 	ret = cam_cc_native_handoff_init();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
@@ -252,6 +259,9 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	return 0;
 
 clean_failure:
+	if (cam_cc_owner_busy())
+		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_crm_guard_put();
 	cam_cc_native_parents_put();
 	return cam_cc_owner_probe_failed(ret);
 }

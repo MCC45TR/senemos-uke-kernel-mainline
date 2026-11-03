@@ -12,6 +12,7 @@
 #include "camcc-sm7675-data.h"
 #include "provider/camcc-sm7675-power.h"
 #include "provider/camcc-sm7675-owner.h"
+#include "provider/camcc-sm7675-crm-guard.h"
 #include "provider/camcc-sm7675-clocks.h"
 #include "provider/camcc-sm7675-handoff.h"
 #include "provider/camcc-sm7675-registration.h"
@@ -25,8 +26,20 @@ static ssize_t controller_state_show(struct device *dev,
 }
 static DEVICE_ATTR_RO(controller_state);
 
+static ssize_t crm_mode_show(struct device *dev,
+			    struct device_attribute *attribute, char *buffer)
+{
+	/* Cached probe observation; sysfs must not read an unpowered register. */
+	if (!READ_ONCE(cam_cc_crm_guard.checked))
+		return sysfs_emit(buffer, "unchecked\n");
+	return sysfs_emit(buffer, "%s\n", READ_ONCE(cam_cc_crm_guard.firmware_enabled) ?
+			  "firmware-enabled-refused" : "direct-programming");
+}
+static DEVICE_ATTR_RO(crm_mode);
+
 static struct attribute *cam_cc_native_attrs[] = {
 	&dev_attr_controller_state.attr,
+	&dev_attr_crm_mode.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(cam_cc_native);

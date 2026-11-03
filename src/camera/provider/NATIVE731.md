@@ -57,3 +57,22 @@ operations. Neither matching register offsets nor this object qualification
 establishes CRMC ownership or safe bypass. Exact active firmware/controller
 mode and the CRM/native relationship must be reconciled before activation;
 the new compatible remains absent from the current DT until that work passes.
+
+The direct-programming candidate now requires an exclusive, named `crm` MMIO
+resource at the exact Uke base0xadd7000/size0x2000. After the initial voltage
+votes and interface/runtime-PM reference, it reads CRM_ENABLE at0xc before any
+PLL/RCG/CBC programming or provider publication. Only zero admits the direct
+path. Any nonzero mode is refused, retaining the controller resources in the
+existing bound fault state. Cached read-only `crm_mode` reports that observation
+without accessing an unpowered register. The guard never writes CRM or a LUT.
+An unexpected pre-PM reference also retains parents/mapping in quarantine.
+
+Exact OEM CRM and CAMCC code, together with the Qualcomm20April2026 upstream
+CESTA proposal, establish that enabled CRM owns PLL/RCG/CBC programming through
+votes and firmware lookup tables. The proposed SM8750 display driver has a
+different CRM descriptor/register layout from Uke's v1 camera block; it is
+reference evidence, not a portable replacement. Active Uke CRM still requires
+matched vote/IRQ/LUT/voltage ownership and implementation. The disabled-mode
+guard alone establishes neither complete firmware handoff nor physical support.
+Its actual resource/admission source and native probe ordering are qualified
+separately in ordinary/fail-fast sanitizer checks and real kernel object builds.

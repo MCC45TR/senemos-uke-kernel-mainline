@@ -34,7 +34,7 @@ curl --fail --location --silent --show-error "$base/cam_csiphy_dev.h" -o "$refer
  'efef1af717f54ad458a1db00c989fcaa4fdd775a8572d49ea8924cfad0ccee82  cam_csiphy_dev.h' | sha256sum --check --strict)
 cp "$profile/source-composition.json" "$profile/source-composition-before-phy731.json"
 jq '. + {
- source_mode:"retained1011-with-unlinked-native-camcc-and-uke-dphy-helper",
+ source_mode:("retained"+(.camera_base_release // "1011")+"-with-unlinked-native-camcc-and-uke-dphy-helper"),
  phy_parent_composition:"source-composition-before-phy731.json",
  native_phy_object:true,native_phy_linked:false,native_phy_installed:false,
  camera_dt_activation:false,physical_acceptance:false

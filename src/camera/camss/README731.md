@@ -74,7 +74,17 @@ Its full-kernel result is recorded separately. The CAMSS integration adds source
 and caller/module qualification after that checkpoint; do not transfer the
 helper result to the complete new profile or physical cameras.
 
-These source-qualification producers retain parent1011. Fresh local inventory
-has independently advanced to1500; actual delivery must reconcile and preserve
-the latest running/accepted source and recovery route. Do not install an old
-qualification cohort as a replacement for that current baseline.
+The earlier1209/1210 qualification producers retain parent1011. The current
+CAMSS producer starts at fresh ABI1700 and retains successful COPR11251503 /
+source3d8702b / parent1500, matching the inspected running kernel. It preserves
+that complete SSC/IIO, Binder, touch, MEMLAT, display and audio source/boot
+recipe. Both profile and manifest-verified boot configurations enable the
+sensor modules and record the updated config digest. Pinned RPM header/payload
+digests and full remote RPM verification protect the retained source. New
+source execution/packaging remains pending until its own COPR result.
+
+The still-unlinked CAMCC object also has an exclusive read-only CRM mode guard;
+enabled CRM refuses direct clock programming before publication. Camera DT
+remains inactive. Actual delivery must recheck and preserve the latest accepted
+source, independent changes and recovery route; no old qualification cohort
+should replace a newer running/accepted baseline.

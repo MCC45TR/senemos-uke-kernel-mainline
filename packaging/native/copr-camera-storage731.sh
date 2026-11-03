@@ -26,7 +26,7 @@ for path in "${overlays[@]}"; do
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-storage731.json"
 jq '. + {
-    source_mode:"retained1011-with-sensors-exposure-and-permanent-gdsc-storage-prerequisites",
+    source_mode:("retained"+(.camera_base_release // "1011")+"-with-sensors-exposure-and-permanent-gdsc-storage-prerequisites"),
     storage_parent_composition:"source-composition-before-storage731.json",
     gdsc_permanent_storage_api:true,gdsc_permanent_storage_callers:0,
     ov08d10_exposure_read_guard:true,

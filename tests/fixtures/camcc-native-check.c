@@ -81,6 +81,7 @@ struct qcom_reset_controller { struct reset_controller_dev rcdev; struct regmap 
 static int steps, fail_at, resources, registered_clocks, reset_published, domain_published, clock_published;
 static int configured_plls, sync_error, sync_calls, genpd_syncs;
 static bool model_domains_on, first_resume, boot_drop_fault, domain_sync_fault;
+static bool crm_mapping, crm_active, busy_at_suspend;
 static int sequence[1024], sequence_size;
 enum { EVENT_CLOCK_SYNC = 1001, EVENT_RCG_DROP, EVENT_DOMAIN_SYNC, EVENT_PROXY_DROP, EVENT_PM_DROP };
 static struct regmap model_map;
@@ -169,7 +170,12 @@ static void qcom_clk_alpha_pll_configure(struct clk_alpha_pll *pll, struct regma
 	int ret = step(); if (ret) { cam_cc_power_fail(ret, 0, 0); return; }
 	configured_plls++; map->words[(pll->offset + pll->regs[PLL_OFF_L_VAL]) / 4] = pll->config->l;
 }
-static int pm_runtime_set_suspended(struct device *dev) { assert(!dev->active); return step(); }
+static int pm_runtime_set_suspended(struct device *dev)
+{
+	assert(!dev->active); int ret = step(); if (ret) return ret;
+	if (busy_at_suspend) { dev->usage++; return -EBUSY; }
+	return 0;
+}
 static void pm_runtime_enable(struct device *dev) { dev->enabled = true; }
 static int pm_runtime_resume_and_get(struct device *dev)
 {
@@ -193,7 +199,31 @@ static struct regmap *cam_cc_owner_create(struct platform_device *pdev)
 static int cam_cc_owner_probe_failed(int error)
 {
 	assert(!cam_cc_power.publication_started && !model_device.dev.usage);
+	assert(!crm_mapping);
 	resources = 0; cam_cc_power.dev = NULL; cam_cc_power.map = NULL; return error;
+}
+static bool cam_cc_owner_busy(void)
+{
+	return model_device.dev.usage || model_device.dev.active ||
+		cam_cc_power.fault || cam_cc_power.publication_started;
+}
+static int cam_cc_crm_guard_map(struct platform_device *pdev)
+{
+	assert(pdev == &model_device && resources && !crm_mapping);
+	int ret = step(); if (ret) return ret;
+	crm_mapping = true; return 0;
+}
+static int cam_cc_crm_guard_admit(void)
+{
+	assert(crm_mapping && model_device.dev.active && model_device.dev.usage > 0);
+	assert(!configured_plls && !registered_clocks && !reset_published);
+	int ret = step(); if (ret) return ret;
+	return crm_active ? -EOPNOTSUPP : 0;
+}
+static void cam_cc_crm_guard_put(void)
+{
+	assert(!model_device.dev.active && !cam_cc_power.publication_started);
+	crm_mapping = false;
 }
 static int cam_cc_owner_begin_publication(void)
 {
@@ -306,6 +336,7 @@ static void defaults(bool boot_on)
 	reset_published = domain_published = clock_published = 0;
 	configured_plls = sync_error = sync_calls = genpd_syncs = sequence_size = 0;
 	model_domains_on = boot_on; first_resume = boot_drop_fault = domain_sync_fault = false;
+	crm_mapping = crm_active = busy_at_suspend = false;
 	model_driver.sync_state = cam_cc_native_sync_state;
 	model_device.dev.driver = &model_driver; model_device.dev.of_node = &model_node;
 	for (int i = 0; i < 3; i++) {
@@ -365,7 +396,7 @@ static void probe_failures(void)
 		for (int failure = 1; failure <= total; failure++) {
 			defaults(on); fail_at = failure;
 			int ret = cam_cc_native_probe(&model_device);
-			if (failure <= 6) {
+			if (failure <= 7) {
 				assert(ret == -EREMOTEIO && !resources && !cam_cc_power.fault);
 				assert(!parent_clks[0].references && !parent_clks[1].references && !parent_clks[2].references);
 			} else {
@@ -381,6 +412,20 @@ static void probe_failures(void)
 		}
 	}
 	printf("CAMCC native: %u exact API/MMIO probe fault points preserve clean retry or bound fault resources\n", cases);
+	defaults(true); crm_active = true;
+	assert(!cam_cc_native_probe(&model_device));
+	assert(cam_cc_power.fault && cam_cc_power.primary_error == -EOPNOTSUPP);
+	assert(resources && crm_mapping && model_device.dev.active && cam_cc_native.probe_pm_held);
+	assert(!configured_plls && !registered_clocks && !reset_published && !domain_published && !clock_published);
+	assert(!cam_cc_native.ready);
+	int before_sync = steps; cam_cc_native_sync_state(&model_device.dev); assert(steps == before_sync);
+	puts("CAMCC native: active CRM refuses direct programming before PLL/RCG/CBC access or provider publication and retains powered resources");
+	defaults(false); busy_at_suspend = true;
+	assert(!cam_cc_native_probe(&model_device));
+	assert(cam_cc_power.fault && cam_cc_power.primary_error == -EBUSY && resources && crm_mapping);
+	assert(parent_clks[0].references && parent_clks[1].references && parent_clks[2].references);
+	assert(!configured_plls && !registered_clocks && !reset_published && !cam_cc_native.ready);
+	puts("CAMCC native: an unexpected pre-PM reference retains parent clocks and CRM mapping instead of taking clean failure cleanup");
 }
 
 static void reset_and_lookup(void)

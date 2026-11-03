@@ -17,16 +17,19 @@ profile=$stage/native-profile
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
 overlays=(src/camera/camcc-sm7675.c src/camera/provider/camcc-sm7675-handoff.h
     src/camera/provider/camcc-sm7675-registration.h src/camera/provider/NATIVE731.md
-    tests/camcc-native-object.sh tests/camcc-native731-contract.sh tests/fixtures/camcc-native-check.c)
+    src/camera/provider/camcc-sm7675-crm-guard.h
+    tests/camcc-native-object.sh tests/camcc-native731-contract.sh tests/fixtures/camcc-native-check.c
+    tests/camcc-crm-guard731-contract.sh tests/fixtures/camcc-crm-guard-check.c)
 for path in "${overlays[@]}"; do
     test ! -e "$profile/$path"
     install -Dm644 "$owner/$path" "$profile/$path"
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-native731.json"
 jq '. + {
-    source_mode:"retained1011-with-complete-unlinked-native-camcc-source-and-sensors",
+    source_mode:("retained"+(.camera_base_release // "1011")+"-with-complete-unlinked-native-camcc-source-and-sensors"),
     native_parent_composition:"source-composition-before-native731.json",
     native_provider_object:true,native_provider_linked:false,native_provider_installed:false,
+    crm_mode_admission:true,crm_direct_programming_requires_disabled:true,
     camera_provider_registered:false,camera_dt_activation:false,physical_acceptance:false
 }' "$profile/source-composition-before-native731.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
@@ -38,6 +41,8 @@ spec=$output/senemos-uke-linux-kernel-mainline.spec
 awk '
  /^uke_build_start=\$SECONDS$/ {
   print
+  print "CC=clang bash native-profile/tests/camcc-crm-guard731-contract.sh"
+  print "CC=clang CAMCC_CRM_TEST_FLAGS='\''-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'\'' bash native-profile/tests/camcc-crm-guard731-contract.sh"
   print "CC=clang bash native-profile/tests/camcc-native731-contract.sh \"$PWD\""
   print "CC=clang CAMCC_NATIVE_TEST_FLAGS='\''-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'\'' bash native-profile/tests/camcc-native731-contract.sh \"$PWD\""
   next

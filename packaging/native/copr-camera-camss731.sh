@@ -4,8 +4,9 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1210}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1210 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1700}
+export UKE_CAMCC_PARENT_RELEASE=1500
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1700 ]]
 bash "$owner/packaging/native/copr-camera-phy731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -30,7 +31,7 @@ cp "$profile/source-composition.json" "$profile/source-composition-before-camss7
 api_hash=$(sha256sum "$profile/src/camera/camss/0001-media-camss-return-phy-setup-errors.patch")
 profile_hash=$(sha256sum "$profile/src/camera/camss/0002-media-camss-sm7675-resources.patch")
 jq --arg api_hash "${api_hash%% *}" --arg profile_hash "${profile_hash%% *}" '. + {
- source_mode:"retained1011-with-native-sm7675-camss-module-and-uke-phy",
+ source_mode:("retained"+.camera_base_release+"-with-native-sm7675-camss-module-and-uke-phy"),
  camss_parent_composition:"source-composition-before-camss731.json",
  native_phy_linked:true,native_phy_installed:true,native_camss_packaged:true,
  native_camss_match:true,native_camcc_linked:false,device_installation:false,
