@@ -27,17 +27,14 @@ done
 curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' \
  https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11246385/senemos-uke-linux-kernel-mainline-7.3.1-1011.src.rpm -o "$stage/base.src.rpm"
 [[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/base.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-1011 ]]
-# The pinned header authenticates its payload digest; verify both on the full
-# remotely downloaded parent, rather than trusting a truncated header alone.
+# COPR's retained SRPM is unsigned. Pin its header and payload digest, then
+# verify both over the complete remotely downloaded source RPM. This is not
+# the signature policy for built binary packages or device installation.
 [[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a ]]
 [[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == 914461682948289e960221fb64289e32ca6b6b2bf456357744afb90d591b6a42 ]]
-curl -fLsS --max-time 45 --proto '=https' --proto-redir '=https' \
- https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg -o "$stage/copr-pubkey.gpg"
-printf '%s  %s\n' 09612473936422a20ac218402142f6e40b903e42f78d6d9bc13c1812db435d50 "$stage/copr-pubkey.gpg" | sha256sum -c -
-rpm --dbpath "$stage/rpmdb" --initdb
-rpmkeys --dbpath "$stage/rpmdb" --import "$stage/copr-pubkey.gpg"
-rpmkeys --dbpath "$stage/rpmdb" --checksig --verbose "$stage/base.src.rpm"
+rpmkeys --checksig --nosignature --verbose "$stage/base.src.rpm"
 parent_sha=$(sha256sum "$stage/base.src.rpm" | cut -d ' ' -f1)
+printf 'Verified retained parent SRPM SHA256: %s\n' "$parent_sha"
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
 cpio -t --quiet < "$stage/base.cpio" > "$stage/entries"
 awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/entries"
