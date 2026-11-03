@@ -101,7 +101,7 @@ jq --slurpfile overlays "$stage/audio-overlays.json" --arg commit "$commit" --ar
  "sound/soc/qcom/qdsp6/uke-fs19xx-protocol.h","sound/soc/qcom/qdsp6/uke-fs19xx-safety.h"])|unique),
  speaker_protected_runtime_abi:1,speaker_provisioning_control_access:"write-only",speaker_gain_ceiling:223,
  speaker_formats:["S16_LE","S24_LE","S32_LE"],speaker_rate_hz:48000,speaker_channels:4,
- speaker_tdm_slots:4,speaker_tdm_slot_width:32,speaker_runtime_reader_required:true,speaker_calibration_payload_included:false,
+ speaker_tdm_slots:4,speaker_tdm_slot_width:32,speaker_runtime_reader_required:true,speaker_runtime_reader_minimum:"0.3",speaker_calibration_payload_included:false,
  speaker_generic_data_payload_included:false,speaker_physical_protection_qualified:false,
  speaker_adsp_module_execution_verified:false,speaker_higher_gain_admitted:false,
  amplifier_gain_changed:false,electrical_limits_unchanged:true,audio_hardware_settings_unchanged:false,physical_acceptance:false
@@ -128,8 +128,8 @@ install -m644 "$boot/lock.json" "$output/boot-payload.json"
 ! grep -Eq '^%pre([[:space:]]|$)' "$spec"
 awk -v release="$release" '
  /^%global senemos_build_release 2700$/ {$0="%global senemos_build_release " release}
- /^%package core$/ {print;print "Provides: uke-kernel(fs19xx-protected-v1) = 1";print "Requires: uke-speaker-runtime >= 0.2";next}
- /^%package boot$/ {print;print "Requires(pre): uke-speaker-runtime >= 0.2";next}
+ /^%package core$/ {print;print "Provides: uke-kernel(fs19xx-protected-v1) = 1";print "Requires: uke-speaker-runtime >= 0.3";next}
+ /^%package boot$/ {print;print "Requires(pre): uke-speaker-runtime >= 0.3";next}
  /^%check$/ {print;print "bash native-profile/tests/audio-protected-package-contract.sh %{buildroot} %{_uke_out} native-generated '\''%{krel}'\''";next}
  /^%changelog$/ {
   print "%pre boot";

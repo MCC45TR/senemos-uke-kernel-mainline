@@ -10,9 +10,9 @@ kernel_release=2800
 kernel_build=11252451
 parent_release=2700
 parent_build=11252415
-runtime_build=11252242
+runtime_build=11252520
 control_build=11251908
-runtime_evr=0.2-2.fc46
+runtime_evr=0.3-1.fc46
 control_evr=2.8.1-8.speech4.fc46
 repository=https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test:custom:audio-vi-20261103
 [[ $(uname -m) == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
