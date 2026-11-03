@@ -84,9 +84,9 @@ static struct clk_regmap *cam_cc_sm7675_clocks[] = {
 };
 static struct clk_vdd_class *multi_rails[] = { &cam_cc_mm, &cam_cc_mxc };
 static unsigned long test_rates[VDD_NUM] = {
-	[VDD_LOWER_D1] = 100, [VDD_LOW] = 200, [VDD_NOMINAL] = 400,
+	[VDD_LOWER_D1] = 100000000, [VDD_LOW] = 200000000, [VDD_NOMINAL] = 400000000,
 };
-static unsigned long rivian_rates[VDD_NUM] = { [VDD_LOW] = 200 };
+static unsigned long rivian_rates[VDD_NUM] = { [VDD_LOW] = 200000000 };
 static const char * const test_parents[] = { "fixture-parent" };
 static struct clk_init_data original_inits[5];
 #include "provider-clocks.h"
@@ -105,7 +105,7 @@ static void clock_reset(struct device *dev, bool powered)
 		original_inits[i] = (struct clk_init_data) { .name = "fixture-clock", .ops = ops[i],
 			.parent_names = test_parents, .num_parents = 1, .flags = 0x352 };
 		test_clocks[i].hw.init = &original_inits[i];
-		test_clocks[i].hw.rate = 200;
+		test_clocks[i].hw.rate = 200000000;
 	}
 	test_clocks[0].vdd_data = (struct clk_vdd_class_data) {
 		.vdd_class = &cam_cc_mxc, .rate_max = test_rates, .num_rate_max = VDD_NUM };
@@ -138,13 +138,13 @@ static void fault_stops_everything(struct device *dev, int index)
 	assert(cam_cc_power.fault == -EIO);
 	assert(ops->prepare(hw) == -EIO);
 	ops->unprepare(hw);
-	assert(ops->pre_rate_change(hw, 200, 400) == -EIO);
-	assert(ops->post_rate_change(hw, 400, 200) == -EIO);
+	assert(ops->pre_rate_change(hw, 200000000, 400000000) == -EIO);
+	assert(ops->post_rate_change(hw, 400000000, 200000000) == -EIO);
 	if (ops->enable) assert(ops->enable(hw) == -EIO);
 	if (ops->disable) ops->disable(hw);
-	if (ops->set_rate) assert(ops->set_rate(hw, 200, 100) == -EIO);
+	if (ops->set_rate) assert(ops->set_rate(hw, 200000000, 100000000) == -EIO);
 	if (ops->set_parent) assert(ops->set_parent(hw, 0) == -EIO);
-	if (ops->set_rate_and_parent) assert(ops->set_rate_and_parent(hw, 200, 100, 0) == -EIO);
+	if (ops->set_rate_and_parent) assert(ops->set_rate_and_parent(hw, 200000000, 100000000, 0) == -EIO);
 	assert(operations + native_calls == before);
 	assert(cam_cc_owner_probe_failed(-ENOMEM) == -ENOMEM);
 	failed_probe_cleanup(dev);
@@ -231,23 +231,23 @@ static void rate_changes(void)
 	prepare_clock(3);
 	struct clk_hw *hw = &test_clocks[3].hw;
 	const struct clk_ops *ops = hw->init->ops;
-	assert(ops->pre_rate_change(hw, 200, 400) == 0);
+	assert(ops->pre_rate_change(hw, 200000000, 400000000) == 0);
 	assert(cam_cc_mm.level_votes[VDD_NOMINAL] == 1 && cam_cc_mxc.level_votes[VDD_NOMINAL] == 1);
 	assert(!cam_cc_mm.level_votes[VDD_LOW] && !cam_cc_mxc.level_votes[VDD_LOW]);
-	assert(ops->set_rate(hw, 400, 100) == 0);
-	assert(ops->post_rate_change(hw, 200, 400) == 0);
-	assert(ops->pre_rate_change(hw, 400, 100) == 0);
-	assert(ops->set_rate_and_parent(hw, 100, 100, 0) == 0);
-	assert(ops->post_rate_change(hw, 400, 100) == 0);
+	assert(ops->set_rate(hw, 400000000, 100000000) == 0);
+	assert(ops->post_rate_change(hw, 200000000, 400000000) == 0);
+	assert(ops->pre_rate_change(hw, 400000000, 100000000) == 0);
+	assert(ops->set_rate_and_parent(hw, 100000000, 100000000, 0) == 0);
+	assert(ops->post_rate_change(hw, 400000000, 100000000) == 0);
 	assert(cam_cc_mm.level_votes[VDD_LOWER_D1] == 1 && cam_cc_mxc.level_votes[VDD_LOWER_D1] == 1);
 	assert(!cam_cc_mm.level_votes[VDD_NOMINAL] && !cam_cc_mxc.level_votes[VDD_NOMINAL]);
 	assert(ops->set_parent(hw, 0) == 0);
 	unprepare_clock(3);
 	assert(!cam_cc_mm.level_votes[VDD_LOWER_D1] && !cam_cc_mxc.level_votes[VDD_LOWER_D1]);
-	assert(ops->pre_rate_change(hw, 100, 200) == 0); /* Unprepared: cache, no vote. */
+	assert(ops->pre_rate_change(hw, 100000000, 200000000) == 0); /* Unprepared: cache, no vote. */
 	assert(!cam_cc_mm.level_votes[VDD_LOW] && test_clocks[3].vdd_data.vdd_level == VDD_LOW);
 	int before = operations + native_calls;
-	assert(ops->pre_rate_change(hw, 200, 401) < 0 && !cam_cc_power.fault);
+	assert(ops->pre_rate_change(hw, 200000000, 401000000) < 0 && !cam_cc_power.fault);
 	assert(before == operations + native_calls);
 	puts("CAMCC clocks: rise-before-rate, lower-after-rate, combined parent change, stopped cache and unsupported-rate refusal pass");
 }
@@ -265,9 +265,9 @@ static void callback_faults(void)
 		native_error = -ETIMEDOUT;
 		if (!kind) assert(ops->prepare(hw) == -EIO);
 		if (kind == 1) assert(ops->enable(hw) == -EIO);
-		if (kind == 2) assert(ops->set_rate(hw, 100, 100) == -EIO);
+		if (kind == 2) assert(ops->set_rate(hw, 100000000, 100000000) == -EIO);
 		if (kind == 3) assert(ops->set_parent(hw, 0) == -EIO);
-		if (kind == 4) assert(ops->set_rate_and_parent(hw, 100, 100, 0) == -EIO);
+		if (kind == 4) assert(ops->set_rate_and_parent(hw, 100000000, 100000000, 0) == -EIO);
 		if (kind == 5) assert(ops->prepare(hw) == -EIO); /* Duplicate callback is corrupt. */
 		assert(cam_cc_power.primary_error == (kind == 5 ? -EUCLEAN : -ETIMEDOUT));
 		assert(cam_cc_mxc.level_votes[VDD_LOW] == 1);
@@ -287,13 +287,16 @@ static void voltage_faults(void)
 			const struct clk_ops *ops = hw->init->ops;
 			if (phase) prepare_clock(3);
 			if (phase == 2) {
-				assert(ops->pre_rate_change(hw, 200, 400) == 0);
-				hw->rate = 400;
+				assert(ops->pre_rate_change(hw, 200000000, 400000000) == 0);
+				assert(ops->set_rate(hw, 400000000, 100000000) == 0);
+				assert(ops->post_rate_change(hw, 200000000, 400000000) == 0);
+				assert(ops->pre_rate_change(hw, 400000000, 100000000) == 0);
+				assert(ops->set_rate(hw, 100000000, 100000000) == 0);
 			}
 			regulators[rail ? 2 : 0].set_error = -EREMOTEIO;
 			if (!phase) assert(ops->prepare(hw) == -EIO);
-			if (phase == 1) assert(ops->pre_rate_change(hw, 200, 400) == -EIO);
-			if (phase == 2) assert(ops->post_rate_change(hw, 400, 100) == -EIO);
+			if (phase == 1) assert(ops->pre_rate_change(hw, 200000000, 400000000) == -EIO);
+			if (phase == 2) assert(ops->post_rate_change(hw, 400000000, 100000000) == -EIO);
 			if (phase == 3) unprepare_clock(3);
 			assert(cam_cc_power.primary_error == -EREMOTEIO);
 			assert(cam_cc_power.uncertain_rails == CAM_CC_POWER_RAILS);
