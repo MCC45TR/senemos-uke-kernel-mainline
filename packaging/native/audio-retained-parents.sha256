@@ -1,4 +1,4 @@
-6008c22d4a2f380d30683c38f9ef4c924651771b819a2ca0cfd456f52f43de87  src/audio/POCO-Pad-X1.conf
+83193dd68fe748983d2febad6c345d7adb60481fe714469f530bb6e60eb994dd  src/audio/POCO-Pad-X1.conf
 5b3a7164e7774f6077cb8f571e0f9108189e86be96bb67581cc75225b8ce33f3  src/audio/desktop/array-ucm2/Speaker-PCM.conf
 5d95677dd4ddac627966449525561eca18fe3696532f7f829e25b3bd1ca22d8b  tests/speaker-audio-topology-contract.sh
 7a514e02776c4a8a18f0e2c3e5d1f81f4c4bd0703878489371392892b1c19b77  tests/microphone-audio-topology-contract.sh
