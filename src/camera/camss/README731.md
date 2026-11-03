@@ -1,9 +1,27 @@
-# Uke CSIPHY 2.2.1 programming prerequisite
+# Native SM7675 CAMSS and Uke CSIPHY 2.2.1
 
-3 November 2026. The D-PHY helper is inactive source. The COPR producer compiles
-it with the complete original native CSIPHY source as an unlinked object and
-executes isolated MMIO/time boundary fixtures. No compatible, platform driver,
-CAMSS resource profile, DT activation, controller binding or capture is added.
+3 November 2026. The initial PHY producer qualifies an unlinked D-PHY helper.
+The CAMSS producer then adds a distinct SM7675 resource profile and connects
+that helper to the actual native CAMSS module. It retains the sensor/controller
+prerequisites and full kernel/package checks. The packaged DT has neither new
+camera compatible. No candidate installation, provider binding or physical
+capture is established by these source changes.
+
+The profile has five PHYs, three full and two lite CSID/VFE paths. Exact Cliffs
+OEM source explicitly shares the full860 CSID/VFE bus/RDI/IRQ layouts with880;
+stable native gen3 operations provide the corresponding RAW path. Uke PHYs use
+the same L2B/L4B supplies,98480/17920uA loads and400MHz timers. Core rates come
+from the OEM tables. The3GB/s HF instantaneous-bandwidth floor comes from OEM
+CPAS; the AHB vote follows the shared native profile. These are source inputs,
+not measured throughput or a full active interconnect/SMMU/DT contract.
+
+PHY setup now returns an error to the actual stream caller. Empty lane masks
+are rejected before changing a legacy clock mux; existing PHY callbacks retain
+their successful return. The new bridge checks noncombo lane numbering and
+propagates timing refusal. Normal/sanitized actual-caller tests qualify errors
+and retained mux behavior. Package checks require the actual new module alias,
+matching vermagic/nonempty signer and absence of camera activation in every
+packaged DTB. The new controller remains unlinked in this producer.
 
 The 103-entry table retains the exact Uke OEM order, values, delay units and
 Qualcomm GPL-2.0-only attribution. Common control0x101c uses0x7a; reset stays
@@ -22,8 +40,9 @@ modes and electrical timing remain unqualified. C-PHY, combo mode and additional
 profiles remain outside this helper; the full camera goal is unchanged.
 
 The caller must establish exclusive powered PHY/IRQ/clock/rail ownership and
-propagate admission errors before using this helper. A complete native caller
-is not yet connected. Its raw MMIO/time interface does not detect electrical
+propagate admission errors before using this helper. The native caller is
+connected by the CAMSS producer; real ownership still needs the matched DT and
+hardware qualification. Its raw MMIO/time interface does not detect electrical
 failures or establish safe DMA, concurrent graph use or power teardown. Existing
 source clocks and a passed object/fixture are not physical camera acceptance.
 
@@ -48,3 +67,14 @@ Native candidate tags are translated by semantic name; OEM numeric masks are
 not substituted into the native callback contract. Initial1208 stops before
 kernel compilation on a missing combo-tag fixture definition; no new PHY test
 pass or device result is claimed for that build.
+
+Corrected1209 imports the independent original masks/type and passes the512-case
+ordinary/sanitized helper comparison and complete-source AArch64 object gate.
+Its full-kernel result is recorded separately. The CAMSS integration adds source
+and caller/module qualification after that checkpoint; do not transfer the
+helper result to the complete new profile or physical cameras.
+
+These source-qualification producers retain parent1011. Fresh local inventory
+has independently advanced to1500; actual delivery must reconcile and preserve
+the latest running/accepted source and recovery route. Do not install an old
+qualification cohort as a replacement for that current baseline.
