@@ -27,7 +27,17 @@ GDSC object for AArch64.
 explicit profile overlay and spec changes. Native compilation and tests run
 only in COPR. The intended qualification build uses an isolated side repository
 in `mcc45tr/uke-linux-unstable`, separate from the device update repository.
-Build results must be recorded before claiming this prerequisite is qualified.
+Native COPR [11247515](https://copr.fedorainfracloud.org/coprs/build/11247515)
+succeeds at source `1d253221adcae63a7cf703f676bd0d11ac2c4e0b`, producing
+7.3.1-1013. The 91-case fixture passes in ordinary and ASan/UBSan runs; the
+identical assertions reproduce the original leak with status 134. The tested
+source matches the production source. The full kernel compiles in 1154 seconds,
+the actual GDSC object is AArch64, and retained package checks pass in 56 seconds.
+All six existing binary package names are produced. No camera activation,
+device installation or tablet execution of this kernel occurred.
+
+Release 1013 is now reserved. A changed build must use a fresh release;
+documentation changes alone do not authorize rebuilding it.
 
 Removing genpd objects does not establish electrical power recovery,
 failed-probe resource ownership, camera firmware handoff or physical capture.
