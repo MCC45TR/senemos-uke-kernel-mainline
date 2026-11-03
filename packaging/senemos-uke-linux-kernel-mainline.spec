@@ -252,7 +252,7 @@ modinfo -F alias %{_uke_out}/boot-modules/lib/modules/%{krel}/kernel/drivers/per
 test "$(cat native-generated/llcc-profile)" = native-v1
 grep -Fx '#define UKE_LLCC_NATIVE_PROFILE 1' arch/arm64/kernel/uke-llcc-profile.h
 CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh native-generated/rpmh-regulator-before-native.c pre-native
-CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native
+CXX=clang++ bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native-pogo
 CXX=clang++ bash native-profile/tests/ktz-dimming-observation-contract.sh drivers/video/backlight/ktz8866.c
 bash boot-recipe/tests/boot-image-contract.sh %{_uke_out}/boot-image
 bash boot-recipe/tests/initramfs-cpio-contract.sh %{_uke_out}/usr/gen_init_cpio
