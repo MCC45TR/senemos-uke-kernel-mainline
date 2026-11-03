@@ -4,6 +4,7 @@
 #include <array>
 #include <cstring>
 #include <fstream>
+#include <string_view>
 #include <iostream>
 #include <memory>
 #include <sys/mman.h>
@@ -55,6 +56,34 @@ struct Control {
         if (locked) snd_ctl_elem_unlock(handle, id);
         if (handle) snd_ctl_close(handle);
         if (id) snd_ctl_elem_id_free(id);
+    }
+    bool available() const {
+        snd_ctl_elem_info_t *info = nullptr;
+        if (snd_ctl_elem_info_malloc(&info) < 0) return false;
+        snd_ctl_elem_info_set_id(info, id);
+        const auto status = snd_ctl_elem_info(handle, info);
+        const bool found = status >= 0 && snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_BYTES &&
+            snd_ctl_elem_info_get_count(info) == UKE_FS19XX_FRAME_BYTES && snd_ctl_elem_info_is_writable(info);
+        snd_ctl_elem_info_free(info);
+        return found;
+    }
+    int status() const {
+        snd_ctl_elem_id_t *state_id = nullptr;
+        snd_ctl_elem_value_t *value = nullptr;
+        require_runtime(snd_ctl_elem_id_malloc(&state_id) == 0);
+        if (snd_ctl_elem_value_malloc(&value) < 0) {
+            snd_ctl_elem_id_free(state_id);
+            throw std::runtime_error("speaker status memory unavailable");
+        }
+        snd_ctl_elem_id_set_interface(state_id, SND_CTL_ELEM_IFACE_MIXER);
+        snd_ctl_elem_id_set_name(state_id, UKE_FS19XX_STATUS);
+        snd_ctl_elem_value_set_id(value, state_id);
+        const int result = snd_ctl_elem_read(handle, value);
+        const unsigned state = result >= 0 ? snd_ctl_elem_value_get_enumerated(value, 0) : 6;
+        snd_ctl_elem_value_free(value);
+        snd_ctl_elem_id_free(state_id);
+        require_runtime(result >= 0 && state <= UKE_FS_FAULT);
+        return int(state);
     }
     void lock() {
         snd_ctl_elem_info_t *info = nullptr;
@@ -128,18 +157,30 @@ void load(Control &control, PrivateSession &session, const GenericParameters &pa
 
 int main(int argc, char **argv) {
     const char *directory = "/mnt/vendor/persist/audio";
-    const char *acdb = "/usr/lib/firmware/qcom/uke/audio/Forte_acdb_cal.acdb";
+    const char *acdb = "/var/cache/uke-speaker-runtime/Forte_acdb_cal.acdb";
     const char *card = "hw:POCOPadX1";
-    bool apply = false;
+    bool apply = false, status_only = false, has_control = false;
     try {
         for (int i = 1; i < argc; ++i) {
             std::string_view option(argv[i]);
             if (option == "--check") apply = false;
             else if (option == "--load") apply = true;
+            else if (option == "--status") status_only = true;
+            else if (option == "--has-control") has_control = true;
             else if (option == "--persist-directory" && i + 1 < argc) directory = argv[++i];
             else if (option == "--acdb" && i + 1 < argc) acdb = argv[++i];
             else if (option == "--card" && i + 1 < argc) card = argv[++i];
-            else throw std::runtime_error("usage: uke-speaker-runtime [--check|--load] [--acdb PATH] [--persist-directory RO_PATH] [--card ALSA_ID]");
+            else throw std::runtime_error("usage: uke-speaker-runtime [--check|--load|--status|--has-control] [--acdb PATH] [--persist-directory RO_PATH] [--card ALSA_ID]");
+        }
+        if (status_only || has_control) {
+            require_runtime(!apply && !(status_only && has_control));
+            Control control(card);
+            if (has_control) return control.available() ? 0 : 1;
+            static constexpr const char *names[] = {"empty", "staging", "ready", "prepared", "running", "fault"};
+            const auto state = control.status();
+            std::cout << "{\"schema_version\":1,\"state\":\"" << names[state]
+                << "\",\"gain_ceiling\":223,\"physical_protection_qualified\":false}\n";
+            return 0;
         }
         struct rlimit core{0, 0};
         require_runtime(setrlimit(RLIMIT_CORE, &core) == 0 && prctl(PR_SET_DUMPABLE, 0) == 0);

@@ -1,0 +1,2 @@
+# Board card identity only. No per-unit calibration or tuning in udev.
+ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC[0-9]*", ATTRS{id}=="POCOPadX1", TAG+="systemd", ENV{SYSTEMD_WANTS}+="uke-speaker-provision@%k.service"
