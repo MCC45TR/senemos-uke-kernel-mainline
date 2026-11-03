@@ -277,7 +277,7 @@
     },
     {
       "path": "src/audio/audioreach-control-links.h",
-      "sha256": "6dba7965a260bd60741ccfd980843c461c1fc11482b5e8822d75327e0b1e8980"
+      "sha256": "60b58e621c3549f5f360f178622d26bc0f5338a41d5c5bb693ccfef879e613a3"
     },
     {
       "path": "src/audio/desktop/LICENSE",
@@ -649,11 +649,11 @@
     },
     {
       "path": "tests/audio-control-links-contract.sh",
-      "sha256": "ca799a4593aab6a50d23b0de2e9c6ade33e20ad07eacfef8b2bdf1bc2d93cc1b"
+      "sha256": "7c3421b80f104a4597b98049ba490f26186bfdf6cfef7c9b3083f71543a6a2a0"
     },
     {
       "path": "tests/audio-control-links-integration.sh",
-      "sha256": "ccafbca07dd4b249d731f01936d45d5585ee37d6ccc76b2f7d9e5c88e460f5b4"
+      "sha256": "a2e87e7b9597b2f0b07ee4310aab40afd727415e64a6d31e0a976a5751aa1664"
     },
     {
       "path": "tests/audio-control-links.c",

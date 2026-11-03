@@ -4,7 +4,8 @@ set -Eeuo pipefail
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
-mkdir -p "$work/linux"
+mkdir -p "$work/linux" "$work/asm"
+printf '#include <endian.h>\n' > "$work/asm/byteorder.h"
 cat > "$work/linux/types.h" <<'C'
 #include <stdint.h>
 #include <stddef.h>

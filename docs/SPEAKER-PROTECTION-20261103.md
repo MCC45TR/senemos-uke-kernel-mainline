@@ -15,7 +15,7 @@ only data connections in its graph-open packet.
 for a single-intent control connection. The native source preparation installs
 the bounded encoder before applying that patch. Existing topologies contain
 none of these tokens and retain their graph-open payload. Duplicate, partial,
-zero, self-connected and oversized link descriptions are rejected. The host
+zero, identical-endpoint and oversized link descriptions are rejected. The host
 ACDB inspector reports control-link identities without exporting tuning data.
 
 This is a protocol prerequisite, not an enabled VI path or a complete speaker

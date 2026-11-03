@@ -5,7 +5,8 @@ kernel=${1:?Pass prepared kernel source}
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
-mkdir -p "$work/linux"
+mkdir -p "$work/linux" "$work/asm"
+printf '#include <endian.h>\n' > "$work/asm/byteorder.h"
 cat > "$work/linux/types.h" <<'C'
 #include <stdint.h>
 #include <stddef.h>
@@ -116,6 +117,8 @@ int main(void)
     return 0;
 }
 C
-${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined \
+# Match Kbuild for the inherited parser's int/u32 port loop; encoder checks
+# retain their separate full -Wextra -Werror build.
+${CC:-cc} -std=gnu11 -Wall -Wextra -Werror -Wno-sign-compare -fsanitize=address,undefined \
     -I"$work" -I"$root/src/audio" "$work/parser.c" -o "$work/check"
 "$work/check"

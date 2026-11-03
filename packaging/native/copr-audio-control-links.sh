@@ -33,7 +33,7 @@ tar --sort=name --mtime=@1793664000 --owner=0 --group=0 --numeric-owner -czf \
 cat > "$output/uke-audio-source-check.spec" <<'SPEC'
 Name: uke-audio-source-check
 Version: 0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Uke AudioReach source fixtures without a hardware payload
 License: GPL-2.0-only
 BuildArch: noarch

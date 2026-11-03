@@ -8,6 +8,7 @@
 #ifndef AUDIOREACH_CONTROL_LINKS_H
 #define AUDIOREACH_CONTROL_LINKS_H
 
+#include <asm/byteorder.h>
 #include <linux/errno.h>
 #include <linux/string.h>
 #include <linux/types.h>
