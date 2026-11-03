@@ -43,8 +43,8 @@ hash=$(sha256sum "$boot/packaging/native/native.config"); hash=${hash%% *}
 jq --arg hash "$hash" '(.source_assets[]|select(.path=="packaging/native/native.config").sha256)=$hash' \
     "$boot/lock.json" > "$work/boot-lock.json"
 mv "$work/boot-lock.json" "$boot/lock.json"
-commit=$(git -C "$owner" rev-parse HEAD)
-epoch=$(git -C "$owner" show -s --format=%ct HEAD)
+commit=$(git -c safe.directory="$owner" -C "$owner" rev-parse HEAD)
+epoch=$(git -c safe.directory="$owner" -C "$owner" show -s --format=%ct HEAD)
 release=$(jq -er .kernel_release "$lock")
 revision=$(jq -er .rpm_revision "$lock")
 printf '%s\n' "$commit" > "$profile/source-commit"
