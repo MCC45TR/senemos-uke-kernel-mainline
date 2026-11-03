@@ -1,0 +1,345 @@
+diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
+index 698507d..933d4cb 100644
+--- a/sound/soc/codecs/fs19xx.c
++++ b/sound/soc/codecs/fs19xx.c
+@@ -6,9 +6,9 @@
+ // driver published in MiCode/vendor_qcom_opensource_audio-kernel
+ // (asoc/codecs/fs19xx, Copyright (C) Fourier Semiconductor Inc.).
+ //
+-// The amplifier runs its own speaker protection. It is held in reset while
+-// idle, configured from the OEM preset on stream start and unmuted only after
+-// the amplifier reports a locked PLL.
++// Local PLL/thermal checks do not establish complete transducer protection.
++// The optional protected profile also requires the calibrated AudioReach VI
++// graph before DAC unmute. The existing conservative gain ceiling is retained.
+ 
+ #include <linux/bitfield.h>
+ #include <linux/bits.h>
+@@ -28,6 +28,7 @@
+ #include <linux/workqueue.h>
+ #include <sound/pcm_params.h>
+ #include <sound/soc.h>
++#include <sound/uke-fs19xx-guard.h>
+ 
+ #define FS19XX_DEFAULT_FW_NAME		"qcom/uke/audio/fs19xx.fsm"
+ 
+@@ -76,7 +77,7 @@
+ #define FS19XX_PLL_C2			0x0540
+ #define FS19XX_PLL_C3			0x0018
+ 
+-#define FS19XX_VOL_DEFAULT		0xdf	/* OEM uncalibrated default, -12 dB */
++#define FS19XX_VOL_DEFAULT		0xdf	/* Native conservative ceiling, -12 dB */
+ #define FS19XX_VOL_MAX			FS19XX_VOL_DEFAULT
+ 
+ #define FS19XX_LOCK_POLL_MS		10
+@@ -173,6 +174,8 @@ struct fs19xx_priv {
+ 	bool stream_active;
+ 	bool suspended;
+ 	bool removing;
++	bool require_protection;
++	struct notifier_block protection_listener;
+ };
+ 
+ /* Registers that are read-modify-written must be read twice to be trusted. */
+@@ -428,6 +431,15 @@ static void fs19xx_unmute_work(struct work_struct *work)
+ 
+ 	if (!fs19xx->powered)
+ 		return;
++	if (fs19xx->require_protection && !q6apm_fs19xx_running()) {
++		if (q6apm_fs19xx_configured() && ++fs19xx->pll_polls < FS19XX_LOCK_POLL_COUNT) {
++			mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
++					 msecs_to_jiffies(FS19XX_LOCK_POLL_MS));
++			return;
++		}
++		ret = -ENODATA;
++		goto stop;
++	}
+ 	ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &status);
+ 	if (ret)
+ 		goto stop;
+@@ -476,6 +488,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+ 		return -ENODEV;
+ 	if (fs19xx->suspended)
+ 		return -EBUSY;
++	if (fs19xx->require_protection && !q6apm_fs19xx_configured())
++		return -ENODATA;
+ 	if (fs19xx->powered)
+ 		return 0;
+ 
+@@ -504,6 +518,26 @@ static void fs19xx_power_off(struct fs19xx_priv *fs19xx)
+ 	fs19xx_chip_stop(fs19xx);
+ }
+ 
++static int fs19xx_protection_event(struct notifier_block *listener,
++				 unsigned long mode, void *unused)
++{
++	struct fs19xx_priv *fs19xx = container_of(listener, struct fs19xx_priv, protection_listener);
++	int ret = 0;
++	guard(mutex)(&fs19xx->lock);
++	if (mode != 2)
++		fs19xx_power_off(fs19xx);
++	else if (fs19xx->stream_active && fs19xx->speaker_enabled &&
++		 !fs19xx->suspended && !fs19xx->removing)
++		ret = fs19xx_power_on(fs19xx);
++	return notifier_from_errno(ret);
++}
++
++static void fs19xx_unregister_protection(void *context)
++{
++	struct fs19xx_priv *fs19xx = context;
++	q6apm_fs19xx_unregister(&fs19xx->protection_listener, fs19xx->position);
++}
++
+ static int fs19xx_dai_startup(struct snd_pcm_substream *substream,
+ 			      struct snd_soc_dai *dai)
+ {
+@@ -972,6 +1006,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+ 	fs19xx->i2c = client;
+ 	fs19xx->dev = dev;
+ 	fs19xx->volume = FS19XX_VOL_DEFAULT;
++	fs19xx->require_protection = of_property_read_bool(dev->of_node, "foursemi,require-protection");
+ 	mutex_init(&fs19xx->lock);
+ 	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
+ 	i2c_set_clientdata(client, fs19xx);
+@@ -1005,6 +1040,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+ 			dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
+ 	}
+ 
++	if (fs19xx->require_protection) {
++		unsigned int expected;
++		switch (client->addr) {
++		case 0x34: expected = 8; break;
++		case 0x35: expected = 2; break;
++		case 0x36: expected = 4; break;
++		case 0x37: expected = 1; break;
++		default: return -EINVAL;
++		}
++		if (!fs19xx->preset || fs19xx->position != expected)
++			return dev_err_probe(dev, -EINVAL, "protected amplifier identity unavailable\n");
++		fs19xx->protection_listener.notifier_call = fs19xx_protection_event;
++		ret = q6apm_fs19xx_register(&fs19xx->protection_listener, fs19xx->position);
++		if (ret)
++			return dev_err_probe(dev, ret, "protection guard unavailable\n");
++		ret = devm_add_action_or_reset(dev, fs19xx_unregister_protection, fs19xx);
++		if (ret)
++			return ret;
++	}
+ 	return devm_snd_soc_register_component(dev, &fs19xx_component, &fs19xx_dai, 1);
+ }
+ 
+diff --git a/sound/soc/qcom/qdsp6/Makefile b/sound/soc/qcom/qdsp6/Makefile
+index 6726730..f2882fc 100644
+--- a/sound/soc/qcom/qdsp6/Makefile
++++ b/sound/soc/qcom/qdsp6/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ snd-q6dsp-common-y := q6dsp-common.o q6dsp-lpass-ports.o q6dsp-lpass-clocks.o
+-snd-q6apm-y := q6apm.o audioreach.o topology.o
++snd-q6apm-y := q6apm.o audioreach.o topology.o uke-fs19xx-runtime.o
+ 
+ obj-$(CONFIG_SND_SOC_QDSP6_COMMON) += snd-q6dsp-common.o
+ obj-$(CONFIG_SND_SOC_QDSP6_CORE) += q6core.o
+diff --git a/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c b/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c
+index e204fd5..fa2ac78 100644
+--- a/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c
++++ b/sound/soc/qcom/qdsp6/q6apm-lpass-dais.c
+@@ -17,6 +17,7 @@
+ #include "q6dsp-common.h"
+ #include "audioreach.h"
+ #include "q6apm.h"
++#include "uke-fs19xx-runtime.h"
+ #include "q6prm.h"
+ 
+ #define AUDIOREACH_BE_PCM_BASE	16
+@@ -218,6 +219,15 @@ static int q6apm_lpass_dai_trigger(struct snd_pcm_substream *substream, int cmd,
+ 				dai_data->is_port_started[dai->id] = true;
+ 		}
+ 		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (dai_data->graph[dai->id] && q6apm_fs19xx_graph(dai_data->graph[dai->id]) &&
++		    dai_data->is_port_started[dai->id]) {
++			ret = q6apm_graph_stop(dai_data->graph[dai->id]);
++			dai_data->is_port_started[dai->id] = false;
++		}
++		break;
+ 	default:
+ 		break;
+ 	}
+diff --git a/sound/soc/qcom/qdsp6/q6apm.c b/sound/soc/qcom/qdsp6/q6apm.c
+index 483fac4..82468b3 100644
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -19,6 +19,7 @@
+ #include <sound/pcm.h>
+ #include "audioreach.h"
+ #include "q6apm.h"
++#include "uke-fs19xx-runtime.h"
+ 
+ /* Graph Management */
+ struct apm_graph_mgmt_cmd {
+@@ -78,11 +79,17 @@ static struct audioreach_graph *q6apm_get_audioreach_graph(struct q6apm *apm, ui
+ 	graph->apm = apm;
+ 	graph->info = info;
+ 	graph->id = graph_id;
++	ret = q6apm_fs19xx_claim(graph);
++	if (ret) {
++		kfree(graph);
++		return ERR_PTR(ret);
++	}
+ 
+ 	graph->graph = audioreach_alloc_graph_pkt(apm, info);
+ 	if (IS_ERR(graph->graph)) {
+ 		void *err = graph->graph;
+ 
++		q6apm_fs19xx_release(graph);
+ 		kfree(graph);
+ 		return ERR_CAST(err);
+ 	}
+@@ -93,6 +100,7 @@ static struct audioreach_graph *q6apm_get_audioreach_graph(struct q6apm *apm, ui
+ 	if (id < 0) {
+ 		dev_err(apm->dev, "Unable to allocate graph id (%d)\n", graph_id);
+ 		kfree(graph->graph);
++		q6apm_fs19xx_release(graph);
+ 		kfree(graph);
+ 		mutex_unlock(&apm->lock);
+ 		return ERR_PTR(id);
+@@ -103,6 +111,7 @@ static struct audioreach_graph *q6apm_get_audioreach_graph(struct q6apm *apm, ui
+ 	if (ret < 0) {
+ 		/* Retain the ID until removal; remote ownership may be ambiguous. */
+ 		graph->state = ret;
++		q6apm_fs19xx_shutdown(apm);
+ 		return ERR_PTR(ret);
+ 	}
+ 
+@@ -147,7 +156,9 @@ static void q6apm_put_audioreach_graph(struct kref *ref)
+ 	apm = graph->apm;
+ 	guard(mutex)(&apm->cmd_lock);
+ 
+-	audioreach_graph_mgmt_cmd(graph, APM_CMD_GRAPH_CLOSE);
++	q6apm_fs19xx_quiesce(graph);
++	graph->state = audioreach_graph_mgmt_cmd(graph, APM_CMD_GRAPH_CLOSE);
++	q6apm_fs19xx_release(graph);
+ 
+ 	mutex_lock(&apm->lock);
+ 	graph = idr_remove(&apm->graph_idr, graph->id);
+@@ -500,12 +511,21 @@ EXPORT_SYMBOL_GPL(q6apm_set_real_module_id);
+ 
+ int q6apm_graph_media_format_pcm(struct q6apm_graph *graph, struct audioreach_module_config *cfg)
+ {
++	struct audioreach_module_config protected_cfg;
+ 	struct audioreach_graph_info *info = graph->info;
+ 	struct audioreach_sub_graph *sgs;
+ 	struct audioreach_container *container;
+ 	struct audioreach_module *module;
+ 	int ret;
+ 
++	if (q6apm_fs19xx_graph(graph)) {
++		if (cfg->sample_rate != 48000 || cfg->num_channels != 4 || cfg->bit_width != 16)
++			return -EINVAL;
++		protected_cfg = *cfg;
++		protected_cfg.bit_width = 32;
++		cfg = &protected_cfg;
++	}
++
+ 	list_for_each_entry(sgs, &info->sg_list, node) {
+ 		list_for_each_entry(container, &sgs->container_list, node) {
+ 			list_for_each_entry(module, &container->modules_list, node) {
+@@ -895,7 +915,14 @@ EXPORT_SYMBOL_GPL(q6apm_graph_close);
+ 
+ int q6apm_graph_prepare(struct q6apm_graph *graph)
+ {
+-	return audioreach_graph_mgmt_cmd(graph->ar_graph, APM_CMD_GRAPH_PREPARE);
++	int ret = q6apm_fs19xx_prepare(graph);
++	if (!ret)
++		ret = audioreach_graph_mgmt_cmd(graph->ar_graph, APM_CMD_GRAPH_PREPARE);
++	if (!ret)
++		ret = q6apm_fs19xx_prepared(graph);
++	if (ret)
++		q6apm_fs19xx_stopped(graph, true);
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(q6apm_graph_prepare);
+ 
+@@ -906,8 +933,16 @@ int q6apm_graph_start(struct q6apm_graph *graph)
+ 
+ 	if (ar_graph->start_count == 0) {
+ 		ret = audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_START);
+-		if (ret)
++		if (ret) {
++			q6apm_fs19xx_stopped(graph, true);
++			return ret;
++		}
++		ret = q6apm_fs19xx_started(graph);
++		if (ret) {
++			q6apm_fs19xx_stopped(graph, true);
++			audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
+ 			return ret;
++		}
+ 	}
+ 
+ 	ar_graph->start_count++;
+@@ -919,6 +954,7 @@ EXPORT_SYMBOL_GPL(q6apm_graph_start);
+ int q6apm_graph_stop(struct q6apm_graph *graph)
+ {
+ 	struct audioreach_graph *ar_graph = graph->ar_graph;
++	int ret;
+ 
+ 	if (ar_graph->start_count == 0)
+ 		return 0;
+@@ -926,7 +962,11 @@ int q6apm_graph_stop(struct q6apm_graph *graph)
+ 	if (--ar_graph->start_count > 0)
+ 		return 0;
+ 
+-	return audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
++	q6apm_fs19xx_stopped(graph, false);
++	ret = audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
++	if (ret)
++		q6apm_fs19xx_stopped(graph, true);
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(q6apm_graph_stop);
+ 
+@@ -938,7 +978,8 @@ EXPORT_SYMBOL_GPL(q6apm_graph_flush);
+ 
+ static int q6apm_audio_probe(struct snd_soc_component *component)
+ {
+-	return audioreach_tplg_init(component);
++	int ret = q6apm_fs19xx_controls(component);
++	return ret ? ret : audioreach_tplg_init(component);
+ }
+ 
+ static void q6apm_audio_remove(struct snd_soc_component *component)
+@@ -983,6 +1024,10 @@ static int apm_probe(gpr_device_t *gdev)
+ 
+ 	idr_init(&apm->modules_idr);
+ 
++	ret = q6apm_fs19xx_init(apm);
++	if (ret)
++		return ret;
++
+ 	ret = snd_soc_register_component(dev, &q6apm_audio_component, NULL, 0);
+ 	if (ret < 0) {
+ 		dev_err(dev, "failed to register q6apm: %d\n", ret);
+@@ -1016,6 +1061,8 @@ static void apm_remove(gpr_device_t *gdev)
+ {
+ 	struct q6apm *apm = dev_get_drvdata(&gdev->dev);
+ 
++	q6apm_fs19xx_shutdown(apm);
++
+ 	mutex_lock(&g_apm_lock);
+ 	if (g_apm == apm)
+ 		g_apm = NULL;
+diff --git a/sound/soc/qcom/qdsp6/q6apm.h b/sound/soc/qcom/qdsp6/q6apm.h
+index bf8caff..2e5843e 100644
+--- a/sound/soc/qcom/qdsp6/q6apm.h
++++ b/sound/soc/qcom/qdsp6/q6apm.h
+@@ -72,6 +72,7 @@ struct q6apm {
+ 	struct idr sub_graphs_idr;
+ 	struct idr containers_idr;
+ 	struct idr modules_idr;
++	struct q6apm_fs19xx *fs19xx;
+ };
+ 
+ struct audio_buffer {
