@@ -25,7 +25,7 @@ tar --sort=name --mtime=@1793664000 --owner=0 --group=0 --numeric-owner -czf \
 cat > "$output/uke-speaker-runtime.spec" <<'SPEC'
 Name: uke-speaker-runtime
 Version: 0.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Read-only Uke speaker calibration reader and guarded DSP provisioner
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.gz

@@ -22,5 +22,6 @@ unset LD_PRELOAD
 # Validate the real service with only the executable path relocated for the worker.
 sed "s|/usr/bin/uke-speaker-runtime|$stage/runtime|g" \
  "$owner/src/audio/systemd/uke-speaker-provision@.service" > "$stage/uke-speaker-provision@controlC0.service"
-systemd-analyze verify --man=no "$stage/uke-speaker-provision@controlC0.service"
+mkdir -m700 "$stage/user-run"
+XDG_RUNTIME_DIR="$stage/user-run" systemd-analyze --user --generators=no --recursive-errors=no verify --man=no "$stage/uke-speaker-provision@controlC0.service"
 printf '%s\n' 'Speaker control-only status, missing-source isolation, gain admission and systemd unit syntax passed; no hardware'
