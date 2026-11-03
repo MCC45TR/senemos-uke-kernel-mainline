@@ -70,6 +70,7 @@ static struct rc_dev *devm_rc_allocate_device(struct device *d,int type){
 }
 static int devm_rc_register_device(struct device *d,struct rc_dev *rc){(void)d;registered=rc;return register_error;}
 static bool device_property_read_bool(struct device *d,const char *name){assert(!strcmp(name,"led-active-low"));return d->low;}
+static bool device_property_present(struct device *d,const char *name){assert(!strcmp(name,"duty-cycle"));return d->duty!=-1;}
 static int device_property_read_u8(struct device *d,const char *name,u8 *v){assert(!strcmp(name,"duty-cycle"));if(d->duty<0)return -EINVAL;*v=d->duty;return 0;}
 static int device_property_read_string(struct device *d,const char *name,const char **v){assert(!strcmp(name,"label"));*v=d->label;return *v?0:-EINVAL;}
 static int regulator_enable(struct regulator *r){assert(r==&supply);enable_calls++;return enable_error;}
@@ -141,6 +142,7 @@ int main(void){
   reset();spi.dev.duty=dc;assert(ir_spi_probe(&spi)==((!dc||dc>=100)?-EINVAL:0));
  }
  spi.dev.duty=-1;
+ reset();spi.dev.duty=-2;assert(ir_spi_probe(&spi)==-EINVAL&&!registered);spi.dev.duty=-1;
  reset();spi.dev.label=NULL;assert(!ir_spi_probe(&spi));assert(!strcmp(registered->device_name,"IR SPI"));
  reset();puts("Actual IR SPI: known 16-bit waveform, cumulative edges, idle tail, immutable input, polarity, all duty defaults, carrier/size bounds and failures passed; no optical test.");
 }

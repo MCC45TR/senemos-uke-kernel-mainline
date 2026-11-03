@@ -10,10 +10,13 @@ trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/receipt"
 for compiler in gcc clang; do
     CC=$compiler bash "$owner/tests/fm19511-contract.sh"
+    CC=$compiler bash "$owner/tests/fm19511-pm-contract.sh"
     CC=$compiler bash "$owner/tests/ir-spi-contract.sh" "$owner/src/infrared/ir-spi-uke.c"
 done
 CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/fm19511-contract.sh"
+CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
+    bash "$owner/tests/fm19511-pm-contract.sh"
 CC=clang CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/ir-spi-contract.sh" "$owner/src/infrared/ir-spi-uke.c"
 curl -fLsS --retry 2 --max-time 300 \

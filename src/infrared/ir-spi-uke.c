@@ -185,9 +185,13 @@ static int ir_spi_probe(struct spi_device *spi)
 	idata->spi                 = spi;
 
 	idata->negated = device_property_read_bool(dev, "led-active-low");
-	ret = device_property_read_u8(dev, "duty-cycle", &dc);
-	if (ret)
+	if (device_property_present(dev, "duty-cycle")) {
+		ret = device_property_read_u8(dev, "duty-cycle", &dc);
+		if (ret)
+			return dev_err_probe(dev, ret, "invalid IR duty property\n");
+	} else {
 		dc = 50;
+	}
 
 	ret = ir_spi_set_duty_cycle(idata->rc, dc);
 	if (ret)
