@@ -32,7 +32,20 @@ cover all five families, an already-wired generic-hook variant, single/shared
 rails, increasing/decreasing/stopped rates, callback failures, voltage errors,
 and resource retention through failed-probe core cleanup. The complete catalog
 and callbacks must also compile as an AArch64 kernel object using the real
-candidate layout. Native results are pending.
+candidate layout.
+
+[COPR build 11247758](https://copr.fedorainfracloud.org/coprs/build/11247758)
+passes on Fedora Rawhide AArch64, 3 November 2026, with tested source
+88c60fdce55784fd8fa97d07cdb55435022e875f and kernel ABI 7.3.1-1018.
+The missing-vote before-control fails with expected exit 134. Candidate clock
+and retained owner/GDSC fixtures pass normally and under fail-fast ASan/UBSan.
+The complete kernel compiles in 1,140 seconds with four jobs; boot preparation
+takes 1,216 seconds and package checks take 56 seconds. The complete catalog,
+power, owner and new clock callbacks compile against the real kernel layout
+as an AArch64 object; Image is unchanged and the object is not installed.
+Six existing binary package names are emitted in the isolated side repository.
+Full binary delivery verification, device installation and physical operation
+are not claimed. ABI 1018 is reserved; changed inputs need a fresh ABI.
 
 This is a clock-callback prerequisite. A complete provider must still own its
 clock/reset/domain registration storage, wire PM/publication/removal/shutdown,
