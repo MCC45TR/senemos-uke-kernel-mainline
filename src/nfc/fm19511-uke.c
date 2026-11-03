@@ -291,7 +291,6 @@ static const struct file_operations fm19511_fops = {
 #ifdef CONFIG_COMPAT
 	.compat_ioctl = compat_ptr_ioctl,
 #endif
-	.llseek = no_llseek,
 };
 
 static void fm19511_clear_irq(struct work_struct *work)
