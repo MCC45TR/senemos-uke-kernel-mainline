@@ -21,6 +21,7 @@ tests/audio-control-links.c
 tests/audio-pcm-formats-contract.sh
 tests/audio-speaker-safety-contract.sh
 tests/audio-speaker-safety.c
+tests/audio-speaker-state-store-contract.sh
 tests/speaker-audio-topology-contract.sh
 tests/microphone-audio-topology-contract.sh
 tests/audio-fs19xx-contract.sh

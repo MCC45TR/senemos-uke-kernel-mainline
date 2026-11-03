@@ -178,12 +178,6 @@ static int fs19xx_control_info(struct snd_kcontrol *kcontrol, struct snd_ctl_ele
 	info->count = UKE_FS19XX_FRAME_BYTES;
 	return 0;
 }
-static int fs19xx_control_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *value)
-{
-	/* alsactl and unprivileged clients must never read calibration back. */
-	memset(value->value.bytes.data, 0, UKE_FS19XX_FRAME_BYTES);
-	return 0;
-}
 static int fs19xx_control_put(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *value)
 {
 	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
@@ -242,8 +236,9 @@ static int fs19xx_state_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_v
 }
 static const struct snd_kcontrol_new fs19xx_controls[] = {
 	{ .iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = UKE_FS19XX_CONTROL,
-	  .access = SNDRV_CTL_ELEM_ACCESS_READWRITE | SNDRV_CTL_ELEM_ACCESS_VOLATILE,
-	  .info = fs19xx_control_info, .get = fs19xx_control_get, .put = fs19xx_control_put },
+	  /* alsactl must not serialize a zero readback and replay it over READY. */
+	  .access = SNDRV_CTL_ELEM_ACCESS_WRITE | SNDRV_CTL_ELEM_ACCESS_VOLATILE,
+	  .info = fs19xx_control_info, .put = fs19xx_control_put },
 	{ .iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = UKE_FS19XX_STATUS,
 	  .access = SNDRV_CTL_ELEM_ACCESS_READ | SNDRV_CTL_ELEM_ACCESS_VOLATILE,
 	  .info = fs19xx_state_info, .get = fs19xx_state_get },

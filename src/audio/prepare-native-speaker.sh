@@ -13,6 +13,8 @@ for fixture in audio-fs19xx-contract audio-fs19xx-lifecycle-contract audio-graph
 done
 CC=clang bash "$owner/tests/audio-pcm-formats-contract.sh" "$kernel"
 CC=clang bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
+CC=clang bash "$owner/tests/audio-speaker-state-store-contract.sh" "$kernel"
+CC=gcc bash "$owner/tests/audio-speaker-state-store-contract.sh" "$kernel"
 bash "$owner/src/audio/build-protected-topology.sh" "$output/POCO-Pad-X1-protected-speaker.conf"
 cat "$output/POCO-Pad-X1-protected-speaker.conf" "$owner/src/audio/POCO-Pad-X1-Microphone-Capture.conf" > "$output/POCO-Pad-X1.conf"
 alsatplg -c "$output/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
