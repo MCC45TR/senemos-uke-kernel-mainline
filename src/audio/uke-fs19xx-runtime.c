@@ -6,6 +6,7 @@
 #include <linux/hex.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
+#include <linux/spinlock.h>
 #include <linux/workqueue.h>
 #include <sound/control.h>
 #include <sound/soc.h>
@@ -14,6 +15,7 @@
 #include "q6apm.h"
 #include "uke-fs19xx-protocol.h"
 #include "uke-fs19xx-runtime.h"
+#include "uke-fs19xx-safety.h"
 
 struct q6apm_fs19xx {
 	struct mutex lock;
@@ -21,36 +23,61 @@ struct q6apm_fs19xx {
 	struct audioreach_graph *owner;
 	struct crypto_shash *sha256;
 	bool removing;
+	uke_fs_generation provision_generation;
 };
 
 /* No pointer into a removable APM device is exposed to an amplifier. */
 static DEFINE_MUTEX(fs19xx_listeners_lock);
 static BLOCKING_NOTIFIER_HEAD(fs19xx_listeners);
 static unsigned int fs19xx_positions;
-static atomic_t fs19xx_mode = ATOMIC_INIT(0);
-static atomic_t fs19xx_faulted = ATOMIC_INIT(0);
+static DEFINE_SPINLOCK(fs19xx_guard_lock);
+static struct uke_fs_guard fs19xx_guard;
 
 bool q6apm_fs19xx_configured(void)
-{ return !atomic_read(&fs19xx_faulted) && atomic_read(&fs19xx_mode) >= 1; }
+{
+	unsigned long flags;
+	bool configured;
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	configured = uke_fs_guard_configured(&fs19xx_guard);
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	return configured;
+}
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_configured);
 bool q6apm_fs19xx_running(void)
-{ return !atomic_read(&fs19xx_faulted) && atomic_read(&fs19xx_mode) == 2; }
+{
+	unsigned long flags;
+	bool running;
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	running = uke_fs_guard_running(&fs19xx_guard);
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	return running;
+}
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_running);
 
 static int fs19xx_gate(unsigned int mode)
 {
+	unsigned long flags;
 	int ret = 0;
 
 	guard(mutex)(&fs19xx_listeners_lock);
-	if (mode && (fs19xx_positions != 15 || atomic_read(&fs19xx_faulted)))
+	if (mode && fs19xx_positions != 15)
 		return -ENODEV;
-	atomic_set(&fs19xx_mode, mode);
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	ret = uke_fs_guard_mode(&fs19xx_guard, mode);
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	if (ret)
+		return ret;
 	if (mode != 1)
 		ret = notifier_to_errno(blocking_notifier_call_chain(&fs19xx_listeners, mode, NULL));
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	if (mode && (!uke_fs_guard_configured(&fs19xx_guard) || fs19xx_guard.mode != mode))
+		ret = -EIO;
 	if (ret) {
-		atomic_set(&fs19xx_mode, 0);
-		blocking_notifier_call_chain(&fs19xx_listeners, 0, NULL);
+		uke_fs_guard_trip(&fs19xx_guard);
 	}
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	if (ret)
+		blocking_notifier_call_chain(&fs19xx_listeners, 0, NULL);
 	return ret;
 }
 
@@ -63,9 +90,11 @@ static DECLARE_WORK(fs19xx_fault_work, fs19xx_fault_work_fn);
 /* Callable under a codec mutex: physical mute runs outside that mutex. */
 void q6apm_fs19xx_fault(void)
 {
-	atomic_set(&fs19xx_faulted, 1);
-	atomic_set(&fs19xx_mode, 0);
-	schedule_work(&fs19xx_fault_work);
+	unsigned long flags;
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	uke_fs_guard_trip(&fs19xx_guard);
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	queue_work(system_highpri_wq, &fs19xx_fault_work);
 }
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_fault);
 
@@ -76,7 +105,7 @@ int q6apm_fs19xx_register(struct notifier_block *listener, unsigned int position
 	if (!position || position > 8 || !is_power_of_2(position))
 		return -EINVAL;
 	guard(mutex)(&fs19xx_listeners_lock);
-	if (atomic_read(&fs19xx_mode) || (fs19xx_positions & position))
+	if (q6apm_fs19xx_configured() || (fs19xx_positions & position))
 		return -EBUSY;
 	ret = blocking_notifier_chain_register(&fs19xx_listeners, listener);
 	if (!ret)
@@ -87,8 +116,11 @@ EXPORT_SYMBOL_GPL(q6apm_fs19xx_register);
 
 void q6apm_fs19xx_unregister(struct notifier_block *listener, unsigned int position)
 {
+	unsigned long flags;
 	mutex_lock(&fs19xx_listeners_lock);
-	atomic_set(&fs19xx_mode, 0);
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	uke_fs_guard_trip(&fs19xx_guard);
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
 	blocking_notifier_call_chain(&fs19xx_listeners, 0, NULL);
 	blocking_notifier_chain_unregister(&fs19xx_listeners, listener);
 	fs19xx_positions &= ~position;
@@ -157,6 +189,7 @@ static int fs19xx_control_put(struct snd_kcontrol *kcontrol, struct snd_ctl_elem
 	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
 	struct q6apm *apm = dev_get_drvdata(component->dev);
 	struct q6apm_fs19xx *fs = apm->fs19xx;
+	unsigned long flags;
 	int ret;
 
 	if (!capable(CAP_SYS_RAWIO))
@@ -166,8 +199,23 @@ static int fs19xx_control_put(struct snd_kcontrol *kcontrol, struct snd_ctl_elem
 		return -ENODEV;
 	ret = uke_fs19xx_provision(&fs->data, value->value.bytes.data,
 		UKE_FS19XX_FRAME_BYTES, fs->owner != NULL, fs19xx_verify, fs);
-	if (!ret && fs->data.status == UKE_FS_READY)
-		atomic_set(&fs19xx_faulted, 0);
+	if (!ret && fs->data.status == UKE_FS_STAGING &&
+	    uke_fs19xx_word(value->value.bytes.data + 4) == UKE_FS_BEGIN) {
+		spin_lock_irqsave(&fs19xx_guard_lock, flags);
+		fs->provision_generation = fs19xx_guard.generation;
+		spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	}
+	if (!ret && fs->data.status == UKE_FS_READY) {
+		/* An older mute job must complete before a new transaction can arm. */
+		flush_work(&fs19xx_fault_work);
+		spin_lock_irqsave(&fs19xx_guard_lock, flags);
+		ret = uke_fs_guard_reprovision(&fs19xx_guard, fs->provision_generation);
+		spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+		if (ret) {
+			uke_fs19xx_erase(&fs->data);
+			fs->data.status = UKE_FS_FAULT;
+		}
+	}
 	/* The control core does not retain this write value; erase its copy too. */
 	memzero_explicit(value->value.bytes.data, UKE_FS19XX_FRAME_BYTES);
 	return ret ? ret : 1;
@@ -183,8 +231,13 @@ static int fs19xx_state_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_v
 {
 	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
 	struct q6apm *apm = dev_get_drvdata(component->dev);
+	unsigned long flags;
+	bool faulted;
 	guard(mutex)(&apm->fs19xx->lock);
-	value->value.enumerated.item[0] = atomic_read(&fs19xx_faulted) ? UKE_FS_FAULT : apm->fs19xx->data.status;
+	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+	faulted = fs19xx_guard.faulted;
+	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+	value->value.enumerated.item[0] = faulted ? UKE_FS_FAULT : apm->fs19xx->data.status;
 	return 0;
 }
 static const struct snd_kcontrol_new fs19xx_controls[] = {

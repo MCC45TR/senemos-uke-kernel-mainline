@@ -20,6 +20,8 @@ done < <(jq -r '.patches[].path' "$owner/manifests/native-linux-7.3.1.json")
 git -C "$kernel" apply "$owner/patches/boot/0058-fs19xx-current-workqueue.patch"
 bash "$owner/src/audio/prepare-control-links.sh" "$kernel"
 bash "$owner/src/audio/prepare-fs19xx-runtime.sh" "$kernel"
+CC=clang bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
+CC=gcc bash "$owner/tests/audio-speaker-safety-contract.sh" "$kernel"
 mkdir -p "$stage/objects"
 cp "$owner/packaging/native/native.config" "$stage/objects/.config"
 make -s -C "$kernel" O="$stage/objects" ARCH=arm64 LLVM=1 olddefconfig prepare modules_prepare
@@ -33,13 +35,13 @@ alsatplg -d "$stage/protected.bin" -o "$stage/decoded.conf"
 grep -Fq 'spk.fs.rx' "$stage/decoded.conf"
 grep -Fq 'spk.fs.tx' "$stage/decoded.conf"
 grep -Fq 'spk.vi.source' "$stage/decoded.conf"
-printf 'Targeted kernel objects and protected ALSA topology compile. No full kernel, device or physical protection acceptance.\n' > "$stage/receipt/VALIDATION"
+printf 'Actual codec fault-injection and guard-generation fixtures pass with GCC/Clang sanitizers; targeted kernel objects and protected topology compile. Gain remains capped at 223. No full kernel, device or physical protection acceptance.\n' > "$stage/receipt/VALIDATION"
 git -C "$owner" rev-parse HEAD > "$stage/receipt/SOURCE-COMMIT"
 tar -czf "$output/uke-speaker-kernel-check-0.1.tar.gz" -C "$stage/receipt" .
 cat > "$output/uke-speaker-kernel-check.spec" <<'SPEC'
 Name: uke-speaker-kernel-check
 Version: 0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Source receipt for the Uke protected speaker kernel objects
 License: GPL-2.0-only
 BuildArch: noarch

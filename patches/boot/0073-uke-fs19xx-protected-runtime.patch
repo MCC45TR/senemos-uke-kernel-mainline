@@ -1,5 +1,5 @@
 diff --git a/sound/soc/codecs/fs19xx.c b/sound/soc/codecs/fs19xx.c
-index 698507d..91ed3c4 100644
+index 698507d..7669adf 100644
 --- a/sound/soc/codecs/fs19xx.c
 +++ b/sound/soc/codecs/fs19xx.c
 @@ -6,9 +6,9 @@
@@ -23,7 +23,7 @@ index 698507d..91ed3c4 100644
  
  #define FS19XX_DEFAULT_FW_NAME		"qcom/uke/audio/fs19xx.fsm"
  
-@@ -76,7 +77,7 @@
+@@ -76,12 +77,14 @@
  #define FS19XX_PLL_C2			0x0540
  #define FS19XX_PLL_C3			0x0018
  
@@ -32,7 +32,19 @@ index 698507d..91ed3c4 100644
  #define FS19XX_VOL_MAX			FS19XX_VOL_DEFAULT
  
  #define FS19XX_LOCK_POLL_MS		10
-@@ -173,6 +174,8 @@ struct fs19xx_priv {
+ #define FS19XX_LOCK_POLL_COUNT		200
+ #define FS19XX_UNMUTE_DELAY_MS		30
++/* Diagnostic polling only; this is not a transducer protection deadline. */
++#define FS19XX_HEALTH_POLL_MS		250
+ 
+ /* Preset file layout; all integers are little endian. */
+ #define FS19XX_SCENE_MUSIC		BIT(0)
+@@ -169,10 +172,13 @@ struct fs19xx_priv {
+ 	unsigned int rotation;
+ 	unsigned int pll_polls;
+ 	bool powered;
++	bool unmuted;
+ 	bool speaker_enabled;
  	bool stream_active;
  	bool suspended;
  	bool removing;
@@ -41,12 +53,106 @@ index 698507d..91ed3c4 100644
  };
  
  /* Registers that are read-modify-written must be read twice to be trusted. */
-@@ -428,6 +431,15 @@ static void fs19xx_unmute_work(struct work_struct *work)
+@@ -330,6 +336,9 @@ static int fs19xx_chip_init(struct fs19xx_priv *fs19xx)
+ 
+ static int fs19xx_set_volume_reg(struct fs19xx_priv *fs19xx, unsigned int volume)
+ {
++	/* Enforce the ceiling at the final hardware writer, including future callers. */
++	if (volume > FS19XX_VOL_MAX)
++		return -ERANGE;
+ 	return regmap_write(fs19xx->regmap, FS19XX_REG_VOLCTRL,
+ 			    (volume << 8) | 0x00c0);
+ }
+@@ -417,17 +426,104 @@ static void fs19xx_chip_stop(struct fs19xx_priv *fs19xx)
+ 		gpiod_set_value_cansleep(fs19xx->gpio_reset, 1);
+ }
+ 
++static int fs19xx_check_health(struct fs19xx_priv *fs19xx, bool running)
++{
++	unsigned int value;
++	int ret;
++
++	if (fs19xx->require_protection && !q6apm_fs19xx_running())
++		return -ENODATA;
++	ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &value);
++	if (ret)
++		return ret;
++	if (!(value & FS19XX_STATUS_PLLS))
++		return -ENOLINK;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &value);
++	if (ret)
++		return ret;
++	if (!(value & FS19XX_TSCTRL_TSEN))
++		return -EIO;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_PWRCTRL, &value);
++	if (ret)
++		return ret;
++	if (value & FS19XX_PWRCTRL_PWDN)
++		return -EIO;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_SYSCTRL, &value);
++	if (ret)
++		return ret;
++	if ((value & FS19XX_SYSCTRL_ALL_ON) != FS19XX_SYSCTRL_ALL_ON)
++		return -EIO;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_VOLCTRL, &value);
++	if (ret)
++		return ret;
++	/* Exact Uke FS19xx gain field is bits 15:6; low reserved bits are ignored. */
++	if (fs19xx->volume > FS19XX_VOL_MAX ||
++	    (value & 0xffc0) != ((fs19xx->volume << 8) | 0x00c0))
++		return -ERANGE;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_DACCTRL, &value);
++	if (ret)
++		return ret;
++	if (!!(value & FS19XX_DACCTRL_MUTE_BIT) == running)
++		return -EIO;
++	if (fs19xx->require_protection && !q6apm_fs19xx_running())
++		return -ENODATA;
++	return 0;
++}
++
++static int fs19xx_unmute_output(struct fs19xx_priv *fs19xx)
++{
++	unsigned int value;
++	int ret;
++
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_DACCTRL, &value);
++	if (ret)
++		return ret;
++	if (!(value & FS19XX_DACCTRL_MUTE_BIT))
++		return -EIO;
++	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &value);
++	if (ret)
++		return ret;
++	if (!(value & FS19XX_TSCTRL_TSEN)) {
++		ret = regmap_write(fs19xx->regmap, FS19XX_REG_TSCTRL,
++				   value | FS19XX_TSCTRL_TSEN);
++		if (ret)
++			return ret;
++	}
++	msleep(10);
++	/* Sensor readback, PLL, power, gain and guard must pass while still muted. */
++	ret = fs19xx_check_health(fs19xx, false);
++	if (ret)
++		return ret;
++	return regmap_write(fs19xx->regmap, FS19XX_REG_DACCTRL, FS19XX_DACCTRL_RUN);
++}
++
+ static void fs19xx_unmute_work(struct work_struct *work)
+ {
+ 	struct fs19xx_priv *fs19xx = container_of(to_delayed_work(work),
+ 						  struct fs19xx_priv, unmute_work);
+-	unsigned int status, tsctrl;
++	unsigned int status;
+ 	int ret;
+ 
+ 	guard(mutex)(&fs19xx->lock);
  
  	if (!fs19xx->powered)
  		return;
 +	if (fs19xx->require_protection && !q6apm_fs19xx_running()) {
-+		if (q6apm_fs19xx_configured() && ++fs19xx->pll_polls < FS19XX_LOCK_POLL_COUNT) {
++		if (!fs19xx->unmuted && q6apm_fs19xx_configured() &&
++		    ++fs19xx->pll_polls < FS19XX_LOCK_POLL_COUNT) {
 +			mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
 +					 msecs_to_jiffies(FS19XX_LOCK_POLL_MS));
 +			return;
@@ -54,19 +160,57 @@ index 698507d..91ed3c4 100644
 +		ret = -ENODATA;
 +		goto stop;
 +	}
++	if (fs19xx->unmuted) {
++		ret = fs19xx_check_health(fs19xx, true);
++		if (ret)
++			goto stop;
++		goto monitor;
++	}
  	ret = regmap_read(fs19xx->regmap, FS19XX_REG_STATUS, &status);
  	if (ret)
  		goto stop;
-@@ -464,6 +476,8 @@ static void fs19xx_unmute_work(struct work_struct *work)
+@@ -440,31 +536,21 @@ static void fs19xx_unmute_work(struct work_struct *work)
+ 		ret = -ETIMEDOUT;
+ 		goto stop;
+ 	}
+-	ret = regmap_write(fs19xx->regmap, FS19XX_REG_DACCTRL, FS19XX_DACCTRL_RUN);
+-	if (ret)
+-		goto stop;
+-	msleep(10);
+-	ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &tsctrl);
++	ret = fs19xx_unmute_output(fs19xx);
+ 	if (ret)
+ 		goto stop;
+-	if (!(tsctrl & FS19XX_TSCTRL_TSEN)) {
+-		ret = regmap_write(fs19xx->regmap, FS19XX_REG_TSCTRL,
+-				   tsctrl | FS19XX_TSCTRL_TSEN);
+-		if (ret)
+-			goto stop;
+-		ret = fs19xx_read_stable(fs19xx, FS19XX_REG_TSCTRL, &tsctrl);
+-		if (ret)
+-			goto stop;
+-		if (!(tsctrl & FS19XX_TSCTRL_TSEN)) {
+-			ret = -EIO;
+-			goto stop;
+-		}
+-	}
++	fs19xx->unmuted = true;
++monitor:
++	mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
++			 msecs_to_jiffies(FS19XX_HEALTH_POLL_MS));
+ 	return;
  
  stop:
- 	dev_err(fs19xx->dev, "unmute failed: %d; amplifier reset\n", ret);
+-	dev_err(fs19xx->dev, "unmute failed: %d; amplifier reset\n", ret);
++	dev_err(fs19xx->dev, "output health failed: %d; amplifier reset\n", ret);
 +	if (fs19xx->require_protection)
 +		q6apm_fs19xx_fault();
  	fs19xx->powered = false;
++	fs19xx->unmuted = false;
  	fs19xx_chip_stop(fs19xx);
  }
-@@ -476,6 +490,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+ 
+@@ -476,6 +562,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
  		return -ENODEV;
  	if (fs19xx->suspended)
  		return -EBUSY;
@@ -75,7 +219,7 @@ index 698507d..91ed3c4 100644
  	if (fs19xx->powered)
  		return 0;
  
-@@ -484,6 +500,8 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
+@@ -484,10 +572,13 @@ static int fs19xx_power_on(struct fs19xx_priv *fs19xx)
  		ret = fs19xx_chip_start(fs19xx);
  	if (ret) {
  		dev_err(fs19xx->dev, "power on failed: %d\n", ret);
@@ -84,7 +228,16 @@ index 698507d..91ed3c4 100644
  		fs19xx_chip_stop(fs19xx);
  		return ret;
  	}
-@@ -504,6 +522,26 @@ static void fs19xx_power_off(struct fs19xx_priv *fs19xx)
+ 	fs19xx->powered = true;
++	fs19xx->unmuted = false;
+ 	fs19xx->pll_polls = 0;
+ 	mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
+ 			 msecs_to_jiffies(FS19XX_UNMUTE_DELAY_MS));
+@@ -501,9 +592,30 @@ static void fs19xx_power_off(struct fs19xx_priv *fs19xx)
+ 	if (!fs19xx->powered)
+ 		return;
+ 	fs19xx->powered = false;
++	fs19xx->unmuted = false;
  	fs19xx_chip_stop(fs19xx);
  }
  
@@ -111,7 +264,7 @@ index 698507d..91ed3c4 100644
  static int fs19xx_dai_startup(struct snd_pcm_substream *substream,
  			      struct snd_soc_dai *dai)
  {
-@@ -972,6 +1010,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -972,6 +1084,7 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  	fs19xx->i2c = client;
  	fs19xx->dev = dev;
  	fs19xx->volume = FS19XX_VOL_DEFAULT;
@@ -119,7 +272,7 @@ index 698507d..91ed3c4 100644
  	mutex_init(&fs19xx->lock);
  	INIT_DELAYED_WORK(&fs19xx->unmute_work, fs19xx_unmute_work);
  	i2c_set_clientdata(client, fs19xx);
-@@ -1005,6 +1044,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
+@@ -1005,6 +1118,25 @@ static int fs19xx_i2c_probe(struct i2c_client *client)
  			dev_info(dev, "preset loaded, position 0x%x\n", fs19xx->position);
  	}
  
