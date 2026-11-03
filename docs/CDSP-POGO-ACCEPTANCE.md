@@ -1,12 +1,26 @@
 # Uke CDSP and pogo acceptance
 
 4 November 2026. Source and COPR results are engineering evidence; hardware
-acceptance remains open. The candidate retains the1600 source cohort and its
+acceptance remains open. The candidate retains the1900 source cohort and its
 recovery/DNF contract. No native compilation runs on the tablet.
 
 Run tests/cdsp-pogo-device-report.sh for a bounded read-only inventory. It never
 starts remoteproc, uploads firmware, reads authentication attributes or writes
 LED/input controls.
+
+The DNF delivery recipe is packaging/native/deliver-cdsp-pogo-candidate.sh.
+Its default --preview prints the exact package/provisioning steps. --apply
+requires an administrator terminal and successful pinned COPR builds. It
+refuses delivery over an installed kernel newer than the retained1900 parent;
+compose any later hardware changes before using it. Existing recovery kernels
+are retained and no reboot is requested.
+
+The separately packaged native helper uke-cdsp-pogo-firmware --preflight
+checks fixed stock CDSP and MCU files without publishing or starting devices.
+Both source partitions are read-only views of the observed Uke UFS LUNs.
+After matching kernel installation, --import KERNEL_RELEASE publishes only
+versioned families for a non-running kernel. Exact MDT identity must pass;
+never relax hashes after an unexplained refusal. No OEM bytes enter COPR.
 
 CDSP acceptance requires matched device-local cdsp.mdt/cdsp_dtb.mdt and all
 requested split segments under qcom/uke/cdsp. Their redistribution/provisioning
