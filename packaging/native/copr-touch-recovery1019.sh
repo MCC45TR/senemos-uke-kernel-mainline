@@ -75,6 +75,7 @@ for line in '%global senemos_build_release 1011' 'bash native-profile/prepare.sh
  [[ $(grep -Fxc "$line" "$spec") == 1 ]]
 done
 awk '
+ /^Source0:/ {print;print "BuildRequires: compiler-rt";next}
  /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release 1019"}
  /^bash native-profile\/prepare.sh "\$PWD"$/ {
   print
