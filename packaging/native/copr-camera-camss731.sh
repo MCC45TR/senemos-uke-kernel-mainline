@@ -4,9 +4,9 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1700}
-export UKE_CAMCC_PARENT_RELEASE=1600
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1700 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2000}
+export UKE_CAMCC_PARENT_RELEASE=1900
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2000 ]]
 bash "$owner/packaging/native/copr-camera-phy731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT

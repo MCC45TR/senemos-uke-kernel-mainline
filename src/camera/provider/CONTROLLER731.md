@@ -1,9 +1,17 @@
 # Guarded native Uke camera controller bring-up
 
-4 November 2026. The controller producer retains parent1600, links the permanent
+4 November 2026. The controller producer retains parent1900, links the permanent
 SM7675 CAMCC driver into the actual kernel and enables its boot FDT conversion.
 This is a hardware bring-up candidate. Both full cameras, fitted read-only
 EEPROM calibration, rear focus, processing, modes and recovery remain required.
+
+Fresh ABI2000 or later preserves successful parent1900's complete supplier,
+display REGDMA, adaptive L3, SSC temperature, NFC/IR, secure RTC and earlier
+source/boot changes. Earlier1702 passes the synthetic FDT and real standalone
+object checks, then stops at the supplier scope gate before a full kernel build.
+The updated scope admits only the reviewed built-in controller. Source2000 also
+establishes transport gates before CRM access; no older qualification cohort
+should be installed as a substitute for the latest accepted/staged baseline.
 
 The boot converter validates the exact controller resource, clock-list shape
 and provider argument widths before mutation. It reorders iface/XO/XO-AO/sleep,

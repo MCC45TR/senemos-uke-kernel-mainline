@@ -4,8 +4,8 @@ set -Eeuo pipefail
 export LC_ALL=C
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-1703}
-[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 1703 ]]
+export UKE_CAMERA_BUILD_RELEASE=${UKE_CAMERA_BUILD_RELEASE:-2000}
+[[ $UKE_CAMERA_BUILD_RELEASE =~ ^[1-9][0-9]{3,4}$ && $UKE_CAMERA_BUILD_RELEASE -ge 2000 ]]
 bash "$owner/packaging/native/copr-camera-camss731.sh" "$output"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -73,6 +73,23 @@ jq --arg digest "$config_hash" '. + {
  gdsc_permanent_storage_callers:1,controller_pm_domains_opted_in:8,
  camcc_boot_fdt_activation:true,camera_dt_activation:true,camera_sensor_dt_activation:false,
  camera_capture_graph_activation:false,camera_provider_registered:false,
+ changed_kernel_files:((.changed_kernel_files + [
+  "drivers/clk/qcom/Kconfig","drivers/clk/qcom/Makefile",
+  "drivers/clk/qcom/camcc-sm7675.c","drivers/clk/qcom/camcc-sm7675-data.h",
+  "drivers/clk/qcom/provider/camcc-sm7675-power.h","drivers/clk/qcom/provider/camcc-sm7675-owner.h",
+  "drivers/clk/qcom/provider/camcc-sm7675-clocks.h","drivers/clk/qcom/provider/camcc-sm7675-handoff.h",
+  "drivers/clk/qcom/provider/camcc-sm7675-registration.h","drivers/clk/qcom/provider/camcc-sm7675-crm-guard.h",
+  "include/dt-bindings/clock/qcom,sm7675-camcc.h",
+  "arch/arm64/kernel/uke-abl.c","arch/arm64/kernel/uke-camcc-dt.h",
+  "drivers/media/platform/qcom/camss/camss-csiphy.c",
+  "drivers/media/platform/qcom/camss/camss-csiphy.h",
+  "drivers/media/platform/qcom/camss/camss-csiphy-2ph-1-0.c",
+  "drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c",
+  "drivers/media/platform/qcom/camss/camss-vfe.c","drivers/media/platform/qcom/camss/camss.c",
+  "drivers/media/platform/qcom/camss/camss.h","drivers/media/platform/qcom/camss/csiphy-sm7675.h",
+  "drivers/media/platform/qcom/camss/camss-sm7675-phy-ops.h",
+  "drivers/media/platform/qcom/camss/camss-sm7675-data.h"
+ ])|unique),
  native_config_sha256:$digest,device_installation:false,physical_acceptance:false
 }' "$profile/source-composition-before-controller731.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)

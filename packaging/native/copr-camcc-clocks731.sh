@@ -28,6 +28,12 @@ case $base_release in
   base_header=f71eea4d521b2937c08d81886c9338e0908834491ee9bb35238a2b72171f58e5
   base_payload=b4f6340ccd8cd72fcfba6d462b869621eaf62793b28abc083bad53072838d5e7
   ;;
+ 1900)
+  base_build=11252138
+  base_commit_expected=aec8163b1ba0fba34e94f99accc99a18a46f8810
+  base_header=1bb1e6fab32581f77f6babb69e2be7d405dfdf6a6d1513d515994d551e931f89
+  base_payload=c91b0a390f73a7063bcb49221cf94d42ef2242b95e3a26f2d84b4428e7ca207f
+  ;;
  *) printf 'Unqualified camera parent: %s\n' "$base_release" >&2; exit 1;;
 esac
 stage=$(mktemp -d)
@@ -87,9 +93,16 @@ if [[ $base_release != 1011 ]]; then
   .panel_variants==["o82_36_02_0a","o82_42_02_0b"] and .touch_variants==["tianma","csot"]' \
   "$profile/source-composition.json" >/dev/null
 fi
-if [[ $base_release == 1600 ]]; then
+if ((base_release >= 1600)); then
  jq -e '.rtc_backend=="qseecom-uefisecapp-RTCInfo" and .rtc_qseecom_version=="0x1402000" and
   .rtc_offset_write_readback and (.rtc_pmic_counter_writes|not) and (.rtc_sdam_writes|not)' \
+  "$profile/source-composition.json" >/dev/null
+fi
+if [[ $base_release == 1900 ]]; then
+ jq -e '.ssc_adsp_supplier_bound_gate==1 and .ssc_temperature_unit=="millicelsius" and
+  .nfc_atomic_memory_read and .nfc_system_wakeup and .ir_explicit_word_bits==16 and
+  .memlat_l3_capacity=="ERANGE-only-descending-OEM-map" and .memlat_strict_provider_unchanged and
+  .o82_regdma_resource=={start:"0x0af80000",size:"0x7000"}' \
   "$profile/source-composition.json" >/dev/null
 fi
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS
