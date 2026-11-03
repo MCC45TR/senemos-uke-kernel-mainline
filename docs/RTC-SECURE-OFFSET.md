@@ -41,8 +41,29 @@ failures and synthetic FDT refusals. The firmware application, real ioctl writes
 alarm delivery and cold power-cycle retention require independent device tests.
 The candidate requires the paired RTC-capable installation profile/updater.
 
+COPR [11251559](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11251559/)
+passed on 3 November 2026 for Fedora Rawhide AArch64. Actual RTC callback and
+synthetic FDT fixtures passed; all824 module signatures were verified on the
+worker, including rejection controls. All six published binary RPM signatures
+and repository SHA-256 values were independently checked. The delivered RTC
+module matches the boot inventory; the core Image and both boot-image digests
+match their signed package inventories. These are software/package results.
+See [artifact identities](rtc-secure-offset-20261103.json).
+
+The paired integration1.8.39,
+[build11251582](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11251582/),
+provides the required profile capability. Its injected UTC and readback tests,
+retained first-update RPM fixture and continuous rollback-health checks pass.
+No RTC ioctl write or cold power-cycle test was performed on the tablet.
+
 Source comparison: Xiaomi kernel5712080a4b0c and DT94c84aeb9e51; upstream
 Linux v7.3.1 `drivers/rtc/rtc-pm8xxx.c`, `drivers/firmware/qcom/qcom_scm.c`,
 `qcom_qseecom_uefisecapp.c` and `drivers/firmware/efi/vars.c`. GPL-2.0-only
 driver changes retain their upstream attribution. Generic laptop SDAM offsets
 were reviewed and are not Uke storage allocations.
+
+The independently retrieved
+[upstream RTC driver](https://github.com/torvalds/linux/blob/05441d697f7f9a927264f4058cbbc6a03dfcac9d/drivers/rtc/rtc-pm8xxx.c)
+has SHA-256a7364852aae55844e117d7799bd1be339775ae576af6d131269da6d5500826d6,
+matching the reviewed pre-patch driver bytes. This does not assert that every
+file in the retained RPM source equals that upstream commit.

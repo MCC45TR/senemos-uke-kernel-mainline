@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "project": "mcc45tr/uke-linux-unstable",
+  "target": "fedora-rawhide-aarch64",
+  "build_id": 11251559,
+  "kernel_release": "7.3.1-1600",
+  "source_commit": "31313e89f719b935bcd1301d48d807bd1dc27163",
+  "parent_build": 11251503,
+  "binary_rpm_signatures": "six verified with COPR public key",
+  "binary_repository_sha256_match": true,
+  "module_signatures_verified_on_worker": 824,
+  "actual_rtc_callback_fixture": true,
+  "synthetic_rtc_fdt_fixture": true,
+  "rtc_early_module": true,
+  "rtc_offset_backend": "qseecom-uefisecapp-RTCInfo",
+  "direct_pmic_writes": false,
+  "sdam_writes": false,
+  "boot_profile_requirement": "uke-installation-profile(rtc-secure-offset-v1) >= 1",
+  "paired_integration_build": 11251582,
+  "source_rpm": {
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/fedora-rawhide-aarch64/Packages/s/senemos-uke-linux-kernel-mainline-7.3.1-1600.fc46.src.rpm",
+    "repository_sha256": "6c8aca6ae2ffdfb3f9b7cdf41617fa8dd9ce6a56f266e60de73394a53f070ac5",
+    "full_local_download": false
+  },
+  "physical_acceptance": false,
+  "rpm_files": [
+    {
+      "file": "senemos-uke-linux-kernel-mainline-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "6548d660fb4091714e26f333521f603e7af9b16ae470ba8d013296ab9b9ca343"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-boot-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "774f343597b50067730d7aa7ca70369c649647cecfb8b00bc778fdedad3aee6c"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-core-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "4980a26d60a82cb9b046f33bbc61b117b9afc520d790719dcaf2257eff3e2a13"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-dtbs-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "2ebb3bd3452ab3a58077ee5848366903821f0e1599815d2436378efe5bdd5f90"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-modules-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "bfda6d770ecc5c8ddbebd99e43472872b45ec873612a0bdee7836918a087d0d3"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-singleboot-7.3.1-1600.fc46.aarch64.rpm",
+      "sha256": "d59d6eb6a24a730eb9c072eca8fb1c271d2bfbdd6e84f5d2427f54491ba83de8"
+    }
+  ]
+}
