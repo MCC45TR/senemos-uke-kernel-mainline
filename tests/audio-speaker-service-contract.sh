@@ -18,6 +18,16 @@ done
 if UKE_AUDIO_TEST_STATE=6 "$stage/runtime" --status > "$stage/error" 2>&1; then exit 1; fi
 if UKE_AUDIO_TEST_ABSENT=1 "$stage/runtime" --has-control > "$stage/error" 2>&1; then exit 1; fi
 if "$stage/runtime" --status --load > "$stage/error" 2>&1; then exit 1; fi
+for fault in USER_COMMAND USER_STATE NONVOLATILE READABLE_COMMAND WRITABLE_STATE BAD_ENUM; do
+ if env "UKE_AUDIO_TEST_$fault=1" "$stage/runtime" --has-control > "$stage/error" 2>&1; then exit 1; fi
+ if env "UKE_AUDIO_TEST_$fault=1" "$stage/runtime" --load --acdb /missing-generic-source \
+  --persist-directory /missing-private-source > "$stage/error" 2>&1; then exit 1; fi
+ # Rejection must precede even generic-file access, and thus private reads too.
+ grep -Fq 'speaker runtime operation rejected' "$stage/error"
+done
+if UKE_AUDIO_TEST_REPLACED_AFTER_LOCK=1 "$stage/runtime" --load --acdb /missing-generic-source \
+ --persist-directory /missing-private-source > "$stage/error" 2>&1; then exit 1; fi
+grep -Fq 'speaker runtime operation rejected' "$stage/error"
 unset LD_PRELOAD
 # Validate the real service with only the executable path relocated for the worker.
 sed "s|/usr/bin/uke-speaker-runtime|$stage/runtime|g" \

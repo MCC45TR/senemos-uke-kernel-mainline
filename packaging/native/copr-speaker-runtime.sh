@@ -21,11 +21,11 @@ curl -fLsS --max-time 45 'https://raw.githubusercontent.com/delano-git/android_v
 printf '%s  %s\n' bd3f9b8834b80c23f86241756e263e36ddf92b2b8993ed83ff71c310af952f3e "$stage/generic.acdb" | sha256sum -c -
 CXX=clang++ bash "$stage/source/tests/audio-speaker-runtime-contract.sh" "$stage/generic.acdb"
 tar --sort=name --mtime=@1793664000 --owner=0 --group=0 --numeric-owner -czf \
- "$output/uke-speaker-runtime-0.2.tar.gz" -C "$stage/source" .
+ "$output/uke-speaker-runtime-0.3.tar.gz" -C "$stage/source" .
 cat > "$output/uke-speaker-runtime.spec" <<'SPEC'
 Name: uke-speaker-runtime
-Version: 0.2
-Release: 2%{?dist}
+Version: 0.3
+Release: 1%{?dist}
 Summary: Read-only Uke speaker calibration reader and guarded DSP provisioner
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.gz

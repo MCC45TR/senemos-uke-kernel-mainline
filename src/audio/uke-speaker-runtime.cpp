@@ -57,17 +57,39 @@ struct Control {
         if (handle) snd_ctl_close(handle);
         if (id) snd_ctl_elem_id_free(id);
     }
+    static bool trusted_command(const snd_ctl_elem_info_t *info) {
+        return snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_BYTES &&
+            snd_ctl_elem_info_get_count(info) == UKE_FS19XX_FRAME_BYTES &&
+            snd_ctl_elem_info_get_numid(info) != 0 && !snd_ctl_elem_info_is_user(info) &&
+            !snd_ctl_elem_info_is_readable(info) && snd_ctl_elem_info_is_writable(info) &&
+            snd_ctl_elem_info_is_volatile(info);
+    }
+    bool trusted_status() const {
+        snd_ctl_elem_info_t *info = nullptr;
+        if (snd_ctl_elem_info_malloc(&info) < 0) return false;
+        snd_ctl_elem_info_set_interface(info, SND_CTL_ELEM_IFACE_MIXER);
+        snd_ctl_elem_info_set_name(info, UKE_FS19XX_STATUS);
+        const auto result = snd_ctl_elem_info(handle, info);
+        const bool valid = result >= 0 &&
+            snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_ENUMERATED &&
+            snd_ctl_elem_info_get_count(info) == 1 && snd_ctl_elem_info_get_items(info) == 6 &&
+            snd_ctl_elem_info_get_numid(info) != 0 && !snd_ctl_elem_info_is_user(info) &&
+            snd_ctl_elem_info_is_readable(info) && !snd_ctl_elem_info_is_writable(info) &&
+            snd_ctl_elem_info_is_volatile(info);
+        snd_ctl_elem_info_free(info);
+        return valid;
+    }
     bool available() const {
         snd_ctl_elem_info_t *info = nullptr;
         if (snd_ctl_elem_info_malloc(&info) < 0) return false;
         snd_ctl_elem_info_set_id(info, id);
         const auto status = snd_ctl_elem_info(handle, info);
-        const bool found = status >= 0 && snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_BYTES &&
-            snd_ctl_elem_info_get_count(info) == UKE_FS19XX_FRAME_BYTES && snd_ctl_elem_info_is_writable(info);
+        const bool found = status >= 0 && trusted_command(info);
         snd_ctl_elem_info_free(info);
-        return found;
+        return found && trusted_status();
     }
     int status() const {
+        require_runtime(trusted_status());
         snd_ctl_elem_id_t *state_id = nullptr;
         snd_ctl_elem_value_t *value = nullptr;
         require_runtime(snd_ctl_elem_id_malloc(&state_id) == 0);
@@ -86,18 +108,20 @@ struct Control {
         return int(state);
     }
     void lock() {
+        require_runtime(available());
         snd_ctl_elem_info_t *info = nullptr;
         require_runtime(snd_ctl_elem_info_malloc(&info) == 0);
         snd_ctl_elem_info_set_id(info, id);
         int result = snd_ctl_elem_info(handle, info);
-        bool valid = result >= 0 && snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_BYTES &&
-            snd_ctl_elem_info_get_count(info) == UKE_FS19XX_FRAME_BYTES &&
-            snd_ctl_elem_info_is_writable(info);
+        bool valid = result >= 0 && trusted_command(info);
+        if (valid) snd_ctl_elem_info_get_id(info, id);
         snd_ctl_elem_info_free(info);
         require_runtime(valid && snd_ctl_elem_lock(handle, id) >= 0);
         locked = true;
+        require_runtime(available());
     }
     void write(std::span<const uint8_t> frame) {
+        require_runtime(locked && frame.size() == UKE_FS19XX_FRAME_BYTES && available());
         snd_ctl_elem_value_t *value = nullptr;
         require_runtime(snd_ctl_elem_value_malloc(&value) == 0);
         snd_ctl_elem_value_set_id(value, id);
@@ -126,7 +150,6 @@ void send(Control &control, PrivateSession &session, uint32_t operation,
 void load(Control &control, PrivateSession &session, const GenericParameters &parameters) {
     uint32_t transaction = 0;
     require_runtime(getrandom(&transaction, sizeof(transaction), 0) == ssize_t(sizeof(transaction)) && transaction);
-    control.lock();
     try {
         send(control, session, UKE_FS_BEGIN, transaction);
         for (size_t slot = 0; slot < parameters.size(); ++slot) {
@@ -184,15 +207,21 @@ int main(int argc, char **argv) {
         }
         struct rlimit core{0, 0};
         require_runtime(setrlimit(RLIMIT_CORE, &core) == 0 && prctl(PR_SET_DUMPABLE, 0) == 0);
+        // Reject user-created lookalikes and pin the real kernel numid before
+        // opening any calibration source. Device removal also fails each write.
+        std::unique_ptr<Control> control;
+        if (apply) {
+            require_runtime(geteuid() == 0);
+            control = std::make_unique<Control>(card);
+            control->lock();
+        }
         auto parameters = generic_parameters(acdb);
         // Refuse to read unit data if the process cannot keep it out of swap.
         require_runtime(mlockall(MCL_CURRENT | MCL_FUTURE) == 0);
         PrivateSession session;
         session.calibration = read_persist_calibration(directory);
         if (apply) {
-            require_runtime(geteuid() == 0);
-            Control control(card);
-            load(control, session, parameters);
+            load(*control, session, parameters);
         }
         std::cout << (apply ? "Speaker parameters staged; playback still requires the protected kernel graph.\n"
                            : "Read-only calibration consistency and generic DSP data checks passed.\n");
