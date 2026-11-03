@@ -22,7 +22,9 @@ recorded Fedora installation. `boot-linux.img` selects `PARTLABEL=linux` for a
 separately provisioned installation. Both contain the same query kernel and
 matching early initramfs modules. `rpms/` contains the matching full module set
 and kernel files, with no boot-activation scriptlets. KVM aliases and metadata
-are isolated from the normal kernel family.
+are isolated from the normal kernel family. Its boot bundles live under
+`/usr/lib/senemos/kvm-kernel-updates/`, outside the installed updater's RPM file
+trigger for `/usr/lib/senemos/kernel-updates/` and `default-boot.img`.
 
 Verify the extracted artifact on the computer:
 

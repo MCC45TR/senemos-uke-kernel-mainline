@@ -16,7 +16,10 @@ bash "$kernel/native-profile/tests/kernel-module-signatures-contract.sh" "$kerne
 "$out/boot-image" inspect "$out/userdata.img"
 [[ $(make -s -C "$kernel" O="$out" LOCALVERSION="-${release#*-}" kernelrelease) == "$release" ]]
 [[ ! -e $buildroot/usr/lib/senemos/default-boot.img ]]
+[[ ! -e $buildroot/usr/lib/senemos/kernel-updates ]]
 [[ -L $buildroot/usr/lib/senemos/kvm-default-boot.img ]]
+[[ $(readlink "$buildroot/usr/lib/senemos/kvm-default-boot.img") == "kvm-kernel-updates/$release/userdata.img" ]]
+[[ -s $buildroot/usr/lib/senemos/kvm-kernel-updates/$release/userdata.img ]]
 jq -e '.automatic_kernel_activation == false' \
     "$buildroot/usr/share/senemos/uke/kvm-singleboot.json" >/dev/null
 strings "$out/vmlinux" | grep -F 'UKE_EL2_QUERY: query-only'

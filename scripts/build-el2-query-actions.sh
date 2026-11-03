@@ -99,6 +99,18 @@ install -m644 "$boot/lock.json" "$top/SOURCES/boot-payload.json"
 # Isolate the package ABI and aliases, remove the parent's activation scriptlet,
 # and replace normal-family %check assertions with the query candidate checks.
 awk -v revision="$revision" '
+ /^%description($| boot$| singleboot$)/ {
+   print
+   print "Experimental Uke SCM INFO service-discovery candidate, query only."
+   print "Install matching modules through DNF and flash the selected image manually."
+   print "Boot bundles and aliases are isolated from the normal automatic updater."
+   print "Build success does not establish device boot or EL2 transfer."
+   skip_description=1; next
+ }
+ skip_description && /^%/ {skip_description=0}
+ skip_description {next}
+ /^Requires: uke-kernel-update([[:space:](]|$)/ {next}
+ /^Requires: uke-installation-profile([[:space:]]|$)/ {next}
  /^%posttrans boot / {skip_script=1; next}
  skip_script && /^%files/ {skip_script=0}
  skip_script {next}
@@ -113,6 +125,7 @@ awk -v revision="$revision" '
  /^%global krel / {$0="%global krel %{version}-%{senemos_build_release}-kvm"}
  {
    gsub("LOCALVERSION=-%\\{senemos_build_release\\}", "LOCALVERSION=-%{senemos_build_release}-kvm")
+   gsub("kernel-updates/", "kvm-kernel-updates/")
    gsub("/usr/lib/senemos/default-boot.img", "/usr/lib/senemos/kvm-default-boot.img")
    gsub("/usr/share/senemos/uke/singleboot.json", "/usr/share/senemos/uke/kvm-singleboot.json")
    gsub("automatic_kernel_activation\": true", "automatic_kernel_activation\": false")
@@ -135,6 +148,10 @@ out=$top/native-kernel-out
 cp "$top/RPMS/aarch64/"*.rpm "$artifact/rpms/"
 for package in "$artifact/rpms/"*.rpm; do
     [[ -z $(rpm -qp --scripts "$package") ]]
+    if rpm -qpl "$package" | grep -E '^/usr/lib/senemos/(kernel-updates(/|$)|default-boot[.]img$)'; then
+        echo 'Manual candidate overlaps the installed automatic-update trigger.' >&2
+        exit 1
+    fi
 done
 install -m644 "$out/userdata.img" "$artifact/boot-userdata.img"
 install -m644 "$out/linux.img" "$artifact/boot-linux.img"
