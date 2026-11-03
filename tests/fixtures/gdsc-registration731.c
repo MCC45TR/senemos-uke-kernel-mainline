@@ -78,7 +78,7 @@ struct regmap {
 };
 #include "gdsc-header.h"
 
-static int icc_error, icc_calls, init_error, init_calls;
+static int icc_error, init_error;
 static bool registration_test, published;
 static int registered, removed, linked, init_fail_at, link_fail_at, provider_error;
 static int registration_inits, registration_links, allocation_fail_at, allocations;
@@ -146,12 +146,10 @@ static int regulator_disable(struct regulator *supply)
 }
 static int icc_set_bw(struct icc_path *path, int average, int peak)
 {
-	icc_calls++;
 	return icc_error;
 }
 static int pm_genpd_init(struct generic_pm_domain *pd, void *governor, bool off)
 {
-	init_calls++;
 	if (registration_test) {
 		if (++registration_inits == init_fail_at)
 			return -ENOMEM;
@@ -299,7 +297,6 @@ static void registration_failures(void)
 		}
 	}
 	registration_test = false;
-	init_calls = 0;
 	printf("GDSC: %d sparse registration cases, seven parent topologies, all allocation/init/link/provider failures and teardown checked\n", cases);
 }
 

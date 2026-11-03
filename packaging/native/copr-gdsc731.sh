@@ -17,7 +17,7 @@ for project in uke-linux-unstable uke-linux-test uke-linux; do
    --data-urlencode limit=100 --data-urlencode "offset=$offset" \
    https://copr.fedorainfracloud.org/api_3/build/list > "$stage/builds.json"
   jq -e '(.items|type)=="array" and all(.items[];
-    ((.source_package.version // "")|test("^7[.]3[.]1-1012([.]|$)"))|not)' "$stage/builds.json" >/dev/null
+    ((.source_package.version // "")|test("^7[.]3[.]1-1013([.]|$)"))|not)' "$stage/builds.json" >/dev/null
   count=$(jq -er '.items|length' "$stage/builds.json")
   ((count < 100)) && break
   offset=$((offset + 100))
@@ -26,6 +26,7 @@ for project in uke-linux-unstable uke-linux-test uke-linux; do
 done
 curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' \
  https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11246385/senemos-uke-linux-kernel-mainline-7.3.1-1011.src.rpm -o "$stage/base.src.rpm"
+printf '%s  %s\n' 84915ef98a26df47bc8f223e3751b160e40eba3c447f433fbe13b2097d6a7146 "$stage/base.src.rpm" | sha256sum -c -
 [[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/base.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-1011 ]]
 # COPR's retained SRPM is unsigned. Pin its header and payload digest, then
 # verify both over the complete remotely downloaded source RPM. This is not
@@ -59,7 +60,7 @@ for path in "${overlays[@]}"; do
  test ! -e "$profile/$path"
  install -Dm644 "$owner/$path" "$profile/$path"
 done
-cp "$profile/source-composition.json" "$profile/source-composition-before1012.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before1013.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
@@ -67,10 +68,10 @@ jq --arg commit "$commit" --arg parent_sha "$parent_sha" '. + {
  source_commit:$commit,source_mode:"retained1011-with-gdsc-registration-unwind",
  parent_copr_build:11246385,parent_srpm_sha256:$parent_sha,
  parent_srpm_header_sha256:"1a5eea8444659804be066cd379c6021c067455cd9a6a9899c3857962a128a46a",
- parent_composition:"source-composition-before1012.json",kernel_release:"7.3.1-1012",rpm_revision:"1012",
+ parent_composition:"source-composition-before1013.json",kernel_release:"7.3.1-1013",rpm_revision:"1013",
  changed_kernel_files:["drivers/clk/qcom/gdsc.c"],camera_dt_activation:false,
  firmware_payload_included:false,automatic_policy_unchanged:true,physical_acceptance:false
- }' "$profile/source-composition-before1012.json" > "$profile/source-composition.json"
+ }' "$profile/source-composition-before1013.json" > "$profile/source-composition.json"
 (cd "$profile"; sha256sum -c "$stage/retained-profile.sha256"
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" native-profile
@@ -78,17 +79,17 @@ for line in '%global senemos_build_release 1011' 'bash native-profile/prepare.sh
  [[ $(grep -Fxc "$line" "$spec") == 1 ]]
 done
 awk '
- /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release 1012"}
+ /^%global senemos_build_release 1011$/ {$0="%global senemos_build_release 1013"}
  /^bash native-profile\/prepare.sh "\$PWD"$/ {
   print
-  print "cp drivers/clk/qcom/gdsc.c native-generated/gdsc-before1012.c"
+  print "cp drivers/clk/qcom/gdsc.c native-generated/gdsc-before1013.c"
   print "git apply --check native-profile/src/camera/provider/0001-gdsc-registration-unwind731.patch"
   print "git apply native-profile/src/camera/provider/0001-gdsc-registration-unwind731.patch"
   next
  }
  /^uke_build_start=\$SECONDS$/ {
   print
-  print "CC=clang bash native-profile/tests/gdsc-registration731-contract.sh native-generated/gdsc-before1012.c drivers/clk/qcom/gdsc.h drivers/clk/qcom/gdsc.c"
+  print "CC=clang bash native-profile/tests/gdsc-registration731-contract.sh native-generated/gdsc-before1013.c drivers/clk/qcom/gdsc.h drivers/clk/qcom/gdsc.c"
   next
  }
  /^%check$/ {
@@ -99,7 +100,7 @@ awk '
   next
  }
  /^%changelog$/ {
-  print; print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1012"
+  print; print "* Tue Nov 03 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1013"
   print "- Unwind initialized genpds after later registration failures."
   print "- Retain the production drivers and DT without activating a camera provider."
   print ""; next
@@ -108,4 +109,4 @@ awk '
 ' "$spec" > "$stage/next.spec"
 mv "$stage/next.spec" "$spec"
 sha256sum -c "$stage/retained-sources.sha256"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1012 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-1013 ]]
