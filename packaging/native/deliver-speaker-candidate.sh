@@ -6,9 +6,10 @@ mode=${1:---preview}
 [[ $# -le 1 && ( $mode == --preview || $mode == --apply ) ]] || {
  echo 'Usage: deliver-speaker-candidate.sh [--preview|--apply]' >&2; exit 2;
 }
-kernel_release=2300
-kernel_build=11252342
+kernel_release=2310
+kernel_build=11252355
 parent_release=1910
+parent_build=11252282
 runtime_build=11252242
 control_build=11251908
 runtime_evr=0.2-2.fc46
@@ -68,7 +69,7 @@ printf 'Step 4:'; printf ' %q' dnf "${dnf_options[@]}" install "${kernel[@]}"; p
 printf '%s\n' 'Existing recovery kernels are retained. The existing updater may stage the inactive boot slot. No reboot is requested.'
 [[ $mode == --apply ]] || exit 0
 [[ $(id -u) == 0 ]] || { echo 'Run --apply from an administrator terminal.' >&2; exit 1; }
-for build in "$kernel_build" "$runtime_build" "$control_build"; do
+for build in "$kernel_build" "$parent_build" "$runtime_build" "$control_build"; do
  result=$(curl -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$build")
  jq -e '.state=="succeeded"' <<< "$result" >/dev/null || {
   echo 'A pinned COPR build has not succeeded; refusing installation.' >&2; exit 1;
