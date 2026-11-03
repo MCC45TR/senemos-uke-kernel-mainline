@@ -77,6 +77,7 @@ struct regmap {
 
 static int icc_error, icc_calls, init_error, init_calls;
 static bool registration_test, published;
+static struct genpd_onecell_data *published_data;
 static int registered, removed, linked, init_fail_at, link_fail_at, provider_error;
 static int registration_inits, registration_links, allocation_fail_at, allocations;
 static void *allocated[2];
@@ -215,12 +216,14 @@ static int of_genpd_add_provider_onecell(void *node, struct genpd_onecell_data *
 	if (provider_error)
 		return provider_error;
 	published = true;
+	published_data = data;
 	return 0;
 }
 static void of_genpd_del_provider(void *node)
 {
 	assert(published);
 	published = false;
+	published_data = NULL;
 }
 #undef assert
 #include "gdsc-functions.c"
@@ -581,8 +584,15 @@ static void legacy_domain(void)
 }
 #endif
 
+#ifdef GDSC_STORAGE_TEST
+#include "gdsc-storage-check.h"
+#endif
+
 int main(void)
 {
+#ifdef GDSC_STORAGE_BEFORE
+	storage_before();
+#else
 	registration_failures();
 	collapse_errors();
 #ifndef BASELINE
@@ -593,6 +603,11 @@ int main(void)
 	refused_contracts();
 	shared_controller();
 	legacy_domain();
+#endif
+#ifdef GDSC_STORAGE_TEST
+	storage_lifetime();
+	storage_refusals();
+#endif
 #endif
 	return 0;
 }

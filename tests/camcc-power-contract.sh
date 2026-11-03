@@ -22,6 +22,11 @@ for role in baseline candidate; do
             git -C "$work" apply --check "$patch"
             git -C "$work" apply "$patch"
         done
+        if [[ ${CAMCC_STORAGE_TEST:-0} == 1 ]]; then
+            patch=$project/src/camera/provider/0004-clk-qcom-gdsc-permanent-storage.patch
+            git -C "$work" apply --check "$patch"
+            git -C "$work" apply "$patch"
+        fi
         cmp "$work/drivers/clk/qcom/gdsc.c" "$production/drivers/clk/qcom/gdsc.c"
         cmp "$work/drivers/clk/qcom/gdsc.h" "$production/drivers/clk/qcom/gdsc.h"
     fi
