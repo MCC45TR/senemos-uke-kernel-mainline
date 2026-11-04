@@ -43,9 +43,15 @@ Continue qualification in the unstable kernel family. RTC calendar persistence,
 both complete camera pipelines, private fitted calibration and rear autofocus
 remain independent open requirements.
 
-The composition producer pins the exact qualified RTC7300, HSIC7600,
-CDSP/pogo7603 and Android-network8200 source RPMs by header and payload digest.
-It refuses to publish until all four native builds succeed. It retains all
+The composition producer pins the exact qualified RTC7300, HSIC7600 and
+CDSP/pogo7603 source RPMs, plus the failed Android-network8200 prototype, by
+complete, header and payload digest. The three delivery parents must succeed.
+8200 failed effective-config admission and is a research reference only. Its
+missing NETFILTER_XTABLES_LEGACY and IPv4/IPv6 IPTABLES_LEGACY prerequisites
+are corrected explicitly, preserving its original input for attribution.
+The source worker resolves actual upstream Kconfig and requires every requested
+network setting before publishing; full native object checks remain required.
+The composition retains all
 unrelated source files, original source snapshots, camera stage0 and boot
 policy. Camera stage1 in the separate8101 diagnostic remains a separate trial;
 this composition does not grant physical camera acceptance.
@@ -60,3 +66,11 @@ existing firewall negative fixtures, all retained device checks and the actual
 NFC object remain required. This replaces a stale single-parent configuration
 comparison with explicit coverage of both source inputs and the complete final
 configuration; runtime networking and physical device behavior remain unproved.
+
+The legacy-table dependency is specified in Linux7.3.1
+[generic Netfilter Kconfig](https://github.com/gregkh/linux/blob/v7.3.1/net/netfilter/Kconfig),
+[IPv4 Kconfig](https://github.com/gregkh/linux/blob/v7.3.1/net/ipv4/netfilter/Kconfig)
+and [IPv6 Kconfig](https://github.com/gregkh/linux/blob/v7.3.1/net/ipv6/netfilter/Kconfig).
+The current7200/7300 configuration disables PREEMPT_RT, satisfying the generic
+legacy-table constraint. No preemption policy, DT, firmware or electrical
+parameter is changed by this correction.

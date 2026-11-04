@@ -10,12 +10,14 @@ revision=$2
 [[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 10000 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
-for build in 11259919 11259981 11259990 11260104; do
+for build in 11259919 11259981 11259990; do
  state=$(curl -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$build" | jq -er .state)
- [[ $state == succeeded || ( $build == 11260104 && $state == running ) ]] || {
+ [[ $state == succeeded ]] || {
   printf 'Required parent %s is %s\n' "$build" "$state" >&2; exit 1;
  }
 done
+# 8200 is a failed configuration prototype, never a qualified delivery parent.
+[[ $(curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11260104 | jq -er .state) == failed ]]
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/base" "$stage/reference" "$stage/hsic" "$stage/network"
@@ -29,7 +31,7 @@ download()
  [[ $(rpm -qp --qf '%{SHA256HEADER}' "$destination") == "$header" ]]
  [[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$destination") == "$payload" ]]
  rpmkeys --checksig --nosignature --verbose "$destination"
- printf 'Qualified source %s full SRPM SHA-256: ' "$build"
+ printf 'Pinned reference source %s full SRPM SHA-256: ' "$build"
  sha256sum "$destination"
 }
 download 11259990 uke-linux-unstable:custom:cdsp-pogo-20261104 7603 \
@@ -162,6 +164,19 @@ while read -r path; do
 done < "$stage/hsic-assets"
 cat "$stage/nfc-assets" "$stage/rtc-assets" "$stage/hsic-assets" "$stage/network-assets" > "$stage/overlays"
 printf '%s\n' "$hsic_manifest" >> "$stage/overlays"
+# The failed8200 reference omits the three Linux7.3 legacy-table prerequisites.
+# Keep its exact input for attribution, then apply only this explicit correction.
+install -Dm644 "$network/native.config" "$profile/configs/nfc-network8200-original.config"
+for input in "$network/native.config" "$network/configs/waydroid-network.config"; do
+ awk '
+  FNR==NR {if(/^CONFIG_/){split($0,a,"=");keys[a[1]]=1;lines[++n]=$0}next}
+  /^CONFIG_/ {split($0,a,"=");if(a[1] in keys)next}
+  /^# CONFIG_.* is not set$/ {if($2 in keys)next}
+  {print} END {for(i=1;i<=n;i++)print lines[i]}
+ ' "$owner/configs/nfc-network-legacy.config" "$input" > "$stage/legacy.config"
+ install -m644 "$stage/legacy.config" "$input"
+done
+install -Dm644 "$owner/configs/nfc-network-legacy.config" "$profile/configs/nfc-network-legacy.config"
 # Preserve both reviewed input configurations. Final Kconfig checks independently
 # resolve the old CDSP input and the Android-network reference on prepared sources.
 install -Dm644 "$profile/native.config" "$profile/configs/nfc-cdsp-reference.config"
@@ -181,6 +196,17 @@ sed '/^CONFIG_HID_NANOSIC_UKE=/d; /^# CONFIG_HID_NANOSIC_UKE is not set$/d' \
  "$network/native.config" > "$stage/native.config"
 printf '%s\n' CONFIG_HID_NANOSIC_UKE=m >> "$stage/native.config"
 [[ $(jq -r .native_config_sha256 "$profile/source-composition.json") == "$(sha256sum "$profile/native.config" | cut -d ' ' -f1)" ]]
+# Resolve upstream networking dependencies before spending a complete kernel build.
+# Uke-only settings are checked again on fully prepared sources in the native job.
+mkdir "$stage/kconfig-source" "$stage/kconfig-output"
+tar -xJf "$output/linux-7.3.1.tar.xz" --strip-components=1 -C "$stage/kconfig-source"
+install -m644 "$stage/native.config" "$stage/kconfig-output/.config"
+make -s -C "$stage/kconfig-source" O="$stage/kconfig-output" ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
+while IFS= read -r setting; do
+ [[ $setting == CONFIG_*=y ]] || continue
+ grep -Fx "$setting" "$stage/kconfig-output/.config"
+done < "$network/configs/waydroid-network.config"
+printf 'Actual upstream Kconfig resolves all corrected legacy routing/filter prerequisites\n'
 for tree in "$profile" "$boot"; do
  (cd "$tree"; while read -r path; do
   case $path in SHA256SUMS|source-commit|source-composition.json|lock.json|native.config|packaging/native/native.config|src/boot/uke-abl.c|src/audio/uke-audio-card.c) continue;; esac
@@ -257,6 +283,8 @@ jq --arg commit "$commit" --arg revision "$revision" --arg base "$base_sha" --ar
  nfc_rtc_reference_srpm_sha256:$reference,
  nfc_network_reference_build:11260104,nfc_network_reference_source:"7ca15872cb06dc6263ac366bc50dec4439149b9a",
  nfc_network_reference_srpm_sha256:$network_sha,native_config_sha256:$config_sha,
+ nfc_network_reference_qualified:false,nfc_network_reference_status:"failed-effective-config-admission",
+ nfc_network_legacy_overlay:"configs/nfc-network-legacy.config",
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,waydroid_legacy_filter_builtin:true,
  waydroid_network_runtime_qualified:false,kernel_driver_source_unchanged:false,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
@@ -363,17 +391,5 @@ set -e
 cat "$stage/spec-errors" >&2
 [[ $status == 0 && $parsed == 7.3.1-$revision ]]
 if grep -q '^error:' "$stage/spec-errors"; then exit 1; fi
-# Source generation may qualify NFC while the independent network build finishes.
-# Publish nothing until every referenced native build has actually succeeded.
-deadline=$((SECONDS + 1200))
-while :; do
- state=$(curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11260104 | jq -er .state)
- [[ $state != succeeded ]] || break
- [[ $state == running && $SECONDS -lt $deadline ]] || {
-  printf 'Network parent not qualified for publication: %s\n' "$state" >&2; exit 1;
- }
- printf 'NFC callback regression passed; waiting for network parent11260104\n'
- sleep 15
-done
-printf 'Qualified NFC wake ownership cohort %s; CDSP/pogo and RTC reference retained\n' "$revision"
+printf 'NFC callbacks and corrected network Kconfig admitted for native cohort %s; device acceptance remains open\n' "$revision"
 rpmbuild -bs --define 'dist %{nil}' --define "_sourcedir $output" --define "_srcrpmdir $output" "$spec"
