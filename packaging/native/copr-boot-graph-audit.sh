@@ -5,7 +5,7 @@ test ! -e /etc/senemos/kernel-update.conf
 output=$(realpath -m "${1:?COPR output}")
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 mkdir -p "$output" "$output/graph-audit"
-for file in graph-audit.c graph-audit.cpp uke-camcc-dt.h uke-front-eeprom-dt.h; do
+for file in graph-audit.c graph-audit.cpp uke-camcc-dt.h uke-front-eeprom-dt.h LICENSE; do
  install -m644 "$owner/src/boot/diagnostics/$file" "$output/graph-audit/$file"
 done
 cat > "$output/graph-audit/instrument.sh" <<'SCRIPT'
@@ -22,7 +22,7 @@ find "$output/graph-audit" -depth -delete
 cat > "$output/uke-boot-graph-audit-unstable.spec" <<'SPEC'
 Name: uke-boot-graph-audit-unstable
 Version: 0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Read-only Uke camera boot graph diagnostics on a RAM copy
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.xz
@@ -44,6 +44,10 @@ if ./uke-boot-graph-audit-unstable; then exit 1; fi
 %install
 install -Dm755 uke-boot-graph-audit-unstable %{buildroot}%{_bindir}/uke-boot-graph-audit-unstable
 %files
+%license LICENSE
 %{_bindir}/uke-boot-graph-audit-unstable
+%changelog
+* Wed Nov 04 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 0.1-2
+- Preserve kernel array-size semantics in the userspace audit adapter.
 SPEC
 rpmspec --target aarch64 --parse "$output/uke-boot-graph-audit-unstable.spec" >/dev/null

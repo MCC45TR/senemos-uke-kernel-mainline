@@ -5,6 +5,7 @@
 #include <string.h>
 #include <libfdt.h>
 #define UKE_INIT
+#define ARRAY_SIZE(value) (sizeof(value) / sizeof((value)[0]))
 static int uke_audit_failed_line;
 #include "instrumented-camcc.h"
 #include "instrumented-front.h"
