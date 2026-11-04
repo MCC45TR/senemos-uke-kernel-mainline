@@ -82,7 +82,7 @@ done
 for tree in "$profile" "$boot"; do
  path=src/boot/boot-status.cpp
  test -f "$tree/$path" || continue
- printf '%s  %s\n' ab071b245e2c67931bf2164854b5fd9455919bf62889ca4f8b392b31d9583102 "$tree/$path" | sha256sum -c --strict
+ printf '%s  %s\n' 273fbb864a6fd5b78abf1d7b8c3d0b53b780c9ebcee075a7574715575b6f2246 "$tree/$path" | sha256sum -c --strict
  install -m644 "$owner/$path" "$tree/$path"
 done
 install -m644 "$owner/tests/mainline-boot-status-contract.sh" "$profile/tests/mainline-boot-status-contract.sh"
