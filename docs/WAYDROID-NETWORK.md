@@ -6,7 +6,7 @@ but netd cannot add IPv4 policy rules; the kernel returns an unsupported
 operation. The effective configuration disables advanced/multiple-table
 routing. Legacy IPv4/IPv6 filter tables are also unavailable inside Android.
 
-Candidate7801 retains the7300 unstable producer, camera stage0 and the
+The network candidate retains the7300 unstable producer, camera stage0 and the
 existing recovery/pstore policy. It enables Android policy routing and the
 standard legacy filters/matches as built-ins, including owner/mark/BPF rules.
 The Android13 [base configuration](https://android.googlesource.com/kernel/configs/+/refs/heads/android13-release/t/android-5.15/android-base.config)
@@ -24,3 +24,11 @@ their built-in configuration only with matching modules.builtin receipts;
 the other nftables module checks remain. Fixtures refuse missing receipts,
 missing nftables modules and disabled connection tracking. No7800 binary is
 delivered.
+
+The8200 trial completes compilation but its effective-config check rejects
+silently dropped legacy filter settings. Modern kernels additionally require
+`NETFILTER_XTABLES_LEGACY`, `IP_NF_IPTABLES_LEGACY` and
+`IP6_NF_IPTABLES_LEGACY`; those gates are included explicitly. All requirements
+are now checked immediately after olddefconfig, before compilation, and again
+against the built objects. The running profile has PREEMPT_RT disabled and
+retains its existing preemption policy.
