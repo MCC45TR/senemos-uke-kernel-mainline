@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR only: retain the exact 7200 diagnostic graph and add CDSP/pogo.
 set -Eeuo pipefail
+trap 'status=$?; printf "CDSP/pogo source preparation failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
@@ -74,7 +75,10 @@ for tree in "$profile" "$boot"; do
         done < <(find . -type f -printf '%P\n' | sort)
     ) > "$stage/retained-profile.sha256"
     includes=()
-    [[ $tree == "$profile" ]] || includes=(--include=src/boot/prepare-abl-source.sh --include=src/boot/uke-abl.c)
+    if [[ $tree != "$profile" ]]; then
+        includes=(--include=src/boot/prepare-abl-source.sh)
+        [[ ! -f $tree/src/boot/uke-abl.c ]] || includes+=(--include=src/boot/uke-abl.c)
+    fi
     git -C "$tree" apply --check "${includes[@]}" "$owner/packaging/native/cdsp-pogo-prepare.patch"
     git -C "$tree" apply "${includes[@]}" "$owner/packaging/native/cdsp-pogo-prepare.patch"
     while read -r path; do install -Dm644 "$owner/$path" "$tree/$path"; done < "$stage/assets"
