@@ -25,7 +25,13 @@ for project in uke-linux uke-linux-test uke-linux-unstable; do
         [[ $published =~ ^[0-9]+([.][0-9]+)*-[0-9]+([.][a-zA-Z0-9]+)*$ ]] || {
             echo 'Unrecognized published kernel version; review before rebuilding' >&2; exit 1;
         }
-        comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$published\", \"$candidate\"))}")
+        compared=$published
+        if [[ $mode == --unpublished-only ]]; then
+            # Distribution/repackaging suffixes do not create a new kernel ABI.
+            [[ $published =~ ^([0-9]+([.][0-9]+)*-[0-9]+)([.][a-zA-Z0-9]+)*$ ]]
+            compared=${BASH_REMATCH[1]}
+        fi
+        comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$compared\", \"$candidate\"))}")
         [[ $comparison =~ ^-?[0-9]+$ ]]
         if ((comparison == 0)) || { [[ $mode == --monotonic ]] && ((comparison > 0)); }; then
             printf 'Refusing %s: %s published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$project" "$published" >&2
