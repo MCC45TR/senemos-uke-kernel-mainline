@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR only: retain the withdrawn 6000 input in an isolated diagnostic family.
 set -Eeuo pipefail
+trap 'status=$?; printf "Unstable source preparation failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
