@@ -19,6 +19,7 @@ runtime_build=11252520
 control_build=11259934
 runtime_evr=0.3-1.fc46
 control_evr=2.8.1-24.speech1.fc46
+control_parent_evr=2.8.1-23.fc46
 family=senemos-uke-linux-kernel-mainline-unstable
 repository=https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-test:custom:audio-vi-20261103
 [[ $(uname -m) == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
@@ -27,7 +28,8 @@ rpm -q uke-control uke-kernel-update >/dev/null
 for component in uke-control uke-control-client uke-control-tui uke-control-client-devel uke-control-tests; do
  if installed_evr=$(rpm -q "$component" --qf '%{VERSION}-%{RELEASE}' 2>/dev/null); then
   [[ $installed_evr =~ ^[0-9]+([.][0-9]+)*-[0-9]+([.][a-zA-Z0-9]+)*$ ]]
-  comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$installed_evr\", \"$control_evr\"))}")
+  [[ $installed_evr != "$control_evr" ]] || continue
+  comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$installed_evr\", \"$control_parent_evr\"))}")
   ((comparison <= 0)) || {
    echo 'A newer control cohort is installed; retain its changes before delivery.' >&2; exit 1;
   }
