@@ -43,22 +43,28 @@ awk '
  END {for(i=1;i<=n;i++) print lines[i]}
 ' "$fragment" "$stage/before.config" > "$profile/native.config"
 cp "$profile/native.config" "$boot/packaging/native/native.config"
+parent_effective_hash=7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38
 # Check all actual Kconfig dependencies immediately after olddefconfig, before
 # spending a complete build on a silently dropped legacy-table prerequisite.
 for tree in "$profile" "$boot"; do
  install -Dm644 "$fragment" "$tree/configs/waydroid-network.config"
  install -Dm644 "$owner/tests/waydroid-network-built731.sh" "$tree/tests/waydroid-network-built731.sh"
- awk '
+ install -Dm644 "$owner/tests/waydroid-network-config731.sh" "$tree/tests/waydroid-network-config731.sh"
+ install -Dm644 "$stage/before.config" "$tree/configs/waydroid-firewall-modular-reference.config"
+ awk -v parent_hash="$parent_effective_hash" '
   {print}
   /^make -C "\$kernel" O="\$out" LOCALVERSION="\$localversion" olddefconfig$/ {
-   print "bash \"$here/../../tests/waydroid-network-built731.sh\" \"$out\" \"$here/../../configs/waydroid-network.config\" config-only"; checks++
+   checks++
+   phase=(checks==1 ? "initial" : "final")
+   print "bash \"$here/../../tests/waydroid-network-built731.sh\" \"$out\" \"$here/../../configs/waydroid-network.config\" config-only"
+   print "bash \"$here/../../tests/waydroid-network-config731.sh\" \"$kernel\" \"$out\" \"$localversion\" \"$here/../../configs/waydroid-firewall-modular-reference.config\" \"$here/../../configs/waydroid-network.config\" "phase" "parent_hash
   }
   END {if(checks!=2)exit 1}
  ' "$tree/src/boot/build-payload.sh" > "$stage/build-payload.sh"
  cp "$stage/build-payload.sh" "$tree/src/boot/build-payload.sh"
  bash -n "$tree/src/boot/build-payload.sh"
 done
-for path in configs/waydroid-network.config tests/waydroid-network-built731.sh src/boot/build-payload.sh; do
+for path in configs/waydroid-network.config configs/waydroid-firewall-modular-reference.config tests/waydroid-network-built731.sh tests/waydroid-network-config731.sh src/boot/build-payload.sh; do
  digest=$(sha256sum "$boot/$path"); digest=${digest%% *}
  jq --arg path "$path" --arg digest "$digest" \
   '.source_assets |= (map(select(.path!=$path)) + [{path:$path,sha256:$digest}])' \
@@ -89,6 +95,7 @@ jq --arg hash "$config_hash" --arg producer "$producer" '. + {
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,
  waydroid_legacy_filter_builtin:true,waydroid_network_runtime_qualified:false,
  waydroid_network_precompile_config_gate:true,
+ waydroid_network_independent_effective_config_gate:true,
  waydroid_network_parent_factory:"copr-o82-hsic-unstable.sh",
  waydroid_network_parent_reference_producer:"34d29c4946fa62ef10fdb1424be304407aee5ed8",
  waydroid_network_parent_composition:"source-composition-before-waydroid-network.json",
@@ -109,7 +116,12 @@ for tree in native-profile boot-recipe; do
   -cJf "$output/$archive" -C "$stage/unpacked" "$tree"
 done
 spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
-awk '
+awk -v parent_hash="$parent_effective_hash" '
+ $0=="printf " "\047" parent_hash "  %{_uke_out}/.config\\n" "\047" " | sha256sum -c --strict" {
+  print "printf " "\047" parent_hash "  %{_uke_out}/waydroid-config-reference/parent/.config\\n" "\047" " | sha256sum -c --strict"
+  print "cmp %{_uke_out}/waydroid-config-reference/expected-final/.config %{_uke_out}/.config"
+  parent_checks++; next
+ }
  /^%package singleboot$/ || /^%package -n %\{name\}-singleboot$/ || /^%package -n senemos-uke-linux-kernel-mainline-unstable-singleboot$/ {
   print; print "Provides: uke-kernel-default(waydroid-netd) = 1"; profiles++; next
  }
@@ -118,7 +130,7 @@ awk '
   print "bash native-profile/tests/native-firewall-builtins-contract.sh native-profile/tests/native-firewall-contract.sh native-profile/configs/waydroid-firewall-modular-reference.config"
   print "bash native-profile/tests/waydroid-network-built731.sh %{_uke_out} native-profile/configs/waydroid-network.config"; checks++; next
  }
- {print} END {if(checks!=1 || profiles!=1)exit 1}
+ {print} END {if(checks!=1 || profiles!=1 || parent_checks!=1)exit 1}
 ' "$spec" > "$stage/kernel.spec"
 cp "$stage/kernel.spec" "$spec"
 printf 'Waydroid network input config: %s; producer: %s\n' "$config_hash" "$producer"
