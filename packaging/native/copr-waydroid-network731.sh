@@ -43,6 +43,28 @@ awk '
  END {for(i=1;i<=n;i++) print lines[i]}
 ' "$fragment" "$stage/before.config" > "$profile/native.config"
 cp "$profile/native.config" "$boot/packaging/native/native.config"
+# Check all actual Kconfig dependencies immediately after olddefconfig, before
+# spending a complete build on a silently dropped legacy-table prerequisite.
+for tree in "$profile" "$boot"; do
+ install -Dm644 "$fragment" "$tree/configs/waydroid-network.config"
+ install -Dm644 "$owner/tests/waydroid-network-built731.sh" "$tree/tests/waydroid-network-built731.sh"
+ awk '
+  {print}
+  /^make -C "\$kernel" O="\$out" LOCALVERSION="\$localversion" olddefconfig$/ {
+   print "bash \"$here/../../tests/waydroid-network-built731.sh\" \"$out\" \"$here/../../configs/waydroid-network.config\" config-only"; checks++
+  }
+  END {if(checks!=1)exit 1}
+ ' "$tree/src/boot/build-payload.sh" > "$stage/build-payload.sh"
+ cp "$stage/build-payload.sh" "$tree/src/boot/build-payload.sh"
+ bash -n "$tree/src/boot/build-payload.sh"
+done
+for path in configs/waydroid-network.config tests/waydroid-network-built731.sh src/boot/build-payload.sh; do
+ digest=$(sha256sum "$boot/$path"); digest=${digest%% *}
+ jq --arg path "$path" --arg digest "$digest" \
+  '.source_assets |= (map(select(.path!=$path)) + [{path:$path,sha256:$digest}])' \
+  "$boot/lock.json" > "$stage/network-lock.json"
+ cp "$stage/network-lock.json" "$boot/lock.json"
+done
 # Every unrelated input setting remains byte-for-byte equivalent.
 awk -F= '/^CONFIG_/ {print $1}' "$fragment" > "$stage/keys"
 for version in before after; do
@@ -66,6 +88,7 @@ jq --arg hash "$config_hash" --arg producer "$producer" '. + {
  native_config_sha256:$hash, waydroid_network_producer_commit:$producer,
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,
  waydroid_legacy_filter_builtin:true,waydroid_network_runtime_qualified:false,
+ waydroid_network_precompile_config_gate:true,
  waydroid_network_parent_producer:"00ebf622ca473b9b7a799b2f531b4871ddc70497",
  waydroid_network_parent_composition:"source-composition-before-waydroid-network.json",
  kernel_driver_source_unchanged:true,physical_acceptance:false
