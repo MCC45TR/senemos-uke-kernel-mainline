@@ -12,7 +12,7 @@ if [[ $# == 2 ]]; then
  userspace_only=true
 fi
 kernel_release=7700
-kernel_build=11260011
+kernel_build=11260016
 parent_release=7300
 parent_build=11259919
 runtime_build=11252520
