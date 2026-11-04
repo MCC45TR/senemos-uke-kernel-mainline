@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR only: retain touch5000 with the camera4000 driver and test sources.
 set -Eeuo pipefail
+export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -64,6 +65,7 @@ epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
  -cJf "$output/senemos-native-profile-7.3.1.tar.xz" -C "$stage" native-profile
 spec=$output/senemos-uke-linux-kernel-mainline.spec
+bash "$owner/packaging/native/date-cohort-changelog.sh" "$spec" "$revision" "$epoch"
 awk '
  /^%check$/ {
   print
@@ -79,5 +81,15 @@ for required in \
  'CC=clang bash native-profile/tests/front-eeprom-fdt731-contract.sh'; do
  [[ $(grep -Fxc "$required" "$spec") == 1 ]]
 done
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-$revision ]]
+if rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec" \
+ > "$stage/nvr" 2> "$stage/spec-diagnostics"; then
+ :
+else
+ status=$?
+ cat "$stage/spec-diagnostics" >&2
+ exit "$status"
+fi
+cat "$stage/spec-diagnostics" >&2
+if grep -q '^error:' "$stage/spec-diagnostics"; then exit 1; fi
+[[ $(cat "$stage/nvr") == 7.3.1-$revision ]]
 printf 'Combined native touch/camera source prepared; full captures, fitted private calibration and rear autofocus remain required\n'
