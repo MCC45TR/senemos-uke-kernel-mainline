@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Exercise the actual inspector and producer guards; no device or boot write.
 set -Eeuo pipefail
+producer_namespace=mainline
+if (($#)); then
+    [[ $# == 1 && $1 == --producer-unstable ]] || exit 64
+    producer_namespace=unstable
+fi
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
@@ -18,10 +23,19 @@ for release in 7.3.0-1-kvm-exit 7.3.0-0 7.3.0-01 7.3.00-1 7.3.01-1 7.3.-1 7.3.0-
 done
 build_guard=$(sed -n '/^\[\[ \$release =~ /p' "$root/src/boot/build-payload.sh")
 base_guard=$(sed -n '/^\[\[ \$# == 2 && \$2 =~ /p' "$root/src/boot/make-initramfs-base.sh")
-release=7.3.0-1 jobs=2
-eval "$build_guard"
-(set -- fixture "$release"; eval "$base_guard")
-for release in 7x3y0-1 7.3.0-1-unstable; do
+jobs=2
+accepted=(7.3.0-1)
+refused=(7x3y0-1 7.3.0-0 7.3.0-1-unstable-exit 7.3.0-1-kvm-unstable)
+if [[ $producer_namespace == unstable ]]; then
+    accepted+=(7.3.1-7001-unstable)
+else
+    refused+=(7.3.0-1-unstable)
+fi
+for release in "${accepted[@]}"; do
+    eval "$build_guard"
+    (set -- fixture "$release"; eval "$base_guard")
+done
+for release in "${refused[@]}"; do
     if (eval "$build_guard") || (set -- fixture "$release"; eval "$base_guard"); then exit 1; fi
 done
-echo 'Read-only mainline 7.3 identity, producer ABI, legacy fallback and malformed/foreign refusals passed'
+printf 'Read-only mainline identity/refusals retained; actual %s producer ABI admission and malformed suffix refusals passed\n' "$producer_namespace"

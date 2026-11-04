@@ -154,6 +154,7 @@ jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_s
  diagnostic_scope:"Source bisection only; both calibrated cameras and rear focus remain required"}' \
  "$profile/source-composition-withdrawn6000.json" > "$profile/source-composition.json"
 install -Dm644 "$owner/tests/unstable-boot-family731-contract.sh" "$profile/tests/unstable-boot-family731-contract.sh"
+install -Dm644 "$owner/tests/mainline-boot-status-contract.sh" "$profile/tests/mainline-boot-status-contract.sh"
 install -Dm644 "$owner/docs/UNSTABLE-BOOT-TRIALS.md" "$profile/docs/UNSTABLE-BOOT-TRIALS.md"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
@@ -176,6 +177,14 @@ awk -v revision="$revision" -v day="$day" '
  drop && /^%files$/ {drop=0}
  drop {next}
  /^%check$/ {print; print "bash native-profile/tests/unstable-boot-family731-contract.sh %{_specdir}/senemos-uke-linux-kernel-mainline-unstable.spec %{buildroot} %{krel}"; next}
+ /^uke_build_start=\$SECONDS$/ {
+  print
+  print "bash native-profile/tests/mainline-boot-status-contract.sh --producer-unstable"
+  early_identity++; next
+ }
+ /^bash native-profile\/tests\/mainline-boot-status-contract.sh$/ {
+  moved_identity++; next
+ }
  /^bash native-profile\/tests\/camss-sm7675-module731-object.sh / {
   print
   print "make O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable -j\"$jobs\" sound/soc/qcom/uke-audio-card.o"
@@ -198,7 +207,7 @@ awk -v revision="$revision" -v day="$day" '
   gsub(/"automatic_kernel_activation": true/,"\"automatic_kernel_activation\": false")
   print
  }
- END {if(names!=1 || releases!=1 || abis!=1 || hooks!=1)exit 1}
+ END {if(names!=1 || releases!=1 || abis!=1 || hooks!=1 || early_identity!=1 || moved_identity!=1)exit 1}
 ' "$old_spec" > "$spec"
 rm "$old_spec"
 # The withdrawn input contains several independently appended 6000 entries
