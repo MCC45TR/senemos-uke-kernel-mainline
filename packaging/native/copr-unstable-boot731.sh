@@ -218,6 +218,19 @@ awk -v revision="$revision" -v day="$day" -v pstore="$pstore_layout" '
  /^%global senemos_build_release 6000$/ {$0="%global senemos_build_release " revision; releases++}
  /^%global krel / {$0=$0 "-unstable"; abis++}
  /^%global uke_audio_driver / {$0="%global uke_audio_driver %(printf '\''uke%%s'\'' '\''%{version}-%{senemos_build_release}u'\'' | tr '\''.'\'' '\''_'\'')"}
+ /^Summary:/ {
+  print "Conflicts: senemos-uke-linux-kernel-mainline-core"
+  print "Conflicts: senemos-uke-linux-kernel-mainline-singleboot"
+ }
+ /^Provides: installonlypkg\(kernel\)$/ {
+  if(!provides_main++)print "Provides: senemos-uke-linux-kernel-mainline = %{version}-%{release}"
+ }
+ /^%description modules$/ {
+  print; next
+ }
+ /^Summary: Matching Uke kernel modules$/ {
+  print "Provides: senemos-uke-linux-kernel-mainline-modules = %{version}-%{release}"
+ }
  /^%posttrans boot / {drop=1; hooks++; next}
  drop && /^%files$/ {drop=0}
  drop {next}
@@ -242,7 +255,7 @@ awk -v revision="$revision" -v day="$day" -v pstore="$pstore_layout" '
  /^%changelog$/ {
   print; print "* " day " MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" revision
   print "- Isolate camera boot admission in an explicitly selected unstable family."
-  print "- Preserve the accepted mainline profile and matching rollback modules."
+  print "- Exclude the ordinary kernel family and provide the selected userdata profile."
   print ""; next
  }
  /grep -aqF '\''uke-front-calibration'\''/ {
@@ -251,8 +264,6 @@ awk -v revision="$revision" -v day="$day" -v pstore="$pstore_layout" '
  {
   gsub(/LOCALVERSION=-%\{senemos_build_release\}/,"LOCALVERSION=-%{senemos_build_release}-unstable")
   gsub(/qcom\/uke%\{krel\}/,"qcom/uke%{version}-%{senemos_build_release}u")
-  gsub(/\/senemos\/default-boot.img/,"/senemos/unstable-default-boot.img")
-  gsub(/uke\/singleboot.json/,"uke/unstable-singleboot.json")
   gsub(/automatic_kernel_activation==true/,"automatic_kernel_activation==false")
   gsub(/"automatic_kernel_activation": true/,"\"automatic_kernel_activation\": false")
   print
