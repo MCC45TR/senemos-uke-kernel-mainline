@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# COPR only: retain the7300 producer and enable Android policy routing/filtering.
+# COPR only: retain the current color/7300 cohort and add Android networking.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
 revision=${2:?Fresh unstable kernel revision}
-[[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 7300 ]]
+[[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 10000 ]]
 bash "$owner/packaging/native/refuse-published-release.sh" \
  senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
-bash "$owner/packaging/native/copr-unstable-boot731.sh" "$output" "$revision" 0 1
+bash "$owner/packaging/native/copr-o82-hsic-unstable.sh" "$output" "$revision"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$stage/unpacked"
@@ -53,7 +53,7 @@ for tree in "$profile" "$boot"; do
   /^make -C "\$kernel" O="\$out" LOCALVERSION="\$localversion" olddefconfig$/ {
    print "bash \"$here/../../tests/waydroid-network-built731.sh\" \"$out\" \"$here/../../configs/waydroid-network.config\" config-only"; checks++
   }
-  END {if(checks!=1)exit 1}
+  END {if(checks!=2)exit 1}
  ' "$tree/src/boot/build-payload.sh" > "$stage/build-payload.sh"
  cp "$stage/build-payload.sh" "$tree/src/boot/build-payload.sh"
  bash -n "$tree/src/boot/build-payload.sh"
@@ -89,9 +89,11 @@ jq --arg hash "$config_hash" --arg producer "$producer" '. + {
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,
  waydroid_legacy_filter_builtin:true,waydroid_network_runtime_qualified:false,
  waydroid_network_precompile_config_gate:true,
- waydroid_network_parent_producer:"00ebf622ca473b9b7a799b2f531b4871ddc70497",
+ waydroid_network_parent_factory:"copr-o82-hsic-unstable.sh",
+ waydroid_network_parent_reference_producer:"34d29c4946fa62ef10fdb1424be304407aee5ed8",
  waydroid_network_parent_composition:"source-composition-before-waydroid-network.json",
- kernel_driver_source_unchanged:true,physical_acceptance:false
+ waydroid_network_kernel_driver_source_unchanged:true,
+ waydroid_default_kernel_feature_level:1,physical_acceptance:false
  }' "$profile/source-composition-before-waydroid-network.json" > "$profile/source-composition.json"
 install -Dm644 "$fragment" "$profile/configs/waydroid-network.config"
 install -Dm644 "$stage/before.config" "$profile/configs/waydroid-firewall-modular-reference.config"
@@ -108,12 +110,15 @@ for tree in native-profile boot-recipe; do
 done
 spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 awk '
+ /^%package singleboot$/ || /^%package -n %\{name\}-singleboot$/ || /^%package -n senemos-uke-linux-kernel-mainline-unstable-singleboot$/ {
+  print; print "Provides: uke-kernel-default(waydroid-netd) = 1"; profiles++; next
+ }
  /^%check$/ {
   print
   print "bash native-profile/tests/native-firewall-builtins-contract.sh native-profile/tests/native-firewall-contract.sh native-profile/configs/waydroid-firewall-modular-reference.config"
   print "bash native-profile/tests/waydroid-network-built731.sh %{_uke_out} native-profile/configs/waydroid-network.config"; checks++; next
  }
- {print} END {if(checks!=1)exit 1}
+ {print} END {if(checks!=1 || profiles!=1)exit 1}
 ' "$spec" > "$stage/kernel.spec"
 cp "$stage/kernel.spec" "$spec"
 printf 'Waydroid network input config: %s; producer: %s\n' "$config_hash" "$producer"

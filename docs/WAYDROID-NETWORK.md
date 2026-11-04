@@ -6,8 +6,9 @@ but netd cannot add IPv4 policy rules; the kernel returns an unsupported
 operation. The effective configuration disables advanced/multiple-table
 routing. Legacy IPv4/IPv6 filter tables are also unavailable inside Android.
 
-The network candidate retains the7300 unstable producer, camera stage0 and the
-existing recovery/pstore policy. It enables Android policy routing and the
+The network candidate retains the concurrent10000 color producer and its
+qualified7300 parent, camera stage0 and the existing recovery/pstore policy.
+It enables Android policy routing and the
 standard legacy filters/matches as built-ins, including owner/mark/BPF rules.
 The Android13 [base configuration](https://android.googlesource.com/kernel/configs/+/refs/heads/android13-release/t/android-5.15/android-base.config)
 is the reference for Android's requirements. No firewall service is disabled
@@ -32,3 +33,10 @@ silently dropped legacy filter settings. Modern kernels additionally require
 are now checked immediately after olddefconfig, before compilation, and again
 against the built objects. The running profile has PREEMPT_RT disabled and
 retains its existing preemption policy.
+
+The complete parent retains the composed HSIC/SixZone code and its unchanged
+physical-qualification gates. The network delta does not change those drivers.
+Both olddefconfig passes verify the effective prerequisites. The selected
+singleboot package provides `uke-kernel-default(waydroid-netd) = 1`, allowing
+Waydroid metadata to require a capable default profile on the unstable channel.
+This does not establish physical color, network, graphics or reboot acceptance.
