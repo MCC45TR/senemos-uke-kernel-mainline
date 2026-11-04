@@ -11,10 +11,10 @@ if [[ $# == 2 ]]; then
  [[ $2 == --userspace-only ]] || exit 2
  userspace_only=true
 fi
-kernel_release=7400
-kernel_build=11259935
-parent_release=7200
-parent_build=11259638
+kernel_release=7700
+kernel_build=11260011
+parent_release=7300
+parent_build=11259919
 runtime_build=11252520
 control_build=11259934
 runtime_evr=0.3-1.fc46
