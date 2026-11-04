@@ -16,14 +16,24 @@ for node in /dev/fastrpc-cdsp /dev/fastrpc-cdsp-secure; do
 done
 for relative in qcom/uke/cdsp/cdsp.mdt qcom/uke/cdsp/cdsp_dtb.mdt qcom/uke/nanosic/MCU_Upgrade.bin; do
     found=false
+    permissions_unknown=false
     for prefix in "/usr/lib/firmware/$(uname -r)" /usr/lib/firmware/updates /usr/lib/firmware; do
         if [[ -f $prefix/$relative ]]; then
             printf 'firmware.%s=present:%s-bytes\n' "$relative" "$(stat -Lc %s "$prefix/$relative")"
             found=true
             break
         fi
+        ancestor=$prefix/${relative%/*}
+        while [[ $ancestor != / ]]; do
+            if [[ -d $ancestor && ! -x $ancestor ]]; then permissions_unknown=true;break;fi
+            ancestor=${ancestor%/*}
+            [[ -n $ancestor ]] || ancestor=/
+        done
     done
-    [[ $found == true ]] || printf 'firmware.%s=absent\n' "$relative"
+    if [[ $found != true ]]; then
+        if [[ $permissions_unknown == true ]]; then printf 'firmware.%s=unverified-permissions\n' "$relative";
+        else printf 'firmware.%s=absent\n' "$relative";fi
+    fi
 done
 for path in /sys/bus/i2c/devices/*; do
     [[ -f $path/of_node/compatible ]] || continue
