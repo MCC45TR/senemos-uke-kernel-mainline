@@ -5,7 +5,7 @@ set -Eeuo pipefail
 output=$(realpath "$1")
 root=$(realpath "$2")
 release=$3
-[[ $release =~ ^7\.3\.1-[1-9][0-9]{3,4}$ ]]
+[[ $release =~ ^7\.3\.1-[1-9][0-9]{3,4}(-unstable)?$ ]]
 grep -Fx 'CONFIG_SM_CAMCC_7675=y' "$output/.config"
 llvm-readelf -h "$output/drivers/clk/qcom/camcc-sm7675.o" | grep -E 'Machine:.*AArch64'
 for field in phase error gate_register gate_readback; do

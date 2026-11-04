@@ -75,7 +75,7 @@
       "path": "tests/fixtures/camcc-native-check.c"
     },
     {
-      "sha256": "2850ca740feeb8d1667018354d419f11c55a05904addf33ce4b111da041ac921",
+      "sha256": "eaf820a5d22a24bc8b941c2df376f31706d19762c3a5863d9331befd0bd7d7e0",
       "path": "tests/camcc-controller-linked731-check.sh"
     }
   ],
@@ -109,8 +109,10 @@
       "path": "tests/fixtures/camcc-native-check.c"
     },
     {
-      "sha256": "579785c6e5ab03d74c3fee163897a6a18b9a4886c8bdc3b2ff3cb83abac1aafe",
-      "path": "tests/camcc-controller-linked731-check.sh"
+      "sha256": "3c61d2e140bca7c28d00774b96ab9c20e64f829263355d5128addb0a0dce94fb",
+      "path": "tests/camcc-controller-linked731-check.sh",
+      "preimage_transform": "Exact published copr-unstable-boot731.sh namespace extension: append optional -unstable suffix to release guard",
+      "repository_preimage_sha256": "579785c6e5ab03d74c3fee163897a6a18b9a4886c8bdc3b2ff3cb83abac1aafe"
     }
   ],
   "new_paths": [
