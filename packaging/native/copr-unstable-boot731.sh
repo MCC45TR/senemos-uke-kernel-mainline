@@ -8,8 +8,10 @@ test ! -e /etc/senemos/kernel-update.conf
 output=$(realpath -m "${1:?COPR source output}")
 revision=${2:?Fresh diagnostic revision}
 camera_stage=${3:?Camera admission stage: 0 or 1}
+pstore_layout=${4:-0}
 [[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 7001 ]]
 [[ $camera_stage == 0 || $camera_stage == 1 ]]
+[[ $pstore_layout == 0 || $pstore_layout == 1 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -57,6 +59,36 @@ awk -v stage="$camera_stage" '
 if [[ -f $boot/src/boot/uke-abl.c ]]; then
  cmp "$stage/abl-before.c" "$boot/src/boot/uke-abl.c"
  cp "$profile/src/boot/uke-abl.c" "$boot/src/boot/uke-abl.c"
+fi
+
+if [[ $pstore_layout == 1 ]]; then
+ for tree in "$profile" "$boot"; do
+  install -m644 "$owner/src/boot/uke-pstore-dt.h" "$tree/src/boot/uke-pstore-dt.h"
+  path=src/boot/uke-abl.c
+  if [[ -f $tree/$path ]]; then
+   awk '
+    /^#include "uke-hall.h"$/ {print "#include \"uke-pstore-dt.h\""; header++}
+    /ret = fdt_overlay_apply\(output, ufs_overlay\);/ {
+     print "\tret = uke_pstore_graph(output);"; print "\tif (ret)"; print "\t\treturn ret;"; call++
+    }
+    {print} END {if(header!=1 || call!=1)exit 1}
+   ' "$tree/$path" > "$stage/pstore-abl.c"
+   cat "$stage/pstore-abl.c" > "$tree/$path"
+  fi
+  path=src/boot/prepare-abl-source.sh
+  awk '
+   {print}
+   /^install -m644 .*"\$kernel\/arch\/arm64\/kernel\/uke-abl.c"$/ {
+    print "install -m644 \"$here/uke-pstore-dt.h\" \"$kernel/arch/arm64/kernel/uke-pstore-dt.h\""; n++
+   }
+   END {if(n!=1)exit 1}
+  ' "$tree/$path" > "$stage/pstore-prepare.sh"
+  cat "$stage/pstore-prepare.sh" > "$tree/$path"
+  printf '\nsha256sum "$here/uke-pstore-dt.h" >> "$output/abl-source-SHA256SUMS"\n' >> "$tree/$path"
+  bash -n "$tree/$path"
+ done
+ install -m644 "$owner/tests/pstore-fdt731-contract.sh" "$profile/tests/pstore-fdt731-contract.sh"
+ bash "$profile/tests/pstore-fdt731-contract.sh"
 fi
 
 # The updater admits this family only when the Image ABI ends in -unstable.
@@ -139,6 +171,7 @@ audio_driver="uke7_3_1-${revision}u"
 install -m644 "$owner/tests/kernel-audio-policy-contract.sh" "$profile/tests/kernel-audio-policy-contract.sh"
 for path in src/boot/uke-abl.c src/boot/build-payload.sh src/boot/make-initramfs-base.sh \
  src/boot/boot-status.cpp \
+ src/boot/uke-pstore-dt.h src/boot/prepare-abl-source.sh \
  tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
  tests/camss-sm7675-phy-object.sh tests/camss-sm7675-linked731-check.sh \
  tests/camcc-native-object.sh tests/msm-kms-alternate-build.sh \
@@ -153,11 +186,12 @@ done
 cp "$boot/lock.json" "$output/boot-payload.json"
 cp "$profile/source-composition.json" "$profile/source-composition-withdrawn6000.json"
 producer=$(git -C "$owner" rev-parse HEAD)
-jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_sha" --argjson stage "$camera_stage" \
+jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_sha" --argjson stage "$camera_stage" --argjson pstore "$pstore_layout" \
  '. + {kernel_release:("7.3.1-"+$revision+"-unstable"),rpm_revision:$revision,
  source_mode:"withdrawn6000-with-isolated-boot-admission-bisection",
  diagnostic_producer_commit:$producer,diagnostic_parent_srpm_sha256:$parent,
  diagnostic_parent_build:11252822,diagnostic_camera_stage:$stage,
+ diagnostic_pstore_panic_layout:($pstore==1),
  camcc_boot_fdt_activation:($stage==1),camera_dt_activation:($stage==1),
  front_geni_dt_activation:false,front_eeprom_dt_activation:false,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
@@ -179,7 +213,7 @@ done
 old_spec=$output/senemos-uke-linux-kernel-mainline.spec
 spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 day=$(date -u --date="@$epoch" '+%a %b %d %Y')
-awk -v revision="$revision" -v day="$day" '
+awk -v revision="$revision" -v day="$day" -v pstore="$pstore_layout" '
  /^Name: senemos-uke-linux-kernel-mainline$/ {$0=$0 "-unstable"; names++}
  /^%global senemos_build_release 6000$/ {$0="%global senemos_build_release " revision; releases++}
  /^%global krel / {$0=$0 "-unstable"; abis++}
@@ -187,7 +221,17 @@ awk -v revision="$revision" -v day="$day" '
  /^%posttrans boot / {drop=1; hooks++; next}
  drop && /^%files$/ {drop=0}
  drop {next}
- /^%check$/ {print; print "bash native-profile/tests/unstable-boot-family731-contract.sh %{_specdir}/senemos-uke-linux-kernel-mainline-unstable.spec %{buildroot} %{krel}"; next}
+ /^%check$/ {
+  print
+  print "bash native-profile/tests/unstable-boot-family731-contract.sh %{_specdir}/senemos-uke-linux-kernel-mainline-unstable.spec %{buildroot} %{krel}"
+  if(pstore==1) {
+   print "bash native-profile/tests/pstore-fdt731-contract.sh"
+   print "cmp native-profile/src/boot/uke-pstore-dt.h arch/arm64/kernel/uke-pstore-dt.h"
+   print "test \"$(grep -Fc '\''ret = uke_pstore_graph(output);'\'' arch/arm64/kernel/uke-abl.c)\" = 1"
+   print "grep -aqF '\''max-reason'\'' %{_uke_out}/arch/arm64/kernel/uke-abl.o"
+  }
+  next
+ }
  /^bash native-profile\/tests\/camss-sm7675-module731-object.sh / {
   print
   print "make O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable -j\"$jobs\" sound/soc/qcom/uke-audio-card.o"
