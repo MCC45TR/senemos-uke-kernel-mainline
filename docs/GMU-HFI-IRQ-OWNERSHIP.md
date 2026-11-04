@@ -47,7 +47,18 @@ OOB preservation, real missing-response timeout and the original completion
 retry. Register facts come from the pinned kernel XML using native awk; no
 Python generator or device compilation is needed.
 
-Source/syntax checks and remote native qualification remain pending. The patch
+Source/syntax and complete proposed-index privacy checks pass. Fixture14 fails
+before compilation because awk consumes a dynamic-regex escape. Source
+a85f0f660dd947d2737dca18ce043674ce55a45e uses literal prefix extraction without
+changing production code, assertions or warning flags. Fresh fixture15,
+COPR11261228, succeeds in68seconds: actual old assertion134 and all four
+corrected compiler/sanitizer modes pass. Native final log gzip SHA256 is
+c4ff55b9964f274ac218890a83bc7de33867e667020e9cfc0fc6020480645aed.
+The corrected IRQ digest is27090a6a64d647b12b24125bfe0ae5c3b22abbbc88f9c7202c8c921377a39ae3.
+The complete text-only signed RPM d802402d77375b30133ba15a4a17ab9e65eb0b3a0cde891d3f6200749a34e6c2
+verifies with trusted2204A661EA630A5303500085538797E72A3E4ECA. Its exact source,
+empty scripts and rpmlib-only dependencies are audited; it is not installed.
+Published14 and15 are immutable. The patch
 must join the coordinator's next complete cumulative unstable candidate,
 retaining touch ordering, SSC, camera quarantine and every other feature/gate.
 Complete linked-object/module/package qualification, signed DNF delivery and
