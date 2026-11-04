@@ -27,7 +27,7 @@ printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de2
 cat > "$output/uke-camcc-probe-check.spec" <<'SPEC'
 Name: uke-camcc-probe-check
 Version: 1.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Remote qualification of cached native Uke CAMCC probe observations
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.gz
@@ -64,6 +64,9 @@ done
 %{_docdir}/%{name}/source-commit
 %{_docdir}/%{name}/checks.txt
 %changelog
+* Wed Nov 04 2026 Uke contributors - 1.0-2
+- Distinguish the void PLL callback primary error from the latched access errno.
+
 * Wed Nov 04 2026 Uke contributors - 1.0-1
 - Preserve the first failing phase and existing gate readback without new MMIO.
 - Check cached sysfs reads, unavailable/stale data and unchanged probe calls.

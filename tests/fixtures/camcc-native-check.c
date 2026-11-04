@@ -87,6 +87,7 @@ static bool model_domains_on, first_resume, boot_drop_fault, domain_sync_fault;
 static bool crm_mapping, crm_active, busy_at_suspend;
 static int stuck_gate;
 static const char *observed_probe_phases[1024];
+static int observed_probe_errors[1024];
 static int sequence[1024], sequence_size;
 enum { EVENT_CLOCK_SYNC = 1001, EVENT_RCG_DROP, EVENT_DOMAIN_SYNC, EVENT_PROXY_DROP, EVENT_PM_DROP };
 static struct regmap model_map;
@@ -174,7 +175,10 @@ static int clk_unvote_vdd_level(struct clk_vdd_class_data *vote, int level)
 static void qcom_clk_alpha_pll_configure(struct clk_alpha_pll *pll, struct regmap *map)
 {
 	assert(map == &model_map);
-	int ret = step(); if (ret) { cam_cc_power_fail(ret, 0, 0); return; }
+	int ret = step();
+	/* The native void callback latches the primary error; access returns EIO. */
+	observed_probe_errors[steps - 1] = -EIO;
+	if (ret) { cam_cc_power_fail(ret, 0, 0); return; }
 	configured_plls++; map->words[(pll->offset + pll->regs[PLL_OFF_L_VAL]) / 4] = pll->config->l;
 }
 static int pm_runtime_set_suspended(struct device *dev)
@@ -333,6 +337,7 @@ static void observe_probe_step(void)
 {
 	assert(steps < (int)ARRAY_SIZE(observed_probe_phases));
 	observed_probe_phases[steps] = cam_cc_native.probe.phase;
+	observed_probe_errors[steps] = -EREMOTEIO;
 }
 
 static int sysfs_emit(char *buffer, const char *format, ...)
@@ -393,6 +398,7 @@ static void defaults(bool boot_on)
 	crm_mapping = crm_active = busy_at_suspend = false;
 	stuck_gate = -1;
 	memset(observed_probe_phases, 0, sizeof(observed_probe_phases));
+	memset(observed_probe_errors, 0, sizeof(observed_probe_errors));
 	model_driver.sync_state = cam_cc_native_sync_state;
 	model_device.dev.driver = &model_driver; model_device.dev.of_node = &model_node;
 	for (int i = 0; i < 3; i++) {
@@ -451,12 +457,18 @@ static void probe_failures(void)
 	for (int on = 0; on < 2; on++) {
 		defaults(on); assert(!cam_cc_native_probe(&model_device)); int total = steps;
 		const char *reference_phases[1024];
+		int reference_errors[1024];
 		memcpy(reference_phases, observed_probe_phases, sizeof(reference_phases));
+		memcpy(reference_errors, observed_probe_errors, sizeof(reference_errors));
 		for (int failure = 1; failure <= total; failure++) {
 			defaults(on); fail_at = failure;
 			int ret = cam_cc_native_probe(&model_device);
 			if (failure > 1) {
-				assert(cam_cc_native.probe.complete && cam_cc_native.probe.error == -EREMOTEIO);
+				if (!cam_cc_native.probe.complete || cam_cc_native.probe.error != reference_errors[failure - 1])
+					fprintf(stderr, "probe observation mismatch: boot_on=%d boundary=%d phase=%s expected_error=%d observed_error=%d\n",
+						on, failure, cam_cc_native.probe.phase,
+						reference_errors[failure - 1], cam_cc_native.probe.error);
+				assert(cam_cc_native.probe.complete && cam_cc_native.probe.error == reference_errors[failure - 1]);
 				assert(!strcmp(cam_cc_native.probe.phase, reference_phases[failure - 1]));
 			}
 			if (failure <= 7) {
@@ -543,6 +555,12 @@ static void probe_observations(void)
 	defaults(false); crm_active = true;
 	assert(!cam_cc_native_probe(&model_device));
 	check_probe_observation("crm-admission", -EOPNOTSUPP, true, 0x70c, true, 1);
+	for (int boundary = 26; boundary <= 30; boundary += 4) {
+		defaults(false); fail_at = boundary;
+		assert(!cam_cc_native_probe(&model_device));
+		assert(cam_cc_power.primary_error == -EREMOTEIO);
+		check_probe_observation("pll-configuration", -EIO, true, 0x70c, true, 1);
+	}
 	puts("CAMCC probe: four actual read-only callbacks preserve first phase/error and unavailable/stale gate data; repeated reads add no API/MMIO calls");
 }
 
