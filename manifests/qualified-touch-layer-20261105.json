@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Exact qualified touch layer on complete12101 source; preserve all camera/SSC and earlier features",
+  "parent": {
+    "copr_build": 11260781,
+    "release": "7.3.1-12101.fc46",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/fedora-rawhide-aarch64/Packages/s/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12101.fc46.src.rpm",
+    "sha256": "8c436d285a39067097507972b7b1f8e4199e94f75abddf30d9fe35072449f342",
+    "bytes": 164485546,
+    "primary_sha256": "f6385fb6eab56efe6d0ede04337483a4e5ff42d8c76412788414d4e2041b9f44"
+  },
+  "qualified_touch": {
+    "source_commit": "27471abc9cf4ed25011fb26383ccf35f8505aa43",
+    "production_patch_commit": "966f77de3a292ec4daad13f7edc0485d06232e6c",
+    "ack_diagnostic_commit": "59d6c42b7b9ac1b8c0c66c9801d9e76580142549",
+    "copr_build": 11260818,
+    "package": "uke-o82-kms-check-7.3.1-13",
+    "native_log_sha256": "5a954e8f8398f71ab4026e0267238783b2bf428eeb248985f97083449af63320",
+    "qualification_scope": "Actual callbacks, original134, both suppliers/all7 modes, GCC/Clang sanitizers; full module/physical results separate"
+  },
+  "imports": [
+    {
+      "sha256": "a72b34cf3c6dd82a7f260e4c48900364ddb8e9e74f470c4e4230d828949600e2",
+      "path": "patches/display/0074-o82-touch-retain-before-off.patch",
+      "embedded": true
+    },
+    {
+      "sha256": "ce615c84db01c796f2f81f32728a35869ccad3cae975ad9ddc1e7665752757aa",
+      "path": "patches/display/0074-o82-touch-retain-test.patch",
+      "embedded": true
+    },
+    {
+      "sha256": "9ece15f175700917803f062835e8f7e42c898184fb3fe8d2bfc6acddc4f8b68d",
+      "path": "tests/o82-touch-integrated731-contract.sh",
+      "embedded": true
+    },
+    {
+      "sha256": "fff99e67d673f2ba735095f392013ac2c02682628d766213629baf6d06e7a944",
+      "path": "packaging/native/overlay-qualified-touch731.sh",
+      "embedded": true
+    },
+    {
+      "sha256": "5b102cd822e13dc337e1973ee855199c6276f2027f7bc927d5e905a8329a89dc",
+      "path": "docs/O82-TOUCH-BLANK-ORDER.md",
+      "embedded": true
+    },
+    {
+      "sha256": "05558c531e77d914f5dc1fbba8dda6fcde466f7f8b8451c7119955d9e389787d",
+      "path": "src/input/nt36532-uke-protocol.c",
+      "embedded": true
+    }
+  ],
+  "preimages": [
+    {
+      "path": "src/display/panel-xiaomi-o82.c",
+      "sha256": "6b43d63765b157fad76c48ee9de7aa68e2a8ab88c7fec0c271526e6d0a39d0d4",
+      "after_sha256": "3dd0ab8849bd3976061ab6e4887547c7b2fb38bc12c87bb11d6158098f91b78b"
+    },
+    {
+      "path": "tests/o82-panel-contract.sh",
+      "sha256": "a5edb95ad1ea8bd81fd383eb5d30d0d6a8a031716355ede889191590c11ee19f",
+      "after_sha256": "af4c91aeda9631fffb2f6629dbf64bf5da5e3f10b47839e62efd77f6b3563208"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.c",
+      "sha256": "f81f42c2622a6eb671fd7ca11fbb0ce700b6f5a7589a43cb379b5baa7cdfb1ca",
+      "after_sha256": "05558c531e77d914f5dc1fbba8dda6fcde466f7f8b8451c7119955d9e389787d"
+    }
+  ],
+  "new_paths": [
+    "patches/display/0074-o82-touch-retain-before-off.patch",
+    "patches/display/0074-o82-touch-retain-test.patch",
+    "tests/o82-touch-integrated731-contract.sh",
+    "packaging/native/overlay-qualified-touch731.sh",
+    "docs/O82-TOUCH-BLANK-ORDER.md",
+    "manifests/qualified-touch-layer-20261105.json"
+  ],
+  "constraints": {
+    "all_undeclared_source_bytes_unchanged": true,
+    "all_existing_feature_config_firmware_admission_fields_unchanged": true,
+    "original_boot_assets_retained": true,
+    "camera_calibration_private_and_read_only": true,
+    "full_kernel_required_before_delivery": true,
+    "physical_camera_acceptance": false,
+    "normal_family_promotion": false
+  }
+}

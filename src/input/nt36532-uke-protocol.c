@@ -418,7 +418,8 @@ static int nvt_uke_setting_ack(const struct nvt_uke_io *io, u8 command, u16 valu
 			break;
 	}
 	if (i == 5) {
-		pr_warn_ratelimited("NT36532 setting 0x%02x ACK timed out\n", command);
+		pr_warn_ratelimited("NT36532 setting 0x%02x ACK timed out; last ACK=0x%02x\n",
+				command, ack);
 		return -ETIMEDOUT;
 	}
 	return 0;

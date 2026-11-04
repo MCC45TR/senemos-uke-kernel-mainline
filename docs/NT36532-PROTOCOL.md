@@ -232,3 +232,19 @@ protocol, packet/filter, firmware, matrix, publisher and transport race checks
 remain required. No compiler or touch-device operation runs on the tablet.
 Native qualification, signed delivery and physical gesture/touch recurrence
 acceptance remain pending.
+
+### Physical timeout follow-up, 4 November 2026
+
+The cumulative 7.3.1-11003-unstable kernel includes the ACK-only gesture path.
+This physical boot still records two setting0x11 ACK timeouts, so the earlier
+source correction does not resolve every gesture-retention failure. Existing
+logs identify the operation but omit the byte returned by the firmware.
+
+The diagnostic source change reports the final ACK byte already read by the
+bounded retry loop. It adds no transfer, delay, retry or hardware state change;
+read/write errors still return before that timeout message. The byte is a
+control reply, not a touch sample or calibration value. This change is not a
+gesture fix and has not been built or run on Uke. Existing protocol, sanitizer
+and complete input-module checks remain required in the coordinated cumulative
+COPR candidate before DNF delivery. Firmware, panel lifetime, power retention
+and physical touch-return acceptance remain open.
