@@ -7,7 +7,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-revision=7304
+revision=7603
 release=7.3.1-$revision-unstable
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 stage=$(mktemp -d)
@@ -116,7 +116,7 @@ while read -r path; do
     install -m644 "$stage/lock.json" "$boot/lock.json"
 done < "$stage/boot-assets"
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
-cp "$profile/source-composition.json" "$profile/source-composition-before7304.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before7603.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
@@ -124,7 +124,7 @@ config_sha=$(sha256sum "$profile/native.config");config_sha=${config_sha%% *}
 jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" --arg config_sha "$config_sha" '. + {
  source_commit:$commit,source_mode:"retained7200-cdsp-pogo-candidate",
  parent_copr_build:11259638,parent_srpm_sha256:"2e4fc4ac91711568a2a7ae83d6711492c758cd56e9771d8dfc792ea94fe008ba",
- parent_composition:"source-composition-before7304.json",kernel_release:$release,rpm_revision:$revision,
+ parent_composition:"source-composition-before7603.json",kernel_release:$release,rpm_revision:$revision,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
  cdsp_auto_boot:false,cdsp_context_sids:["0x0c01","0x0c02"],cdsp_secure_policy_override:false,
  cdsp_start_stop_retention:true,cdsp_permanent_platform_instance:true,
@@ -133,7 +133,7 @@ jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" --
  native_config_sha256:$config_sha,
  cdsp_pogo_parent_effective_config_sha256:"7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38",
  cdsp_pogo_config_delta:["CONFIG_HID_NANOSIC_UKE=m"]
-}' "$profile/source-composition-before7304.json" > "$profile/source-composition.json"
+}' "$profile/source-composition-before7603.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
