@@ -1,0 +1,5 @@
+4ff3d859e4c2d4bd61ab1dfe76f429be3ca10fa3f9f854f7378ae874fa0f17be  src/boot/uke-rtc.h
+30235c22a50f401d72e375122147da53f63e91ab58d577a8a262936c1ef5c260  patches/rtc/0001-uke-secure-rtc-offset.patch
+af99c75f4534e839baaf30f51379d520efdc8d096c57045bd09ac87a64865a4f  tests/rtc-secure-contract.sh
+38d2d76973f443c133431b280c7b63e5ca11958f56b9abc9006b7eb8035ce085  tests/rtc-fdt-contract.sh
+300e1e469fd569f4069e46ef6155884ead5f657decfe9998e4e6d4f5d09cb6de  docs/RTC-COUNTER-GATE.md

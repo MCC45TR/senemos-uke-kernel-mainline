@@ -34,7 +34,7 @@ Primary contracts:
 
 Exact Uke wiring remains the MiCode uke-v-oss DT at
 94c84aeb9e517dbde546fc732033c184094c8e57, with FM19511 at I2C address 0x57
-and IRQ 170. No donor electrical values or firmware are changed. The existing
+and TLMM GPIO 170. No donor electrical values or firmware are changed. The existing
 tag code retains its Uke OEM attribution. A board donor is unnecessary for
 the bus-core lifetime contract; real interrupt and suspend behavior still
 require the fitted device.
@@ -42,3 +42,21 @@ require the fitted device.
 Continue qualification in the unstable kernel family. RTC calendar persistence,
 both complete camera pipelines, private fitted calibration and rear autofocus
 remain independent open requirements.
+
+The composition producer pins the exact qualified RTC7300, HSIC7600,
+CDSP/pogo7603 and Android-network8200 source RPMs by header and payload digest.
+It refuses to publish until all four native builds succeed. It retains all
+unrelated source files, original source snapshots, camera stage0 and boot
+policy. Camera stage1 in the separate8101 diagnostic remains a separate trial;
+this composition does not grant physical camera acceptance.
+
+The Android network input differs only in the reviewed routing/filter settings;
+the combined input adds the pogo HID module. COPR independently resolves the
+original CDSP input and the exact network input on the final prepared sources.
+The original CDSP configuration assertion must pass on its resolved reference.
+Every effective setting in the combined kernel must then match the independently
+resolved network reference, except that HID module. Real routing/filter objects,
+existing firewall negative fixtures, all retained device checks and the actual
+NFC object remain required. This replaces a stale single-parent configuration
+comparison with explicit coverage of both source inputs and the complete final
+configuration; runtime networking and physical device behavior remain unproved.
