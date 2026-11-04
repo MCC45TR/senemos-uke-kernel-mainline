@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Source/callback qualification of the exact touch layer on the complete12101 baseline",
+  "copr_build": 11261044,
+  "package": "uke-coordinated-source-check-7.3.1-1",
+  "state": "succeeded",
+  "tested_source_commit": "0e320d96f0d2dc155df224dd0e9712719a1d1f08",
+  "parent": {
+    "copr_build": 11260781,
+    "kernel_release": "7.3.1-12101-unstable",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "srpm_sha256": "8c436d285a39067097507972b7b1f8e4199e94f75abddf30d9fe35072449f342",
+    "srpm_bytes": 164485546
+  },
+  "source_result": {
+    "exact_preimages_and_outputs": true,
+    "undeclared_profile_and_boot_source_bytes_retained": true,
+    "old_feature_configuration_firmware_admission_fields_retained": true,
+    "boot_source_assets_retained": true,
+    "idempotent_second_application": true
+  },
+  "native_callback_result": {
+    "original_early_blank_control_exit": 134,
+    "original_failure": "Touch retention must precede panel OFF commands",
+    "panel_suppliers": 2,
+    "panel_modes": 7,
+    "compilers": [
+      "gcc",
+      "clang"
+    ],
+    "sanitizers": [
+      "undefined",
+      "address"
+    ],
+    "protocol_transfer_faults": 380,
+    "protocol_panel_guard_faults": 382,
+    "full_kernel_image_built": false
+  },
+  "artifacts": {
+    "srpm_log_gzip_sha256": "6769f37e23eb690d60b7eda991ee356f12238d685bfe45cc4bd2148df506b976",
+    "native_log_gzip_sha256": "58569c9f4c6c8716805e5f707eccaf5bb70e3a88e2237fba1b268817a3926cb9",
+    "output": "Text receipts and explicitly labeled source-check composition only"
+  },
+  "delivery": {
+    "new_kernel_revision_reserved": false,
+    "kernel_or_module_rpm_produced": false,
+    "installed_on_tablet": false,
+    "boot_or_slot_changed": false
+  },
+  "physical_touch_acceptance": false,
+  "physical_camera_acceptance": false,
+  "remaining": [
+    "Observed12101 cached camera fault diagnosis",
+    "One following cumulative native-kernel qualification preserving all12101 features and this layer",
+    "Signed DNF delivery and physical touch/camera/calibration/focus/recovery acceptance"
+  ]
+}
