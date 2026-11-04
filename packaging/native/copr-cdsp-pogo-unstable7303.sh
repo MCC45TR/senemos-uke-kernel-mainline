@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COPR only: retain the exact 7008 diagnostic graph and add CDSP/pogo.
+# COPR only: retain the exact 7200 diagnostic graph and add CDSP/pogo.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
@@ -12,11 +12,11 @@ bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-ker
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 curl -fLsS --retry 2 --max-time 300 --proto '=https' --proto-redir '=https' \
-    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11253587/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7008.src.rpm \
+    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259638/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7200.src.rpm \
     -o "$stage/base.src.rpm"
-printf '%s  %s\n' b2578b66bd0703bd78fde774bc56d239b08f19ae9b1acea62c38ceec7f6839c2 "$stage/base.src.rpm" | sha256sum -c --strict
-[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 0bcd23a3c5eed73029af7b033ba46176904fd2d8e956c62056b64dbdea8a0c7c ]]
-[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == ae8cee9484fc09df8da164a76bd6c2f4caab2845478eaa5b2ec47aa23798cb23 ]]
+printf '%s  %s\n' 2e4fc4ac91711568a2a7ae83d6711492c758cd56e9771d8dfc792ea94fe008ba "$stage/base.src.rpm" | sha256sum -c --strict
+[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 7a3b23ee15f61f5a22595cf16b15bac0d03f44802c68de5829c444ac28f13e76 ]]
+[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == de00c0a33bfb051b7981ea2cb6f4e8019a3e57240c4178fa061caba05c6e4690 ]]
 rpmkeys --checksig --nosignature "$stage/base.src.rpm"
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
 cpio -t --quiet < "$stage/base.cpio" | awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}'
@@ -36,13 +36,13 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 cmp "$boot/lock.json" "$output/boot-payload.json"
 jq -e '.source_commit=="bf1f6634bafc214219de1c48b3fc72a181485343" and
- .diagnostic_producer_commit=="92e34db9b66482643278ce992bf6f170fa068a9e" and
- .kernel_release=="7.3.1-7008-unstable" and .diagnostic_camera_stage==0 and
+ .diagnostic_producer_commit=="d3dcaaf3f4fca6bd9efbc7c4ebf6e6ba212ac609" and
+ .kernel_release=="7.3.1-7200-unstable" and .diagnostic_camera_stage==0 and
  .diagnostic_pstore_panic_layout and (.camera_dt_activation|not) and
  (.camera_capture_graph_activation|not) and (.front_eeprom_dt_activation|not) and
  .nfc_atomic_memory_read and .ir_explicit_word_bits==16 and
  .ssc_adsp_supplier_bound_gate==1 and .ssc_payload_limit==16384' "$profile/source-composition.json" >/dev/null
-(cd "$profile"; sha256sum --check --strict "$owner/manifests/cdsp-pogo7008-overlay-before.sha256")
+(cd "$profile"; sha256sum --check --strict "$owner/manifests/cdsp-pogo7200-overlay-before.sha256")
 cat > "$stage/assets" <<'FILES'
 src/boot/uke-cdsp-pogo.h
 patches/boot/0041-rproc-retain-failed-startup.patch
@@ -60,12 +60,13 @@ tests/nanosic-lifecycle-contract.sh
 manifests/cdsp-tested-linux731.sha256
 docs/CDSP-POGO-ACCEPTANCE.md
 tests/cdsp-pogo-device-report.sh
+tests/cdsp-pogo-config-contract.sh
 FILES
 git -C "$owner" ls-files src/pogo src/cdsp >> "$stage/assets"
 for tree in "$profile" "$boot"; do
     while read -r hash path; do
         [[ ! -e $tree/$path ]] || printf '%s  %s\n' "$hash" "$tree/$path" | sha256sum -c --strict
-    done < "$owner/manifests/cdsp-pogo7008-overlay-before.sha256"
+    done < "$owner/manifests/cdsp-pogo7200-overlay-before.sha256"
     (cd "$tree"
         while read -r path; do
             case $path in SHA256SUMS|source-commit|source-composition.json|lock.json|native.config|packaging/native/native.config|prepare.sh|src/boot/uke-abl.c|src/boot/prepare-abl-source.sh|src/audio/uke-audio-card.c) continue;; esac
@@ -80,8 +81,8 @@ for tree in "$profile" "$boot"; do
     # Preserve the isolated family's short ALSA driver ABI for the new release.
     path=$tree/src/audio/uke-audio-card.c
     if [[ -f $path ]]; then
-        [[ $(grep -Fo 'uke7.3.1-7008u' "$path" | wc -l) == 2 ]]
-        sed -i "s/uke7[.]3[.]1-7008u/uke7.3.1-${revision}u/g" "$path"
+        [[ $(grep -Fo 'uke7.3.1-7200u' "$path" | wc -l) == 2 ]]
+        sed -i "s/uke7[.]3[.]1-7200u/uke7.3.1-${revision}u/g" "$path"
     fi
     (cd "$tree"; sha256sum -c --quiet "$stage/retained-profile.sha256")
 done
@@ -114,15 +115,19 @@ cp "$profile/source-composition.json" "$profile/source-composition-before7303.js
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" '. + {
- source_commit:$commit,source_mode:"retained7008-cdsp-pogo-candidate",
- parent_copr_build:11253587,parent_srpm_sha256:"b2578b66bd0703bd78fde774bc56d239b08f19ae9b1acea62c38ceec7f6839c2",
+config_sha=$(sha256sum "$profile/native.config");config_sha=${config_sha%% *}
+jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" --arg config_sha "$config_sha" '. + {
+ source_commit:$commit,source_mode:"retained7200-cdsp-pogo-candidate",
+ parent_copr_build:11259638,parent_srpm_sha256:"2e4fc4ac91711568a2a7ae83d6711492c758cd56e9771d8dfc792ea94fe008ba",
  parent_composition:"source-composition-before7303.json",kernel_release:$release,rpm_revision:$revision,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
  cdsp_auto_boot:false,cdsp_context_sids:["0x0c01","0x0c02"],cdsp_secure_policy_override:false,
  cdsp_start_stop_retention:true,cdsp_permanent_platform_instance:true,
  pogo_mcu_firmware_distributed:false,pogo_report_format:"21-byte shared-protocol candidate",
- pogo_auth_provider_included:false,physical_acceptance:false,device_installation:false
+ pogo_auth_provider_included:false,physical_acceptance:false,device_installation:false,
+ native_config_sha256:$config_sha,
+ cdsp_pogo_parent_effective_config_sha256:"7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38",
+ cdsp_pogo_config_delta:["CONFIG_HID_NANOSIC_UKE=m"]
 }' "$profile/source-composition-before7303.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
@@ -131,26 +136,30 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$stage/unpacked" boot-recipe
 day=$(date -u --date="@$epoch" '+%a %b %d %Y')
+[[ $(grep -Fc 'uke-rpmh-resource-contract.sh' "$spec") == 0 ]]
 awk -v revision="$revision" -v day="$day" '
- /^%global senemos_build_release 7008$/ {$0="%global senemos_build_release " revision;releases++}
+ /^%global senemos_build_release 7200$/ {$0="%global senemos_build_release " revision;releases++}
  /^Name:[[:space:]]/ {print;print "Provides: uke-kernel(cdsp-pogo-candidate-v1) = 1";next}
- /uke-rpmh-resource-contract.sh.* native$/ {sub(/ native$/," native-pogo");regulator++}
+ /^printf / && /7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38/ && /sha256sum/ {
+   print "bash native-profile/tests/cdsp-pogo-config-contract.sh %{_uke_out}/.config";configuration++;next
+ }
  /^%check$/ {
    print
    print "test -s %{_uke_out}/drivers/hid/hid-nanosic-uke.o"
    print "test -s %{_uke_out}/drivers/remoteproc/qcom_q6v5_pas.o"
    print "test -n \"$(find %{buildroot}/usr/lib/modules/%{krel} -type f -name '\''hid-nanosic-uke.ko*'\'' -print -quit)\""
+   print "bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native-pogo"
    next
  }
  /^%changelog$/ {
    print
    print "* " day " MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" revision
-   print "- Retain the isolated 7008 graph and add guarded CDSP and pogo transport."
+   print "- Retain the isolated 7200 graph and add guarded CDSP and pogo transport."
    print "- Keep firmware provisioning and physical acceptance separate."
    print "";next
  }
  {print}
- END {if(releases!=1 || regulator!=1)exit 1}
+ END {if(releases!=1 || configuration!=1)exit 1}
 ' "$spec" > "$stage/next.spec"
 install -m644 "$stage/next.spec" "$spec"
 sha256sum -c --quiet "$stage/retained-sources.sha256"
