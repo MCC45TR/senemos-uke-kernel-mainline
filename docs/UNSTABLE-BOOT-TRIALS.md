@@ -50,6 +50,8 @@ and the [upstream ramoops documentation](https://kernel.org/doc/html/next/admin-
 | 7.3.1-7006-unstable | Skip CAMCC and front EEPROM | Original OEM layout | [11253472](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11253472/) |
 | 7.3.1-7007-unstable | CAMCC only | Original OEM layout | [11253473](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11253473/) |
 | 7.3.1-7008-unstable | Skip CAMCC and front EEPROM | 1 MiB panic/oops | [11253587](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11253587/) |
+| 7.3.1-7200-unstable | Skip CAMCC and front EEPROM | 1 MiB panic/oops | [11259638](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11259638/) |
+| 7.3.1-7300-unstable | Skip CAMCC and front EEPROM; read-only RTC counter | 1 MiB panic/oops | [11259919](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11259919/) |
 
 All three passed Fedora Rawhide 46 AArch64 builds and RPM checks. Signed RPMs
 were installed through DNF and passed read-only bundle admission. Initial
@@ -77,6 +79,14 @@ is still deferred; this does not establish a healthy accepted trial. Candidate
 firmware-offset property inactive. Its rationale and validation limits are in
 [RTC counter admission](RTC-COUNTER-GATE.md). The accepted B/1500 partition
 must remain unchanged during this investigation.
+
+Candidate 7300 passed source-worker RTC fixtures, prepared-driver fixtures, the
+full AArch64 build and RPM checks. DNF installed its five kernel packages and
+native bundle admission passed. The 7200 profile, both raw slot hashes,
+protected trial state and off mode stayed unchanged. No 7300 physical boot,
+RTC binding, wake alarm or UTC persistence is established. Current 7200 remains
+an unaccepted trial; candidate installation does not authorize healthy approval
+or replacement of the accepted stable image.
 
 The separate `uke-boot-graph-audit-unstable-0.1-3` tool, built in COPR 11253683
 and installed through DNF, executed both retained 6000 camera helpers on a RAM
