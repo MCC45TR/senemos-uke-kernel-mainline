@@ -107,4 +107,5 @@ if ! $userspace_only; then
 fi
 [[ $(readlink /usr/lib/senemos/default-boot.img) == "$boot_default" ]]
 rpm -q "uke-control-$control_evr"
+printf '%s\n' 'WirePlumber loads the installed microphone policy at the next session start; close captures before a deliberate reload.'
 printf '%s\n' 'DNF delivery complete. Physical audio checks remain pending; speaker gain stays 223.'
