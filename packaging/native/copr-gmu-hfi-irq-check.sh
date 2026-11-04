@@ -5,7 +5,7 @@ trap 'status=$?; printf "GMU fixture source failed at line %s (exit %s)\n" "$LIN
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
-bash "$owner/packaging/native/refuse-published-release.sh" uke-o82-kms-check 7.3.1-14
+bash "$owner/packaging/native/refuse-published-release.sh" uke-o82-kms-check 7.3.1-15
 output=$(realpath -m "${1:?COPR source result directory}")
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -94,7 +94,7 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf \
 cat > "$output/uke-o82-kms-check.spec" <<'SPEC'
 Name: uke-o82-kms-check
 Version: 7.3.1
-Release: 14%{?dist}
+Release: 15%{?dist}
 Summary: Actual Uke GMU fault IRQ and HFI response callback qualification
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.xz
@@ -121,7 +121,7 @@ bash tests/gmu-hfi-irq-contract.sh "$PWD/upstream" \
 %{_docdir}/%{name}/source-inputs.json
 %{_docdir}/%{name}/checks.txt
 %changelog
-* Thu Nov 05 2026 Uke contributors - 7.3.1-14
+* Thu Nov 05 2026 Uke contributors - 7.3.1-15
 - Check actual IRQ/poller ownership, fault dispatch, late arrivals and timeout.
 SPEC
-[[ $(rpmspec --define 'dist %{nil}' --target aarch64 -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$output/uke-o82-kms-check.spec") == uke-o82-kms-check-7.3.1-14 ]]
+[[ $(rpmspec --define 'dist %{nil}' --target aarch64 -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$output/uke-o82-kms-check.spec") == uke-o82-kms-check-7.3.1-15 ]]

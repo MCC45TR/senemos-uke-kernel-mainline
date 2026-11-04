@@ -10,11 +10,11 @@ ulimit -c 0
 gmu=$kernel/drivers/gpu/drm/msm/adreno/a6xx_gmu.c
 hfi=$kernel/drivers/gpu/drm/msm/adreno/a6xx_hfi.c
 extract() {
- awk -v start="$1" '$0~start {emit=1} emit{print} emit&&/^}/{exit}' "$2" > "$3"
+ awk -v start="$1" 'index($0,start)==1 {emit=1} emit{print} emit&&/^}/{exit}' "$2" > "$3"
  test -s "$3"
 }
-extract '^static irqreturn_t a6xx_hfi_irq\(' "$gmu" "$stage/irq.inc"
-extract '^static int a6xx_hfi_wait_for_msg_interrupt\(' "$hfi" "$stage/wait.inc"
+extract 'static irqreturn_t a6xx_hfi_irq(' "$gmu" "$stage/irq.inc"
+extract 'static int a6xx_hfi_wait_for_msg_interrupt(' "$hfi" "$stage/wait.inc"
 # Linux generates its register header from this pinned XML. Derive only the
 # four fixture constants with native awk; no build generator or Python runs.
 awk -F '\"' '
@@ -59,7 +59,7 @@ fi
 printf 'Actual original IRQ loses the pending MSGQ response: required assertion134 observed\n'
 git -C "$kernel" apply --check "$owner/patches/gpu/0075-gmu-hfi-irq-owned-status.patch"
 git -C "$kernel" apply "$owner/patches/gpu/0075-gmu-hfi-irq-owned-status.patch"
-extract '^static irqreturn_t a6xx_hfi_irq\(' "$gmu" "$stage/irq.inc"
+extract 'static irqreturn_t a6xx_hfi_irq(' "$gmu" "$stage/irq.inc"
 export ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:detect_leaks=1
 export UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1
 for compiler in gcc clang; do
