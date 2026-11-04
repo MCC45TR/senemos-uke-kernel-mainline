@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COPR only: retain the exact 7200 diagnostic graph and add CDSP/pogo.
+# COPR only: retain the exact 7300 diagnostic graph and add CDSP/pogo.
 set -Eeuo pipefail
 trap 'status=$?; printf "CDSP/pogo source preparation failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 export LC_ALL=C
@@ -7,17 +7,17 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-revision=7603
+revision=7604
 release=7.3.1-$revision-unstable
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 curl -fLsS --retry 2 --max-time 300 --proto '=https' --proto-redir '=https' \
-    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259638/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7200.src.rpm \
+    https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259919/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7300.src.rpm \
     -o "$stage/base.src.rpm"
-printf '%s  %s\n' 2e4fc4ac91711568a2a7ae83d6711492c758cd56e9771d8dfc792ea94fe008ba "$stage/base.src.rpm" | sha256sum -c --strict
-[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 7a3b23ee15f61f5a22595cf16b15bac0d03f44802c68de5829c444ac28f13e76 ]]
-[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == de00c0a33bfb051b7981ea2cb6f4e8019a3e57240c4178fa061caba05c6e4690 ]]
+printf '%s  %s\n' 4cc89bc2d5fb99a76a2d4db9b3ec983fd03ad88d4cdbf2c9c7e7bff77edebd03 "$stage/base.src.rpm" | sha256sum -c --strict
+[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/base.src.rpm") == 2538f7e4027ca8f926cf2ccd965715a6d080835443d2bafec41b96ccaab6c250 ]]
+[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/base.src.rpm") == 147edc8fae715ba6e8beb958fc6873df8ab60c7439f74831bb58154c56de0d49 ]]
 rpmkeys --checksig --nosignature "$stage/base.src.rpm"
 rpm2cpio "$stage/base.src.rpm" > "$stage/base.cpio"
 cpio -t --quiet < "$stage/base.cpio" | awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}'
@@ -37,13 +37,15 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 cmp "$boot/lock.json" "$output/boot-payload.json"
 jq -e '.source_commit=="bf1f6634bafc214219de1c48b3fc72a181485343" and
- .diagnostic_producer_commit=="d3dcaaf3f4fca6bd9efbc7c4ebf6e6ba212ac609" and
- .kernel_release=="7.3.1-7200-unstable" and .diagnostic_camera_stage==0 and
+ .diagnostic_producer_commit=="00ebf622ca473b9b7a799b2f531b4871ddc70497" and
+ .kernel_release=="7.3.1-7300-unstable" and .diagnostic_camera_stage==0 and
  .diagnostic_pstore_panic_layout and (.camera_dt_activation|not) and
+ .rtc_backend=="pmic-read-only-counter" and .rtc_secure_offset_boot_activation==false and
+ .rtc_secure_provider_qualified==false and .rtc_utc_calendar_qualified==false and
  (.camera_capture_graph_activation|not) and (.front_eeprom_dt_activation|not) and
  .nfc_atomic_memory_read and .ir_explicit_word_bits==16 and
  .ssc_adsp_supplier_bound_gate==1 and .ssc_payload_limit==16384' "$profile/source-composition.json" >/dev/null
-(cd "$profile"; sha256sum --check --strict "$owner/manifests/cdsp-pogo7200-overlay-before.sha256")
+(cd "$profile"; sha256sum --check --strict "$owner/manifests/cdsp-pogo7300-overlay-before.sha256")
 cat > "$stage/assets" <<'FILES'
 src/boot/uke-cdsp-pogo.h
 patches/boot/0041-rproc-retain-failed-startup.patch
@@ -68,7 +70,7 @@ git -C "$owner" ls-files src/pogo src/cdsp >> "$stage/assets"
 for tree in "$profile" "$boot"; do
     while read -r hash path; do
         [[ ! -e $tree/$path ]] || printf '%s  %s\n' "$hash" "$tree/$path" | sha256sum -c --strict
-    done < "$owner/manifests/cdsp-pogo7200-overlay-before.sha256"
+    done < "$owner/manifests/cdsp-pogo7300-overlay-before.sha256"
     (cd "$tree"
         while read -r path; do
             case $path in SHA256SUMS|source-commit|source-composition.json|lock.json|native.config|packaging/native/native.config|prepare.sh|src/boot/uke-abl.c|src/boot/prepare-abl-source.sh|src/audio/uke-audio-card.c) continue;; esac
@@ -86,8 +88,8 @@ for tree in "$profile" "$boot"; do
     # Preserve the isolated family's short ALSA driver ABI for the new release.
     path=$tree/src/audio/uke-audio-card.c
     if [[ -f $path ]]; then
-        [[ $(grep -Fo 'uke7.3.1-7200u' "$path" | wc -l) == 2 ]]
-        sed -i "s/uke7[.]3[.]1-7200u/uke7.3.1-${revision}u/g" "$path"
+        [[ $(grep -Fo 'uke7.3.1-7300u' "$path" | wc -l) == 2 ]]
+        sed -i "s/uke7[.]3[.]1-7300u/uke7.3.1-${revision}u/g" "$path"
     fi
     (cd "$tree"; sha256sum -c --quiet "$stage/retained-profile.sha256")
 done
@@ -116,15 +118,15 @@ while read -r path; do
     install -m644 "$stage/lock.json" "$boot/lock.json"
 done < "$stage/boot-assets"
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
-cp "$profile/source-composition.json" "$profile/source-composition-before7603.json"
+cp "$profile/source-composition.json" "$profile/source-composition-before7604.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 config_sha=$(sha256sum "$profile/native.config");config_sha=${config_sha%% *}
 jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" --arg config_sha "$config_sha" '. + {
- source_commit:$commit,source_mode:"retained7200-cdsp-pogo-candidate",
- parent_copr_build:11259638,parent_srpm_sha256:"2e4fc4ac91711568a2a7ae83d6711492c758cd56e9771d8dfc792ea94fe008ba",
- parent_composition:"source-composition-before7603.json",kernel_release:$release,rpm_revision:$revision,
+ source_commit:$commit,source_mode:"retained7300-cdsp-pogo-candidate",
+ parent_copr_build:11259919,parent_srpm_sha256:"4cc89bc2d5fb99a76a2d4db9b3ec983fd03ad88d4cdbf2c9c7e7bff77edebd03",
+ parent_composition:"source-composition-before7604.json",kernel_release:$release,rpm_revision:$revision,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
  cdsp_auto_boot:false,cdsp_context_sids:["0x0c01","0x0c02"],cdsp_secure_policy_override:false,
  cdsp_start_stop_retention:true,cdsp_permanent_platform_instance:true,
@@ -133,7 +135,7 @@ jq --arg commit "$commit" --arg release "$release" --arg revision "$revision" --
  native_config_sha256:$config_sha,
  cdsp_pogo_parent_effective_config_sha256:"7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38",
  cdsp_pogo_config_delta:["CONFIG_HID_NANOSIC_UKE=m"]
-}' "$profile/source-composition-before7603.json" > "$profile/source-composition.json"
+}' "$profile/source-composition-before7604.json" > "$profile/source-composition.json"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
@@ -143,7 +145,7 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
 day=$(date -u --date="@$epoch" '+%a %b %d %Y')
 [[ $(grep -Ec 'uke-rpmh-resource-contract.sh.* native$' "$spec") == 1 ]]
 awk -v revision="$revision" -v day="$day" '
- /^%global senemos_build_release 7200$/ {$0="%global senemos_build_release " revision;releases++}
+ /^%global senemos_build_release 7300$/ {$0="%global senemos_build_release " revision;releases++}
  /^Name:[[:space:]]/ {print;print "Provides: uke-kernel(cdsp-pogo-candidate-v1) = 1";next}
  /uke-rpmh-resource-contract.sh.* native$/ {sub(/ native$/," native-pogo");regulator++}
  /^printf / && /7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38/ && /sha256sum/ {
@@ -159,7 +161,7 @@ awk -v revision="$revision" -v day="$day" '
  /^%changelog$/ {
    print
    print "* " day " MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" revision
-   print "- Retain the isolated 7200 graph and add guarded CDSP and pogo transport."
+   print "- Retain the isolated 7300 graph and add guarded CDSP and pogo transport."
    print "- Keep firmware provisioning and physical acceptance separate."
    print "";next
  }

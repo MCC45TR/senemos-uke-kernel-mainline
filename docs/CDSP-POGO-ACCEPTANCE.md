@@ -1,25 +1,29 @@
 # Uke CDSP and pogo acceptance
 
 4 November 2026. Source and COPR results are engineering evidence; hardware
-acceptance remains open. The candidate retains the1900 source cohort and its
-recovery/DNF contract. No native compilation runs on the tablet.
+acceptance remains open. New development uses the unstable package family and
+an -unstable ABI. The current producer retains the exact installed7300 source,
+including its disabled unqualified secure RTC path and recovery/DNF policy.
+No native compilation runs on the tablet.
 
-Kernel7.3.1-2313, COPR11252339, passes complete native checks, including833
+Historical kernel7.3.1-2313, COPR11252339, passes complete native checks, including833
 module signatures and tampered/unsigned/wrong-key refusals. Independent checks
 verify both OpenPGP signatures and header/payload digests of all six RPMs.
 The separate firmware helper0.1-2 succeeds in COPR11252345 and passes the same
-RPM checks. DNF resolution succeeds; administrator installation remains pending.
+RPM checks. These normal-family artifacts are not deployment targets under the
+4 November policy. The new retained7300 producer is
+packaging/native/copr-cdsp-pogo-unstable7604.sh. Its complete binary and package
+results must be checked separately.
 
 Run tests/cdsp-pogo-device-report.sh for a bounded read-only inventory. It never
 starts remoteproc, uploads firmware, reads authentication attributes or writes
 LED/input controls.
 
-The DNF delivery recipe is packaging/native/deliver-cdsp-pogo-candidate.sh.
-Its default --preview prints the exact package/provisioning steps. --apply
-requires an administrator terminal and successful pinned COPR builds. It
-refuses delivery over an installed kernel newer than the retained1900 parent;
-compose any later hardware changes before using it. Existing recovery kernels
-are retained and no reboot is requested.
+The historical packaging/native/deliver-cdsp-pogo-candidate.sh now refuses
+execution. Deliver signed matching unstable packages through DNF after reviewing
+current/staged cohorts. Keep automatic activation disabled, retain the existing
+singleboot selection and accepted recovery route, and do not request a reboot
+as part of package installation. Later source changes need explicit composition.
 
 The separately packaged native helper uke-cdsp-pogo-firmware --preflight
 checks fixed stock CDSP and MCU files without publishing or starting devices.
@@ -27,6 +31,10 @@ Both source partitions are read-only views of the observed Uke UFS LUNs.
 After matching kernel installation, --import KERNEL_RELEASE publishes only
 versioned families for a non-running kernel. Exact MDT identity must pass;
 never relax hashes after an unexplained refusal. No OEM bytes enter COPR.
+The helper0.2-2 VFAT correction passes COPR11260014 and is installed through DNF.
+Device preflight now resolves the fixed stock names but refuses differing CDSP
+and complete authentication-image identities. Investigate those differences
+before importing firmware; no unrecognized image is admitted.
 
 CDSP acceptance requires matched device-local cdsp.mdt/cdsp_dtb.mdt and all
 requested split segments under qcom/uke/cdsp. Their redistribution/provisioning
@@ -51,8 +59,11 @@ Record attachment, all key/modifier/media press/release paths, three-contact
 candidate reports, buttons and coordinate range. Establish the exact report
 layout and physical touchpad geometry before claiming complete gestures.
 Check Caps Lock, backlight0-100 and microphone LED requests through the standard
-HID/LED interfaces. Token submission is separate from confirmed authentication;
-the qualified Uke TEE provider is still missing.
+HID/LED interfaces. The separate original C++ uke-pogo-auth0.1-2 provider passes
+COPR11259992, complete signed-package checks and DNF installation. It refuses
+operation on the current kernel without the exact bound authentication bridge.
+Its static service remains inactive. Exact Uke TA/challenge and accessory
+acceptance remain open; token submission is separate from confirmed authentication.
 
 Exercise detach/reconnect while keys or contacts are active, lid close/open,
 tablet fold state, system sleep/wake and pending authentication. Confirm there
@@ -63,3 +74,5 @@ during ordinary operation; idle-power optimization needs measured qualification.
 Document physical results independently of synthetic fault injection and
 compilation. The canonical engineering record is
 uke-linux-docs/docs/lessons/2026-11-03-UKE-CDSP-POGO-KERNEL.md.
+The unstable/provider follow-up is
+uke-linux-docs/docs/lessons/2026-11-04-UKE-CDSP-POGO-UNSTABLE.md.

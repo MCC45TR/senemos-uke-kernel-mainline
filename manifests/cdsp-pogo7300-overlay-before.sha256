@@ -1,0 +1,5 @@
+594d60708aa186af5ad2e8f676bfabf605c13ee8807ae311866d75202c57e573  patches/boot/0041-rproc-retain-failed-startup.patch
+d23a55bab65b970c9637b32abec20a6d0476b5f5c5fe3a051d43d0c33a142a48  tests/uke-rpmh-resource-contract.sh
+8e32dfbe3a32226e9eeca289564258ed628da0ac145a0e637a5d00304b91abd2  tests/pas-stop-ownership-contract.sh
+740e8cad0e5d06b43e1e8f19bc8f8cc27acc7394e70452516cbe28f301dc7a3a  tests/rproc-start-stop-retention-contract.sh
+e3c830f3a40820c6dafc53c7453b59b6943fa166d87a0b7b399503a246cfe50e  tests/front-eeprom-fdt731-contract.sh
