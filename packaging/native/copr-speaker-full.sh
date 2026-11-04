@@ -17,7 +17,10 @@ curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11259919 
  jq -e '.state as $state | (["running","succeeded","starting","importing","waiting"]|index($state))!=null and
  .source_package.name=="senemos-uke-linux-kernel-mainline-unstable" and .source_package.version=="7.3.1-7300" and
  .source_package.url=="https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259919/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7300.src.rpm"' >/dev/null
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$release"
+# Isolated audio candidates need a never-published ABI. Concurrent unrelated
+# source builds may have higher numbers; installed-source retention is enforced
+# separately by the delivery helper. Never relax exact NVR immutability.
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$release" --unpublished-only
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/unpacked"

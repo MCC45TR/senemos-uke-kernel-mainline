@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 name=${1:?Pass the source package name}
 candidate=${2:?Pass the proposed version-release without the Fedora suffix}
+mode=${3:---monotonic}
+[[ $# -le 3 && ( $mode == --monotonic || $mode == --unpublished-only ) ]]
 [[ $name =~ ^[a-zA-Z0-9+_.-]+$ && $candidate =~ ^[0-9]+([.][0-9]+)*-[1-9][0-9]*$ ]]
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
@@ -25,7 +27,7 @@ for project in uke-linux uke-linux-test uke-linux-unstable; do
         }
         comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$published\", \"$candidate\"))}")
         [[ $comparison =~ ^-?[0-9]+$ ]]
-        if ((comparison >= 0)); then
+        if ((comparison == 0)) || { [[ $mode == --monotonic ]] && ((comparison > 0)); }; then
             printf 'Refusing %s: %s published %s is equal or newer; use a fresh kernel release\n' "$candidate" "$project" "$published" >&2
             exit 1
         fi
@@ -41,4 +43,4 @@ for project in uke-linux uke-linux-test uke-linux-unstable; do
   exit 1
  }
 done
-printf 'Fresh kernel release admitted across all COPR projects: %s\n' "$candidate"
+printf 'Fresh kernel release admitted across all COPR projects: %s (%s)\n' "$candidate" "$mode"
