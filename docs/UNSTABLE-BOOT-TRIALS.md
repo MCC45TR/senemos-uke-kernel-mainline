@@ -102,11 +102,14 @@ Candidate 8101 passes the full native build, CAMCC/CRM and RTC fixtures and
 834 module-signature checks. It uses RTC producer
 `00ebf622ca473b9b7a799b2f531b4871ddc70497` with CAMCC stage 1 enabled.
 Front GENI/EEPROM, sensor and capture graph activation remain disabled.
-Signed DNF delivery of its five non-profile packages and read-only trial
-admission pass on 7200. The running cohort, selected profile, both raw slot
-hashes, protected state and off policy remain unchanged.
-Its matching physical boot, real controller ownership and camera operation
-remain unqualified. A separate CAMCC-only 7300 build 11259915 reused the RTC
+Initial five-package signed DNF delivery and read-only admission on 7200 left
+the running cohort, profile, images and protected state unchanged. Updater
+1.8.90 now watches the containing profile directory. Signed DNF delivery invokes
+automatic preparation and verifies 8101 in A, preserving B and the boot disk's
+non-target GPT entries. A profile-only DNF reinstall invokes the pending-reboot
+guard with unchanged images, protected state and local off. Current execution
+remains 7200; the matching 8101 boot, real controller ownership and camera
+operation remain unqualified. A separate CAMCC-only 7300 build 11259915 reused the RTC
 candidate's NEVRA and is withdrawn from delivery. Do not mix those artifacts
 or identify their contents solely by version; 8101 has a distinct identity.
 
@@ -124,11 +127,18 @@ trial in rollback mode off, version 1.8.60 adds explicit `check-trial BUNDLE`
 and `replace-trial BUNDLE`. Its source is
 [documented with the updater](https://github.com/MCC45TR/uke-linux-hardware-support/blob/8eb0c4d/uke-boot/DEVELOPMENT-TRIALS.md).
 Remote fault-injection tests, signed DNF delivery and read-only admission on
-7200 pass. Actual replacement and power-loss recovery remain unqualified.
+7200 pass. The later [1.8.90 directory-trigger fix](https://github.com/MCC45TR/uke-linux-hardware-support/blob/b5f1adb991bc39743cea75ebd5b6e4292592b354/uke-boot/README.md)
+passes actual DNF preparation of A and profile-only reinstall idempotence.
+Power-loss recovery and the first matching camera boot remain unqualified.
 This narrow operation preserves B bytes/flags and UFS selection, quarantines A
 before writing, verifies the result and leaves it unaccepted. It creates no
 full-image backup and requests no reboot. Verify the exact candidate and a
 recoverable observed trial before replacing A. Retain the accepted slot and the
 documented fastboot recovery route. A source/build pass is not a boot result;
 record the running release, acceptance state, journal and pstore separately
-after each physical trial. Test one staged candidate at a time.
+after each physical trial. Test one staged candidate at a time. With seamless
+policy enabled, DNF can prepare the selected candidate before it returns.
+After current-A preparation, `check-auto` reports the pending reboot without
+repeating the image write. The old running Image no longer matches either raw
+slot until the new boot, so read-only status may leave the current slot unknown;
+that does not establish a new boot or healthy approval.
