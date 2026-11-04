@@ -140,10 +140,11 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$stage/unpacked" boot-recipe
 day=$(date -u --date="@$epoch" '+%a %b %d %Y')
-[[ $(grep -Fc 'uke-rpmh-resource-contract.sh' "$spec") == 0 ]]
+[[ $(grep -Ec 'uke-rpmh-resource-contract.sh.* native$' "$spec") == 1 ]]
 awk -v revision="$revision" -v day="$day" '
  /^%global senemos_build_release 7200$/ {$0="%global senemos_build_release " revision;releases++}
  /^Name:[[:space:]]/ {print;print "Provides: uke-kernel(cdsp-pogo-candidate-v1) = 1";next}
+ /uke-rpmh-resource-contract.sh.* native$/ {sub(/ native$/," native-pogo");regulator++}
  /^printf / && /7f1e3f7a5be62396b2b36534780aeb561dfbf7e0a10698677b860cbc91efbd38/ && /sha256sum/ {
    print "bash native-profile/tests/cdsp-pogo-config-contract.sh %{_uke_out}/.config";configuration++;next
  }
@@ -152,7 +153,6 @@ awk -v revision="$revision" -v day="$day" '
    print "test -s %{_uke_out}/drivers/hid/hid-nanosic-uke.o"
    print "test -s %{_uke_out}/drivers/remoteproc/qcom_q6v5_pas.o"
    print "test -n \"$(find %{buildroot}/usr/lib/modules/%{krel} -type f -name '\''hid-nanosic-uke.ko*'\'' -print -quit)\""
-   print "bash native-profile/tests/uke-rpmh-resource-contract.sh drivers/regulator/qcom-rpmh-regulator-uke.c native-pogo"
    next
  }
  /^%changelog$/ {
@@ -163,7 +163,7 @@ awk -v revision="$revision" -v day="$day" '
    print "";next
  }
  {print}
- END {if(releases!=1 || configuration!=1)exit 1}
+ END {if(releases!=1 || configuration!=1 || regulator!=1)exit 1}
 ' "$spec" > "$stage/next.spec"
 install -m644 "$stage/next.spec" "$spec"
 sha256sum -c --quiet "$stage/retained-sources.sha256"
