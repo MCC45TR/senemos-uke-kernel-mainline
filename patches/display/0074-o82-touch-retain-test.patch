@@ -36,7 +36,7 @@
      static const struct drm_panel_funcs funcs={.enable=o82_enable,.disable=o82_disable};
      static struct host_ops ops={transfer};
      static struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
-@@ -533,12 +544,13 @@
+@@ -533,24 +544,50 @@
      return ctx;
  }
  int main(void) {
@@ -53,7 +53,9 @@
          for(int i=0;i<3;i++) assert(balance[i]==1);
          assert(!o82_unprepare(&c.panel) && gesture_retains==1);
          const int released=gesture_releases;
-@@ -546,11 +558,34 @@
+         pps_start=transfers+2*c.active->on_count-pps_transfers;
++        /* Batch packet indices describe one powered ON sequence. */
++        on_batch_calls=on_batch_total=on_complete=0;
          assert(!o82_prepare(&c.panel) && !c.gesture_retained);
          assert(gesture_releases==released+1);
          for(int i=0;i<3;i++) assert(balance[i]==1);

@@ -5,7 +5,7 @@ trap 'status=$?; printf "Touch fixture source failed at line %s (exit %s)\n" "$L
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
-bash "$owner/packaging/native/refuse-published-release.sh" uke-o82-kms-check 7.3.1-12
+bash "$owner/packaging/native/refuse-published-release.sh" uke-o82-kms-check 7.3.1-13
 output=$(realpath -m "${1:?Pass the remote source result directory}")
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -41,7 +41,7 @@ spec=$output/uke-o82-kms-check.spec
 awk '
  /^%description/ {exit}
  /^Name:/ {$0="Name: uke-o82-kms-check"}
- /^Release:/ {$0="Release: 12%{?dist}"}
+ /^Release:/ {$0="Release: 13%{?dist}"}
  /^Summary:/ {$0="Summary: Retained Uke TDDI early-blank ordering callback check"}
  /^(Requires|Provides|Recommends):/ {next}
  {print}
@@ -79,13 +79,14 @@ test -s %{buildroot}%{_docdir}/%{name}/checks.txt
 %{_docdir}/%{name}/source-commit
 
 %changelog
-* Wed Nov 04 2026 Uke contributors - 7.3.1-12
+* Wed Nov 04 2026 Uke contributors - 7.3.1-13
 - Check OEM touch retention before panel OFF, including fault cleanup.
 - Qualify the already-read final ACK diagnostic on the retained protocol.
+- Reset fixture ON packet accounting between complete powered lifecycles.
 SPEC
 sha256sum -c "$stage/retained.sha256"
 rm "$parent"
 # COPR's source worker does not promise a binary-chroot dist macro.
 candidate=$(rpmspec --define 'dist %{nil}' --target aarch64 -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec")
 printf 'Fixture source candidate: %s\n' "$candidate"
-[[ $candidate == uke-o82-kms-check-7.3.1-12 ]]
+[[ $candidate == uke-o82-kms-check-7.3.1-13 ]]
