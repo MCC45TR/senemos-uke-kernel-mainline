@@ -50,7 +50,24 @@ must pass both suppliers and all seven modes, repeated retention/resume/remove,
 OFF failure and short write, touch refusal and partial cleanup under GCC/Clang
 UBSan and ASan. The existing real protocol regressions also check the final
 ACK-byte diagnostic from59d6c42. Only text receipts are packaged; do not install
-this fixture on the tablet. All compilation remains in COPR. These checks are
-prepared, not yet executed. A combined native kernel/module build, matching
-signed DNF delivery and physical off/on, suspend/wake and long-run input/display
-acceptance remain separate gates under the single kernel coordinator.
+this fixture on the tablet. All compilation remains in COPR.
+
+COPR11260818 succeeds from27471abc9cf4ed25011fb26383ccf35f8505aa43 as fixture
+7.3.1-13. The actual original11003 callback reaches the required assertion134;
+the corrected callback passes the complete two-supplier/seven-mode lifecycle
+and fault matrix under both compiler/sanitizer pairs. Retained gesture negative
+controls and the full protocol matrix also pass. Fixture12 first exposed a
+per-powered-cycle ON packet counter missing from the expanded test adapter;
+13 resets that adapter counter at the explicit resume boundary. The production
+patch and all ordering, recurrence and fault assertions remain unchanged.
+An earlier source-worker dist assertion failed before publishing a source RPM.
+
+Final native compressed log SHA256:
+`5a954e8f8398f71ab4026e0267238783b2bf428eeb248985f97083449af63320`.
+The signed text-only fixture RPM SHA256 is
+`9725812be5641e9afe1f39dfa4e6086193b4782d327f369ce75ab751c3bf4284`;
+its exact source commit and empty install scripts were checked. No fixture is
+installed on Uke. Published fixture13 is immutable. A combined native
+kernel/module build, matching signed DNF delivery and physical off/on,
+suspend/wake and long-run input/display acceptance remain separate gates under
+the single kernel coordinator.
