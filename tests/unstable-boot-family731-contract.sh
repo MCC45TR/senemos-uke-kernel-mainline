@@ -15,6 +15,11 @@ names=$(query -q --qf '%{NAME}\n')
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot"$'\n'"$expected-singleboot" ]]
 parsed=$(query --parse)
 grep -Eq '^Provides: kernel-uname-r\(7[.]3[.]1-[1-9][0-9]*-unstable\)$' <<< "$parsed"
+kernel_release=$(sed -n 's/^Provides: kernel-uname-r(\([^)]*\))$/\1/p' <<< "$parsed")
+audio_release=${kernel_release%-unstable}u
+audio_driver=uke${audio_release//./_}
+[[ ${#audio_driver} -lt 16 ]]
+grep -Fq "/usr/share/alsa/ucm2/Qualcomm/$audio_driver/" <<< "$parsed"
 grep -Fq '"automatic_kernel_activation": false' <<< "$parsed"
 if grep -E '^Obsoletes:|^Conflicts:|^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)($|[[:space:]])' <<< "$parsed"; then
  echo 'Diagnostic RPMs must coexist without activation scriptlets' >&2; exit 1

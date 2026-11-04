@@ -120,6 +120,12 @@ for tree in "$profile" "$boot"; do
   bash -n "$tree/$path"
  fi
 done
+# Exercise the actual policy installer with the new ABI before starting a
+# full kernel build. All output is an isolated COPR temporary directory.
+bash "$profile/src/audio/desktop/install-policy.sh" "$stage/audio-policy-probe" "7.3.1-$revision-unstable"
+audio_driver="uke7_3_1-${revision}u"
+[[ -d $stage/audio-policy-probe/usr/share/alsa/ucm2/Qualcomm/$audio_driver ]]
+[[ -r $stage/audio-policy-probe/usr/share/alsa/ucm2/conf.d/$audio_driver/POCO-Pad-X1.conf ]]
 for path in src/boot/uke-abl.c src/boot/build-payload.sh src/boot/make-initramfs-base.sh \
  tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
  tests/camss-sm7675-phy-object.sh tests/camss-sm7675-linked731-check.sh \
