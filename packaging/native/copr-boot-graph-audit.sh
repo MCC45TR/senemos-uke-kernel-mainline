@@ -22,7 +22,8 @@ find "$output/graph-audit" -depth -delete
 cat > "$output/uke-boot-graph-audit-unstable.spec" <<'SPEC'
 Name: uke-boot-graph-audit-unstable
 Version: 0.1
-Release: 2%{?dist}
+Release: 3%{?dist}
+%global debug_package %{nil}
 Summary: Read-only Uke camera boot graph diagnostics on a RAM copy
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.xz
@@ -36,8 +37,8 @@ Current handoff admission is not proof of the original failed boot graph.
 %setup -q -n graph-audit
 bash instrument.sh
 %build
-gcc -std=gnu11 -O2 -Wall -Wextra -Werror -c graph-audit.c -o graph-audit.o
-g++ -std=c++17 -O2 -Wall -Wextra -Werror graph-audit.cpp graph-audit.o -lfdt -o uke-boot-graph-audit-unstable
+gcc %{build_cflags} -std=gnu11 -Wall -Wextra -Werror -c graph-audit.c -o graph-audit.o
+g++ %{build_cxxflags} -std=c++17 -Wall -Wextra -Werror graph-audit.cpp graph-audit.o %{build_ldflags} -lfdt -o uke-boot-graph-audit-unstable
 %check
 if ./uke-boot-graph-audit-unstable /dev/null; then exit 1; fi
 if ./uke-boot-graph-audit-unstable; then exit 1; fi
@@ -47,6 +48,8 @@ install -Dm755 uke-boot-graph-audit-unstable %{buildroot}%{_bindir}/uke-boot-gra
 %license LICENSE
 %{_bindir}/uke-boot-graph-audit-unstable
 %changelog
+* Wed Nov 04 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 0.1-3
+- Apply distribution compiler hardening and omit separate debug subpackages.
 * Wed Nov 04 2026 MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 0.1-2
 - Preserve kernel array-size semantics in the userspace audit adapter.
 SPEC
