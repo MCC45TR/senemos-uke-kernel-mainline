@@ -8,9 +8,13 @@ record was available. Its exact
 failed instruction and the reset behavior have not been established.
 
 The separate `senemos-uke-linux-kernel-mainline-unstable` family retains the
-withdrawn source composition with a unique `-unstable` module ABI. It owns only
-its prefixed profile link. Its packages have no automatic activation scriptlet
-and preserve the ordinary family's selected profile and installed modules.
+withdrawn source composition with a unique `-unstable` module ABI. The initial
+7006–7008 candidates used a prefixed profile link and coexisted with ordinary
+mainline. Starting with candidate 7200, every unstable subpackage conflicts
+with the ordinary core and profile packages. Ordinary packages require their
+core, so this excludes both complete and partial opposite-family installations.
+The optional unstable singleboot package owns the normal selected profile link.
+No unstable package automatically stages a slot or requests a reboot.
 The ALSA card driver and matching UCM directory use the compact per-release
 identifier `uke7_3_1-REVISIONu` to fit ALSA's 16-byte field. The full kernel
 release remains in the component match used by the existing audio policy.
@@ -48,9 +52,23 @@ and the [upstream ramoops documentation](https://kernel.org/doc/html/next/admin-
 | 7.3.1-7008-unstable | Skip CAMCC and front EEPROM | 1 MiB panic/oops | [11253587](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11253587/) |
 
 All three passed Fedora Rawhide 46 AArch64 builds and RPM checks. Signed RPMs
-were installed through DNF and passed read-only bundle admission. The accepted
-1500 profile, protected state, GPT boot flags, raw boot images and accepted RPM
-files remained unchanged. No candidate was selected or physically boot-tested.
+were installed through DNF and passed read-only bundle admission. Initial
+installation left the accepted 1500 selection unchanged. A subsequent explicit
+7008 trial reached userspace, but the PMK8550 RTC remained deferred. The health
+observer rejected the trial after its 90-second window. The native fallback
+selected accepted slot B and requested an orderly reboot into 1500. This is an
+observed userspace health fallback; neither healthy 7008 acceptance nor recovery
+from an early bootloader hang is established. Pstore remained empty.
+
+The boot-integration policy candidate adds `rollback-enforced` (end-user
+default), `rollback-permissive` (observe without automatic fallback), and
+`rollback-off` (skip automatic acceptance/fallback). Configure them with
+`uke-control set MODE` and inspect with `uke-control rollback status`.
+Development off mode permits an explicitly checked family replacement after
+old RPM removal, using the recorded accepted slot hash. Retaining old slot
+bytes without the matching modules is not a qualified full rollback. Image,
+package, firmware, UFS and transactional write checks still apply. Normal
+enforced same-family updates require the accepted installed cohort.
 
 The separate `uke-boot-graph-audit-unstable-0.1-3` tool, built in COPR 11253683
 and installed through DNF, executed both retained 6000 camera helpers on a RAM
