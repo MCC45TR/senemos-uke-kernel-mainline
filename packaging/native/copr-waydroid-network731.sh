@@ -5,7 +5,8 @@ export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-revision=7801
+revision=${2:?Fresh unstable kernel revision}
+[[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 7300 ]]
 bash "$owner/packaging/native/refuse-published-release.sh" \
  senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 bash "$owner/packaging/native/copr-unstable-boot731.sh" "$output" "$revision" 0 1
