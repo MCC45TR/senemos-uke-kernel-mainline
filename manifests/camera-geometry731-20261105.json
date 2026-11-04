@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "OV08D10 source geometry on retained7.3.1 API; complete12101 plus qualified touch layer",
+  "inputs": [
+    {
+      "path": "src/camera/sensors/0005-ov08d10-selection731.patch",
+      "sha256": "1fc8b19a865c6ff118bae8b516fae9b709c326c944fcf201971594c119c6eae9"
+    },
+    {
+      "path": "tests/camera-geometry731-contract.sh",
+      "sha256": "11053da8ccf5b7a1820730afbae4acbe6c4812163217b3838a439f85add5d129"
+    },
+    {
+      "path": "tests/camera-geometry731-object.sh",
+      "sha256": "fcde5a9b27490287726f63b70d2257bfaf7a4e85223a431bc9a000b1b2369c8b"
+    },
+    {
+      "path": "tests/fixtures/camera-geometry731.c",
+      "sha256": "ac36845c233fddcfeb60d732f92c19bfebc9ebb8b657c989053c5c36e86c3b32"
+    },
+    {
+      "path": "docs/OV08D10-GEOMETRY731.md",
+      "sha256": "cedb4bb4f13babeaeb4792524ebfdd4d4ea82c28ae7047f105d264da5188f2b0"
+    },
+    {
+      "path": "packaging/native/copr-camera-geometry-check.sh",
+      "sha256": "11b31890a1ab8240813f98704f89dd8406c5e68a8b79eeadef056bb4691497ef"
+    }
+  ],
+  "parent": {
+    "kernel_release": "7.3.1-12101-unstable",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "copr_build": 11260781,
+    "touch_integration_source": "0e320d96f0d2dc155df224dd0e9712719a1d1f08",
+    "touch_check": 11261044
+  },
+  "source": {
+    "original_sha256": "dea565800781f428397acd082c4cb76af2aee63eb51dc006b02000b13777a1ad",
+    "prepared_before_sha256": "96aad491915796d54e2a8cd20c90a9a8c4e58515c64f7ad4d5faae39caa4d31c",
+    "after_sha256": "df7ce54741d6a08c09ff607b86ce33c2057bb05c52b4d1a21d98b5be3395700e",
+    "proposal": "https://lists.openwall.net/linux-kernel/2026/10/23/2170",
+    "proposal_html_sha256": "43652c04de01a769d8e482cf2bb4c24622946e326004a78cb147cf3783a711bd",
+    "latest_upstream_file_commit": "7eef49c164615a6460dc49448b67444a65997017"
+  },
+  "constraints": {
+    "three_argument_pad_api": true,
+    "private_mutex_retained": true,
+    "per_file_try_state_retained": true,
+    "all_12101_and_qualified_touch_features_retained": true,
+    "source_config_and_boot_gates_unchanged": true,
+    "no_register_timing_or_power_changes": true,
+    "no_device_install_or_boot": true,
+    "no_image_or_linked_module_or_kernel_rpm": true,
+    "physical_camera_acceptance": false,
+    "calibration_consumption": false,
+    "rear_focus_acceptance": false
+  },
+  "qualification_state": "prepared; no native pass claimed"
+}
