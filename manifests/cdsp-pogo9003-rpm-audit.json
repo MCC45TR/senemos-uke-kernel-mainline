@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "device": "xiaomi,uke / SM7675",
+  "copr_build": 11260109,
+  "kernel_release": "7.3.1-9003-unstable",
+  "source_commit": "0d33f44fb188f6cd53f40c016a06fd80ac736f98",
+  "parent_copr_build": 11259919,
+  "parent_kernel_release": "7.3.1-7300-unstable",
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "native_module_signatures_verified": 835,
+  "native_signature_negative_controls": [
+    "tampered",
+    "unsigned",
+    "wrong-key"
+  ],
+  "full_binary_rpm_audit": true,
+  "device_installation_at_audit": false,
+  "physical_acceptance": false,
+  "packages": [
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "e4807eeab1132c818689cf3853398e4757364980543abdba368c23b27523211c",
+      "header_sha256": "b2b85c0a57fd69f4f224d01afa2797e5df4c86a1893c6a88aa12be54fe9c77cd",
+      "payload_sha256": "15996eb92227268a0ee354c10217a3d00a9a105fbf23cfd24ef76de7574790df"
+    },
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable-core",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-core-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "0bb612bedd62548d93e786de0e9521eb878b88edde5c63bef66ba8865a10e6da",
+      "header_sha256": "be71aa0480b0910ac4e4e5dc3328af69a9904f7ddc8da8fd08becbd39b93616a",
+      "payload_sha256": "cf686e8670bbd6828b78782a2a2e8e97912efda811be6c9a7102c2b3b5490f98"
+    },
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable-modules",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-modules-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "da6f2c681fcaae9ded4b196e62df7d95432a08360dc7dbeafa2e9f18069a90a2",
+      "header_sha256": "8fcf30e1509e6f892cedb467b327d2e4c4c63f0432e86520d403fc75ff146e6a",
+      "payload_sha256": "8672f011c07b336098b25d79911636b6c63b7478617d0016bcff1d1160500623"
+    },
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable-dtbs",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-dtbs-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "4cc6cebb472c909d38196eda6f6ac5890463109ab8b87ae549b5540f9391b7ed",
+      "header_sha256": "5f79a08824344f3585b496a29ebcfbf794fe4eec9adabe93f7005d08f2879dec",
+      "payload_sha256": "161bd1a1c2267ea2ed8f80e7c9b0c8e9d96ba2c5604cfb873ff37bdf98bcd9ce"
+    },
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable-boot",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-boot-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "d5bc4876f822fac0ced2ecd7e56ad1924b0ddd2ab3f418be921c26f882a75864",
+      "header_sha256": "29d4460ff43c9e18525385d3f52034ab77395df32cafd83f71cfa1a8ef3d0efd",
+      "payload_sha256": "d8bcfe580834db7bad4ad1cd202bcd9619150ec444086b22fca0df5b9db74f56"
+    },
+    {
+      "name": "senemos-uke-linux-kernel-mainline-unstable-singleboot",
+      "nvr": "senemos-uke-linux-kernel-mainline-unstable-singleboot-7.3.1-9003.fc46.aarch64",
+      "full_rpm_sha256": "27066623cd7c88226ca25adc4cafe67371aabf635eed4bdb7244f8b6cdb3a419",
+      "header_sha256": "9462f387b9b1541d665d13dd41b024b06853e2e295ccaa5a90b0d4285ebaa430",
+      "payload_sha256": "f59e72fabebfb7a01e6096c880bf8800f324f8eb0eaa6e62e69f7cf306bf5c5b"
+    }
+  ]
+}

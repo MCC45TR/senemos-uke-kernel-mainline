@@ -17,6 +17,14 @@ results must be checked separately.
 The COPR request pins CDSP_POGO_RPM_REVISION explicitly; the producer retains
 the global published-release guard and bounds the short ALSA driver identity.
 
+Kernel7.3.1-9003-unstable, COPR11260109, passes the complete build and final
+checks, including835 module signatures and all three signature refusal controls.
+All six complete binary RPMs independently pass both OpenPGP signatures,
+header/payload digests and exact NVR checks. Source/parent/RTC metadata, the
+one-setting config delta, module ABI and exact OF/firmware aliases match.
+manifests/cdsp-pogo9003-rpm-audit.json records their full identities. Device
+installation and physical CDSP/pogo operation remain separate gates.
+
 Run tests/cdsp-pogo-device-report.sh for a bounded read-only inventory. It never
 starts remoteproc, uploads firmware, reads authentication attributes or writes
 LED/input controls.
@@ -26,6 +34,15 @@ execution. Deliver signed matching unstable packages through DNF after reviewing
 current/staged cohorts. Keep automatic activation disabled, retain the existing
 singleboot selection and accepted recovery route, and do not request a reboot
 as part of package installation. Later source changes need explicit composition.
+packaging/native/install-cdsp-pogo-unstable.sh --preview resolves the five exact
+9003 RPMs from the candidate repository with DNF. Its --apply mode requires an
+administrator terminal, the observed running7200 tuple and activation/rollback
+policies off. It verifies that existing RPMs and the selected singleboot/state
+files are retained. Source identity and package bytes are checked after install.
+The preview also needs administrator access when DNF's system-state file is
+root-only; this helper does not change that file's permissions.
+It installs the dormant package cohort; device-local firmware admission and a
+later controlled boot have their own results.
 
 The separately packaged native helper uke-cdsp-pogo-firmware --preflight
 checks fixed stock CDSP and MCU files without publishing or starting devices.
