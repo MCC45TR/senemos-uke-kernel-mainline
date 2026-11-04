@@ -1,38 +1,37 @@
 #!/usr/bin/env bash
-# COPR only. Preserve the current normal-channel cumulative source and add audio.
+# COPR only. Preserve the running unstable7200 source and add protected audio.
 set -Eeuo pipefail
 export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-release=${UKE_SPEAKER_BUILD_RELEASE:-7100}
-[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 7100 ]]
-# The parent includes the installed1600 RTC, cumulative1710 sensors/NFC/IR and
-# normal-channel L3 admission, bound-ADSP SSC, large reports and DPU REGDMA.
-# Full integration can build in parallel; installation still requires7001 success.
-for qualified in 11253722; do
+release=${UKE_SPEAKER_BUILD_RELEASE:-7400}
+[[ $release =~ ^[1-9][0-9]{3,4}$ && $release -ge 7400 ]]
+# Keep the actual running boot-admission bisect and all cumulative non-audio
+# inputs. This candidate does not promote or activate a normal-family kernel.
+for qualified in 11259638; do
  [[ $(curl -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$qualified" | jq -er .state) == succeeded ]]
 done
-curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11253722 |
+curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11259638 |
  jq -e '.state as $state | (["running","succeeded","starting","importing","waiting"]|index($state))!=null and
- .source_package.name=="senemos-uke-linux-kernel-mainline" and .source_package.version=="7.3.1-7001" and
- .source_package.url=="https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11253722/senemos-uke-linux-kernel-mainline-7.3.1-7001.src.rpm"' >/dev/null
-bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline "7.3.1-$release"
+ .source_package.name=="senemos-uke-linux-kernel-mainline-unstable" and .source_package.version=="7.3.1-7200" and
+ .source_package.url=="https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259638/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7200.src.rpm"' >/dev/null
+bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$release"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/unpacked"
 curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' --max-time 600 \
- https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11253722/senemos-uke-linux-kernel-mainline-7.3.1-7001.src.rpm -o "$stage/parent.src.rpm"
-[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-7001 ]]
-[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/parent.src.rpm") == 1c037b4543f4a0ee94f190ba8abea8f2b448269f7242a2b5f25b98abf8fec45d ]]
-[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/parent.src.rpm") == 5f95fe3f6d7f90413b82b19668d975552a37a991ca01bd4bca7b472eb8bca3eb ]]
+ https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11259638/senemos-uke-linux-kernel-mainline-unstable-7.3.1-7200.src.rpm -o "$stage/parent.src.rpm"
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.1-7200 ]]
+[[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/parent.src.rpm") == 7a3b23ee15f61f5a22595cf16b15bac0d03f44802c68de5829c444ac28f13e76 ]]
+[[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/parent.src.rpm") == de00c0a33bfb051b7981ea2cb6f4e8019a3e57240c4178fa061caba05c6e4690 ]]
 rpmkeys --checksig --nosignature --verbose "$stage/parent.src.rpm"
 parent_sha=$(sha256sum "$stage/parent.src.rpm");parent_sha=${parent_sha%% *}
 rpm2cpio "$stage/parent.src.rpm" > "$stage/parent.cpio"
 cpio -t --quiet < "$stage/parent.cpio" | awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}'
 (cd "$output";cpio -idm --quiet --no-absolute-filenames < "$stage/parent.cpio")
-spec=$output/senemos-uke-linux-kernel-mainline.spec
+spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 native=senemos-native-profile-7.3.1.tar.xz
 boot_archive=senemos-uke-boot-recipe.tar.xz
 find "$output" -maxdepth 1 -type f ! -name "${spec##*/}" ! -name "$native" ! -name "$boot_archive" ! -name boot-payload.json \
@@ -46,10 +45,10 @@ boot=$stage/unpacked/boot-recipe
 [[ $(cat "$profile/audio-profile") == microphones ]]
 (cd "$profile";sha256sum --check --strict --quiet SHA256SUMS)
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --quiet -)
-jq -e '.kernel_release=="7.3.1-7001" and .native_ssc_iio_abi==1 and .binder_ipc_builtin and .binderfs_builtin and
+jq -e '.kernel_release=="7.3.1-7200-unstable" and .source_mode=="withdrawn6000-with-isolated-boot-admission-bisection" and
+ .native_ssc_iio_abi==1 and .binder_ipc_builtin and .binderfs_builtin and
  .rtc_backend=="qseecom-uefisecapp-RTCInfo" and .rtc_offset_write_readback and .ssc_temperature_unit=="millicelsius" and
- .nfc_atomic_memory_read and .ir_explicit_word_bits==16 and .qualified_ssc_large_report_check==11252237 and
- .ssc_report_type==1 and .ssc_indication_ids==[33,34] and
+ .nfc_atomic_memory_read and .ir_explicit_word_bits==16 and
  .wcd939x_telemetry_readonly==1 and .wcd939x_electrical_settings_unchanged' "$profile/source-composition.json" >/dev/null
 parent_commit=$(cat "$profile/source-commit")
 [[ $(jq -er .source_commit "$profile/source-composition.json") == "$parent_commit" ]]
@@ -84,11 +83,12 @@ printf '%s\n' "$commit" > "$profile/source-commit"
  printf '%s\n' prepare.sh src/audio/sm7675-uke-speaker-audio.dtsi
 } | jq -Rn '[inputs]' > "$stage/audio-overlays.json"
 jq --slurpfile overlays "$stage/audio-overlays.json" --arg commit "$commit" --arg release "$release" --arg parent "$parent_sha" --arg parent_commit "$parent_commit" '. + {
- source_commit:$commit,source_mode:"retained7001-with-private-fs19xx-provisioning-and-speaker-pcm-formats",
- kernel_release:("7.3.1-"+$release),rpm_revision:$release,parent_copr_build:11253722,parent_binary_qualification_required:11253722,
- qualified_source_input_checks:[11253722],parent_source_commit:$parent_commit,
- parent_srpm_sha256:$parent,parent_header_sha256:"1c037b4543f4a0ee94f190ba8abea8f2b448269f7242a2b5f25b98abf8fec45d",
- parent_payload_sha256:"5f95fe3f6d7f90413b82b19668d975552a37a991ca01bd4bca7b472eb8bca3eb",
+ source_commit:$commit,source_mode:"retained-unstable7200-with-private-fs19xx-provisioning-and-speaker-pcm-formats",
+ kernel_release:("7.3.1-"+$release+"-unstable"),rpm_revision:$release,kernel_family:"unstable",
+ automatic_kernel_activation:false,stable_promotion:false,parent_copr_build:11259638,parent_binary_qualification_required:11259638,
+ qualified_source_input_checks:[11259638],parent_source_commit:$parent_commit,
+ parent_srpm_sha256:$parent,parent_header_sha256:"7a3b23ee15f61f5a22595cf16b15bac0d03f44802c68de5829c444ac28f13e76",
+ parent_payload_sha256:"de00c0a33bfb051b7981ea2cb6f4e8019a3e57240c4178fa061caba05c6e4690",
  parent_composition:"source-composition-before-audio.json",overlays:$overlays[0],
  changed_kernel_files:(((.changed_kernel_files // []) + [
  "include/sound/uke-fs19xx-guard.h","include/uapi/sound/snd_ar_tokens.h",
@@ -124,24 +124,18 @@ for tree in native-profile boot-recipe; do
  tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" "$tree"
 done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
-[[ $(grep -Fxc '%global senemos_build_release 7001' "$spec") == 1 ]]
+[[ $(grep -Fxc '%global senemos_build_release 7200' "$spec") == 1 ]]
 ! grep -Eq '^%pre([[:space:]]|$)' "$spec"
 awk -v release="$release" '
- /^%global senemos_build_release 7001$/ {$0="%global senemos_build_release " release}
+ /^%global senemos_build_release 7200$/ {$0="%global senemos_build_release " release}
  /^%package core$/ {print;print "Provides: uke-kernel(fs19xx-protected-v1) = 1";print "Requires: uke-speaker-runtime >= 0.3";next}
- /^%package boot$/ {print;print "Requires(pre): uke-speaker-runtime >= 0.3";next}
+ /^%package boot$/ {print;print "Requires: uke-speaker-runtime >= 0.3";next}
  /^%check$/ {print;print "bash native-profile/tests/audio-protected-package-contract.sh %{buildroot} %{_uke_out} native-generated '\''%{krel}'\''";next}
  /^%changelog$/ {
-  print "%pre boot";
-  print "if ! /usr/bin/uke-speaker-runtime --check; then";
-  print " echo '\''Protected speaker prerequisites failed; the previous boot route is retained.'\'' >&2";
-  print " exit 1";
-  print "fi";
-  print "";
   print;
   print "* Wed Nov 04 2026 Uke contributors - 7.3.1-" release;
   print "- Add matched protected speaker DT, graph, calibration provisioning and PCM formats.";
-  print "- Require verified read-only calibration before boot-package installation; retain gain 223.";
+  print "- Retain the unstable ABI and explicit boot selection; require runtime and keep gain 223.";
   print "";next
  }
  {print}
@@ -149,4 +143,5 @@ awk -v release="$release" '
 mv "$stage/next.spec" "$spec"
 sha256sum -c --quiet "$stage/unchanged-sources.sha256"
 [[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec") == 7.3.1-$release ]]
-printf 'Full protected speaker candidate %s prepared from cumulative7001; no private calibration in source or RPMs\n' "$release"
+bash "$profile/tests/unstable-boot-family731-contract.sh" "$spec"
+printf 'Protected speaker candidate %s-unstable prepared from running7200; no activation or private payload\n' "$release"
