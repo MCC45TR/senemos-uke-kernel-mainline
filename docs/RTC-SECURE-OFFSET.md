@@ -1,5 +1,10 @@
 # Uke secure RTC candidate
 
+Historical 1600 candidate. The 4 November 2026 ABL boot evidence does not
+establish its firmware provider. Current development uses the unstable family
+and the [counter admission correction](RTC-COUNTER-GATE.md); the recipe below
+is retained as source history, not a stable-promotion instruction.
+
 3 November 2026. The retained 7.3.1-1500 production source is extended as
 7.3.1-1600. Source and native fixtures do not establish physical RTC persistence.
 Use the COPR producer `packaging/native/copr-rtc1600.sh`; compilation runs on

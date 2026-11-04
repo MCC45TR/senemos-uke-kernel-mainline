@@ -98,6 +98,9 @@ int main(void){
  qsee_result=0;qsee_status=-EIO;assert(qcom_scm_qseecom_call(&desc,&response)==-EIO&&!qsee_locked);qsee_status=0;
  assert(!qcom_scm_qseecom_call(&desc,&response)&&!qsee_locked);
  struct rtc_time tm;
+ reset();struct pm8xxx_rtc counter={0};
+ assert(!pm8xxx_rtc_read_time((void*)&counter,&tm)&&tm.secs==raw&&!counter.offset_invalid);
+ assert(pm8xxx_rtc_update_offset(&counter,1793730000)==-ENODEV&&!reads&&!writes&&!locks&&!counter.offset);
  reset();struct pm8xxx_rtc d={.use_uefi=true};
  assert(!pm8xxx_rtc_read_uefi_offset(&d)&&d.offset_invalid&&!writes);
  assert(pm8xxx_rtc_read_time((void*)&d,&tm)==-ENODATA);
@@ -123,7 +126,7 @@ int main(void){
  assert(!pm8xxx_rtc_update_offset(&factory,utc));
  reset();board=false;struct pm8xxx_rtc foreign={.use_uefi=true};
  assert(pm8xxx_rtc_read_uefi_offset(&foreign)==-ENOENT&&!foreign.offset_invalid&&!writes);
- puts("Secure RTC: exact board/SOC/version, unsupported callback refusal, uninitialized calendar, provisioning, simulated reboot, reserved bytes, idempotence and five persistence failures passed; no PMIC or firmware operation");
+ puts("RTC: read-only raw counter without EFI access, exact secure admission, uninitialized secure calendar, simulated persistence/readback and failure refusals passed; no PMIC or firmware operation");
 }
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -UNDEBUG -I"$work" -I"$kernel/include" "$work/test.c" -o "$work/check"

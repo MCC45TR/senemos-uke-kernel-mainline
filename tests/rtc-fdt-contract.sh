@@ -28,14 +28,15 @@ static void reset(void){
  assert(!fdt_setprop(tree,rtc(),"reg",reg,sizeof(reg)));
 }
 int main(void){
- reset();assert(!uke_rtc_secure_offset(tree));assert(fdt_getprop(tree,rtc(),"qcom,uefi-rtc-info",NULL));
- memcpy(before,tree,sizeof(tree));assert(!uke_rtc_secure_offset(tree));assert(!memcmp(before,tree,sizeof(tree)));
- const char *forbidden[]={"allow-set-time","nvmem-cells","nvmem-cell-names"};
- for(unsigned i=0;i<3;i++){reset();assert(!fdt_setprop_u32(tree,rtc(),forbidden[i],1));memcpy(before,tree,sizeof(tree));assert(uke_rtc_secure_offset(tree)<0);assert(!memcmp(before,tree,sizeof(tree)));}
- reset();assert(!fdt_setprop_string(tree,0,"compatible","xiaomi,other"));memcpy(before,tree,sizeof(tree));assert(uke_rtc_secure_offset(tree)<0&&!memcmp(before,tree,sizeof(tree)));
- reset();assert(!fdt_setprop_u32(tree,rtc(),"reg",0x6100));memcpy(before,tree,sizeof(tree));assert(uke_rtc_secure_offset(tree)<0&&!memcmp(before,tree,sizeof(tree)));
- reset();assert(!fdt_setprop_string(tree,rtc(),"compatible","qcom,pm8941-rtc"));memcpy(before,tree,sizeof(tree));assert(uke_rtc_secure_offset(tree)<0&&!memcmp(before,tree,sizeof(tree)));
- puts("RTC FDT: exact Uke/SM7675 and PMK resource admission, idempotence and foreign/direct-write/offset conflicts passed; synthetic FDT only");
+ reset();memcpy(before,tree,sizeof(tree));assert(!uke_rtc_counter_only(tree));
+ assert(!fdt_getprop(tree,rtc(),"qcom,uefi-rtc-info",NULL));assert(!memcmp(before,tree,sizeof(tree)));
+ assert(!uke_rtc_counter_only(tree));assert(!memcmp(before,tree,sizeof(tree)));
+ const char *forbidden[]={"allow-set-time","nvmem-cells","nvmem-cell-names","qcom,uefi-rtc-info"};
+ for(unsigned i=0;i<4;i++){reset();assert(!fdt_setprop_u32(tree,rtc(),forbidden[i],1));memcpy(before,tree,sizeof(tree));assert(uke_rtc_counter_only(tree)<0);assert(!memcmp(before,tree,sizeof(tree)));}
+ reset();assert(!fdt_setprop_string(tree,0,"compatible","xiaomi,other"));memcpy(before,tree,sizeof(tree));assert(uke_rtc_counter_only(tree)<0&&!memcmp(before,tree,sizeof(tree)));
+ reset();assert(!fdt_setprop_u32(tree,rtc(),"reg",0x6100));memcpy(before,tree,sizeof(tree));assert(uke_rtc_counter_only(tree)<0&&!memcmp(before,tree,sizeof(tree)));
+ reset();assert(!fdt_setprop_string(tree,rtc(),"compatible","qcom,pm8941-rtc"));memcpy(before,tree,sizeof(tree));assert(uke_rtc_counter_only(tree)<0&&!memcmp(before,tree,sizeof(tree)));
+ puts("RTC counter FDT: exact Uke/PMK admission, unchanged bytes, no firmware-offset property, idempotence and conflicting contract refusal passed; synthetic FDT only");
 }
 C
 "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -UNDEBUG -I"$kernel/arch/arm64/kernel" "$work/test.c" -lfdt -o "$work/check"

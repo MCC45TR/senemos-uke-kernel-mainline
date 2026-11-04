@@ -70,6 +70,14 @@ bytes without the matching modules is not a qualified full rollback. Image,
 package, firmware, UFS and transactional write checks still apply. Normal
 enforced same-family updates require the accepted installed cohort.
 
+A subsequent physical boot identifies 7.3.1-7200-unstable in slot A with off
+persisted and the accept unit exiting successfully without fallback. The RTC
+is still deferred; this does not establish a healthy accepted trial. Candidate
+7300 restores the read-only RTC counter contract and keeps the unqualified
+firmware-offset property inactive. Its rationale and validation limits are in
+[RTC counter admission](RTC-COUNTER-GATE.md). The accepted B/1500 partition
+must remain unchanged during this investigation.
+
 The separate `uke-boot-graph-audit-unstable-0.1-3` tool, built in COPR 11253683
 and installed through DNF, executed both retained 6000 camera helpers on a RAM
 copy of the current FDT. CAMCC and front EEPROM each returned zero. This does

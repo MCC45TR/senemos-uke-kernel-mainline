@@ -12,6 +12,7 @@ pstore_layout=${4:-0}
 [[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 7001 ]]
 [[ $camera_stage == 0 || $camera_stage == 1 ]]
 [[ $pstore_layout == 0 || $pstore_layout == 1 ]]
+[[ $revision -ge 7300 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -34,6 +35,7 @@ for archive in senemos-native-profile-7.3.1.tar.xz senemos-uke-boot-recipe.tar.x
  awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/entries"
  tar -xJf "$output/$archive" -C "$stage/unpacked"
 done
+
 profile=$stage/unpacked/native-profile
 boot=$stage/unpacked/boot-recipe
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
@@ -60,6 +62,32 @@ if [[ -f $boot/src/boot/uke-abl.c ]]; then
  cmp "$stage/abl-before.c" "$boot/src/boot/uke-abl.c"
  cp "$profile/src/boot/uke-abl.c" "$boot/src/boot/uke-abl.c"
 fi
+
+# ABL exposes no qualified efivar provider on Uke. The unconditional RTCInfo
+# property otherwise leaves rtc-pm8xxx deferred forever. Keep the accepted
+# read-only counter path; do not invent a writable offset storage backend.
+for tree in "$profile" "$boot"; do
+ install -m644 "$owner/src/boot/uke-rtc.h" "$tree/src/boot/uke-rtc.h"
+ install -m644 "$owner/patches/rtc/0001-uke-secure-rtc-offset.patch" "$tree/patches/rtc/0001-uke-secure-rtc-offset.patch"
+ install -m644 "$owner/tests/rtc-secure-contract.sh" "$tree/tests/rtc-secure-contract.sh"
+ install -m644 "$owner/tests/rtc-fdt-contract.sh" "$tree/tests/rtc-fdt-contract.sh"
+ if [[ -f $tree/src/boot/uke-abl.c ]]; then
+  [[ $(grep -Fc 'ret = uke_rtc_secure_offset(output);' "$tree/src/boot/uke-abl.c") == 1 ]]
+  sed -i 's/ret = uke_rtc_secure_offset(output);/ret = uke_rtc_counter_only(output);/' "$tree/src/boot/uke-abl.c"
+ fi
+done
+
+# Exercise the actual retained driver and FDT helper before a full kernel build.
+probe=$stage/rtc-probe
+mkdir -p "$probe/include/linux" "$probe/arch/arm64/kernel"
+tar -xJf "$output/linux-7.3.1.tar.xz" --strip-components=1 -C "$probe" \
+ linux-7.3.1/drivers/rtc/rtc-pm8xxx.c linux-7.3.1/drivers/firmware/qcom/qcom_scm.c
+git -C "$probe" apply --check "$profile/patches/rtc/0001-uke-secure-rtc-offset.patch"
+git -C "$probe" apply "$profile/patches/rtc/0001-uke-secure-rtc-offset.patch"
+install -m644 "$profile/src/rtc/uke-rtc-policy.h" "$probe/include/linux/uke-rtc-policy.h"
+install -m644 "$profile/src/boot/uke-rtc.h" "$probe/arch/arm64/kernel/uke-rtc.h"
+bash "$profile/tests/rtc-secure-contract.sh" "$probe"
+bash "$profile/tests/rtc-fdt-contract.sh" "$probe"
 
 if [[ $pstore_layout == 1 ]]; then
  for tree in "$profile" "$boot"; do
@@ -170,6 +198,7 @@ audio_driver="uke7_3_1-${revision}u"
 [[ -r $stage/audio-policy-probe/usr/share/alsa/ucm2/conf.d/$audio_driver/POCO-Pad-X1.conf ]]
 install -m644 "$owner/tests/kernel-audio-policy-contract.sh" "$profile/tests/kernel-audio-policy-contract.sh"
 for path in src/boot/uke-abl.c src/boot/build-payload.sh src/boot/make-initramfs-base.sh \
+ src/boot/uke-rtc.h patches/rtc/0001-uke-secure-rtc-offset.patch tests/rtc-secure-contract.sh tests/rtc-fdt-contract.sh \
  src/boot/boot-status.cpp \
  src/boot/uke-pstore-dt.h src/boot/prepare-abl-source.sh \
  tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
@@ -192,6 +221,9 @@ jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_s
  diagnostic_producer_commit:$producer,diagnostic_parent_srpm_sha256:$parent,
  diagnostic_parent_build:11252822,diagnostic_camera_stage:$stage,
  diagnostic_pstore_panic_layout:($pstore==1),
+ rtc_backend:"pmic-read-only-counter",rtc_secure_offset_boot_activation:false,
+ rtc_secure_provider_qualified:false,rtc_utc_calendar_qualified:false,
+ rtc_initial_calendar_invalid:false,rtc_offset_write_readback:false,
  camcc_boot_fdt_activation:($stage==1),camera_dt_activation:($stage==1),
  front_geni_dt_activation:false,front_eeprom_dt_activation:false,
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
@@ -201,6 +233,7 @@ jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_s
  "$profile/source-composition-withdrawn6000.json" > "$profile/source-composition.json"
 install -Dm644 "$owner/tests/unstable-boot-family731-contract.sh" "$profile/tests/unstable-boot-family731-contract.sh"
 install -Dm644 "$owner/docs/UNSTABLE-BOOT-TRIALS.md" "$profile/docs/UNSTABLE-BOOT-TRIALS.md"
+install -Dm644 "$owner/docs/RTC-COUNTER-GATE.md" "$profile/docs/RTC-COUNTER-GATE.md"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
@@ -256,6 +289,7 @@ awk -v revision="$revision" -v day="$day" -v pstore="$pstore_layout" '
   print; print "* " day " MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" revision
   print "- Isolate camera boot admission in an explicitly selected unstable family."
   print "- Exclude the ordinary kernel family and provide the selected userdata profile."
+  print "- Restore the read-only RTC counter without an unavailable firmware offset dependency."
   print ""; next
  }
  /grep -aqF '\''uke-front-calibration'\''/ {

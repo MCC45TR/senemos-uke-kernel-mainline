@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef UKE_RTC_FDT_H
 #define UKE_RTC_FDT_H
-static int UKE_INIT uke_rtc_secure_offset(void *fdt)
+/* ABL does not provide a qualified RTCInfo service. Preserve the OEM counter
+ * path until a persistent UTC backend has been physically demonstrated. */
+static int UKE_INIT uke_rtc_counter_only(void *fdt)
 {
 	const char *path = "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/rtc@6100";
 	const fdt32_t *reg;
@@ -19,8 +21,9 @@ static int UKE_INIT uke_rtc_secure_offset(void *fdt)
 		return -FDT_ERR_BADVALUE;
 	if (fdt_getprop(fdt, node, "allow-set-time", NULL) ||
 	    fdt_getprop(fdt, node, "nvmem-cells", NULL) ||
-	    fdt_getprop(fdt, node, "nvmem-cell-names", NULL))
+	    fdt_getprop(fdt, node, "nvmem-cell-names", NULL) ||
+	    fdt_getprop(fdt, node, "qcom,uefi-rtc-info", NULL))
 		return -FDT_ERR_BADVALUE;
-	return fdt_setprop(fdt, node, "qcom,uefi-rtc-info", NULL, 0);
+	return 0;
 }
 #endif
