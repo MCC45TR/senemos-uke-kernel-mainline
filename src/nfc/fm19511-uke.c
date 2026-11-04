@@ -11,9 +11,7 @@
 #include <linux/of.h>
 #include <linux/poll.h>
 #include <linux/pm.h>
-#include <linux/pm_wakeirq.h>
 #include <linux/pm_wakeup.h>
-#include <linux/property.h>
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -388,23 +386,10 @@ static int fm19511_probe(struct i2c_client *client)
 		.fops = &fm19511_fops, .parent = &client->dev, .mode = 0600,
 	};
 	i2c_set_clientdata(client, tag);
-	ret = device_init_wakeup(&client->dev,
-				 device_property_read_bool(&client->dev, "wakeup-source"));
+	/* The I2C core owns wakeup-source setup and the matching wake IRQ. */
+	ret = misc_register(&tag->misc);
 	if (ret)
 		goto free_irq;
-	if (device_can_wakeup(&client->dev)) {
-		ret = dev_pm_set_wake_irq(&client->dev, client->irq);
-		if (ret) {
-			device_init_wakeup(&client->dev, false);
-			goto free_irq;
-		}
-	}
-	ret = misc_register(&tag->misc);
-	if (ret) {
-		dev_pm_clear_wake_irq(&client->dev);
-		device_init_wakeup(&client->dev, false);
-		goto free_irq;
-	}
 	return 0;
 free_irq:
 	free_irq(client->irq, tag);
@@ -419,8 +404,6 @@ static void fm19511_remove(struct i2c_client *client)
 	struct fm19511 *tag = i2c_get_clientdata(client);
 
 	misc_deregister(&tag->misc);
-	dev_pm_clear_wake_irq(&client->dev);
-	device_init_wakeup(&client->dev, false);
 	free_irq(client->irq, tag);
 	cancel_delayed_work_sync(&tag->clear_irq);
 	mutex_lock(&tag->lock);
