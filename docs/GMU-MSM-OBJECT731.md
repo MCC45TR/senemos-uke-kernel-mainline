@@ -32,5 +32,21 @@ fresh fixture release. No new kernel NVR, kernel package, runtime helper,
 Image or final module is produced or installed. The coordinator still owns the
 next full cumulative kernel, including every additional qualified contribution.
 Own-device suspend/wake/stall effectiveness and full cameras/fitted calibration/
-rear focus remain open. Native results are pending; canonical record
-UKE-GMU-LINK-20261105-02 preserves that boundary.
+rear focus remain open. Canonical record UKE-GMU-LINK-20261105-02 preserves
+that boundary.
+
+COPR11261342 succeeds in247seconds with exact source
+e6c122e2cd30fbf6ff5bec796f117da1afc97cb1, fixture7.3.1-16. Complete inherited
+preparation, touch/geometry controls and the real sensor object pass. The
+actual prepared old GMU reproduces assertion134; all four corrected
+compiler/sanitizer modes pass. The real AArch64 relocatable MSM composite
+contains the expected IRQ, resume, HFI-vote and fault-capture functions with
+unchanged source/output config and warnings treated as errors. Composite
+SHA256 is def2808c1b2055c2fb643c634fdc2ff3c3ac901504c814c690e3523c32c122f5;
+final native gzip46dec027917a80132ba8f7e9d62086411b5eae4e4980472e8e99048ad6a2fcba.
+The signed text-only RPM is audited with the full trusted COPR signing key,
+exact source, empty scripts and rpmlib-only dependencies; it is not installed.
+Final module/modpost/signature, cumulative kernel delivery and own-device
+effectiveness remain pending. The original prepared manifest is retained as
+an immutable build input; this documentation update does not change the
+tested source or reuse its published release.
