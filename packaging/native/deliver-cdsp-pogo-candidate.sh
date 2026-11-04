@@ -18,17 +18,19 @@ for compatible in xiaomi,uke qcom,sm7675; do
     tr '\0' '\n' < /sys/firmware/devicetree/base/compatible | grep -Fxq "$compatible"
 done
 rpm -q uke-kernel-update >/dev/null
+for family in senemos-uke-linux-kernel-mainline senemos-uke-linux-kernel-mainline-unstable; do
 for component in '' -core -modules -dtbs -boot -singleboot; do
     while read -r version revision; do
         [[ $version =~ ^[0-9]+([.][0-9]+)*$ && $revision =~ ^[0-9]+([.][a-zA-Z0-9]+)*$ ]]
         installed=$version-$revision
-        [[ $installed != "$release.fc46" ]] || continue
+        [[ $family != senemos-uke-linux-kernel-mainline || $installed != "$release.fc46" ]] || continue
         comparison=$(rpm --eval "%{lua:print(rpm.vercmp(\"$installed\", \"$parent.fc46\"))}")
         ((comparison <= 0)) || {
             echo 'A kernel newer than the retained 1900 parent is installed; compose its source changes before delivery.' >&2
             exit 1;
         }
-    done < <(rpm -q "senemos-uke-linux-kernel-mainline$component" --qf '%{VERSION} %{RELEASE}\n' 2>/dev/null | awk '/^[0-9]/')
+    done < <(rpm -q "$family$component" --qf '%{VERSION} %{RELEASE}\n' 2>/dev/null | awk '/^[0-9]/')
+done
 done
 if installed=$(rpm -q uke-cdsp-pogo-firmware --qf '%{VERSION}-%{RELEASE}' 2>/dev/null); then
     [[ $installed =~ ^[0-9]+([.][0-9]+)*-[0-9]+([.][a-zA-Z0-9]+)*$ ]]
