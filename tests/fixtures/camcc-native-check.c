@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+#include <sys/types.h>
 
 typedef uint32_t u32;
 #define BIT(n) (1U << (n))
@@ -28,6 +30,7 @@ typedef uint32_t u32;
 #define dev_err(...) ((void)0)
 #define dev_info(...) ((void)0)
 struct device;
+struct device_attribute;
 struct device_node { bool protected; };
 struct device_driver { void (*sync_state)(struct device *); };
 struct device { struct device_driver *driver; struct device_node *of_node; int usage; bool enabled, active; };
@@ -82,6 +85,8 @@ static int steps, fail_at, resources, registered_clocks, reset_published, domain
 static int configured_plls, sync_error, sync_calls, genpd_syncs;
 static bool model_domains_on, first_resume, boot_drop_fault, domain_sync_fault;
 static bool crm_mapping, crm_active, busy_at_suspend;
+static int stuck_gate;
+static const char *observed_probe_phases[1024];
 static int sequence[1024], sequence_size;
 enum { EVENT_CLOCK_SYNC = 1001, EVENT_RCG_DROP, EVENT_DOMAIN_SYNC, EVENT_PROXY_DROP, EVENT_PM_DROP };
 static struct regmap model_map;
@@ -115,7 +120,8 @@ static const struct clk_ops clk_branch2_ops = { .disable = native_disable };
 #include "clock-state.h"
 static struct cam_cc_clock cam_cc_clock_state[5];
 
-static int step(void) { return ++steps == fail_at ? -EREMOTEIO : 0; }
+static void observe_probe_step(void);
+static int step(void) { observe_probe_step(); return ++steps == fail_at ? -EREMOTEIO : 0; }
 static void event(int value) { assert(sequence_size < 1024); sequence[sequence_size++] = value; }
 static int cam_cc_power_fail(int error, int rollback, unsigned int uncertain)
 {
@@ -139,6 +145,7 @@ static int regmap_update_bits(struct regmap *map, unsigned int reg, u32 mask, u3
 {
 	assert(map == &model_map && reg % 4 == 0 && reg < sizeof(map->words));
 	int ret = step(); if (ret) return ret;
+	if (stuck_gate >= 0 && reg == cam_cc_sm7675_critical_cbcrs[stuck_gate]) return 0;
 	map->words[reg / 4] = (map->words[reg / 4] & ~mask) | (value & mask); return 0;
 }
 #define regmap_read_poll_timeout_atomic(map, reg, value, condition, delay, timeout) \
@@ -192,6 +199,7 @@ static void pm_runtime_put(struct device *dev)
 }
 static struct regmap *cam_cc_owner_create(struct platform_device *pdev)
 {
+	if (resources) return ERR_PTR(-EBUSY);
 	int ret = step(); if (ret) return ERR_PTR(ret);
 	assert(!resources); resources = 1; cam_cc_power.dev = &pdev->dev;
 	return cam_cc_power.map = &model_map;
@@ -321,6 +329,50 @@ static void of_genpd_sync_state(struct device_node *node)
 #include "native-handoff.h"
 #include "native-registration.h"
 
+static void observe_probe_step(void)
+{
+	assert(steps < (int)ARRAY_SIZE(observed_probe_phases));
+	observed_probe_phases[steps] = cam_cc_native.probe.phase;
+}
+
+static int sysfs_emit(char *buffer, const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	int size = vsnprintf(buffer, 4096, format, args);
+	va_end(args);
+	assert(size >= 0 && size < 4096);
+	return size;
+}
+#include "native-probe-show.c"
+
+static void check_probe_observation(const char *phase, int error, bool gate,
+				    unsigned int reg, bool valid, unsigned int value)
+{
+	char buffer[4096], expected[80];
+	int old_steps = steps;
+	struct regmap saved_map = model_map;
+	unsigned char saved[sizeof(cam_cc_native.probe)];
+	memcpy(saved, &cam_cc_native.probe, sizeof(saved));
+	assert(probe_phase_show(NULL, NULL, buffer) == (ssize_t)strlen(phase) + 1);
+	snprintf(expected, sizeof(expected), "%s\n", phase); assert(!strcmp(buffer, expected));
+	snprintf(expected, sizeof(expected), "%d\n", error);
+	assert(probe_error_show(NULL, NULL, buffer) == (ssize_t)strlen(expected));
+	assert(!strcmp(buffer, expected));
+	if (gate) {
+		snprintf(expected, sizeof(expected), "%#x\n", reg);
+		assert(probe_gate_register_show(NULL, NULL, buffer) == (ssize_t)strlen(expected));
+		assert(!strcmp(buffer, expected));
+	} else assert(probe_gate_register_show(NULL, NULL, buffer) == -ENODATA);
+	if (valid) {
+		snprintf(expected, sizeof(expected), "%#x\n", value);
+		assert(probe_gate_readback_show(NULL, NULL, buffer) == (ssize_t)strlen(expected));
+		assert(!strcmp(buffer, expected));
+	} else assert(probe_gate_readback_show(NULL, NULL, buffer) == -ENODATA);
+	assert(steps == old_steps && !memcmp(&saved_map, &model_map, sizeof(model_map)));
+	assert(!memcmp(saved, &cam_cc_native.probe, sizeof(saved)));
+}
+
 static void defaults(bool boot_on)
 {
 	memset(&cam_cc_native, 0, sizeof(cam_cc_native));
@@ -339,6 +391,8 @@ static void defaults(bool boot_on)
 	configured_plls = sync_error = sync_calls = genpd_syncs = sequence_size = 0;
 	model_domains_on = boot_on; first_resume = boot_drop_fault = domain_sync_fault = false;
 	crm_mapping = crm_active = busy_at_suspend = false;
+	stuck_gate = -1;
+	memset(observed_probe_phases, 0, sizeof(observed_probe_phases));
 	model_driver.sync_state = cam_cc_native_sync_state;
 	model_device.dev.driver = &model_driver; model_device.dev.of_node = &model_node;
 	for (int i = 0; i < 3; i++) {
@@ -363,6 +417,7 @@ static void normal_lifecycle(void)
 	for (int on = 0; on < 2; on++) {
 		defaults(on); assert(!cam_cc_native_probe(&model_device));
 		assert(resources && cam_cc_native.ready && !cam_cc_power.fault);
+		assert(steps == (on ? 39 : 41));
 		assert(reset_published && domain_published && clock_published && registered_clocks == 5);
 		assert(configured_plls == (on ? 0 : 2));
 		assert(model_driver.sync_state == cam_cc_native_sync_state);
@@ -395,9 +450,15 @@ static void probe_failures(void)
 	unsigned int cases = 0;
 	for (int on = 0; on < 2; on++) {
 		defaults(on); assert(!cam_cc_native_probe(&model_device)); int total = steps;
+		const char *reference_phases[1024];
+		memcpy(reference_phases, observed_probe_phases, sizeof(reference_phases));
 		for (int failure = 1; failure <= total; failure++) {
 			defaults(on); fail_at = failure;
 			int ret = cam_cc_native_probe(&model_device);
+			if (failure > 1) {
+				assert(cam_cc_native.probe.complete && cam_cc_native.probe.error == -EREMOTEIO);
+				assert(!strcmp(cam_cc_native.probe.phase, reference_phases[failure - 1]));
+			}
 			if (failure <= 7) {
 				assert(ret == -EREMOTEIO && !resources && !cam_cc_power.fault);
 				assert(!parent_clks[0].references && !parent_clks[1].references && !parent_clks[2].references);
@@ -428,6 +489,61 @@ static void probe_failures(void)
 	assert(parent_clks[0].references && parent_clks[1].references && parent_clks[2].references);
 	assert(!configured_plls && !registered_clocks && !reset_published && !cam_cc_native.ready);
 	puts("CAMCC native: an unexpected pre-PM reference retains parent clocks and CRM mapping instead of taking clean failure cleanup");
+}
+
+static void probe_observations(void)
+{
+	defaults(false);
+	check_probe_observation("not-started", 0, false, 0, false, 0);
+	assert(!cam_cc_native_probe(&model_device));
+	assert(cam_cc_native.probe.complete);
+	check_probe_observation("ready", 0, true, 0x70c, true, 1);
+	int normal_steps = steps;
+	/* The successful sequence is unchanged: caching introduces no boundary call. */
+	assert(normal_steps == 41);
+	for (int i = 0; i < 4096; i++)
+		check_probe_observation("ready", 0, true, 0x70c, true, 1);
+	/* A runtime reset fault must not rewrite the successful probe's history. */
+	fail_at = steps + 2;
+	assert(cam_cc_native_reset_assert(&cam_cc_native_reset.rcdev, 0) == -EREMOTEIO);
+	check_probe_observation("ready", 0, true, 0x70c, true, 1);
+	for (int gate = 0; gate < 4; gate++) {
+		for (int operation = 0; operation < 3; operation++) {
+			defaults(false);
+			/* Existing boundaries: owner, three parents, map, init, suspended,
+			 * three proxy votes, resume, then each gate's update/read pair.
+			 */
+			if (operation < 2) fail_at = 12 + 2 * gate + operation;
+			else stuck_gate = gate;
+			assert(!cam_cc_native_probe(&model_device));
+			const char *phase = operation == 0 ? "critical-gate-write" :
+				operation == 1 ? "critical-gate-read" : "critical-gate-verify";
+			int error = operation < 2 ? -EREMOTEIO : -EIO;
+			assert(cam_cc_power.fault && !configured_plls && !registered_clocks);
+			check_probe_observation(phase, error, true,
+				cam_cc_sm7675_critical_cbcrs[gate], operation == 2, 0);
+			/* Later hardware values and refused re-probes cannot replace evidence. */
+			model_map.words[cam_cc_sm7675_critical_cbcrs[gate] / 4] = 0xfeed;
+			assert(cam_cc_native_probe(&model_device) == -EBUSY);
+			cam_cc_native_probe_phase("incorrect-later-phase");
+			cam_cc_native_probe_complete(-EINVAL);
+			for (int i = 0; i < 4096; i++)
+				check_probe_observation(phase, error, true,
+					cam_cc_sm7675_critical_cbcrs[gate], operation == 2, 0);
+		}
+	}
+	for (int rail = 0; rail < 3; rail++) {
+		defaults(false); fail_at = 8 + rail;
+		assert(!cam_cc_native_probe(&model_device));
+		check_probe_observation("proxy-votes", -EREMOTEIO, false, 0, false, 0);
+	}
+	defaults(false); fail_at = 11;
+	assert(!cam_cc_native_probe(&model_device));
+	check_probe_observation("runtime-resume", -EREMOTEIO, false, 0, false, 0);
+	defaults(false); crm_active = true;
+	assert(!cam_cc_native_probe(&model_device));
+	check_probe_observation("crm-admission", -EOPNOTSUPP, true, 0x70c, true, 1);
+	puts("CAMCC probe: four actual read-only callbacks preserve first phase/error and unavailable/stale gate data; repeated reads add no API/MMIO calls");
 }
 
 static void reset_and_lookup(void)
@@ -505,6 +621,6 @@ static void handoff_failures(void)
 
 int main(void)
 {
-	normal_lifecycle(); probe_failures(); reset_and_lookup(); disable_postconditions(); handoff_failures();
+	normal_lifecycle(); probe_failures(); probe_observations(); reset_and_lookup(); disable_postconditions(); handoff_failures();
 	return 0;
 }

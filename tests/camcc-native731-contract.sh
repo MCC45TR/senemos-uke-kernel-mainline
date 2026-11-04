@@ -19,10 +19,51 @@ printf '%s  %s\n' \
 for part in handoff registration; do
     sed '/^#include /d' "$project/src/camera/provider/camcc-sm7675-$part.h" > "$work/native-$part.h"
 done
+awk '
+ /^static ssize_t probe_(phase|error|gate_register|gate_readback)_show\(/ {copy=1;count++}
+ copy {print;if($0=="}")copy=0}
+ END {if(count!=4 || copy)exit 1}
+' "$project/src/camera/camcc-sm7675.c" > "$work/native-probe-show.c"
 flags=(-std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter
        -Wno-unused-function -Wno-sign-compare -I"$work")
 read -r -a extra <<< "${CAMCC_NATIVE_TEST_FLAGS:-}"
 "${CC:-clang}" "${flags[@]}" "${extra[@]}" \
     "$project/tests/fixtures/camcc-native-check.c" -o "$work/native"
 ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 "$work/native"
+if [[ ${CAMCC_NATIVE_MUTATIONS:-0} == 1 ]]; then
+    ulimit -c 0
+    cp "$work/native-handoff.h" "$work/handoff.saved"
+    cp "$work/native-registration.h" "$work/registration.saved"
+    cp "$work/native-probe-show.c" "$work/show.saved"
+    for mutation in frozen-phase stale-readback live-sysfs-read; do
+        cp "$work/handoff.saved" "$work/native-handoff.h"
+        cp "$work/registration.saved" "$work/native-registration.h"
+        cp "$work/show.saved" "$work/native-probe-show.c"
+        case $mutation in
+            frozen-phase)
+                sed 's/if (!cam_cc_native.probe.complete)/if (true)/' \
+                    "$work/handoff.saved" > "$work/native-handoff.h" ;;
+            stale-readback)
+                sed '/cam_cc_native.probe.gate_read_valid = false;/d' \
+                    "$work/registration.saved" > "$work/native-registration.h" ;;
+            live-sysfs-read)
+                awk '
+                 /READ_ONCE\(cam_cc_native.probe.gate_readback\)/ {
+                  print "\tu32 value;"
+                  print "\tint ret = regmap_read(cam_cc_power.map, cam_cc_native.probe.gate_reg, &value);"
+                  print "\treturn ret ? ret : sysfs_emit(buffer, \"%#x\\n\", value);"
+                  next
+                 } {print}
+                ' "$work/show.saved" > "$work/native-probe-show.c" ;;
+        esac
+        "${CC:-clang}" "${flags[@]}" "$project/tests/fixtures/camcc-native-check.c" \
+            -o "$work/mutation"
+        if "$work/mutation" > "$work/mutation.log" 2>&1; then
+            printf 'Required CAMCC mutation unexpectedly passed: %s\n' "$mutation" >&2
+            exit 1
+        fi
+        grep -q 'Assertion.*failed' "$work/mutation.log"
+        printf 'Required CAMCC mutation rejected: %s\n' "$mutation"
+    done
+fi
 printf 'Actual native CAMCC registration/handoff functions passed boundary models; hardware remains unqualified\n'

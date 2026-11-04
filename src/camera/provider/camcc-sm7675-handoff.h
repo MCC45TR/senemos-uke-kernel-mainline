@@ -15,6 +15,17 @@
 #define CAM_CC_PLL_OUTPUTS GENMASK(2, 0)
 #define CAM_CC_PLL_FSM (BIT(21) | BIT(25))
 
+/* Probe-only observations; reading them must never acquire power or touch MMIO. */
+struct cam_cc_native_probe_observation {
+	const char *phase;
+	int error;
+	u32 gate_reg;
+	u32 gate_readback;
+	bool gate_started;
+	bool gate_read_valid;
+	bool complete;
+};
+
 static struct {
 	struct clk *parents[3];
 	struct clk *boot_rcgs[ARRAY_SIZE(cam_cc_sm7675_clocks)];
@@ -25,7 +36,22 @@ static struct {
 	bool probe_pm_held;
 	bool ready;
 	bool synchronized;
+	struct cam_cc_native_probe_observation probe;
 } cam_cc_native;
+
+static void cam_cc_native_probe_phase(const char *phase)
+{
+	if (!cam_cc_native.probe.complete)
+		cam_cc_native.probe.phase = phase;
+}
+
+static void cam_cc_native_probe_complete(int error)
+{
+	if (cam_cc_native.probe.complete)
+		return;
+	cam_cc_native.probe.error = error;
+	cam_cc_native.probe.complete = true;
+}
 
 static int cam_cc_native_fail(int error)
 {

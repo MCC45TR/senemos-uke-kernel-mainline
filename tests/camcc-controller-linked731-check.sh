@@ -8,6 +8,10 @@ release=$3
 [[ $release =~ ^7\.3\.1-[1-9][0-9]{3,4}$ ]]
 grep -Fx 'CONFIG_SM_CAMCC_7675=y' "$output/.config"
 llvm-readelf -h "$output/drivers/clk/qcom/camcc-sm7675.o" | grep -E 'Machine:.*AArch64'
+for field in phase error gate_register gate_readback; do
+    llvm-nm --defined-only "$output/drivers/clk/qcom/camcc-sm7675.o" | \
+        awk -v symbol="probe_${field}_show" '$NF==symbol {found=1} END {exit !found}'
+done
 llvm-nm --defined-only "$output/vmlinux" | awk '$NF=="cam_cc_native_driver" {found=1} END {exit !found}'
 grep -Fx 'kernel/drivers/clk/qcom/camcc-sm7675.ko' "$output/modules.builtin"
 test ! -e "$root/usr/lib/modules/$release/kernel/drivers/clk/qcom/camcc-sm7675.ko.zst"

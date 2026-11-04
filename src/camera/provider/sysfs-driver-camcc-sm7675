@@ -1,0 +1,39 @@
+What:           /sys/bus/platform/devices/ade0000.clock-controller/probe_phase
+Date:           November 2026
+Contact:        https://github.com/MCC45TR/senemos-uke-kernel-mainline
+Description:
+                Read-only final probe phase. Examples include proxy-votes,
+                runtime-resume, critical-gate-write, critical-gate-read,
+                critical-gate-verify, crm-admission, and ready. A quarantined
+                failure preserves its first phase until reboot. Ready means
+                provider registration completed, not that cameras or runtime
+                handoff passed. Clean failures can retry before publication.
+
+What:           /sys/bus/platform/devices/ade0000.clock-controller/probe_error
+Date:           November 2026
+Contact:        https://github.com/MCC45TR/senemos-uke-kernel-mainline
+Description:
+                Read-only signed errno returned at the final probe phase,
+                or zero for successful registration. Later runtime faults
+                remain separate in controller_state. The kernel fault log
+                also records existing cached power/rollback errors and votes.
+
+What:           /sys/bus/platform/devices/ade0000.clock-controller/probe_gate_register
+Date:           November 2026
+Contact:        https://github.com/MCC45TR/senemos-uke-kernel-mainline
+Description:
+                Read-only hexadecimal offset of the last critical transport
+                gate attempted during probe. ENODATA means no gate was reached.
+                This is a cached offset, not an arbitrary register interface.
+
+What:           /sys/bus/platform/devices/ade0000.clock-controller/probe_gate_readback
+Date:           November 2026
+Contact:        https://github.com/MCC45TR/senemos-uke-kernel-mainline
+Description:
+                Read-only hexadecimal value from the existing readback of the
+                gate named by probe_gate_register. ENODATA means that gate's
+                update or read failed, or no gate was reached. Zero is a valid
+                readback and differs from an unavailable observation. The
+                value is retained even when the underlying register changes.
+                None of these attributes reads MMIO, acquires runtime power,
+                accesses EEPROM, or moves an actuator.
