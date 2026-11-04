@@ -18,9 +18,12 @@ mainline. Starting with candidate 7200, every unstable subpackage conflicts
 with the ordinary core and profile packages. Ordinary packages require their
 core, so this excludes both complete and partial opposite-family installations.
 The optional unstable singleboot package owns the normal selected profile link.
-Keep global automatic staging disabled during qualification. DNF may invoke
-the existing updater transaction hooks; their activation policy still applies.
-Installing a candidate does not request a reboot.
+Keep automatic seamless staging enabled across DNF installs and updates.
+Rollback is a separate persistent local choice; package defaults remain
+enforced. Native version 1.8.71 separates off-mode health acceptance from
+staging and preserves the local choice during install and reinstall. DNF
+transaction hooks may prepare the selected candidate, while reboot remains a
+separate operation. Do not disable automatic policy as a trial workaround.
 The ALSA card driver and matching UCM directory use the compact per-release
 identifier `uke7_3_1-REVISIONu` to fit ALSA's 16-byte field. The full kernel
 release remains in the component match used by the existing audio policy.
