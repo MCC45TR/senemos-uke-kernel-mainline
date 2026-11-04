@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR only: reuse the diagnostic fixture family; never produce a kernel RPM.
 set -Eeuo pipefail
+trap 'status=$?; printf "Touch fixture source failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -84,4 +85,7 @@ test -s %{buildroot}%{_docdir}/%{name}/checks.txt
 SPEC
 sha256sum -c "$stage/retained.sha256"
 rm "$parent"
-[[ $(rpmspec --target aarch64 -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-o82-kms-check-7.3.1-12.fc46 ]]
+# COPR's source worker does not promise a binary-chroot dist macro.
+candidate=$(rpmspec --define 'dist %{nil}' --target aarch64 -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec")
+printf 'Fixture source candidate: %s\n' "$candidate"
+[[ $candidate == uke-o82-kms-check-7.3.1-12 ]]
