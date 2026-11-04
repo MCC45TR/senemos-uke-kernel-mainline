@@ -111,7 +111,7 @@
  		return rc;
  
  	secs += rtc_dd->offset;
-+	if (uke_rtc_machine() && secs < 1577836800U) {
++	if (uke_rtc_machine() && rtc_dd->use_uefi && secs < 1577836800U) {
 +		/* A missing/factory offset is not a valid calendar for this device. */
 +		rtc_dd->offset_invalid = true;
 +		return -ENODATA;
