@@ -157,6 +157,9 @@ awk -v revision="$revision" -v day="$day" '
  END {if(names!=1 || releases!=1 || abis!=1 || hooks!=1)exit 1}
 ' "$old_spec" > "$spec"
 rm "$old_spec"
+# The withdrawn input contains several independently appended 6000 entries
+# with inconsistent dates. Date that one retained cohort coherently as well.
+bash "$owner/packaging/native/date-cohort-changelog.sh" "$spec" 6000 "$epoch"
 bash "$owner/packaging/native/date-cohort-changelog.sh" "$spec" "$revision" "$epoch"
 bash "$owner/tests/unstable-boot-family731-contract.sh" "$spec"
 printf 'Prepared isolated diagnostic %s: camera stage %s; no automatic activation\n' "$revision" "$camera_stage"
