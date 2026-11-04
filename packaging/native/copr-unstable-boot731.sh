@@ -90,10 +90,41 @@ for path in tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked
   bash -n "$tree/$path"
  done
 done
+
+# ALSA's card driver field has a 16-byte ABI limit. Preserve the complete
+# kernel release in components while giving this family a compact UCM key.
+audio_release="7.3.1-${revision}u"
+[[ ${#audio_release} -le 12 ]]
+for tree in "$profile" "$boot"; do
+ path=src/audio/uke-audio-card.c
+ if [[ -f $tree/$path ]]; then
+  [[ $(grep -Fc 'BUILD_BUG_ON(sizeof("uke" UTS_RELEASE) > 16);' "$tree/$path") == 1 ]]
+  [[ $(grep -Fc 'card->driver_name = "uke" UTS_RELEASE;' "$tree/$path") == 1 ]]
+  sed -i -e "s/sizeof(\"uke\" UTS_RELEASE)/sizeof(\"uke${audio_release}\")/" \
+   -e "s/card->driver_name = \"uke\" UTS_RELEASE;/card->driver_name = \"uke${audio_release}\";/" "$tree/$path"
+ fi
+ path=src/audio/desktop/install-policy.sh
+ if [[ -f $tree/$path ]]; then
+  awk '
+   /^\[\[ \$destination == / {
+    print "[[ $destination == /* && $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[0-9]+(-unstable)?$ ]]"; guard++; next
+   }
+   /^driver=uke\$\{release\/\/\.\/_\}$/ {
+    print "audio_release=${release%-unstable}"
+    print "[[ $release != *-unstable ]] || audio_release+=u"
+    print "driver=uke${audio_release//./_}"; driver++; next
+   }
+   {print} END {if(guard!=1 || driver!=1)exit 1}
+  ' "$tree/$path" > "$stage/audio-policy.sh"
+  cat "$stage/audio-policy.sh" > "$tree/$path"
+  bash -n "$tree/$path"
+ fi
+done
 for path in src/boot/uke-abl.c src/boot/build-payload.sh src/boot/make-initramfs-base.sh \
  tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
  tests/camss-sm7675-phy-object.sh tests/camss-sm7675-linked731-check.sh \
- tests/camcc-native-object.sh tests/msm-kms-alternate-build.sh; do
+ tests/camcc-native-object.sh tests/msm-kms-alternate-build.sh \
+ src/audio/uke-audio-card.c src/audio/desktop/install-policy.sh; do
  test -f "$boot/$path" || continue
  digest=$(sha256sum "$boot/$path"); digest=${digest%% *}
  jq --arg path "$path" --arg digest "$digest" \
@@ -111,6 +142,7 @@ jq --arg revision "$revision" --arg producer "$producer" --arg parent "$parent_s
  diagnostic_parent_build:11252822,diagnostic_camera_stage:$stage,
  camcc_boot_fdt_activation:($stage==1),camera_dt_activation:($stage==1),
  front_geni_dt_activation:false,front_eeprom_dt_activation:false,
+ diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
  camera_sensor_dt_activation:false,camera_capture_graph_activation:false,
  device_installation:false,physical_acceptance:false,
  diagnostic_scope:"Source bisection only; both calibrated cameras and rear focus remain required"}' \
@@ -133,10 +165,16 @@ awk -v revision="$revision" -v day="$day" '
  /^Name: senemos-uke-linux-kernel-mainline$/ {$0=$0 "-unstable"; names++}
  /^%global senemos_build_release 6000$/ {$0="%global senemos_build_release " revision; releases++}
  /^%global krel / {$0=$0 "-unstable"; abis++}
+ /^%global uke_audio_driver / {$0="%global uke_audio_driver %(printf '\''uke%%s'\'' '\''%{version}-%{senemos_build_release}u'\'' | tr '\''.'\'' '\''_'\'')"}
  /^%posttrans boot / {drop=1; hooks++; next}
  drop && /^%files$/ {drop=0}
  drop {next}
  /^%check$/ {print; print "bash native-profile/tests/unstable-boot-family731-contract.sh %{_specdir}/senemos-uke-linux-kernel-mainline-unstable.spec %{buildroot} %{krel}"; next}
+ /^bash native-profile\/tests\/camss-sm7675-module731-object.sh / {
+  print
+  print "make O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable -j\"$jobs\" sound/soc/qcom/uke-audio-card.o"
+  next
+ }
  /^%changelog$/ {
   print; print "* " day " MCC45TR <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-" revision
   print "- Isolate camera boot admission in an explicitly selected unstable family."

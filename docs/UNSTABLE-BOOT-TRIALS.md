@@ -10,6 +10,9 @@ The separate `senemos-uke-linux-kernel-mainline-unstable` family retains the
 withdrawn source composition with a unique `-unstable` module ABI. It owns only
 its prefixed profile link. Its packages have no automatic activation scriptlet
 and preserve the ordinary family's selected profile and installed modules.
+The ALSA card driver and matching UCM directory use the compact per-release
+identifier `uke7_3_1-REVISIONu` to fit ALSA's 16-byte field. The full kernel
+release remains in the component match used by the existing audio policy.
 
 The first diagnostic stage skips the new CAMCC and front EEPROM boot graph
 conversions. The second enables the CAMCC conversion while keeping front GENI

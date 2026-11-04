@@ -28,5 +28,10 @@ if [[ $# == 3 ]]; then
  [[ ! -e $root/usr/lib/senemos/default-boot.img && ! -e $root/usr/share/senemos/uke/singleboot.json ]]
  jq -e --arg release "$release" '.kernel_release==$release and .automatic_kernel_activation==false' "$root/usr/share/senemos/uke/unstable-singleboot.json" >/dev/null
  [[ -f $root/usr/lib/modules/$release/vmlinuz ]]
+ audio_release=${release%-unstable}u
+ driver=uke${audio_release//./_}
+ [[ ${#driver} -lt 16 ]]
+ [[ -d $root/usr/share/alsa/ucm2/Qualcomm/$driver && -d $root/usr/share/alsa/ucm2/conf.d/$driver ]]
+ grep -Fq "kernel:$release" "$root/usr/share/wireplumber/wireplumber.conf.d/95-uke-microphone-array-$release.conf"
 fi
 printf 'Isolated unstable family, unique Image ABI and explicit trial selection passed\n'
