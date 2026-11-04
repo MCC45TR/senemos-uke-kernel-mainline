@@ -17,6 +17,7 @@ mkdir -p "$output" "$stage/unpacked"
 curl -fLsS --retry 2 --proto '=https' --proto-redir '=https' \
  https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11252822/senemos-uke-linux-kernel-mainline-7.3.1-6000.src.rpm \
  -o "$stage/parent.src.rpm"
+printf '%s  %s\n' ee3d9c1e57dc8d6b3d6cd2de6f22a0047565c1699cff2a5d2c72ade8fee5501e "$stage/parent.src.rpm" | sha256sum -c --strict
 [[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-7.3.1-6000 ]]
 [[ $(rpm -qp --qf '%{SHA256HEADER}' "$stage/parent.src.rpm") == 1b4b01c5fcf780bb13154807eefd68cae642cb5151b1105ca0622d62ad3a939c ]]
 [[ $(rpm -qp --qf '%{PAYLOADSHA256}' "$stage/parent.src.rpm") == c1b853aa669b511dc370499eb93c65d297fbc289c634a155b56b13b62a26d4c3 ]]
@@ -61,8 +62,12 @@ fi
 # The updater admits this family only when the Image ABI ends in -unstable.
 for tree in "$profile" "$boot"; do
  for path in src/boot/build-payload.sh src/boot/make-initramfs-base.sh; do
-  [[ $(grep -Fc '(-kvm)?' "$tree/$path") == 1 ]]
-  sed -i 's/(-kvm)?/(-kvm|-unstable)?/' "$tree/$path"
+  if grep -Fq '(-kvm)?' "$tree/$path"; then
+   [[ $(grep -Fc '(-kvm)?' "$tree/$path") == 1 ]]
+   sed -i 's/(-kvm)?/(-kvm|-unstable)?/' "$tree/$path"
+  else
+   grep -Fq -- '-unstable' "$tree/$path"
+  fi
   bash -n "$tree/$path"
  done
 done
@@ -73,7 +78,9 @@ for path in tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked
  tests/camcc-native-object.sh tests/msm-kms-alternate-build.sh; do
  for tree in "$profile" "$boot"; do
   test -f "$tree/$path" || continue
-  sed -i '/^\[\[ \$release =~ /s/\$ \]\]/(-unstable)?$ ]]/' "$tree/$path"
+  if ! sed -n '/^\[\[ \$release =~ /p' "$tree/$path" | grep -Fq -- '-unstable'; then
+   sed -i '/^\[\[ \$release =~ /s/\$ \]\]/(-unstable)?$ ]]/' "$tree/$path"
+  fi
   bash -n "$tree/$path"
  done
 done
