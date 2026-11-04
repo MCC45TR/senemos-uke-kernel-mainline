@@ -48,6 +48,12 @@ base_sha=$(sha256sum "$stage/base.src.rpm" | cut -d ' ' -f1)
 reference_sha=$(sha256sum "$stage/reference.src.rpm" | cut -d ' ' -f1)
 hsic_sha=$(sha256sum "$stage/hsic.src.rpm" | cut -d ' ' -f1)
 network_sha=$(sha256sum "$stage/network.src.rpm" | cut -d ' ' -f1)
+printf '%s  %s\n' \
+ 163d3d26bf61e4f27537f760517054fac126b7d06f49a14eb69ab8cb67a3216d "$stage/base.src.rpm" \
+ 4cc89bc2d5fb99a76a2d4db9b3ec983fd03ad88d4cdbf2c9c7e7bff77edebd03 "$stage/reference.src.rpm" \
+ 9d91aa697fff83edf361e302b4b0c47d1601daba7a6c1ce8219a058677cf884d "$stage/hsic.src.rpm" \
+ 7ec21b063bd3d639b3c11e691d41f902081213a14c07e8d079ec6cbc7995fcbc "$stage/network.src.rpm" \
+ | sha256sum -c --strict
 for role in base reference hsic network; do
  rpm2cpio "$stage/$role.src.rpm" > "$stage/$role.cpio"
  cpio -t --quiet < "$stage/$role.cpio" > "$stage/entries"
@@ -57,8 +63,9 @@ for role in base reference hsic network; do
   archives=$output
  else
   mkdir "$stage/$role-sources"
-  (cd "$stage/$role-sources"; cpio -idm --quiet --no-absolute-filenames \
-   'senemos-native-profile-7.3.1.tar.xz' 'senemos-uke-boot-recipe.tar.xz' < "$stage/$role.cpio")
+  printf 'Reference source members (%s):\n' "$role"
+  cat "$stage/entries"
+  (cd "$stage/$role-sources"; cpio -idm --quiet --no-absolute-filenames < "$stage/$role.cpio")
   archives=$stage/$role-sources
  fi
  for archive in senemos-native-profile-7.3.1.tar.xz senemos-uke-boot-recipe.tar.xz; do
