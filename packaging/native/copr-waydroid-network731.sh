@@ -70,6 +70,7 @@ jq --arg hash "$config_hash" --arg producer "$producer" '. + {
  kernel_driver_source_unchanged:true,physical_acceptance:false
  }' "$profile/source-composition-before-waydroid-network.json" > "$profile/source-composition.json"
 install -Dm644 "$fragment" "$profile/configs/waydroid-network.config"
+install -Dm644 "$stage/before.config" "$profile/configs/waydroid-firewall-modular-reference.config"
 install -Dm644 "$owner/tests/waydroid-network-built731.sh" "$profile/tests/waydroid-network-built731.sh"
 install -Dm644 "$owner/tests/native-firewall-builtins-contract.sh" "$profile/tests/native-firewall-builtins-contract.sh"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
@@ -85,7 +86,7 @@ spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 awk '
  /^%check$/ {
   print
-  print "bash native-profile/tests/native-firewall-builtins-contract.sh native-profile/tests/native-firewall-contract.sh native-profile/packaging/native/native.config"
+  print "bash native-profile/tests/native-firewall-builtins-contract.sh native-profile/tests/native-firewall-contract.sh native-profile/configs/waydroid-firewall-modular-reference.config"
   print "bash native-profile/tests/waydroid-network-built731.sh %{_uke_out} native-profile/configs/waydroid-network.config"; checks++; next
  }
  {print} END {if(checks!=1)exit 1}
