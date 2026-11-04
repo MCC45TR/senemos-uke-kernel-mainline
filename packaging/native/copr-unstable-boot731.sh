@@ -62,12 +62,18 @@ fi
 # The updater admits this family only when the Image ABI ends in -unstable.
 for tree in "$profile" "$boot"; do
  for path in src/boot/build-payload.sh src/boot/make-initramfs-base.sh; do
-  if grep -Fq '(-kvm)?' "$tree/$path"; then
-   [[ $(grep -Fc '(-kvm)?' "$tree/$path") == 1 ]]
-   sed -i 's/(-kvm)?/(-kvm|-unstable)?/' "$tree/$path"
+  if [[ $path == src/boot/build-payload.sh ]]; then
+   awk '
+    /^\[\[ \$release =~ / {print "[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ && $jobs =~ ^[1-9][0-9]*$ ]]"; n++; next}
+    {print} END {if(n!=1)exit 1}
+   ' "$tree/$path" > "$stage/release-guard.sh"
   else
-   grep -Fq -- '-unstable' "$tree/$path"
+   awk '
+    /^\[\[ \$# == 2 && \$2 =~ / {print "[[ $# == 2 && $2 =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ ]] || exit 2"; n++; next}
+    {print} END {if(n!=1)exit 1}
+   ' "$tree/$path" > "$stage/release-guard.sh"
   fi
+  cat "$stage/release-guard.sh" > "$tree/$path"
   bash -n "$tree/$path"
  done
 done
