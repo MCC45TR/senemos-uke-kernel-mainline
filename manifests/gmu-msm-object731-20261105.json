@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Complete12101 preparation plus qualified touch/geometry and GMU composite-object check; no full kernel candidate",
+  "parent": {
+    "kernel_release": "7.3.1-12101-unstable",
+    "copr_build": 11260781,
+    "touch_source": "0e320d96f0d2dc155df224dd0e9712719a1d1f08",
+    "touch_check": 11261044,
+    "geometry_source": "9398700a6375a309f572d588a9e448cdbc4b0736",
+    "geometry_check": 11261165,
+    "gmu_source": "a85f0f660dd947d2737dca18ce043674ce55a45e",
+    "gmu_check": 11261228
+  },
+  "qualified_inputs": [
+    {
+      "path": "patches/gpu/0075-gmu-hfi-irq-owned-status.patch",
+      "sha256": "bbe81a1b5b7abb663204f3d496efb6e1012b2bb34d04d8729d7173c67f28a29c"
+    },
+    {
+      "path": "tests/gmu-hfi-irq-contract.sh",
+      "sha256": "6d81e50b06be97206631c0ce7f38cfc02034229b4f6eb1f1f7dddeb556575a3d"
+    },
+    {
+      "path": "tests/fixtures/gmu-hfi-irq-check.c",
+      "sha256": "1a1a96bbc2071ca9dca58dbe4ecf46bfaccc4816bbe59f57b89877cd9853d638"
+    }
+  ],
+  "constraints": {
+    "all_12101_and_touch_geometry_inputs_retained": true,
+    "no_hardware_gate_or_boot_asset_change": true,
+    "no_image_or_final_module_or_kernel_rpm": true,
+    "no_kernel_revision_reserved": true,
+    "other_post12101_contributions_require_final_integration": true,
+    "no_device_compile_install_or_boot": true,
+    "physical_gpu_acceptance": false,
+    "full_camera_calibration_focus_acceptance": false
+  },
+  "qualification_state": "prepared; no real MSM object result claimed"
+}
