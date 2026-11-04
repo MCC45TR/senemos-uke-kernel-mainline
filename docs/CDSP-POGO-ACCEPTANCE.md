@@ -12,8 +12,10 @@ verify both OpenPGP signatures and header/payload digests of all six RPMs.
 The separate firmware helper0.1-2 succeeds in COPR11252345 and passes the same
 RPM checks. These normal-family artifacts are not deployment targets under the
 4 November policy. The new retained7300 producer is
-packaging/native/copr-cdsp-pogo-unstable8003.sh. Its complete binary and package
+packaging/native/copr-cdsp-pogo-unstable.sh. Its complete binary and package
 results must be checked separately.
+The COPR request pins CDSP_POGO_RPM_REVISION explicitly; the producer retains
+the global published-release guard and bounds the short ALSA driver identity.
 
 Run tests/cdsp-pogo-device-report.sh for a bounded read-only inventory. It never
 starts remoteproc, uploads firmware, reads authentication attributes or writes
