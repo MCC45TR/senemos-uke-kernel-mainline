@@ -10,7 +10,7 @@ revision=$2
 [[ $revision =~ ^[1-9][0-9]{3,4}$ && $revision -ge 10000 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
-for build in 11259919 11259981 11259990; do
+for build in 11259919 11259981 11259990 11260006; do
  state=$(curl -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$build" | jq -er .state)
  [[ $state == succeeded ]] || {
   printf 'Required parent %s is %s\n' "$build" "$state" >&2; exit 1;
@@ -20,7 +20,7 @@ done
 [[ $(curl -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11260104 | jq -er .state) == failed ]]
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
-mkdir -p "$output" "$stage/base" "$stage/reference" "$stage/hsic" "$stage/network"
+mkdir -p "$output" "$stage/base" "$stage/reference" "$stage/hsic" "$stage/network" "$stage/camera"
 download()
 {
  local build=$1 project=$2 version=$3 header=$4 payload=$5 destination=$6
@@ -46,17 +46,21 @@ download 11259981 uke-linux-unstable 7600 \
 download 11260104 uke-linux-unstable 8200 \
  60077d6548a0928cfd4104616a2a088a3949822bb6f18edd8ae3c8653a00c839 \
  ccfc9efd9b347d83c8067a1b842992f155a78366d10ae2e00f25c507b463b269 "$stage/network.src.rpm"
+download 11260006 uke-linux-unstable 8101 \
+ b395c17d295a7939871d0f9b8d0496b166b15051185f12303cdbc4c8ecad60d3 \
+ ab9b752768a130a275714bf1edc828cda4d00837100225771fc3fabc2b6644b1 "$stage/camera.src.rpm"
 base_sha=$(sha256sum "$stage/base.src.rpm" | cut -d ' ' -f1)
 reference_sha=$(sha256sum "$stage/reference.src.rpm" | cut -d ' ' -f1)
 hsic_sha=$(sha256sum "$stage/hsic.src.rpm" | cut -d ' ' -f1)
 network_sha=$(sha256sum "$stage/network.src.rpm" | cut -d ' ' -f1)
+camera_sha=$(sha256sum "$stage/camera.src.rpm" | cut -d ' ' -f1)
 printf '%s  %s\n' \
  163d3d26bf61e4f27537f760517054fac126b7d06f49a14eb69ab8cb67a3216d "$stage/base.src.rpm" \
  4cc89bc2d5fb99a76a2d4db9b3ec983fd03ad88d4cdbf2c9c7e7bff77edebd03 "$stage/reference.src.rpm" \
  9d91aa697fff83edf361e302b4b0c47d1601daba7a6c1ce8219a058677cf884d "$stage/hsic.src.rpm" \
  7ec21b063bd3d639b3c11e691d41f902081213a14c07e8d079ec6cbc7995fcbc "$stage/network.src.rpm" \
  | sha256sum -c --strict
-for role in base reference hsic network; do
+for role in base reference hsic network camera; do
  rpm2cpio "$stage/$role.src.rpm" > "$stage/$role.cpio"
  cpio -t --quiet < "$stage/$role.cpio" > "$stage/entries"
  awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}' "$stage/entries"
@@ -83,6 +87,7 @@ boot=$stage/base/boot-recipe
 reference=$stage/reference/native-profile
 hsic=$stage/hsic/native-profile
 network=$stage/network/native-profile
+camera=$stage/camera/native-profile
 spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 # Prove the reported ownership failure before attempting composition changes.
 probe=$stage/wakeup-probe
@@ -119,6 +124,15 @@ jq -e '.kernel_release=="7.3.1-8200-unstable" and
  .waydroid_network_overlay and .waydroid_policy_routing_builtin and .waydroid_legacy_filter_builtin and
  (.waydroid_network_runtime_qualified|not) and .diagnostic_camera_stage==0 and
  .rtc_backend=="pmic-read-only-counter"' "$network/source-composition.json" >/dev/null
+jq -e '.kernel_release=="7.3.1-8101-unstable" and
+ .diagnostic_producer_commit=="00ebf622ca473b9b7a799b2f531b4871ddc70497" and
+ .diagnostic_camera_stage==1 and .camcc_boot_fdt_activation and .camera_dt_activation and
+ (.front_geni_dt_activation|not) and (.front_eeprom_dt_activation|not) and
+ (.camera_sensor_dt_activation|not) and (.camera_capture_graph_activation|not) and
+ .rtc_backend=="pmic-read-only-counter"' "$camera/source-composition.json" >/dev/null
+[[ $(grep -Fc 'if (1 >= 1) {' "$camera/src/boot/uke-abl.c") == 1 ]]
+sed 's/if (1 >= 1) {/if (0 >= 1) {/' "$camera/src/boot/uke-abl.c" > "$stage/camera-before.c"
+cmp "$stage/camera-before.c" "$reference/src/boot/uke-abl.c"
 base_snapshot=$(jq -er .parent_composition "$profile/source-composition.json")
 hsic_snapshot=$(jq -er .parent_composition "$hsic/source-composition.json")
 for snapshot in "$base_snapshot" "$hsic_snapshot"; do
@@ -233,6 +247,9 @@ for tree in "$profile" "$boot"; do
  if [[ -f $tree/src/boot/uke-abl.c ]]; then
   [[ $(grep -Fc 'ret = uke_rtc_secure_offset(output);' "$tree/src/boot/uke-abl.c") == 1 ]]
   sed -i 's/ret = uke_rtc_secure_offset(output);/ret = uke_rtc_counter_only(output);/' "$tree/src/boot/uke-abl.c"
+  # Retain the installed/selected8101 CAMCC stage without replacing CDSP edits.
+  [[ $(grep -Fc 'if (0 >= 1) {' "$tree/src/boot/uke-abl.c") == 1 ]]
+  sed -i 's/if (0 >= 1) {/if (1 >= 1) {/' "$tree/src/boot/uke-abl.c"
  fi
  path=$tree/src/audio/uke-audio-card.c
  if [[ -f $path ]]; then
@@ -269,12 +286,12 @@ epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --arg revision "$revision" --arg base "$base_sha" --arg reference "$reference_sha" \
  --arg hsic_sha "$hsic_sha" --arg nfc_sha "$nfc_sha" --arg network_sha "$network_sha" \
- --arg config_sha "$config_sha" --rawfile overlays "$stage/overlays" \
+ --arg config_sha "$config_sha" --arg camera_sha "$camera_sha" --rawfile overlays "$stage/overlays" \
  --slurpfile rtc "$reference/source-composition.json" --slurpfile hsic "$hsic/source-composition.json" '
  del(.qualified_o82_kms_check,.qualified_o82_source_commit,
      .qualified_o82_sixzone_utility_check,.qualified_o82_sixzone_utility_source) +
  ($hsic[0]|with_entries(select(.key|test("^(o82_|historical_o82_|qualified_o82_)")))) + {
- source_commit:$commit,source_mode:"rtc7300-hsic7600-cdsp7603-network8200-with-i2c-owned-nfc-wakeup",
+ source_commit:$commit,source_mode:"rtc7300-hsic7600-cdsp7603-camcc8101-corrected-network8200-nfc-wakeup",
  kernel_release:("7.3.1-"+$revision+"-unstable"),rpm_revision:$revision,
  parent_copr_build:11259990,parent_srpm_sha256:$base,parent_composition:"source-composition-before-nfc-wakeup.json",
  nfc_o82_reference_build:11259981,nfc_o82_reference_source:"16f178ed5e4d513b1d9a415c16c181fb9bf35a0e",
@@ -283,6 +300,9 @@ jq --arg commit "$commit" --arg revision "$revision" --arg base "$base_sha" --ar
  nfc_rtc_reference_srpm_sha256:$reference,
  nfc_network_reference_build:11260104,nfc_network_reference_source:"7ca15872cb06dc6263ac366bc50dec4439149b9a",
  nfc_network_reference_srpm_sha256:$network_sha,native_config_sha256:$config_sha,
+ nfc_camera_reference_build:11260006,nfc_camera_reference_source:"00ebf622ca473b9b7a799b2f531b4871ddc70497",
+ nfc_camera_reference_srpm_sha256:$camera_sha,
+ diagnostic_camera_stage:1,camcc_boot_fdt_activation:true,camera_dt_activation:true,
  nfc_network_reference_qualified:false,nfc_network_reference_status:"failed-effective-config-admission",
  nfc_network_legacy_overlay:"configs/nfc-network-legacy.config",
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,waydroid_legacy_filter_builtin:true,

@@ -43,18 +43,22 @@ Continue qualification in the unstable kernel family. RTC calendar persistence,
 both complete camera pipelines, private fitted calibration and rear autofocus
 remain independent open requirements.
 
-The composition producer pins the exact qualified RTC7300, HSIC7600 and
-CDSP/pogo7603 source RPMs, plus the failed Android-network8200 prototype, by
-complete, header and payload digest. The three delivery parents must succeed.
+The composition producer pins the exact qualified RTC7300, HSIC7600,
+CDSP/pogo7603 and CAMCC8101 source RPMs, plus the failed Android-network8200
+prototype, by header and payload digest. Complete digests bind the original
+four references; the8101 complete digest is recorded during composition.
+The four qualified references must have succeeded.
 8200 failed effective-config admission and is a research reference only. Its
 missing NETFILTER_XTABLES_LEGACY and IPv4/IPv6 IPTABLES_LEGACY prerequisites
 are corrected explicitly, preserving its original input for attribution.
 The source worker resolves actual upstream Kconfig and requires every requested
 network setting before publishing; full native object checks remain required.
 The composition retains all
-unrelated source files, original source snapshots, camera stage0 and boot
-policy. Camera stage1 in the separate8101 diagnostic remains a separate trial;
-this composition does not grant physical camera acceptance.
+unrelated source files, original source snapshots and boot policy. The installed
+8101 CAMCC stage1 is retained: its ABL source must equal RTC7300 except for the
+single CAMCC guard before applying that guard to the CDSP-preserving result.
+Front GENI, EEPROM, sensor and capture graphs stay inactive. This composition
+does not grant physical camera acceptance or activate a device boot.
 
 The Android network input differs only in the reviewed routing/filter settings;
 the combined input adds the pogo HID module. COPR independently resolves the
