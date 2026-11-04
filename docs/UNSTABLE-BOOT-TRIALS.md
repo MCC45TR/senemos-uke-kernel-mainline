@@ -13,6 +13,10 @@ and preserve the ordinary family's selected profile and installed modules.
 The ALSA card driver and matching UCM directory use the compact per-release
 identifier `uke7_3_1-REVISIONu` to fit ALSA's 16-byte field. The full kernel
 release remains in the component match used by the existing audio policy.
+The firmware topology lookup uses the same compact card driver name. The
+initramfs inspector admits the exact numeric `-unstable` ABI while continuing
+to reject malformed and foreign releases. Its actual identity fixtures and
+the UCM parser run before the full native kernel build.
 
 The first diagnostic stage skips the new CAMCC and front EEPROM boot graph
 conversions. The second enables the CAMCC conversion while keeping front GENI

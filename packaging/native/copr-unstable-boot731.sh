@@ -77,6 +77,16 @@ for tree in "$profile" "$boot"; do
   bash -n "$tree/$path"
  done
 done
+# Carry the matching inspector into both the initramfs recipe and profile.
+# Refuse an unexpected frozen before-image instead of replacing unrelated code.
+for tree in "$profile" "$boot"; do
+ path=src/boot/boot-status.cpp
+ test -f "$tree/$path" || continue
+ printf '%s  %s\n' ab071b245e2c67931bf2164854b5fd9455919bf62889ca4f8b392b31d9583102 "$tree/$path" | sha256sum -c --strict
+ install -m644 "$owner/$path" "$tree/$path"
+done
+install -m644 "$owner/tests/mainline-boot-status-contract.sh" "$profile/tests/mainline-boot-status-contract.sh"
+bash "$profile/tests/mainline-boot-status-contract.sh"
 # These existing object/link checks accept only the original numeric ABI.
 # Extend their namespace admission while retaining every object assertion.
 for path in tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
@@ -126,7 +136,9 @@ bash "$profile/src/audio/desktop/install-policy.sh" "$stage/audio-policy-probe" 
 audio_driver="uke7_3_1-${revision}u"
 [[ -d $stage/audio-policy-probe/usr/share/alsa/ucm2/Qualcomm/$audio_driver ]]
 [[ -r $stage/audio-policy-probe/usr/share/alsa/ucm2/conf.d/$audio_driver/POCO-Pad-X1.conf ]]
+install -m644 "$owner/tests/kernel-audio-policy-contract.sh" "$profile/tests/kernel-audio-policy-contract.sh"
 for path in src/boot/uke-abl.c src/boot/build-payload.sh src/boot/make-initramfs-base.sh \
+ src/boot/boot-status.cpp \
  tests/camss-sm7675-module731-object.sh tests/camcc-controller-linked731-check.sh \
  tests/camss-sm7675-phy-object.sh tests/camss-sm7675-linked731-check.sh \
  tests/camcc-native-object.sh tests/msm-kms-alternate-build.sh \
@@ -179,6 +191,8 @@ awk -v revision="$revision" -v day="$day" '
  /^bash native-profile\/tests\/camss-sm7675-module731-object.sh / {
   print
   print "make O=%{_uke_out} LOCALVERSION=-%{senemos_build_release}-unstable -j\"$jobs\" sound/soc/qcom/uke-audio-card.o"
+  print "bash native-profile/tests/mainline-boot-status-contract.sh"
+  print "CXX=clang++ bash native-profile/tests/kernel-audio-policy-contract.sh"
   next
  }
  /^%changelog$/ {
@@ -192,6 +206,7 @@ awk -v revision="$revision" -v day="$day" '
  }
  {
   gsub(/LOCALVERSION=-%\{senemos_build_release\}/,"LOCALVERSION=-%{senemos_build_release}-unstable")
+  gsub(/qcom\/uke%\{krel\}/,"qcom/uke%{version}-%{senemos_build_release}u")
   gsub(/\/senemos\/default-boot.img/,"/senemos/unstable-default-boot.img")
   gsub(/uke\/singleboot.json/,"uke/unstable-singleboot.json")
   gsub(/automatic_kernel_activation==true/,"automatic_kernel_activation==false")

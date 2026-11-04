@@ -9,7 +9,9 @@
 namespace fs = std::filesystem;
 namespace {
 bool selected_kernel(const std::string& input) {
-    const auto release = input.size() > 4 && input.compare(input.size() - 4, 4, "-kvm") == 0 ? input.substr(0, input.size() - 4) : input;
+    const bool unstable = input.size() > 9 && input.compare(input.size() - 9, 9, "-unstable") == 0;
+    const auto release = unstable ? input.substr(0, input.size() - 9) :
+        input.size() > 4 && input.compare(input.size() - 4, 4, "-kvm") == 0 ? input.substr(0, input.size() - 4) : input;
     const auto dash = release.find('-');
     if (release.size() < 128 && (release.rfind("7.2.", 0) == 0 || release.rfind("7.3.", 0) == 0) && dash > 4 && dash != std::string::npos) {
         const auto patch = release.substr(4, dash - 4);
@@ -18,6 +20,7 @@ bool selected_kernel(const std::string& input) {
             patch.find_first_not_of("0123456789") == std::string::npos &&
             revision.find_first_not_of("0123456789") == std::string::npos) return true;
     }
+    if (unstable) return false;
     for (const std::string version : {"7.2.9", "7.2.10"}) {
         if (release == version + "-senemos-uke") return true;
         const auto prefix = version + "-senemos.";

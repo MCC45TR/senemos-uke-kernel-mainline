@@ -19,6 +19,7 @@ kernel_release=$(sed -n 's/^Provides: kernel-uname-r(\([^)]*\))$/\1/p' <<< "$par
 audio_release=${kernel_release%-unstable}u
 audio_driver=uke${audio_release//./_}
 [[ ${#audio_driver} -lt 16 ]]
+grep -Fq "/qcom/uke$audio_release/POCO-Pad-X1-tplg.bin" <<< "$parsed"
 grep -Fq "/usr/share/alsa/ucm2/Qualcomm/$audio_driver/" <<< "$parsed"
 grep -Fq '"automatic_kernel_activation": false' <<< "$parsed"
 if grep -E '^Obsoletes:|^Conflicts:|^%(pre|post|preun|postun|pretrans|posttrans|trigger[a-z]*)($|[[:space:]])' <<< "$parsed"; then
@@ -37,6 +38,8 @@ if [[ $# == 3 ]]; then
  driver=uke${audio_release//./_}
  [[ ${#driver} -lt 16 ]]
  [[ -d $root/usr/share/alsa/ucm2/Qualcomm/$driver && -d $root/usr/share/alsa/ucm2/conf.d/$driver ]]
+ topology=$root/usr/lib/firmware/$release/qcom/uke$audio_release/POCO-Pad-X1-tplg.bin
+ [[ -L $topology && -r $topology ]]
  grep -Fq "kernel:$release" "$root/usr/share/wireplumber/wireplumber.conf.d/95-uke-microphone-array-$release.conf"
 fi
 printf 'Isolated unstable family, unique Image ABI and explicit trial selection passed\n'
