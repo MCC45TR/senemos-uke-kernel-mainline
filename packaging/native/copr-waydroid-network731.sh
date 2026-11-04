@@ -5,7 +5,7 @@ export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-revision=7800
+revision=7801
 bash "$owner/packaging/native/refuse-published-release.sh" \
  senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 bash "$owner/packaging/native/copr-unstable-boot731.sh" "$output" "$revision" 0 1
@@ -22,6 +22,16 @@ boot=$stage/unpacked/boot-recipe
 (cd "$profile"; sha256sum --check --strict --quiet SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 cmp "$profile/native.config" "$boot/packaging/native/native.config"
+bash "$owner/tests/native-firewall-builtins-contract.sh" \
+ "$owner/tests/native-firewall-contract.sh" "$owner/packaging/native/native.config"
+for tree in "$profile" "$boot"; do
+ install -m644 "$owner/tests/native-firewall-contract.sh" "$tree/tests/native-firewall-contract.sh"
+done
+guard_hash=$(sha256sum "$boot/tests/native-firewall-contract.sh"); guard_hash=${guard_hash%% *}
+jq --arg hash "$guard_hash" \
+ '(.source_assets[]|select(.path=="tests/native-firewall-contract.sh")|.sha256)=$hash' \
+ "$boot/lock.json" > "$stage/guard-lock.json"
+cp "$stage/guard-lock.json" "$boot/lock.json"
 cp "$profile/native.config" "$stage/before.config"
 fragment=$owner/configs/waydroid-network.config
 awk '
@@ -61,6 +71,7 @@ jq --arg hash "$config_hash" --arg producer "$producer" '. + {
  }' "$profile/source-composition-before-waydroid-network.json" > "$profile/source-composition.json"
 install -Dm644 "$fragment" "$profile/configs/waydroid-network.config"
 install -Dm644 "$owner/tests/waydroid-network-built731.sh" "$profile/tests/waydroid-network-built731.sh"
+install -Dm644 "$owner/tests/native-firewall-builtins-contract.sh" "$profile/tests/native-firewall-builtins-contract.sh"
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
@@ -73,7 +84,9 @@ done
 spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
 awk '
  /^%check$/ {
-  print; print "bash native-profile/tests/waydroid-network-built731.sh %{_uke_out} native-profile/configs/waydroid-network.config"; checks++; next
+  print
+  print "bash native-profile/tests/native-firewall-builtins-contract.sh native-profile/tests/native-firewall-contract.sh native-profile/packaging/native/native.config"
+  print "bash native-profile/tests/waydroid-network-built731.sh %{_uke_out} native-profile/configs/waydroid-network.config"; checks++; next
  }
  {print} END {if(checks!=1)exit 1}
 ' "$spec" > "$stage/kernel.spec"

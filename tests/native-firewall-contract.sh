@@ -7,14 +7,32 @@ grep -Fxq CONFIG_NF_TABLES_INET=y "$config"
 for symbol in NF_TABLES NF_CONNTRACK NF_NAT NF_LOG_SYSLOG NF_CT_NETLINK \
     NETFILTER_NETLINK_LOG NFT_CT NFT_LOG NFT_LIMIT NFT_MASQ NFT_REDIR NFT_NAT \
     NFT_REJECT NFT_FIB_IPV4 NFT_FIB_IPV6 NFT_FIB_INET NFT_COMPAT; do
-    grep -Fxq "CONFIG_$symbol=m" "$config" || { echo "Missing firewall module: $symbol" >&2; exit 1; }
+    case $symbol in
+        NF_CONNTRACK|NF_NAT)
+            grep -Eq "^CONFIG_$symbol=[ym]$" "$config" || {
+                echo "Missing firewall feature: $symbol" >&2; exit 1;
+            };;
+        *) grep -Fxq "CONFIG_$symbol=m" "$config" || {
+            echo "Missing firewall module: $symbol" >&2; exit 1;
+        };;
+    esac
 done
 if [[ $# == 2 ]]; then
     for module in nf_tables nf_conntrack nf_nat nf_log_syslog nf_conntrack_netlink \
         nfnetlink_log nft_ct nft_log nft_limit nft_masq nft_redir nft_nat \
         nft_reject nft_reject_ipv4 nft_reject_ipv6 nft_reject_inet \
         nft_fib_ipv4 nft_fib_ipv6 nft_fib_inet nft_compat; do
-        [[ -n $(find "$2/net" -name "$module.ko" -type f -print -quit) ]] || {
+        builtin=false
+        case $module in
+            nf_conntrack) symbol=NF_CONNTRACK;;
+            nf_nat) symbol=NF_NAT;;
+            *) symbol=;;
+        esac
+        if [[ -n $symbol ]] && grep -Fxq "CONFIG_$symbol=y" "$config" &&
+           grep -Eq "/$module[.]ko$" "$2/modules.builtin"; then
+            builtin=true
+        fi
+        [[ $builtin == true || -n $(find "$2/net" -name "$module.ko" -type f -print -quit) ]] || {
             echo "Missing built firewall module: $module" >&2; exit 1;
         }
     done
