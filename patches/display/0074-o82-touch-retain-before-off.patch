@@ -1,0 +1,26 @@
+--- a/src/display/panel-xiaomi-o82.c
++++ b/src/display/panel-xiaomi-o82.c
+@@ -683,6 +683,7 @@
+ static int o82_unprepare(struct drm_panel *panel)
+ {
+ 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
++	bool retain = false;
+ 	int ret = 0, power_ret;
+ 
+ 	mutex_lock(&ctx->lock);
+@@ -691,10 +692,12 @@
+ 		goto out;
+ 	if (!ctx->prepared && !ctx->enabled_supplies && !ctx->loaded_supplies)
+ 		goto out;
++	/* Uke TDDI handles early blank before the DCS OFF sequence. */
++	if (ctx->prepared && !ctx->removing &&
++	    ctx->enabled_supplies == GENMASK(ARRAY_SIZE(ctx->supplies) - 1, 0))
++		retain = o82_touch_gesture(ctx, UKE_O82_TOUCH_RETAIN) == NOTIFY_STOP;
+ 	ret = ctx->prepared ? o82_off(ctx) : 0;
+-	if (!ret && !ctx->removing &&
+-	    ctx->enabled_supplies == GENMASK(ARRAY_SIZE(ctx->supplies) - 1, 0) &&
+-	    o82_touch_gesture(ctx, UKE_O82_TOUCH_RETAIN) == NOTIFY_STOP) {
++	if (!ret && retain) {
+ 		ctx->gesture_retained = true;
+ 		ctx->prepared = false;
+ 		goto out;
