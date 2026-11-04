@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # RPM metadata and installed paths only. Does not compile or access hardware.
+# Retained project family contract from d3dcaaf; cleanup uses unlink.
 set -Eeuo pipefail
-spec=${1:?Diagnostic spec}
+spec=${1:?Unstable development spec}
 diagnostics=$(mktemp)
-trap 'rm -f "$diagnostics"' EXIT
+trap 'unlink "$diagnostics"' EXIT
 query() {
  rpmspec --target aarch64 "$@" "$spec" 2> "$diagnostics"
  cat "$diagnostics" >&2

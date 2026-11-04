@@ -90,5 +90,8 @@ operation is introduced. Clean retries reset observations only after ownership
 succeeds; quarantine and later refused probes preserve the first failure.
 Successful registration remains distinct from later runtime/handoff faults.
 The fixture imports the actual show callbacks and requires unsafe phase-reset,
-stale-readback and live-sysfs-MMIO mutations to fail. Remote qualification and
-the cumulative full-kernel build are separate pending checks for this change.
+stale-readback and live-sysfs-MMIO mutations to fail. COPR11260755, source
+a1afff0dd7d42ea7c5a979519417d6f371c3ebae, passes GCC/Clang ordinary and
+ASan/UBSan runs, all80 probe fault points and all three required mutations.
+The complete AArch64 object/link/package checks remain gates of the next
+cumulative kernel. These modeled results do not identify the physical fault.
