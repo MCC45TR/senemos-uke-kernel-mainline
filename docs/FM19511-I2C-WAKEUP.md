@@ -78,3 +78,18 @@ and [IPv6 Kconfig](https://github.com/gregkh/linux/blob/v7.3.1/net/ipv6/netfilte
 The current7200/7300 configuration disables PREEMPT_RT, satisfying the generic
 legacy-table constraint. No preemption policy, DT, firmware or electrical
 parameter is changed by this correction.
+
+The complete configuration references include the production embedded-initramfs
+path before olddefconfig. The original CDSP assertion runs on its reference
+before expensive compilation. Both actual boot-build olddefconfig passes must
+retain every networking prerequisite; the complete comparator also runs after
+embedding the initramfs. This avoids comparing a provisional empty initramfs
+configuration against the final production configuration.
+
+The singleboot package provides uke-kernel-default(waydroid-netd)=1 only with
+the corresponding effective-config and object checks. Its config-only checker
+is retained from project source2b5ae9739f455049960024581c5d00e63fb85c1f,
+which introduced that dependency contract in the parallel11002 candidate.
+The combined candidate retains the RTC, HSIC, CDSP/pogo, CAMCC stage and NFC
+correction while satisfying that consumer interface. Build and physical
+acceptance remain independent.

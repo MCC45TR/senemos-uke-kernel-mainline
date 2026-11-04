@@ -190,6 +190,7 @@ for input in "$network/native.config" "$network/configs/waydroid-network.config"
  ' "$owner/configs/nfc-network-legacy.config" "$input" > "$stage/legacy.config"
  install -m644 "$stage/legacy.config" "$input"
 done
+install -m644 "$owner/tests/waydroid-network-built731.sh" "$network/tests/waydroid-network-built731.sh"
 install -Dm644 "$owner/configs/nfc-network-legacy.config" "$profile/configs/nfc-network-legacy.config"
 # Preserve both reviewed input configurations. Final Kconfig checks independently
 # resolve the old CDSP input and the Android-network reference on prepared sources.
@@ -223,7 +224,7 @@ done < "$network/configs/waydroid-network.config"
 printf 'Actual upstream Kconfig resolves all corrected legacy routing/filter prerequisites\n'
 for tree in "$profile" "$boot"; do
  (cd "$tree"; while read -r path; do
-  case $path in SHA256SUMS|source-commit|source-composition.json|lock.json|native.config|packaging/native/native.config|src/boot/uke-abl.c|src/audio/uke-audio-card.c) continue;; esac
+  case $path in SHA256SUMS|source-commit|source-composition.json|lock.json|native.config|packaging/native/native.config|src/boot/uke-abl.c|src/boot/build-payload.sh|src/audio/uke-audio-card.c) continue;; esac
   grep -Fxq "$path" "$stage/overlays" || sha256sum "$path"
  done < <(find . -type f -printf '%P\n' | sort)) > "$stage/tree-retained.sha256"
  while read -r hash path; do
@@ -231,9 +232,22 @@ for tree in "$profile" "$boot"; do
  done < "$owner/manifests/nfc-rtc-merge-before.sha256"
  while read -r path; do install -Dm644 "$hsic/$path" "$tree/$path"; done < "$stage/hsic-assets"
  while read -r path; do
-  [[ $tree == "$profile" || $path == tests/native-firewall-contract.sh ]] || continue
   install -Dm644 "$network/$path" "$tree/$path"
  done < "$stage/network-assets"
+ install -Dm644 "$owner/tests/nfc-cohort-config731.sh" "$tree/tests/nfc-cohort-config731.sh"
+ # Check real olddefconfig output before either Image build. The final complete
+ # comparator follows initramfs embedding; the first pass intentionally has none.
+ awk '
+  {print}
+  /^make -C "\$kernel" O="\$out" LOCALVERSION="\$localversion" olddefconfig$/ {
+   n++
+   print "bash \"$here/../../tests/waydroid-network-built731.sh\" \"$out\" \"$here/../../configs/waydroid-network.config\" config-only"
+   if(n==2) print "bash \"$here/../../tests/nfc-cohort-config731.sh\" \"$out/.config\" \"$kernel/native-generated/nfc-waydroid-reference/.config\""
+  }
+  END {if(n!=2)exit 1}
+ ' "$tree/src/boot/build-payload.sh" > "$stage/build-payload.sh"
+ install -m644 "$stage/build-payload.sh" "$tree/src/boot/build-payload.sh"
+ bash -n "$tree/src/boot/build-payload.sh"
  if [[ $tree == "$profile" ]]; then
   install -m644 "$stage/native.config" "$tree/native.config"
  else
@@ -269,7 +283,8 @@ done
 {
  cat "$stage/rtc-assets" "$stage/hsic-assets"
  printf '%s\n' src/boot/uke-abl.c src/audio/uke-audio-card.c src/nfc/fm19511-uke.c \
-  tests/native-firewall-contract.sh packaging/native/native.config
+  src/boot/build-payload.sh tests/nfc-cohort-config731.sh packaging/native/native.config
+ cat "$stage/network-assets"
 } | while read -r path; do
  test -f "$boot/$path" || continue
  hash=$(sha256sum "$boot/$path" | cut -d ' ' -f1)
@@ -307,6 +322,8 @@ jq --arg commit "$commit" --arg revision "$revision" --arg base "$base_sha" --ar
  nfc_network_legacy_overlay:"configs/nfc-network-legacy.config",
  waydroid_network_overlay:true,waydroid_policy_routing_builtin:true,waydroid_legacy_filter_builtin:true,
  waydroid_network_runtime_qualified:false,kernel_driver_source_unchanged:false,
+ waydroid_network_precompile_config_gate:true,waydroid_default_kernel_feature_level:1,
+ waydroid_config_check_source:"2b5ae9739f455049960024581c5d00e63fb85c1f",
  diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),
  rtc_backend:$rtc[0].rtc_backend,rtc_secure_offset_boot_activation:false,
  rtc_secure_provider_qualified:false,rtc_utc_calendar_qualified:false,
@@ -352,6 +369,9 @@ day=$(date -u --date="@$epoch" '+%a %b %d %Y')
 awk -v revision="$revision" -v day="$day" -v color="$stage/missing-color-checks" '
  BEGIN {while((getline line < color)>0) extra[++nc]=line;close(color)}
  /^%global senemos_build_release 7603$/ {$0="%global senemos_build_release " revision;n++}
+ /^%package singleboot$/ || /^%package -n %\{name\}-singleboot$/ || /^%package -n senemos-uke-linux-kernel-mainline-unstable-singleboot$/ {
+  print;print "Provides: uke-kernel-default(waydroid-netd) = 1";profiles++;next
+ }
  /^%build$/ {
   print "CC=clang bash native-profile/tests/o82-avr-contract.sh \"$PWD\""
   print "CXX=clang++ bash native-profile/tests/dpu-video-timing-contract.sh \"$PWD\""
@@ -367,8 +387,10 @@ awk -v revision="$revision" -v day="$day" -v color="$stage/missing-color-checks"
   print "  ref=\"$PWD/native-generated/nfc-$role-reference\""
   print "  mkdir -p \"$ref\""
   print "  cp \"native-profile/configs/nfc-$role-reference.config\" \"$ref/.config\""
+  print "  bash scripts/config --file \"$ref/.config\" --set-str INITRAMFS_SOURCE \"%{_uke_out}/boot-initramfs.cpio.gz\""
   print "  make -s O=\"$ref\" ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig"
   print "done"
+  print "bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-reference/.config"
   print "CC=clang bash native-profile/tests/fm19511-wakeup-owner-regression.sh \"$PWD\""
   print "CC=clang FM19511_WAKEUP_TEST_FLAGS='\''-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'\'' bash native-profile/tests/fm19511-wakeup-owner-regression.sh \"$PWD\""
   next
@@ -398,7 +420,7 @@ awk -v revision="$revision" -v day="$day" -v color="$stage/missing-color-checks"
   print "";next
  }
  {print}
- END {if(n!=1 || configchecks!=1)exit 1}
+ END {if(n!=1 || configchecks!=1 || profiles!=1)exit 1}
 ' "$spec" > "$stage/next.spec"
 install -m644 "$stage/next.spec" "$spec"
 bash "$owner/packaging/native/date-cohort-changelog.sh" "$spec" "$revision" "$epoch"
