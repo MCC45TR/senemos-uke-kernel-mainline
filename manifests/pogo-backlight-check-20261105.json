@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "source_commit": "4e478f2076ef653ccf29d9524d3e043ab74666df",
+  "copr_build": 11262339,
+  "state": "succeeded",
+  "scope": "isolated actual-callback fixtures and real Linux7.3.1 AArch64 driver object; no full kernel",
+  "checks": {
+    "fixtures": ["nanosic-protocol", "nanosic-lifecycle", "nanosic-backlight", "nanosic-power"],
+    "compilers": ["gcc", "clang"],
+    "modes": ["ordinary", "address-and-undefined-sanitizers"],
+    "successful_runs": 16,
+    "aarch64_object_werror": true,
+    "backlight_worker_symbol_present": true,
+    "source_sha256": "97107ef558ed2d9855f7c174c749e6efd634d5c6c6536cad3135fda9b5eb3f7c",
+    "object_sha256": "b48d2454bdb682ee364e39b6045869d300f246201eeb8f472771b89ab0b0ce49"
+  },
+  "receipt": {
+    "nevra": "uke-pogo-kernel-check-0.1-1.fc46.noarch",
+    "sha256": "bbb45606a4bebe4a48fdc7be80fe5ba05ae5f41a9777ed944c215dddf8253cbd",
+    "header_sha256": "65ddf24a38ed9f25cd2c48a0282e9391752c0eca437e354ded40e53c03253464",
+    "payload_sha256": "4bc52b501c8a801d2e608fc6ec9adef57b3b8845e1530504a3917f5bf646e3c6",
+    "signature_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "both_signatures_and_digests_pass": true,
+    "exact_source_matches": true,
+    "installed": false
+  },
+  "physical": {
+    "accessory_available": false,
+    "running_kernel": "7.3.1-12101-unstable",
+    "new_driver_delivered": false,
+    "prior_first_i2c_write_errno": -5,
+    "failure_cause_established": false,
+    "keyboard_touchpad_authentication_light_suspend_wake_accepted": false
+  },
+  "integration": "Shared coordinator applies src/pogo/apply-backlight.sh to the latest cumulative profile, refreshes its locks and requires the new fixtures; retain every newer contribution."
+}

@@ -33,8 +33,9 @@ enable calls at108c8/109e4 establish order; the shared WN8030 donor's I/O-first
 sequence is not transplanted. GPIO timing and admitted MCU image remain exact.
 Neither module is executed or included in source/build artifacts.
 
-The real device currently fails its first MCU I2C write; accessory presence
-still needs confirmation. The change removes the unordered power assumption,
+The real device currently fails its first MCU I2C write. The physical keyboard
+is unavailable, as confirmed on5 November; this does not establish the cause
+of the transfer failure. The change removes the unordered power assumption,
 but a physical retry on a coordinator-delivered cumulative kernel is required.
 Touchpad21-byte layout, Y1770 versus OEM edge2135, exact authentication,
 effective brightness and complete input/suspend/wake remain physical gates.
@@ -45,3 +46,11 @@ Use src/pogo/apply-backlight.sh on the extracted profile before its normal
 preparation. It admits only the known old/current driver and leaves Kconfig,
 Makefile, unrelated sources and feature gates intact. Refresh its profile lock
 and require the new lifecycle/backlight/power checks in the final producer.
+
+Isolated COPR11262339 succeeds at source4e478f2076ef653ccf29d9524d3e043ab74666df:
+all four actual-callback fixtures pass with GCC and Clang, each ordinary and
+ASan/UBSan; the real Linux7.3.1 AArch64 driver object builds with-Werror.
+The signed text-only receipt passes both fingerprint signatures and both
+digests. Its precise identities and remaining gates are recorded in
+manifests/pogo-backlight-check-20261105.json. The receipt is not installed;
+this check produces neither a full kernel nor physical acceptance.
