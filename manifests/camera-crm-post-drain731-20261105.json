@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "Adopt independently reproduced CRM post-drain correction before provider activation",
-  "status": "implemented; awaiting coordinator COPR source/native-object qualification",
+  "status": "Post-drain correction source/native-object qualified; managed provider integration remains pending",
   "parent": {
     "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
     "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
@@ -135,17 +135,31 @@
   "qualification": {
     "package": "uke-camera-crm-core-check",
     "version_release": "7.3.1-5",
-    "copr_build": null,
+    "copr_build": 11264557,
     "requires_exact_original_assertion134": true,
     "requires_all16_review_cases": true,
     "requires_native_aarch64_object": true,
-    "requires_retained_original_preparation": true
+    "requires_retained_original_preparation": true,
+    "state": "succeeded",
+    "source_commit": "2d90d80b63d68565c93a6311857f09166164f7f4",
+    "duration_seconds": 215,
+    "signed_text_rpm_sha256": "f56bb64582b9b60103a8e21d024bb454fcc78ec35aca0bc2b8c9eacfbb170503",
+    "native_log_download_sha256": "f30466cb98414a8122cc71ae45317789befb0a7c73f3dd21c263ee0f46d95dda",
+    "native_object_sha256": "1d6323e14ced3d5d253999007ab792ff306cc512b06432eca90d40311e5959fc",
+    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "original_failure_assertion134_passed": true,
+    "review_cases_per_mode": 16,
+    "compiler_modes": 4,
+    "all_prior_contracts_passed": true,
+    "native_aarch64_object_passed": true,
+    "parent_checks_retained": 19,
+    "receipt_installed": false
   },
   "activation": {
     "provider_integration": false,
     "guard_changed": false,
     "post_drain_fixed": true,
-    "post_drain_qualified": false,
+    "post_drain_qualified": true,
     "managed_ccf_complete": false,
     "runtime_pm_wired": false,
     "physical_acceptance": false
