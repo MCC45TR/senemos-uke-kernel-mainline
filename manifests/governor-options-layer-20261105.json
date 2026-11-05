@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Four stock governor options on actual cumulative config and independent NFC inputs; all defaults, other config bytes, source layers and hardware gates retained",
+  "parent": {
+    "build": 11262085,
+    "source": "d1a7a35247eb76bdcc323b42b3ff46806c7fdccf",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11262085/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12202.src.rpm",
+    "sha256": "b0ca5002c0a99c750e514a5ee18ee403ce51c69a82ac0adcd2c2f0bc97d8317a",
+    "full_candidate_status": "retired-after-late-audio-fixture-failure",
+    "physical_acceptance": false
+  },
+  "config_inputs": [
+    {
+      "path": "native.config",
+      "history": "configs/governor-before-native.config",
+      "before_sha256": "739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34",
+      "after_sha256": "e0bad377ea2719e00eb2a5b2a3b38fc05d32d23e52cd0f8466905c204c32bc4a"
+    },
+    {
+      "path": "configs/nfc-cdsp-reference.config",
+      "history": "configs/governor-before-nfc-cdsp.config",
+      "before_sha256": "d7a47d22e8d187d3b51044aabc220aeeb9aa6f23ddc0d4632050ac78d6c23617",
+      "after_sha256": "83226623001a693f20da67883dd5880e46be85d478c6d662804f604ce474e545"
+    },
+    {
+      "path": "configs/nfc-waydroid-reference.config",
+      "history": "configs/governor-before-nfc-waydroid.config",
+      "before_sha256": "01db3cf62131e3dd94f90a84a1cdb24686c17c678bdbeb5804a27d19ee105729",
+      "after_sha256": "b71f1974e504c02b846b6725332158823373a5c2a95c9af47fada4ffacf733e7"
+    }
+  ],
+  "preserved_profile_inputs": [
+    {
+      "path": "tests/nfc-cohort-config731.sh",
+      "sha256": "f2b40184d2343f046c91befbc875f7cb4b6ec36e89fc9ac3a993b9dcac8766d1"
+    },
+    {
+      "path": "tests/cdsp-pogo-config-contract.sh",
+      "sha256": "fd11aad8209533f50fa5b3a6cf90fb16c223d63bf0bfcfd7304c670e0862a2ef"
+    }
+  ],
+  "assets": [
+    {
+      "path": "tests/governor-config-contract.sh",
+      "sha256": "583bae34ce00528ba5aab75f4bc932d883661c53acd81654fbc3ec4d89d4594c"
+    },
+    {
+      "path": "packaging/native/overlay-governor-options731.sh",
+      "sha256": "88ea3a00e9ac37ba85a1d73de343ff8c83a21009420ee76e7ce3c2f171bfbc65"
+    },
+    {
+      "path": "docs/GOVERNOR-OPTIONS.md",
+      "sha256": "302964be8b21464edbcc33a41bc9bdb157e62545c99719a0c03cc6f3a466ddf2"
+    },
+    {
+      "path": "packaging/native/check-cumulative-camera731.sh",
+      "sha256": "71d33ac30166b6cfa369e3647a5e4bdb1b5a6656c2af2577df94d7eeeef2e20a",
+      "before_sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216",
+      "history": "packaging/native/check-cumulative-camera731-before-governor.sh"
+    }
+  ],
+  "check_inputs": [
+    {
+      "path": "tests/governor-layer-contract.sh",
+      "sha256": "3fad6969cc368f580bfaffd7596ad59cdcbd2d399a8879837a0faf3a517da546"
+    },
+    {
+      "path": "packaging/native/check-governor-cumulative731.sh",
+      "sha256": "74b9c1b1fb56b3eacdd58a9cd9f5e085f4971e2be22ff674bfc5b1c641511b4e"
+    },
+    {
+      "path": "packaging/native/copr-governor-cumulative731-check.sh",
+      "sha256": "5f3850b63e8c78735e5d24cd5b81443fb9b83d39c1f15d19467a5c3b5788636c"
+    },
+    {
+      "path": "packaging/native/refuse-published-release.sh",
+      "sha256": "8ebb19b5e63a57df661b1401620766ae1519a154b32127a2d17733761b64eb23"
+    }
+  ],
+  "defaults_unchanged": true,
+  "dt_unchanged": true,
+  "thermal_opp_limits_unchanged": true,
+  "task_scheduler_unchanged": true,
+  "io_schedulers_unchanged": true,
+  "physical_acceptance": false
+}

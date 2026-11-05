@@ -48,12 +48,24 @@ configuration, package and workload qualification.
 
 ## Integration and validation
 
-The coordinator must carry these four changes into both native configuration
-copies in the next cumulative source recipe, update the corresponding config
-hashes/locks and preserve every existing layer. Do not repoint a frozen source
-producer or replace an active full-kernel build. No kernel revision, installed
-kernel/profile, slot, automatic staging policy or rollback preference changes
-as part of this contribution.
+The production source profile differs from the repository's legacy native
+config copy. Apply the four-line extension to the actual production input,
+never replace it with that legacy file. The layer helper updates both
+production config copies and the two independent NFC reference inputs,
+keeps their original bytes in history files and updates profile/boot receipts.
+The full NFC comparator remains unchanged and excludes only the existing pogo
+HID delta. The cumulative source checker accepts the new exact config hash
+only after the four-line contract passes; its original source is preserved.
+
+`manifests/governor-options-layer-20261105.json` pins the exact12202 source RPM,
+all three before/after config hashes and layer assets. That retired full
+candidate failed late audio fixtures; it is a frozen source input, not a
+delivered or physically qualified kernel. The audio owner supplies its separate
+fixture correction. The governor owner qualifies this source layer fully;
+the coordinator imports the precise layer into the later cumulative recipe.
+Do not repoint a frozen producer or replace an active full-kernel build.
+No kernel revision, installed kernel/profile, slot, staging policy or rollback
+preference changes as part of this contribution.
 
 `tests/governor-config-contract.sh BASELINE CANDIDATE` requires the four expected
 changes and byte-for-byte retention of every other config line. The COPR-only
@@ -68,6 +80,16 @@ build; the archive is supplied as Source1 and checked again inside the isolated
 build. Initial check11262118 passed the config comparison but stopped before
 compilation because its build chroot could not resolve the source host. The
 corrected recipe removes that network dependency from the RPM check.
+
+The separate `copr-governor-cumulative731-check.sh` producer uses the complete
+pinned production SRPM and retains its original source verification and full
+preparation section. It checks exact application, unchanged repeat and thirteen
+refusal cases before producing a source-only check view. It independently
+resolves the original native config, extended native config and both extended
+NFC references; compares the complete effective configs; runs the unchanged
+full NFC and native hardening contracts; and compiles only the four governor
+objects. An empty initramfs setting is applied consistently to every resolved
+config for this object-only check. It does not produce an Image or final module.
 
 After coordinated delivery, confirm the two GPU governors appear on the actual
 Adreno node and both CPU governors are available without module loading. Keep
