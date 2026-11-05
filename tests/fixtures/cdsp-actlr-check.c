@@ -47,7 +47,7 @@ static const void *of_get_property(struct device_node *n,const char *s,int *len)
     return hide_rules?NULL:rules;
 }
 static u32 be32_to_cpu(u32 x) {return __builtin_bswap32(x);}
-static bool test_bit(unsigned bit,const unsigned long *map) {return !!(*map&(1UL<<bit));}
+static bool __attribute__((unused)) test_bit(unsigned bit,const unsigned long *map) {return !!(*map&(1UL<<bit));}
 static bool qcom_uke_video_domain(struct arm_smmu_device *s,struct device *d) {(void)s;(void)d;return false;}
 static bool qcom_uke_video_actlr_matches(struct arm_smmu_device *s) {(void)s;return true;}
 static bool qcom_uke_display_domain(struct arm_smmu_device *s,struct device *d) {(void)s;(void)d;return false;}

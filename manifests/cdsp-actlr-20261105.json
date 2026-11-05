@@ -43,7 +43,7 @@
     },
     {
       "path": "tests/fixtures/cdsp-actlr-check.c",
-      "sha256": "940409f8b38c390b51e5089c75e5bacc0170f797c23b7c73f3111813064f20d7"
+      "sha256": "cef834b5b1e1915d55bac31b77b4d2f919b9e34621ac41c94e549dc9c941703d"
     },
     {
       "path": "tests/iris-smmu-contract.sh",
