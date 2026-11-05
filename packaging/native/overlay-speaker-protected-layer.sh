@@ -10,6 +10,7 @@ commit=${2:?Exact protected source commit}
 hook='bash "$profile/src/audio/prepare-speaker-protected-layer.sh" "$kernel"'
 assets=(src/audio/prepare-speaker-protected-layer.sh src/audio/build-protected-topology.sh
  src/audio/prepare-speaker-formats.sh tests/audio-pcm-formats-contract.sh
+ tests/audio-fs19xx-contract.sh tests/audio-fs19xx-lifecycle-contract.sh tests/audio-probe-contract.sh
  src/audio/sm7675-uke-protected-speaker.dtsi tests/audio-speaker-safety-contract.sh
  tests/audio-speaker-safety.c tests/audio-protected-package-contract.sh
  src/audio/desktop/array-ucm2/Speaker-PCM.conf
@@ -39,12 +40,15 @@ for asset in packaging/native/check-speaker-inclusion.sh tests/audio-speaker-obs
 done
 (cd "$profile"; sha256sum -c --strict --quiet <<'HASH'
 5b3a7164e7774f6077cb8f571e0f9108189e86be96bb67581cc75225b8ce33f3  src/audio/desktop/array-ucm2/Speaker-PCM.conf
+d263454909bd44d3c106567591f8951147e76621bfb0aefe6d02d27f7157d307  tests/audio-fs19xx-contract.sh
+0bbdecbf33d551b0041492e96d51ba29fe5235d3fe49bff95036e1319cfe14ef  tests/audio-fs19xx-lifecycle-contract.sh
+67732058a2c16167d8edcd0ed627288beef508dbd351ce5be094cfe5f056b2fc  tests/audio-probe-contract.sh
 HASH
 )
 for asset in "${assets[@]}"; do
  [[ ! -L $profile/$asset ]]
  git -C "$owner" show "$commit:$asset" | cmp - "$owner/$asset"
- case $asset in packaging/native/check-speaker-inclusion.sh|tests/audio-speaker-observer-code.sh|src/audio/desktop/array-ucm2/Speaker-PCM.conf) ;;
+ case $asset in packaging/native/check-speaker-inclusion.sh|tests/audio-speaker-observer-code.sh|src/audio/desktop/array-ucm2/Speaker-PCM.conf|tests/audio-fs19xx-contract.sh|tests/audio-fs19xx-lifecycle-contract.sh|tests/audio-probe-contract.sh) ;;
  *) [[ ! -e $profile/$asset ]] || cmp "$owner/$asset" "$profile/$asset";; esac
 done
 cp "$profile/prepare.sh" "$stage/prepare"
@@ -52,7 +56,9 @@ cp "$profile/source-composition.json" "$stage/composition"
 cp "$profile/src/audio/sm7675-uke-speaker-audio.dtsi" "$stage/speaker-dt"
 (cd "$profile"; find . -type f ! -name SHA256SUMS ! -name prepare.sh ! -name source-composition.json \
  ! -path ./src/audio/sm7675-uke-speaker-audio.dtsi ! -path ./packaging/native/check-speaker-inclusion.sh \
- ! -path ./tests/audio-speaker-observer-code.sh ! -path ./src/audio/desktop/array-ucm2/Speaker-PCM.conf -print0 | sort -z | xargs -0 sha256sum) > "$stage/retained"
+ ! -path ./tests/audio-speaker-observer-code.sh ! -path ./src/audio/desktop/array-ucm2/Speaker-PCM.conf \
+ ! -path ./tests/audio-fs19xx-contract.sh ! -path ./tests/audio-fs19xx-lifecycle-contract.sh \
+ ! -path ./tests/audio-probe-contract.sh -print0 | sort -z | xargs -0 sha256sum) > "$stage/retained"
 for asset in "${assets[@]}"; do install -Dm644 "$owner/$asset" "$profile/$asset"; done
 printf '\n#include "sm7675-uke-protected-speaker.dtsi"\n' >> "$profile/src/audio/sm7675-uke-speaker-audio.dtsi"
 printf '\n%s\n' "$hook" >> "$profile/prepare.sh"
