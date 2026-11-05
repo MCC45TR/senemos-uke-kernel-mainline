@@ -42,7 +42,7 @@ unit hashes out of source, RPMs, COPR and public logs.
 
 MiCode audio commit `8eb0eccbc4027ae4a4987e4bced03a4381039714` identifies
 FS19XX as 0x29 and FS1958 as 0x17 in `fsm-dev.h`. `fsm_config_vol()` uses different
-encodings for these IDs. Retain the0x29 register contract; do not transplant
+encodings for these IDs. Retain the 0x29 register contract; do not transplant
 FS1958 or upstream FS2104/5S masks, limits or gain conversions.
 
 Its legacy `fsm_q6afe.c` maps protection-enabled run-in mode to 1 and
@@ -80,3 +80,24 @@ immediate revocation on loss. No such activation is included here.
 Automatic seamless staging stays enabled. Preserve the user-selected local
 rollback-off preference and rollback-enforced package defaults. This contributor
 does not change kernel selection, boot state, staging policy or rollback mode.
+
+## Controls-only cumulative layer
+
+`packaging/native/overlay-speaker-controls-only.sh PROFILE AUDIO_COMMIT` is a
+source layer for the coordinator. It retains the complete incoming profile
+ledger and every old source/config/DT/topology/UCM/firmware byte. It adds code
+and one final preparation hook; it does not receive or modify BOOT or the spec.
+Use an immutable detached audio tree at the stated exact contribution commit.
+
+The hook excludes the codec portion of 0073 and does not apply 0074, preserving
+all legacy amplifier callbacks and stream formats. The existing 223 baseline
+stays in use. It compiles the new Uke-only cache/controls with
+`UKE_FS19XX_CONTROLS_ONLY`; DT alone cannot admit a graph. All graph callbacks
+are inert while inactive, including close/release of legacy graph 40. Optional
+cache allocation/crypto/registration failure does not take down legacy audio.
+The separate admitted path still fails closed. Cached READY is not protection.
+
+The later admission layer must validate generic/factory data offline, add only
+0073's codec hunk and the 0074 format layer, provide both suppliers' complete
+protected DT/topology, and remove the controls-only compiler flag. This remains
+at 223 and does not satisfy the eight physical gates or enable 243.
