@@ -10,13 +10,18 @@ Deeper sleep and uncertain/partially published states retain the old refusal.
 
 --- a/src/camera/camcc-sm7675.c
 +++ b/src/camera/camcc-sm7675.c
-@@ -16,4 +16,5 @@
+@@ -16,6 +16,7 @@
  #include "provider/camcc-sm7675-clocks.h"
  #include "provider/camcc-sm7675-handoff.h"
  #include "provider/camcc-sm7675-registration.h"
 +#include "provider/camcc-sm7675-sleep.h"
  
-@@ -112,4 +113,4 @@
+ static ssize_t controller_state_show(struct device *dev,
+ 				    struct device_attribute *attribute, char *buffer)
+@@ -105,7 +106,7 @@
+ 	.driver = {
+ 		.name = "camcc-sm7675",
+ 		.of_match_table = cam_cc_native_match,
 -		.pm = &cam_cc_power_pm_ops,
 +		.pm = &cam_cc_native_pm_ops,
  		.sync_state = cam_cc_native_sync_state,
@@ -24,17 +29,22 @@ Deeper sleep and uncertain/partially published states retain the old refusal.
  		.dev_groups = cam_cc_native_groups,
 --- a/src/camera/provider/camcc-sm7675-owner.h
 +++ b/src/camera/provider/camcc-sm7675-owner.h
-@@ -7,4 +7,6 @@
+@@ -8,6 +8,8 @@
  #include <linux/of.h>
  #include <linux/string.h>
  
 +static const struct dev_pm_ops cam_cc_native_pm_ops;
 +
  static bool cam_cc_owner_busy(void)
-@@ -82,4 +84,5 @@
+ {
+ 	unsigned int rail, level, domain;
+@@ -82,7 +84,8 @@
+ 	    of_node_check_flag(dev->of_node, OF_DYNAMIC) ||
  	    dev->pm_domain || of_find_property(dev->of_node, "power-domains", NULL) ||
  	    !dev->driver || dev->driver->owner || !dev->driver->suppress_bind_attrs ||
 -	    dev->driver->pm != &cam_cc_power_pm_ops)
 +	    (dev->driver->pm != &cam_cc_power_pm_ops &&
 +	     dev->driver->pm != &cam_cc_native_pm_ops))
  		return ERR_PTR(-EINVAL);
+ 	if (cam_cc_power.dev || dev_get_drvdata(dev))
+ 		return ERR_PTR(-EBUSY);

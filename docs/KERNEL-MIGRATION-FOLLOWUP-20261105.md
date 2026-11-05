@@ -55,3 +55,8 @@ external-monitor/USB continuity and repeated operation remain acceptance work.
 Automatic staging and rollback preferences remain separately owned. An actual
 alternating A/B updater change and recovery-artifact admission are required
 before the next device installation; this kernel source does not supply them.
+
+Source preparation11267957 failed before compilation: GNU patch with fuzz0
+rejected shortened context in the new CAMCC delta. The corrected delta uses
+complete generated context; no kernel package or device change came from that
+attempt. The following check uses a fresh receipt release.
