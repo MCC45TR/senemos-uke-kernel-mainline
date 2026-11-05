@@ -9,10 +9,13 @@ The included original helper is installed by src/cdsp/apply-actlr.sh.
 
 --- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
 +++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
-@@ -890,2 +890,3 @@
+@@ -890,5 +890,6 @@
  #include "uke-display-smmu.c"
  #include "uke-video-smmu.c"
 +#include "uke-cdsp-smmu.c"
+ 
+ static int qcom_uke_smmu_alloc_context_bank(struct arm_smmu_domain *domain,
+ 		struct arm_smmu_device *smmu, struct device *dev, int start)
 @@ -900,3 +901,8 @@
  	int len, i, j;
  

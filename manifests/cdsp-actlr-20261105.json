@@ -31,7 +31,7 @@
     },
     {
       "path": "patches/cdsp/0001-uke-cdsp-actlr.patch",
-      "sha256": "4784b1c5052fa02ea8f08d11359bc3afc337fa7bf0bd64aef8b6d63dc4393612"
+      "sha256": "f7ac4cd48e0d2cbcdef4573ab69ea83b553c7497419e0e4b695f9c207dbbc7c0"
     },
     {
       "path": "tests/cdsp-actlr-contract.sh",
@@ -69,5 +69,5 @@
     "physical_dma_compute_accepted": false,
     "full_camera_calibration_focus_accepted": false
   },
-  "qualification_state": "Fixture1/COPR11261869 failed before its original-control assertion: the extracted existing allocator intentionally leaves domain unused; use the same unused-parameter harness policy as the retained video fixture. Production code unchanged; fresh fixture2 pending."
+  "qualification_state": "Fixture1/COPR11261869 failed before its original-control assertion: the extracted existing allocator intentionally leaves domain unused; use the same unused-parameter harness policy as the retained video fixture. Production code unchanged; fresh fixture2 pending. A synthetic text apply check also caught missing trailing context in the include hunk; corrected three-hunk application passes without native compilation."
 }
