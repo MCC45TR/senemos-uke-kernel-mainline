@@ -9,7 +9,7 @@
     "sha256": "db31b8a612b3caf5aedbfb681eb1140688072cb6dffaa104946877c65d341b57",
     "rpm_nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203"
   },
-  "combined_source_check": null,
+  "combined_source_check": 11263219,
   "ssc": {
     "admission": "qualified",
     "source_commit": "52ece641276acda0c691db55f6cacd659be67287",
@@ -83,6 +83,11 @@
       "copr_build": 11263153,
       "source_commit": "6d1bac6ae7da5edb9aa3a8e85732b7eef2b9bef1",
       "feature": "qualified combined governor/observer/pogo/corrected SSC/camera GCC objects"
+    },
+    {
+      "copr_build": 11263219,
+      "source_commit": "b7f83a1064a9fb610672a5c4db87f7d41a645d17",
+      "feature": "qualified common production assembly, six roles and camera GCC"
     }
   ],
   "assets": [
@@ -128,5 +133,7 @@
       "disposition": "following candidate after this frozen camera correction; preserve all existing kernel features/config",
       "observed_result": "11263166 failed after freeze; no qualified production input"
     }
-  ]
+  ],
+  "combined_source_check_source": "b7f83a1064a9fb610672a5c4db87f7d41a645d17",
+  "combined_source_check_receipt_sha256": "1577565f5978d4bfbe125857790e636e28d3cd0c8cbd43b544ab594a78e02b83"
 }
