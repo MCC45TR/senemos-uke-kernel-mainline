@@ -50,8 +50,9 @@ reference=$kernel/native-generated/migration-manager-$phase-waydroid
 mkdir -p "$before" "$reference"
 cp "$kernel/native-generated/migration-manager-before-native/.config" "$before/.config"
 cp "$kernel/native-generated/migration-manager-waydroid/.config" "$reference/.config"
-for config in "$before/.config" "$reference/.config"; do
- bash "$kernel/scripts/config" --file "$config" --set-str INITRAMFS_SOURCE "$initramfs"
+for directory in "$before" "$reference"; do
+ bash "$kernel/scripts/config" --file "$directory/.config" --set-str INITRAMFS_SOURCE "$initramfs"
+ make -s -C "$kernel" O="$directory" ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
 done
 bash "$profile/tests/kernel-manager-config-contract.sh" \
  "$before/.config" "$out/.config" \

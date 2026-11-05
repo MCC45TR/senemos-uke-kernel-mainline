@@ -26,9 +26,11 @@ awk '
 )
 # The historical reference must still reject the new manager composition,
 # with the same explicit initramfs context on both sides.
-cp "$kernel/native-generated/nfc-waydroid-reference/.config" "$stage/old-reference"
-bash "$kernel/scripts/config" --file "$stage/old-reference" --set-str INITRAMFS_SOURCE "$stage/out/boot-initramfs.cpio.gz"
-if bash "$profile/tests/nfc-cohort-config731.sh" "$stage/out/.config" "$stage/old-reference" > "$stage/old-refusal" 2>&1; then
+mkdir "$stage/old-reference"
+cp "$kernel/native-generated/nfc-waydroid-reference/.config" "$stage/old-reference/.config"
+bash "$kernel/scripts/config" --file "$stage/old-reference/.config" --set-str INITRAMFS_SOURCE "$stage/out/boot-initramfs.cpio.gz"
+make -s -C "$kernel" O="$stage/old-reference" ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
+if bash "$profile/tests/nfc-cohort-config731.sh" "$stage/out/.config" "$stage/old-reference/.config" > "$stage/old-refusal" 2>&1; then
  echo 'Historical manager omission was not detected' >&2; exit 1
 fi
 # An unrelated config mutation must be refused by the actual replacement gate.
