@@ -76,7 +76,8 @@ done
 own_assets=(src/boot/uke-hardware.h src/boot/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
  tests/ssc-native-host.h tests/hardware-dt.cpp tests/ssc-mount-matrix.c tests/ssc-mount-matrix.sh
  tests/ssc-als-vector-contract.c tests/ssc-als-vector-contract.sh tests/ssc-rear-als-contract.c tests/ssc-rear-als-contract.sh
- packaging/native/check-migration-cohort731.sh packaging/native/prepare-migration-manager731.sh)
+ packaging/native/check-migration-cohort731.sh packaging/native/prepare-migration-manager731.sh
+ packaging/native/check-migration-boot-config731.sh tests/migration-boot-config-boundary731.sh)
 for path in "${own_assets[@]}"; do install -Dm644 "$owner/$path" "$profile/$path"; done
 for path in configs/kernel-manager/resources.config configs/kernel-manager/resource-dependencies.txt \
  packaging/native/apply-kernel-manager-config.sh tests/kernel-manager-config-contract.sh; do
@@ -113,6 +114,19 @@ sed -e "s/739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34/$nati
  -e '/^! strings .*uke-fs19xx-runtime.o.*grep -F xiaomi,fs19xx-protected/s/^! strings /strings /' \
  "$checker" > "$stage/checker"
 install -m644 "$stage/checker" "$checker"
+# The actual embedded-initramfs branch must compare the new manager cohort.
+# Its old complete reference remains checked during preparation, unchanged.
+payload=$profile/src/boot/build-payload.sh
+printf '%s  %s\n' f05787c6ba9e256227761d1f0cfd5035705f16693a7cdb3873e30b54cfe4e3e5 "$payload" | sha256sum -c --strict -
+install -Dm644 "$payload" "$profile/history-before-migration/src/boot/build-payload.sh"
+awk '
+ $0=="bash \"$here/../../tests/nfc-cohort-config731.sh\" \"$out/.config\" \"$kernel/native-generated/nfc-waydroid-reference/.config\"" {
+  print "bash \"$kernel/native-profile/packaging/native/check-migration-boot-config731.sh\" \"$kernel\" \"$out\"";n++;next
+ }
+ {print}
+ END {if(n!=1)exit 1}
+' "$payload" > "$stage/payload"
+install -m644 "$stage/payload" "$payload"
 cat >> "$profile/prepare.sh" <<'PREP'
 
 # Qualified stationary initial-state sampling; no new wake or GPIO owner.
@@ -180,7 +194,7 @@ awk -v revision="$revision" '
  /^bash native-profile\/tests\/nfc-cohort-config731.sh / {
   sub(/native-generated\/nfc-waydroid-reference/,"native-generated/migration-manager-linked-waydroid");f++
  }
- /^%check$/ {print;print "bash native-profile/packaging/native/check-migration-cohort731.sh \"$PWD\" %{_uke_out} linked";next}
+ /^%check$/ {print;print "bash native-profile/tests/migration-boot-config-boundary731.sh \"$PWD\" %{_uke_out}";print "bash native-profile/packaging/native/check-migration-cohort731.sh \"$PWD\" %{_uke_out} linked";next}
  /^%changelog$/ {
   print;print "* Thu Nov 05 2026 Uke contributors - 7.3.1-"revision
   print "- Retain complete12204 and all qualified native sensor, Hall, manager and protected223 additions."
@@ -213,6 +227,7 @@ make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_re
  drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o \
  sound/soc/codecs/fs19xx.o sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o arch/arm64/kernel/uke-abl.o
 bash native-profile/packaging/native/check-migration-cohort731.sh "$PWD" %{_uke_out} objects
+bash native-profile/tests/migration-boot-config-boundary731.sh "$PWD" %{_uke_out}
 %install
 install -d %{buildroot}%{_docdir}/%{name}
 install -m644 native-profile/source-commit native-profile/source-composition.json \
