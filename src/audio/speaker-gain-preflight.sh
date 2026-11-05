@@ -20,7 +20,9 @@ fi
 installed=false
 if rpm -q uke-speaker-runtime >/dev/null 2>&1; then installed=true; fi
 controls=false
+controls_query=false
 if names=$(amixer -c POCOPadX1 controls 2>/dev/null); then
+ controls_query=true
  if grep -Fq "name='FS19xx Runtime Provisioning'" <<< "$names" &&
   grep -Fq "name='FS19xx Protection State'" <<< "$names"; then controls=true; fi
 fi
@@ -40,15 +42,16 @@ if [[ -x /usr/bin/uke-speaker-runtime ]]; then
  fi
 fi
 jq -n --arg release "$release" --argjson model "$model" --argjson ro "$persist_ro" \
- --argjson installed "$installed" --argjson controls "$controls" --argjson native "$native" '
+ --argjson installed "$installed" --argjson controls "$controls" --argjson query "$controls_query" --argjson native "$native" '
  {schema_version:1,kernel_release:$release,model_matched:$model,
   requested_gain_ceiling:243,gain_243_admissible:false,decision:"blocked",
   persist_mount_read_only:$ro,runtime_installed:$installed,
-  protected_controls_visible:$controls,native_readiness:$native,
+  controls_query_succeeded:$query,protected_controls_visible:$controls,native_readiness:$native,
   blockers: ([if $model then empty else "model_not_matched" end,
    if $ro then empty else "persist_not_verified_read_only" end,
    if $installed then empty else "runtime_not_installed" end,
-   if $controls then empty else "protected_kernel_controls_missing" end,
+   if ($query|not) then "protected_kernel_controls_unavailable"
+    elif $controls then empty else "protected_kernel_controls_missing" end,
    if $native==null then "authenticated_runtime_readiness_unavailable" else empty end,
    if ($native.provisioned // false) then empty else "calibration_provisioning_unverified" end,
    if ($native.protected_graph_running // false) then empty else "protected_graph_not_observed_running" end] +

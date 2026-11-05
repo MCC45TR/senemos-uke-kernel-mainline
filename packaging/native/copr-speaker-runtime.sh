@@ -5,6 +5,7 @@ set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
+bash "$owner/packaging/native/refuse-published-release.sh" uke-speaker-runtime 0.4-2
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 mkdir -p "$stage/source/src/audio" "$stage/source/tests" "$output"
@@ -13,6 +14,7 @@ git archive HEAD src/audio/uke-speaker-runtime.cpp src/audio/uke-fs19xx-acdb.hpp
  src/audio/uke-speaker-calibration.hpp src/audio/uke-speaker-persist.hpp \
  src/audio/uke-fs19xx-protocol.h tests/audio-speaker-runtime.cpp \
  tests/audio-speaker-runtime-contract.sh tests/audio-speaker-service-contract.sh \
+ tests/audio-speaker-preflight-contract.sh \
  tests/audio-speaker-control-mock.cpp src/audio/systemd/uke-speaker-provision@.service \
  src/audio/udev/70-uke-speaker-provision.rules src/audio/prepare-generic-speaker-data.sh \
  src/audio/speaker-gain-preflight.sh LICENSE | tar -xf - -C "$stage/source"
@@ -26,7 +28,7 @@ tar --sort=name --mtime=@1793664000 --owner=0 --group=0 --numeric-owner -czf \
 cat > "$output/uke-speaker-runtime.spec" <<'SPEC'
 Name: uke-speaker-runtime
 Version: 0.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Read-only Uke speaker calibration reader and guarded DSP provisioner
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.gz
@@ -55,6 +57,7 @@ CXX=clang++ bash tests/audio-speaker-runtime-contract.sh
 CXX=g++ bash tests/audio-speaker-service-contract.sh
 CXX=clang++ bash tests/audio-speaker-service-contract.sh
 bash -n src/audio/speaker-gain-preflight.sh
+bash tests/audio-speaker-preflight-contract.sh
 %install
 install -Dm755 uke-speaker-runtime %{buildroot}%{_bindir}/uke-speaker-runtime
 install -Dm755 src/audio/prepare-generic-speaker-data.sh %{buildroot}%{_libexecdir}/uke-speaker-prepare-data
