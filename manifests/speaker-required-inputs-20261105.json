@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "controls_source": "89acf61d73f60f5164104eaffd19c076e6371287",
+  "fixture_source": "f05c32a879b9c56abe3531365f95b85684af4510",
+  "observer_source": "13fb0ff522531924c0e96f81cef59d7c64b93eb8",
+  "observer_check": 11262314,
+  "runtime_abi": 1,
+  "gain_ceiling": 223,
+  "protected_graph_admitted": false,
+  "physical_protection_qualified": false,
+  "files": [
+    {
+      "path": "src/audio/uke-fs19xx-runtime.c",
+      "sha256": "8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57"
+    },
+    {
+      "path": "tests/audio-speaker-state-read-contract.sh",
+      "sha256": "5d6d733afe871aa3fcff98f70bf2e9697dc115280db3d5ebc7eabdfde30c176d"
+    }
+  ]
+}
