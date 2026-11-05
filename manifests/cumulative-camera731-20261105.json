@@ -581,7 +581,7 @@
     },
     {
       "path": "packaging/native/copr-cumulative-camera731.sh",
-      "sha256": "eb216f540ea402c1c35f287328cfad4ccd5d2580dc7abc77562cdfd1d4003208"
+      "sha256": "fd40bdbe8e4c132069fa6d35359d2fdfb4acfad250ec6b453d6b894d4c0aa836"
     },
     {
       "path": "packaging/native/copr-o82-memory-cumulative-check.sh",

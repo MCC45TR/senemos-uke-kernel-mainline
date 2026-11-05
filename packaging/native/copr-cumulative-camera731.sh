@@ -6,6 +6,7 @@ export LC_ALL=C
 test ! -e /etc/senemos/kernel-update.conf
 [[ $# == 2 && $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
+[[ $(git -C "$owner" remote get-url origin) == https://github.com/MCC45TR/senemos-uke-kernel-mainline.git ]]
 output=$(realpath -m "$1")
 revision=$2
 [[ $revision =~ ^[1-9][0-9]{4}$ && $revision -gt 12101 ]]
@@ -103,6 +104,7 @@ for role in profile boot; do
     done < "$receipt"
 done
 cmp <(jq -cS 'del(.source_assets)' "$stage/extension-lock.before") <(jq -cS 'del(.source_assets)' "$boot/lock.json")
+(cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 # The complete source/DT/audio policy must survive all ABI renaming unchanged.
 audio_path=src/audio/uke-audio-card.c
 audio_release="7.3.1-${revision}u"
