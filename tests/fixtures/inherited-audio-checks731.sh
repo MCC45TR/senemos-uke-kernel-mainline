@@ -1,0 +1,24 @@
+CC=clang bash native-profile/tests/audio-gpr-bounds-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-prm-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-unmap-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-response-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-port-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-rx-queue-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-compress-lock-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-buffer-submit-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-graph-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-lifetime-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-service-add-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-readiness-contract.sh "$PWD"
+CXX=clang++ bash native-profile/tests/audio-preset-contract.sh
+CXX=clang++ bash native-profile/tests/audio-acdb-contract.sh
+CC=clang bash native-profile/tests/audio-card-contract.sh "$PWD"
+CC=clang bash native-profile/tests/microphone-gain-contract.sh
+CC=clang bash native-profile/tests/audio-eld-contract.sh
+CXX=clang++ bash native-profile/tests/kernel-audio-policy-contract.sh
+CC=clang bash native-profile/tests/audio-fs19xx-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-fs19xx-lifecycle-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-probe-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-tdm-sink-contract.sh "$PWD"
+CC=clang bash native-profile/tests/audio-topology-errors-contract.sh "$PWD"
+bash native-profile/tests/audio-services-fdt-contract.sh

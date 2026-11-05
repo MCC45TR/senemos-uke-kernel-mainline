@@ -17,7 +17,7 @@ admit_asset_path()
 }
 while read -r path; do
     admit_asset_path "$path" || { printf 'Refused cumulative asset path: %s\n' "$path" >&2; exit 1; }
-done < <(jq -r '.source_inputs[].path,.production_assets[].path,.audio_controls_only.assets[].path' "$owner/$manifest")
+done < <(jq -r '.source_inputs[].path,.production_assets[].path,.audio_controls_only.assets[].path,.audio_legacy_fixtures.assets[].path' "$owner/$manifest")
 (cd "$owner"; jq -r '.source_inputs[]|.sha256+"  "+.path' "$manifest" | sha256sum -c --strict --quiet -)
 bash "$owner/packaging/native/refuse-published-release.sh" \
  senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
@@ -29,6 +29,7 @@ stage=$(mktemp -d)
 cleanup()
 {
     if [[ -d $stage/audio-source ]]; then git -C "$owner" worktree remove "$stage/audio-source"; fi
+    if [[ -d $stage/audio-fixtures ]]; then git -C "$owner" worktree remove "$stage/audio-fixtures"; fi
     find "$stage" -depth -delete
 }
 trap cleanup EXIT
@@ -127,6 +128,23 @@ bash "$stage/audio-source/$audio_helper" "$profile" "$audio_commit"
 sha256sum "$profile/SHA256SUMS" "$boot/lock.json" > "$stage/audio-applied"
 bash "$stage/audio-source/$audio_helper" "$profile" "$audio_commit"
 sha256sum -c --strict --quiet "$stage/audio-applied"
+fixture_commit=$(jq -er .audio_legacy_fixtures.source_commit "$owner/$manifest")
+fixture_helper=$(jq -er .audio_legacy_fixtures.helper "$owner/$manifest")
+[[ $fixture_commit == f05c32a879b9c56abe3531365f95b85684af4510 ]]
+git -C "$owner" cat-file -e "$fixture_commit^{commit}" 2>/dev/null || git -C "$owner" fetch --depth=1 origin "$fixture_commit"
+git -C "$owner" worktree add --detach "$stage/audio-fixtures" "$fixture_commit"
+(cd "$stage/audio-fixtures"; jq -r '.audio_legacy_fixtures.assets[]|.sha256+"  "+.path' "$owner/$manifest" | sha256sum -c --strict --quiet -)
+bash "$stage/audio-fixtures/$fixture_helper" "$profile" "$fixture_commit"
+sha256sum "$profile/SHA256SUMS" "$boot/lock.json" > "$stage/fixtures-applied"
+bash "$stage/audio-fixtures/$fixture_helper" "$profile" "$fixture_commit"
+sha256sum -c --strict --quiet "$stage/fixtures-applied"
+# Bind the early dispatcher to the exact successful24-call replay. Retain the
+# original final %check and every argument, rather than curating a replacement.
+awk '/^%check$/ {inside=1;next} /^%[a-z]/ {inside=0}
+ inside && /bash native-profile\/tests\/(audio-|microphone-gain-contract|kernel-audio-policy-contract)/ {print}' \
+ "$spec" > "$stage/inherited-audio-checks.sh"
+[[ $(wc -l < "$stage/inherited-audio-checks.sh") == 24 ]]
+cmp "$owner/tests/fixtures/inherited-audio-checks731.sh" "$stage/inherited-audio-checks.sh"
 for tree in "$profile" "$boot"; do
     [[ $(grep -Fo 'uke7.3.1-12101u' "$tree/$audio_path" | wc -l) == 2 ]]
     sed "s/uke7[.]3[.]1-12101u/uke$audio_release/g" "$tree/$audio_path" > "$stage/audio-card.c"

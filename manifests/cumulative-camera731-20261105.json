@@ -22,6 +22,7 @@
     "camcc-oem-bootstrap",
     "cdsp-actlr-source",
     "audio-controls-only",
+    "qualified-inherited-fixtures",
     "final-source-abi-stamp"
   ],
   "required_checks": [
@@ -79,6 +80,11 @@
       "copr_build": 11262024,
       "source_commit": "89acf61d73f60f5164104eaffd19c076e6371287",
       "feature": "speaker controls with compile-time-disabled graph admission"
+    },
+    {
+      "copr_build": 11262171,
+      "source_commit": "f05c32a879b9c56abe3531365f95b85684af4510",
+      "feature": "all24 inherited audio fixtures, strict dispatcher and real old-harness refusal"
     }
   ],
   "production_assets": [
@@ -154,7 +160,7 @@
     },
     {
       "path": "packaging/native/check-cumulative-camera731.sh",
-      "sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216",
+      "sha256": "0a052830a731ce929ead63685efe2b1d1e8911330f29ea1cee29f7b94f8c19da",
       "before_sha256": null
     },
     {
@@ -393,6 +399,11 @@
       "before_sha256": null
     },
     {
+      "path": "tests/fixtures/inherited-audio-checks731.sh",
+      "sha256": "d7854b8571fd7cb4b61e6e958296b6691ada78d2a604663c168979121b3b3e7d",
+      "before_sha256": null
+    },
+    {
       "path": "tests/gmu-hfi-irq-contract.sh",
       "sha256": "6d81e50b06be97206631c0ce7f38cfc02034229b4f6eb1f1f7dddeb556575a3d",
       "before_sha256": null
@@ -557,7 +568,7 @@
     },
     {
       "path": "packaging/native/check-cumulative-camera731.sh",
-      "sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216"
+      "sha256": "0a052830a731ce929ead63685efe2b1d1e8911330f29ea1cee29f7b94f8c19da"
     },
     {
       "path": "packaging/native/check-o82-memory-cumulative.sh",
@@ -581,7 +592,7 @@
     },
     {
       "path": "packaging/native/copr-cumulative-camera731.sh",
-      "sha256": "0d750749e32adc9307b5d2bac7fe160e74d44d6214dc122ffe1abd45485d894c"
+      "sha256": "2d66aca625548691ff202e338cef651e387b77f517795f36541c3943cadea1cf"
     },
     {
       "path": "packaging/native/copr-o82-memory-cumulative-check.sh",
@@ -804,6 +815,10 @@
       "sha256": "1a1a96bbc2071ca9dca58dbe4ecf46bfaccc4816bbe59f57b89877cd9853d638"
     },
     {
+      "path": "tests/fixtures/inherited-audio-checks731.sh",
+      "sha256": "d7854b8571fd7cb4b61e6e958296b6691ada78d2a604663c168979121b3b3e7d"
+    },
+    {
       "path": "tests/gmu-hfi-irq-contract.sh",
       "sha256": "6d81e50b06be97206631c0ce7f38cfc02034229b4f6eb1f1f7dddeb556575a3d"
     },
@@ -964,6 +979,32 @@
     ],
     "graph_admitted": false,
     "gain_ceiling": 223
+  },
+  "audio_legacy_fixtures": {
+    "source_commit": "f05c32a879b9c56abe3531365f95b85684af4510",
+    "copr_build": 11262171,
+    "helper": "packaging/native/overlay-speaker-legacy-fixtures.sh",
+    "assets": [
+      {
+        "path": "packaging/native/overlay-speaker-legacy-fixtures.sh",
+        "sha256": "48e1805458d6e1a0bcab6c117d1e12e1b9450249caf9e524bf9dfcac132c693a"
+      },
+      {
+        "path": "tests/audio-graph-lifetime-contract.sh",
+        "sha256": "097900c1ccbf321522d20b9a594bba69e674f8f950f1de202e7ba3f63181e232"
+      },
+      {
+        "path": "tests/audio-readiness-contract.sh",
+        "sha256": "f405c836145a11ac163cc192d03c07bb3e00e3d4857e0a186f27c16edc1f71e1"
+      },
+      {
+        "path": "tests/fixtures/audio-protection-mock.h",
+        "sha256": "b98f50eb9e38ad23c3b1774e5e4d96359713b779bde8e618d7cf5804ed6aaafd"
+      }
+    ],
+    "fixture_call_list": "tests/fixtures/inherited-audio-checks731.sh",
+    "fixture_call_list_sha256": "d7854b8571fd7cb4b61e6e958296b6691ada78d2a604663c168979121b3b3e7d",
+    "early_dispatcher_strict": true
   },
   "seamless_staging_required": true,
   "package_rollback_default": "enforced",
