@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "AP SWDRV0 IRQ transport and read-only LUT foundation; provider guard unchanged",
-  "status": "implementation awaiting COPR source and native-object qualification",
+  "status": "IRQ/LUT source and native-object qualification passed; provider integration and physical acceptance pending",
   "parent": {
     "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
     "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
@@ -91,11 +91,31 @@
   "qualification": {
     "package": "uke-camera-crm-core-check",
     "version_release": "7.3.1-3",
-    "copr_build": null,
+    "copr_build": 11264111,
     "requires_native_aarch64_object": true,
     "requires_original_preparation": true,
     "requires_original_ignored_lut_error_negative_control": true,
-    "requires_transport_timeout_resource_stale_mutants": true
+    "requires_transport_timeout_resource_stale_mutants": true,
+    "state": "succeeded",
+    "source_commit": "ef2a550945f19f9c2c53c948aa68d3c4bf0336e7",
+    "duration_seconds": 206,
+    "signed_text_rpm_sha256": "6d4da7fce5c15e7c4478fac0f0871a20c991361e2478f584e96fb3cac085750d",
+    "native_log_download_sha256": "3cef2723cae2b60df938af6e5c0c95ab5f7d32cdcbb5968295822350c0f755c3",
+    "native_object_sha256": "eb94fe32b1f9f840d56f8b5873cbf267697d87be272ca144d61da4be4eea5ba8",
+    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "compiler_modes": 4,
+    "core_checks_per_run": 427488,
+    "lut_checks_per_run": 2341,
+    "transport_success_hz_cases": 24,
+    "original_source_negative_controls": 2,
+    "mutants": {
+      "core": 4,
+      "transport": 3
+    },
+    "original_preparation_passed": true,
+    "native_aarch64_object_passed": true,
+    "parent_checks_retained": 19,
+    "receipt_installed": false
   },
   "activation": {
     "provider_integration": false,
