@@ -5,7 +5,9 @@ set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" uke-speaker-runtime 0.4-2
+revision=${2:-2}
+[[ $# -le 2 && $revision =~ ^[1-9][0-9]*$ ]]
+bash "$owner/packaging/native/refuse-published-release.sh" uke-speaker-runtime "0.4-$revision"
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 mkdir -p "$stage/source/src/audio" "$stage/source/tests" "$output"
@@ -28,7 +30,7 @@ tar --sort=name --mtime=@1793664000 --owner=0 --group=0 --numeric-owner -czf \
 cat > "$output/uke-speaker-runtime.spec" <<'SPEC'
 Name: uke-speaker-runtime
 Version: 0.4
-Release: 2%{?dist}
+Release: @UKE_RUNTIME_RELEASE@%{?dist}
 Summary: Read-only Uke speaker calibration reader and guarded DSP provisioner
 License: GPL-2.0-only
 Source0: %{name}-%{version}.tar.gz
@@ -80,5 +82,6 @@ install -Dm644 src/audio/udev/70-uke-speaker-provision.rules %{buildroot}%{_udev
 %{_bindir}/uke-speaker-runtime
 %{_bindir}/uke-speaker-gain-preflight
 SPEC
+sed -i "s/@UKE_RUNTIME_RELEASE@/$revision/" "$output/uke-speaker-runtime.spec"
 rpmbuild -bs --define "_sourcedir $output" --define "_srcrpmdir $output" \
  "$output/uke-speaker-runtime.spec"
