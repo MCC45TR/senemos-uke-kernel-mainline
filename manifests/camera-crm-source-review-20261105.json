@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "Native firmware-managed CRM clock support for both complete Uke cameras",
-  "status": "AP vote core source-qualified11264022; IRQ/LUT foundation awaits native qualification; provider guard unchanged",
+  "status": "Core/IRQ/LUT/lifecycle source and native objects qualified; managed CCF and runtime-PM wiring pending; no physical admission",
   "baseline": {
     "release": "7.3.1-12204-unstable",
     "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
@@ -139,6 +139,30 @@
       "revision": "05441d697f7f9a927264f4058cbbc6a03dfcac9d",
       "path": "drivers/clk/qcom/common.h",
       "sha256": "9a2f6db86a796403b600f7e0f3a5b3b6a8cfc8f84feccf2d1ec7eeee68f9bc4a"
+    },
+    {
+      "reference_file": "upstream731-clk.c",
+      "repository": "gregkh/linux",
+      "revision": "79a907609d53d5cd645b42c11550d295d43abf99",
+      "path": "drivers/clk/clk.c",
+      "sha256": "9d92dcd1dbeeca41bf518415f217810d60fca95c81545289cf6b1579d5c43fce",
+      "spdx": "GPL-2.0"
+    },
+    {
+      "reference_file": "oem571-clk.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/clk.c",
+      "sha256": "72c21e49ad761899c76ce23fa2cca2064b4d737e404a018360cb30a2580fb6ca",
+      "spdx": "GPL-2.0"
+    },
+    {
+      "reference_file": "upstream731-clk-provider.h",
+      "repository": "gregkh/linux",
+      "revision": "79a907609d53d5cd645b42c11550d295d43abf99",
+      "path": "include/linux/clk-provider.h",
+      "sha256": "b6030ae09af2a71aa05b13c04f31177d165fae44a22d70fc1c3b3db971c2c759",
+      "spdx": "GPL-2.0"
     }
   ],
   "reference_policy": "Unchanged public sources; file-level SPDX and attribution retained; no donor code executed",
@@ -246,12 +270,15 @@
   "pending_delivery_dependency": {
     "helper": "uke-cdsp-pogo-firmware >=0.2-8",
     "updater": "uke-kernel-update >=1.8.97 after pre-write and boot-acceptance qualification",
-    "qualified": false,
+    "qualified": true,
     "trigger_priority_alone_sufficient": false,
     "automatic_staging_must_remain_enabled": true,
     "helper_copr_build": 11263798,
     "helper_build_state": "succeeded; API verified; coordinator package admission pending",
-    "withdrawn_updater96": "selected==running boot acceptance bypass; evidence only, no delivery"
+    "withdrawn_updater96": "selected==running boot acceptance bypass; evidence only, no delivery",
+    "installed_transaction": 113,
+    "installed_updater": "1.8.97-1.fc46",
+    "installed_helper": "0.2-8.fc46"
   },
   "physical_camera_acceptance": false,
   "calibration_read": false,
@@ -267,5 +294,41 @@
     "transport": "src/camera/provider/camcc-sm7675-crm-transport.h",
     "lut": "src/camera/provider/camcc-sm7675-crm-lut.h",
     "runtime_integrated": false
+  },
+  "framework_review": {
+    "native_ops": "determine_rate; no round_rate field in pinned7.3.1 clk_ops",
+    "upstream_set_rate_errors": "clk_change_rate ignores callback return; do not infer client-visible failure from that callback alone",
+    "workspace_hooks": "0001-cliffs-clock-handoff.patch provides checked PRE and ABORT/POST hooks; inspect actual prepared cumulative code before adaptation",
+    "runtime_pm": "clk_core_prepare gets provider PM before callback; set_rate also holds provider PM; probe-loaded immutable LUT avoids unpowered determine_rate MMIO",
+    "parent_transition": "clk_change_rate updates CCF parent even without a set_parent callback; preserve real OEM topology and avoid direct programming of managed PLLs",
+    "source_only": true
+  },
+  "managed_clock_classes": {
+    "total": 38,
+    "pll_indices": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "pll_postdiv_even_indices": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "perf_rcgs": 7,
+    "bw_rcgs": 1,
+    "branches": 20,
+    "not_managed_pll_indices": [
+      0,
+      1,
+      2,
+      8,
+      9
+    ],
+    "evidence": "Exact OEM descriptor declarations and crm ops; do not assume managed classes from the adjacent native catalog or cached notes"
   }
 }
