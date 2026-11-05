@@ -3,11 +3,11 @@
   "date": "2026-11-05",
   "scope": "Four stock governor options on actual cumulative config and independent NFC inputs; all defaults, other config bytes, source layers and hardware gates retained",
   "parent": {
-    "build": 11262085,
-    "source": "d1a7a35247eb76bdcc323b42b3ff46806c7fdccf",
-    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11262085/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12202.src.rpm",
-    "sha256": "b0ca5002c0a99c750e514a5ee18ee403ce51c69a82ac0adcd2c2f0bc97d8317a",
-    "full_candidate_status": "retired-after-late-audio-fixture-failure",
+    "build": 11262313,
+    "source": "45d8355e366e6b75e43f441ca99b517302adf522",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11262313/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203.src.rpm",
+    "sha256": "db31b8a612b3caf5aedbfb681eb1140688072cb6dffaa104946877c65d341b57",
+    "full_candidate_status": "current-frozen-source-live-build-reference-gate-observed-passing",
     "physical_acceptance": false
   },
   "preintegration": {
@@ -71,7 +71,7 @@
     },
     {
       "path": "docs/GOVERNOR-OPTIONS.md",
-      "sha256": "f5b02f095a46a1372465134b3fa5fef08f535c06ff02ca0b89461e3259df8c52"
+      "sha256": "b634467ba883e86f1633f0785c284beefc263645c693c30214500f62edf5c794"
     },
     {
       "path": "packaging/native/check-cumulative-camera731.sh",
@@ -91,11 +91,11 @@
     },
     {
       "path": "packaging/native/check-governor-cumulative731.sh",
-      "sha256": "0b8fecb341f0abe7fb533d7cc6e6d28e617305ccdece4d7a40553ddbe08d33af"
+      "sha256": "95dbb104296226b2c3335edfcaa182f5f86dd27899aa291727a19d744ea6df08"
     },
     {
       "path": "packaging/native/copr-governor-cumulative731-check.sh",
-      "sha256": "37771bce76bd38bcbe6baa716a13c1839219216be709e34e9f3f625917bcca1f"
+      "sha256": "e071a77bc175b381781842ad8f82d6b9a8176a40395690dd19a9a69e37b02ab5"
     },
     {
       "path": "packaging/native/refuse-published-release.sh",

@@ -1,9 +1,11 @@
 # Optional CPU and GPU governors
 
 5 November 2026. Target: POCO Pad X1 / SM7675, Fedora Rawhide AArch64.
-This contribution follows cumulative source
-`d1a7a35247eb76bdcc323b42b3ff46806c7fdccf`. It must be integrated into a later
-coordinated unstable candidate; it does not replace the frozen candidate.
+The source branch descends from cumulative freeze
+`d1a7a35247eb76bdcc323b42b3ff46806c7fdccf`. The bounded check uses the complete
+coordinator source `45d8355e366e6b75e43f441ca99b517302adf522`, frozen12203 /
+COPR11262313. Integrate the qualified layer into a later coordinated unstable
+candidate; it does not replace or modify the frozen12203 candidate.
 
 ## Observed running kernel
 
@@ -62,12 +64,12 @@ and final `%check`. No historical digest is relaxed. The cumulative source
 checker accepts the new exact config hash only after the four-line contract
 passes; its original source is preserved.
 
-`manifests/governor-options-layer-20261105.json` pins the exact12202 source RPM,
-all three before/after config hashes and layer assets. That retired full
-candidate failed late audio fixtures; it is a frozen source input, not a
-delivered or physically qualified kernel. The audio owner supplies its separate
-fixture correction. The bounded follow-up reproduces that qualified correction
-and camera source477314d's strict early replay of all24 inherited audio calls.
+`manifests/governor-options-layer-20261105.json` pins the exact12203 source RPM,
+all three before/after config hashes and layer assets. This is a frozen source
+input, not a delivered or physically qualified kernel. It already contains the
+qualified audio fixture correction and camera source477314d's strict early
+replay of all24 inherited audio calls. The check verifies these exact inputs
+and retains the production dependency set and reference-resolution context.
 Only the six-line config-digest adaptation differs from that camera checker.
 The governor owner qualifies this source layer fully;
 the coordinator imports the precise layer into the later cumulative recipe.

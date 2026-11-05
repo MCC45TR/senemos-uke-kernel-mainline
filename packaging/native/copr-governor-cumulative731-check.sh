@@ -21,7 +21,7 @@ trap cleanup EXIT
 curl -q -fLsS --retry 2 --max-time 600 --proto '=https' --proto-redir '=https' \
     "$(jq -er .parent.url "$manifest")" -o "$stage/parent.src.rpm"
 printf '%s  %s\n' "$(jq -er .parent.sha256 "$manifest")" "$stage/parent.src.rpm" | sha256sum -c --strict -
-[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.1-12202* ]]
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203* ]]
 rpmkeys --checksig --nosignature --verbose "$stage/parent.src.rpm"
 rpm2cpio "$stage/parent.src.rpm" > "$stage/parent.cpio"
 cpio -t --quiet < "$stage/parent.cpio" > "$stage/entries"
@@ -51,31 +51,20 @@ for commit in "$audio_source" "$camera_source"; do
 done
 git -C "$owner" worktree add --detach "$stage/audio-source" "$audio_source"
 bash "$stage/audio-source/packaging/native/overlay-speaker-legacy-fixtures.sh" "$profile" "$audio_source"
-install -m644 "$profile/SHA256SUMS" "$stage/pre-camera-profile.sha256"
-(cd "$boot"; find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$stage/pre-camera-boot.sha256"
+jq -e '.source_commit=="45d8355e366e6b75e43f441ca99b517302adf522" and
+ .kernel_release=="7.3.1-12203-unstable"' "$profile/source-composition.json" >/dev/null
+# The current frozen SRPM already contains both qualified inputs. Verify their
+# exact bytes instead of approximating the production factory with another merge.
 while IFS=$'\t' read -r path digest before; do
     [[ $path =~ ^(packaging|tests)/[a-zA-Z0-9_.,/-]+$ && $path != *..* ]]
     git -C "$owner" show "$camera_source:$path" > "$stage/camera-asset"
     printf '%s  %s\n' "$digest" "$stage/camera-asset" | sha256sum -c --strict --quiet -
     for tree in "$profile" "$boot"; do
-        if [[ $before == null ]]; then [[ ! -e $tree/$path && ! -L $tree/$path ]];
-        else printf '%s  %s\n' "$before" "$tree/$path" | sha256sum -c --strict --quiet -; fi
-        install -Dm644 "$stage/camera-asset" "$tree/$path"
+        cmp "$stage/camera-asset" "$tree/$path"
     done
-    jq --arg path "$path" --arg sha "$digest" '
-      if any(.source_assets[];.path==$path) then (.source_assets[]|select(.path==$path)|.sha256)=$sha
-      else .source_assets += [{path:$path,sha256:$sha}] end' "$boot/lock.json" > "$stage/next.lock"
-    install -m644 "$stage/next.lock" "$boot/lock.json"
+    jq -e --arg path "$path" --arg sha "$digest" \
+        'any(.source_assets[];.path==$path and .sha256==$sha)' "$boot/lock.json" >/dev/null
 done < <(jq -r '.preintegration.camera_assets[]|[.path,.sha256,(.before_sha256 // "null")]|@tsv' "$manifest")
-for role in profile boot; do
-    tree=$profile; receipt=$stage/pre-camera-profile.sha256
-    [[ $role != boot ]] || { tree=$boot; receipt=$stage/pre-camera-boot.sha256; }
-    while read -r digest path; do
-        path=${path#./}
-        if jq -e --arg path "$path" 'any(.preintegration.camera_assets[];.path==$path)' "$manifest" >/dev/null; then continue; fi
-        printf '%s  %s\n' "$digest" "$tree/$path" | sha256sum -c --strict --quiet -
-    done < "$receipt"
-done
 awk '/^%check$/ {inside=1;next} /^%[a-z]/ {inside=0}
  inside && /bash native-profile\/tests\/(audio-|microphone-gain-contract|kernel-audio-policy-contract)/ {print}' \
  "$parent" > "$stage/inherited-audio-checks.sh"
@@ -117,12 +106,11 @@ Source9: governor-cumulative-addon.tar.xz
 Source10: governor-production-spec.txt
 Source11: governor-source-checks.txt
 Source12: governor-production-spec-before.txt
-BuildRequires: python3-lxml kernel-headers
 
 %description
-Exact optional-governor source layer over the frozen cumulative12202 inputs.
-The parent full candidate failed later audio fixtures and is not a delivered
-or physically qualified baseline. Preserve all source layers, hardware gates
+Exact optional-governor source layer over the frozen cumulative12203 inputs.
+The parent is a current source candidate, not a delivered or physically
+qualified baseline. Preserve all source layers, hardware gates
 and independent full-config comparisons. Build only the four governor objects;
 package text receipts only. No Image, final module or target state operation.
 
