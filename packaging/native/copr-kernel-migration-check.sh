@@ -4,7 +4,7 @@ set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR source result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check 1.0-1
+bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check 1.0-2
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/uke-kernel-migration-check-1.0"
@@ -13,6 +13,8 @@ git -C "$owner" archive HEAD \
     tests/ssc-protocol-contract.c tests/ssc-protocol-contract.sh \
     tests/ssc-native-contract.c tests/ssc-native-contract.sh tests/ssc-native-host.h \
     tests/ssc-supplier-contract.sh tests/ssc-mount-matrix.c tests/ssc-mount-matrix.sh \
+    tests/ssc-als-vector-contract.c tests/ssc-als-vector-contract.sh \
+    tests/ssc-rear-als-contract.c tests/ssc-rear-als-contract.sh \
     tests/hardware-dt.cpp tests/hardware-dt.sh \
     packaging/native/check-ssc-native-objects.sh \
     manifests/kernel-package-migration.json docs/KERNEL-PACKAGE-MIGRATION.md \
@@ -30,7 +32,7 @@ printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de2
 cat > "$output/uke-kernel-migration-check.spec" <<'SPEC'
 Name: uke-kernel-migration-check
 Version: 1.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Native Uke DT and IIO migration source checks
 License: GPL-2.0-only AND MIT
 Source0: %{name}-%{version}.tar.gz
@@ -72,6 +74,10 @@ printf 'Full kernel/module, DNF replacement, four-pose rotation and ALS acceptan
 %{_docdir}/%{name}
 
 %changelog
+* Thu Nov 05 2026 Uke contributors - 1.0-2
+- Retain the qualified early-indication acknowledgement gates and both queued ALS patches.
+- Exercise real front/rear light callbacks in both metadata/vector orders with mount metadata.
+
 * Thu Nov 05 2026 Uke contributors - 1.0-1
 - Check native child mount metadata, exact landscape DT strings and retained SSC gates.
 - Package text evidence only; preserve all target services and recovery policy.

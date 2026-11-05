@@ -81,6 +81,9 @@ bash "$profile/tests/memlat-lifecycle-contract.sh"
 bash "$profile/src/sensors/prepare-source.sh" "$kernel"
 bash "$profile/tests/ssc-protocol-contract.sh"
 bash "$profile/tests/ssc-native-contract.sh" "$kernel"
+for order in metadata-first vectors-first; do
+    bash "$profile/tests/ssc-rear-als-contract.sh" "$profile" "$kernel" "$order"
+done
 bash "$profile/tests/ssc-mount-matrix.sh"
 CXX=clang++ bash "$profile/tests/hardware-dt.sh"
 bash "$profile/src/performance/prepare-source.sh" "$kernel"

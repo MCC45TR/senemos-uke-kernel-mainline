@@ -61,9 +61,10 @@ calibration, package or boot operation.
 | KDE/GNOME | Correct standard hardware interfaces | Use original distribution packages; generic desktop defects cannot be implemented in DT |
 
 Front-light `9896de4` / check11263802 and rear-light `f4b5020` / check11264114
-are separate qualified source contributions. They remain required inputs to
-the next cumulative assembly. This change does not replace them with an older
-sensor snapshot or claim their physical acceptance.
+are separately qualified source contributions. The migration source check also
+applies both patches to the retained layer2 acknowledgement consumer and checks
+the combined source in both metadata/vector orders. The next cumulative assembly
+must retain that combination. No physical ALS acceptance is claimed.
 
 ## Sources and compatibility
 

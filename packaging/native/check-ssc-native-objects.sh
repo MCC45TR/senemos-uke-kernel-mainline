@@ -20,6 +20,9 @@ tar -xJf "$archive" -C "$scratch"
 kernel=$scratch/linux-7.3.1
 bash "$owner/src/sensors/prepare-source.sh" "$kernel"
 bash "$owner/tests/ssc-native-contract.sh" "$kernel"
+for order in metadata-first vectors-first; do
+    bash "$owner/tests/ssc-rear-als-contract.sh" "$owner" "$kernel" "$order"
+done
 bash "$owner/tests/ssc-mount-matrix.sh"
 make -s -C "$kernel" O="$scratch/out" ARCH=arm64 defconfig
 "$kernel/scripts/config" --file "$scratch/out/.config" -d RUST -d DEBUG_INFO_BTF \
