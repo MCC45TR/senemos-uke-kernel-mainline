@@ -6,16 +6,21 @@ test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 scratch=$(mktemp -d)
 trap 'find "$scratch" -depth -delete' EXIT
-archive=$owner/referances/releases/linux-7.3.1.tar.xz
-mkdir -p "${archive%/*}"
-curl --fail --location --silent --show-error --retry 3 --proto '=https' --proto-redir '=https' \
-    https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.1.tar.xz -o "$archive"
+archive=${UKE_SSC_KERNEL_ARCHIVE:-$owner/referances/releases/linux-7.3.1.tar.xz}
+if [[ -z ${UKE_SSC_KERNEL_ARCHIVE:-} ]]; then
+    mkdir -p "${archive%/*}"
+    curl --fail --location --silent --show-error --retry 3 --proto '=https' --proto-redir '=https' \
+        https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.1.tar.xz -o "$archive"
+else
+    [[ -f $archive && ! -L $archive ]]
+fi
 printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231 \
     "$archive" | sha256sum -c -
 tar -xJf "$archive" -C "$scratch"
 kernel=$scratch/linux-7.3.1
 bash "$owner/src/sensors/prepare-source.sh" "$kernel"
 bash "$owner/tests/ssc-native-contract.sh" "$kernel"
+bash "$owner/tests/ssc-mount-matrix.sh"
 make -s -C "$kernel" O="$scratch/out" ARCH=arm64 defconfig
 "$kernel/scripts/config" --file "$scratch/out/.config" -d RUST -d DEBUG_INFO_BTF \
     -e IIO -e IIO_BUFFER -m QRTR -m QCOM_QMI_HELPERS -m IIO_UKE_SSC
