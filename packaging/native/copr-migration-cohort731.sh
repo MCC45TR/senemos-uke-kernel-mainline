@@ -61,10 +61,10 @@ while IFS=$'\t' read -r role pin; do
 done < <(jq -er '.roles|to_entries[]|[.key,.value]|@tsv' "$plan")
 git -C "$owner" fetch -q --depth 1 origin 33a5dc574401b67472e9bea65e5ff7084635f601
 # All helpers authenticate their original preimages and retain every peer byte.
-bash "$stage/audio/packaging/native/overlay-speaker-protected-layer.sh" "$profile" "$(jq -er .roles.audio "$plan")"
-bash "$stage/audio/packaging/native/overlay-speaker-protected-spec.sh" "$spec"
 bash "$stage/als/packaging/native/overlay-ssc-als731.sh" "$profile" "$boot"
 bash "$stage/als/packaging/native/overlay-ssc-rear-als731.sh" "$profile" "$boot"
+bash "$stage/audio/packaging/native/overlay-speaker-protected-layer.sh" "$profile" "$(jq -er .roles.audio "$plan")"
+bash "$stage/audio/packaging/native/overlay-speaker-protected-spec.sh" "$spec"
 for tree in "$profile" "$boot"; do
  printf '%s  %s\n' 7295cad2448f6d4cc814670cefacc413b56a20b39ac36e2c756241be2125fc04 \
   "$tree/src/sensors/uke-ssc-iio.c" | sha256sum -c --strict -

@@ -18,5 +18,8 @@
   "hdr_runtime_activation": false,
   "speaker_gain_ceiling": 223,
   "physical_acceptance": false,
-  "stable_promotion": false
+  "stable_promotion": false,
+  "failed_source_rehearsals": [
+    {"copr_build":11266930,"check_release":3,"scope":"source preparation before native compilation", "cause":"ALS admission correctly refused the already protected graph metadata", "correction":"apply both qualified ALS layers before the protected audio layer"}
+  ]
 }
