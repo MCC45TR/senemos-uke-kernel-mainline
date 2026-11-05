@@ -101,3 +101,20 @@ The later admission layer must validate generic/factory data offline, add only
 0073's codec hunk and the 0074 format layer, provide both suppliers' complete
 protected DT/topology, and remove the controls-only compiler flag. This remains
 at 223 and does not satisfy the eight physical gates or enable 243.
+
+## Inherited full-package audio checks
+
+Full cumulative 12202 reaches native Image/modules but fails an inherited
+APM harness that lacks the newly called helper providers. The controls-only
+source/object check did not cover the complete production check list. Apply
+`overlay-speaker-legacy-fixtures.sh PROFILE AUDIO_COMMIT` from its exact pinned
+detached source after the 89acf61 controls layer. It updates two authenticated
+test harnesses and their shared dependency mock; all production bytes and the
+preparation hook stay unchanged. Keep the original full `%check` mandatory.
+
+The independent fixture replays the exact 12202 `%prep` and extracts all 24
+audio calls from that production spec. Both compiler suites use explicit
+`bash -euo pipefail`; inserting the old failing harness into the same dispatcher
+must stop it. The coordinator should also run this extracted source-check list
+after preparation and before the next Image build, while retaining the final
+package checks. Its exact pin/result belongs in the shared audio handoff.
