@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "purpose": "Source-only qualification of missing exact Uke GCC camera configuration gates",
+  "parent": {
+    "copr_build": 11262313,
+    "source_commit": "45d8355e366e6b75e43f441ca99b517302adf522",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11262313/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203.src.rpm",
+    "sha256": "db31b8a612b3caf5aedbfb681eb1140688072cb6dffaa104946877c65d341b57"
+  },
+  "gcc_before_sha256": "8d6235495d6176a344989f289470e6187e56a9e3d6a157566200729c0a6c8568",
+  "gcc_after_sha256": "f57b6a5aecebc265fdfe25b6f06acae992853f139a3980103c9b86f3870bca7b",
+  "oem_gcc_sha256": "7d19636bc7e89f4837f5e044436d1bbae854f7ac927289f729867c0290e3e544",
+  "camera_registers": [
+    "0x26004",
+    "0x26028",
+    "0x2602c"
+  ],
+  "retained_video_registers": [
+    "0x32004",
+    "0x32030"
+  ],
+  "original_failure_required": 134,
+  "physical_acceptance": false,
+  "calibration_consumed": false,
+  "rear_focus": false,
+  "inputs": [
+    {
+      "path": "src/camera/provider/0006-gcc-cliffs-camera-config.patch",
+      "sha256": "a1d8a4c33aabbbf297913e686922cc69e3573cd1ae5ddc7bb3d54446220d3128"
+    },
+    {
+      "path": "src/camera/provider/apply-gcc-config731.sh",
+      "sha256": "12b47a18437375190cb5276aedaa31fe8982b935f801e0c10a55a6a029af3451"
+    },
+    {
+      "path": "tests/camera-gcc-config731-contract.sh",
+      "sha256": "858bc68a3c631b83967e1eac91d36420d902aa6e6fcd33ba27226a08a4d88694"
+    },
+    {
+      "path": "tests/camera-gcc-config731-object.sh",
+      "sha256": "d5334e6849969f46c21508dc732d7c945e81b6aee1b601051e208b87f50d8983"
+    },
+    {
+      "path": "docs/CAMERA-GCC-CONFIG731.md",
+      "sha256": "d898510df31e64d1bcedea85c99330c7750f5cfbd5270af172a7867a5fc8c4fe"
+    }
+  ]
+}
