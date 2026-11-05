@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Source-only cumulative integration: preserve DT/topology/UCM/firmware/config.
 set -Eeuo pipefail
+test ! -e /etc/senemos/kernel-update.conf
 kernel=$(realpath "${1:?Prepared cumulative kernel source}")
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 bash "$owner/src/audio/prepare-control-links.sh" "$kernel"
