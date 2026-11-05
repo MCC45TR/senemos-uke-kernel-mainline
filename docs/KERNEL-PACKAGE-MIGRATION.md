@@ -12,6 +12,14 @@ would add incompatible responsibilities without eliminating the dependency.
 
 ## Current migration
 
+Combined source `a73b16e022b1db49d710da39d1ab6094949a5aa5` passes
+[COPR11266477](https://copr.fedorainfracloud.org/coprs/mcc45tr/uke-linux-unstable/build/11266477/)
+in155 seconds. The signed text-only receipt, exact sources and additive patch
+preimages are recorded in
+[`kernel-migration-source-20261105.json`](../manifests/kernel-migration-source-20261105.json).
+This qualifies source/callback/object checks; a cumulative kernel and device
+acceptance remain pending.
+
 The native SSC IIO driver now reads the accelerometer child's standard
 `mount-matrix` and exposes `in_accel_mount_matrix` through
 `IIO_MOUNT_MATRIX(IIO_SHARED_BY_TYPE, ...)`. The early DT transformation carries
