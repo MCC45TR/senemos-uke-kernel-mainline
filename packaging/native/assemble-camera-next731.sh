@@ -97,6 +97,9 @@ bash "$stage/governor/packaging/native/overlay-governor-spec731.sh" "$spec"
 observer=$(jq -er '.layers[]|select(.role=="observer")|.source_commit' "$plan")
 bash "$stage/observer/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$observer"
 bash "$stage/pogo/src/pogo/apply-backlight.sh" "$profile"
+# The pogo overlay deliberately leaves sealing to its coordinator. The next
+# contributor verifies the ledger on entry, so seal this completed phase now.
+(cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 bash "$stage/ssc/packaging/native/overlay-ssc-early731.sh" "$profile" "$boot"
 sha256sum "$profile/SHA256SUMS" "$boot/lock.json" > "$stage/ssc-repeat"
 bash "$stage/ssc/packaging/native/overlay-ssc-early731.sh" "$profile" "$boot"
