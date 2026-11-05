@@ -1014,5 +1014,16 @@
   "camera_graph_activation": false,
   "front_eeprom_activation": false,
   "front_eeprom_read_only": true,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "deferred_unintegrated_contributions": [
+    {
+      "feature": "optional governor configuration extension",
+      "source_commit": "ed7e8f7a4164fd79c049cf1abcd661d5216e5309",
+      "latest_check": 11262300,
+      "state": "cumulative qualification failed; source owner follow-up pending",
+      "scope": "not part of the qualified production12101 or integrated12202 source baseline",
+      "delivery": "defer until cumulative qualification; preserve every existing source feature and hardware admission gate",
+      "current_native_config_sha256": "739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34"
+    }
+  ]
 }
