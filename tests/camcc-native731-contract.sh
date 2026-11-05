@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Execute only on COPR; import actual source bodies and framework helper contracts.
 set -Eeuo pipefail
+test ! -e /etc/senemos/kernel-update.conf
 [[ $# == 1 ]] || exit 2
 kernel=$(realpath -- "$1")
 project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -24,9 +25,37 @@ awk '
  copy {print;if($0=="}")copy=0}
  END {if(count!=4 || copy)exit 1}
 ' "$project/src/camera/camcc-sm7675.c" > "$work/native-probe-show.c"
+awk '/^static u32 cam_cc_sm7675_critical_cbcrs\[\] =/ {copy=1;count++}
+ copy {print;if($0=="};")copy=0} END {if(count!=1 || copy)exit 1}' \
+ "$project/src/camera/camcc-sm7675-data.h" > "$work/critical-gates.h"
+[[ $(grep -c '0x[0-9a-f]' "$work/critical-gates.h") == 4 ]]
+cp "$work/critical-gates.h" "$work/candidate-gates.h"
 flags=(-std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter
        -Wno-unused-function -Wno-sign-compare -I"$work")
 read -r -a extra <<< "${CAMCC_NATIVE_TEST_FLAGS:-}"
+if [[ -z ${CAMCC_NATIVE_TEST_FLAGS:-} ]]; then
+    # Exact old array, actual unchanged probe/attributes, and a transport-
+    # dependency counterexample. This is not proof of physical Uke causality.
+    ulimit -c 0
+    printf '%s  %s\n' 3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8 \
+      "$project/tests/fixtures/camcc-critical-before12101.h" | sha256sum -c --strict -
+    cp "$project/tests/fixtures/camcc-critical-before12101.h" "$work/critical-gates.h"
+    "${CC:-clang}" "${flags[@]}" -DCAMCC_GATE_ORDER_BEFORE \
+      "$project/tests/fixtures/camcc-native-check.c" -o "$work/bootstrap-before"
+    set +e
+    "$work/bootstrap-before" > "$work/bootstrap-before.log" 2>&1
+    before_rc=$?
+    set -e
+    if [[ $before_rc != 134 ]] ||
+       ! grep -Fq 'Original bootstrap control: cached critical-gate-verify/-5/0x132ec/0 reproduced' "$work/bootstrap-before.log" ||
+       ! grep -Fq 'cam_cc_native.ready' "$work/bootstrap-before.log"; then
+        cat "$work/bootstrap-before.log" >&2
+        printf 'Original bootstrap dependency control did not fail as required (exit %s)\n' "$before_rc" >&2
+        exit 1
+    fi
+    printf 'Actual12101 gate-array negative control reproduced modeled critical-gate-verify/-5/0x132ec/0 and failed readiness134\n'
+    cp "$work/candidate-gates.h" "$work/critical-gates.h"
+fi
 "${CC:-clang}" "${flags[@]}" "${extra[@]}" \
     "$project/tests/fixtures/camcc-native-check.c" -o "$work/native"
 ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 "$work/native"

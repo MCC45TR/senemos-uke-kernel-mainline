@@ -35,7 +35,7 @@ struct device_node { bool protected; };
 struct device_driver { void (*sync_state)(struct device *); };
 struct device { struct device_driver *driver; struct device_node *of_node; int usage; bool enabled, active; };
 struct platform_device { struct device dev; };
-struct regmap { u32 words[1024]; };
+struct regmap { u32 words[0x16040 / sizeof(u32)]; };
 struct clk_init_data { unsigned long flags; };
 struct clk_hw { const struct clk_init_data *init; unsigned int number; };
 struct clk_ops { int (*init)(struct clk_hw *); void (*disable)(struct clk_hw *); };
@@ -86,6 +86,8 @@ static int configured_plls, sync_error, sync_calls, genpd_syncs;
 static bool model_domains_on, first_resume, boot_drop_fault, domain_sync_fault;
 static bool crm_mapping, crm_active, busy_at_suspend;
 static int stuck_gate;
+static bool bootstrap_dependency;
+static unsigned int bootstrap_requests;
 static const char *observed_probe_phases[1024];
 static int observed_probe_errors[1024];
 static int sequence[1024], sequence_size;
@@ -108,7 +110,8 @@ static struct clk_regmap *cam_cc_sm7675_clocks[] = { &branch.clkr, &rcg.clkr, &p
 static struct gdsc domains[2];
 static struct gdsc *cam_cc_sm7675_gdscs[] = { &domains[0], &domains[1] };
 static const struct qcom_reset_map cam_cc_sm7675_resets[] = { {.reg = 0x600}, {.reg = 0x604} };
-static const unsigned int cam_cc_sm7675_critical_cbcrs[] = {0x700, 0x704, 0x708, 0x70c};
+#include "critical-gates.h"
+#define LAST_CRITICAL_GATE cam_cc_sm7675_critical_cbcrs[ARRAY_SIZE(cam_cc_sm7675_critical_cbcrs) - 1]
 static const struct { size_t num_clks, num_gdscs; } cam_cc_sm7675_desc = {5, 2};
 static struct { struct device *dev; struct regmap *map; int fault, primary_error; bool publication_started; } cam_cc_power;
 
@@ -147,6 +150,20 @@ static int regmap_update_bits(struct regmap *map, unsigned int reg, u32 mask, u3
 	assert(map == &model_map && reg % 4 == 0 && reg < sizeof(map->words));
 	int ret = step(); if (ret) return ret;
 	if (stuck_gate >= 0 && reg == cam_cc_sm7675_critical_cbcrs[stuck_gate]) return 0;
+	if (bootstrap_dependency && mask == BIT(0) && value == BIT(0)) {
+		/* A transport-dependent provider is a counterexample model, not a
+		 * claim about measured Uke electrical dependencies. The OEM sequence
+		 * establishes AHB/XO first; the old first GDSC request is discarded.
+		 */
+		if (reg == 0x13318 || reg == 0x13314 || reg == 0x132ec || reg == 0x13308) {
+			bootstrap_requests++;
+			if (reg != 0x13318 && !(map->words[0x13318 / 4] & BIT(0)))
+				return 0;
+			if ((reg == 0x132ec || reg == 0x13308) &&
+			    !(map->words[0x13314 / 4] & BIT(0)))
+				return 0;
+		}
+	}
 	map->words[reg / 4] = (map->words[reg / 4] & ~mask) | (value & mask); return 0;
 }
 #define regmap_read_poll_timeout_atomic(map, reg, value, condition, delay, timeout) \
@@ -397,6 +414,8 @@ static void defaults(bool boot_on)
 	model_domains_on = boot_on; first_resume = boot_drop_fault = domain_sync_fault = false;
 	crm_mapping = crm_active = busy_at_suspend = false;
 	stuck_gate = -1;
+	bootstrap_dependency = false;
+	bootstrap_requests = 0;
 	memset(observed_probe_phases, 0, sizeof(observed_probe_phases));
 	memset(observed_probe_errors, 0, sizeof(observed_probe_errors));
 	model_driver.sync_state = cam_cc_native_sync_state;
@@ -509,16 +528,16 @@ static void probe_observations(void)
 	check_probe_observation("not-started", 0, false, 0, false, 0);
 	assert(!cam_cc_native_probe(&model_device));
 	assert(cam_cc_native.probe.complete);
-	check_probe_observation("ready", 0, true, 0x70c, true, 1);
+	check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
 	int normal_steps = steps;
 	/* The successful sequence is unchanged: caching introduces no boundary call. */
 	assert(normal_steps == 41);
 	for (int i = 0; i < 4096; i++)
-		check_probe_observation("ready", 0, true, 0x70c, true, 1);
+		check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
 	/* A runtime reset fault must not rewrite the successful probe's history. */
 	fail_at = steps + 2;
 	assert(cam_cc_native_reset_assert(&cam_cc_native_reset.rcdev, 0) == -EREMOTEIO);
-	check_probe_observation("ready", 0, true, 0x70c, true, 1);
+	check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
 	for (int gate = 0; gate < 4; gate++) {
 		for (int operation = 0; operation < 3; operation++) {
 			defaults(false);
@@ -554,12 +573,12 @@ static void probe_observations(void)
 	check_probe_observation("runtime-resume", -EREMOTEIO, false, 0, false, 0);
 	defaults(false); crm_active = true;
 	assert(!cam_cc_native_probe(&model_device));
-	check_probe_observation("crm-admission", -EOPNOTSUPP, true, 0x70c, true, 1);
+	check_probe_observation("crm-admission", -EOPNOTSUPP, true, LAST_CRITICAL_GATE, true, 1);
 	for (int boundary = 26; boundary <= 30; boundary += 4) {
 		defaults(false); fail_at = boundary;
 		assert(!cam_cc_native_probe(&model_device));
 		assert(cam_cc_power.primary_error == -EREMOTEIO);
-		check_probe_observation("pll-configuration", -EIO, true, 0x70c, true, 1);
+		check_probe_observation("pll-configuration", -EIO, true, LAST_CRITICAL_GATE, true, 1);
 	}
 	puts("CAMCC probe: four actual read-only callbacks preserve first phase/error and unavailable/stale gate data; repeated reads add no API/MMIO calls");
 }
@@ -637,8 +656,42 @@ static void handoff_failures(void)
 	puts("CAMCC native: RCG/domain/proxy-release faults retain initial power and prevent handoff retry");
 }
 
+static void bootstrap_order_control(void)
+{
+	for (int on = 0; on < 2; on++) {
+		defaults(on);
+		bootstrap_dependency = true;
+		assert(!cam_cc_native_probe(&model_device));
+#ifdef CAMCC_GATE_ORDER_BEFORE
+		check_probe_observation("critical-gate-verify", -EIO, true, 0x132ec, true, 0);
+		assert(bootstrap_requests == 1 && !configured_plls && !clock_published);
+		fputs("Original bootstrap control: cached critical-gate-verify/-5/0x132ec/0 reproduced; ready is required\n", stderr);
+		assert(cam_cc_native.ready);
+#else
+		assert(cam_cc_native.ready && bootstrap_requests == 4);
+		assert(configured_plls == (on ? 0 : 2) && clock_published);
+		check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
+#endif
+	}
+#ifndef CAMCC_GATE_ORDER_BEFORE
+	defaults(false);
+	bootstrap_dependency = true;
+	crm_active = true;
+	assert(!cam_cc_native_probe(&model_device));
+	assert(bootstrap_requests == 4 && !cam_cc_native.ready && cam_cc_power.fault == -EIO);
+	assert(!configured_plls && !clock_published);
+	check_probe_observation("crm-admission", -EOPNOTSUPP, true, LAST_CRITICAL_GATE, true, 1);
+	puts("CAMCC bootstrap: actual catalog handles modeled AHB/XO dependencies on cold/boot-ON and preserves active-CRM refusal; Uke physical cause/effect remains unproved");
+#endif
+}
+
 int main(void)
 {
+#ifdef CAMCC_GATE_ORDER_BEFORE
+	bootstrap_order_control();
+#else
 	normal_lifecycle(); probe_failures(); probe_observations(); reset_and_lookup(); disable_postconditions(); handoff_failures();
+	bootstrap_order_control();
+#endif
 	return 0;
 }

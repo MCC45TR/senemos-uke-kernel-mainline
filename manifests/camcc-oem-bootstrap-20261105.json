@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Restore exact Uke OEM critical transport-gate order; electrical cause/correction unproved",
+  "observed_parent": {
+    "kernel_release": "7.3.1-12101-unstable",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "copr_build": 11260781,
+    "phase": "critical-gate-verify",
+    "error": -5,
+    "gate_register": "0x132ec",
+    "readback": "0x0",
+    "runtime_pm": "active",
+    "crm_mode": "unchecked",
+    "fitted_calibration_access": false
+  },
+  "reference": {
+    "repo": "MiCode/Xiaomi_Kernel_OpenSource",
+    "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "path": "drivers/clk/qcom/camcc-cliffs.c",
+    "file_sha256": "1a76c029c51710af6684a6d4f87e1486c125cd25badfce7b80ba642d820affe6",
+    "license": "GPL-2.0-only",
+    "same_soc_identical_repo": "OnePlusOSS/android_kernel_oneplus_sm7675",
+    "same_soc_commit": "fc892483f1d61f245924681eb5abd563564d9cba"
+  },
+  "critical_order": {
+    "before": [
+      "0x132ec",
+      "0x13308",
+      "0x13314",
+      "0x13318"
+    ],
+    "candidate": [
+      "0x13318",
+      "0x13314",
+      "0x132ec",
+      "0x13308"
+    ],
+    "mask": "BIT(0)",
+    "catalog_before_sha256": "af2369d63c2731e6e840c9a2560de9884c51c5819cd7f24c89e026f6ddc73fb4",
+    "catalog_after_sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d",
+    "before_fixture_sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8"
+  },
+  "inputs": [
+    {
+      "path": "src/camera/camcc-sm7675-data.h",
+      "sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d"
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "e23073d611db9476b013b617e8a621477e18d07030b43f0405f7062532df76b7"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-handoff.h",
+      "sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-registration.h",
+      "sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb"
+    },
+    {
+      "path": "tests/camcc-native731-contract.sh",
+      "sha256": "1bed2e5a77fe91778b66fedcff92bf39dc899103ea4ce3b917242409532ef620"
+    },
+    {
+      "path": "tests/fixtures/camcc-native-check.c",
+      "sha256": "ddade3a9d88b0f2ab4b574a47ac97a64be0ae1c568efefdf43132c394559a911"
+    },
+    {
+      "path": "tests/fixtures/camcc-critical-before12101.h",
+      "sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8"
+    },
+    {
+      "path": "docs/CAMCC-OEM-BOOTSTRAP731.md",
+      "sha256": "2902e0ea3a4a8ca3669bb9e4c2dc9f122dd86958393ae88b9ca8a18754f81ef0"
+    },
+    {
+      "path": "packaging/native/copr-camcc-probe-check.sh",
+      "sha256": "6b343e14f85d3169efe988c039ad00e33d032bdef9a86bb38a2e6cab64a0aa56"
+    }
+  ],
+  "checks": {
+    "state": "prepared; native pass pending",
+    "package": "uke-camcc-probe-check-1.0-3",
+    "dependency_model": "counterexample provider, not measured Uke electrical fact",
+    "actual_before_control_required": "critical-gate-verify/-5/0x132ec/0 then readiness assertion134",
+    "preserve_all_probe_fault_observation_and_mutation_checks": true
+  },
+  "constraints": {
+    "no_extra_probe_io": true,
+    "readback_quarantine_unchanged": true,
+    "crm_guard_before_pll_unchanged": true,
+    "power_votes_lifetime_unchanged": true,
+    "dt_config_and_firmware_gates_unchanged": true,
+    "all_cumulative_features_required": true,
+    "full_kernel_before_delivery": true,
+    "physical_camera_acceptance": false,
+    "calibration_consumption": false,
+    "rear_focus_acceptance": false
+  }
+}
