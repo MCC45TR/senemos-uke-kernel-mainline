@@ -6,7 +6,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-gcc-check 7.3.1-1
+bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-gcc-check 7.3.1-2
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11262313 | jq -er .state) == succeeded ]]
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
 stage=$(mktemp -d)
@@ -19,7 +19,12 @@ done < <(jq -er '.inputs[]|[.path,.sha256]|@tsv' "$manifest")
 curl -q -fLsS --retry 2 --max-time 600 --proto '=https' --proto-redir '=https' \
     "$(jq -er .parent.url "$manifest")" -o "$stage/parent.src.rpm"
 printf '%s  %s\n' "$(jq -er .parent.sha256 "$manifest")" "$stage/parent.src.rpm" | sha256sum -c --strict -
-[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203.fc46 ]]
+actual_parent=$(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm")
+expected_parent=$(jq -er .parent.rpm_nvr "$manifest")
+[[ $actual_parent == "$expected_parent" ]] || {
+    printf 'Refused raw SRPM NVR: actual=%s expected=%s\n' "$actual_parent" "$expected_parent" >&2
+    exit 1
+}
 # Source-worker SRPM is unsigned; verify its whole hash and RPM digests only.
 rpmkeys --checksig --nosignature --verbose "$stage/parent.src.rpm"
 rpm2cpio "$stage/parent.src.rpm" > "$stage/parent.cpio"
@@ -43,7 +48,7 @@ spec=$output/uke-camera-gcc-check.spec
 awk '
  /^%description/ {exit}
  /^Name:/ {$0="Name: uke-camera-gcc-check"}
- /^Release:/ {$0="Release: 1%{?dist}"}
+ /^Release:/ {$0="Release: 2%{?dist}"}
  /^Summary:/ {$0="Summary: Exact Uke camera GCC configuration source qualification"}
  /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/ {next}
  {print}
@@ -105,12 +110,13 @@ test ! -e camera-gcc-object/drivers/clk/qcom/gcc-cliffs.ko
 %{_docdir}/%{name}/parent-composition.json
 
 %changelog
-* Thu Nov 05 2026 Uke contributors - 7.3.1-1
+* Thu Nov 05 2026 Uke contributors - 7.3.1-2
+- Check the measured raw source-worker NVR, independently of native binary dist.
 - Restore only the exact OEM three camera configuration writes before GCC publication.
 - Preserve video and full12203 preparation, source/config/DT and hardware admission.
 - Require actual original failure, fault/mutation controls and AArch64 object.
 SPEC
 sha256sum -c --strict --quiet "$stage/retained.sha256"
 unlink "$parent"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-camera-gcc-check-7.3.1-1 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-camera-gcc-check-7.3.1-2 ]]
 printf 'Camera GCC independent source check prepared; no full-kernel revision or target change\n'
