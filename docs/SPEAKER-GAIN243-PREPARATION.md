@@ -102,6 +102,31 @@ The later admission layer must validate generic/factory data offline, add only
 protected DT/topology, and remove the controls-only compiler flag. This remains
 at 223 and does not satisfy the eight physical gates or enable 243.
 
+### Protected223 cumulative source layer
+
+`overlay-speaker-protected-layer.sh PROFILE AUDIO_COMMIT` prepares that separate
+profile on the complete12204 baseline or a compatible later cumulative profile.
+It authenticates the89/f05/13/33a contributions, retains all peer bytes, adds
+the protected DT include before the original supplier generation, and appends
+final preparation after all retained hooks. Only0073's codec hunk is applied.
+0074 is retained when already present; otherwise its exact patch is required.
+The UCM speaker PCM negotiates the admitted formats. Raw capture stays intact.
+
+The original observer gate remains mandatory before and after final preparation.
+Final admission requires both supplier overlays, no controls-only compiler flag,
+the actual codec safeguard hunk and223 at the final gain writer. The full linked
+gate also compares the compiled codec callbacks with their packaged module.
+`overlay-speaker-protected-spec.sh SPEC` adds the runtime>=0.4-2 dependency and
+the complete protected package check without removing existing spec statements.
+
+The standalone `copr-speaker-protected-check.sh` rehearses complete12204 source,
+all24 inherited audio calls, actual safeguard fault/mutant tests, four native
+objects and partial links. It emits text receipts only. Its result is separate
+from a later cumulative full build, target activation and physical acceptance.
+Do not install historical7700, build locally, or submit an independent full
+kernel. Before target activation, the coordinator must deliver the runtime
+through the supported repository and pass its offline locked-RAM input check.
+
 ## Inherited full-package audio checks
 
 Full cumulative 12202 reaches native Image/modules but fails an inherited

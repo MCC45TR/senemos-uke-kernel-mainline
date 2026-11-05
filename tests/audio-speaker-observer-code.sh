@@ -3,14 +3,19 @@
 # No object/module is loaded or executed. A final-module build is not required.
 set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
-[[ $# == 2 ]]
+[[ $# == 2 || $# == 3 ]]
+symbol=${3:-fs19xx_state_get}
+case $symbol in
+ fs19xx_state_get|fs19xx_unmute_work|fs19xx_volume_put|fs19xx_protection_event) ;;
+ *) exit 2;;
+esac
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 extract() {
  local input=$1 output=$2 address section size extra
  readelf -h "$input" | grep -Eq 'Type: +REL '
  readelf -h "$input" | grep -Eq 'Machine: +AArch64'
- objdump -t "$input" | awk '$3=="F" && $NF=="fs19xx_state_get" {print $1,$4,$5}' > "$work/symbol"
+ objdump -t "$input" | awk -v symbol="$symbol" '$3=="F" && $NF==symbol {print $1,$4,$5}' > "$work/symbol"
  [[ $(wc -l < "$work/symbol") == 1 ]]
  read -r address section size extra < "$work/symbol"
  [[ -z ${extra:-} && $address =~ ^[0-9a-fA-F]+$ && $size =~ ^[0-9a-fA-F]+$ && $section =~ ^[.a-zA-Z0-9_-]+$ ]]
@@ -26,4 +31,4 @@ if ! cmp -s "$work/expected" "$work/linked"; then
  echo 'Speaker inclusion: linked observer differs from the freshly compiled runtime object' >&2
  exit 1
 fi
-printf '%s\n' 'Speaker observer instructions match the runtime object; no module loaded.'
+printf 'Speaker %s instructions match the compiled object; no module loaded.\n' "$symbol"
