@@ -11,6 +11,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 #define __iomem
 #define READ_ONCE(value) (value)
+#define WRITE_ONCE(target, value) ((target) = (value))
 typedef int irqreturn_t;
 #define IRQ_NONE 0
 #define IRQ_HANDLED 1
@@ -23,14 +24,25 @@ static u32 memory[0x2000 / 4];
 static bool powered, registered;
 static int request_error, enable_failure;
 static unsigned access_calls, fail_access, writes, reads, enables, clears, votes, masks;
-static unsigned hz, timeout_seen, mode;
+static unsigned hz, timeout_seen, mode, drains, freed;
 static irqreturn_t (*registered_handler)(int, void *);
 static void *registered_context;
+static void (*before_lock_hook)(void);
 static void spin_lock_init(spinlock_t *lock) { lock->locked = false; }
 #define spin_lock_irqsave(lock, flags) do { (flags) = 0; assert(!(lock)->locked); (lock)->locked = true; } while (0)
 #define spin_unlock_irqrestore(lock, flags) do { (void)(flags); assert((lock)->locked); (lock)->locked = false; } while (0)
 static void mutex_init(struct mutex *lock) { lock->locked = false; }
-static bool mutex_trylock(struct mutex *lock) { if (lock->locked) return false; lock->locked = true; return true; }
+static bool mutex_trylock(struct mutex *lock)
+{
+    if (before_lock_hook) {
+        void (*hook)(void) = before_lock_hook;
+        before_lock_hook = NULL;
+        hook();
+    }
+    if (lock->locked) return false;
+    lock->locked = true;
+    return true;
+}
 static void mutex_unlock(struct mutex *lock) { assert(lock->locked); lock->locked = false; }
 static void init_completion(struct completion *completion) { completion->done = false; }
 static void reinit_completion(struct completion *completion) { completion->done = false; }
@@ -47,6 +59,8 @@ static int request_irq(int irq, irqreturn_t (*handler)(int, void *), unsigned fl
     return 0;
 }
 static void disable_irq_nosync(int irq) { assert(registered && irq == 121); masks++; }
+static void synchronize_irq(unsigned irq);
+static void free_irq(unsigned irq, void *context);
 static unsigned register_offset(const volatile void *address)
 {
     uintptr_t offset = (uintptr_t)address - (uintptr_t)memory;
@@ -67,7 +81,7 @@ static void writel(u32 value, volatile void *address)
     for (resource = 0; resource < 8; resource++) {
         if (!owned_perf(resource)) continue;
         if (offset == 0x11e0 + resource * 4 || offset == 0x1580) {
-            assert(registered && value == 1);
+            assert(registered && value <= 1);
             if ((int)enables++ != enable_failure) memory[offset / 4] = value;
             return;
         }
@@ -94,6 +108,21 @@ static void writel(u32 value, volatile void *address)
 }
 
 #include "crm-transport.h"
+
+static void synchronize_irq(unsigned irq)
+{
+    struct cam_cc_crm_transport *t = registered_context;
+    assert(registered && irq == 121 && !t->lock.locked && t->quiesced);
+    assert(!t->ready && !t->pending);
+    drains++;
+}
+static void free_irq(unsigned irq, void *context)
+{
+    struct cam_cc_crm_transport *t = context;
+    assert(registered && irq == 121 && context == registered_context && drains);
+    assert(!t->lock.locked && !t->irq_owned && t->quiesced && !t->fault);
+    registered = false; freed++;
+}
 
 static int access_power(void *context)
 {
@@ -136,6 +165,8 @@ static void reset_model(struct cam_cc_crm_transport *t)
     powered = true; registered = false; request_error = 0; enable_failure = -1;
     access_calls = fail_access = writes = reads = enables = clears = votes = masks = 0;
     mode = 0; hz = 250; timeout_seen = 0;
+    drains = freed = 0;
+    before_lock_hook = NULL;
     memory[0] = 0x10200;
     memory[1] = (1U << 20) | (9U << 8) | (2U << 24);
     memory[2] = 3U << 26; memory[3] = 1;
@@ -144,6 +175,10 @@ static int initialize(struct cam_cc_crm_transport *t)
 {
     static struct device device;
     return cam_cc_crm_transport_init(t, &device, memory, 121, access_power, memory);
+}
+static void release_before_lock(void)
+{
+    assert(cam_cc_crm_transport_idle(registered_context, true) == 0);
 }
 
 int main(void)
@@ -223,4 +258,91 @@ int main(void)
     assert(cam_cc_crm_transport_vote(&t, 1, 1, 1) == -EINVAL);
     assert(cam_cc_crm_transport_vote(&t, 0, 0, 8) == -ERANGE && !t.fault);
     puts("Actual CRM transport: owned IRQ ordering, 24 success/HZ cases, timeout/late/wrong/duplicate IRQ, power/partial-init and contention controls passed");
+
+    reset_model(&t); assert(initialize(&t) == 0);
+    assert(cam_cc_crm_transport_idle(&t, false) == 0);
+    assert(!t.ready && t.quiesced && t.irq_owned && enables == 16 && drains == 1);
+    powered = false; before = reads;
+    assert(registered_handler(121, &t) == IRQ_NONE && reads == before && !t.fault);
+    assert(cam_cc_crm_transport_vote(&t, 0, 0, 3) == -ENODEV && reads == before);
+    assert(cam_cc_crm_transport_idle(&t, false) == 0 && reads == before);
+    powered = true;
+    assert(cam_cc_crm_transport_resume(&t) == 0 && t.ready && !t.quiesced && enables == 24);
+    assert(cam_cc_crm_transport_resume(&t) == -EALREADY && !t.fault);
+    assert(cam_cc_crm_transport_vote(&t, 0, 0, 3) == 0);
+    before = writes;
+    assert(cam_cc_crm_transport_idle(&t, false) == -EBUSY && writes == before && !t.fault);
+    assert(cam_cc_crm_transport_vote(&t, 0, 0, 0) == 0);
+    assert(cam_cc_crm_transport_idle(&t, true) == 0 && freed == 1 && !t.irq_owned && t.released);
+    assert(cam_cc_crm_transport_vote(&t, 0, 0, 1) == -ENODEV);
+    assert(cam_cc_crm_transport_resume(&t) == -ENODEV);
+    assert(initialize(&t) == -EALREADY);
+    for (kind = 0; kind < 2; kind++) {
+        for (resource = 0; resource < 8; resource++) {
+            if (kind == 0 ? !owned_perf(resource) : resource != 0) continue;
+            for (i = 0; i < 3; i++) {
+                reset_model(&t); assert(initialize(&t) == 0);
+                memory[((kind == 0 ? 0x1060 : 0x1400) + resource * 4 + i * 0x40) / 4] = 3;
+                before = writes;
+                assert(cam_cc_crm_transport_idle(&t, false) == -EBUSY);
+                assert(writes == before && !t.fault && t.ready && drains == 0);
+            }
+        }
+    }
+    reset_model(&t); assert(initialize(&t) == 0);
+    t.transaction.locked = true; before = reads;
+    assert(cam_cc_crm_transport_idle(&t, true) == -EBUSY && reads == before && !freed);
+    t.transaction.locked = false; t.pending = true;
+    assert(cam_cc_crm_transport_idle(&t, false) == -EBUSY && !t.fault);
+    for (i = 0; i < 8; i++) {
+        reset_model(&t); assert(initialize(&t) == 0); enable_failure = 8 + (int)i;
+        assert(cam_cc_crm_transport_idle(&t, true) == -EIO);
+        assert(t.fault == -EIO && t.irq_owned && masks == 1 && !freed && !drains);
+        before = writes;
+        assert(cam_cc_crm_transport_idle(&t, true) == -EIO && writes == before && !freed);
+        reset_model(&t); assert(initialize(&t) == 0);
+        assert(cam_cc_crm_transport_idle(&t, false) == 0); enable_failure = 16 + (int)i;
+        assert(cam_cc_crm_transport_resume(&t) == -EIO);
+        assert(t.fault == -EIO && t.irq_owned && masks == 1 && !freed && !t.ready);
+    }
+    for (scenario = 0; scenario < 5; scenario++) {
+        reset_model(&t); assert(initialize(&t) == 0);
+        if (scenario == 0) memory[0x1060 / 4] = 8;
+        if (scenario == 1) memory[0x1400 / 4] = 1U << 28;
+        if (scenario == 2) memory[0x1160 / 4] = 1;
+        if (scenario == 3) memory[0x11e0 / 4] = 0;
+        if (scenario == 4) powered = false;
+        before = writes;
+        expected = scenario == 4 ? -EHOSTDOWN : -EUCLEAN;
+        assert(cam_cc_crm_transport_idle(&t, true) == expected);
+        assert(t.fault == expected && writes == before && t.irq_owned && !freed);
+    }
+    for (scenario = 0; scenario < 6; scenario++) {
+        reset_model(&t); assert(initialize(&t) == 0);
+        assert(cam_cc_crm_transport_idle(&t, false) == 0);
+        if (scenario == 0) memory[0] ^= 0x10000;
+        if (scenario == 1) memory[1] ^= 1U << 8;
+        if (scenario == 2) memory[3] = 0;
+        if (scenario == 3) memory[0x1160 / 4] = 1;
+        if (scenario == 4) memory[0x11e0 / 4] = 1;
+        if (scenario == 5) powered = false;
+        before = writes;
+        expected = scenario == 5 ? -EHOSTDOWN : -EUCLEAN;
+        assert(cam_cc_crm_transport_resume(&t) == expected);
+        assert(t.fault == expected && writes == before && !t.ready && !freed);
+    }
+    reset_model(&t); assert(initialize(&t) == 0);
+    assert(cam_cc_crm_transport_idle(&t, false) == 0);
+    powered = false; before = reads;
+    assert(cam_cc_crm_transport_idle(&t, true) == 0 && freed == 1 && reads == before);
+    for (scenario = 0; scenario < 3; scenario++) {
+        reset_model(&t); assert(initialize(&t) == 0);
+        if (scenario == 1) assert(cam_cc_crm_transport_idle(&t, false) == 0);
+        before_lock_hook = release_before_lock;
+        if (scenario == 0) expected = cam_cc_crm_transport_idle(&t, true);
+        else if (scenario == 1) expected = cam_cc_crm_transport_resume(&t);
+        else expected = cam_cc_crm_transport_vote(&t, 0, 0, 1);
+        assert(expected == -ENODEV && freed == 1 && !registered && !t.base);
+    }
+    puts("Actual CRM lifecycle: idle-vote refusal, owned IRQ disable/readback/drain/release, powered-off quiescence, resume identity and all16 partial-transition failures passed");
 }

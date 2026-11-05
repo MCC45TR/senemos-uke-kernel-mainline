@@ -111,13 +111,19 @@ fi
 grep -q 'rc == -EIO && reads == 1' "$work/negative.log"
 printf 'Actual OEM LUT ignored-read-error negative control reproduced assertion134\n'
 if [[ ${CAMERA_CRM_MUTATIONS:-0} == 1 ]]; then
-    for mutation in timeout-units wrong-resource stale-completion; do
+    for mutation in timeout-units wrong-resource stale-completion no-drain inherited-vote unpowered-irq; do
         case $mutation in
             timeout-units) sed 's/msecs_to_jiffies(CAM_CC_CRM_TIMEOUT_MS)/CAM_CC_CRM_TIMEOUT_MS/' \
                 "$work/camcc-sm7675-crm-transport.h";;
             wrong-resource) sed 's/t->pending_resource != resource/false/' \
                 "$work/camcc-sm7675-crm-transport.h";;
             stale-completion) sed 's/if (t->pending || status)/if (t->pending || (status \&\& false))/' \
+                "$work/camcc-sm7675-crm-transport.h";;
+            no-drain) sed 's/synchronize_irq(t->irq);/if (false) synchronize_irq(t->irq);/' \
+                "$work/camcc-sm7675-crm-transport.h";;
+            inherited-vote) sed 's/if (value)$/if (value \&\& false)/' \
+                "$work/camcc-sm7675-crm-transport.h";;
+            unpowered-irq) sed 's/if (t->quiesced)$/if (t->quiesced \&\& false)/' \
                 "$work/camcc-sm7675-crm-transport.h";;
         esac > "$work/crm-transport.h"
         if cmp -s "$work/camcc-sm7675-crm-transport.h" "$work/crm-transport.h"; then exit 1; fi
@@ -130,5 +136,5 @@ if [[ ${CAMERA_CRM_MUTATIONS:-0} == 1 ]]; then
         fi
         [[ $rc == 134 ]]
     done
-    printf 'All3 timeout-unit, resource-correlation and stale-completion mutants refused\n'
+    printf 'All6 timeout/resource/stale IRQ and drain/inherited-vote/quiescence mutants refused\n'
 fi
