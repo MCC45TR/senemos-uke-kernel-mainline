@@ -19,7 +19,9 @@ resolve()
     install -m644 "$1" "$2/.config"
     # Match the production reference snapshot; object targets do not embed it.
     bash "$kernel/scripts/config" --file "$2/.config" --set-str INITRAMFS_SOURCE "$output/boot-initramfs.cpio.gz"
-    make -s -C "$kernel" O="$2" olddefconfig
+    install -m644 "$2/.config" "$2/input.config"
+    make -s -C "$kernel" O="$2" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-12202-unstable olddefconfig
+    grep -E '^CONFIG_(CC_VERSION_TEXT|CC_IS_CLANG|CC_IS_GCC|CLANG_VERSION|GCC_VERSION|PAHOLE_VERSION|INITRAMFS_SOURCE)=' "$2/.config"
 }
 resolve "$profile/native.config" "$output"
 resolve "$profile/configs/governor-before-native.config" "$stage/baseline"
@@ -28,6 +30,7 @@ for role in cdsp waydroid; do
     resolve "$profile/configs/nfc-$role-reference.config" "$stage/$role"
 done
 resolve "$profile/configs/governor-before-nfc-cdsp.config" "$stage/cdsp-before"
+diff -u --label original-cdsp-input --label resolved-original-cdsp "$stage/cdsp-before/input.config" "$stage/cdsp-before/.config" || [[ $? == 1 ]]
 bash "$profile/tests/cdsp-pogo-config-contract.sh" "$stage/cdsp-before/.config"
 bash "$owner/tests/governor-config-contract.sh" "$stage/cdsp-before/.config" "$stage/cdsp/.config"
 # The original full comparator is unchanged: its only exclusion remains pogo HID.
@@ -35,7 +38,7 @@ bash "$profile/tests/nfc-cohort-config731.sh" "$output/.config" "$stage/waydroid
 bash "$profile/tests/kernel-hardening-config-contract.sh" "$output/.config"
 objects=(drivers/cpufreq/cpufreq_powersave.o drivers/cpufreq/cpufreq_conservative.o \
     drivers/devfreq/governor_performance.o drivers/devfreq/governor_powersave.o)
-make -C "$kernel" O="$output" KCFLAGS=-Werror -j4 prepare modules_prepare "${objects[@]}"
+make -C "$kernel" O="$output" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-12202-unstable KCFLAGS=-Werror -j4 prepare modules_prepare "${objects[@]}"
 for object in "${objects[@]}"; do
     test -s "$output/$object"
     llvm-readelf -h "$output/$object" | grep -E 'Machine:.*AArch64'

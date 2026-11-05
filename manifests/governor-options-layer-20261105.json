@@ -91,7 +91,7 @@
     },
     {
       "path": "packaging/native/check-governor-cumulative731.sh",
-      "sha256": "cbcb9a13571222634ae60f6cb8746fe0512190149d6b87aaf21728c874d53e6f"
+      "sha256": "0b8fecb341f0abe7fb533d7cc6e6d28e617305ccdece4d7a40553ddbe08d33af"
     },
     {
       "path": "packaging/native/copr-governor-cumulative731-check.sh",
