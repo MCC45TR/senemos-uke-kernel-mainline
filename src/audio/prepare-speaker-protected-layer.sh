@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR-only final preparation after all cumulative peer hooks and inactive checks.
 set -Eeuo pipefail
+trap 'printf "Protected source preparation failed at line %s\n" "$LINENO" >&2' ERR
 test ! -e /etc/senemos/kernel-update.conf
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
 profile=$(cd -- "$(dirname -- "$0")/../.." && pwd)
