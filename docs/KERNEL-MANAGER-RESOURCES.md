@@ -40,3 +40,10 @@ Upstream interface references: [uclamp](https://docs.kernel.org/scheduler/sched-
 [zram](https://docs.kernel.org/admin-guide/blockdev/zram.html),
 [MGLRU](https://docs.kernel.org/admin-guide/mm/multigen_lru.html),
 [sched_ext](https://docs.kernel.org/scheduler/sched-ext.html).
+
+Check trial11263166 reached the new full-config comparison after all retained
+postfreeze gates passed. It correctly refused the previously undeclared
+BLK_RQ_ALLOC_TIME, GROUP_SCHED_BANDWIDTH, PAGE_IDLE_FLAG and allocator-chain
+size dependencies, plus ADVANCED's three default congestion modules. The
+follow-up admits the four dependencies at exact values and explicitly disables
+the three unrelated algorithms. No failing trial is treated as qualification.
