@@ -5,7 +5,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-crm-core-check 7.3.1-1
+bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-crm-core-check 7.3.1-2
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -32,9 +32,10 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
     -cJf "$output/crm-oracles.tar.xz" -C "$stage" crm-oracles
 cat > "$output/uke-camera-crm-core-check.spec" <<'SPEC'
+%global debug_package %{nil}
 Name: uke-camera-crm-core-check
 Version: 7.3.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Uke AP camera CRM source and failure qualification
 License: GPL-2.0-only
 Source0: camera-crm-core.tar.xz
@@ -96,6 +97,9 @@ test -s %{buildroot}%{_docdir}/%{name}/source-manifest.json
 %{_docdir}/%{name}/source-manifest.json
 
 %changelog
+* Thu Nov 05 2026 Uke contributors - 7.3.1-2
+- Suppress empty debug subpackages for this text-only qualification receipt.
+
 * Thu Nov 05 2026 Uke contributors - 7.3.1-1
 - Check AP SWDRV0 offsets and packets against exact OEM source bodies.
 - Reject invalid plans before transport; stop and poison on first failure.

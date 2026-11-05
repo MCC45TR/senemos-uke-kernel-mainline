@@ -68,11 +68,24 @@
   "active_crm_guard_changed": false,
   "qualification": {
     "package": "uke-camera-crm-core-check",
-    "version_release": "7.3.1-1",
+    "version_release": "7.3.1-2",
     "copr_build": null,
     "hardware_access": false,
     "native_kernel_object": false,
     "full_kernel": false,
-    "runtime_payload": false
+    "runtime_payload": false,
+    "previous_attempts": [
+      {
+        "copr_build": 11264011,
+        "source_commit": "4b45a9efaad150f8eaccc146191516b60654567a",
+        "state": "failed",
+        "reason": "RPM packaging: empty debugsource %files after all source contracts passed",
+        "contract_checks_per_run": 427488,
+        "compiler_modes_passed": 4,
+        "original_negative_assertion134": true,
+        "ordinary_mutants_passed": 4,
+        "raw_native_log_sha256": "1d0524df3d1b6c87671dad65fa25881c8ebddbc4e0f8a788db025038a253f7b3"
+      }
+    ]
   }
 }
