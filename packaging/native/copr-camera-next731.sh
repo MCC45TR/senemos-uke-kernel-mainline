@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COPR only: one fresh full unstable kernel from the qualified shared assembly.
+# Historical12204 constructor. Later kernels must start from the full12204 SRPM.
 set -Eeuo pipefail
 trap 'rc=$?; printf "Next-camera production factory failed at line%s/exit%s\n" "$LINENO" "$rc" >&2; exit "$rc"' ERR
 test ! -e /etc/senemos/kernel-update.conf
@@ -7,7 +7,10 @@ test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "$1")
 revision=$2
-[[ $revision =~ ^[1-9][0-9]{4}$ && $revision -gt 12203 ]]
+[[ $revision == 12204 ]] || {
+    printf 'Retired12203-based constructor: retain full12204 and all later qualified handoffs in the next producer\n' >&2
+    exit 1
+}
 bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 plan=$owner/manifests/camera-next-cohort731-20261105.json
 [[ $(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$(jq -er .combined_source_check "$plan")" | jq -er .state) == succeeded ]]

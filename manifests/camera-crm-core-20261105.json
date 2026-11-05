@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Cliffs camera AP SWDRV0 vote foundation; no hardware activation",
+  "status": "implementation awaiting COPR source qualification",
+  "baseline": {
+    "release": "7.3.1-12204-unstable",
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
+    "copr_build": 11263248
+  },
+  "inputs": [
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "tests/camera-crm-core-contract.sh",
+      "sha256": "66f12343100ad7380b8245bc9264c52240fb5e9809fdb046337f7231ed437cde"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-core-check.cpp",
+      "sha256": "4fb00f756450877c5665fb5e12a0eb1c2d025490175f99e34b84ab856d288dca"
+    },
+    {
+      "path": "docs/camera-crm-core.md",
+      "sha256": "5e5c8a7303ba7be0e1385488e12ffc43c276bf311af1119f0510f62f0c662f3d"
+    }
+  ],
+  "oracle_repository": "MiCode/Xiaomi_Kernel_OpenSource",
+  "oracle_revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+  "oracle_inputs": [
+    {
+      "reference_file": "oem571-crm.c",
+      "path": "drivers/soc/qcom/crm.c",
+      "sha256": "b55fbbfa0235d1fed3112bbc134a7c835214819b8d318bc2b408940a5dbb0e48",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-clk-rcg2.c",
+      "path": "drivers/clk/qcom/clk-rcg2.c",
+      "sha256": "87b1645f20fd2ddbe07344ad707c74f81df9871bb53902b9243c1f617584da20",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-tcs.h",
+      "path": "include/soc/qcom/tcs.h",
+      "sha256": "3183aaa5964d6354cdb47cd87930c084d1feaf19e7481fefe1b973dd102d8c8f",
+      "spdx": "GPL-2.0"
+    }
+  ],
+  "ownership": {
+    "software_drv": 0,
+    "perf_vcds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      7
+    ],
+    "bandwidth_nodes": [
+      0
+    ],
+    "other_voters_untouched": true
+  },
+  "physical_camera_acceptance": false,
+  "active_crm_guard_changed": false,
+  "qualification": {
+    "package": "uke-camera-crm-core-check",
+    "version_release": "7.3.1-1",
+    "copr_build": null,
+    "hardware_access": false,
+    "native_kernel_object": false,
+    "full_kernel": false,
+    "runtime_payload": false
+  }
+}

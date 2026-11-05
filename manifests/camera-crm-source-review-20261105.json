@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Native firmware-managed CRM clock support for both complete Uke cameras",
+  "status": "Source comparison complete; AP vote core awaiting COPR; no runtime CRM backend or activation",
+  "baseline": {
+    "release": "7.3.1-12204-unstable",
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
+    "copr_build": 11263248,
+    "actual_boot": true,
+    "clock_phase": "crm-admission",
+    "error": -95,
+    "last_transport_gate": "0x13308",
+    "last_transport_readback": "0x1",
+    "crm": "firmware-enabled-refused",
+    "raw_srpm": {
+      "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+      "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+      "digest_method": "HTTPS stream to native sha256sum; no second large archive stored"
+    }
+  },
+  "reference_directory": "referances/crm-20261105",
+  "source_files": [
+    {
+      "reference_file": "oem571-camcc-cliffs.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/camcc-cliffs.c",
+      "sha256": "1a76c029c51710af6684a6d4f87e1486c125cd25badfce7b80ba642d820affe6"
+    },
+    {
+      "reference_file": "oem571-crm.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/soc/qcom/crm.c",
+      "sha256": "b55fbbfa0235d1fed3112bbc134a7c835214819b8d318bc2b408940a5dbb0e48"
+    },
+    {
+      "reference_file": "oem571-crm.h",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "include/soc/qcom/crm.h",
+      "sha256": "5d89555609e29d9092100a20aaddfef594ec80af57e31609d7fde9c75aa9ddf0"
+    },
+    {
+      "reference_file": "oem571-clk-rcg2.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-rcg2.c",
+      "sha256": "87b1645f20fd2ddbe07344ad707c74f81df9871bb53902b9243c1f617584da20"
+    },
+    {
+      "reference_file": "oem571-clk-branch.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-branch.c",
+      "sha256": "c47d1b70f8b008d7b41b25c9114fdec73eadb7167fa365d0d330231d2ace0b9e"
+    },
+    {
+      "reference_file": "oem571-clk-alpha-pll.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-alpha-pll.c",
+      "sha256": "ea8a97cb6be05ebe807860f81152d4407eda1819b795c6c1573e59fc3e0b32e0"
+    },
+    {
+      "reference_file": "oem571-clk-alpha-pll.h",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-alpha-pll.h",
+      "sha256": "5230cb0c4dff2916835aa2384eabe83581dc75f18ab73fa09fd904da6973b78d"
+    },
+    {
+      "reference_file": "oem571-clk-regmap.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-regmap.c",
+      "sha256": "84e3177686e25e4d45620b6694cb61b97498ac6db9d0953d4d6a11c89a8b0835"
+    },
+    {
+      "reference_file": "oem571-clk-regmap.h",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/clk-regmap.h",
+      "sha256": "58fa3b19322b43acf4d51bd14af99f59b7f6f614901e46bcfaddd1069e613d92"
+    },
+    {
+      "reference_file": "oem571-common.c",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/common.c",
+      "sha256": "e6d56c307b26cc49566bdc9864276b2bfaf1183c6d27e5752125c104283bbee6"
+    },
+    {
+      "reference_file": "oem571-common.h",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clk/qcom/common.h",
+      "sha256": "fcdb187bece64224d27edce492e0b356e039f53c6508fb101935bdb1f098b9d3"
+    },
+    {
+      "reference_file": "oem571-tcs.h",
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "include/soc/qcom/tcs.h",
+      "sha256": "3183aaa5964d6354cdb47cd87930c084d1feaf19e7481fefe1b973dd102d8c8f"
+    },
+    {
+      "reference_file": "oneplusfc-camcc-cliffs.c",
+      "repository": "OnePlusOSS/android_kernel_oneplus_sm7675",
+      "revision": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "path": "drivers/clk/qcom/camcc-cliffs.c",
+      "sha256": "1a76c029c51710af6684a6d4f87e1486c125cd25badfce7b80ba642d820affe6"
+    },
+    {
+      "reference_file": "oneplusfc-crm.c",
+      "repository": "OnePlusOSS/android_kernel_oneplus_sm7675",
+      "revision": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "path": "drivers/soc/qcom/crm.c",
+      "sha256": "18277a9799a50572a20db194b65667841a966370efbbeba6eb6bfe144a340012"
+    },
+    {
+      "reference_file": "upstream731-soc-Kconfig",
+      "repository": "gregkh/linux",
+      "revision": "79a907609d53d5cd645b42c11550d295d43abf99",
+      "path": "drivers/soc/qcom/Kconfig",
+      "sha256": "f5cabe6cfb06cd2f54004b5dec97c8ce8072c8d228d60e12340e668dcd2a4002"
+    },
+    {
+      "reference_file": "upstream0544-clk-Kconfig",
+      "repository": "torvalds/linux",
+      "revision": "05441d697f7f9a927264f4058cbbc6a03dfcac9d",
+      "path": "drivers/clk/qcom/Kconfig",
+      "sha256": "e0e3253dbe685023688f3b2aef788a19dfed2435c11f5711518b422970ab76d2"
+    },
+    {
+      "reference_file": "upstream0544-common.h",
+      "repository": "torvalds/linux",
+      "revision": "05441d697f7f9a927264f4058cbbc6a03dfcac9d",
+      "path": "drivers/clk/qcom/common.h",
+      "sha256": "9a2f6db86a796403b600f7e0f3a5b3b6a8cfc8f84feccf2d1ec7eeee68f9bc4a"
+    }
+  ],
+  "reference_policy": "Unchanged public sources; file-level SPDX and attribution retained; no donor code executed",
+  "device_tree": {
+    "repository": "MiCode/kernel_devicetree",
+    "revision": "94c84aeb9e517dbde546fc732033c184094c8e57",
+    "files": [
+      "qcom/cliffs.dtsi",
+      "qcom/pineapple-gdsc.dtsi"
+    ],
+    "cfg": {
+      "address": "0x0add7000",
+      "size": "0x2000"
+    },
+    "crmb": {
+      "address": "0x0add9800",
+      "size": "0x800"
+    },
+    "crmc": {
+      "address": "0x0adda000",
+      "size": "0x2000"
+    },
+    "crmv": {
+      "address": "0x0add9000",
+      "size": "0x800"
+    },
+    "software_drv": 0,
+    "hardware_drvs": [
+      0,
+      1,
+      2
+    ],
+    "irq": {
+      "gic_spi": 121,
+      "type": "rising edge"
+    }
+  },
+  "same_soc_comparison": {
+    "camcc": "byte-identical",
+    "crm": "identical when ignoring whitespace and blank lines; both original byte hashes retained",
+    "board_values_transferred": false
+  },
+  "managed_vcds": [
+    {
+      "name": "cam_cc_ife_0_clk_src",
+      "vcd": 0
+    },
+    {
+      "name": "cam_cc_ife_1_clk_src",
+      "vcd": 1
+    },
+    {
+      "name": "cam_cc_ife_2_clk_src",
+      "vcd": 2
+    },
+    {
+      "name": "cam_cc_sfe_0_clk_src",
+      "vcd": 3
+    },
+    {
+      "name": "cam_cc_sfe_1_clk_src",
+      "vcd": 4
+    },
+    {
+      "name": "cam_cc_csid_clk_src",
+      "vcd": 6
+    },
+    {
+      "name": "cam_cc_cphy_rx_clk_src",
+      "vcd": 7
+    },
+    {
+      "name": "cam_cc_camnoc_axi_rt_clk_src",
+      "vcd": 8,
+      "type": "CRMB; software bandwidth node0"
+    }
+  ],
+  "upstream_review": {
+    "current_commit": "05441d697f7f9a927264f4058cbbc6a03dfcac9d",
+    "scope": "Pinned qcom SoC directory, clock Kconfig/common header and stable SoC Kconfig; no generic CRM backend identified in these inputs",
+    "queue": "20260420-cesta-sm870-dispcc-v1 (13 patches)",
+    "queue_scope": "SM8750 display; comparison architecture, not Cliffs camera acceptance",
+    "cover_url": "https://lists.openwall.net/linux-kernel/2026/04/20/1646",
+    "driver_url": "https://lists.openwall.net/linux-kernel/2026/04/20/1743",
+    "reviewed_discussion_through": "2026-06-30",
+    "exhaustive_all_lists_search": false
+  },
+  "source_risks_requiring_contracts": [
+    "LUT regmap read errors are ignored by the OEM decoder",
+    "Three-state rate-vote loops overwrite earlier errors and continue",
+    "Requested frequency is cached before a failed prepared vote",
+    "Timeout leaves an in-progress vote and later wait can be unbounded",
+    "OEM timeout macro in milliseconds is passed to a jiffies API"
+  ],
+  "required_backend_scope": [
+    "Exclusive runtime power and AP SWDRV0 ownership; preserve firmware and HW voters",
+    "Bounded capability/offset/value admission before any I/O",
+    "Read-only firmware LUT parsing and validated parent-rate calculation",
+    "First-error propagation and acknowledged active votes; bounded timeout/late IRQ fault quarantine",
+    "Separate desired/confirmed software rate and no aggregate-rate short-circuit",
+    "Firmware-managed PLL/branch ops, CCF/domain publication and full existing ownership contracts",
+    "COPR host/native-object/full-package gates before one cumulative DNF candidate",
+    "Two complete calibrated camera modes, rear focus/parking and repeated-use/recovery acceptance"
+  ],
+  "pending_delivery_dependency": {
+    "helper": "uke-cdsp-pogo-firmware >=0.2-8",
+    "updater": "native updater1.8.96 pre-write prepare-target/verify-target barrier",
+    "qualified": false,
+    "trigger_priority_alone_sufficient": false,
+    "automatic_staging_must_remain_enabled": true,
+    "helper_copr_build": 11263798,
+    "helper_build_state": "succeeded; API verified; coordinator package admission pending"
+  },
+  "physical_camera_acceptance": false,
+  "calibration_read": false,
+  "lens_operation": false,
+  "unmapped_vcds_in_reviewed_clock_descriptor": [
+    5
+  ],
+  "historical_constructor": "copr-camera-next731.sh restricted to12204; subsequent full kernels start at this full baseline",
+  "implementation": {
+    "core": "src/camera/provider/camcc-sm7675-crm-core.h",
+    "qualification_manifest": "manifests/camera-crm-core-20261105.json",
+    "active_crm_guard_changed": false
+  }
+}
