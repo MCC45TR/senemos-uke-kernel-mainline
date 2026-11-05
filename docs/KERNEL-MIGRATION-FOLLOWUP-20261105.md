@@ -60,3 +60,7 @@ Source preparation11267957 failed before compilation: GNU patch with fuzz0
 rejected shortened context in the new CAMCC delta. The corrected delta uses
 complete generated context; no kernel package or device change came from that
 attempt. The following check uses a fresh receipt release.
+The following11267971 source preparation passed the patch admission and inherited
+preparation, then refused the new synthetic fixture because its APM model lacked
+the cumulative provider-removal field. The fixture now retains and tests that
+actual guard. Production code and earlier removal admission remain unchanged.

@@ -91,6 +91,7 @@ for tree in native-profile boot-recipe; do
 done
 awk -v revision="$revision" '
  /^%global senemos_build_release 12206$/ {$0="%global senemos_build_release "revision;changed++}
+ /^Requires: uke-kernel-update >= 1[.]8[.]97$/ {print "Requires: uke-kernel-update >= 1.8.98"; print "Requires: uke-kernel-update(alternating-checkpoint-v2) >= 1";next}
  /^%changelog$/ {print;print "* Thu Nov 05 2026 Uke contributors - 7.3.1-"revision;print "- Scope audio OPEN cleanup and retain unpublished CRM quarantine across s2idle.";print "- Preserve protected223 and every cumulative feature/admission gate.";print "";next}
  {print} END {if(changed!=1)exit 1}
 ' "$spec" > "$stage/full.spec"

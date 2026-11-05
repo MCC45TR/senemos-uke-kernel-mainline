@@ -38,7 +38,7 @@ struct audioreach_graph;
 struct snapshot { int status; unsigned char calibration[96]; };
 struct q6apm_fs19xx { bool admitted,removing; int lock; struct audioreach_graph *owner; struct snapshot data; };
 struct idr { void *entry; unsigned id; };
-struct q6apm { struct q6apm_fs19xx *fs19xx; struct idr graph_idr,graph_info_idr; int cmd_lock,lock,dev; };
+struct q6apm { bool removing; struct q6apm_fs19xx *fs19xx; struct idr graph_idr,graph_info_idr; int cmd_lock,lock,dev; };
 struct audioreach_graph_info { int unused; };
 struct kref { int count; };
 struct audioreach_graph { struct q6apm *apm; struct audioreach_graph_info *info; unsigned id; void *graph; int state; struct kref refcount; };
@@ -83,7 +83,8 @@ static void trial(unsigned id,int error) {
  } else assert(fs.owner==&unrelated && !gates && !memcmp(&before,&fs.data,sizeof(before)));
  assert(PTR_ERR(q6apm_get_audioreach_graph(&apm,id))==error);
  assert(sends==1 && claims==1 && apm.graph_idr.entry==quarantined);
- free(quarantined->graph);free(quarantined);
+ free(quarantined->graph);free(quarantined);apm.graph_idr.entry=NULL;apm.removing=true;
+ assert(PTR_ERR(q6apm_get_audioreach_graph(&apm,id))==-ENODEV && sends==1 && claims==1);
 }
 int main(void) {
  for(unsigned id=0;id<=40;id++)for(unsigned e=0;e<3;e++)trial(id,e==0?-EINVAL:e==1?-ETIMEDOUT:-ENODEV);
