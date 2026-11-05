@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "purpose": "Private XML mathematical components and full33-term panel polynomial for the native HDR preparation path",
+  "qualified_curve": {
+    "source": "2730b7c287c6e19c91b4a890aba8ce6c42135233",
+    "copr_build": 11264550
+  },
+  "source_reference": {
+    "repository": "Xiaomi-Pad-7-Development/android_vendor_xiaomi_uke",
+    "commit": "6739c8ec275318a156aa3a65f04f54f8dad82926",
+    "path": "proprietary/vendor/lib64/libhdr_tm.so",
+    "sha256": "42ed49d8b0f79b319107a4ce70cf6ee25ca75888929335b1e1e78702bc9b0f3b",
+    "provenance": "Third-party retained proprietary OEM binary; no execution/import/redistribution",
+    "functions": {
+      "parser": "HDRXml::LoadTmParams0x4c7b0",
+      "polynomial": "panel_mapping_PCC0x51c38",
+      "final_clip": "Clipping(float,float,float), resolved PLT0x5a448/GOT0x5c930"
+    },
+    "row_bases": [
+      248,
+      336,
+      424
+    ],
+    "coefficient_keys": [
+      "c",
+      "r",
+      "g",
+      "b",
+      "rr",
+      "gg",
+      "bb",
+      "rg",
+      "gb",
+      "rb",
+      "rgb"
+    ],
+    "coefficient_type": "binary64",
+    "basis_type": "binary32",
+    "sum_type": "binary64",
+    "output": "binary32 then clamp0..1"
+  },
+  "xml_library": {
+    "name": "Original distribution TinyXML-2",
+    "primary_api": "https://github.com/leethomason/tinyxml2/tree/11.0.0",
+    "license": "zlib",
+    "attribution": "Lee Thomason and contributors",
+    "vendored": false,
+    "api_commit": "9148bdf719e997d1f474be6bcc7943881046dba1"
+  },
+  "inputs": [
+    {
+      "path": "docs/O82-HDR-COMPONENTS.md",
+      "sha256": "08de8079fcee12a2fccd657f636fd145631397920f45a6b60119555f86041d51"
+    },
+    {
+      "path": "manifests/o82-hdr-curve-source-20261105.json",
+      "sha256": "547f6ea8241b0ac2f08a0455bae1f2be25e77fa2a5e256fdcedcfa6c1f201109"
+    },
+    {
+      "path": "src/display/o82-color-firmware.h",
+      "sha256": "d9a4b176ad7be2334b5cf79af1f3a59185cf5304bf22247ea427bfb8839ae48a"
+    },
+    {
+      "path": "src/display/o82-color-profile.cpp",
+      "sha256": "89c8aae6054e016724ddf49b251a259298003286e2cc12a946f4e6fc30ad7392"
+    },
+    {
+      "path": "src/display/o82-hdr-components.hpp",
+      "sha256": "262583a0193c718a4cfb61f60aabd8a18c0b1bf6cab233faddf6779af77e9a00"
+    },
+    {
+      "path": "src/display/o82-hdr-pcc.h",
+      "sha256": "b5709f5bbfccf52db035e2367257066e951203fe769ec174c1dad6c9f6c0cd4b"
+    },
+    {
+      "path": "src/display/o82-hdr-tonemap.h",
+      "sha256": "ae9c4d4aad1083e8b4e83bc43910450cfb6edd99b4edf8118ea258fa8fe01446"
+    },
+    {
+      "path": "src/display/o82-hsic-format.h",
+      "sha256": "dfa79dc0ef22f87d6989b9caca60716f7abd89387e23f1be8df38cfd02bbdb05"
+    },
+    {
+      "path": "src/display/o82-hsic.h",
+      "sha256": "ef3247bfc15efab11f5ed19bfb5c8d0c14f894c59a1bfc9d6aac16f5572ff945"
+    },
+    {
+      "path": "src/display/o82-memory-color.h",
+      "sha256": "c4a684bf4465e326907159acef5cc89d21a2b57a756520be87286eed5ff1c651"
+    },
+    {
+      "path": "src/display/o82-memory-format.h",
+      "sha256": "af2008725d1e642c507eac3ca100c4a3d88214ef0702e6e5b7b2b871441b4efa"
+    },
+    {
+      "path": "src/display/o82-regdma.h",
+      "sha256": "6c16856cd0041aa091162910aebf4076e721b35ba4bf0205b6b315de01a52077"
+    },
+    {
+      "path": "src/display/o82-sixzone-format.h",
+      "sha256": "67e018625041460de4e10c2ddaa734ee9e8d0909138a3b0fe23c8a08040db86d"
+    },
+    {
+      "path": "src/display/o82-sixzone.h",
+      "sha256": "567b616cf2e66702fad00d56623dd922921eb97bd26903bf02138e8201ca6b75"
+    },
+    {
+      "path": "src/display/o82-stock-profile.hpp",
+      "sha256": "9b6a6318d1050e5536998c6cce98e25bd49193e5c0a1cfea159f291ac4357f52"
+    },
+    {
+      "path": "src/display/stock-profile/local.hpp",
+      "sha256": "cc504b204e3063426f3daaefc9eb92276d8a11c818655b488837f6d24413024b"
+    },
+    {
+      "path": "src/display/stock-profile/oem-video.hpp",
+      "sha256": "19b1897ee6de470013f7d3ea40fb5db6b97aa26e7ae9b2d77380308a7b552cdb"
+    },
+    {
+      "path": "src/display/uke-o82-hdr-format.h",
+      "sha256": "537bca8c0c82946754ee334a0bd47187fe341c65e2f9c655188062a5c8ded8e8"
+    },
+    {
+      "path": "tests/o82-hdr-components-contract.cpp",
+      "sha256": "54119b37b3643ed6e706889878efe86e9f2f08adbf926d1d39474b3c2b68864e"
+    },
+    {
+      "path": "tests/o82-hdr-curve-contract.cpp",
+      "sha256": "9461cf538948a339f5a38573ef42c0431ac21b0171f6f11dd0ebcacda7fef37c"
+    },
+    {
+      "path": "tests/o82-hdr-pcc-contract.cpp",
+      "sha256": "57ae4f008062ad385c045345ac2dc587d784835c2671c880e23a5c7e98ac1e56"
+    }
+  ],
+  "producer": {
+    "path": "packaging/native/copr-o82-hdr-components-check.sh",
+    "sha256": "055d81a735eff2a89248388cf0a12c0326ce6792cc41f1360620d7e63e360f30"
+  },
+  "policy": {
+    "private_values_exported": false,
+    "remaining_xml_preserved": true,
+    "complete_mode_admission": false,
+    "production_cpp_changed": false,
+    "hdr_advertisement_changed": false,
+    "full_kernel": false,
+    "physical_acceptance": false
+  },
+  "qualification": {
+    "state": "pending",
+    "scope": "Synthetic actual-decoder/typed XML/curve/polynomial path, independent integer oracles and required mutants"
+  }
+}
