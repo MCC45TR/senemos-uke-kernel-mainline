@@ -10,6 +10,9 @@ revision=${2:?unique unstable revision}
 mode=${3:?check or full}
 proof=${4:?check release, or qualified check build for full}
 [[ $revision =~ ^[1-9][0-9]{4}$ && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
+# Historical12206 constructor. Later full candidates must extend the complete
+# qualified12206 SRPM and retain any subsequently admitted cumulative changes.
+[[ $mode != full || $revision == 12206 ]]
 plan=$owner/packaging/native/migration-cohort-inputs731.json
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
