@@ -5,7 +5,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
-bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-crm-core-check 7.3.1-6
+bash "$owner/packaging/native/refuse-published-release.sh" uke-camera-crm-core-check 7.3.1-7
 for build in 11263248 11264022 11264111 11264217 11264495 11264557; do
     [[ $(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$build" | jq -er .state) == succeeded ]]
 done
@@ -53,7 +53,7 @@ spec=$output/uke-camera-crm-core-check.spec
 awk '
  /^%description/ {exit}
  /^Name:/ {$0="Name: uke-camera-crm-core-check"}
- /^Release:/ {$0="Release: 6%{?dist}"}
+ /^Release:/ {$0="Release: 7%{?dist}"}
  /^Summary:/ {$0="Summary: Uke camera CRM CCF and PM source qualification"}
  /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/ {next}
  {print}
@@ -138,7 +138,7 @@ test ! -e crm-ccf-object/camcc-crm-ccf-object/camcc-crm-adapters.ko
 %{_docdir}/%{name}/parent-composition.json
 
 %changelog
-* Thu Nov 05 2026 Uke contributors - 7.3.1-6
+* Thu Nov 05 2026 Uke contributors - 7.3.1-7
 - Vote in checked PRE and restore a cleanly aborted vote before voltage cleanup.
 - Drain before power-off and retain resources after failed IRQ rearm.
 - Compile complete provider and adapter objects; retain all prior controls.
@@ -146,5 +146,5 @@ test ! -e crm-ccf-object/camcc-crm-ccf-object/camcc-crm-adapters.ko
 SPEC
 sha256sum -c --strict --quiet "$stage/retained.sha256"
 unlink "$parent"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-camera-crm-core-check-7.3.1-6 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-camera-crm-core-check-7.3.1-7 ]]
 printf 'Camera CRM IRQ/LUT source/native-object check prepared; no full kernel or target change\n'

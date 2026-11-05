@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "Qualify checked CCF vote callbacks, runtime-PM transport hooks and complete provider objects on124",
-  "status": "Source ready; COPR qualification pending; firmware CRM remains refused",
+  "status": "Archive completeness corrected; unchanged CCF/PM sources await fresh COPR qualification",
   "parent": {
     "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
     "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
@@ -194,6 +194,10 @@
     {
       "path": "tests/fixtures/camera-crm-transport-check.c",
       "sha256": "ef169621af16515d4b8d9e800b222cb4ccb3b6c578fff2a1182fd88c30e65ec8"
+    },
+    {
+      "path": "manifests/camera-crm-post-drain731-20261105.json",
+      "sha256": "1b6360f851ed1391090c76163635d94d3e2db0861b9afe4324811790e65b3de4"
     }
   ],
   "oracle_inputs": [
@@ -231,7 +235,7 @@
   },
   "qualification": {
     "package": "uke-camera-crm-core-check",
-    "version_release": "7.3.1-6",
+    "version_release": "7.3.1-7",
     "state": "pending",
     "requires_complete_provider_aarch64_object": true,
     "requires_checked_pre_abort_and_voltage_order": true,
@@ -273,5 +277,13 @@
     "Owned inherited AP0 startup votes, sync-state withdrawal and power lifecycle",
     "One qualified cumulative full unstable candidate including every admitted peer handoff",
     "Physical controller, buses, both fitted cameras, private read-only EEPROM consumption, rear AF/parking and complete camera acceptance"
-  ]
+  ],
+  "previous_attempt": {
+    "source_commit": "e1346f6143ec650c28397f5028cb81fd11e263a4",
+    "copr_build": 11264703,
+    "version_release": "7.3.1-6",
+    "state": "failed",
+    "duration_seconds": 177,
+    "reason": "The archived addon omitted the prior post-drain manifest required by its retained contract; new CCF/PM tests and native objects were not reached"
+  }
 }
