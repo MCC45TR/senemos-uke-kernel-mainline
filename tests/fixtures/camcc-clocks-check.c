@@ -328,7 +328,10 @@ static void disable_observation(void)
 	puts("CAMCC clocks: observed void-disable failure latches fault before voltage unprepare and preserves resources");
 }
 
-int main(void)
+#ifndef CAMCC_CLOCKS_MAIN
+#define CAMCC_CLOCKS_MAIN main
+#endif
+int CAMCC_CLOCKS_MAIN(void)
 {
 #ifdef CLOCKS_BASELINE
 	struct device dev;

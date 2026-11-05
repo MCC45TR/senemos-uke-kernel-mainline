@@ -224,6 +224,8 @@ static int cam_cc_native_handoff_init(void)
 		if (!clock->clock)
 			continue;
 		clock->init.flags |= CLK_HOLD_STATE;
+		if (clock->crm)
+			continue;
 		if (clock->native->disable)
 			clock->disable_check = cam_cc_native_disable_check;
 		if (clock->native != &clk_rcg2_shared_ops)

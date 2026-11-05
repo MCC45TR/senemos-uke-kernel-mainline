@@ -13,7 +13,7 @@ install -Dm644 "$here/provider/sysfs-driver-camcc-sm7675" \
  "$kernel/Documentation/ABI/testing/sysfs-driver-camcc-sm7675"
 install -Dm644 "$here/include/dt-bindings/clock/qcom,sm7675-camcc.h" \
  "$kernel/include/dt-bindings/clock/qcom,sm7675-camcc.h"
-for part in power owner clocks handoff registration crm-guard; do
+for part in power owner clocks handoff registration crm-guard crm-core crm-lut crm-clock crm-ccf crm-transport crm-pm; do
  install -Dm644 "$here/provider/camcc-sm7675-$part.h" \
   "$kernel/drivers/clk/qcom/provider/camcc-sm7675-$part.h"
 done
