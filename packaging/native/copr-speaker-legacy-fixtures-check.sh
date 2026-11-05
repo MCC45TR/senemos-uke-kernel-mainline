@@ -101,9 +101,9 @@ ulimit -c 0
 jq -e '.speaker_protection_graph_admitted==false and .speaker_gain_ceiling==223 and .speaker_physical_protection_qualified==false' native-profile/source-composition.json
 cmp native-profile/src/audio/uke-fs19xx-runtime.c sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
 grep -Fx 'CFLAGS_uke-fs19xx-runtime.o += -DUKE_FS19XX_CONTROLS_ONLY' sound/soc/qcom/qdsp6/Makefile
-bash %{SOURCE92}
+bash -euo pipefail %{SOURCE92}
 sed 's/CC=clang /CC=gcc /g; s/CXX=clang++ /CXX=g++ /g' %{SOURCE92} > %{_topdir}/inherited-audio-gcc.sh
-CC=gcc CXX=g++ bash %{_topdir}/inherited-audio-gcc.sh
+CC=gcc CXX=g++ bash -euo pipefail %{_topdir}/inherited-audio-gcc.sh
 mkdir -p %{_topdir}/old-audio-fixtures
 tar -xJf %{SOURCE93} -C %{_topdir}/old-audio-fixtures
 for fixture in audio-graph-lifetime-contract audio-readiness-contract; do
@@ -112,6 +112,13 @@ for fixture in audio-graph-lifetime-contract audio-readiness-contract; do
  fi
  grep -Eq "(undeclared|not declared).*q6apm_fs19xx_|q6apm_fs19xx_.*(undeclared|not declared)" %{_topdir}/$fixture-original.log
 done
+# A real old failing harness inside the complete dispatcher must stop the job.
+# This catches a wrapper that accidentally returns only the last fixture status.
+sed 's#native-profile/tests/audio-graph-lifetime-contract.sh#%{_topdir}/old-audio-fixtures/tests/audio-graph-lifetime-contract.sh#' %{SOURCE92} > %{_topdir}/inherited-audio-negative.sh
+if CC=clang CXX=clang++ bash -euo pipefail %{_topdir}/inherited-audio-negative.sh "$PWD" > %{_topdir}/inherited-audio-negative.log 2>&1; then
+ echo 'Complete audio dispatcher ignored the original graph fixture failure' >&2; exit 1
+fi
+grep -Eq "(undeclared|not declared).*q6apm_fs19xx_|q6apm_fs19xx_.*(undeclared|not declared)" %{_topdir}/inherited-audio-negative.log
 CC=gcc UKE_AUDIO_TEST_MUTANTS=1 bash native-profile/tests/audio-controls-only-contract.sh sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
 CC=clang bash native-profile/tests/audio-controls-only-contract.sh sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
 CC=gcc bash native-profile/tests/audio-speaker-state-store-contract.sh .
