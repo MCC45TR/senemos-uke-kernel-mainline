@@ -110,6 +110,8 @@ It authenticates the89/f05/13/33a contributions, retains all peer bytes, adds
 the protected DT include before the original supplier generation, and appends
 final preparation after all retained hooks. Only0073's codec hunk is applied.
 0074 is retained when already present; otherwise its exact patch is required.
+The12204 source rehearsal confirms that its profile omits the format helper;
+the admission layer explicitly imports both that helper and its actual PCM test.
 The UCM speaker PCM negotiates the admitted formats. Raw capture stays intact.
 
 The original observer gate remains mandatory before and after final preparation.

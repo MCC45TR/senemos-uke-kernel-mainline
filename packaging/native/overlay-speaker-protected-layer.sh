@@ -9,6 +9,7 @@ commit=${2:?Exact protected source commit}
 (cd "$profile"; sha256sum -c --strict --quiet SHA256SUMS)
 hook='bash "$profile/src/audio/prepare-speaker-protected-layer.sh" "$kernel"'
 assets=(src/audio/prepare-speaker-protected-layer.sh src/audio/build-protected-topology.sh
+ src/audio/prepare-speaker-formats.sh tests/audio-pcm-formats-contract.sh
  src/audio/sm7675-uke-protected-speaker.dtsi tests/audio-speaker-safety-contract.sh
  tests/audio-speaker-safety.c tests/audio-protected-package-contract.sh
  src/audio/desktop/array-ucm2/Speaker-PCM.conf
