@@ -6,8 +6,14 @@ test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
 revision=${2:-1}
+mode=${3:-fixtures}
+case "$mode" in
+ fixtures) check_name=uke-speaker-fixtures-check;;
+ state) check_name=uke-speaker-state-check;;
+ *) exit 2;;
+esac
 [[ $revision =~ ^[1-9][0-9]*$ ]]
-bash "$owner/packaging/native/refuse-published-release.sh" uke-speaker-fixtures-check "7.3.1-$revision"
+bash "$owner/packaging/native/refuse-published-release.sh" "$check_name" "7.3.1-$revision"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/unpacked"
@@ -55,6 +61,31 @@ bash "$owner/packaging/native/overlay-speaker-legacy-fixtures.sh" "$profile" "$c
 sha256sum "$profile/SHA256SUMS" "$profile/source-composition.json" > "$stage/repeat"
 bash "$owner/packaging/native/overlay-speaker-legacy-fixtures.sh" "$profile" "$commit"
 sha256sum -c --strict "$stage/repeat"
+if [[ $mode == state ]]; then
+ cp "$profile/src/audio/uke-fs19xx-runtime.c" "$output/previous-speaker-runtime.c"
+ for compiler in gcc clang; do
+  CC=$compiler bash "$owner/tests/audio-speaker-state-read-contract.sh"
+  if CC=$compiler bash "$owner/tests/audio-speaker-state-read-contract.sh" "$output/previous-speaker-runtime.c" > "$stage/baseline.log" 2>&1; then exit 1; fi
+  grep -Fq 'Status overstates RUNNING after the actual guard is closed' "$stage/baseline.log"
+  grep -Fq 'Assertion' "$stage/baseline.log"
+ done
+ cp "$profile/SHA256SUMS" "$stage/state-ledger"
+ cp "$profile/source-composition.json" "$stage/state-composition"
+ printf '\n' >> "$profile/src/audio/uke-fs19xx-runtime.c"
+ if bash "$owner/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$commit" > "$stage/state-refusal" 2>&1; then exit 1; fi
+ (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+ if bash "$owner/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$commit" > "$stage/state-refusal" 2>&1; then exit 1; fi
+ cat "$output/previous-speaker-runtime.c" > "$profile/src/audio/uke-fs19xx-runtime.c"
+ jq '.speaker_protection_graph_admitted=true' "$stage/state-composition" > "$profile/source-composition.json"
+ (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+ if bash "$owner/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$commit" > "$stage/state-refusal" 2>&1; then exit 1; fi
+ cat "$stage/state-composition" > "$profile/source-composition.json"
+ cat "$stage/state-ledger" > "$profile/SHA256SUMS"
+ bash "$owner/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$commit"
+ sha256sum "$profile/SHA256SUMS" "$profile/source-composition.json" > "$stage/state-repeat"
+ bash "$owner/packaging/native/overlay-speaker-state-observer.sh" "$profile" "$commit"
+ sha256sum -c --strict "$stage/state-repeat"
+fi
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$native" -C "$stage/unpacked" native-profile
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/old-audio-fixtures.tar.xz" -C "$stage/old" .
@@ -67,13 +98,13 @@ awk '/^%check$/ {inside=1;next} /^%[a-z]/ {inside=0}
 awk '/^%prep$/ {inside=1} /^%build$/ {exit} inside {print}' "$parent" > "$stage/production-prep"
 [[ $(grep -c '^%prep$' "$stage/production-prep") == 1 ]]
 ! grep -Eq '^Source9[0-4]:' "$parent"
-spec=$output/uke-speaker-fixtures-check.spec
+spec=$output/$check_name.spec
 cat > "$spec" <<SPEC
 %global debug_package %{nil}
 %global _build_id_links none
 %global krel 7.3.1-12202-unstable
 %global _uke_out %{_topdir}/native-kernel-out
-Name: uke-speaker-fixtures-check
+Name: $check_name
 Version: 7.3.1
 Release: $revision%{?dist}
 Summary: All inherited audio fixtures on the exact cumulative Uke source
@@ -87,12 +118,26 @@ Source90: production-spec.txt
 Source91: speaker-fixtures-source-commit.txt
 Source92: inherited-audio-checks.sh
 Source93: old-audio-fixtures.tar.xz
+SPEC
+if [[ $mode == state ]]; then
+ cat >> "$spec" <<'SPEC'
+Source94: previous-speaker-runtime.c
+%description
+Replay exact cumulative12202 preparation and all inherited audio fixtures.
+Correct only the read-only status callback: a closed guard cannot report
+RUNNING from cached graph state. The old callback is a failing assertion control.
+ABI1, graph admission disabled, gain223 and every other production function stay
+unchanged. Text receipts only; no Image, modules, calibration or target action.
+SPEC
+else
+ cat >> "$spec" <<'SPEC'
 %description
 Replays every inherited audio check after exact cumulative12202 preparation.
 Only two test harnesses and their common dependency mock change. Production
 kernel, preparation hooks, DT, topology, boot inputs and gain223 are retained.
 Contains text receipts only; no Image, modules, boot selection or calibration.
 SPEC
+fi
 cat "$stage/production-prep" >> "$spec"
 cat >> "$spec" <<'SPEC'
 %build
@@ -130,7 +175,36 @@ install -m644 %{_topdir}/speaker-fixtures-checks.txt %{SOURCE90} %{SOURCE91} %{S
 %files
 %{_datadir}/doc/%{name}/
 SPEC
+if [[ $mode == state ]]; then
+ awk '
+ /^Summary:/ {$0="Summary: Read-only speaker state bound to its actual guard"}
+ /^%build$/ {
+  print
+  print "for compiler in gcc clang; do"
+  print " CC=$compiler bash native-profile/tests/audio-speaker-state-read-contract.sh sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c"
+  print " if CC=$compiler bash native-profile/tests/audio-speaker-state-read-contract.sh %{SOURCE94} > %{_topdir}/previous-speaker-state.log 2>&1; then exit 1; fi"
+  print " grep -Fq '\''Status overstates RUNNING after the actual guard is closed'\'' %{_topdir}/previous-speaker-state.log"
+  print " grep -Fq Assertion %{_topdir}/previous-speaker-state.log"
+  print "done"
+  next
+ }
+ /^printf '\''Complete cumulative12202/ {next}
+ /^%install$/ {
+  print "export ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-12202-unstable"
+  print "mkdir -p %{_uke_out}"
+  print "sha256sum native-profile/native.config sound/soc/codecs/fs19xx.c > %{_topdir}/state-observer-retained.sha256"
+  print "cp native-profile/native.config %{_uke_out}/.config"
+  print "make -s O=%{_uke_out} olddefconfig prepare modules_prepare"
+  print "make -s O=%{_uke_out} KCFLAGS=-Werror -j4 sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o"
+  print "llvm-readelf -h %{_uke_out}/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o | grep AArch64"
+  print "sha256sum -c --strict %{_topdir}/state-observer-retained.sha256"
+  print "printf '\''Actual observer: close interleaving and288 guard/cache cases pass GCC/Clang; old callback rejected by assertions. All24 inherited audio calls, inactive runtime/mutants/state-store and native AArch64 runtime object pass. Only read-only getter changes; graph false, ABI1, gain223. No kernel/target/physical protection qualification.\\n'\'' > %{_topdir}/speaker-fixtures-checks.txt"
+ }
+ {print}
+ ' "$spec" > "$stage/state.spec"
+ cat "$stage/state.spec" > "$spec"
+fi
 sha256sum -c --strict --quiet "$stage/retained-sources"
 unlink "$parent"
-[[ $(rpmspec --target aarch64 -q --srpm --qf '%{NAME}' "$spec") == uke-speaker-fixtures-check ]]
+[[ $(rpmspec --target aarch64 -q --srpm --qf '%{NAME}' "$spec") == "$check_name" ]]
 printf '%s\n' 'Independent exact cumulative audio fixture replay prepared; no full kernel or target action.'

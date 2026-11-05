@@ -234,13 +234,26 @@ static int fs19xx_state_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_v
 {
 	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
 	struct q6apm *apm = dev_get_drvdata(component->dev);
+	struct q6apm_fs19xx *fs = apm->fs19xx;
 	unsigned long flags;
-	bool faulted;
-	guard(mutex)(&apm->fs19xx->lock);
+	unsigned int state;
+	bool faulted, running;
+	guard(mutex)(&fs->lock);
 	spin_lock_irqsave(&fs19xx_guard_lock, flags);
 	faulted = fs19xx_guard.faulted;
+	running = uke_fs_guard_running(&fs19xx_guard);
 	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
-	value->value.enumerated.item[0] = faulted ? UKE_FS_FAULT : apm->fs19xx->data.status;
+	state = fs->data.status;
+	if (faulted)
+		state = UKE_FS_FAULT;
+	else if (state == UKE_FS_RUNNING &&
+		 (!running || !fs->admitted || fs->removing || !fs->owner))
+		/*
+		 * Quiesce revokes the gate before the graph-close command completes.
+		 * Only cached provisioning is known while that teardown is in flight.
+		 */
+		state = UKE_FS_READY;
+	value->value.enumerated.item[0] = state;
 	return 0;
 }
 static const struct snd_kcontrol_new fs19xx_controls[] = {
