@@ -11,6 +11,13 @@ output=$(realpath -m "$1")
 revision=$2
 [[ $revision =~ ^[1-9][0-9]{4}$ && $revision -gt 12101 ]]
 manifest=manifests/cumulative-camera731-20261105.json
+admit_asset_path()
+{
+    [[ $1 =~ ^(src|tests|docs|packaging|manifests|patches)/[a-zA-Z0-9_.,/-]+$ && $1 != *..* ]]
+}
+while read -r path; do
+    admit_asset_path "$path" || { printf 'Refused cumulative asset path: %s\n' "$path" >&2; exit 1; }
+done < <(jq -r '.source_inputs[].path,.production_assets[].path,.audio_controls_only.assets[].path' "$owner/$manifest")
 (cd "$owner"; jq -r '.source_inputs[]|.sha256+"  "+.path' "$manifest" | sha256sum -c --strict --quiet -)
 bash "$owner/packaging/native/refuse-published-release.sh" \
  senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
@@ -69,7 +76,7 @@ bash "$owner/tests/camcc-bootstrap-layer731-contract.sh" "$owner" "$profile" "$b
 # Extend the complete trees with exact qualified CDSP and model/check inputs.
 # No undeclared old byte may be replaced, including optional boot mirrors.
 while IFS=$'\t' read -r path digest before; do
-    [[ $path =~ ^(src|tests|docs|packaging|manifests)/[a-zA-Z0-9_.,/-]+$ && $path != *..* ]]
+    admit_asset_path "$path"
     for tree in "$profile" "$boot"; do
         if [[ -e $tree/$path || -L $tree/$path ]]; then
             [[ -f $tree/$path && ! -L $tree/$path ]]
