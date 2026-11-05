@@ -20,6 +20,7 @@
   "physical_acceptance": false,
   "stable_promotion": false,
   "failed_source_rehearsals": [
-    {"copr_build":11266930,"check_release":3,"scope":"source preparation before native compilation", "cause":"ALS admission correctly refused the already protected graph metadata", "correction":"apply both qualified ALS layers before the protected audio layer"}
+    {"copr_build":11266930,"check_release":3,"scope":"source preparation before native compilation", "cause":"ALS admission correctly refused the already protected graph metadata", "correction":"apply both qualified ALS layers before the protected audio layer"},
+    {"copr_build":11266955,"check_release":4,"scope":"original preparation passed; build stopped at historical governor comparison", "cause":"the retained governor-only check received the newer manager configuration", "correction":"keep the exact post-governor/pre-manager config as the historical comparison and check manager deltas independently"}
   ]
 }

@@ -86,6 +86,8 @@ while read -r path; do install -Dm644 "$stage/hall/$path" "$profile/$path"; done
  < <(jq -er '.inputs[].path' "$stage/hall/manifests/hall-startup-20261105.json")
 # Preserve old full reference configurations; only the actual production input changes.
 install -Dm644 "$profile/native.config" "$profile/configs/migration-before-native.config"
+printf '%s  %s\n' e0bad377ea2719e00eb2a5b2a3b38fc05d32d23e52cd0f8466905c204c32bc4a \
+ "$profile/configs/migration-before-native.config" | sha256sum -c --strict -
 mkdir -p "$stage/config-tool/scripts"
 tar -xOJf "$output/linux-7.3.1.tar.xz" linux-7.3.1/scripts/config > "$stage/config-tool/scripts/config"
 bash "$stage/manager/packaging/native/apply-kernel-manager-config.sh" "$stage/config-tool" \
@@ -103,7 +105,10 @@ for path in packaging/native/check-cumulative-camera731.sh packaging/native/chec
 done
 checker=$profile/packaging/native/check-cumulative-camera731.sh
 [[ $(grep -Fc 739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34 "$checker") == 1 ]]
+[[ $(grep -Fc e0bad377ea2719e00eb2a5b2a3b38fc05d32d23e52cd0f8466905c204c32bc4a "$checker") == 1 ]]
 sed -e "s/739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34/$native_sha/" \
+ -e "s/e0bad377ea2719e00eb2a5b2a3b38fc05d32d23e52cd0f8466905c204c32bc4a/$native_sha/" \
+ -e 's|"$profile/configs/governor-before-native.config" "$profile/native.config"|"$profile/configs/governor-before-native.config" "$profile/configs/migration-before-native.config"|' \
  -e "/^grep -Fx 'CFLAGS_uke-fs19xx-runtime.o += -DUKE_FS19XX_CONTROLS_ONLY'/s/^grep -Fx /! grep -Fq /" \
  -e '/^! strings .*uke-fs19xx-runtime.o.*grep -F xiaomi,fs19xx-protected/s/^! strings /strings /' \
  "$checker" > "$stage/checker"
@@ -220,6 +225,11 @@ test -z "$(find %{_uke_out} -type f -name '*.ko' -print -quit)"
 %files
 %license COPYING
 %{_docdir}/%{name}
+SPEC
+ cat >> "$check_spec" <<SPEC
+%changelog
+* Thu Nov 05 2026 Uke contributors - 7.3.1-$proof
+- Check complete cumulative preparation, exact retained config histories and native objects.
 SPEC
  unlink "$spec"
 fi
