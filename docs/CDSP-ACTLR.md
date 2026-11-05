@@ -47,3 +47,17 @@ profile selection, AP reboot, automatic boot or stable promotion is performed
 by this contribution. Keep automatic staging enabled and preserve the existing
 local rollback preference. Both full calibrated cameras and rear focus remain
 required independently.
+
+COPR11261896 succeeds for exact source3776f776b5be22d01e4bb084cff994050c719a2e.
+The original allocator fails its required assertion, all four GCC/Clang ordinary
+and ASan/UBSan callback runs pass, all four mutants are refused, retained video
+controls pass, and the real AArch64 SMMU object includes the new initialization
+callback at -Werror with unchanged configuration. Inherited touch/geometry/GMU
+preparation and the real MSM composite also pass. Prepared SMMU source SHA is
+4ff6bd3c30fa30f949f7f6c11a02f9e11abb687f15afa67d61bfb4c5731c499e; object SHA
+2379b34de1a4a60f43189eaf4d36a33a7729e5dde0dd2fa56e511dbbb956a9f6.
+The complete text-receipt RPM passes both full-fingerprint OpenPGP signatures
+and header/payload digests; its exact source and five assertion controls match.
+It is not installed. The reused factory retains kernel-family Conflicts, which
+is another reason this text fixture is evidence rather than a device package.
+Full kernel delivery and physical translated computation remain open.

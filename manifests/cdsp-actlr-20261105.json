@@ -55,7 +55,7 @@
     },
     {
       "path": "docs/CDSP-ACTLR.md",
-      "sha256": "c03257af0a4eadc4f38876c9efadda26e0ac60ed85717bb2bf739bd55a1e2697"
+      "sha256": "a7bcd922830ad37c3177f898fcb45856addbe55ae94e5bb9faff4252fd28020d"
     }
   ],
   "constraints": {
@@ -69,5 +69,26 @@
     "physical_dma_compute_accepted": false,
     "full_camera_calibration_focus_accepted": false
   },
-  "qualification_state": "Fixture1/COPR11261869 failed before its original-control assertion: the extracted existing allocator intentionally leaves domain unused; use the same unused-parameter harness policy as the retained video fixture. Production code unchanged; fresh fixture2 pending. A synthetic text apply check also caught missing trailing context in the include hunk; corrected three-hunk application passes without native compilation."
+  "qualification_state": "COPR11261896 succeeded for exact code3776f77; source/object and complete signed text-receipt gates pass, physical DMA/compute unqualified",
+  "qualification_result": {
+    "copr_build": 11261896,
+    "code_source": "3776f776b5be22d01e4bb084cff994050c719a2e",
+    "fixture_nvr": "uke-cdsp-actlr-check-7.3.1-2.fc46",
+    "native_log_gzip_sha256": "4f6faaf0cd0813d92bcad9db725a43f31a40e937f1227b8487913f27a5ff1721",
+    "prepared_smmu_source_sha256": "4ff6bd3c30fa30f949f7f6c11a02f9e11abb687f15afa67d61bfb4c5731c499e",
+    "aarch64_object_sha256": "2379b34de1a4a60f43189eaf4d36a33a7729e5dde0dd2fa56e511dbbb956a9f6",
+    "gcc_clang_ordinary_and_sanitizer_passes": 4,
+    "original_assertion_control": 134,
+    "required_mutants_refused": 4,
+    "retained_video_and_msm_gates": true,
+    "rpm_sha256": "fe942cd2f6f91fb9f5b3f4bd04c8870d03a6e5f9478db6e4d34d4289830a3493",
+    "rpm_header_sha256": "0ac4a20bfadca746d3e1d752ea861e9fd716e5b807a544542ae3dbb46fa9c5dc",
+    "rpm_payload_sha256": "2a44fb858bd0d093f52d31cb40f884988ec1f2254ac161571f4da97e4a560f5d",
+    "both_openpgp_signatures_verified": true,
+    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "fixture_installed": false,
+    "inherited_kernel_conflicts_retained": true,
+    "full_kernel_delivered": false,
+    "physical_dma_compute_qualified": false
+  }
 }
