@@ -12,7 +12,8 @@ static bool state_info(const snd_ctl_elem_info_t *info) {
 }
 extern "C" {
 uid_t geteuid() noexcept { return 0; }
-int snd_ctl_open(snd_ctl_t **handle, const char *, int) {
+int snd_ctl_open(snd_ctl_t **handle, const char *, int mode) {
+    if (std::getenv("UKE_AUDIO_TEST_REQUIRE_READONLY") && !(mode & SND_CTL_READONLY)) return -EACCES;
     if (std::getenv("UKE_AUDIO_TEST_ABSENT")) return -ENOENT;
     *handle = reinterpret_cast<snd_ctl_t *>(uintptr_t(1)); return 0;
 }

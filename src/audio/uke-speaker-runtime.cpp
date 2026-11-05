@@ -42,9 +42,9 @@ struct Control {
     snd_ctl_t *handle = nullptr;
     snd_ctl_elem_id_t *id = nullptr;
     bool locked = false;
-    explicit Control(const char *card) {
+    explicit Control(const char *card, bool read_only = false) {
         require_runtime(snd_ctl_elem_id_malloc(&id) == 0);
-        if (snd_ctl_open(&handle, card, 0) < 0) {
+        if (snd_ctl_open(&handle, card, read_only ? SND_CTL_READONLY : 0) < 0) {
             snd_ctl_elem_id_free(id); id = nullptr;
             throw std::runtime_error("protected speaker control unavailable");
         }
@@ -182,22 +182,51 @@ int main(int argc, char **argv) {
     const char *directory = "/mnt/vendor/persist/audio";
     const char *acdb = "/var/cache/uke-speaker-runtime/Forte_acdb_cal.acdb";
     const char *card = "hw:POCOPadX1";
-    bool apply = false, status_only = false, has_control = false;
+    bool apply = false, status_only = false, has_control = false, gain_readiness = false;
+    unsigned operations = 0;
     try {
         for (int i = 1; i < argc; ++i) {
             std::string_view option(argv[i]);
-            if (option == "--check") apply = false;
-            else if (option == "--load") apply = true;
-            else if (option == "--status") status_only = true;
-            else if (option == "--has-control") has_control = true;
+            if (option == "--check") { apply = false; ++operations; }
+            else if (option == "--load") { apply = true; ++operations; }
+            else if (option == "--status") { status_only = true; ++operations; }
+            else if (option == "--has-control") { has_control = true; ++operations; }
+            else if (option == "--gain-readiness") { gain_readiness = true; ++operations; }
             else if (option == "--persist-directory" && i + 1 < argc) directory = argv[++i];
             else if (option == "--acdb" && i + 1 < argc) acdb = argv[++i];
             else if (option == "--card" && i + 1 < argc) card = argv[++i];
-            else throw std::runtime_error("usage: uke-speaker-runtime [--check|--load|--status|--has-control] [--acdb PATH] [--persist-directory RO_PATH] [--card ALSA_ID]");
+            else throw std::runtime_error("usage: uke-speaker-runtime [--check|--load|--status|--has-control|--gain-readiness] [--acdb PATH] [--persist-directory RO_PATH] [--card ALSA_ID]");
+        }
+        require_runtime(operations <= 1);
+        if (gain_readiness) {
+            bool authenticated = false;
+            int state = -1;
+            try {
+                Control control(card, true);
+                authenticated = control.available();
+                if (authenticated) state = control.status();
+            } catch (const std::exception &) {
+                // Metadata errors remain blocked. No tuning or private source
+                // is opened, no stream is started and no ALSA write is issued.
+            }
+            static constexpr const char *names[] = {"empty", "staging", "ready", "prepared", "running", "fault"};
+            std::cout << "{\"schema_version\":1,\"requested_gain_ceiling\":243,"
+                << "\"binary_gain_ceiling\":223,\"gain_243_admissible\":false,\"decision\":\"blocked\","
+                << "\"authenticated_interface\":" << (authenticated ? "true" : "false")
+                << ",\"protection_state\":\"" << (state < 0 ? "unavailable" : names[state]) << "\","
+                << "\"provisioned\":" << (state >= UKE_FS_READY && state <= UKE_FS_RUNNING ? "true" : "false")
+                << ",\"protected_graph_running\":" << (state == UKE_FS_RUNNING ? "true" : "false")
+                << ",\"physical_evidence\":{\"dsp_protection_mode\":\"unverified\","
+                << "\"electrical_calibration_and_physical_binding\":\"unverified\","
+                << "\"gain_transfer_function\":\"unverified\",\"vi_mapping_scaling_continuity\":\"unverified\","
+                << "\"power_limit\":\"unverified\",\"coil_temperature_limit\":\"unverified\","
+                << "\"excursion_limit\":\"unverified\",\"fault_response_deadline\":\"unverified\"},"
+                << "\"physical_protection_qualified\":false}\n";
+            return 2;
         }
         if (status_only || has_control) {
             require_runtime(!apply && !(status_only && has_control));
-            Control control(card);
+            Control control(card, true);
             if (has_control) return control.available() ? 0 : 1;
             static constexpr const char *names[] = {"empty", "staging", "ready", "prepared", "running", "fault"};
             const auto state = control.status();
