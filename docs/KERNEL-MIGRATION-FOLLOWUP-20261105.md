@@ -64,3 +64,19 @@ The following11267971 source preparation passed the patch admission and inherite
 preparation, then refused the new synthetic fixture because its APM model lacked
 the cumulative provider-removal field. The fixture now retains and tests that
 actual guard. Production code and earlier removal admission remain unchanged.
+
+Source/native check11267990, commit a51b48ae, passed the retained preparation,
+actual audio/CAMCC fixtures and changed native objects. Its independently
+verified normal-key signed text receipt is SHA256
+`b236f10048dd52ebb154d727034d86b51838e4d0b3efc90837fc5b53240c7354`.
+No Image or physical audio/sleep acceptance is inferred.
+
+Before the following freeze, qualified issue14 contribution9ea9a0c8 is carried
+into both recipes: newly generated Android v4 headers use os_version0 while
+historical inspection remains compatible. Its codec/contract hashes match the
+retained signed11267985 receipt, independently verified by this coordinator.
+That completed fixture was retired after evidence preservation. The local
+contribution is republished with the cumulative source; no additional branch
+or partial kernel is built. No AVB footer, vbmeta or firmware change accompanies
+this isolated header delta. Re-run the combined source check before reserving
+the complete full kernel. Own-device and reporter Pad7 boot results are separate.

@@ -45,7 +45,10 @@ boot=$stage/unpacked/boot-recipe
 (cd "$profile"; sha256sum -c --strict --quiet SHA256SUMS)
 (cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 jq -e '.source_commit=="424caffa1313639827d8a5c523a2b3dd7d01f37a" and .kernel_release=="7.3.1-12206-unstable" and .speaker_protection_graph_admitted and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
-assets=(src/audio/0004-q6apm-scope-graph-open-failure.patch tests/audio-open-failure-contract.sh tests/camcc-quarantine-sleep.sh)
+for tree in "$profile" "$boot"; do
+ printf '%s  %s\n' 13cb6a40a5e11234e5f349260f266e66c48699d68dcfcf6742d47e69bc9bf0fb "$tree/src/boot/boot-image.cpp" | sha256sum -c --strict -
+done
+assets=(manifests/migration-boot-header-layer-20261105.json src/boot/boot-image.cpp tests/boot-image-contract.sh tests/migration-boot-header.sh src/audio/0004-q6apm-scope-graph-open-failure.patch tests/audio-open-failure-contract.sh tests/camcc-quarantine-sleep.sh)
 for asset in "${assets[@]}"; do install -Dm644 "$owner/$asset" "$profile/$asset"; done
 install -Dm644 "$owner/src/camera/sleep/camcc-sm7675-sleep.h" "$profile/src/camera/provider/camcc-sm7675-sleep.h"
 sed -i 's/for part in power owner clocks handoff registration crm-guard; do/for part in power owner clocks handoff registration crm-guard sleep; do/' "$profile/src/camera/prepare-controller731.sh"
@@ -63,15 +66,17 @@ patch --dry-run -d "$kernel" -p1 --fuzz=0 --batch -i "$profile/src/audio/0004-q6
 patch -d "$kernel" -p1 --fuzz=0 --batch -i "$profile/src/audio/0004-q6apm-scope-graph-open-failure.patch"
 bash "$profile/tests/audio-open-failure-contract.sh" "$kernel"
 bash "$profile/tests/camcc-quarantine-sleep.sh"
+bash "$profile/tests/migration-boot-header.sh"
 PREP
 cp "$profile/source-composition.json" "$profile/source-composition-before-followup.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),followup_parent_build:11267328,followup_parent_source:"424caffa1313639827d8a5c523a2b3dd7d01f37a",speaker_graph_open_failure_scope_layer:1,camcc_quarantine_s2idle_layer:1,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-followup.json" > "$profile/source-composition.json"
+jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),followup_parent_build:11267328,followup_parent_source:"424caffa1313639827d8a5c523a2b3dd7d01f37a",speaker_graph_open_failure_scope_layer:1,camcc_quarantine_s2idle_layer:1,boot_header_zero_version_layer:1,boot_header_zero_version_source:"9ea9a0c8eb12fc66e76b5ea44a66d13f6a44124d",boot_header_zero_version_check:11267985,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-followup.json" > "$profile/source-composition.json"
 while IFS= read -r path; do
  path=${path#./}
  case $path in packaging/native/prepare.sh|packaging/native/native.config) continue;; esac
  install -Dm644 "$profile/$path" "$boot/$path"
 done < <(cd "$profile"; find src tests configs packaging -type f | LC_ALL=C sort)
+install -Dm644 "$profile/manifests/migration-boot-header-layer-20261105.json" "$boot/manifests/migration-boot-header-layer-20261105.json"
 install -m644 "$profile/prepare.sh" "$boot/packaging/native/cumulative-prepare.sh"
 for tree in "$profile" "$boot"; do
  if [[ $tree == "$profile" ]]; then
@@ -102,6 +107,7 @@ if [[ $mode == check ]]; then
  awk '/^if \[\[ \$mode == check \]\]; then$/ {copy=1;next} copy && /^fi$/ {exit} copy {print}' "$owner/packaging/native/copr-migration-cohort731.sh" | sed 's| drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o| sound/soc/qcom/qdsp6/q6apm.o drivers/clk/qcom/camcc-sm7675.o drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o|' > "$stage/check-packaging.sh"
  test -s "$stage/check-packaging.sh"
  source "$stage/check-packaging.sh"
+ sed -i 's/Complete12204/Complete12206/g' "$output/uke-kernel-migration-check.spec"
 fi
 (cd "$output"; sha256sum -c --strict --quiet "$stage/retained")
 printf 'Complete12206 audio/sleep followup prepared for planned%s/%s; physical acceptance pending.\n' "$revision" "$mode"

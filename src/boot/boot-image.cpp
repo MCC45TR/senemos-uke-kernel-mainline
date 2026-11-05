@@ -108,20 +108,21 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Root profile must be linux or userdata");
             if (create && argc == 5 && profile.empty())
                 throw std::runtime_error("Empty root profile refused");
-            // Uke stock-ABL metadata and capacity from the accepted boot_b header.
+            // Retain the Uke partition capacity, not Android version metadata.
             const auto stock = create ? std::vector<uint8_t>(100663296) : read(argv[2]);
-            const auto h = create ? Header{0, 0, 570425768, 0, 0, false} : inspect(stock);
+            const auto h = create ? Header{} : inspect(stock);
             const auto kernel = read(argv[create ? 2 : 3]); raw_arm64(kernel);
             const auto capacity = create ? 100663296 : number(argv[5]);
             if (h.ramdisk || h.signature || capacity != stock.size() || capacity % page ||
                 capacity > limit || page + aligned(kernel.size()) > capacity)
                 throw std::runtime_error("Template or capacity does not admit a kernel-only v4 image");
-            // Copy only the OS metadata. Neither stale signatures nor footer,
-            // stock command line, kernel bytes or authentication data survive.
+            // Android 13+ GKI boot v4 requires os_version=0; version information
+            // belongs in AVB properties. Do not inherit a template's Android
+            // version/patch level, signatures, footer or command line.
             std::vector<uint8_t> b(static_cast<size_t>(capacity), 0);
             std::memcpy(b.data(), "ANDROID!", 8);
             put32(b.data() + 8, static_cast<uint32_t>(kernel.size()));
-            put32(b.data() + 16, h.os); put32(b.data() + 20, 1584); put32(b.data() + 40, 4);
+            put32(b.data() + 20, 1584); put32(b.data() + 40, 4);
             if (!profile.empty()) {
                 const std::string selector = "senemos.root=" + profile;
                 std::memcpy(b.data() + 44, selector.c_str(), selector.size());
