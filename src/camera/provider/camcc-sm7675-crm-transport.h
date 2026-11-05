@@ -373,6 +373,7 @@ static inline int cam_cc_crm_transport_idle(struct cam_cc_crm_transport *t, bool
 {
 	unsigned long flags;
 	u32 kind, resource, offset;
+	bool newly_quiesced = false;
 	int ret;
 
 	if (!t || !READ_ONCE(t->base) || !READ_ONCE(t->irq_owned))
@@ -419,6 +420,7 @@ static inline int cam_cc_crm_transport_idle(struct cam_cc_crm_transport *t, bool
 		}
 		t->ready = false;
 		t->quiesced = true;
+		newly_quiesced = true;
 	}
 	spin_unlock_irqrestore(&t->lock, flags);
 	synchronize_irq(t->irq);
@@ -426,6 +428,16 @@ static inline int cam_cc_crm_transport_idle(struct cam_cc_crm_transport *t, bool
 	if (t->fault) {
 		ret = t->fault;
 		goto unlock;
+	}
+	if (newly_quiesced) {
+		/* The owner still holds power. Drain completion does not prove that
+		 * owned hardware status stayed idle while IRQ delivery was masked.
+		 */
+		ret = t->access(t->power_context);
+		if (!ret)
+			ret = cam_cc_crm_transport_check_idle(t, false);
+		if (ret)
+			goto fault;
 	}
 	if (release) {
 		/* IRQs are off, no SW vote remains, and no callback can retain this object. */
