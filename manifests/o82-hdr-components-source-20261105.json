@@ -123,7 +123,7 @@
     },
     {
       "path": "tests/o82-hdr-components-contract.cpp",
-      "sha256": "54119b37b3643ed6e706889878efe86e9f2f08adbf926d1d39474b3c2b68864e"
+      "sha256": "723466b803e30123735b54586ec2e34d7dad8180bc2c9c2992aaed39da4283ad"
     },
     {
       "path": "tests/o82-hdr-curve-contract.cpp",
@@ -159,6 +159,15 @@
         "reason": "Copied integer oracle retains an unused division helper; -Werror=unused-function correctly refuses it",
         "native_log_sha256": "144e6ecc4c52e467b4120f8c5f67bff8a1017abfcc4091af5006bb7610d9890b",
         "correction": "Remove only the unused oracle helper; retain warnings and production/component arithmetic unchanged"
+      },
+      {
+        "source_commit": "0b8adbdfd09a195fbd60f3055bd74d4a461e1396",
+        "copr_build": 11264724,
+        "version_release": "1.1.0-2",
+        "state": "failed in GCC optimized bridge compilation before runtime checks",
+        "reason": "GCC cannot prove the custom throwing assertion initialized the out-parameter before use; -Werror=maybe-uninitialized refuses it",
+        "native_log_sha256": "557c6d65885a4aa3848d581748ff8a385e2beb11f52884e47131eb00a360ecfd",
+        "correction": "Initialize bridge outputs to NaN sentinels, so a missing write remains a detectable failure; preserve production arithmetic and warnings"
       }
     ]
   }

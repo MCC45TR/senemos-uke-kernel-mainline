@@ -100,10 +100,11 @@ void hdr_actual_decoder_bridge() {
             hdr_component_check(o82::parse_hdr_components(text_field(decoded.get(),"blob"),parsed)==o82::HdrXmlError::none&&parsed==expected);
             for(unsigned i=1;i<=1024;++i) {
                 const float grey=float(i)/1024;
-                float mapped;
+                float mapped=std::numeric_limits<float>::quiet_NaN();
                 hdr_component_check(o82::map_hdr_normalized_luminance(parsed.curve,parsed.range,grey,
                     o82::HdrCurveDirection::to_panel,mapped)==o82::HdrCurveError::none);
-                std::array<float,3> output;
+                const float poison=std::numeric_limits<float>::quiet_NaN();
+                std::array<float,3> output{poison,poison,poison};
                 hdr_component_check(o82::map_hdr_panel_pcc(parsed.pcc,{mapped,mapped,mapped},output)==o82::HdrPccError::none);
                 const double target=std::clamp((10000.0*grey-0.001)/(1000.0-0.001),0.0,1.0);
                 for(unsigned channel=0;channel<3;++channel)
