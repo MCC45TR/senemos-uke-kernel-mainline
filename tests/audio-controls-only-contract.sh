@@ -30,19 +30,26 @@ static struct mutex *acquire_mutex(struct mutex *m){assert(!m->held);m->held=tru
 static void cleanup_mutex(struct mutex **m){assert((*m)->held);(*m)->held=false;}
 #define guard(t) struct mutex *guard_value __attribute__((cleanup(cleanup_mutex)))=acquire_mutex
 struct crypto_shash { int unused; };
-struct device { void *of_node; };
+struct device { void *of_node,*data; };
 struct q6apm_fs19xx;
 struct q6apm { struct device *dev; struct q6apm_fs19xx *fs19xx; };
 struct audioreach_graph { struct q6apm *apm; unsigned id; int state; void *info; };
 struct q6apm_graph { struct q6apm *apm; unsigned id; struct audioreach_graph *ar_graph; };
 static bool uke,dt_admitted;
+static int init_fault,registration_fault;
+static void *allocation;
 static bool __attribute__((unused)) of_machine_is_compatible(const char *s){assert(!strcmp(s,"xiaomi,uke"));return uke;}
 static bool __attribute__((unused)) of_property_read_bool(void *p,const char *s){(void)p;assert(!strcmp(s,"xiaomi,fs19xx-protected"));return dt_admitted;}
-static void *devm_kzalloc(struct device *d,size_t n,int f){(void)d;(void)f;return calloc(1,n);}
+static void *devm_kzalloc(struct device *d,size_t n,int f){(void)d;(void)f;if(init_fault==1)return NULL;allocation=calloc(1,n);return allocation;}
 static struct crypto_shash hash;
-static struct crypto_shash *crypto_alloc_shash(const char *n,int a,int b){assert(!strcmp(n,"sha256")&&!a&&!b);return &hash;}
+static struct crypto_shash *crypto_alloc_shash(const char *n,int a,int b){assert(!strcmp(n,"sha256")&&!a&&!b);return init_fault==2?(void *)(intptr_t)-EIO:&hash;}
 static void fs19xx_free_hash(void *p){(void)p;}
-static int devm_add_action_or_reset(struct device *d,void(*fn)(void*),void*p){(void)d;(void)fn;(void)p;return 0;}
+static int devm_add_action_or_reset(struct device *d,void(*fn)(void*),void*p){(void)d;(void)fn;(void)p;return init_fault==3?-EIO:0;}
+struct snd_soc_component {struct device *dev;};
+static const int fs19xx_controls[2];
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+static struct q6apm *dev_get_drvdata(struct device *d){return d->data;}
+static int snd_soc_add_component_controls(struct snd_soc_component *c,const int *a,unsigned n){(void)c;assert(a==fs19xx_controls&&n==2);return registration_fault;}
 static int fs19xx_gate(unsigned n){(void)n;gates++;return 0;}
 static int fs19xx_send(void *ctx,u32 iid,u32 param,const u8 *data,size_t n){(void)ctx;(void)iid;(void)param;(void)data;(void)n;sends++;return 0;}
 #define list_for_each_entry(pos,head,member) for((pos)=NULL;(pos)!=NULL;(pos)=NULL)
@@ -58,7 +65,7 @@ struct audioreach_module {
 #define MODULE_ID_MFC 3
 C
 awk '/^struct q6apm_fs19xx \{/ {emit=1} emit {print} emit && /^};/ {exit}' "$source_file" >> "$stage/check.c"
-for function in q6apm_fs19xx_init q6apm_fs19xx_graph q6apm_fs19xx_claim q6apm_fs19xx_prepare q6apm_fs19xx_prepared q6apm_fs19xx_started q6apm_fs19xx_stopped q6apm_fs19xx_quiesce q6apm_fs19xx_release q6apm_fs19xx_shutdown; do
+for function in q6apm_fs19xx_init q6apm_fs19xx_controls q6apm_fs19xx_graph q6apm_fs19xx_claim q6apm_fs19xx_prepare q6apm_fs19xx_prepared q6apm_fs19xx_started q6apm_fs19xx_stopped q6apm_fs19xx_quiesce q6apm_fs19xx_release q6apm_fs19xx_shutdown; do
  awk -v name="$function" '$0 ~ "^(int|bool|void) "name"\\(" {emit=1} emit {print} emit && /^}/ {exit}' "$source_file" >> "$stage/check.c"
  grep -Fq "$function(" "$stage/check.c"
 done
@@ -67,7 +74,7 @@ if [[ ${UKE_AUDIO_TEST_MUTANTS:-0} == 1 ]]; then
   case "$mutation" in
    graph) sed 's/graph->apm->fs19xx->admitted \&\& //g' "$source_file" > "$stage/mutant.c";;
    claim) sed 's/!fs || !fs->admitted || graph->id != 40/!fs || graph->id != 40/g' "$source_file" > "$stage/mutant.c";;
-   force) sed 's/fs->admitted = false;/fs->admitted = true;/' "$source_file" > "$stage/mutant.c";;
+   force) sed 's/bool admitted = false;/bool admitted = true;/' "$source_file" > "$stage/mutant.c";;
    foreign) sed 's/if (!of_machine_is_compatible("xiaomi,uke"))/if (false)/' "$source_file" > "$stage/mutant.c";;
   esac
   if UKE_AUDIO_TEST_MUTANTS=0 bash "$0" "$stage/mutant.c" > "$stage/mutant.log" 2>&1; then
@@ -80,11 +87,35 @@ fi
 cat >> "$stage/check.c" <<'C'
 int main(void){
  struct device dev={0};struct q6apm apm={.dev=&dev};
+ dev.data=&apm;
+ struct snd_soc_component component={.dev=&dev};
+ uke=true;dt_admitted=false;
+ for(init_fault=1;init_fault<=3;init_fault++){
+  allocation=NULL;assert(!q6apm_fs19xx_init(&apm)&&!apm.fs19xx);free(allocation);
+ }
+ dt_admitted=true;
+ for(init_fault=1;init_fault<=3;init_fault++){
+  allocation=NULL;int r=q6apm_fs19xx_init(&apm);
+#ifdef UKE_FS19XX_CONTROLS_ONLY
+  assert(!r&&!apm.fs19xx);
+#else
+  assert(r==(init_fault==1?-ENOMEM:-EIO)&&!apm.fs19xx);
+#endif
+  free(allocation);
+ }
+ init_fault=0;
  uke=false;dt_admitted=true;assert(q6apm_fs19xx_init(&apm)==0&&!apm.fs19xx);
  uke=true;dt_admitted=false;assert(q6apm_fs19xx_init(&apm)==0&&apm.fs19xx&&!apm.fs19xx->admitted);
  struct q6apm_fs19xx *fs=apm.fs19xx;free(fs);apm.fs19xx=NULL;
  dt_admitted=true;assert(q6apm_fs19xx_init(&apm)==0&&apm.fs19xx);
  fs=apm.fs19xx;
+ registration_fault=-ENOMEM;
+#ifdef UKE_FS19XX_CONTROLS_ONLY
+ assert(!q6apm_fs19xx_controls(&component));
+#else
+ assert(q6apm_fs19xx_controls(&component)==-ENOMEM);
+#endif
+ registration_fault=0;assert(!q6apm_fs19xx_controls(&component));
 #ifdef UKE_FS19XX_CONTROLS_ONLY
  assert(!fs->admitted); /* Even a stray DT flag cannot activate this build. */
 #else

@@ -139,6 +139,7 @@ static void fs19xx_free_hash(void *context)
 int q6apm_fs19xx_init(struct q6apm *apm)
 {
 	struct q6apm_fs19xx *fs;
+	bool admitted = false;
 	int ret;
 
 	/* Controls may cache calibration on Uke while its legacy graph stays intact.
@@ -146,21 +147,20 @@ int q6apm_fs19xx_init(struct q6apm *apm)
 	 */
 	if (!of_machine_is_compatible("xiaomi,uke"))
 		return 0;
+#ifndef UKE_FS19XX_CONTROLS_ONLY
+	admitted = of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected");
+#endif
 	fs = devm_kzalloc(apm->dev, sizeof(*fs), GFP_KERNEL);
 	if (!fs)
-		return -ENOMEM;
+		return admitted ? -ENOMEM : 0;
 	mutex_init(&fs->lock);
-#ifdef UKE_FS19XX_CONTROLS_ONLY
-	fs->admitted = false;
-#else
-	fs->admitted = of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected");
-#endif
+	fs->admitted = admitted;
 	fs->sha256 = crypto_alloc_shash("sha256", 0, 0);
 	if (IS_ERR(fs->sha256))
-		return PTR_ERR(fs->sha256);
+		return admitted ? PTR_ERR(fs->sha256) : 0;
 	ret = devm_add_action_or_reset(apm->dev, fs19xx_free_hash, fs->sha256);
 	if (ret)
-		return ret;
+		return admitted ? ret : 0;
 	apm->fs19xx = fs;
 	return 0;
 }
@@ -255,9 +255,12 @@ static const struct snd_kcontrol_new fs19xx_controls[] = {
 int q6apm_fs19xx_controls(struct snd_soc_component *component)
 {
 	struct q6apm *apm = dev_get_drvdata(component->dev);
+	int ret;
 	if (!apm->fs19xx)
 		return 0;
-	return snd_soc_add_component_controls(component, fs19xx_controls, ARRAY_SIZE(fs19xx_controls));
+	ret = snd_soc_add_component_controls(component, fs19xx_controls, ARRAY_SIZE(fs19xx_controls));
+	/* Optional diagnostics cannot take down the existing unprotected sound card. */
+	return apm->fs19xx->admitted ? ret : 0;
 }
 
 bool q6apm_fs19xx_graph(struct q6apm_graph *graph)

@@ -5,6 +5,9 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?COPR result directory}")
+revision=${2:-1}
+[[ $revision =~ ^[1-9][0-9]*$ ]]
+bash "$owner/packaging/native/refuse-published-release.sh" uke-speaker-controls-check "7.3.1-$revision"
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$output" "$stage/unpacked"
@@ -43,9 +46,9 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$out
 printf '%s\n' "$commit" > "$output/speaker-controls-source-commit.txt"
 [[ $(grep -c '^Source12:' "$parent") == 0 ]]
 spec=$output/uke-speaker-controls-check.spec
-awk '
+awk -v revision="$revision" '
  /^Name:/ {$0="Name: uke-speaker-controls-check"}
- /^Release:/ {$0="Release: 1%{?dist}"}
+ /^Release:/ {$0="Release: "revision"%{?dist}"}
  /^Summary:/ {$0="Summary: Cumulative Uke speaker controls with inactive protection admission"}
  /^%description$/ {
   print "Source12: speaker-controls-source-commit.txt\n\n%description"
