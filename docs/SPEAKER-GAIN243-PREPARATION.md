@@ -118,3 +118,25 @@ audio calls from that production spec. Both compiler suites use explicit
 must stop it. The coordinator should also run this extracted source-check list
 after preparation and before the next Image build, while retaining the final
 package checks. Its exact pin/result belongs in the shared audio handoff.
+
+## Meaning of readback
+
+Readiness reports metadata and a software-state snapshot. It does not measure
+VI current/voltage, coil temperature, displacement or power. TSEN readback is
+an enable-bit check, not a Celsius coil observation. Calibration consistency
+does not establish its electrical bounds or the fitted channel/VI identity.
+
+The original 89acf61 state getter can overstate cached RUNNING during normal
+quiesce, after the actual guard closes but before release clears the cache.
+The read-only observer correction requires a running guard, admitted graph,
+live owner and no removal; fault precedence remains mandatory. Otherwise cached
+RUNNING is reported as READY, meaning only provisioning is known. This does
+not change a cache, DSP operation, codec write, threshold, ABI or gain.
+
+The coordinator applies `overlay-speaker-state-observer.sh PROFILE AUDIO_COMMIT`
+from the exact qualified detached source after the controls/fixture layers.
+The helper authenticates the original runtime and verifies every byte outside
+the one getter. Its actual-function test rejects the old getter and covers288
+guard/cache/lifetime combinations; cumulative audio checks and real AArch64
+object compilation remain required. Passing these tests supplies no live
+transducer measurements and cannot admit243.
