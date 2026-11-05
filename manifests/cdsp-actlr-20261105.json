@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Exact CDSP ACTLR on retained cumulative12101/touch/geometry/GMU; source/object fixture only",
+  "parent": {
+    "source": "e6c122e2cd30fbf6ff5bec796f117da1afc97cb1",
+    "copr_check": 11261342,
+    "factory_sha256": "dd75377d4dcfa1d601a982c92fd37def8930ecbf313ec71dc7e142f24ad032f7",
+    "kernel_source": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "kernel_copr": 11260781
+  },
+  "oem": {
+    "kernel": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "dt": "94c84aeb9e517dbde546fc732033c184094c8e57",
+    "same_soc_dt": "1138e00fee63582a0cc6a53af3286621786827b7",
+    "sids": [
+      "0xc01",
+      "0xc02"
+    ],
+    "mask": 0,
+    "actlr": "0x303"
+  },
+  "inputs": [
+    {
+      "path": "src/cdsp/uke-cdsp-smmu.c",
+      "sha256": "638727e816f3761611ea1d51c6bd6e1a017c1e50ab13851a2493d0de45f6ea7e"
+    },
+    {
+      "path": "src/cdsp/apply-actlr.sh",
+      "sha256": "0999751d91da3363c21249689d695b64da105900ee35888b3258544b5260287a"
+    },
+    {
+      "path": "patches/cdsp/0001-uke-cdsp-actlr.patch",
+      "sha256": "4784b1c5052fa02ea8f08d11359bc3afc337fa7bf0bd64aef8b6d63dc4393612"
+    },
+    {
+      "path": "tests/cdsp-actlr-contract.sh",
+      "sha256": "091d58024f0bae57ab24b541d2a7b456bc02558a4f84b3351336b07a94dd0dcc"
+    },
+    {
+      "path": "tests/cdsp-actlr-qualify.sh",
+      "sha256": "ade1cccdaa11f2c3b8e6d8abfbae7de102e8fabf710e331bae3f05a9c2740cab"
+    },
+    {
+      "path": "tests/fixtures/cdsp-actlr-check.c",
+      "sha256": "940409f8b38c390b51e5089c75e5bacc0170f797c23b7c73f3111813064f20d7"
+    },
+    {
+      "path": "tests/iris-smmu-contract.sh",
+      "sha256": "ed8f6d839b5b615f62f277e2eb6519b1b7f5c8cdaeafa23c4df5b92db549de42"
+    },
+    {
+      "path": "packaging/native/copr-cdsp-actlr-check.sh",
+      "sha256": "c0739c4e8ead1bf998b91a820efccc1d10278071d756b054feed5d33d87ee216"
+    },
+    {
+      "path": "docs/CDSP-ACTLR.md",
+      "sha256": "c03257af0a4eadc4f38876c9efadda26e0ac60ed85717bb2bf739bd55a1e2697"
+    }
+  ],
+  "constraints": {
+    "fresh_translated_banks_only": true,
+    "boot_banks_retained": true,
+    "exact_of_and_source_admission": true,
+    "secure_channel_and_vmids_unchanged": true,
+    "video_display_adsp_retained": true,
+    "no_kernel_nvr_or_image_or_delivery": true,
+    "newer_memory_and_other_deltas_require_final_integration": true,
+    "physical_dma_compute_accepted": false,
+    "full_camera_calibration_focus_accepted": false
+  },
+  "qualification_state": "source prepared; COPR result pending"
+}

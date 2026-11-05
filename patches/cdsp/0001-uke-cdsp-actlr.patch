@@ -1,0 +1,29 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] iommu: apply exact Uke CDSP ACTLR before enabling translation
+
+The two previously admitted CDSP streams reach the generic boot-stream
+ACTLR refusal. Require the exact board, SMMU, native OF/SID pair and one
+unmasked OEM rule with value0x303. Allocate a fresh translated context and
+verify ACTLR readback; retain boot-owned banks and video/display delegation.
+The included original helper is installed by src/cdsp/apply-actlr.sh.
+
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -890,2 +890,3 @@
+ #include "uke-display-smmu.c"
+ #include "uke-video-smmu.c"
++#include "uke-cdsp-smmu.c"
+@@ -900,3 +901,8 @@
+ 	int len, i, j;
+ 
++	if (qcom_uke_cdsp_domain(smmu, dev)) {
++		if (!qcom_uke_cdsp_actlr_matches(smmu, dev))
++			return -EINVAL;
++		return __arm_smmu_alloc_bitmap(smmu->context_map, start, smmu->num_context_banks);
++	}
+ 	if (qcom_uke_video_domain(smmu, dev)) {
+@@ -950,3 +956,3 @@
+ static const struct arm_smmu_impl qcom_uke_smmu_impl = {
+-	.init_context = qcom_uke_init_context,
++	.init_context = qcom_uke_cdsp_init_context,
+ 	.def_domain_type = qcom_uke_smmu_def_domain_type,
