@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Source/callback and native object qualification only; physical cover behavior remains unproved",
+  "source_commit": "ab15a54ed48bebed90ecbfca535448ea92eb7fdf",
+  "source_manifest": "manifests/hall-startup-20261105.json",
+  "copr_build": 11266380,
+  "copr_state": "succeeded",
+  "package": "uke-hall-startup-check-7.3.1-1.fc46.aarch64",
+  "rpm_sha256": "77f4dd3a99e9d054fce9c996b6721ccd07d787390718f43986319dc703448ba6",
+  "trusted_signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "rpm_signatures_and_digests_verified": true,
+  "receipt_source_and_manifest_exact": true,
+  "parent_composition_matches_12204": true,
+  "four_compiler_sanitizer_modes_passed": true,
+  "four_runtime_assertion_controls_passed": true,
+  "actual_aarch64_object": {
+    "path": "drivers/input/misc/qcom-smp2p-switch.o",
+    "sha256": "ebf39ed7aace4e68d49f08e8e1222648867ca732a0e9bf9980bf2f2645a620ef",
+    "kcflags": "-Werror",
+    "initial_state_callback_symbol_verified": true,
+    "retained_input_config_verified": true
+  },
+  "payload": "Text receipts and licenses only; no scriptlets or runtime dependencies",
+  "installed_on_target": false,
+  "full_kernel_built": false,
+  "kernel_selection_or_boot_changed": false,
+  "remaining": "Coordinator integration into the following cumulative unstable kernel, signed DNF delivery, and physical stationary closed-cover boot before any motion; normal transitions/resume/wake remain separate hardware gates"
+}
