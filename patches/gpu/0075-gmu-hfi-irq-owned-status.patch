@@ -1,0 +1,28 @@
+From: Uke contributors
+Subject: [PATCH] drm/msm/a6xx: preserve latches owned by HFI and OOB pollers
+
+The fault interrupt consumes CM3_FAULT. MSGQ and OOB acknowledgements share
+the status register but belong to synchronous pollers under gmu->lock.
+Acknowledging the complete snapshot can lose their pending response.
+
+Limit the write-one-to-clear value to the observed fault bit. Preserve fault
+logging and recovery, including a new fault arriving after the snapshot.
+No clock, firmware, polling limit or IRQ-mask programming changes.
+
+Compared with gennro's KettleLinux 1350 at 91e3b5cfe90925d469430fc915101df5579b4e68,
+exact Uke MiCode, shared Xiaomi gen7 KGSL, Palawan and upstream 7.3.1.
+See docs/GMU-HFI-IRQ-OWNERSHIP.md for attribution and validation limits.
+---
+--- a/drivers/gpu/drm/msm/adreno/a6xx_gmu.c
++++ b/drivers/gpu/drm/msm/adreno/a6xx_gmu.c
+@@ -64,7 +64,9 @@ static irqreturn_t a6xx_hfi_irq(int irq, void *data)
+ 	struct a6xx_gmu *gmu = data;
+ 	u32 status;
+ 
+-	status = gmu_read(gmu, REG_A6XX_GMU_GMU2HOST_INTR_INFO);
++	/* Leave response and OOB latches to their synchronous pollers. */
++	status = gmu_read(gmu, REG_A6XX_GMU_GMU2HOST_INTR_INFO) &
++		A6XX_GMU_GMU2HOST_INTR_INFO_CM3_FAULT;
+ 	gmu_write(gmu, REG_A6XX_GMU_GMU2HOST_INTR_CLR, status);
+ 
+ 	if (status & A6XX_GMU_GMU2HOST_INTR_INFO_CM3_FAULT) {

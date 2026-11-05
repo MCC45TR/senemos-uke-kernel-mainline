@@ -1,0 +1,977 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "One full unstable production kernel retaining complete12101 and every qualified coordinated delta; physical gates remain open",
+  "kernel_parent": {
+    "copr_build": 11260781,
+    "release": "7.3.1-12101.fc46",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/fedora-rawhide-aarch64/Packages/s/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12101.fc46.src.rpm",
+    "sha256": "8c436d285a39067097507972b7b1f8e4199e94f75abddf30d9fe35072449f342",
+    "bytes": 164485546,
+    "primary_sha256": "f6385fb6eab56efe6d0ede04337483a4e5ff42d8c76412788414d4e2041b9f44",
+    "kernel_release": "7.3.1-12101-unstable",
+    "native_config_sha256": "739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34"
+  },
+  "layer_order": [
+    "qualified-touch",
+    "o82-memory-v5",
+    "queued-geometry-gmu",
+    "private-color-dnf",
+    "ssc-transaction-id",
+    "camcc-oem-bootstrap",
+    "cdsp-actlr-source",
+    "audio-controls-only",
+    "final-source-abi-stamp"
+  ],
+  "required_checks": [
+    {
+      "copr_build": 11260781,
+      "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+      "feature": "full12101 production baseline"
+    },
+    {
+      "copr_build": 11261044,
+      "source_commit": "0e320d96f0d2dc155df224dd0e9712719a1d1f08",
+      "feature": "touch source retention"
+    },
+    {
+      "copr_build": 11261165,
+      "source_commit": "9398700a6375a309f572d588a9e448cdbc4b0736",
+      "feature": "front geometry"
+    },
+    {
+      "copr_build": 11261282,
+      "source_commit": "4800f0b884594018885c7ebadb3238c03499199f",
+      "feature": "memory and private color v5"
+    },
+    {
+      "copr_build": 11261342,
+      "source_commit": "e6c122e2cd30fbf6ff5bec796f117da1afc97cb1",
+      "feature": "GMU IRQ and real MSM object"
+    },
+    {
+      "copr_build": 11261509,
+      "source_commit": "ae967e08dfc41b786d42316233f4d7089411eafe",
+      "feature": "native private-color DNF gate"
+    },
+    {
+      "copr_build": 11261650,
+      "source_commit": "d602010745633e88f1ab3c3431ec56ad24d00758",
+      "feature": "cumulative touch geometry memory GMU DNF union"
+    },
+    {
+      "copr_build": 11261868,
+      "source_commit": "b38a29f2a1ce52fa1b1ce0d0843a927b3525fc8a",
+      "feature": "positive QMI transaction ID"
+    },
+    {
+      "copr_build": 11261896,
+      "source_commit": "3776f776b5be22d01e4bb084cff994050c719a2e",
+      "feature": "exact CDSP ACTLR and retained video"
+    },
+    {
+      "copr_build": 11261918,
+      "source_commit": "4024165658f2fc852741bf3905ceb6717fbb6ad4",
+      "feature": "OEM CAMCC transport bootstrap candidate"
+    },
+    {
+      "copr_build": 11262024,
+      "source_commit": "89acf61d73f60f5164104eaffd19c076e6371287",
+      "feature": "speaker controls with compile-time-disabled graph admission"
+    }
+  ],
+  "production_assets": [
+    {
+      "path": "docs/CDSP-ACTLR.md",
+      "sha256": "c03257af0a4eadc4f38876c9efadda26e0ac60ed85717bb2bf739bd55a1e2697",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/CUMULATIVE-CAMERA731.md",
+      "sha256": "e0db17326aa52843674cfe4703144db3e8b21c82844e007a053dd516a2612b88",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/O82-TOUCH-BLANK-ORDER.md",
+      "sha256": "5b102cd822e13dc337e1973ee855199c6276f2027f7bc927d5e905a8329a89dc",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/OV08D10-GEOMETRY731.md",
+      "sha256": "cedb4bb4f13babeaeb4792524ebfdd4d4ea82c28ae7047f105d264da5188f2b0",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/camera-geometry731-20261105.json",
+      "sha256": "e6500516f4b2aeedf0289f76dc62c2637d6f190da8ee28ca2bc73406e4e8b29d",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/cdsp-actlr-20261105.json",
+      "sha256": "e1add9c677527ee318267178c4468f750b8b603eb7de134c6d65a49f4bef6ba5",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/coordinated-union731-20261105.json",
+      "sha256": "ebb5d9393772108f545d9dc12ec30d79f5b2d7c4975d08981ae4e516330c62a8",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/o82-memory-cumulative-source-20261105.json",
+      "sha256": "66db591ec6fef934082930932fa9c5b89d5a8b224d0838c754a7f79e5ae618f4",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/o82-memory-layer-20261105.json",
+      "sha256": "b4cb175fd47c71b4b20bfcd24b372db1489866ea0d21c33fc7f12cf9ee6e57a3",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/o82-private-dnf-source-20261105.json",
+      "sha256": "57547ff37f9bb42dad5e32a4297d9db13190369ca3fb5dcc71a9884fb92c83d6",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/qualified-touch-layer-20261105.json",
+      "sha256": "97d5dbc1270d89997777ad40a13c7832efde6f6af99290c40d627a18dc99e1a0",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/queued-kernel-layer-20261105.json",
+      "sha256": "0cb431c5db7342cc4b49737251dd1d20cdd8dbaf5eebf0e328d0022513d73f9c",
+      "before_sha256": null
+    },
+    {
+      "path": "manifests/ssc-transaction-source-20261105.json",
+      "sha256": "c97c3b201c858138f956e353fdc25215fe1576dbfd06c17ad1f1f8e2926b6307",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/check-coordinated-union731.sh",
+      "sha256": "0be2f994e940e2ed2895e7042ef1c1a354f6deb5052d48d21420868cbc31a4d6",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/check-cumulative-camera731.sh",
+      "sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/check-o82-memory-cumulative.sh",
+      "sha256": "f331a08f1cbbf9114c096feba2a2958d9a962ac3e8399b3e38035bc8fa5a723b",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/copr-cdsp-actlr-check.sh",
+      "sha256": "53cb19bbd536a8a06a8929b0ae97d09a4d75063db6964d920d2be87e5d453f87",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/copr-coordinated-union731-check.sh",
+      "sha256": "cb14df3e3463d389c0e0eb01b78ec1ded058a9110bdc53f04731a1bb1fd8d94f",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/copr-o82-memory-cumulative-check.sh",
+      "sha256": "5b1109ca1cfb435729164a99ef980be92612d6cf2059c7d4755831ed70abed9d",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/overlay-o82-memory731.sh",
+      "sha256": "3e83459d316b128cfb216afaeb96b0afa770e71a95e6279d52c487d7b160d179",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/overlay-o82-private-dnf731.sh",
+      "sha256": "b48cc562e412e095165fd3b1f85722b122ecb9732e3eace973a855f4cbc87e48",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/overlay-qualified-touch731.sh",
+      "sha256": "fff99e67d673f2ba735095f392013ac2c02682628d766213629baf6d06e7a944",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/overlay-queued-kernel731.sh",
+      "sha256": "ebdd5eea6d006f39f6d62d830b114145957cfd6364a4107f65dccf67134f735c",
+      "before_sha256": null
+    },
+    {
+      "path": "packaging/native/prepare-queued-kernel731.sh",
+      "sha256": "8e99e90e733cd2d2be18242c5df181d4f7c81d53d9fccf4d30832c5ab97edd0d",
+      "before_sha256": null
+    },
+    {
+      "path": "patches/cdsp/0001-uke-cdsp-actlr.patch",
+      "sha256": "f7ac4cd48e0d2cbcdef4573ab69ea83b553c7497419e0e4b695f9c207dbbc7c0",
+      "before_sha256": null
+    },
+    {
+      "path": "patches/display/0074-o82-touch-retain-before-off.patch",
+      "sha256": "a72b34cf3c6dd82a7f260e4c48900364ddb8e9e74f470c4e4230d828949600e2",
+      "before_sha256": null
+    },
+    {
+      "path": "patches/display/0074-o82-touch-retain-test.patch",
+      "sha256": "ce615c84db01c796f2f81f32728a35869ccad3cae975ad9ddc1e7665752757aa",
+      "before_sha256": null
+    },
+    {
+      "path": "patches/gpu/0075-gmu-hfi-irq-owned-status.patch",
+      "sha256": "bbe81a1b5b7abb663204f3d496efb6e1012b2bb34d04d8729d7173c67f28a29c",
+      "before_sha256": null
+    },
+    {
+      "path": "src/camera/sensors/0005-ov08d10-selection731.patch",
+      "sha256": "1fc8b19a865c6ff118bae8b516fae9b709c326c944fcf201971594c119c6eae9",
+      "before_sha256": null
+    },
+    {
+      "path": "src/cdsp/apply-actlr.sh",
+      "sha256": "0999751d91da3363c21249689d695b64da105900ee35888b3258544b5260287a",
+      "before_sha256": null
+    },
+    {
+      "path": "src/cdsp/uke-cdsp-smmu.c",
+      "sha256": "638727e816f3761611ea1d51c6bd6e1a017c1e50ab13851a2493d0de45f6ea7e",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_color.c",
+      "sha256": "31d27a25b466c9c2024820efb69b4521cde24d66ce8d4c171a92189eff170f9f",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_color.h",
+      "sha256": "e8890ab33aa243b23951c5a6abd1a18831f24b6ba62c635f377368b8022bb650",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_lutbus.c",
+      "sha256": "96206e9ff6e3a56ab86df64f5d0188ca3187aa19e942ab79ed1ff5b5fd6d162a",
+      "before_sha256": "eee1f6a2d589ccaa0f32470dec1adccd237737c18465071de5337cbd771521d2"
+    },
+    {
+      "path": "src/display/dpu_o82_lutbus.h",
+      "sha256": "b30f36d17cc3700b3bbaa6eb0469d82b9f0289fbdb8da337d560bc447018c7dd",
+      "before_sha256": "800ff42d7f78b63f6386648928677d02c225b6f172d3039a224784b06f79236c"
+    },
+    {
+      "path": "src/display/dpu_o82_platform.c",
+      "sha256": "933b15a26ea11832b1dbe3ad1c2e65ac5404b45de434ef2140744dcfb1fc4484",
+      "before_sha256": "a8a6db2f8218add640e0cd80e3050a95b08f4fb411b1bc87564747bb2484ffc6"
+    },
+    {
+      "path": "src/display/dpu_o82_platform.h",
+      "sha256": "23b6f1533f6b01c30a1ed2ad363b3def3ad7a3e3f3d456ee14da74ca2f6d1452",
+      "before_sha256": "9be5b1246551e4c827161bf789f4378a6dd6e9b63c22575b7071ed758c54eea8"
+    },
+    {
+      "path": "src/display/dpu_o82_power.c",
+      "sha256": "5e37041ea46d689793a2c686c210ef8c532183c6cb10acd968f94584cf98394b",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_power.h",
+      "sha256": "030cca4a0c9b3928650969bc7cbf25c83bcc5d1db26653aad77cfa9f5dd94aa3",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_profiles.c",
+      "sha256": "98382e04a21af440ae69672b878d267c7049d23bf517a754388a16ee9d0c6ae3",
+      "before_sha256": "65c963c6b2d63ecd1cbc76a1d7f58a8f5528c5b02fdc14eac67837d964f4b4c8"
+    },
+    {
+      "path": "src/display/dpu_o82_profiles.h",
+      "sha256": "9396a72dc5e4104f3e67566a74b666d47267fd292339858484a626a9e4106e68",
+      "before_sha256": "53ef42517cbdad323069927efbef703359e797210aeb34b635f23c4a256ae489"
+    },
+    {
+      "path": "src/display/dpu_o82_regdma.c",
+      "sha256": "82b3b85f51fc27c75e911aa0557246ab449a6261840aeacc18c6460cf7dfdaa0",
+      "before_sha256": "baa48492b21e5b21c27656cc342e86a66df9607bb1f4eb251ca63280194f4b72"
+    },
+    {
+      "path": "src/display/dpu_o82_regdma.h",
+      "sha256": "96e0e077f5735b61074817962baf976581f97d078182f96552e71d8114d809be",
+      "before_sha256": "076ae17346d8d8e1e1b67f476183052aa2ecb2d601a5541369da018a22e3b1c3"
+    },
+    {
+      "path": "src/display/dpu_o82_upload.c",
+      "sha256": "8060ecdc74c792fe5126f818237ac7e5d413e0755ea81ee8b24ef56fe0ca90c5",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/dpu_o82_upload.h",
+      "sha256": "dc3386e7471b92eac62330224756ccaf016301c99a38751d4152dd5e67805f4c",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/o82-color-firmware.h",
+      "sha256": "d9a4b176ad7be2334b5cf79af1f3a59185cf5304bf22247ea427bfb8839ae48a",
+      "before_sha256": "7cac536f24d45d5cba4a299d4a730a8036c6e20a313b09b333f5a4f804733131"
+    },
+    {
+      "path": "src/display/o82-hsic-format.h",
+      "sha256": "dfa79dc0ef22f87d6989b9caca60716f7abd89387e23f1be8df38cfd02bbdb05",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/o82-memory-color.h",
+      "sha256": "c4a684bf4465e326907159acef5cc89d21a2b57a756520be87286eed5ff1c651",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/o82-memory-format.h",
+      "sha256": "af2008725d1e642c507eac3ca100c4a3d88214ef0702e6e5b7b2b871441b4efa",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/o82-regdma.h",
+      "sha256": "6c16856cd0041aa091162910aebf4076e721b35ba4bf0205b6b315de01a52077",
+      "before_sha256": "6c16856cd0041aa091162910aebf4076e721b35ba4bf0205b6b315de01a52077"
+    },
+    {
+      "path": "src/display/o82-sixzone-format.h",
+      "sha256": "67e018625041460de4e10c2ddaa734ee9e8d0909138a3b0fe23c8a08040db86d",
+      "before_sha256": null
+    },
+    {
+      "path": "src/display/prepare-o82-regdma.sh",
+      "sha256": "74ed6ce15e3a054e8ad887159df11a854be6a1be97fb21f2e23b831709073e63",
+      "before_sha256": "b794c9653898a4937af8829db2490d7666d9a152285e5d7e55d223a3d5ca80d4"
+    },
+    {
+      "path": "src/display/uke-o82-hdr-format.h",
+      "sha256": "537bca8c0c82946754ee334a0bd47187fe341c65e2f9c655188062a5c8ded8e8",
+      "before_sha256": "537bca8c0c82946754ee334a0bd47187fe341c65e2f9c655188062a5c8ded8e8"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.c",
+      "sha256": "05558c531e77d914f5dc1fbba8dda6fcde466f7f8b8451c7119955d9e389787d",
+      "before_sha256": "f81f42c2622a6eb671fd7ca11fbb0ce700b6f5a7589a43cb379b5baa7cdfb1ca"
+    },
+    {
+      "path": "tests/camcc-bootstrap-layer731-contract.sh",
+      "sha256": "18722c6aa9880657b8f7090e16533bb8096d8b1e8f6d33d7f902893dba710ca8",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/camera-geometry731-contract.sh",
+      "sha256": "11053da8ccf5b7a1820730afbae4acbe6c4812163217b3838a439f85add5d129",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/camera-geometry731-object.sh",
+      "sha256": "fcde5a9b27490287726f63b70d2257bfaf7a4e85223a431bc9a000b1b2369c8b",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/cdsp-actlr-contract.sh",
+      "sha256": "8cb86ac99e029771659dc331635f932650f627ef8be88bc759bba2be5142bcfa",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/cdsp-actlr-qualify.sh",
+      "sha256": "ade1cccdaa11f2c3b8e6d8abfbae7de102e8fabf710e331bae3f05a9c2740cab",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/fixtures/camera-geometry731.c",
+      "sha256": "ac36845c233fddcfeb60d732f92c19bfebc9ebb8b657c989053c5c36e86c3b32",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/fixtures/cdsp-actlr-check.c",
+      "sha256": "cef834b5b1e1915d55bac31b77b4d2f919b9e34621ac41c94e549dc9c941703d",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/fixtures/gmu-hfi-irq-check.c",
+      "sha256": "1a1a96bbc2071ca9dca58dbe4ecf46bfaccc4816bbe59f57b89877cd9853d638",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/gmu-hfi-irq-contract.sh",
+      "sha256": "6d81e50b06be97206631c0ce7f38cfc02034229b4f6eb1f1f7dddeb556575a3d",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/iris-smmu-contract.sh",
+      "sha256": "ed8f6d839b5b615f62f277e2eb6519b1b7f5c8cdaeafa23c4df5b92db549de42",
+      "before_sha256": "e511fbb5d0a79bfaca41d44f6b702f2f7c381a2cfa4146d5ac652477797b1235"
+    },
+    {
+      "path": "tests/o82-atomic-contract.c",
+      "sha256": "7eb52b2c1d1f8cd99ec8a24f3f3fbf63a5aa20409ab945395b8ff20dde01b15b",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-atomic-contract.sh",
+      "sha256": "9c589bc0109a7bf9a4a336a5c1f636717deeb3eeaa6ee17fbc18d991c0a9cad7",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-lutbus-contract.c",
+      "sha256": "9d01b20e6e545750cbf2bf891b856e4b4d55ca92a5011a55e87ffe8db501b7e4",
+      "before_sha256": "2b5e122bef7276b40b3f31450ab4756461b83495c5adcec9bbdc4923661fef9a"
+    },
+    {
+      "path": "tests/o82-lutbus-contract.sh",
+      "sha256": "896941d01918f788198ed07ff1933af03038efba7bcce70f8df32b44866fa162",
+      "before_sha256": "896941d01918f788198ed07ff1933af03038efba7bcce70f8df32b44866fa162"
+    },
+    {
+      "path": "tests/o82-memory-bundle-contract.c",
+      "sha256": "c80801516b3a546e1cd56dd0d5dca9fe197786f4dca5c61f49a043eddc4d17f3",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-memory-bundle-contract.sh",
+      "sha256": "0adffd04aaa7c4508a4efe7b052d50aa7a61890c4b3c0b0e0bc7e45c0012e4aa",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-memory-layer-contract.sh",
+      "sha256": "629d2707a16e2cfd6e02bf7d5447bcb2babceb8e99cf4b87fd5a8bfe6d93422b",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-memory-pipeline-contract.cpp",
+      "sha256": "c0fe305a8177b52be9406357b3a0588b6b735a6bc72709710922c40558ffe277",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-private-dnf-layer.sh",
+      "sha256": "ffe9686d55f5038d643958df67c915b635dd5288a447e78f745cbe57c0b4a4fd",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/o82-profile-loader-contract.c",
+      "sha256": "6efbef54ba1403df09218e3bed9b0320b6cd73b6782ec70a02c9d17943feef66",
+      "before_sha256": "3fca21eb7de8a41bcf908bdf0114c3eb60e659e6ffa92ef5899c21e4b316fb68"
+    },
+    {
+      "path": "tests/o82-profile-loader-contract.sh",
+      "sha256": "18e93120b593073d4c85e24c629cb2dc3ff7c64fa66a0b4297b5ff281db6b3cd",
+      "before_sha256": "e9519ff2db8acea96c7f41c4973f41d968bca04935211793ae4534010a8cb6f8"
+    },
+    {
+      "path": "tests/o82-regdma-transport-contract.c",
+      "sha256": "7db7296bba4a32a6294a8953a043f1e7bdf80cb15dc25059567dfd58601f1f2d",
+      "before_sha256": "c1932a846898898e4e3b84b28e7e7237535fc0d38e02766d415e2be56915a755"
+    },
+    {
+      "path": "tests/o82-regdma-transport-contract.sh",
+      "sha256": "192732f05086ea7388345a06678d00187e07921ad364610bf3f30796b3d4f694",
+      "before_sha256": "b6c12a978f51e0a249d5d2735eb14d03c1cf058729f530b1d184eb9c66ee7dd0"
+    },
+    {
+      "path": "tests/o82-touch-integrated731-contract.sh",
+      "sha256": "9ece15f175700917803f062835e8f7e42c898184fb3fe8d2bfc6acddc4f8b68d",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/queued-source-layer731-contract.sh",
+      "sha256": "4b8ba74e402d795f82cb3416005d5b546de9c3878da984f108eb5d469bac5b53",
+      "before_sha256": null
+    }
+  ],
+  "source_inputs": [
+    {
+      "path": "docs/CAMCC-OEM-BOOTSTRAP731.md",
+      "sha256": "2902e0ea3a4a8ca3669bb9e4c2dc9f122dd86958393ae88b9ca8a18754f81ef0"
+    },
+    {
+      "path": "docs/CDSP-ACTLR.md",
+      "sha256": "c03257af0a4eadc4f38876c9efadda26e0ac60ed85717bb2bf739bd55a1e2697"
+    },
+    {
+      "path": "docs/CUMULATIVE-CAMERA731.md",
+      "sha256": "e0db17326aa52843674cfe4703144db3e8b21c82844e007a053dd516a2612b88"
+    },
+    {
+      "path": "docs/O82-TOUCH-BLANK-ORDER.md",
+      "sha256": "5b102cd822e13dc337e1973ee855199c6276f2027f7bc927d5e905a8329a89dc"
+    },
+    {
+      "path": "docs/OV08D10-GEOMETRY731.md",
+      "sha256": "cedb4bb4f13babeaeb4792524ebfdd4d4ea82c28ae7047f105d264da5188f2b0"
+    },
+    {
+      "path": "manifests/camcc-bootstrap-layer-20261105.json",
+      "sha256": "e198e33db15afb4d29eee5c66125cc04c58d049786ce1b01ef66b4a19349ddf6"
+    },
+    {
+      "path": "manifests/camcc-oem-bootstrap-20261105.json",
+      "sha256": "683d9c17ab6b170af25ca126607edc1f7b8b0f4142a958e39eee872a9e2e0898"
+    },
+    {
+      "path": "manifests/camcc-oem-bootstrap-check-20261105.json",
+      "sha256": "a1904d2746217d51b0ec50b8b152769994e488d462bf35d7bc42e83318e7414f"
+    },
+    {
+      "path": "manifests/camera-geometry731-20261105.json",
+      "sha256": "e6500516f4b2aeedf0289f76dc62c2637d6f190da8ee28ca2bc73406e4e8b29d"
+    },
+    {
+      "path": "manifests/cdsp-actlr-20261105.json",
+      "sha256": "e1add9c677527ee318267178c4468f750b8b603eb7de134c6d65a49f4bef6ba5"
+    },
+    {
+      "path": "manifests/coordinated-union731-20261105.json",
+      "sha256": "ebb5d9393772108f545d9dc12ec30d79f5b2d7c4975d08981ae4e516330c62a8"
+    },
+    {
+      "path": "manifests/o82-memory-cumulative-source-20261105.json",
+      "sha256": "66db591ec6fef934082930932fa9c5b89d5a8b224d0838c754a7f79e5ae618f4"
+    },
+    {
+      "path": "manifests/o82-memory-layer-20261105.json",
+      "sha256": "b4cb175fd47c71b4b20bfcd24b372db1489866ea0d21c33fc7f12cf9ee6e57a3"
+    },
+    {
+      "path": "manifests/o82-private-dnf-source-20261105.json",
+      "sha256": "57547ff37f9bb42dad5e32a4297d9db13190369ca3fb5dcc71a9884fb92c83d6"
+    },
+    {
+      "path": "manifests/qualified-touch-layer-20261105.json",
+      "sha256": "97d5dbc1270d89997777ad40a13c7832efde6f6af99290c40d627a18dc99e1a0"
+    },
+    {
+      "path": "manifests/queued-kernel-layer-20261105.json",
+      "sha256": "0cb431c5db7342cc4b49737251dd1d20cdd8dbaf5eebf0e328d0022513d73f9c"
+    },
+    {
+      "path": "manifests/ssc-transaction-layer-20261105.json",
+      "sha256": "3748dd1b622b1347a82c854f582491831654185b2cc7cc09027f5a890b8334a9"
+    },
+    {
+      "path": "manifests/ssc-transaction-source-20261105.json",
+      "sha256": "c97c3b201c858138f956e353fdc25215fe1576dbfd06c17ad1f1f8e2926b6307"
+    },
+    {
+      "path": "packaging/native/check-coordinated-union731.sh",
+      "sha256": "0be2f994e940e2ed2895e7042ef1c1a354f6deb5052d48d21420868cbc31a4d6"
+    },
+    {
+      "path": "packaging/native/check-cumulative-camera731.sh",
+      "sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216"
+    },
+    {
+      "path": "packaging/native/check-o82-memory-cumulative.sh",
+      "sha256": "f331a08f1cbbf9114c096feba2a2958d9a962ac3e8399b3e38035bc8fa5a723b"
+    },
+    {
+      "path": "packaging/native/check-ssc-transaction731.sh",
+      "sha256": "c560f8801a51d3a355f1e2802452821190afcbe73adb73377f9dc74242e3b438"
+    },
+    {
+      "path": "packaging/native/copr-camcc-probe-check.sh",
+      "sha256": "6b343e14f85d3169efe988c039ad00e33d032bdef9a86bb38a2e6cab64a0aa56"
+    },
+    {
+      "path": "packaging/native/copr-cdsp-actlr-check.sh",
+      "sha256": "53cb19bbd536a8a06a8929b0ae97d09a4d75063db6964d920d2be87e5d453f87"
+    },
+    {
+      "path": "packaging/native/copr-coordinated-union731-check.sh",
+      "sha256": "cb14df3e3463d389c0e0eb01b78ec1ded058a9110bdc53f04731a1bb1fd8d94f"
+    },
+    {
+      "path": "packaging/native/copr-cumulative-camera731.sh",
+      "sha256": "eb216f540ea402c1c35f287328cfad4ccd5d2580dc7abc77562cdfd1d4003208"
+    },
+    {
+      "path": "packaging/native/copr-o82-memory-cumulative-check.sh",
+      "sha256": "5b1109ca1cfb435729164a99ef980be92612d6cf2059c7d4755831ed70abed9d"
+    },
+    {
+      "path": "packaging/native/overlay-camcc-bootstrap731.sh",
+      "sha256": "af3653966f03cdd7a54aa4ac6a101318e1dc6f8c91279182f7f419d188f494d7"
+    },
+    {
+      "path": "packaging/native/overlay-o82-memory731.sh",
+      "sha256": "3e83459d316b128cfb216afaeb96b0afa770e71a95e6279d52c487d7b160d179"
+    },
+    {
+      "path": "packaging/native/overlay-o82-private-dnf731.sh",
+      "sha256": "b48cc562e412e095165fd3b1f85722b122ecb9732e3eace973a855f4cbc87e48"
+    },
+    {
+      "path": "packaging/native/overlay-qualified-touch731.sh",
+      "sha256": "fff99e67d673f2ba735095f392013ac2c02682628d766213629baf6d06e7a944"
+    },
+    {
+      "path": "packaging/native/overlay-queued-kernel731.sh",
+      "sha256": "ebdd5eea6d006f39f6d62d830b114145957cfd6364a4107f65dccf67134f735c"
+    },
+    {
+      "path": "packaging/native/overlay-ssc-transaction731.sh",
+      "sha256": "f4b3e331ddb32822183ae91918215fa255394bcc46bb0712c869089f0a61b97f"
+    },
+    {
+      "path": "packaging/native/prepare-queued-kernel731.sh",
+      "sha256": "8e99e90e733cd2d2be18242c5df181d4f7c81d53d9fccf4d30832c5ab97edd0d"
+    },
+    {
+      "path": "packaging/native/refuse-published-release.sh",
+      "sha256": "8ebb19b5e63a57df661b1401620766ae1519a154b32127a2d17733761b64eb23"
+    },
+    {
+      "path": "patches/cdsp/0001-uke-cdsp-actlr.patch",
+      "sha256": "f7ac4cd48e0d2cbcdef4573ab69ea83b553c7497419e0e4b695f9c207dbbc7c0"
+    },
+    {
+      "path": "patches/display/0074-o82-touch-retain-before-off.patch",
+      "sha256": "a72b34cf3c6dd82a7f260e4c48900364ddb8e9e74f470c4e4230d828949600e2"
+    },
+    {
+      "path": "patches/display/0074-o82-touch-retain-test.patch",
+      "sha256": "ce615c84db01c796f2f81f32728a35869ccad3cae975ad9ddc1e7665752757aa"
+    },
+    {
+      "path": "patches/gpu/0075-gmu-hfi-irq-owned-status.patch",
+      "sha256": "bbe81a1b5b7abb663204f3d496efb6e1012b2bb34d04d8729d7173c67f28a29c"
+    },
+    {
+      "path": "src/camera/camcc-sm7675-data.h",
+      "sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d"
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "e23073d611db9476b013b617e8a621477e18d07030b43f0405f7062532df76b7"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-handoff.h",
+      "sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-registration.h",
+      "sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb"
+    },
+    {
+      "path": "src/camera/sensors/0005-ov08d10-selection731.patch",
+      "sha256": "1fc8b19a865c6ff118bae8b516fae9b709c326c944fcf201971594c119c6eae9"
+    },
+    {
+      "path": "src/cdsp/apply-actlr.sh",
+      "sha256": "0999751d91da3363c21249689d695b64da105900ee35888b3258544b5260287a"
+    },
+    {
+      "path": "src/cdsp/uke-cdsp-smmu.c",
+      "sha256": "638727e816f3761611ea1d51c6bd6e1a017c1e50ab13851a2493d0de45f6ea7e"
+    },
+    {
+      "path": "src/display/dpu_o82_color.c",
+      "sha256": "31d27a25b466c9c2024820efb69b4521cde24d66ce8d4c171a92189eff170f9f"
+    },
+    {
+      "path": "src/display/dpu_o82_color.h",
+      "sha256": "e8890ab33aa243b23951c5a6abd1a18831f24b6ba62c635f377368b8022bb650"
+    },
+    {
+      "path": "src/display/dpu_o82_lutbus.c",
+      "sha256": "96206e9ff6e3a56ab86df64f5d0188ca3187aa19e942ab79ed1ff5b5fd6d162a"
+    },
+    {
+      "path": "src/display/dpu_o82_lutbus.h",
+      "sha256": "b30f36d17cc3700b3bbaa6eb0469d82b9f0289fbdb8da337d560bc447018c7dd"
+    },
+    {
+      "path": "src/display/dpu_o82_platform.c",
+      "sha256": "933b15a26ea11832b1dbe3ad1c2e65ac5404b45de434ef2140744dcfb1fc4484"
+    },
+    {
+      "path": "src/display/dpu_o82_platform.h",
+      "sha256": "23b6f1533f6b01c30a1ed2ad363b3def3ad7a3e3f3d456ee14da74ca2f6d1452"
+    },
+    {
+      "path": "src/display/dpu_o82_power.c",
+      "sha256": "5e37041ea46d689793a2c686c210ef8c532183c6cb10acd968f94584cf98394b"
+    },
+    {
+      "path": "src/display/dpu_o82_power.h",
+      "sha256": "030cca4a0c9b3928650969bc7cbf25c83bcc5d1db26653aad77cfa9f5dd94aa3"
+    },
+    {
+      "path": "src/display/dpu_o82_profiles.c",
+      "sha256": "98382e04a21af440ae69672b878d267c7049d23bf517a754388a16ee9d0c6ae3"
+    },
+    {
+      "path": "src/display/dpu_o82_profiles.h",
+      "sha256": "9396a72dc5e4104f3e67566a74b666d47267fd292339858484a626a9e4106e68"
+    },
+    {
+      "path": "src/display/dpu_o82_regdma.c",
+      "sha256": "82b3b85f51fc27c75e911aa0557246ab449a6261840aeacc18c6460cf7dfdaa0"
+    },
+    {
+      "path": "src/display/dpu_o82_regdma.h",
+      "sha256": "96e0e077f5735b61074817962baf976581f97d078182f96552e71d8114d809be"
+    },
+    {
+      "path": "src/display/dpu_o82_upload.c",
+      "sha256": "8060ecdc74c792fe5126f818237ac7e5d413e0755ea81ee8b24ef56fe0ca90c5"
+    },
+    {
+      "path": "src/display/dpu_o82_upload.h",
+      "sha256": "dc3386e7471b92eac62330224756ccaf016301c99a38751d4152dd5e67805f4c"
+    },
+    {
+      "path": "src/display/o82-color-firmware.h",
+      "sha256": "d9a4b176ad7be2334b5cf79af1f3a59185cf5304bf22247ea427bfb8839ae48a"
+    },
+    {
+      "path": "src/display/o82-hsic-format.h",
+      "sha256": "dfa79dc0ef22f87d6989b9caca60716f7abd89387e23f1be8df38cfd02bbdb05"
+    },
+    {
+      "path": "src/display/o82-memory-color.h",
+      "sha256": "c4a684bf4465e326907159acef5cc89d21a2b57a756520be87286eed5ff1c651"
+    },
+    {
+      "path": "src/display/o82-memory-format.h",
+      "sha256": "af2008725d1e642c507eac3ca100c4a3d88214ef0702e6e5b7b2b871441b4efa"
+    },
+    {
+      "path": "src/display/o82-regdma.h",
+      "sha256": "6c16856cd0041aa091162910aebf4076e721b35ba4bf0205b6b315de01a52077"
+    },
+    {
+      "path": "src/display/o82-sixzone-format.h",
+      "sha256": "67e018625041460de4e10c2ddaa734ee9e8d0909138a3b0fe23c8a08040db86d"
+    },
+    {
+      "path": "src/display/prepare-o82-regdma.sh",
+      "sha256": "74ed6ce15e3a054e8ad887159df11a854be6a1be97fb21f2e23b831709073e63"
+    },
+    {
+      "path": "src/display/uke-o82-hdr-format.h",
+      "sha256": "537bca8c0c82946754ee334a0bd47187fe341c65e2f9c655188062a5c8ded8e8"
+    },
+    {
+      "path": "src/input/nt36532-uke-protocol.c",
+      "sha256": "05558c531e77d914f5dc1fbba8dda6fcde466f7f8b8451c7119955d9e389787d"
+    },
+    {
+      "path": "src/sensors/uke-ssc-iio.c",
+      "sha256": "8c5a6faae5c22b3ca9850d9a7b14500b5cafae2e10ccb208b60da55f7121e7eb"
+    },
+    {
+      "path": "tests/camcc-bootstrap-layer731-contract.sh",
+      "sha256": "18722c6aa9880657b8f7090e16533bb8096d8b1e8f6d33d7f902893dba710ca8"
+    },
+    {
+      "path": "tests/camcc-native731-contract.sh",
+      "sha256": "1bed2e5a77fe91778b66fedcff92bf39dc899103ea4ce3b917242409532ef620"
+    },
+    {
+      "path": "tests/camera-geometry731-contract.sh",
+      "sha256": "11053da8ccf5b7a1820730afbae4acbe6c4812163217b3838a439f85add5d129"
+    },
+    {
+      "path": "tests/camera-geometry731-object.sh",
+      "sha256": "fcde5a9b27490287726f63b70d2257bfaf7a4e85223a431bc9a000b1b2369c8b"
+    },
+    {
+      "path": "tests/cdsp-actlr-contract.sh",
+      "sha256": "8cb86ac99e029771659dc331635f932650f627ef8be88bc759bba2be5142bcfa"
+    },
+    {
+      "path": "tests/cdsp-actlr-qualify.sh",
+      "sha256": "ade1cccdaa11f2c3b8e6d8abfbae7de102e8fabf710e331bae3f05a9c2740cab"
+    },
+    {
+      "path": "tests/fixtures/camcc-critical-before12101.h",
+      "sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8"
+    },
+    {
+      "path": "tests/fixtures/camcc-native-check.c",
+      "sha256": "ddade3a9d88b0f2ab4b574a47ac97a64be0ae1c568efefdf43132c394559a911"
+    },
+    {
+      "path": "tests/fixtures/camera-geometry731.c",
+      "sha256": "ac36845c233fddcfeb60d732f92c19bfebc9ebb8b657c989053c5c36e86c3b32"
+    },
+    {
+      "path": "tests/fixtures/cdsp-actlr-check.c",
+      "sha256": "cef834b5b1e1915d55bac31b77b4d2f919b9e34621ac41c94e549dc9c941703d"
+    },
+    {
+      "path": "tests/fixtures/gmu-hfi-irq-check.c",
+      "sha256": "1a1a96bbc2071ca9dca58dbe4ecf46bfaccc4816bbe59f57b89877cd9853d638"
+    },
+    {
+      "path": "tests/gmu-hfi-irq-contract.sh",
+      "sha256": "6d81e50b06be97206631c0ce7f38cfc02034229b4f6eb1f1f7dddeb556575a3d"
+    },
+    {
+      "path": "tests/iris-smmu-contract.sh",
+      "sha256": "ed8f6d839b5b615f62f277e2eb6519b1b7f5c8cdaeafa23c4df5b92db549de42"
+    },
+    {
+      "path": "tests/o82-atomic-contract.c",
+      "sha256": "7eb52b2c1d1f8cd99ec8a24f3f3fbf63a5aa20409ab945395b8ff20dde01b15b"
+    },
+    {
+      "path": "tests/o82-atomic-contract.sh",
+      "sha256": "9c589bc0109a7bf9a4a336a5c1f636717deeb3eeaa6ee17fbc18d991c0a9cad7"
+    },
+    {
+      "path": "tests/o82-lutbus-contract.c",
+      "sha256": "9d01b20e6e545750cbf2bf891b856e4b4d55ca92a5011a55e87ffe8db501b7e4"
+    },
+    {
+      "path": "tests/o82-lutbus-contract.sh",
+      "sha256": "896941d01918f788198ed07ff1933af03038efba7bcce70f8df32b44866fa162"
+    },
+    {
+      "path": "tests/o82-memory-bundle-contract.c",
+      "sha256": "c80801516b3a546e1cd56dd0d5dca9fe197786f4dca5c61f49a043eddc4d17f3"
+    },
+    {
+      "path": "tests/o82-memory-bundle-contract.sh",
+      "sha256": "0adffd04aaa7c4508a4efe7b052d50aa7a61890c4b3c0b0e0bc7e45c0012e4aa"
+    },
+    {
+      "path": "tests/o82-memory-layer-contract.sh",
+      "sha256": "629d2707a16e2cfd6e02bf7d5447bcb2babceb8e99cf4b87fd5a8bfe6d93422b"
+    },
+    {
+      "path": "tests/o82-memory-pipeline-contract.cpp",
+      "sha256": "c0fe305a8177b52be9406357b3a0588b6b735a6bc72709710922c40558ffe277"
+    },
+    {
+      "path": "tests/o82-private-dnf-layer.sh",
+      "sha256": "ffe9686d55f5038d643958df67c915b635dd5288a447e78f745cbe57c0b4a4fd"
+    },
+    {
+      "path": "tests/o82-profile-loader-contract.c",
+      "sha256": "6efbef54ba1403df09218e3bed9b0320b6cd73b6782ec70a02c9d17943feef66"
+    },
+    {
+      "path": "tests/o82-profile-loader-contract.sh",
+      "sha256": "18e93120b593073d4c85e24c629cb2dc3ff7c64fa66a0b4297b5ff281db6b3cd"
+    },
+    {
+      "path": "tests/o82-regdma-transport-contract.c",
+      "sha256": "7db7296bba4a32a6294a8953a043f1e7bdf80cb15dc25059567dfd58601f1f2d"
+    },
+    {
+      "path": "tests/o82-regdma-transport-contract.sh",
+      "sha256": "192732f05086ea7388345a06678d00187e07921ad364610bf3f30796b3d4f694"
+    },
+    {
+      "path": "tests/o82-touch-integrated731-contract.sh",
+      "sha256": "9ece15f175700917803f062835e8f7e42c898184fb3fe8d2bfc6acddc4f8b68d"
+    },
+    {
+      "path": "tests/queued-source-layer731-contract.sh",
+      "sha256": "4b8ba74e402d795f82cb3416005d5b546de9c3878da984f108eb5d469bac5b53"
+    },
+    {
+      "path": "tests/ssc-native-contract.c",
+      "sha256": "ff0129123b7764db9d20259fb80bff04d0707cba3a1aa816f8f44adc3096b829"
+    },
+    {
+      "path": "tests/ssc-native-contract.sh",
+      "sha256": "0ab2854782730ccb08e7663ea7204b7a53c5328fedb6a7849d843d2c9c6ffb37"
+    },
+    {
+      "path": "tests/unstable-boot-family731-contract.sh",
+      "sha256": "3ccb91eee559a307a1c1de8baf1d30e908fb254dc9ae258cf31028b5f253a352"
+    }
+  ],
+  "audio_controls_only": {
+    "source_commit": "89acf61d73f60f5164104eaffd19c076e6371287",
+    "copr_build": 11262024,
+    "helper": "packaging/native/overlay-speaker-controls-only.sh",
+    "assets": [
+      {
+        "path": "packaging/native/audio-controls-only-assets.list",
+        "sha256": "8839d6928bb8968256514fa656afd69e7f5876a9e592cb2bf82492492ee3bf1e"
+      },
+      {
+        "path": "packaging/native/overlay-speaker-controls-only.sh",
+        "sha256": "c99305a566b79707d0f8e3c50d2d018c71cd879bed23e7346e48d3bbeee1a9bb"
+      },
+      {
+        "path": "patches/boot/0072-audioreach-control-links.patch",
+        "sha256": "a452f7ac2174ef33346d2c012c314631ec449f0406ac404a04afef057cbd8c6a"
+      },
+      {
+        "path": "patches/boot/0073-uke-fs19xx-protected-runtime.patch",
+        "sha256": "0773da4b739ccb468636017946c1198080d374a19aa39ff1eb8706dfbc22baa4"
+      },
+      {
+        "path": "patches/boot/0074-uke-speaker-pcm-formats.patch",
+        "sha256": "13405d0cae170490e60f03562cd0f063e68341d61bdf14a40eaebf1b731760fd"
+      },
+      {
+        "path": "src/audio/audioreach-control-links.h",
+        "sha256": "60b58e621c3549f5f360f178622d26bc0f5338a41d5c5bb693ccfef879e613a3"
+      },
+      {
+        "path": "src/audio/prepare-control-links.sh",
+        "sha256": "0535790e6e3e35c5edce9ad6ce17d04729e32369cc97f74576884127c9f8a5d4"
+      },
+      {
+        "path": "src/audio/prepare-speaker-controls-only.sh",
+        "sha256": "f3b0eb4e50e02bdc15fa3123c8d22746d27ec9439ce46a52d5098b6e3b9a11f7"
+      },
+      {
+        "path": "src/audio/uke-fs19xx-guard.h",
+        "sha256": "f3b03a6846b034f64def55739191354919ecb395eac89685fc845364e6bd889f"
+      },
+      {
+        "path": "src/audio/uke-fs19xx-protocol.h",
+        "sha256": "24d76367841f05290ed38acbd6ad644c9a8ee8fec8ec5850c28ed6d8738ee217"
+      },
+      {
+        "path": "src/audio/uke-fs19xx-runtime.c",
+        "sha256": "c810ec77c028f9a2b679094113b236ed59dd346e739932f9fc73f635d34e8055"
+      },
+      {
+        "path": "src/audio/uke-fs19xx-runtime.h",
+        "sha256": "58bd8b9c9c947632cae1c0951fb0b5facd25a683e8a6b2bd93e0a27d35a0466a"
+      },
+      {
+        "path": "src/audio/uke-fs19xx-safety.h",
+        "sha256": "4e995d2e77b77e13a4ec36bb8b20728495fb80504b4b7a18ec3fb1d1516d5941"
+      },
+      {
+        "path": "tests/audio-control-links-contract.sh",
+        "sha256": "7c3421b80f104a4597b98049ba490f26186bfdf6cfef7c9b3083f71543a6a2a0"
+      },
+      {
+        "path": "tests/audio-control-links-integration.sh",
+        "sha256": "a2e87e7b9597b2f0b07ee4310aab40afd727415e64a6d31e0a976a5751aa1664"
+      },
+      {
+        "path": "tests/audio-control-links.c",
+        "sha256": "6ae6d76f1c4fc4a814d1852bd27c45e753b9568ff0c9bf426c1fb54fd3441048"
+      },
+      {
+        "path": "tests/audio-controls-only-contract.sh",
+        "sha256": "91eee9eae001c10f6a19414d24fa5c448ca8e46b10f91fa251f15491aaa276d7"
+      },
+      {
+        "path": "tests/audio-speaker-state-store-contract.sh",
+        "sha256": "a67238ed0039ad9dc69ddcf421534f27fc884e62b3980f3398fe3cf3eb208daa"
+      }
+    ],
+    "graph_admitted": false,
+    "gain_ceiling": 223
+  },
+  "seamless_staging_required": true,
+  "package_rollback_default": "enforced",
+  "preserve_local_rollback_preference": true,
+  "stable_promotion": false,
+  "private_unit_data_in_sources": false,
+  "camera_graph_activation": false,
+  "front_eeprom_activation": false,
+  "front_eeprom_read_only": true,
+  "physical_acceptance": false
+}

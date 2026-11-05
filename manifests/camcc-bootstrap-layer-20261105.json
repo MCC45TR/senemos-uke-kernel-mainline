@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Exact qualified CAMCC bootstrap source/models over the cumulative union plus SSC; preserve all other bytes and gates",
+  "qualified_source": "4024165658f2fc852741bf3905ceb6717fbb6ad4",
+  "qualified_check": 11261918,
+  "imports": [
+    {
+      "path": "src/camera/camcc-sm7675-data.h",
+      "sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d",
+      "before_sha256": "af2369d63c2731e6e840c9a2560de9884c51c5819cd7f24c89e026f6ddc73fb4",
+      "required_profile": true
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "e23073d611db9476b013b617e8a621477e18d07030b43f0405f7062532df76b7",
+      "before_sha256": "e23073d611db9476b013b617e8a621477e18d07030b43f0405f7062532df76b7",
+      "required_profile": true
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-handoff.h",
+      "sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578",
+      "before_sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578",
+      "required_profile": true
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-registration.h",
+      "sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb",
+      "before_sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb",
+      "required_profile": true
+    },
+    {
+      "path": "tests/camcc-native731-contract.sh",
+      "sha256": "1bed2e5a77fe91778b66fedcff92bf39dc899103ea4ce3b917242409532ef620",
+      "before_sha256": "bc3d1affcc24cf9362545b4487761afc96f3f56597fdd52114b6463d44590639",
+      "required_profile": true
+    },
+    {
+      "path": "tests/fixtures/camcc-native-check.c",
+      "sha256": "ddade3a9d88b0f2ab4b574a47ac97a64be0ae1c568efefdf43132c394559a911",
+      "before_sha256": "395f298a75249ffc34efcf5e8bcb9cc3298a80f286e3d4c51c99ececf7adfad8",
+      "required_profile": true
+    },
+    {
+      "path": "tests/fixtures/camcc-critical-before12101.h",
+      "sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8",
+      "before_sha256": null,
+      "required_profile": false
+    },
+    {
+      "path": "docs/CAMCC-OEM-BOOTSTRAP731.md",
+      "sha256": "2902e0ea3a4a8ca3669bb9e4c2dc9f122dd86958393ae88b9ca8a18754f81ef0",
+      "before_sha256": null,
+      "required_profile": false
+    },
+    {
+      "path": "packaging/native/copr-camcc-probe-check.sh",
+      "sha256": "6b343e14f85d3169efe988c039ad00e33d032bdef9a86bb38a2e6cab64a0aa56",
+      "before_sha256": "e8d8c608e464426ecb747da0fa5a33398abbb94066685bf66c14d90c16b67fc4",
+      "required_profile": false
+    },
+    {
+      "path": "manifests/camcc-oem-bootstrap-20261105.json",
+      "sha256": "683d9c17ab6b170af25ca126607edc1f7b8b0f4142a958e39eee872a9e2e0898",
+      "before_sha256": null,
+      "required_profile": false
+    },
+    {
+      "path": "manifests/camcc-oem-bootstrap-check-20261105.json",
+      "sha256": "a1904d2746217d51b0ec50b8b152769994e488d462bf35d7bc42e83318e7414f",
+      "before_sha256": null,
+      "required_profile": false
+    },
+    {
+      "path": "packaging/native/overlay-camcc-bootstrap731.sh",
+      "sha256": "af3653966f03cdd7a54aa4ac6a101318e1dc6f8c91279182f7f419d188f494d7",
+      "before_sha256": null,
+      "required_profile": false
+    }
+  ],
+  "no_target_execution": true,
+  "physical_correction_unproved": true
+}

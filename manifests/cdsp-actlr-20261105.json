@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Exact CDSP ACTLR on retained cumulative12101/touch/geometry/GMU; source/object fixture only",
+  "parent": {
+    "source": "e6c122e2cd30fbf6ff5bec796f117da1afc97cb1",
+    "copr_check": 11261342,
+    "factory_sha256": "dd75377d4dcfa1d601a982c92fd37def8930ecbf313ec71dc7e142f24ad032f7",
+    "kernel_source": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "kernel_copr": 11260781
+  },
+  "oem": {
+    "kernel": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "dt": "94c84aeb9e517dbde546fc732033c184094c8e57",
+    "same_soc_dt": "1138e00fee63582a0cc6a53af3286621786827b7",
+    "sids": [
+      "0xc01",
+      "0xc02"
+    ],
+    "mask": 0,
+    "actlr": "0x303"
+  },
+  "inputs": [
+    {
+      "path": "src/cdsp/uke-cdsp-smmu.c",
+      "sha256": "638727e816f3761611ea1d51c6bd6e1a017c1e50ab13851a2493d0de45f6ea7e"
+    },
+    {
+      "path": "src/cdsp/apply-actlr.sh",
+      "sha256": "0999751d91da3363c21249689d695b64da105900ee35888b3258544b5260287a"
+    },
+    {
+      "path": "patches/cdsp/0001-uke-cdsp-actlr.patch",
+      "sha256": "f7ac4cd48e0d2cbcdef4573ab69ea83b553c7497419e0e4b695f9c207dbbc7c0"
+    },
+    {
+      "path": "tests/cdsp-actlr-contract.sh",
+      "sha256": "8cb86ac99e029771659dc331635f932650f627ef8be88bc759bba2be5142bcfa"
+    },
+    {
+      "path": "tests/cdsp-actlr-qualify.sh",
+      "sha256": "ade1cccdaa11f2c3b8e6d8abfbae7de102e8fabf710e331bae3f05a9c2740cab"
+    },
+    {
+      "path": "tests/fixtures/cdsp-actlr-check.c",
+      "sha256": "cef834b5b1e1915d55bac31b77b4d2f919b9e34621ac41c94e549dc9c941703d"
+    },
+    {
+      "path": "tests/iris-smmu-contract.sh",
+      "sha256": "ed8f6d839b5b615f62f277e2eb6519b1b7f5c8cdaeafa23c4df5b92db549de42"
+    },
+    {
+      "path": "packaging/native/copr-cdsp-actlr-check.sh",
+      "sha256": "53cb19bbd536a8a06a8929b0ae97d09a4d75063db6964d920d2be87e5d453f87"
+    },
+    {
+      "path": "docs/CDSP-ACTLR.md",
+      "sha256": "c03257af0a4eadc4f38876c9efadda26e0ac60ed85717bb2bf739bd55a1e2697"
+    }
+  ],
+  "constraints": {
+    "fresh_translated_banks_only": true,
+    "boot_banks_retained": true,
+    "exact_of_and_source_admission": true,
+    "secure_channel_and_vmids_unchanged": true,
+    "video_display_adsp_retained": true,
+    "no_kernel_nvr_or_image_or_delivery": true,
+    "newer_memory_and_other_deltas_require_final_integration": true,
+    "physical_dma_compute_accepted": false,
+    "full_camera_calibration_focus_accepted": false
+  },
+  "qualification_state": "Fixture1/COPR11261869 failed before its original-control assertion: the extracted existing allocator intentionally leaves domain unused; use the same unused-parameter harness policy as the retained video fixture. Production code unchanged; fresh fixture2 pending. A synthetic text apply check also caught missing trailing context in the include hunk; corrected three-hunk application passes without native compilation."
+}
