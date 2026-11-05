@@ -8,9 +8,7 @@ stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 manifest=$owner/manifests/native-linux-7.3.1.json
 archive=$owner/referances/releases/linux-7.3.1.tar.xz
-mkdir -p "${archive%/*}"
-curl --fail --location --silent --show-error --retry 3 --proto '=https' --proto-redir '=https' \
-    "$(jq -er '.source_url' "$manifest")" -o "$archive"
+test -s "$archive"
 printf '%s  %s\n' "$(jq -er '.source_sha256' "$manifest")" "$archive" | sha256sum -c -
 tar -xJf "$archive" -C "$stage"
 kernel=$stage/linux-7.3.1

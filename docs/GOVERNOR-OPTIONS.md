@@ -63,6 +63,12 @@ Linux 7.3.1 source with AArch64 `defconfig` and `-Werror`. This bounded check do
 not resolve the complete cumulative kernel configuration or qualify final
 linkage, boot, thermal behavior or workload performance.
 
+The source worker downloads and verifies the upstream archive before the RPM
+build; the archive is supplied as Source1 and checked again inside the isolated
+build. Initial check11262118 passed the config comparison but stopped before
+compilation because its build chroot could not resolve the source host. The
+corrected recipe removes that network dependency from the RPM check.
+
 After coordinated delivery, confirm the two GPU governors appear on the actual
 Adreno node and both CPU governors are available without module loading. Keep
 the original active governors while inspecting availability. Any selection
