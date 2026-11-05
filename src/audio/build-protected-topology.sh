@@ -15,6 +15,12 @@ awk '
     }
     /^SectionVendorTuples\."spk_(mfc|tdm_sink)"/ {exit}
     /^# This graph omits/ {next}
+    /^SectionPCMCapabilities\."MultiMedia2 Playback"/ {speaker_caps=1}
+    speaker_caps && /^}/ {speaker_caps=0}
+    speaker_caps && $1=="formats" {
+        print "    formats \"S16_LE,S24_LE,S32_LE\""
+        next
+    }
     {print}' "$owner/POCO-Pad-X1.conf" > "$output"
 cat >> "$output" <<'CONF'
 # Calibrated FourSemi RX and its VI TX peer share backend graph 40.
@@ -121,12 +127,6 @@ tdm spk.sink 0x0700100e 0x4433 1 0 0 spk_device_sg spk_device_container 2
 tdm spk.vi.source 0x0700100f 0x4960 0 1 0x49fd vi_device_sg vi_device_container 1
 awk '
     /^SectionControlMixer\."MultiMedia2"/ {copy=1}
-    copy && /^SectionPCMCapabilities\."MultiMedia2 Playback"/ {speaker_caps=1}
-    speaker_caps && /^}/ {speaker_caps=0}
-    speaker_caps && $1=="formats" {
-        print "    formats \"S16_LE,S24_LE,S32_LE\""
-        next
-    }
     copy {
         if ($0 ~ /"spk.sink, , spk.mfc"/) {
             print "        \"spk.fs.rx, , spk.mfc\""

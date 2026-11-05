@@ -26,7 +26,10 @@ cat "$output/POCO-Pad-X1-protected-speaker.conf" "$profile/src/audio/POCO-Pad-X1
 alsatplg -c "$output/POCO-Pad-X1.conf" -o "$output/POCO-Pad-X1-tplg.bin"
 alsatplg -d "$output/POCO-Pad-X1-tplg.bin" -o "$output/POCO-Pad-X1-decoded.conf"
 for name in spk.fs.rx spk.fs.tx spk.vi.source 'MultiMedia3 Capture' S24_LE S32_LE; do
- grep -Fq "$name" "$output/POCO-Pad-X1-decoded.conf"
+ grep -Fq "$name" "$output/POCO-Pad-X1-decoded.conf" || {
+  printf 'Protected topology lacks required field: %s\n' "$name" >&2
+  exit 1
+ }
 done
 for compiler in gcc clang; do
  CC=$compiler bash "$profile/tests/audio-speaker-safety-contract.sh" "$kernel"
