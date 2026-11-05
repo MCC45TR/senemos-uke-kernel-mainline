@@ -13,7 +13,7 @@ awk '/^static int qcom_uke_smmu_alloc_context_bank\(/ {p=1} p {print} p&&/^}/ {e
     "$directory/arm-smmu-qcom.c" > "$stage/actual-allocation.inc"
 cp "$helper" "$stage/actual-cdsp.inc"
 read -r -a flags <<< "${CFLAGS:-}"
-"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-sign-compare "${flags[@]}" \
+"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter "${flags[@]}" \
     -I "$stage" "$here/tests/fixtures/cdsp-actlr-check.c" -o "$stage/check"
 ulimit -c 0
 "$stage/check"

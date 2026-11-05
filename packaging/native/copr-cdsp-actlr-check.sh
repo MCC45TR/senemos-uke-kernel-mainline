@@ -11,10 +11,10 @@ factory=$owner/packaging/native/copr-gmu-msm-object-check.sh
 printf '%s  %s\n' dd75377d4dcfa1d601a982c92fd37def8930ecbf313ec71dc7e142f24ad032f7 "$factory" | sha256sum -c --strict -
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11261342 | jq -er .state) == succeeded ]]
 # Reuse the unchanged qualified factory with this independent fixture identity.
-# Its namespace guard still runs, now against uke-cdsp-actlr-check7.3.1-1.
+# Its namespace guard still runs, now against uke-cdsp-actlr-check7.3.1-2.
 sed -e 's/^owner=.*/owner=${UKE_CDSP_FACTORY_OWNER:?}/' \
     -e 's/uke-o82-kms-check/uke-cdsp-actlr-check/g' \
-    -e 's/7\.3\.1-16/7.3.1-1/g' -e 's/Release: 16%/Release: 1%/g' \
+    -e 's/7\.3\.1-16/7.3.1-2/g' -e 's/Release: 16%/Release: 2%/g' \
     "$factory" > "$stage/factory.sh"
 UKE_CDSP_FACTORY_OWNER=$owner bash "$stage/factory.sh" "$output"
 spec=$output/uke-cdsp-actlr-check.spec
@@ -52,5 +52,5 @@ awk '
  {print}
 ' "$spec" > "$stage/check.spec"
 install -m644 "$stage/check.spec" "$spec"
-[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-cdsp-actlr-check-7.3.1-1 ]]
+[[ $(rpmspec --target aarch64 --define 'dist %{nil}' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$spec") == uke-cdsp-actlr-check-7.3.1-2 ]]
 printf 'Cumulative CDSP ACTLR fixture source prepared; no kernel delivery or device operation\n'
