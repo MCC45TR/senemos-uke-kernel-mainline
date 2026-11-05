@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Bounded initial Hall state recovery on the complete cumulative12204 source",
+  "status": "Awaiting COPR source/callback/object qualification; physical closed-cover boot unproved",
+  "parent": {
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+    "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+    "rpm_nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204",
+    "copr_build": 11263248,
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f"
+  },
+  "before_driver_sha256": "f2f88aa474497b0162c053221df5a45818df0e2a5f830dc6632321754cf8f50e",
+  "after_driver_sha256": "14a7922f690bf1615ffa925e14e7da612da4d2c0e6338710662f3de0856c7cb3",
+  "inputs": [
+    {
+      "path": "patches/input/0002-smp2p-switch-initial-state.patch",
+      "sha256": "9aa99f72703edd172cb64a98dea522a28f3c52d324e09fef7ceb0c7e8f23be92"
+    },
+    {
+      "path": "src/input/apply-smp2p-switch-startup.sh",
+      "sha256": "c9e4150e82d1e0fce6640d914e210b77cb8ff8cd1f4a2e5990b9ec8219b7eb59"
+    },
+    {
+      "path": "tests/hall-startup.c",
+      "sha256": "4cdc3d2e8b9485702e13e78507e194d1f4dad35fddb872b457d4050681072cd7"
+    },
+    {
+      "path": "tests/hall-startup-contract.sh",
+      "sha256": "bcb27fae994de4e5c8e3ce3572392ed68b40b46c4ddb74dec2eb03c015adc415"
+    },
+    {
+      "path": "tests/hall-startup-controls.sh",
+      "sha256": "a140416c783f8ff2abcb5098d41a3b21d1f330ee419919d5f06d9fe39be7003b"
+    },
+    {
+      "path": "tests/hall-startup-object.sh",
+      "sha256": "a247bda72cde92e61f6819f2057a5d6f7a259527d2a2d0de17ca21e10e19ae57"
+    },
+    {
+      "path": "docs/HALL-STARTUP.md",
+      "sha256": "25b5c7923882e8d8a1e449ad05f4461fd4c6f471920b2a7c7ce6b0a0abfab34c"
+    }
+  ]
+}

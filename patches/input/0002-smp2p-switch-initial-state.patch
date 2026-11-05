@@ -1,0 +1,152 @@
+From: Uke Linux maintainers
+Subject: [PATCH] input: retry unavailable initial SMP2P switch state
+
+A remote-owned switch may not have a valid SMEM pair at probe or resume.
+The provider can also consume its initial edge before the input consumer
+is ready. Retry only the initial read for up to 30 seconds, then rely on
+normal events. Never infer a closed/open state from zero or conflicting bits.
+
+Serialize reports with IRQ handlers, stop work for suspend and managed
+cleanup, and retain selective wake only for a real valid open interrupt.
+This does not establish whether fitted firmware publishes a stationary
+closed cover at startup; physical boot validation remains required.
+
+--- a/drivers/input/misc/qcom-smp2p-switch.c
++++ b/drivers/input/misc/qcom-smp2p-switch.c
+@@ -4,6 +4,8 @@
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/workqueue.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm.h>
+@@ -11,9 +13,15 @@
+ #include <linux/property.h>
+ #include <linux/slab.h>
+ 
++#define SMP2P_SWITCH_INITIAL_RETRIES 120
++#define SMP2P_SWITCH_INITIAL_DELAY_MS 250
++
+ struct smp2p_switch {
+ 	struct device *dev;
+ 	struct input_dev *input;
++	struct mutex lock;
++	struct delayed_work initial_work;
++	unsigned int initial_retries;
+ 	unsigned int code;
+ 	int open_irq;
+ 	int closed_irq;
+@@ -36,32 +44,77 @@ static int smp2p_switch_read(struct smp2p_switch *sw)
+ 	return closed;
+ }
+ 
+-static irqreturn_t smp2p_switch_irq(int irq, void *data)
++/* Serialize asynchronous initial reads with the paired interrupt handlers. */
++static int smp2p_switch_report(struct smp2p_switch *sw, int irq)
+ {
+-	struct smp2p_switch *sw = data;
+-	int state = smp2p_switch_read(sw);
++	int state;
+ 
++	mutex_lock(&sw->lock);
++	state = smp2p_switch_read(sw);
+ 	if (state >= 0) {
+ 		if (irq == sw->open_irq && !state && device_may_wakeup(sw->dev))
+ 			pm_wakeup_event(sw->dev, 500);
+ 		input_report_switch(sw->input, sw->code, state);
+ 		input_sync(sw->input);
+ 	}
++	mutex_unlock(&sw->lock);
++	return state;
++}
++
++static irqreturn_t smp2p_switch_irq(int irq, void *data)
++{
++	smp2p_switch_report(data, irq);
+ 	return IRQ_HANDLED;
+ }
+ 
++static void smp2p_switch_initial_state(struct work_struct *work)
++{
++	struct smp2p_switch *sw = container_of(to_delayed_work(work),
++					     struct smp2p_switch, initial_work);
++
++	/* A late provider/SMEM entry need not replay an already asserted edge. */
++	if (smp2p_switch_report(sw, 0) >= 0)
++		return;
++	if (++sw->initial_retries < SMP2P_SWITCH_INITIAL_RETRIES)
++		queue_delayed_work(system_freezable_wq, &sw->initial_work,
++				   msecs_to_jiffies(SMP2P_SWITCH_INITIAL_DELAY_MS));
++	else
++		dev_warn(sw->dev, "Initial switch state unavailable; waiting for an event\n");
++}
++
++static void smp2p_switch_start(struct smp2p_switch *sw)
++{
++	sw->initial_retries = 0;
++	smp2p_switch_initial_state(&sw->initial_work.work);
++}
++
++static void smp2p_switch_work_cleanup(void *data)
++{
++	struct smp2p_switch *sw = data;
++
++	cancel_delayed_work_sync(&sw->initial_work);
++}
++
+ static void smp2p_switch_wake_cleanup(void *data)
+ {
+ 	device_init_wakeup(data, false);
+ }
+ 
++static int smp2p_switch_suspend(struct device *dev)
++{
++	struct smp2p_switch *sw = dev_get_drvdata(dev);
++
++	cancel_delayed_work_sync(&sw->initial_work);
++	return 0;
++}
++
+ static int smp2p_switch_resume(struct device *dev)
+ {
+-	smp2p_switch_irq(0, dev_get_drvdata(dev));
++	smp2p_switch_start(dev_get_drvdata(dev));
+ 	return 0;
+ }
+ 
+-static DEFINE_SIMPLE_DEV_PM_OPS(smp2p_switch_pm_ops, NULL, smp2p_switch_resume);
++static DEFINE_SIMPLE_DEV_PM_OPS(smp2p_switch_pm_ops, smp2p_switch_suspend, smp2p_switch_resume);
+ 
+ static int smp2p_switch_probe(struct platform_device *pdev)
+ {
+@@ -74,6 +127,8 @@ static int smp2p_switch_probe(struct platform_device *pdev)
+ 	if (!sw)
+ 		return -ENOMEM;
+ 	sw->dev = dev;
++	mutex_init(&sw->lock);
++	INIT_DELAYED_WORK(&sw->initial_work, smp2p_switch_initial_state);
+ 	ret = device_property_read_u32(dev, "linux,code", &sw->code);
+ 	if (ret || sw->code > SW_MAX)
+ 		return dev_err_probe(dev, -EINVAL, "Invalid switch code\n");
+@@ -107,6 +162,10 @@ static int smp2p_switch_probe(struct platform_device *pdev)
+ 		if (ret)
+ 			return ret;
+ 	}
++	/* IRQs release before work, and work releases before the input device. */
++	ret = devm_add_action_or_reset(dev, smp2p_switch_work_cleanup, sw);
++	if (ret)
++		return ret;
+ 	ret = devm_request_threaded_irq(dev, sw->open_irq, NULL, smp2p_switch_irq,
+ 			IRQF_ONESHOT | IRQF_TRIGGER_RISING |
+ 			(device_property_present(dev, "wakeup-source") ? IRQF_NO_SUSPEND : 0),
+@@ -117,7 +176,7 @@ static int smp2p_switch_probe(struct platform_device *pdev)
+ 			IRQF_ONESHOT | IRQF_TRIGGER_RISING, label, sw);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "Cannot request closed event\n");
+-	smp2p_switch_irq(0, sw);
++	smp2p_switch_start(sw);
+ 	return 0;
+ }
+ 
