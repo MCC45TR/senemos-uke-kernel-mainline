@@ -131,7 +131,7 @@
     },
     {
       "path": "tests/o82-hdr-pcc-contract.cpp",
-      "sha256": "57ae4f008062ad385c045345ac2dc587d784835c2671c880e23a5c7e98ac1e56"
+      "sha256": "fb730899c1317b9a8be9f5766c0d0c5f1b43f7f28987095bdd7fefcffdd78833"
     }
   ],
   "producer": {
@@ -149,6 +149,17 @@
   },
   "qualification": {
     "state": "pending",
-    "scope": "Synthetic actual-decoder/typed XML/curve/polynomial path, independent integer oracles and required mutants"
+    "scope": "Synthetic actual-decoder/typed XML/curve/polynomial path, independent integer oracles and required mutants",
+    "previous_trials": [
+      {
+        "source_commit": "6dfbcec015832ef963a5bd789a0c6501c50d67a3",
+        "copr_build": 11264708,
+        "version_release": "1.1.0-1",
+        "state": "failed at the first compiler invocation before numeric fixtures",
+        "reason": "Copied integer oracle retains an unused division helper; -Werror=unused-function correctly refuses it",
+        "native_log_sha256": "144e6ecc4c52e467b4120f8c5f67bff8a1017abfcc4091af5006bb7610d9890b",
+        "correction": "Remove only the unused oracle helper; retain warnings and production/component arithmetic unchanged"
+      }
+    ]
   }
 }

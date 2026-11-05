@@ -62,11 +62,6 @@ Binary times(Binary a, Binary b, unsigned precision = 24) {
     return rounded(a.negative != b.negative, Wide(a.mantissa) * b.mantissa, 1,
                    a.power + b.power, precision);
 }
-Binary divided(Binary a, Binary b, unsigned precision = 24) {
-    assert(b.mantissa);
-    return rounded(a.negative != b.negative, a.mantissa, b.mantissa,
-                   a.power - b.power, precision);
-}
 std::uint32_t encode(Binary value) {
     if (!value.mantissa) return 0;
     const int top = int(std::bit_width(value.mantissa)) - 1;
