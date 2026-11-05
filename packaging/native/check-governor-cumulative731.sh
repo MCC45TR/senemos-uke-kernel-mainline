@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # COPR only: complete cumulative Kconfig retention and four real governor objects.
 set -Eeuo pipefail
+trap 'status=$?; printf "Governor cumulative check failed at line %s: %s (status %s)\n" "$LINENO" "$BASH_COMMAND" "$status" >&2; exit "$status"' ERR
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(uname -m) == aarch64 ]]
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
@@ -16,8 +17,8 @@ resolve()
 {
     mkdir -p "$2"
     install -m644 "$1" "$2/.config"
-    # Object-only check: normalize the same empty initramfs for every input.
-    bash "$kernel/scripts/config" --file "$2/.config" --set-str INITRAMFS_SOURCE ''
+    # Match the production reference snapshot; object targets do not embed it.
+    bash "$kernel/scripts/config" --file "$2/.config" --set-str INITRAMFS_SOURCE "$output/boot-initramfs.cpio.gz"
     make -s -C "$kernel" O="$2" olddefconfig
 }
 resolve "$profile/native.config" "$output"
@@ -26,7 +27,9 @@ bash "$owner/tests/governor-config-contract.sh" "$stage/baseline/.config" "$outp
 for role in cdsp waydroid; do
     resolve "$profile/configs/nfc-$role-reference.config" "$stage/$role"
 done
-bash "$profile/tests/cdsp-pogo-config-contract.sh" "$stage/cdsp/.config"
+resolve "$profile/configs/governor-before-nfc-cdsp.config" "$stage/cdsp-before"
+bash "$profile/tests/cdsp-pogo-config-contract.sh" "$stage/cdsp-before/.config"
+bash "$owner/tests/governor-config-contract.sh" "$stage/cdsp-before/.config" "$stage/cdsp/.config"
 # The original full comparator is unchanged: its only exclusion remains pogo HID.
 bash "$profile/tests/nfc-cohort-config731.sh" "$output/.config" "$stage/waydroid/.config"
 bash "$profile/tests/kernel-hardening-config-contract.sh" "$output/.config"

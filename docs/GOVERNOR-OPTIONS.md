@@ -53,15 +53,23 @@ config copy. Apply the four-line extension to the actual production input,
 never replace it with that legacy file. The layer helper updates both
 production config copies and the two independent NFC reference inputs,
 keeps their original bytes in history files and updates profile/boot receipts.
-The full NFC comparator remains unchanged and excludes only the existing pogo
-HID delta. The cumulative source checker accepts the new exact config hash
-only after the four-line contract passes; its original source is preserved.
+The full NFC comparator and historical CDSP snapshot checker remain unchanged.
+The NFC comparison excludes only the existing pogo HID delta. The companion
+`overlay-governor-spec731.sh SPEC` adds independent resolution of the original
+CDSP reference, checks the historical snapshot there, then proves the exact
+four-option effective delta to the extended CDSP reference in both `%build`
+and final `%check`. No historical digest is relaxed. The cumulative source
+checker accepts the new exact config hash only after the four-line contract
+passes; its original source is preserved.
 
 `manifests/governor-options-layer-20261105.json` pins the exact12202 source RPM,
 all three before/after config hashes and layer assets. That retired full
 candidate failed late audio fixtures; it is a frozen source input, not a
 delivered or physically qualified kernel. The audio owner supplies its separate
-fixture correction. The governor owner qualifies this source layer fully;
+fixture correction. The bounded follow-up reproduces that qualified correction
+and camera source477314d's strict early replay of all24 inherited audio calls.
+Only the six-line config-digest adaptation differs from that camera checker.
+The governor owner qualifies this source layer fully;
 the coordinator imports the precise layer into the later cumulative recipe.
 Do not repoint a frozen producer or replace an active full-kernel build.
 No kernel revision, installed kernel/profile, slot, staging policy or rollback
@@ -83,13 +91,15 @@ corrected recipe removes that network dependency from the RPM check.
 
 The separate `copr-governor-cumulative731-check.sh` producer uses the complete
 pinned production SRPM and retains its original source verification and full
-preparation section. It checks exact application, unchanged repeat and thirteen
-refusal cases before producing a source-only check view. It independently
-resolves the original native config, extended native config and both extended
-NFC references; compares the complete effective configs; runs the unchanged
-full NFC and native hardening contracts; and compiles only the four governor
-objects. An empty initramfs setting is applied consistently to every resolved
-config for this object-only check. It does not produce an Image or final module.
+preparation section. It checks exact application, unchanged repeat, thirteen
+tree refusal cases and six spec refusal cases before producing a source-only
+check view. It independently resolves the original and extended native configs,
+original and extended CDSP references and extended NFC network reference.
+Complete effective config comparisons, the unchanged historical CDSP snapshot,
+full NFC comparison and native hardening contracts precede compilation of only
+the four governor objects. Every resolved config uses the production initramfs
+path; these object targets do not embed an initramfs. No Image or final module
+is produced.
 
 After coordinated delivery, confirm the two GPU governors appear on the actual
 Adreno node and both CPU governors are available without module loading. Keep

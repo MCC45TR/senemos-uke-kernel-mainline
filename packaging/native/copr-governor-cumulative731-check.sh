@@ -12,7 +12,12 @@ manifest=$owner/manifests/governor-options-layer-20261105.json
 bash "$owner/packaging/native/refuse-published-release.sh" uke-governor-cumulative-check "7.3.1-$revision"
 (cd "$owner"; jq -r '.assets[],.check_inputs[]|.sha256+"  "+.path' "$manifest" | sha256sum -c --strict --quiet -)
 stage=$(mktemp -d)
-trap 'find "$stage" -depth -delete' EXIT
+cleanup()
+{
+    if [[ -d $stage/audio-source ]]; then git -C "$owner" worktree remove "$stage/audio-source"; fi
+    find "$stage" -depth -delete
+}
+trap cleanup EXIT
 curl -q -fLsS --retry 2 --max-time 600 --proto '=https' --proto-redir '=https' \
     "$(jq -er .parent.url "$manifest")" -o "$stage/parent.src.rpm"
 printf '%s  %s\n' "$(jq -er .parent.sha256 "$manifest")" "$stage/parent.src.rpm" | sha256sum -c --strict -
@@ -36,8 +41,53 @@ done
 profile=$stage/unpacked/native-profile
 boot=$stage/unpacked/boot-recipe
 cmp "$boot/lock.json" "$output/boot-payload.json"
+# Reproduce the camera factory's qualified audio fixture layer and early replay.
+# These are independent inputs, not governor changes or a new kernel candidate.
+audio_source=$(jq -er .preintegration.audio_source "$manifest")
+camera_source=$(jq -er .preintegration.camera_source "$manifest")
+for commit in "$audio_source" "$camera_source"; do
+    [[ $commit =~ ^[a-f0-9]{40}$ ]]
+    git -C "$owner" cat-file -e "$commit^{commit}" 2>/dev/null || git -C "$owner" fetch --depth=1 origin "$commit"
+done
+git -C "$owner" worktree add --detach "$stage/audio-source" "$audio_source"
+bash "$stage/audio-source/packaging/native/overlay-speaker-legacy-fixtures.sh" "$profile" "$audio_source"
+install -m644 "$profile/SHA256SUMS" "$stage/pre-camera-profile.sha256"
+(cd "$boot"; find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$stage/pre-camera-boot.sha256"
+while IFS=$'\t' read -r path digest before; do
+    [[ $path =~ ^(packaging|tests)/[a-zA-Z0-9_.,/-]+$ && $path != *..* ]]
+    git -C "$owner" show "$camera_source:$path" > "$stage/camera-asset"
+    printf '%s  %s\n' "$digest" "$stage/camera-asset" | sha256sum -c --strict --quiet -
+    for tree in "$profile" "$boot"; do
+        if [[ $before == null ]]; then [[ ! -e $tree/$path && ! -L $tree/$path ]];
+        else printf '%s  %s\n' "$before" "$tree/$path" | sha256sum -c --strict --quiet -; fi
+        install -Dm644 "$stage/camera-asset" "$tree/$path"
+    done
+    jq --arg path "$path" --arg sha "$digest" '
+      if any(.source_assets[];.path==$path) then (.source_assets[]|select(.path==$path)|.sha256)=$sha
+      else .source_assets += [{path:$path,sha256:$sha}] end' "$boot/lock.json" > "$stage/next.lock"
+    install -m644 "$stage/next.lock" "$boot/lock.json"
+done < <(jq -r '.preintegration.camera_assets[]|[.path,.sha256,(.before_sha256 // "null")]|@tsv' "$manifest")
+for role in profile boot; do
+    tree=$profile; receipt=$stage/pre-camera-profile.sha256
+    [[ $role != boot ]] || { tree=$boot; receipt=$stage/pre-camera-boot.sha256; }
+    while read -r digest path; do
+        path=${path#./}
+        if jq -e --arg path "$path" 'any(.preintegration.camera_assets[];.path==$path)' "$manifest" >/dev/null; then continue; fi
+        printf '%s  %s\n' "$digest" "$tree/$path" | sha256sum -c --strict --quiet -
+    done < "$receipt"
+done
+awk '/^%check$/ {inside=1;next} /^%[a-z]/ {inside=0}
+ inside && /bash native-profile\/tests\/(audio-|microphone-gain-contract|kernel-audio-policy-contract)/ {print}' \
+ "$parent" > "$stage/inherited-audio-checks.sh"
+[[ $(wc -l < "$stage/inherited-audio-checks.sh") == 24 ]]
+cmp "$stage/inherited-audio-checks.sh" "$profile/tests/fixtures/inherited-audio-checks731.sh"
+(cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 bash "$owner/tests/governor-layer-contract.sh" "$profile" "$boot" | tee "$output/governor-source-checks.txt"
+bash "$owner/tests/governor-spec-contract.sh" "$parent" | tee -a "$output/governor-source-checks.txt"
 bash "$owner/packaging/native/overlay-governor-options731.sh" "$profile" "$boot"
+bash "$owner/packaging/native/overlay-governor-spec731.sh" "$parent"
+install -m644 "$parent.before-governor-options.txt" "$output/governor-production-spec-before.txt"
+unlink "$parent.before-governor-options.txt"
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 for tree in native-profile boot-recipe; do
@@ -66,6 +116,7 @@ cat >> "$spec" <<'SPEC'
 Source9: governor-cumulative-addon.tar.xz
 Source10: governor-production-spec.txt
 Source11: governor-source-checks.txt
+Source12: governor-production-spec-before.txt
 BuildRequires: python3-lxml kernel-headers
 
 %description
@@ -89,6 +140,7 @@ bash governor-addon/packaging/native/check-governor-cumulative731.sh "$PWD" %{_u
 install -Dm644 %{_topdir}/governor-cumulative-checks.txt %{buildroot}%{_docdir}/%{name}/checks.txt
 install -m644 %{SOURCE10} %{buildroot}%{_docdir}/%{name}/production-spec.txt
 install -m644 %{SOURCE11} %{buildroot}%{_docdir}/%{name}/source-checks.txt
+install -m644 %{SOURCE12} %{buildroot}%{_docdir}/%{name}/production-spec-before.txt
 install -m644 governor-addon/source-commit %{buildroot}%{_docdir}/%{name}/source-commit
 install -m644 native-profile/source-composition.json %{buildroot}%{_docdir}/%{name}/check-view-composition.json
 

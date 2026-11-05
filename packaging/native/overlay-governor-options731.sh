@@ -60,6 +60,8 @@ jq -e '.package_family=="senemos-uke-linux-kernel-mainline-unstable" and
  .automatic_seamless_staging_required and .preserve_local_rollback_preference and
  .package_rollback_default=="enforced" and .cdsp_auto_boot==false and
  .speaker_controls_present_without_graph_admission and .speaker_protection_graph_admitted==false and
+ .speaker_legacy_fixture_layer_commit=="f05c32a879b9c56abe3531365f95b85684af4510" and
+ .speaker_inherited_audio_fixtures_adapted==true and
  .speaker_gain_ceiling==223 and .o82_color_initial_preset=="" and .o82_color_dma_enabled==false and
  .native_hdr_advertised==false and .front_eeprom_read_only and
  (.front_geni_dt_activation|not) and (.front_eeprom_dt_activation|not) and

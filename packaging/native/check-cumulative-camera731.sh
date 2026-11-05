@@ -30,6 +30,8 @@ jq -e '.package_family=="senemos-uke-linux-kernel-mainline-unstable" and
  .speaker_controls_present_without_graph_admission and .speaker_protected_runtime_abi==1 and
  .speaker_protection_graph_admitted==false and .speaker_gain_ceiling==223 and
  .speaker_physical_protection_qualified==false and
+ .speaker_legacy_fixture_layer_commit=="f05c32a879b9c56abe3531365f95b85684af4510" and
+ .speaker_inherited_audio_fixtures_adapted==true and
  (.front_geni_dt_activation|not) and (.front_eeprom_dt_activation|not) and
  (.camera_sensor_dt_activation|not) and (.camera_capture_graph_activation|not) and
  (.cdsp_auto_boot|not) and (.physical_acceptance|not)' "$profile/source-composition.json" >/dev/null
@@ -57,6 +59,9 @@ for supplier in 36 42; do
     [[ $(fdtget -t x "$overlay" "$node" reg) == 'ae01000 8f000 aeb0000 1074 af80000 7000' ]]
 done
 if [[ $phase == prepared ]]; then
+    printf '%s  %s\n' d7854b8571fd7cb4b61e6e958296b6691ada78d2a604663c168979121b3b3e7d \
+     "$profile/tests/fixtures/inherited-audio-checks731.sh" | sha256sum -c --strict -
+    (cd "$kernel"; CC=clang CXX=clang++ bash -euo pipefail "$profile/tests/fixtures/inherited-audio-checks731.sh")
     bash "$profile/tests/o82-touch-integrated731-contract.sh" "$kernel"
     bash "$profile/tests/o82-profile-loader-contract.sh" "$profile"
     bash "$profile/tests/o82-memory-bundle-contract.sh" "$profile"

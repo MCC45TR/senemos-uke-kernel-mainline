@@ -10,6 +10,22 @@
     "full_candidate_status": "retired-after-late-audio-fixture-failure",
     "physical_acceptance": false
   },
+  "preintegration": {
+    "audio_source": "f05c32a879b9c56abe3531365f95b85684af4510",
+    "audio_check": 11262171,
+    "camera_source": "477314d9a1fa6561ddd9eed4cb39b7e257dd270d",
+    "camera_assets": [
+      {
+        "path": "packaging/native/check-cumulative-camera731.sh",
+        "before_sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216",
+        "sha256": "0a052830a731ce929ead63685efe2b1d1e8911330f29ea1cee29f7b94f8c19da"
+      },
+      {
+        "path": "tests/fixtures/inherited-audio-checks731.sh",
+        "sha256": "d7854b8571fd7cb4b61e6e958296b6691ada78d2a604663c168979121b3b3e7d"
+      }
+    ]
+  },
   "config_inputs": [
     {
       "path": "native.config",
@@ -47,16 +63,20 @@
     },
     {
       "path": "packaging/native/overlay-governor-options731.sh",
-      "sha256": "88ea3a00e9ac37ba85a1d73de343ff8c83a21009420ee76e7ce3c2f171bfbc65"
+      "sha256": "c54190d328680a3554556e059024f8a0681b82ae46583d9e90cac87ffcc24609"
+    },
+    {
+      "path": "packaging/native/overlay-governor-spec731.sh",
+      "sha256": "1a4ea1f8483f0e476196d8a62ac057070934e11e7d1d59e783744cf0fb569d01"
     },
     {
       "path": "docs/GOVERNOR-OPTIONS.md",
-      "sha256": "302964be8b21464edbcc33a41bc9bdb157e62545c99719a0c03cc6f3a466ddf2"
+      "sha256": "f5b02f095a46a1372465134b3fa5fef08f535c06ff02ca0b89461e3259df8c52"
     },
     {
       "path": "packaging/native/check-cumulative-camera731.sh",
-      "sha256": "71d33ac30166b6cfa369e3647a5e4bdb1b5a6656c2af2577df94d7eeeef2e20a",
-      "before_sha256": "c3d1f376b5467cb74ca4d5f085138a9509b5121e9d8f826bb0387009d41c1216",
+      "sha256": "755d1184ff5c2a64cf3deb65e2482400ac725b19e366b5a149d26d802dad1321",
+      "before_sha256": "0a052830a731ce929ead63685efe2b1d1e8911330f29ea1cee29f7b94f8c19da",
       "history": "packaging/native/check-cumulative-camera731-before-governor.sh"
     }
   ],
@@ -66,12 +86,16 @@
       "sha256": "3fad6969cc368f580bfaffd7596ad59cdcbd2d399a8879837a0faf3a517da546"
     },
     {
+      "path": "tests/governor-spec-contract.sh",
+      "sha256": "23c736145d2d165ba7ab7e27902467e3627ccd08363df1b4d041742db21490d4"
+    },
+    {
       "path": "packaging/native/check-governor-cumulative731.sh",
-      "sha256": "74b9c1b1fb56b3eacdd58a9cd9f5e085f4971e2be22ff674bfc5b1c641511b4e"
+      "sha256": "cbcb9a13571222634ae60f6cb8746fe0512190149d6b87aaf21728c874d53e6f"
     },
     {
       "path": "packaging/native/copr-governor-cumulative731-check.sh",
-      "sha256": "5f3850b63e8c78735e5d24cd5b81443fb9b83d39c1f15d19467a5c3b5788636c"
+      "sha256": "37771bce76bd38bcbe6baa716a13c1839219216be709e34e9f3f625917bcca1f"
     },
     {
       "path": "packaging/native/refuse-published-release.sh",
