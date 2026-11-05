@@ -37,8 +37,15 @@ The real device currently fails its first MCU I2C write. The physical keyboard
 is unavailable, as confirmed on5 November; this does not establish the cause
 of the transfer failure. The change removes the unordered power assumption,
 but a physical retry on a coordinator-delivered cumulative kernel is required.
-Touchpad21-byte layout, Y1770 versus OEM edge2135, exact authentication,
-effective brightness and complete input/suspend/wake remain physical gates.
+The same archive's gTouchDevice points to its277-byte HID_TouchReportDescriptor
+at.data+0xa45. It confirms21-byte input, three repeated contacts per packet,
+X3199/Y2135, advertised94x42mm and a maximum of eight contacts per hybrid frame.
+The production descriptor's factual fields match that symbol. Protocol checks
+now admit Y2135 and contact counts0-8, including zero-count continuation packets;
+the feature callback reports the same bounded capacity. Upstream HID multitouch
+owns frame assembly and standard libinput gestures. This is source capability,
+not eight-contact or physical-size acceptance. Exact accessory input/auth,
+effective brightness and complete suspend/wake remain physical gates.
 The isolated source/object fixture does not claim a full cumulative kernel.
 Only the shared coordinator integrates/delivers the delta with every retained
 camera, display, SSC, CDSP, audio, memory and boot contribution.
@@ -54,3 +61,7 @@ The signed text-only receipt passes both fingerprint signatures and both
 digests. Its precise identities and remaining gates are recorded in
 manifests/pogo-backlight-check-20261105.json. The receipt is not installed;
 this check produces neither a full kernel nor physical acceptance.
+
+The later OEM HID correction needs fresh fixture0.1-2, including a fifth
+actual-descriptor/feature check and the expanded protocol boundary checks.
+Earlier check11262339 qualifies only its exact4e478f2 inputs.

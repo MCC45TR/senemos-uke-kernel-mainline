@@ -18,6 +18,10 @@
 #define NANOSIC_FW_DATA_CMD_SIZE		512
 #define NANOSIC_FW_CHUNK_SIZE		503
 #define NANOSIC_FRAME_SIZE		68
+#define NANOSIC_TOUCH_X_MAX		3199
+#define NANOSIC_TOUCH_Y_MAX		2135
+#define NANOSIC_TOUCH_MAX_CONTACTS	8
+#define NANOSIC_TOUCH_CONTACTS_PER_REPORT	3
 
 struct nanosic_firmware {
 	const u8 *header;
@@ -146,15 +150,16 @@ static inline int nanosic_uke_report(const u8 *frame, size_t size)
 	case 0x06:
 		return 3;
 	case 0x19:
-		if (p[20] > 3)
+		/* OEM hybrid report: three entries per packet, up to eight per frame. */
+		if (p[20] > NANOSIC_TOUCH_MAX_CONTACTS)
 			return -EBADMSG;
-		for (i = 0; i < 3; i++) {
+		for (i = 0; i < NANOSIC_TOUCH_CONTACTS_PER_REPORT; i++) {
 			const u8 *c = p + 2 + i * 6;
 
 			if (!(c[0] & 1))
 				continue;
-			if (get_unaligned_le16(c + 2) > 3199 ||
-			    get_unaligned_le16(c + 4) > 1770)
+			if (get_unaligned_le16(c + 2) > NANOSIC_TOUCH_X_MAX ||
+			    get_unaligned_le16(c + 4) > NANOSIC_TOUCH_Y_MAX)
 				return -EBADMSG;
 			for (j = 0; j < i; j++)
 				if ((p[2 + j * 6] & 1) && c[1] == p[3 + j * 6])

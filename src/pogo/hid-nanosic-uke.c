@@ -415,7 +415,7 @@ static int uke_nano_hid_raw(struct hid_device *hid, unsigned char id,
 	if (hid->product == 0xa1 && id == 0x19 && len >= 2 &&
 	    type == HID_FEATURE_REPORT && req == HID_REQ_GET_REPORT) {
 		buf[0] = 0x19;
-		buf[1] = 3;
+		buf[1] = NANOSIC_TOUCH_MAX_CONTACTS;
 		return 2;
 	}
 	return -EOPNOTSUPP;

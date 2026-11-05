@@ -114,7 +114,17 @@ int main(void) {
     u8 frame[68]={0x57,0,0x39,5};assert(nanosic_uke_report(frame,68)==9);
     for(size_t len=0;len<68;len++)assert(nanosic_uke_report(frame,len)==-EMSGSIZE);
     frame[3]=0x19;assert(nanosic_uke_report(frame,68)==21);
-    frame[23]=4;assert(nanosic_uke_report(frame,68)==-EBADMSG);frame[23]=1;
+    for(unsigned contacts=0;contacts<=8;contacts++) {
+        frame[23]=contacts;assert(nanosic_uke_report(frame,68)==21);
+    }
+    frame[23]=9;assert(nanosic_uke_report(frame,68)==-EBADMSG);frame[23]=8;
+    frame[5]=1;frame[6]=7;put_unaligned_le16(3199,frame+7);put_unaligned_le16(2135,frame+9);
+    assert(nanosic_uke_report(frame,68)==21);
+    put_unaligned_le16(2136,frame+9);assert(nanosic_uke_report(frame,68)==-EBADMSG);
+    put_unaligned_le16(2135,frame+9);
+    frame[23]=0;assert(nanosic_uke_report(frame,68)==21); /* hybrid continuation */
+    frame[23]=8;frame[11]=1;frame[12]=7;assert(nanosic_uke_report(frame,68)==-EBADMSG);
+    frame[12]=6;assert(nanosic_uke_report(frame,68)==21);frame[11]=0;
     frame[5]=1;put_unaligned_le16(3200,frame+7);assert(nanosic_uke_report(frame,68)==-EBADMSG);
     frame[3]=0x24;frame[5]=0x38;frame[6]=0x80;frame[8]=60;assert(nanosic_uke_report(frame,68)==-EBADMSG);
     for(unsigned i=0;i<20000;i++) {

@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Derived from map220v's WN8030 HID descriptors, Copyright (c) 2025 map220v.
  * Source: yzddmr6/linux-sm8750-piano, 8ee5a1576e123ecbacfcfb9925d0f56820132bb8.
- * The inherited candidate uses 3199/1770. Uke OEM edge geometry reaches2135 Y;
- * exact accessory reports/physical geometry remain required. The three-contact
- * layout is a shared-protocol candidate; exact accessory capture remains open.
+ * Exact Uke archive9bb7c43/module0f24da97 advertises X3199/Y2135,94x42mm,
+ * three contact entries per report and a maximum of eight per hybrid frame.
+ * These descriptor facts correct the shared donor's Y1770/unspecified size;
+ * fitted accessory behavior still requires physical qualification.
  */
 static const u8 hid_keyboard_descriptor[] = {
 	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
@@ -90,15 +91,15 @@ static const u8 hid_touchpad_descriptor[] = {
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0x7F, 0x0C,  //     Logical Maximum (3199)
 	0x75, 0x10,        //     Report Size (16)
-	0x55, 0x0D,        //     Unit Exponent (-3)
-	0x65, 0x13,        //     Unit (System: English Linear, Length: Centimeter)
+	0x55, 0x0F,        //     Unit Exponent (-1)
+	0x65, 0x11,        //     Unit (SI Linear, Centimeter)
 	0x09, 0x30,        //     Usage (X)
 	0x35, 0x00,        //     Physical Minimum (0)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x46, 0x5E, 0x00,  //     Physical Maximum (94 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x09, 0x31,        //     Usage (Y)
-	0x26, 0xEA, 0x06,  //     Logical Maximum (1770)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x26, 0x57, 0x08,  //     Logical Maximum (2135)
+	0x46, 0x2A, 0x00,  //     Physical Maximum (42 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
 	0xA1, 0x02,        //   Collection (Logical)
@@ -123,15 +124,15 @@ static const u8 hid_touchpad_descriptor[] = {
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0x7F, 0x0C,  //     Logical Maximum (3199)
 	0x75, 0x10,        //     Report Size (16)
-	0x55, 0x0D,        //     Unit Exponent (-3)
-	0x65, 0x13,        //     Unit (System: English Linear, Length: Centimeter)
+	0x55, 0x0F,        //     Unit Exponent (-1)
+	0x65, 0x11,        //     Unit (SI Linear, Centimeter)
 	0x09, 0x30,        //     Usage (X)
 	0x35, 0x00,        //     Physical Minimum (0)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x46, 0x5E, 0x00,  //     Physical Maximum (94 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x09, 0x31,        //     Usage (Y)
-	0x26, 0xEA, 0x06,  //     Logical Maximum (1770)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x26, 0x57, 0x08,  //     Logical Maximum (2135)
+	0x46, 0x2A, 0x00,  //     Physical Maximum (42 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
 	0xA1, 0x02,        //   Collection (Logical)
@@ -156,15 +157,15 @@ static const u8 hid_touchpad_descriptor[] = {
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0x7F, 0x0C,  //     Logical Maximum (3199)
 	0x75, 0x10,        //     Report Size (16)
-	0x55, 0x0D,        //     Unit Exponent (-3)
-	0x65, 0x13,        //     Unit (System: English Linear, Length: Centimeter)
+	0x55, 0x0F,        //     Unit Exponent (-1)
+	0x65, 0x11,        //     Unit (SI Linear, Centimeter)
 	0x09, 0x30,        //     Usage (X)
 	0x35, 0x00,        //     Physical Minimum (0)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x46, 0x5E, 0x00,  //     Physical Maximum (94 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x09, 0x31,        //     Usage (Y)
-	0x26, 0xEA, 0x06,  //     Logical Maximum (1770)
-	0x46, 0x00, 0x00,  //     Physical Maximum (0)
+	0x26, 0x57, 0x08,  //     Logical Maximum (2135)
+	0x46, 0x2A, 0x00,  //     Physical Maximum (42 mm)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
 	0x05, 0x0D,        //   Usage Page (Digitizer)
@@ -172,7 +173,7 @@ static const u8 hid_touchpad_descriptor[] = {
 	0x95, 0x01,        //   Report Count (1)
 	0x75, 0x08,        //   Report Size (8)
 	0x15, 0x00,        //   Logical Minimum (0)
-	0x25, 0x03,        //   Logical Maximum (3)
+	0x25, 0x08,        //   Logical Maximum (8)
 	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x09, 0x55,        //   Usage (0x55)
 	0xB1, 0x02,        //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)

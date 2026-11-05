@@ -7,14 +7,14 @@ out=$(realpath -m "${1:?COPR result directory}")
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 mkdir -p "$out" "$stage/receipt"
-bash "$owner/packaging/native/refuse-published-release.sh" uke-pogo-kernel-check 0.1-1
+bash "$owner/packaging/native/refuse-published-release.sh" uke-pogo-kernel-check 0.1-2
 curl -q -fLsS --retry 2 --max-time 600 https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.1.tar.xz -o "$stage/linux.tar.xz"
 printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de231 "$stage/linux.tar.xz" | sha256sum -c --strict -
 tar -xJf "$stage/linux.tar.xz" -C "$stage"
 kernel=$stage/linux-7.3.1
 bash "$owner/src/pogo/prepare-source.sh" "$kernel"
 for compiler in gcc clang; do
- for test in nanosic-protocol nanosic-lifecycle nanosic-backlight nanosic-power; do
+ for test in nanosic-protocol nanosic-lifecycle nanosic-backlight nanosic-power nanosic-hid; do
   CC=$compiler CFLAGS= bash "$owner/tests/$test-contract.sh" | tee -a "$stage/receipt/checks.txt"
   CC=$compiler CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' \
     bash "$owner/tests/$test-contract.sh" | tee -a "$stage/receipt/checks.txt"
@@ -34,8 +34,8 @@ tar -czf "$out/uke-pogo-kernel-check-0.1.tar.gz" -C "$stage/receipt" .
 cat > "$out/uke-pogo-kernel-check.spec" <<'SPEC'
 Name: uke-pogo-kernel-check
 Version: 0.1
-Release: 1%{?dist}
-Summary: Uke pogo LED and power callback/object qualification receipt
+Release: 2%{?dist}
+Summary: Uke pogo HID, LED and power callback/object qualification receipt
 License: GPL-2.0-only
 BuildArch: noarch
 Source0: %{name}-%{version}.tar.gz
@@ -50,5 +50,8 @@ install -m644 source-commit %{buildroot}%{_docdir}/%{name}/source-commit
 %files
 %{_docdir}/%{name}/checks.txt
 %{_docdir}/%{name}/source-commit
+%changelog
+* Thu Nov 05 2026 Uke contributors - 0.1-2
+- Validate exact OEM touchpad geometry and hybrid contact capacity as well.
 SPEC
 rpmbuild -bs --define "_sourcedir $out" --define "_srcrpmdir $out" "$out/uke-pogo-kernel-check.spec"

@@ -21,10 +21,13 @@ lid/tablet state; this driver does not claim their physical GPIOs.
 Control messages use prefix 0x4c. Boot commands use 0x5c and retain the Uke
 3 ms write pacing. The exact image hash is checked before GPIO/power activity.
 No flash update, arbitrary bus-write interface or other-board firmware fallback
-is exposed. The shared 21-byte touchpad report format still needs an exact
-accessory capture. Its inherited Y1770 differs from OEM edge geometry Y2135;
-the logical report range and physical dimensions remain unqualified.
-Unknown packed/pressure formats are not silently interpreted.
+is exposed. Static comparison with the exact Uke archive9bb7c43/module0f24da97
+confirms the21-byte hybrid format: three entries per packet and a maximum
+of eight contacts per frame, X3199/Y2135 and advertised94x42mm. The previous
+donor Y1770, unspecified dimensions and total-three limit are corrected.
+The standard upstream HID multitouch layer handles continuation packets.
+Actual accessory reports, optical/electrical behavior and measured dimensions
+remain unqualified. Unknown packed/pressure formats are not silently interpreted.
 
 Authentication is asynchronous. Root reads the versioned auth_request sysfs
 attribute and supplies an epoch-matched auth_token within five seconds. The IRQ
