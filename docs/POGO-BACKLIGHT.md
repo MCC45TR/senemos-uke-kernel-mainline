@@ -62,6 +62,10 @@ digests. Its precise identities and remaining gates are recorded in
 manifests/pogo-backlight-check-20261105.json. The receipt is not installed;
 this check produces neither a full kernel nor physical acceptance.
 
-The later OEM HID correction needs fresh fixture0.1-2, including a fifth
-actual-descriptor/feature check and the expanded protocol boundary checks.
-Earlier check11262339 qualifies only its exact4e478f2 inputs.
+The later OEM HID correction passes fresh fixture0.1-2/COPR11262381 at exact
+sourcee9867405d0773065880863ea2df0dbd6242f5894:20 successful runs including the
+fifth actual-descriptor/feature fixture, expanded protocol boundaries and real
+AArch64 object-Werror. Both signed receipt signatures/digests and exact-source
+receipt match. Identities are in manifests/pogo-hid-check-20261105.json.
+Earlier check11262339 remains scoped to its exact4e478f2 inputs. Neither receipt
+is installed; cumulative integration and physical qualification remain separate.

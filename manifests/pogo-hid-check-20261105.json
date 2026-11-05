@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "source_commit": "e9867405d0773065880863ea2df0dbd6242f5894",
+  "copr_build": 11262381,
+  "state": "succeeded",
+  "retains_qualified_source": "4e478f2076ef653ccf29d9524d3e043ab74666df",
+  "checks": {
+    "fixtures": ["nanosic-protocol", "nanosic-lifecycle", "nanosic-backlight", "nanosic-power", "nanosic-hid"],
+    "compilers": ["gcc", "clang"],
+    "modes": ["ordinary", "address-and-undefined-sanitizers"],
+    "successful_runs": 20,
+    "aarch64_object_werror": true,
+    "exact_source_config_and_receipt_match": true,
+    "source_sha256": "335433fa3831cf2ef4b8755878de10e0fbb895ef24efe95bfc16d14f6a1370ed",
+    "object_sha256": "8e7fc7fd7c9f23d59a4155d97e3f8c31366aecfc6c0d6625f13bb2cf8f14ad83"
+  },
+  "receipt": {
+    "nevra": "uke-pogo-kernel-check-0.1-2.fc46.noarch",
+    "sha256": "51cb97a100562d63fa7bc0ee7dba9d4b64d700cd92aad1be1fc3f9d7cc568ce9",
+    "header_sha256": "bdf6ee22473f428968869fab63cafaca13f3fdbd63306547316f4d522504d46b",
+    "payload_sha256": "8d46321dc48d1db2f9b7c048ab4b0507b0a8a101b57819a61c74e4caac4a4ac5",
+    "signature_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "both_signatures_and_digests_pass": true,
+    "text_only": true,
+    "installed": false
+  },
+  "oem_descriptor": {
+    "archive_commit": "9bb7c4331be7205fabf5427b5654555763304d20",
+    "module_sha256": "0f24da97082902f801b5577565753628b34324aeae0ec8ecd2c51520d9718498",
+    "symbol": "HID_TouchReportDescriptor",
+    "symbol_section_offset": ".data+0xa45",
+    "bytes": 277,
+    "input_bytes_including_id": 21,
+    "entries_per_packet": 3,
+    "maximum_contacts_per_frame": 8,
+    "logical_max": [3199, 2135],
+    "advertised_extent_mm": [94, 42],
+    "source_descriptor_matches_pinned_symbol": true,
+    "module_executed_or_published": false
+  },
+  "physical": {
+    "accessory_available": false,
+    "new_driver_delivered": false,
+    "source_capacity_is_not_physical_acceptance": true
+  },
+  "integration": "Apply the exact src/pogo/apply-backlight.sh contribution and all five fixtures atop the latest cumulative coordinator profile. No full kernel or boot operation is performed by this check."
+}
