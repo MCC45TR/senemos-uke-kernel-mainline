@@ -1,9 +1,12 @@
 # Device support in the kernel and Device Tree
 
-5 November 2026. The installed POCO Pad X1 runs `7.3.1-12204-unstable`.
-The read-only package audit classifies all 59 installed project package names
-(109 installed versions, including retained kernels). Classification is not a
-removal instruction or evidence that a replacement works on the tablet.
+6 November 2026. POCO Pad X1 currently runs7.3.1-12206-unstable. Cumulative
+12207 is built through COPR11268117, DNF-installed and fully compared in
+inactive B while A12206 and its modules are retained. Matching boot and physical
+audio/sleep/USB/sensor acceptance remain pending. See the exact
+[qualification record](../manifests/kernel-migration-full12207-20261106.json).
+The initial read-only survey classified59 project names/109 installed versions;
+that historical count is not a removal instruction or physical acceptance.
 
 Hardware resources, protocols and mandatory protection belong in DT/kernel.
 Desktop policy, firmware files, image processing, D-Bus and RPM transactions
@@ -17,8 +20,9 @@ Combined source `a73b16e022b1db49d710da39d1ab6094949a5aa5` passes
 in155 seconds. The signed text-only receipt, exact sources and additive patch
 preimages are recorded in
 [`kernel-migration-source-20261105.json`](../manifests/kernel-migration-source-20261105.json).
-This qualifies source/callback/object checks; a cumulative kernel and device
-acceptance remain pending.
+This initial result qualifies source/callback/object checks. Later cumulative
+12207 passes full native and inactive-B delivery checks; device acceptance
+remains pending.
 
 The native SSC IIO driver now reads the accelerometer child's standard
 `mount-matrix` and exposes `in_accel_mount_matrix` through

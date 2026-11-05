@@ -80,3 +80,38 @@ contribution is republished with the cumulative source; no additional branch
 or partial kernel is built. No AVB footer, vbmeta or firmware change accompanies
 this isolated header delta. Re-run the combined source check before reserving
 the complete full kernel. Own-device and reporter Pad7 boot results are separate.
+
+Combined source/native11268059 succeeds from5fbe231e; signed receipt SHA256
+5277cbf9aa4b22794545fc0f8e5106d775d6c92590ffda2c2e9822fe85d9e105
+passes independent source/signature/payload admission. Full12207/COPR11268117
+succeeds1728s with embedded Image/config, cumulative linked gates and827 module
+signatures/negative controls. The full SRPM SHA256 is
+2d8a02cfdb2ea8e5ea554a9d4f62dac21536a6ea4e4859004cd5106bed4dfdee.
+Both recipes verify;368 inherited composition fields remain unchanged. Exact
+signed RPM identities/hashes are recorded in kernel-migration-full12207-20261106.
+The historical constructor is fenced to12207; later kernels must retain that
+complete source RPM and every later qualified contribution.
+
+Real DNF installs the six packages but updater98 refuses the pre-write barrier
+for an unapproved running trial. Both raw slots, protected state and preferences
+remain unchanged, and no reboot occurs. This corrects the earlier preview-only
+A/B qualification. Complete98-based updater99 adds bootloader retention at the
+actual pre-write barrier without health approval and exercises the complete
+barrier/reload/selection sequence. Its COPR11268221 qualification and actual B
+staging remain pending. Full build success does not prove sound, RTC suspend,
+USB continuity, Hall startup or safe package withdrawal.
+
+Updater99/11268221 refuses the new host fixture's private-member access before
+packaging; production binaries compiled but no target change was admitted.
+Corrected100/source d9e9c7e9f7adfe037c34c5cbab2c499c048a3616 / COPR11268277
+succeeds412s. Both actual slot directions/sector sizes and all four compiler/
+sanitizer modes pass; both original-barrier mutants fail with status134.
+Normal-channel DNF123 installs the three signed100 packages with identical
+version-substituted scriptlets and completes configured automatic staging.
+Six kernel headers/rpm-V, full physical B comparison, preserved A12206 and its
+modules/bundle, zero-version header, unapproved format2 and minimal accepted
+recovery components pass. Automatic1/1 and localoff are unchanged. This proves
+the first A-to-B stage, not a matching boot or hardware stability. One-boot Hall
+and real monitor-idle/RTC fixtures and temporary same-goal continuation are
+enabled. Physical sound/protection, true RTC resume, USB continuity, Hall
+reliability, sensor accuracy and safe package withdrawal remain open.

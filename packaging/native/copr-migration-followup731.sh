@@ -14,6 +14,7 @@ stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 [[ $(curl -q -fLsS --max-time 30 https://copr.fedorainfracloud.org/api_3/build/11267328 | jq -er .state) == succeeded ]]
 if [[ $mode == full ]]; then
+ [[ $revision == 12207 ]] || { printf "Historical followup constructor is restricted to12207; extend the complete qualified12207 SRPM for later candidates.\n" >&2;exit 1; }
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 30 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
  jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check"' "$stage/proof.json" >/dev/null
