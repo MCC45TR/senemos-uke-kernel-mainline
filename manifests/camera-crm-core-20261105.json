@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "Cliffs camera AP SWDRV0 vote foundation; no hardware activation",
-  "status": "implementation awaiting COPR source qualification",
+  "status": "AP vote core source-qualified; no runtime CRM backend activation",
   "baseline": {
     "release": "7.3.1-12204-unstable",
     "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
@@ -69,7 +69,7 @@
   "qualification": {
     "package": "uke-camera-crm-core-check",
     "version_release": "7.3.1-2",
-    "copr_build": null,
+    "copr_build": 11264022,
     "hardware_access": false,
     "native_kernel_object": false,
     "full_kernel": false,
@@ -86,6 +86,16 @@
         "ordinary_mutants_passed": 4,
         "raw_native_log_sha256": "1d0524df3d1b6c87671dad65fa25881c8ebddbc4e0f8a788db025038a253f7b3"
       }
-    ]
+    ],
+    "state": "succeeded",
+    "source_commit": "615a6dd38bc875a7fc3a5c716d0485f21a3fbf8f",
+    "signed_text_rpm_sha256": "7fffb5080e5f1780a5b473ee86d077466f47bd3507d8f99c611af83b1435840e",
+    "native_log_download_sha256": "c64ba873cd9f2c708cdbd7fbfe85a3944d1a4a7ecb9eb7fce6bc31e8766bfda7",
+    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "checks_per_run": 427488,
+    "compiler_modes_passed": 4,
+    "original_negative_assertion134": true,
+    "ordinary_mutants_passed": 4,
+    "receipt_installed": false
   }
 }

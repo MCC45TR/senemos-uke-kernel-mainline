@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "AP SWDRV0 IRQ transport and read-only LUT foundation; provider guard unchanged",
+  "status": "implementation awaiting COPR source and native-object qualification",
+  "parent": {
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+    "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+    "rpm_nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204",
+    "copr_build": 11263248,
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f"
+  },
+  "required_checks": [
+    11263248,
+    11264022
+  ],
+  "inputs": [
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-transport.h",
+      "sha256": "de6d6874a14ef1c662ec0d403a8cf183b7c43cabc0ef4251a5155f89e86ba860"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-lut.h",
+      "sha256": "db49bf4213a2b837212acc064e185a431de9ec43e692c346e533f43c19108049"
+    },
+    {
+      "path": "tests/camera-crm-core-contract.sh",
+      "sha256": "66f12343100ad7380b8245bc9264c52240fb5e9809fdb046337f7231ed437cde"
+    },
+    {
+      "path": "tests/camera-crm-backend-contract.sh",
+      "sha256": "24aaaf0c5eb7138ffb76fca48ee11856914051835a5719d436b2611a98c51cea"
+    },
+    {
+      "path": "tests/camera-crm-backend-object731.sh",
+      "sha256": "1757759a350c6c7c0768f0664b2529188e5c7bbb1d60707b643d8eedbee67808"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-core-check.cpp",
+      "sha256": "4fb00f756450877c5665fb5e12a0eb1c2d025490175f99e34b84ab856d288dca"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-lut-check.cpp",
+      "sha256": "3522b187071ec0a9e7341170b283e90da5e9c47bf5b98290f8e4f24578406fd8"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-transport-check.c",
+      "sha256": "7658f9440e4746af42424bf86429bc174e736fa54a731c490f96c7400ac3c2f5"
+    },
+    {
+      "path": "docs/camera-crm-core.md",
+      "sha256": "5e5c8a7303ba7be0e1385488e12ffc43c276bf311af1119f0510f62f0c662f3d"
+    },
+    {
+      "path": "docs/camera-crm-backend.md",
+      "sha256": "02485a42ca77436edb7549c0d2d4944f930ee7d182b043822e88924a395968cc"
+    },
+    {
+      "path": "manifests/camera-crm-core-20261105.json",
+      "sha256": "f12b4c02361f8edd804d43f717029017d4f20d33005d5576f3208f852a8c7cbc"
+    },
+    {
+      "path": "manifests/camera-crm-source-review-20261105.json",
+      "sha256": "81ca66bfe6b8efc14ae64476847739c1dd5e9a81e0db3d60c302c918f1204502"
+    }
+  ],
+  "oracle_inputs": [
+    {
+      "reference_file": "oem571-crm.c",
+      "path": "drivers/soc/qcom/crm.c",
+      "sha256": "b55fbbfa0235d1fed3112bbc134a7c835214819b8d318bc2b408940a5dbb0e48",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-clk-rcg2.c",
+      "path": "drivers/clk/qcom/clk-rcg2.c",
+      "sha256": "87b1645f20fd2ddbe07344ad707c74f81df9871bb53902b9243c1f617584da20",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-tcs.h",
+      "path": "include/soc/qcom/tcs.h",
+      "sha256": "3183aaa5964d6354cdb47cd87930c084d1feaf19e7481fefe1b973dd102d8c8f",
+      "spdx": "GPL-2.0"
+    }
+  ],
+  "qualification": {
+    "package": "uke-camera-crm-core-check",
+    "version_release": "7.3.1-3",
+    "copr_build": null,
+    "requires_native_aarch64_object": true,
+    "requires_original_preparation": true,
+    "requires_original_ignored_lut_error_negative_control": true,
+    "requires_transport_timeout_resource_stale_mutants": true
+  },
+  "activation": {
+    "provider_integration": false,
+    "guard_changed": false,
+    "quiesce_release_complete": false,
+    "managed_ccf_complete": false,
+    "physical_acceptance": false
+  },
+  "pending_delivery_dependency": {
+    "updater": "uke-kernel-update >=1.8.97 after qualification",
+    "helper": "uke-cdsp-pogo-firmware >=0.2-8",
+    "updater96_withdrawn": "selected==running boot acceptance can bypass firmware gate",
+    "kernel_delivery": false,
+    "automatic_staging_must_remain_enabled": true
+  }
+}

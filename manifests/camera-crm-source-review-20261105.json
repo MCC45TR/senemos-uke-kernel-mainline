@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-05",
   "scope": "Native firmware-managed CRM clock support for both complete Uke cameras",
-  "status": "Source comparison complete; AP vote core awaiting COPR; no runtime CRM backend or activation",
+  "status": "AP vote core source-qualified11264022; IRQ/LUT foundation awaits native qualification; provider guard unchanged",
   "baseline": {
     "release": "7.3.1-12204-unstable",
     "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
@@ -245,12 +245,13 @@
   ],
   "pending_delivery_dependency": {
     "helper": "uke-cdsp-pogo-firmware >=0.2-8",
-    "updater": "native updater1.8.96 pre-write prepare-target/verify-target barrier",
+    "updater": "uke-kernel-update >=1.8.97 after pre-write and boot-acceptance qualification",
     "qualified": false,
     "trigger_priority_alone_sufficient": false,
     "automatic_staging_must_remain_enabled": true,
     "helper_copr_build": 11263798,
-    "helper_build_state": "succeeded; API verified; coordinator package admission pending"
+    "helper_build_state": "succeeded; API verified; coordinator package admission pending",
+    "withdrawn_updater96": "selected==running boot acceptance bypass; evidence only, no delivery"
   },
   "physical_camera_acceptance": false,
   "calibration_read": false,
@@ -262,6 +263,9 @@
   "implementation": {
     "core": "src/camera/provider/camcc-sm7675-crm-core.h",
     "qualification_manifest": "manifests/camera-crm-core-20261105.json",
-    "active_crm_guard_changed": false
+    "active_crm_guard_changed": false,
+    "transport": "src/camera/provider/camcc-sm7675-crm-transport.h",
+    "lut": "src/camera/provider/camcc-sm7675-crm-lut.h",
+    "runtime_integrated": false
   }
 }
