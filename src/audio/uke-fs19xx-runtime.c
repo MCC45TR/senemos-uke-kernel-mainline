@@ -23,6 +23,7 @@ struct q6apm_fs19xx {
 	struct audioreach_graph *owner;
 	struct crypto_shash *sha256;
 	bool removing;
+	bool admitted;
 	uke_fs_generation provision_generation;
 };
 
@@ -140,12 +141,20 @@ int q6apm_fs19xx_init(struct q6apm *apm)
 	struct q6apm_fs19xx *fs;
 	int ret;
 
-	if (!of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected"))
+	/* Controls may cache calibration on Uke while its legacy graph stays intact.
+	 * Hardware/graph admission remains a separate, immutable DT decision.
+	 */
+	if (!of_machine_is_compatible("xiaomi,uke"))
 		return 0;
 	fs = devm_kzalloc(apm->dev, sizeof(*fs), GFP_KERNEL);
 	if (!fs)
 		return -ENOMEM;
 	mutex_init(&fs->lock);
+#ifdef UKE_FS19XX_CONTROLS_ONLY
+	fs->admitted = false;
+#else
+	fs->admitted = of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected");
+#endif
 	fs->sha256 = crypto_alloc_shash("sha256", 0, 0);
 	if (IS_ERR(fs->sha256))
 		return PTR_ERR(fs->sha256);
@@ -253,7 +262,7 @@ int q6apm_fs19xx_controls(struct snd_soc_component *component)
 
 bool q6apm_fs19xx_graph(struct q6apm_graph *graph)
 {
-	return graph->apm->fs19xx && graph->id == 40;
+	return graph->apm->fs19xx && graph->apm->fs19xx->admitted && graph->id == 40;
 }
 EXPORT_SYMBOL_GPL(q6apm_fs19xx_graph);
 
@@ -266,7 +275,7 @@ int q6apm_fs19xx_claim(struct audioreach_graph *graph)
 	unsigned int found = 0;
 	int ret;
 
-	if (!fs || graph->id != 40)
+	if (!fs || !fs->admitted || graph->id != 40)
 		return 0;
 	guard(mutex)(&fs->lock);
 	if (fs->removing || fs->owner || fs->data.status != UKE_FS_READY)
@@ -416,14 +425,14 @@ void q6apm_fs19xx_stopped(struct q6apm_graph *graph, bool failed)
 void q6apm_fs19xx_quiesce(struct audioreach_graph *graph)
 {
 	struct q6apm_fs19xx *fs = graph->apm->fs19xx;
-	if (!fs || graph->id != 40) return;
+	if (!fs || !fs->admitted || graph->id != 40) return;
 	guard(mutex)(&fs->lock);
 	fs19xx_gate(0);
 }
 void q6apm_fs19xx_release(struct audioreach_graph *graph)
 {
 	struct q6apm_fs19xx *fs = graph->apm->fs19xx;
-	if (!fs || graph->id != 40) return;
+	if (!fs || !fs->admitted || graph->id != 40) return;
 	guard(mutex)(&fs->lock);
 	fs19xx_gate(0);
 	if (fs->owner == graph) fs->owner = NULL;

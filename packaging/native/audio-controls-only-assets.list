@@ -1,0 +1,16 @@
+src/audio/audioreach-control-links.h
+src/audio/uke-fs19xx-guard.h
+src/audio/uke-fs19xx-runtime.c
+src/audio/uke-fs19xx-runtime.h
+src/audio/uke-fs19xx-protocol.h
+src/audio/uke-fs19xx-safety.h
+src/audio/prepare-control-links.sh
+src/audio/prepare-speaker-controls-only.sh
+patches/boot/0072-audioreach-control-links.patch
+patches/boot/0073-uke-fs19xx-protected-runtime.patch
+patches/boot/0074-uke-speaker-pcm-formats.patch
+tests/audio-control-links-contract.sh
+tests/audio-control-links-integration.sh
+tests/audio-control-links.c
+tests/audio-controls-only-contract.sh
+tests/audio-speaker-state-store-contract.sh
