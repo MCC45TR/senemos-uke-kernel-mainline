@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Independent source-model review of late owned status during CRM IRQ drain",
+  "baseline_source": "aacc2b954c25447794ab861d2b5a0c10d6f2df98",
+  "baseline_check": 11264217,
+  "baseline_header_sha256": "b18add1f6da4243210a0fc44abef5795e1d788182f8b6c2ce2a92871451c593b",
+  "proposed_header_sha256": "aed38b958f98312b5cd4cf6678d37c49f223840126468710589b535df8bd24ed",
+  "check_package": "uke-o82-kms-check",
+  "check_version_release": "7.3.1-19",
+  "cases_per_mode": 16,
+  "compiler_modes": [
+    "gcc ordinary",
+    "gcc ASan+UBSan",
+    "clang ordinary",
+    "clang ASan+UBSan"
+  ],
+  "requires_exact_original_assertion": true,
+  "retains_original_transport_lifecycle_contract": true,
+  "unchanged_provider_guard": true,
+  "full_kernel": false,
+  "native_kernel_object": false,
+  "hardware_mmio": false,
+  "physical_causality": false,
+  "proposed_patch_only": true,
+  "reference": {
+    "oem": "MiCode/Xiaomi_Kernel_OpenSource",
+    "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "file": "drivers/soc/qcom/crm.c",
+    "sha256": "b55fbbfa0235d1fed3112bbc134a7c835214819b8d318bc2b408940a5dbb0e48",
+    "license": "GPL-2.0-only",
+    "irq_trigger": "IRQF_TRIGGER_RISING",
+    "upstream_api": "https://www.kernel.org/doc/html/latest/core-api/genericirq.html#c.synchronize_irq"
+  },
+  "inputs": [
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-transport.h",
+      "sha256": "b18add1f6da4243210a0fc44abef5795e1d788182f8b6c2ce2a92871451c593b"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-transport-check.c",
+      "sha256": "ef169621af16515d4b8d9e800b222cb4ccb3b6c578fff2a1182fd88c30e65ec8"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-drain-review.c",
+      "sha256": "669c56f431d24cae5128bef201110dc28a527f594cb4a826f237a4c1bb8c235b"
+    },
+    {
+      "path": "tests/camera-crm-drain-review.sh",
+      "sha256": "30fc6765bcc2136296f749267208d3e5b99308bf4f92845c66d8dc2f2b9ae5fb"
+    },
+    {
+      "path": "patches/camera/0002-crm-post-drain-validation.patch",
+      "sha256": "806bac057f44be0893d139a1e942b3aec6b69c0eaef6f0cda5233dfa6cc0893a"
+    },
+    {
+      "path": "packaging/native/copr-camera-crm-drain-review.sh",
+      "sha256": "f4c9c04e6e8156d33d9936ddfa93712c81e3f6c1ff8d335f6200a60997c0eeb2"
+    },
+    {
+      "path": "docs/camera-crm-drain-review.md",
+      "sha256": "3eae5ccb97fbf89d9ff6b625d09762009814905e1faf16afb7082194386bde0f"
+    }
+  ]
+}
