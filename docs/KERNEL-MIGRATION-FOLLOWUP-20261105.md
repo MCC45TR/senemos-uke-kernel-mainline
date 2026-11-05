@@ -115,3 +115,16 @@ the first A-to-B stage, not a matching boot or hardware stability. One-boot Hall
 and real monitor-idle/RTC fixtures and temporary same-goal continuation are
 enabled. Physical sound/protection, true RTC resume, USB continuity, Hall
 reliability, sensor accuracy and safe package withdrawal remain open.
+
+The actual reboot returns kernel 12206. Matching 12207 boot is not observed.
+Current-boot udev marks B unbootable (0x9a000000000000), while the read-only
+UFS boot-LUN attribute reports 1. These support an unsuccessful candidate
+return; raw current images/GPT and pstore remain to be inspected with root
+authorization. Native startup recovers the returned trial record without
+selection or health approval changes and refuses automatic retry of the failed
+candidate. The expected-kernel fixtures skip hardware tests and self-remove.
+Temporary same-goal Codex continuation works before desktop login. No sound,
+RTC sleep, USB, Hall or sensor acceptance follows from this boot. Preserve
+running 12206 and investigate the failure before any candidate retry or new
+reboot; do not assume the zero-version header, AVB, DT or a kernel panic caused
+it without the missing evidence.

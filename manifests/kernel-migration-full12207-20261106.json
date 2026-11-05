@@ -104,5 +104,19 @@
     "camera_crm_refusal_retained": true,
     "physical_audio_sleep_usb_hall_acceptance": false,
     "normal_kernel_promotion": false
+  },
+  "postboot_observation": {
+    "expected_kernel_booted": false,
+    "observed_running_kernel": "7.3.1-12206-unstable",
+    "ufs_boot_lun_sysfs": 1,
+    "udev_boot_a_flags": "0x7f000000000000",
+    "udev_boot_b_flags": "0x9a000000000000",
+    "candidate_b_udev_unbootable": true,
+    "evidence_scope": "Current-boot kernel udev cache and read-only UFS attribute; raw GPT, current image hashes and pstore inspection still pending",
+    "native_startup": "Returned trial record recovered without selection/health changes; previously failed automatic candidate refused",
+    "hardware_tests": "Expected-kernel guards refused; one-boot fixtures self-removed",
+    "temporary_same_goal_continuation_verified": true,
+    "cause": "Unknown; no header, AVB, DT or kernel-panic attribution",
+    "physical_acceptance": false
   }
 }
