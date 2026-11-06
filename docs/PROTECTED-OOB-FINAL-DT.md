@@ -52,3 +52,9 @@ forward declaration and stopped at an unrelated first function. Check26
 requires the complete definition line and excludes semicolon declarations.
 The production entry patch is unchanged. No new entry/native-object result or
 full12213 reservation is established by check25.
+
+Check26/11271075 fails166s while constructing the deliberately preexisting
+supplier case in the fixture: its input had already been packed. Check27
+reopens only that private negative input and reports node-construction errors.
+Production patch and all rejection assertions are unchanged. Full mode now
+requires a successful same-source check27 receipt; no full12213 is reserved.

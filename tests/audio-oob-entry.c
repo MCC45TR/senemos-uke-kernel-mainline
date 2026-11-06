@@ -31,7 +31,7 @@ static unsigned char uke_ufs_overlay[8], uke_usb_overlay[8], uke_lights_overlay[
 struct uke_native_panel { void *overlay; size_t bytes; };
 static const struct uke_native_panel uke_native_panels[] = {{ overlay, sizeof(overlay) }};
 static int at(void *dt, const char *p) { int n=fdt_path_offset(dt,p); assert(n>=0); return n; }
-static void child(void *dt, const char *parent, const char *name) { assert(fdt_add_subnode(dt,at(dt,parent),name)>=0); }
+static void child(void *dt, const char *parent, const char *name) { int ret=fdt_add_subnode(dt,at(dt,parent),name); if(ret<0) fprintf(stderr,"Fixture node %s/%s: %s (%d)\n",parent,name,fdt_strerror(ret),ret); assert(ret>=0); }
 static void string(void *dt, const char *p, const char *name, const char *value) { assert(!fdt_setprop_string(dt,at(dt,p),name,value)); }
 static void word(void *dt, const char *p, const char *name, uint32_t value) { assert(!fdt_setprop_u32(dt,at(dt,p),name,value)); }
 static int uke_abl_transform(void *out, size_t capacity, const void *in, size_t bytes,
@@ -107,7 +107,7 @@ int main(int argc,char **argv)
  reset();base_result=-FDT_ERR_BADVALUE;rejected();
  reset();native_error=-FDT_ERR_BADVALUE;rejected();
  reset();word(input,"/soc/iommu","#iommu-cells",1);rejected();
- reset();child(input,"/","audio-config-memory");rejected();
+ reset();assert(!fdt_open_into(input,input,sizeof(input)));child(input,"/","audio-config-memory");rejected();
  reset();assert(!fdt_open_into(overlay,overlay,sizeof(overlay)));
  assert(!fdt_delprop(overlay,at(overlay,"/fragment@0/__overlay__/service@1/dais"),"status"));rejected();
  puts("Actual Uke entry: late protected overlay, restored capacity, exact DMA supplier, immutable input, legacy/foreign handling and refused publication pass; controlled overlay callbacks only.");
