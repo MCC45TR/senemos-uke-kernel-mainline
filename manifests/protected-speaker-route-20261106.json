@@ -6,8 +6,13 @@
   "builder_preimage_sha256": "3ff2b5affd4881a6ce903782afa02cee24351ada1ef3b18643dd2a1687a4381a",
   "base_topology_sha256": "83193dd68fe748983d2febad6c345d7adb60481fe714469f530bb6e60eb994dd",
   "planned_revision": 12210,
-  "planned_source_check_release": 14,
+  "planned_source_check_release": 15,
   "entry_module": "0x442e",
   "gain_ceiling": 223,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "prior_terminal_check": {
+    "copr_build": 11269329,
+    "release": 14,
+    "cause": "Actual prepared callbacks do not use the mock dev_get_drvdata; -Werror rejects the unused helper before the new fixture executes"
+  }
 }

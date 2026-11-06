@@ -28,7 +28,6 @@ static struct snd_kcontrol_new mixer_news={.name="MultiMedia2",.private_value=(u
 static struct snd_soc_dapm_widget mixer_widget={.num_kcontrols=1,.kcontrol_news=&mixer_news};
 static void mutex_lock(int *value){ assert(!*value);++*value; }
 static void mutex_unlock(int *value){ assert(*value==1);--*value; }
-static struct q6apm *dev_get_drvdata(void *device){ assert(device==&apm);return &apm; }
 static struct audioreach_graph_info *idr_find(int *unused,unsigned id){ (void)unused;assert(id==40);return &graph; }
 static struct audioreach_module *audioreach_find_module(struct snd_soc_component *component,const char *name){
  (void)component;
