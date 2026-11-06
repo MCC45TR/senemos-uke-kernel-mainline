@@ -15,7 +15,7 @@ flags=(-std=gnu11 -O1 -g -Wall -Wextra -Werror -fno-omit-frame-pointer)
 dtc -q -@ -I dts -O dtb "$owner/tests/audio-oob-entry-overlay.dts" -o "$work/native.dtbo"
 extract() {
  local file=$1 out=$2
- awk '/^void \*__init uke_abl_prepare_fdt\(/{p=1}p{print}p&&/^}/{exit}' "$file" > "$out/entry.h"
+ awk '/^void \*__init uke_abl_prepare_fdt\(.*\)$/{p=1}p{print}p&&/^}/{exit}' "$file" > "$out/entry.h"
  test "$(grep -Fc 'void *__init uke_abl_prepare_fdt' "$out/entry.h")" == 1
  local early=0
  if grep -Fq 'uke_audio_config_graph(output)' "$file";then early=1;fi

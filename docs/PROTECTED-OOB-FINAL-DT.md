@@ -45,3 +45,10 @@ OEM and shared-IP sources remain the basis of the unchanged audio resources.
 No applicable donor implements this project-specific staging wrapper, and no
 other-board value is imported. Source/build evidence and device acceptance
 remain separate.
+
+Check25/11271046 fails164s after retained backend/lease/DT/startup gates and
+exact forward/inverse patch application pass. The new extractor included a
+forward declaration and stopped at an unrelated first function. Check26
+requires the complete definition line and excludes semicolon declarations.
+The production entry patch is unchanged. No new entry/native-object result or
+full12213 reservation is established by check25.

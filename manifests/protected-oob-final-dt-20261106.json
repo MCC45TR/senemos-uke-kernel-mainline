@@ -1,12 +1,12 @@
 {
   "date": "2026-11-06",
-  "scope": "Complete12212 plus protected DMA supplier composition after actual native overlay; proposed source check25, not full reservation",
+  "scope": "Complete12212 plus protected DMA supplier composition after actual native overlay; proposed source check26, not full reservation",
   "parent_build": 11270769,
   "parent_source": "7b3b8a8079ac21d1fd5db9f74bb508c4290da0ef",
   "parent_srpm_sha256": "80b8340e18cd4abbd5bc40a5696c40264fd5b84aedf31fbf5e76824b020363d0",
   "proposed_full_revision": 12213,
   "full_revision_reserved": false,
-  "source_check_release": 25,
+  "source_check_release": 26,
   "source_assets": [
     {
       "path": "src/audio/0008-arm64-uke-oob-after-native.patch",
@@ -22,7 +22,7 @@
     },
     {
       "path": "tests/audio-oob-entry.sh",
-      "sha256": "ba151b244f5e6d27bbe3e8cf2c6a12112046d23ea64394b5d8100b0c41493d01"
+      "sha256": "d3ce92c0c41870f8a029af28e91940db8a1d5e6d23d973e44264ea878610117c"
     },
     {
       "path": "tests/audio-oob-entry-overlay.dts",
@@ -30,7 +30,7 @@
     },
     {
       "path": "packaging/native/copr-migration-oob-final-dt731.sh",
-      "sha256": "df688cb5aec3c9b9a2002f3bb25e11f3186893a2cba24bc577ad59c17d840fd9"
+      "sha256": "f962c34b6375a771dbf083b8bcca4524fed1ea08804e06590c1a70e0500f935a"
     }
   ],
   "observed12212": {
@@ -65,5 +65,20 @@
     "drivers/soc/qcom/uke-audio-config-memory.o",
     "sound/soc/qcom/qdsp6/snd-q6apm.o",
     "drivers/misc/fastrpc.o"
-  ]
+  ],
+  "prior_source_check": {
+    "release": 25,
+    "copr_build": 11271046,
+    "source": "17b5b4e3fb94c4c580b462e94b972cb6e9a66a7b",
+    "state": "failed164s in preparation",
+    "builder_log_sha256": "f037c6b698b94f5130908c31f60ebcd32f9f7b5e87160a64e8857c26d4e6a3fd",
+    "baseline_backend_lease_dt_modes_passed": 4,
+    "baseline_startup_modes_passed": 8,
+    "exact_forward_inverse_entry_patch_passed": true,
+    "actual_new_entry_modes_passed": 0,
+    "actual_aarch64_objects_built": false,
+    "failure": "Extractor started at the forward declaration and copied unrelated preprocessor text before the first function body",
+    "correction": "Require the complete function-definition line ending in closing parenthesis; exclude semicolon declarations",
+    "production_patch_changed": false
+  }
 }
