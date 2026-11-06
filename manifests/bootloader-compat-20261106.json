@@ -28,10 +28,6 @@
       "sha256": "deab992b29201d6973f6f8f1a694c356e7c7ba5f2d6b5f4d31ddca35f085358b"
     },
     {
-      "path": "src/boot/build-payload.sh",
-      "sha256": "84218b1baaf381d239004114e8d2e24b09161d8c7a6243b8caac3d0c100ee8c2"
-    },
-    {
       "path": "tests/migration-boot-header.sh",
       "sha256": "4ac47eee0566d3e05869bc364f4c7b113103b6dcb61ece399d68a1d78cea62c8"
     },
@@ -43,5 +39,6 @@
       "path": "docs/BOOTLOADER-COMPATIBILITY.md",
       "sha256": "675657d2e96becc5a5aa1adfb4726ea499a7368339e4123d154a0203b8c36325"
     }
-  ]
+  ],
+  "production_recipe_update": "Narrow transform of authenticated complete12207 recipe; preserve all other bytes and archive exact preimage"
 }

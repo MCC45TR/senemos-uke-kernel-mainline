@@ -46,14 +46,26 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 jq -e '.source_commit=="5fbe231e12679776e5bb069ff6af5b5e9a9db570" and .kernel_release=="7.3.1-12207-unstable" and .speaker_graph_open_failure_scope_layer==1 and .camcc_quarantine_s2idle_layer==1 and .boot_header_zero_version_layer==1 and .speaker_gain_ceiling==223 and .speaker_protection_graph_admitted and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
-assets=(src/boot/boot-image.cpp src/boot/build-payload.sh tests/migration-boot-header.sh tests/bootloader-compat-contract.sh manifests/bootloader-compat-20261106.json docs/BOOTLOADER-COMPATIBILITY.md)
+assets=(src/boot/boot-image.cpp tests/migration-boot-header.sh tests/bootloader-compat-contract.sh manifests/bootloader-compat-20261106.json docs/BOOTLOADER-COMPATIBILITY.md)
 for tree in "$profile" "$boot";do
  printf '%s  %s\n' d8391eacf845448f3134892f1be431ba1e3f51c58aa522370728ff4965f3dcfa "$tree/src/boot/boot-image.cpp" | sha256sum -c --strict -
- printf '%s  %s\n' 6893fa9ff7fb83bd6ad0c717af6ce110d39485d293d46077e3c101956ae013e2 "$tree/src/boot/build-payload.sh" | sha256sum -c --strict -
  for asset in "${assets[@]}";do
   if [[ -f $tree/$asset ]];then install -Dm644 "$tree/$asset" "$tree/history-before-boot-compat/$asset";fi
   install -Dm644 "$owner/$asset" "$tree/$asset"
  done
+ # Preserve the entire authenticated parent recipe, including peer additions.
+ recipe=$tree/src/boot/build-payload.sh
+ install -Dm644 "$recipe" "$tree/history-before-boot-compat/src/boot/build-payload.sh"
+ [[ $(grep -Fc '"$out/boot-image" create ' "$recipe") == 2 ]]
+ [[ $(grep -Fxc '"$out/boot-image" inspect "$out/linux.img" > "$out/boot-header.json"' "$recipe") == 1 ]]
+ sed '
+ s|^"[$]out/boot-image" create |"$out/boot-image" create-bootloader-compat |
+ /^"[$]out\/boot-image" inspect "[$]out\/linux[.]img" > "[$]out\/boot-header[.]json"$/a\
+ jq -e ".os_version_encoded==570425768 and (.avb_footer_present|not)" "$out/boot-header.json" >/dev/null\
+ "$out/boot-image" inspect "$out/userdata.img" | jq -e ".os_version_encoded==570425768 and (.avb_footer_present|not)" >/dev/null
+ ' "$recipe" > "$stage/recipe.sh"
+ install -m644 "$stage/recipe.sh" "$recipe"
+ sha256sum "$tree/history-before-boot-compat/src/boot/build-payload.sh" "$recipe"
  [[ $(grep -Fc '"$out/boot-image" create-bootloader-compat ' "$tree/src/boot/build-payload.sh") == 2 ]]
  ! grep -F '"$out/boot-image" create ' "$tree/src/boot/build-payload.sh"
  [[ $(grep -Fo uke7.3.1-12207u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
