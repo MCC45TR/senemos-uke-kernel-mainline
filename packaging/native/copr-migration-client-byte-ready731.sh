@@ -17,15 +17,15 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-32"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-33"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-32.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-33.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
  rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.protected_gpr_client_byte_layer==1 and .protected_initial_ready_wait_layer==1 and .protected_gpr_client_data_native_admitted and .protected_config_smmu_native_admitted and .protected_oob_native_backend_admitted and .protected_oob_final_dt_native_admitted and (.protected_gpr_client_byte_native_admitted|not) and (.protected_initial_ready_native_admitted|not) and (.physical_acceptance|not)' >/dev/null
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 else
- [[ $# == 4 && $proof == 32 ]]
+ [[ $# == 4 && $proof == 33 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
@@ -47,7 +47,7 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 jq -e '.source_commit=="25dfab3a6c1570961a7e14d2a37d6d118dae3189" and .kernel_release=="7.3.1-12215-unstable" and .protected_gpr_client_data_native_admitted and .protected_gpr_client_data_qualification_build==11271965 and .protected_config_smmu_native_admitted and .protected_config_smmu_qualification_build==11271445 and .protected_oob_final_dt_native_admitted and .protected_oob_final_dt_qualification_build==11271114 and .protected_oob_native_backend_admitted and .protected_oob_native_qualification_build==11270738 and .protected_oob_supplier_readiness_before_probe and .cdsp_dma_admission_check==11270377 and .speaker_gain_ceiling==223 and .speaker_protection_graph_admitted and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
-assets=(src/audio/0012-uke-gpr-client-byte-and-initial-ready.patch src/audio/0013-uke-client-byte-ready-source-seals.patch src/audio/uke-fs19xx-initial-ready.h src/audio/apply-client-byte-ready731.sh tests/audio-gpr-client-byte.c tests/audio-gpr-client-byte.sh tests/audio-initial-ready.c tests/audio-initial-ready.sh tests/audio-client-byte-ready-seal.sh packaging/native/check-client-byte-ready731.sh docs/PROTECTED-CLIENT-BYTE-READY.md manifests/protected-client-byte-ready-20261106.json manifests/kernel-migration-full12215-20261106.json)
+assets=(src/audio/0014-uke-initial-ready-fixtures.patch src/audio/0012-uke-gpr-client-byte-and-initial-ready.patch src/audio/0013-uke-client-byte-ready-source-seals.patch src/audio/uke-fs19xx-initial-ready.h src/audio/apply-client-byte-ready731.sh tests/audio-gpr-client-byte.c tests/audio-gpr-client-byte.sh tests/audio-initial-ready.c tests/audio-initial-ready.sh tests/audio-client-byte-ready-seal.sh packaging/native/check-client-byte-ready731.sh docs/PROTECTED-CLIENT-BYTE-READY.md manifests/protected-client-byte-ready-20261106.json manifests/kernel-migration-full12215-20261106.json)
 for tree in "$profile" "$boot";do
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
  [[ $(grep -Fo uke7.3.1-12215u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
@@ -67,6 +67,17 @@ for tree in "$profile" "$boot";do
  printf '%s  %s\n' \
   566bcdac08d51165a6e0080d22f6ee491f350bb0ec0cc50df1f78fcf20fb7993 "$tree/packaging/native/check-oob-runtime731.sh" \
   cc5bdbf57ccdb1d849da7b32802409cd33f3d5b48911924237dc2560e0f449cc "$tree/packaging/native/check-client-data731.sh" | sha256sum -c --strict -
+done
+# Retain inherited fixtures and extend only their kernel-primitive peers.
+for tree in "$profile" "$boot";do
+ install -Dm644 "$tree/tests/audio-controls-only-oob731.sh" "$tree/history-before-client-byte-ready/tests/audio-controls-only-oob731.sh"
+ printf '%s  %s\n' c1b822217d345161458e786620f9a7dfef0e11c640b9b04eacfabeffc18cc232 "$tree/tests/audio-controls-only-oob731.sh" | sha256sum -c --strict -
+ install -Dm644 "$tree/tests/audio-open-failure-contract.sh" "$tree/history-before-client-byte-ready/tests/audio-open-failure-contract.sh"
+ printf '%s  %s\n' db1725ed1df2b9e29e1d87f861ba32fc2244ebbf66bfe4bc3965ab5fd15c812a "$tree/tests/audio-open-failure-contract.sh" | sha256sum -c --strict -
+ patch -d "$tree" --dry-run --batch --fuzz=0 -p1 -i "$owner/src/audio/0014-uke-initial-ready-fixtures.patch"
+ patch -d "$tree" --batch --fuzz=0 -p1 -i "$owner/src/audio/0014-uke-initial-ready-fixtures.patch"
+ printf '%s  %s\n' 4b6fceca6addd373dc2f62015f1252e913c81c4fc798955aee61c8bca9f79054 "$tree/tests/audio-controls-only-oob731.sh" | sha256sum -c --strict -
+ printf '%s  %s\n' 840f21f35f62745ee64f5c816c5c3fd5141001e8af7854c91d13cbdb5717a545 "$tree/tests/audio-open-failure-contract.sh" | sha256sum -c --strict -
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-client-byte-ready.json"
 printf '%s\n' "$commit" > "$profile/source-commit"

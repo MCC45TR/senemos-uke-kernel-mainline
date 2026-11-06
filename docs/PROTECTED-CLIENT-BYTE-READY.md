@@ -75,7 +75,7 @@ private payload is included. New project kernel code remains GPL-2.0-only.
 
 ## Qualification
 
-COPR source check32 must execute the actual backend with actual kernel GPR
+COPR source check33 must execute the actual backend with actual kernel GPR
 declarations and an independently encoded peer in GCC/Clang normal and
 ASan/UBSan modes. All256 client values, all eight explicit reserved bits,
 identity/status/bounds/lifetime and allocation faults remain covered. Original
@@ -107,3 +107,13 @@ intentionally unused mock callback is treated as an error. Check32 marks only
 that test callback as intentionally unused so assertion refusal is exercised.
 The production kernel patch, helper and source-seal bytes are unchanged. No
 full kernel was reserved or installed from the failed check.
+
+Check32/COPR11272464 passes all four backend/readiness modes, six readiness
+mutants and eleven source-seal refusals. It then stops in an inherited callback
+fixture because that peer lacks the new waitqueue primitives. Check33 retains
+the original fixture in history and adds a timeout-only primitive peer around
+the actual readiness helper, preserving every admission assertion. The actual
+failed-OPEN fixture also receives a notification counter for the new shutdown
+callback. Successful publication and notification faults remain covered by the
+dedicated29-case test. Production kernel and source-seal bytes stay unchanged;
+actual AArch64 object compilation and full kernel delivery are still pending.

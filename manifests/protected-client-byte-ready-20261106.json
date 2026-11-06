@@ -1,10 +1,10 @@
 {
   "date": "2026-11-06",
-  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check32, no full reservation",
+  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check33, no full reservation",
   "parent_build": 11272105,
   "parent_source": "25dfab3a6c1570961a7e14d2a37d6d118dae3189",
   "parent_srpm_sha256": "a087230d9245052ef7ef5980eb62dba77f1eda805392b76308d1259537f100af",
-  "source_check_release": 32,
+  "source_check_release": 33,
   "proposed_full_revision": 12216,
   "full_revision_reserved": false,
   "source_assets": [
@@ -50,15 +50,19 @@
     },
     {
       "path": "packaging/native/copr-migration-client-byte-ready731.sh",
-      "sha256": "9fa54d2467a8116e13941a9ecc124f709ca1424260d25469f4109cdf0bba5f3a"
+      "sha256": "ee75c978e7afb4df64ee92a647cf064ba65b4c1939002f2df7a1184d30221c45"
     },
     {
       "path": "docs/PROTECTED-CLIENT-BYTE-READY.md",
-      "sha256": "89e624c76b037c9b1e86af1866d25b3b20ddcad579ec1723b4eef731d5a79221"
+      "sha256": "69a2d3df1fc267ba0697b9c3483604e7839de3e7e1a0f7155381c10ebcb69979"
     },
     {
       "path": "manifests/kernel-migration-full12215-20261106.json",
       "sha256": "bc6170254d2d9a8f740cda3cdf4a7c62747f40fecac81ed8b50858ea2768e0f1"
+    },
+    {
+      "path": "src/audio/0014-uke-initial-ready-fixtures.patch",
+      "sha256": "212257b37916054fbb67960c1a0179b9c5ed0f608af7c168d8d1bd60d123d50e"
     }
   ],
   "source_hashes": {
@@ -94,9 +98,26 @@
   ],
   "target_changed": false,
   "physical_acceptance": false,
-  "prior_source_check": {
-    "build": 11272447,
-    "source": "37f1e5914e718f77ab938e75652cac6411973c9c",
-    "result": "Normal GCC8712 backend and29 readiness cases pass; missing-notify mutant compilation refuses intentionally unused mock callback; production bytes unchanged"
+  "prior_source_checks": [
+    {
+      "build": 11272447,
+      "source": "37f1e5914e718f77ab938e75652cac6411973c9c",
+      "result": "Normal GCC8712 backend and29 readiness cases pass; missing-notify mutant compilation refuses intentionally unused mock callback; production bytes unchanged"
+    },
+    {
+      "build": 11272464,
+      "source": "70a06888eea98155a6132bc39a59e6ea5eddef90",
+      "result": "All four new backend/readiness modes, mutants and seals pass; inherited runtime callback fixture lacks waitqueue primitive peers before actual AArch64 compilation"
+    }
+  ],
+  "inherited_callback_fixture_primitives": {
+    "audio-controls-only-oob731.sh": {
+      "before": "c1b822217d345161458e786620f9a7dfef0e11c640b9b04eacfabeffc18cc232",
+      "after": "4b6fceca6addd373dc2f62015f1252e913c81c4fc798955aee61c8bca9f79054"
+    },
+    "audio-open-failure-contract.sh": {
+      "before": "db1725ed1df2b9e29e1d87f861ba32fc2244ebbf66bfe4bc3965ab5fd15c812a",
+      "after": "840f21f35f62745ee64f5c816c5c3fd5141001e8af7854c91d13cbdb5717a545"
+    }
   }
 }
