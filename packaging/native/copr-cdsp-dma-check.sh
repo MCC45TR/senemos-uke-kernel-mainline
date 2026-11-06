@@ -23,12 +23,12 @@ printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de2
 cat > "$output/uke-cdsp-kernel-check.spec" <<'SPEC'
 Name: uke-cdsp-kernel-check
 Version: 7.3.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Native source and object evidence for FastRPC DMA admission
 License: GPL-2.0-only
 Source0: linux-7.3.1.tar.xz
 Source1: uke-cdsp-dma-addon.tar.xz
-BuildRequires: gcc gcc-c++ clang llvm lld make bc flex bison openssl-devel elfutils-libelf-devel perl git-core
+BuildRequires: gcc gcc-c++ clang compiler-rt llvm lld make bc flex bison openssl-devel elfutils-libelf-devel perl git-core
 ExclusiveArch: aarch64
 %global debug_package %{nil}
 
@@ -73,5 +73,10 @@ install -Dm644 cdsp-addon/docs/CDSP-KERNEL-DMA-ADMISSION.md %{buildroot}%{_docdi
 %doc %{_docdir}/%{name}/checks.txt
 %doc %{_docdir}/%{name}/source-commit
 %doc %{_docdir}/%{name}/scope.md
+
+%changelog
+* Fri Nov 06 2026 Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2
+- Include the Clang sanitizer runtime in the native source check.
+- Preserve actual callback, fault/mutant and complete AArch64 object gates.
 SPEC
 rpmbuild -bs --define "_sourcedir $output" --define "_srcrpmdir $output" "$output/uke-cdsp-kernel-check.spec"
