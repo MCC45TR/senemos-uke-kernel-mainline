@@ -75,7 +75,7 @@ private payload is included. New project kernel code remains GPL-2.0-only.
 
 ## Qualification
 
-COPR source check31 must execute the actual backend with actual kernel GPR
+COPR source check32 must execute the actual backend with actual kernel GPR
 declarations and an independently encoded peer in GCC/Clang normal and
 ASan/UBSan modes. All256 client values, all eight explicit reserved bits,
 identity/status/bounds/lifetime and allocation faults remain covered. Original
@@ -100,3 +100,10 @@ safe protected speaker output and audible DP remain separate physical gates.
 Inactive-slot staging stays automatic and local rollback preferences persist.
 No stable promotion or health approval is granted. Cover initialization, gray
 handover and USB resume remain open behind the urgent audio work.
+
+Initial check31/COPR11272447 passes the normal GCC8712-case backend and29-case
+readiness test, then the missing-notify mutant fails compilation because its
+intentionally unused mock callback is treated as an error. Check32 marks only
+that test callback as intentionally unused so assertion refusal is exercised.
+The production kernel patch, helper and source-seal bytes are unchanged. No
+full kernel was reserved or installed from the failed check.

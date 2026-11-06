@@ -1,10 +1,10 @@
 {
   "date": "2026-11-06",
-  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check31, no full reservation",
+  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check32, no full reservation",
   "parent_build": 11272105,
   "parent_source": "25dfab3a6c1570961a7e14d2a37d6d118dae3189",
   "parent_srpm_sha256": "a087230d9245052ef7ef5980eb62dba77f1eda805392b76308d1259537f100af",
-  "source_check_release": 31,
+  "source_check_release": 32,
   "proposed_full_revision": 12216,
   "full_revision_reserved": false,
   "source_assets": [
@@ -34,7 +34,7 @@
     },
     {
       "path": "tests/audio-initial-ready.c",
-      "sha256": "9ac55cc7fef503db6ded6b92afe1598c9ad14bc64b78d6e3259a4dae8586e581"
+      "sha256": "59d900fdd69fee3429c9c0d395958b06a9037c975345e0d39ffa05d65d2205bd"
     },
     {
       "path": "tests/audio-initial-ready.sh",
@@ -50,11 +50,11 @@
     },
     {
       "path": "packaging/native/copr-migration-client-byte-ready731.sh",
-      "sha256": "0b8c0e07cdc4bd136f6897a6644dd6bb49159eeadec9e2ba39c76bfcca5a91ac"
+      "sha256": "9fa54d2467a8116e13941a9ecc124f709ca1424260d25469f4109cdf0bba5f3a"
     },
     {
       "path": "docs/PROTECTED-CLIENT-BYTE-READY.md",
-      "sha256": "6a5c3b0c865fdfbfa4d1c8d1f2c463f6afff70cd1a235a0c2ed7b555b0335a63"
+      "sha256": "89e624c76b037c9b1e86af1866d25b3b20ddcad579ec1723b4eef731d5a79221"
     },
     {
       "path": "manifests/kernel-migration-full12215-20261106.json",
@@ -93,5 +93,10 @@
     "__wake_up"
   ],
   "target_changed": false,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "prior_source_check": {
+    "build": 11272447,
+    "source": "37f1e5914e718f77ab938e75652cac6411973c9c",
+    "result": "Normal GCC8712 backend and29 readiness cases pass; missing-notify mutant compilation refuses intentionally unused mock callback; production bytes unchanged"
+  }
 }

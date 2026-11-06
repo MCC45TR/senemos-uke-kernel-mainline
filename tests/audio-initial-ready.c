@@ -50,7 +50,8 @@ static struct mutex *mutex_lock_for_guard(struct mutex *m){mutex_lock(m);return 
 static bool capable(int cap){assert(cap==CAP_SYS_RAWIO);return privileged;}
 static void *snd_kcontrol_chip(struct snd_kcontrol *c){return c->component;}
 static void *dev_get_drvdata(void *p){return p;}
-static void wake_up_all(struct wait_queue_head *q){q->wakes++;}
+/* Missing-notify mutant intentionally removes every call. */
+static void __attribute__((unused)) wake_up_all(struct wait_queue_head *q){q->wakes++;}
 static void flush_work(int *w){assert(w==&fs19xx_fault_work);}
 static int uke_fs_guard_reprovision(void *g,unsigned int generation){assert(g==&fs19xx_guard&&generation==7);return guard_error;}
 static void uke_fs19xx_erase(void *data){memset(data,0,sizeof(current->data));}
