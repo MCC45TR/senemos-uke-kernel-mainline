@@ -5,7 +5,17 @@
   "parent_srpm_sha256": "b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf",
   "planned_revision": 12212,
   "full_revision_reserved": false,
-  "planned_source_check_release": 18,
+  "planned_source_check_release": 19,
+  "prior_source_check": {
+    "release": 18,
+    "copr_build": 11270018,
+    "source_commit": "5c9006eb4bdd00ab41af0b4f51a759ba6371d839",
+    "state": "failed284s after all4 OOB compiler/sanitizer modes and8 mutants; native kernel bridge not reached",
+    "cause": "Clang/LLVM moved23.1.4 to23.1.5; inherited whole historical configuration hash refused during olddefconfig comparison"
+  },
+  "native_llvm_rpm_evr": "23.1.5-1.fc46",
+  "historical_config_identity_model": "23.1.4-1.fc46",
+  "oob_core_unchanged_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d",
   "scope": "Complete12211 plus prospective protected OOB wire/lifetime core and actual AArch64 header bridge; no DMA/response-port backend or activation",
   "tuning_bytes": 5360,
   "whole_tlv_bytes": 5376,

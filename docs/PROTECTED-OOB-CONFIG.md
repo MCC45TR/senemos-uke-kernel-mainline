@@ -38,11 +38,22 @@ and rejects unsafe-free, missing-module-error and alignment mutants. GCC/Clang,
 sanitizers and an actual AArch64 header bridge run only in COPR. The bridge is
 neither a driver nor a hardware result.
 
+Initial check18/11270018 passes all4 OOB modes and8 assertion mutants, then
+fails the inherited historical configuration digest before kernel objects build.
+The native repository moved Clang/LLVM23.1.4 to23.1.5. Check19 pins the latter
+three RPMs and retains the original sealed guard. Its separate historical model
+projects only four explicitly validated compiler identities to23.1.4; every
+functional option remains in the same original digest. Actual configurations
+and compiler provenance stay unchanged. The real normalized23.1.5 output must
+pass that guard, reproduce the original refusal and reject five malformed/
+functional controls before native objects can qualify. A nonidentity change
+still refuses the build. The OOB core's bytes are unchanged.
+
 The kernel DMA/response-port backend is not yet admitted or activated. It must
 prove the exact Uke physical/SID address interpretation, device and response
 lifetimes, strict source/token/opcode/length matching, cache barriers and
 bounded quarantine across timeout/removal before replacing the current sender.
-The existing FE uses fitted SIDs1001/1061; borrowing its PCM allocation or
+The existing FE uses fitted SIDs0x1001/0x1061; borrowing its PCM allocation or
 assuming another device's DMA context is not an acceptable shortcut. No new
 DT resource, live DMA, calibration access or amplifier operation occurs here.
 

@@ -8,7 +8,7 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?Source result directory}")
 revision=${2:?Planned ABI, not a reservation}
 proof=${3:?Unique source check release}
-[[ $# == 3 && $revision == 12212 && $proof == 18 ]]
+[[ $# == 3 && $revision == 12212 && $proof == 19 ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -37,9 +37,12 @@ assets=(src/audio/uke-fs19xx-oob.h tests/audio-fs19xx-oob.c tests/audio-fs19xx-o
  tests/audio-fs19xx-oob-native.c docs/PROTECTED-OOB-CONFIG.md
  manifests/protected-oob-core-20261106.json manifests/kernel-package-migration.json
  manifests/kernel-migration-full12211-20261106.json docs/KERNEL-PACKAGE-MIGRATION.md
- docs/STATIC-GPR-INTENT.md)
+ docs/STATIC-GPR-INTENT.md tests/cdsp-pogo-config-toolchain731.sh
+ tests/cdsp-pogo-toolchain-contract.sh tests/fixtures/cdsp-pogo-config-original.sh)
 for tree in "$profile" "$boot";do
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
+ printf '%s  %s\n' fd11aad8209533f50fa5b3a6cf90fb16c223d63bf0bfcfd7304c670e0862a2ef "$tree/tests/cdsp-pogo-config-contract.sh" | sha256sum -c --strict -
+ install -m644 "$owner/tests/cdsp-pogo-config-toolchain731.sh" "$tree/tests/cdsp-pogo-config-contract.sh"
  [[ $(grep -Fo uke7.3.1-12211u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
  sed "s/uke7[.]3[.]1-12211u/uke7.3.1-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
@@ -55,7 +58,7 @@ done
 CHECK
 cp "$profile/source-composition.json" "$profile/source-composition-before-oob-core.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),oob_core_parent_build:11269695,oob_core_parent_source:"dba56903ddba878aba8db22d87a9ab130ef1e1db",protected_oob_wire_core_layer:1,protected_oob_native_backend_admitted:false,protected_oob_physical_activation:false,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-oob-core.json" > "$profile/source-composition.json"
+jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),oob_core_parent_build:11269695,oob_core_parent_source:"dba56903ddba878aba8db22d87a9ab130ef1e1db",protected_oob_wire_core_layer:1,protected_oob_native_backend_admitted:false,protected_oob_physical_activation:false,native_llvm_rpm_evr:"23.1.5-1.fc46",historical_config_compiler_identity_model:"23.1.4-1.fc46",historical_config_original_guard_sha256:"fd11aad8209533f50fa5b3a6cf90fb16c223d63bf0bfcfd7304c670e0862a2ef",device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-oob-core.json" > "$profile/source-composition.json"
 install -m644 "$profile/prepare.sh" "$boot/packaging/native/cumulative-prepare.sh"
 sha256sum -c --strict --quiet "$stage/configs"
 for tree in "$profile" "$boot";do
@@ -76,7 +79,9 @@ for tree in native-profile boot-recipe;do
 done
 awk -v revision="$revision" '
  /^%global senemos_build_release 12211$/ {$0="%global senemos_build_release "revision;changed++}
- {print} END {if(changed!=1)exit 1}
+ /^%description/ && !pinned {print "BuildRequires: clang = 23.1.5-1.fc46";print "BuildRequires: llvm = 23.1.5-1.fc46";print "BuildRequires: lld = 23.1.5-1.fc46";pinned++}
+ $0=="bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-before-reference/.config" {print "bash native-profile/tests/cdsp-pogo-toolchain-contract.sh native-generated/nfc-cdsp-before-reference/.config";guard++}
+ {print} END {if(changed!=1||pinned!=1||guard!=1)exit 1}
 ' "$spec" > "$stage/planned.spec"
 install -m644 "$stage/planned.spec" "$spec"
 # Reuse the authenticated complete native-object receipt packaging, without
