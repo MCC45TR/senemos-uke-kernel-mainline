@@ -10,7 +10,12 @@ work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 [[ $phase == prepared || $phase == linked ]]
 (cd "$profile"; sha256sum -c --strict --quiet SHA256SUMS)
-printf '%s  %s\n' 739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34 \
+config_sha=739882b3a07fc6a701bae81ac6623a4b576871bd4289de3a095acabc20d49d34
+if jq -e '.governor_options_layer==1' "$profile/source-composition.json" >/dev/null; then
+    bash "$profile/tests/governor-config-contract.sh" "$profile/configs/governor-before-native.config" "$profile/native.config"
+    config_sha=e0bad377ea2719e00eb2a5b2a3b38fc05d32d23e52cd0f8466905c204c32bc4a
+fi
+printf '%s  %s\n' "$config_sha" \
  "$profile/native.config" | sha256sum -c --strict -
 jq -e '.package_family=="senemos-uke-linux-kernel-mainline-unstable" and
  .kernel_abi_suffix=="-unstable" and .qualified_touch_layer==1 and
