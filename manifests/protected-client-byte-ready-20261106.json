@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check31, no full reservation",
+  "parent_build": 11272105,
+  "parent_source": "25dfab3a6c1570961a7e14d2a37d6d118dae3189",
+  "parent_srpm_sha256": "a087230d9245052ef7ef5980eb62dba77f1eda805392b76308d1259537f100af",
+  "source_check_release": 31,
+  "proposed_full_revision": 12216,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0012-uke-gpr-client-byte-and-initial-ready.patch",
+      "sha256": "64128cfac487eea90feb30b3911805b962e617f6d9a87112c2667cd5950ba17b"
+    },
+    {
+      "path": "src/audio/0013-uke-client-byte-ready-source-seals.patch",
+      "sha256": "e6afdf7cf304255ac882e2ec893821dd083ff201a9a9a9227fa67cbae14791af"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-initial-ready.h",
+      "sha256": "73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401"
+    },
+    {
+      "path": "src/audio/apply-client-byte-ready731.sh",
+      "sha256": "51212c20fa861088e924d81dab8880ac17f822b4e1b608ae4321363ad71d8401"
+    },
+    {
+      "path": "tests/audio-gpr-client-byte.c",
+      "sha256": "1d04c311ddfeec524776b852a8900dbad823f16ee447b608f5be9ceb2d595edf"
+    },
+    {
+      "path": "tests/audio-gpr-client-byte.sh",
+      "sha256": "e91d23ead3e9f91b94a10434692f04312e7813f3c66ac90132436d23c2fc808e"
+    },
+    {
+      "path": "tests/audio-initial-ready.c",
+      "sha256": "9ac55cc7fef503db6ded6b92afe1598c9ad14bc64b78d6e3259a4dae8586e581"
+    },
+    {
+      "path": "tests/audio-initial-ready.sh",
+      "sha256": "3cbcf615803b3b2ccfe47dd29fcf253d779fff9a9928e5cbce0e4d658510d71b"
+    },
+    {
+      "path": "tests/audio-client-byte-ready-seal.sh",
+      "sha256": "d7c3323d0a3094d4c6f7c1726fb7151cafbeed3359c45bfa3e4ea1717321841f"
+    },
+    {
+      "path": "packaging/native/check-client-byte-ready731.sh",
+      "sha256": "0101afe68e6092203b6b4f1cbd9c09a0f239114766087ebe530e8e3635bdc0f6"
+    },
+    {
+      "path": "packaging/native/copr-migration-client-byte-ready731.sh",
+      "sha256": "0b8c0e07cdc4bd136f6897a6644dd6bb49159eeadec9e2ba39c76bfcca5a91ac"
+    },
+    {
+      "path": "docs/PROTECTED-CLIENT-BYTE-READY.md",
+      "sha256": "6a5c3b0c865fdfbfa4d1c8d1f2c463f6afff70cd1a235a0c2ed7b555b0335a63"
+    },
+    {
+      "path": "manifests/kernel-migration-full12215-20261106.json",
+      "sha256": "bc6170254d2d9a8f740cda3cdf4a7c62747f40fecac81ed8b50858ea2768e0f1"
+    }
+  ],
+  "source_hashes": {
+    "backend_before": "bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690",
+    "backend_after": "6d9b4b98558345593762a2f10291d7d17f1279453bc8dacb15ee42c4a33d5113",
+    "runtime_before": "58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3",
+    "runtime_after": "0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee",
+    "initial_ready_helper": "73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401"
+  },
+  "unchanged_parent_nonidentity_fields": 437,
+  "new_backend_modes": 4,
+  "backend_cases_per_mode": 8712,
+  "valid_client_values": 256,
+  "true_reserved_bits": 8,
+  "original_backend_refusal_controls": 2,
+  "backend_assertion_mutants": 4,
+  "initial_ready_modes": 4,
+  "initial_ready_cases_per_mode": 29,
+  "initial_ready_assertion_mutants": 6,
+  "source_seal_refusal_controls": 11,
+  "initial_ready_timeout_ms": 2000,
+  "initial_ready_single_budget": true,
+  "actual_objects": [
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o",
+    "sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o"
+  ],
+  "required_runtime_imports": [
+    "schedule_timeout",
+    "prepare_to_wait_event",
+    "finish_wait",
+    "__wake_up"
+  ],
+  "target_changed": false,
+  "physical_acceptance": false
+}
