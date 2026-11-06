@@ -12,6 +12,7 @@ struct uke_audio_config_memory {
 	u32 first_token;
 };
 
+int uke_audio_config_ready(void);
 int uke_audio_config_acquire(struct device *apm,
 			     struct uke_audio_config_memory *memory);
 void uke_audio_config_release(struct uke_audio_config_memory *memory,

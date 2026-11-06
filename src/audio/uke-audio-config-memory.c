@@ -24,6 +24,20 @@ static u32 uke_config_next_token = 1;
 static bool uke_config_busy;
 static bool uke_config_uncertain;
 
+/* Probe readiness must not depend on the APM frontend, which is populated
+ * only after the APM probe succeeds. Domain equality is checked on acquire.
+ */
+int uke_audio_config_ready(void)
+{
+	int ret;
+
+	mutex_lock(&uke_config_lock);
+	ret = uke_config_device ? 0 : -EPROBE_DEFER;
+	mutex_unlock(&uke_config_lock);
+	return ret;
+}
+EXPORT_SYMBOL_GPL(uke_audio_config_ready);
+
 static bool uke_config_iommus(struct device_node *node,
 			      struct device_node **smmu)
 {

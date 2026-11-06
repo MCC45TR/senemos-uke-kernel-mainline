@@ -11,21 +11,21 @@
     "native_bridge_qualified": true,
     "core_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d"
   },
-  "planned_check_release": 22,
+  "planned_check_release": 23,
   "planned_full_revision": 12212,
   "full_revision_reserved": false,
   "source_assets": [
     {
       "path": "src/audio/0007-fs19xx-protected-oob.patch",
-      "sha256": "9a1538557c189c405dd13593526c6a50de9424ea892a09c4bc66c26ca0262026"
+      "sha256": "d018b0e616205429d6d48974862ee0eba26fc7a8462a77db446f56029bbf719a"
     },
     {
       "path": "src/audio/uke-audio-config-memory.c",
-      "sha256": "5d9e53e856c0372bc15329aa6ab66dd3c0c229bf550d64545e3d681336e293c2"
+      "sha256": "64f5d892285d2b32425f3b446b9c1024335a73ceb0604b52ae6e83f8bfc1d447"
     },
     {
       "path": "src/audio/uke-audio-config-memory.h",
-      "sha256": "f6f0fa8498c65879f002763136ff0a0c4b6addab6f04187e0e87efaf378048f1"
+      "sha256": "21a315ae322b90f55caec9ce58d982cee94a12d9e4607d7c508bebf56ad3db28"
     },
     {
       "path": "src/audio/uke-audio-config-dt.h",
@@ -37,11 +37,11 @@
     },
     {
       "path": "src/audio/uke-fs19xx-oob-backend.c",
-      "sha256": "ae34b184926b8ddd6b0e75699f4c107c020cab6363a84d7c54b9e8e5a87b94e8"
+      "sha256": "785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73"
     },
     {
       "path": "src/audio/uke-fs19xx-oob-backend.h",
-      "sha256": "8586cd8eff9717f0ea6be29a5a78735e6e60a0a5608adde180eecb70fb6e7a30"
+      "sha256": "995e8e33e0d523a0ad510e2b2db77e2c1f4a90cf4609a5cc88f3b1cce9264717"
     },
     {
       "path": "src/audio/apply-oob-backend731.sh",
@@ -49,27 +49,27 @@
     },
     {
       "path": "packaging/native/check-oob-runtime731.sh",
-      "sha256": "d3c872769fa04b7c0621c93a69d33fe211f19b4edd222a8b1fee3cbc1a320182"
+      "sha256": "f222d2ee7b45f5c55fbf684f6951d4c4fe5dc0cbd1b35ae151574a6c2a5064e7"
     },
     {
       "path": "packaging/native/check-oob-objects731.sh",
-      "sha256": "dd49bb6d7039efe5e2308395937fc93ace5f89db121bb8c3d45f58c158bf5bc6"
+      "sha256": "621fdaf37551428af9f4bbd12009192a7d118bde46687be3ccdf4563a68568e5"
     },
     {
       "path": "packaging/native/copr-migration-oob-backend731.sh",
-      "sha256": "218ffcbf3cc348c1fcc7e0ae9216e5e455ec12c1c110f1bb38fc777c191ecb6a"
+      "sha256": "bae825b4b6876d006cee641c90299d99d786f1bdad78e1b2145ee02650643caa"
     },
     {
       "path": "tests/audio-fs19xx-oob-backend.c",
-      "sha256": "7b97169446e76f028282bdf4b01a8edbfd8bb143bccf989ec82c2c20852dbb70"
+      "sha256": "a126999e270656459ab9a0b9334511ff0215b5720b843da979dd54e6cc83ae6f"
     },
     {
       "path": "tests/audio-fs19xx-oob-backend.sh",
-      "sha256": "22ae1e0c33a46f6b00add166a38b42218d0a76179e1d161bf887019dd3004320"
+      "sha256": "c412602beaa0ea2fe639042657e2fd03532b45b5074ec4db294996f574a96886"
     },
     {
       "path": "tests/audio-config-memory.c",
-      "sha256": "2700fcdd3ab6f1e98957d67ce4506b79184e32a0acd2a14543960bc225d3feef"
+      "sha256": "faaa2a2c8f2c50c73ca51a145df51a6e3bc2f4e097f93e7bc65197271e728bae"
     },
     {
       "path": "tests/audio-config-dt.c",
@@ -78,10 +78,14 @@
     {
       "path": "tests/audio-config-dt.sh",
       "sha256": "82b6a5c3ccd31626f6054a1a421f5292164f73133e721ea2fb4e5cca3e5c32b4"
+    },
+    {
+      "path": "tests/audio-oob-startup.c",
+      "sha256": "6c649f8102b27721688ad401f13bc4b959c5f23ffb05faaab46f2dae8d1b862e"
     }
   ],
   "runtime_preimage_sha256": "8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57",
-  "runtime_postimage_sha256": "e78e8a70bd192f79c172abdd05eb917f07c9885099f48c7584eda268d897d4bc",
+  "runtime_postimage_sha256": "58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3",
   "native_backend_admitted": false,
   "device_installation": false,
   "physical_activation": false,
@@ -137,16 +141,41 @@
     }
   ],
   "prior_source_check": {
-    "release": 21,
-    "copr_build": 11270572,
-    "source": "a6a5310c494721f7a72a1847c4e1230605dad87c",
-    "state": "failed168s in preparation before native objects",
-    "backend_peer_modes_passed": 3,
+    "release": 22,
+    "copr_build": 11270597,
+    "source": "d67cb05e0f78920676d003897e3f6f237e77817a",
+    "state": "failed246s at inherited prepared gate before native objects",
+    "backend_peer_modes_passed": 4,
     "backend_assertion_mutants_passed": 8,
+    "dt_modes_passed": 4,
     "core_modes_passed": 4,
     "fastrpc_modes_passed": 4,
-    "failure": "Clang synthetic FDT setup assertion; buffer lacked explicit required8-byte alignment",
-    "correction": "Explicitly align fixture like the native ABL buffer; report libfdt setup return/alignment",
+    "failure": "Third active runtime comparator in check-camera-next731.sh still required the original whole runtime",
+    "correction": "Extend all three active comparisons to the same exact preimage/postimage guard; retain complete hashes",
     "production_backend_dma_runtime_dt_bytes_changed": false
-  }
+  },
+  "prior_source_checks": [
+    {
+      "release": 21,
+      "copr_build": 11270572,
+      "source": "a6a5310c494721f7a72a1847c4e1230605dad87c",
+      "state": "failed168s in preparation before native objects",
+      "backend_peer_modes_passed": 3,
+      "backend_assertion_mutants_passed": 8,
+      "core_modes_passed": 4,
+      "fastrpc_modes_passed": 4,
+      "failure": "Clang synthetic FDT setup assertion; buffer lacked explicit required8-byte alignment",
+      "correction": "Explicitly align fixture like the native ABL buffer; report libfdt setup return/alignment",
+      "production_backend_dma_runtime_dt_bytes_changed": false
+    }
+  ],
+  "active_runtime_guard_comparisons": 3,
+  "native_supplier_readiness_before_card_probe": true,
+  "source23_changes": [
+    "Extend the third active exact-runtime comparison",
+    "Defer admitted APM probe until the permanent DMA supplier is ready, without depending on the frontend",
+    "Require the same-source successful signed source23 receipt before full12212 construction, and audit provider linkage"
+  ],
+  "full_mode_requires_same_source_native_receipt": true,
+  "full_mode_requires_trusted_receipt_sha256": true
 }

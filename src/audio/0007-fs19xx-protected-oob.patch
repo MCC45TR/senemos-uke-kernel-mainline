@@ -8,7 +8,19 @@
  
  struct q6apm_fs19xx {
  	struct mutex lock;
-@@ -370,6 +371,8 @@
+@@ -150,6 +151,11 @@
+ #ifndef UKE_FS19XX_CONTROLS_ONLY
+ 	admitted = of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected");
+ #endif
++	if (admitted) {
++		ret = q6apm_fs19xx_oob_ready();
++		if (ret)
++			return ret;
++	}
+ 	fs = devm_kzalloc(apm->dev, sizeof(*fs), GFP_KERNEL);
+ 	if (!fs)
+ 		return admitted ? -ENOMEM : 0;
+@@ -370,6 +376,8 @@
  
  	if (!bytes || bytes > 5360)
  		return -EINVAL;

@@ -214,6 +214,11 @@ static const struct uke_oob_ops uke_oob_native_ops = {
 	.quarantine = uke_oob_quarantine,
 };
 
+int q6apm_fs19xx_oob_ready(void)
+{
+	return uke_audio_config_ready();
+}
+
 /* Called with the existing FS19xx mutex held, before any amplifier unmute.
  * The native callback only uses its own lock/immutable identity, never that
  * mutex, a graph, calibration staging or removable APM driver data.

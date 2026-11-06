@@ -14,20 +14,24 @@ flags=(-std=gnu11 -O1 -g -Wall -Wextra -Werror -fno-omit-frame-pointer)
 backend=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c
 memory=$kernel/drivers/soc/qcom/uke-audio-config-memory.c
 core=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob.h
+awk '/^int q6apm_fs19xx_init\(/{body=1}body{print}body&&/^}/{found++;exit}END{if(found!=1)exit 1}' \
+ "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c" > "$work/native-startup.inc"
 sed '/^#include /d' "$backend" > "$work/native-backend.inc"
 awk '
  /^static DEFINE_MUTEX\(uke_config_lock\)/{globals=1}
- globals && /^static bool uke_config_iommus/{globals=0}
+ globals && /^\/\* Probe readiness/{globals=0}
  globals{print}
- /^int uke_audio_config_acquire\(/ || /^void uke_audio_config_release\(/{function_body=1}
+ /^int uke_audio_config_(acquire|ready)\(/ || /^void uke_audio_config_release\(/{function_body=1}
  function_body{print}
  function_body && /^}/{function_body=0;count++}
- END{if(count!=2)exit 1}
+ END{if(count!=3)exit 1}
 ' "$memory" > "$work/native-memory.inc"
-for fixture in audio-fs19xx-oob-backend audio-config-memory;do
+for fixture in audio-fs19xx-oob-backend audio-config-memory audio-oob-startup;do
  "$cc" "${flags[@]}" -I "$work" -I "${core%/*}" "$owner/tests/$fixture.c" -o "$work/$fixture"
  ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/$fixture"
 done
+"$cc" "${flags[@]}" -DUKE_FS19XX_CONTROLS_ONLY -I "$work" "$owner/tests/audio-oob-startup.c" -o "$work/startup-controls"
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/startup-controls"
 printf 'Actual OOB backend and permanent memory lease passed: %s/sanitize%s.\n' "$cc" "$sanitize"
 if [[ $sanitize == 0 ]];then
  cp "$work/native-backend.inc" "$work/original-backend.inc"

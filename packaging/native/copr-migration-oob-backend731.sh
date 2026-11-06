@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COPR source/backend check only. No full candidate or target activation.
+# COPR only. Full mode requires the same-source qualified native receipt.
 set -Eeuo pipefail
 trap 'printf "OOB backend source guard failed at line%s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
 test ! -e /etc/senemos/kernel-update.conf
@@ -8,13 +8,28 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 (cd "$owner";jq -r ' .source_assets[]|.sha256+"  "+.path' manifests/protected-oob-backend-20261106.json | sha256sum -c --strict --quiet -)
 output=$(realpath -m "${1:?Source result directory}")
 revision=${2:?Planned ABI, not a reservation}
-proof=${3:?Unique source check release}
-[[ $# == 3 && $revision == 12212 && $proof == 22 ]]
+mode=${3:?check or full}
+proof=${4:?Unique check release or qualified build}
+[[ $revision == 12212 && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11269695 | jq -er .state) == succeeded ]]
-bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
+if [[ $mode == check ]];then
+ [[ $# == 4 && $proof == 23 ]]
+ bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
+else
+ [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
+ curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-23"' "$stage/proof.json" >/dev/null
+ result_url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
+ curl -q -fLsS --max-time 90 "${result_url}uke-kernel-migration-check-7.3.1-23.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
+ [[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/proof.rpm") == uke-kernel-migration-check-7.3.1-23.fc46 ]]
+ [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
+ rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.protected_oob_native_backend_layer==1 and .protected_oob_supplier_readiness_before_probe and .cdsp_dma_admission_check==11270377 and (.protected_oob_native_backend_admitted|not) and (.physical_acceptance|not)' >/dev/null
+ bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
+fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
 mkdir -p "$output" "$stage/unpacked"
 curl -q -fLsS --retry 2 --max-time 600 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11269695/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12211.src.rpm -o "$stage/parent.src.rpm"
@@ -53,6 +68,7 @@ assets=(src/audio/uke-fs19xx-oob.h tests/audio-fs19xx-oob.c tests/audio-fs19xx-o
  tests/audio-fs19xx-oob-backend.c
  tests/audio-fs19xx-oob-backend.sh
  tests/audio-config-memory.c
+ tests/audio-oob-startup.c
  tests/audio-config-dt.c
  tests/audio-config-dt.sh
  manifests/protected-oob-backend-20261106.json
@@ -73,13 +89,13 @@ for tree in "$profile" "$boot";do
  sed "s/uke7[.]3[.]1-12211u/uke7.3.1-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
 done
-# The new exact postimage guard extends only two active runtime comparisons.
+# The new exact postimage guard extends all three active runtime comparisons.
 # Historical source, calibration records and all previous semantic tests stay.
 (cd "$owner";jq -r '.inputs[]|.sha256+"  "+.path' manifests/cdsp-dma-admission-20261106.json | sha256sum -c --strict --quiet -)
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11270347 | jq -er .state) == succeeded ]]
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11270377 | jq -er .state) == succeeded ]]
 for tree in "$profile" "$boot";do
- for checker in packaging/native/check-cumulative-camera731.sh packaging/native/check-speaker-inclusion.sh;do
+ for checker in packaging/native/check-cumulative-camera731.sh packaging/native/check-speaker-inclusion.sh packaging/native/check-camera-next731.sh;do
   awk '
    $0=="cmp \"$profile/src/audio/uke-fs19xx-runtime.c\" \"$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c\"" {
     print "bash \"$profile/packaging/native/check-oob-runtime731.sh\" \"$kernel\"";changed++;next
@@ -107,7 +123,7 @@ bash "$profile/src/audio/apply-oob-backend731.sh" "$kernel" "$profile"
 CHECK
 cp "$profile/source-composition.json" "$profile/source-composition-before-oob-core.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),oob_core_parent_build:11269695,oob_core_parent_source:"dba56903ddba878aba8db22d87a9ab130ef1e1db",protected_oob_wire_core_layer:1,protected_oob_native_backend_layer:1,protected_oob_permanent_dma_context:true,protected_oob_independent_response_port:true,protected_oob_parent_core_check:11270347,cdsp_dma_admission_layer:1,cdsp_dma_admission_code_source:"0f5eb8e6d2f2bae951a50d93f029762ba0aec443",cdsp_dma_admission_check:11270377,protected_oob_native_backend_admitted:false,protected_oob_physical_activation:false,native_llvm_rpm_evr:"23.1.5-1.fc46",historical_config_compiler_identity_model:"23.1.4-1.fc46",historical_config_original_guard_sha256:"fd11aad8209533f50fa5b3a6cf90fb16c223d63bf0bfcfd7304c670e0862a2ef",device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-oob-core.json" > "$profile/source-composition.json"
+jq --arg source "$commit" --arg revision "$revision" --arg mode "$mode" --arg proof "$proof" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),oob_core_parent_build:11269695,oob_core_parent_source:"dba56903ddba878aba8db22d87a9ab130ef1e1db",protected_oob_wire_core_layer:1,protected_oob_native_backend_layer:1,protected_oob_permanent_dma_context:true,protected_oob_independent_response_port:true,protected_oob_parent_core_check:11270347,cdsp_dma_admission_layer:1,cdsp_dma_admission_code_source:"0f5eb8e6d2f2bae951a50d93f029762ba0aec443",cdsp_dma_admission_check:11270377,protected_oob_native_backend_admitted:($mode=="full"),protected_oob_supplier_readiness_before_probe:true,protected_oob_native_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),protected_oob_physical_activation:false,native_llvm_rpm_evr:"23.1.5-1.fc46",historical_config_compiler_identity_model:"23.1.4-1.fc46",historical_config_original_guard_sha256:"fd11aad8209533f50fa5b3a6cf90fb16c223d63bf0bfcfd7304c670e0862a2ef",device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-oob-core.json" > "$profile/source-composition.json"
 install -m644 "$profile/prepare.sh" "$boot/packaging/native/cumulative-prepare.sh"
 sha256sum -c --strict --quiet "$stage/configs"
 for tree in "$profile" "$boot";do
@@ -133,8 +149,15 @@ awk -v revision="$revision" '
  {print} END {if(changed!=1||pinned!=1||guard!=2){printf "Unexpected inherited spec counts: release=%d toolchain=%d config_checks=%d\n",changed,pinned,guard > "/dev/stderr";exit 1}}
 ' "$spec" > "$stage/planned.spec"
 install -m644 "$stage/planned.spec" "$spec"
-# Reuse the authenticated complete native-object receipt packaging, without
-# granting a full build path. Inherited objects plus the prospective core bridge.
+# Full mode repeats all source/native tests and requires actual Image linkage.
+awk '
+ /^%check$/ {print;print "bash native-profile/packaging/native/check-oob-objects731.sh \"$PWD\" %{_uke_out} linked";checks++;next}
+ /^%changelog$/ {print;print "* Fri Nov 06 2026 Uke contributors - 7.3.1-12212";print "- Transport whole protected configuration through dedicated shared memory.";print "- Preserve cumulative features, gain223, private identity and updater101 staging.";print "";history++;next}
+ {print} END {if(checks!=1||history!=1)exit 1}
+' "$spec" > "$stage/audited-full.spec"
+install -m644 "$stage/audited-full.spec" "$spec"
+if [[ $mode == check ]];then
+# Reuse the complete native-object receipt packaging; no Image or final module.
 printf '%s  %s\n' 5493807ca28533b0bd0caa497754d99b4d366a852047a1dfb367c46b483830cd "$owner/packaging/native/copr-migration-cohort731.sh" | sha256sum -c --strict -
 awk '/^if \[\[ \$mode == check \]\]; then$/ {copy=1;next} copy && /^fi$/ {exit} copy {print}' "$owner/packaging/native/copr-migration-cohort731.sh" | sed 's| drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o| drivers/soc/qcom/apr.o sound/soc/qcom/qdsp6/audioreach.o sound/soc/qcom/qdsp6/q6apm.o drivers/clk/qcom/camcc-sm7675.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-check.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o sound/soc/qcom/qdsp6/snd-q6apm.o drivers/soc/qcom/uke-audio-config-memory.o drivers/misc/fastrpc.o drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o|' > "$stage/check-packaging.sh"
 test -s "$stage/check-packaging.sh"
@@ -145,5 +168,6 @@ awk '
 ' "$output/uke-kernel-migration-check.spec" > "$stage/backend-check.spec"
 install -m644 "$stage/backend-check.spec" "$output/uke-kernel-migration-check.spec"
 sed -i 's/Complete12204/Complete12211/g' "$output/uke-kernel-migration-check.spec"
+fi
 (cd "$output";sha256sum -c --strict --quiet "$stage/retained")
-printf 'Complete12211 retained; OOB backend/DMA/DT and qualified FastRPC source/native receipt only. No target activation or full NVR reserved.\n'
+printf 'Complete12211 retained; OOB backend/DMA/DT and qualified FastRPC prepared for%s. No target operation or stable promotion.\n' "$mode"

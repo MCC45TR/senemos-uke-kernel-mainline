@@ -13,6 +13,7 @@ typedef uint64_t dma_addr_t;
 #define U32_MAX UINT32_MAX
 #define UKE_CONFIG_BYTES 8192
 #define GFP_KERNEL 0
+#define EPROBE_DEFER 517
 #define upper_32_bits(v) ((u32)((u64)(v)>>32))
 #define DEFINE_MUTEX(n) int n
 struct device { int unused; };
@@ -65,9 +66,11 @@ int main(void)
 	struct device device={0},apm={0};
 	struct uke_audio_config_memory a={0},b={0},stale={0};
 	u32 prior_token;
+	assert(uke_audio_config_ready()==-EPROBE_DEFER && !alloc_count);
 	assert(uke_audio_config_acquire(&apm,NULL)==-EINVAL);
 	assert(uke_audio_config_acquire(&apm,&a)==-ENODEV);
 	uke_config_device=&device;
+	assert(!uke_audio_config_ready() && !alloc_count);
 	domain_ok=false;
 	assert(uke_audio_config_acquire(&apm,&a)==-EXDEV && !alloc_count);
 	domain_ok=true;

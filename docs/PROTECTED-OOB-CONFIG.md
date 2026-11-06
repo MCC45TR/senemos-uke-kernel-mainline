@@ -90,6 +90,17 @@ the same explicit alignment as the native ABL buffer and reports setup errors.
 Production backend, DMA, runtime and DT transformation bytes are unchanged.
 Native objects and the fourth backend mode have not yet qualified.
 
+Check22/11270597 passes all four backend/lease and libfdt modes, then stops
+at a third inherited runtime comparison in `check-camera-next731.sh`.
+Check23 extends that comparison to the same exact preimage/postimage guard
+already used by the other two. It preserves the entire runtime hash check.
+The DMA wire/ownership protocol and DT remain unchanged. Check23 also defers
+admitted APM initialization until the permanent supplier is ready, before
+allocating state or publishing the frontend. This readiness check does not
+depend on that frontend and avoids a supplier/consumer probe cycle. Actual
+initialization fixtures cover defer, controls-only, unprotected/foreign boards
+and allocation/hash/action failures. Native objects are still pending.
+
 The same cumulative source includes qualified FastRPC DMA-before-session
 admission0f5eb8e6/check11270377. It preserves CDSP PAS/DT/SMMU and manual boot
 policies; no compute runtime package or workload acceptance is added.

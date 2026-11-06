@@ -103,6 +103,7 @@ static struct device *get_device(struct device *d) { d->refs++; return d; }
 static void put_device(struct device *d) { assert(d->refs > 0); d->refs--; }
 static void wake_up(wait_queue_head_t *q) { (*q)++; }
 static void mock_wait(void);
+static int uke_audio_config_ready(void) { return 0; }
 static gpr_port_t *gpr_alloc_port(struct apr_device *, struct device *,
 				int (*)(const struct gpr_resp_pkt *, void *, int), void *);
 static void gpr_free_port(gpr_port_t *);
@@ -310,6 +311,7 @@ static void run_case(int which, int allocation_failure)
 int main(void)
 {
 	assert(sizeof(struct gpr_hdr) == 24);
+	assert(!q6apm_fs19xx_oob_ready() && !acquire_count);
 	for (unsigned int i=0; i<sizeof(expected_tuning); i++) expected_tuning[i]=(u8)(i*29+7);
 	for (int i=0; i<SCENARIOS; i++) run_case(i,0);
 	for (int i=1; i<=4; i++) run_case(GOOD,i);
