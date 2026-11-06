@@ -11,7 +11,7 @@
     "native_bridge_qualified": true,
     "core_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d"
   },
-  "planned_check_release": 21,
+  "planned_check_release": 22,
   "planned_full_revision": 12212,
   "full_revision_reserved": false,
   "source_assets": [
@@ -57,7 +57,7 @@
     },
     {
       "path": "packaging/native/copr-migration-oob-backend731.sh",
-      "sha256": "76340c75d72fa1ae0f826b8cb00beeb75d7463045def879889ac856d192b42c9"
+      "sha256": "218ffcbf3cc348c1fcc7e0ae9216e5e455ec12c1c110f1bb38fc777c191ecb6a"
     },
     {
       "path": "tests/audio-fs19xx-oob-backend.c",
@@ -73,7 +73,7 @@
     },
     {
       "path": "tests/audio-config-dt.c",
-      "sha256": "10cf88399df5572306cd319476a814ad0ffcc8dfd1d9314856d2ac7e010938a0"
+      "sha256": "31f8b6476cce521d3d85d81fbefd9653c3631bbaefadac7848998999073b61e9"
     },
     {
       "path": "tests/audio-config-dt.sh",
@@ -135,5 +135,18 @@
       ],
       "use": "Shared stream groups, DMA domains, native address encoding and GPR framing"
     }
-  ]
+  ],
+  "prior_source_check": {
+    "release": 21,
+    "copr_build": 11270572,
+    "source": "a6a5310c494721f7a72a1847c4e1230605dad87c",
+    "state": "failed168s in preparation before native objects",
+    "backend_peer_modes_passed": 3,
+    "backend_assertion_mutants_passed": 8,
+    "core_modes_passed": 4,
+    "fastrpc_modes_passed": 4,
+    "failure": "Clang synthetic FDT setup assertion; buffer lacked explicit required8-byte alignment",
+    "correction": "Explicitly align fixture like the native ABL buffer; report libfdt setup return/alignment",
+    "production_backend_dma_runtime_dt_bytes_changed": false
+  }
 }

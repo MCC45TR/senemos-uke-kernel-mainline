@@ -9,7 +9,7 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?Source result directory}")
 revision=${2:?Planned ABI, not a reservation}
 proof=${3:?Unique source check release}
-[[ $# == 3 && $revision == 12212 && $proof == 21 ]]
+[[ $# == 3 && $revision == 12212 && $proof == 22 ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT

@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 #include <assert.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <libfdt.h>
 #define UKE_INIT
 #include "uke-audio-config-dt.h"
-static unsigned char image[16384], before[16384];
+_Alignas(8) static unsigned char image[16384], before[16384];
 static int path(const char *name) { int n=fdt_path_offset(image,name); assert(n>=0); return n; }
 static void node(const char *parent,const char *name) { assert(fdt_add_subnode(image,path(parent),name)>=0); }
 static void string(const char *p,const char *n,const char *v) { assert(!fdt_setprop_string(image,path(p),n,v)); }
@@ -16,7 +17,10 @@ static void reset(void)
 		cpu_to_fdt32(23),cpu_to_fdt32(0x1061),0};
 	static const char model[]="xiaomi,uke\0qcom,sm7675";
 	memset(image,0,sizeof(image));
-	assert(!fdt_create_empty_tree(image,sizeof(image)));
+	int ret=fdt_create_empty_tree(image,sizeof(image));
+	if(ret) fprintf(stderr,"libfdt fixture setup: %s (%d), alignment%zu\n",
+		fdt_strerror(ret),ret,(size_t)((uintptr_t)image&7));
+	assert(!ret);
 	assert(!fdt_setprop(image,0,"compatible",model,sizeof(model)));
 	node("/","soc"); node("/soc","iommu");
 	word("/soc/iommu","phandle",23); word("/soc/iommu","#iommu-cells",2);

@@ -82,6 +82,14 @@ Independent fake GPR/DMA/DT fixtures, assertion mutants and actual provider,
 backend, APM composite and ABL objects are required in the next COPR check.
 The backend remains unqualified and is not installed or activated on hardware.
 
+Check21/11270572 fails168seconds in preparation after three backend/lease
+compiler/sanitizer modes, eight backend assertion mutants and all retained
+core/FastRPC modes. Clang's synthetic FDT setup had no explicit8-byte buffer
+alignment; libfdt rejects an unaligned tree. The next check gives that fixture
+the same explicit alignment as the native ABL buffer and reports setup errors.
+Production backend, DMA, runtime and DT transformation bytes are unchanged.
+Native objects and the fourth backend mode have not yet qualified.
+
 The same cumulative source includes qualified FastRPC DMA-before-session
 admission0f5eb8e6/check11270377. It preserves CDSP PAS/DT/SMMU and manual boot
 policies; no compute runtime package or workload acceptance is added.
