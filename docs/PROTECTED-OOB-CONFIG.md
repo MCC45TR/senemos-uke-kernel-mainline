@@ -40,7 +40,7 @@ neither a driver nor a hardware result.
 
 Initial check18/11270018 passes all4 OOB modes and8 assertion mutants, then
 fails the inherited historical configuration digest before kernel objects build.
-The native repository moved Clang/LLVM23.1.4 to23.1.5. Check19 pins the latter
+The native repository moved Clang/LLVM23.1.4 to23.1.5. The next check pins the latter
 three RPMs and retains the original sealed guard. Its separate historical model
 projects only four explicitly validated compiler identities to23.1.4; every
 functional option remains in the same original digest. Actual configurations
@@ -48,6 +48,11 @@ and compiler provenance stay unchanged. The real normalized23.1.5 output must
 pass that guard, reproduce the original refusal and reject five malformed/
 functional controls before native objects can qualify. A nonidentity change
 still refuses the build. The OOB core's bytes are unchanged.
+
+Check19/11270202 stopped before SRPM creation: the inherited spec contains the
+same configuration check in both build and install, while the transformation
+required one match. Check20 requires both matches and retains both checks.
+The compiler identity projection and native header bridge remain unqualified.
 
 The kernel DMA/response-port backend is not yet admitted or activated. It must
 prove the exact Uke physical/SID address interpretation, device and response

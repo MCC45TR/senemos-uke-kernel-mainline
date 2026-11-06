@@ -8,7 +8,7 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 output=$(realpath -m "${1:?Source result directory}")
 revision=${2:?Planned ABI, not a reservation}
 proof=${3:?Unique source check release}
-[[ $# == 3 && $revision == 12212 && $proof == 19 ]]
+[[ $# == 3 && $revision == 12212 && $proof == 20 ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 stage=$(mktemp -d)
 trap 'find "$stage" -depth -delete' EXIT
@@ -81,7 +81,7 @@ awk -v revision="$revision" '
  /^%global senemos_build_release 12211$/ {$0="%global senemos_build_release "revision;changed++}
  /^%description/ && !pinned {print "BuildRequires: clang = 23.1.5-1.fc46";print "BuildRequires: llvm = 23.1.5-1.fc46";print "BuildRequires: lld = 23.1.5-1.fc46";pinned++}
  $0=="bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-before-reference/.config" {print "bash native-profile/tests/cdsp-pogo-toolchain-contract.sh native-generated/nfc-cdsp-before-reference/.config";guard++}
- {print} END {if(changed!=1||pinned!=1||guard!=1)exit 1}
+ {print} END {if(changed!=1||pinned!=1||guard!=2){printf "Unexpected inherited spec counts: release=%d toolchain=%d config_checks=%d\n",changed,pinned,guard > "/dev/stderr";exit 1}}
 ' "$spec" > "$stage/planned.spec"
 install -m644 "$stage/planned.spec" "$spec"
 # Reuse the authenticated complete native-object receipt packaging, without

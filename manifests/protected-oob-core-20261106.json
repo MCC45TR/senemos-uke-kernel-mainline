@@ -5,7 +5,15 @@
   "parent_srpm_sha256": "b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf",
   "planned_revision": 12212,
   "full_revision_reserved": false,
-  "planned_source_check_release": 19,
+  "planned_source_check_release": 20,
+  "prior_packaging_check": {
+    "release": 19,
+    "copr_build": 11270202,
+    "source_commit": "8c9c2f1d4205b71dfbdebbd1be0056e544c14479",
+    "state": "failed46s before SRPM or native build",
+    "cause": "Inherited spec has two exact configuration-check calls; transform required one match",
+    "correction": "Require both build/install calls and retain both original checks"
+  },
   "prior_source_check": {
     "release": 18,
     "copr_build": 11270018,
