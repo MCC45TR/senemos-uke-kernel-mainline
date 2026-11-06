@@ -1,0 +1,78 @@
+From: Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] soc: qcom: negotiate intents for synchronous APM configuration
+
+The fitted protected speaker graph opens, but its 5416-byte configuration
+packet fails in qcom_glink_trysend with -EBUSY. The remote has no available
+intent large enough for that packet; the nonblocking GLINK path cannot request
+one. Smaller configuration and close commands still succeed.
+
+Add a separate process-context static-service send API using rpmsg_send.
+Serialize the send against existing callback quiesce and service removal,
+check the same live service under its map lock, then release all spinlocks
+before waiting for an intent. Reject malformed headers and quiesced services.
+Call it only for synchronous APM SET_CFG commands. Keep asynchronous ports,
+legacy APR, readiness requests and all other nonblocking send APIs unchanged.
+Parameter records, protection gates, calibration and timeout errors are retained.
+
+--- a/drivers/soc/qcom/apr.c
++++ b/drivers/soc/qcom/apr.c
+@@ -146,5 +146,40 @@
+ EXPORT_SYMBOL_GPL(gpr_send_port_pkt);
+ 
++/* Process context, outside a GPR callback; caller retains device and packet. */
++int gpr_send_pkt_wait(gpr_device_t *gdev, const struct gpr_pkt *pkt)
++{
++	struct packet_router *pr;
++	struct pkt_router_svc *svc;
++	const struct gpr_hdr *hdr;
++	unsigned long flags;
++	bool live;
++	int ret;
++
++	if (!gdev || !pkt)
++		return -EINVAL;
++	svc = &gdev->svc;
++	pr = svc->pr;
++	hdr = &pkt->hdr;
++	if (!pr || pr->type != PR_TYPE_GPR || hdr->version != GPR_PKT_VER ||
++	    hdr->hdr_size != GPR_PKT_HEADER_WORD_SIZE ||
++	    hdr->pkt_size < GPR_PKT_HEADER_BYTE_SIZE)
++		return -EINVAL;
++
++	mutex_lock(&pr->callback_lock);
++	spin_lock_irqsave(&pr->svcs_lock, flags);
++	live = idr_find(&pr->svcs_idr, svc->id) == svc && READ_ONCE(svc->callback);
++	spin_unlock_irqrestore(&pr->svcs_lock, flags);
++	/* GLINK intent negotiation may sleep; no service/map spinlock is held. */
++	if (live)
++		ret = rpmsg_send(pr->ch, pkt, hdr->pkt_size);
++	else
++		ret = -ENODEV;
++	mutex_unlock(&pr->callback_lock);
++
++	return ret ? ret : hdr->pkt_size;
++}
++EXPORT_SYMBOL_GPL(gpr_send_pkt_wait);
++
+ static void apr_dev_release(struct device *dev)
+ {
+ 	struct apr_device *adev = to_apr_device(dev);
+--- a/include/linux/soc/qcom/apr.h
++++ b/include/linux/soc/qcom/apr.h
+@@ -195,4 +195,6 @@
+ int gpr_send_port_pkt(gpr_port_t *port, const struct gpr_pkt *pkt);
+ int gpr_send_pkt(gpr_device_t *gdev, const struct gpr_pkt *pkt);
++/* Sleepable static service send; retain ownership and stay outside callbacks. */
++int gpr_send_pkt_wait(gpr_device_t *gdev, const struct gpr_pkt *pkt);
+ 
+ #endif /* __QCOM_APR_H_ */
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -605,5 +605,7 @@
+ 	if (port)
+ 		rc = gpr_send_port_pkt(port, pkt);
++	else if (gdev && hdr->opcode == APM_CMD_SET_CFG)
++		rc = gpr_send_pkt_wait(gdev, pkt);
+ 	else if (gdev)
+ 		rc = gpr_send_pkt(gdev, pkt);
+ 	else
