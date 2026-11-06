@@ -101,14 +101,16 @@ int main(int argc, char** argv) {
             const auto b = read(argv[2]); const auto h = inspect(b);
             write_new(argv[3], std::vector<uint8_t>(b.begin() + page, b.begin() + page + h.kernel));
         } else if ((argc == 6 && std::string(argv[1]) == "pack") ||
-                   ((argc == 4 || argc == 5) && std::string(argv[1]) == "create")) {
-            const bool create = std::string(argv[1]) == "create";
+                   ((argc == 4 || argc == 5) && (std::string(argv[1]) == "create" ||
+                    std::string(argv[1]) == "create-bootloader-compat"))) {
+            const bool create = std::string(argv[1]) != "pack";
+            const bool compatibility = std::string(argv[1]) == "create-bootloader-compat";
             const std::string profile = create && argc == 5 ? argv[4] : "";
             if (!profile.empty() && profile != "linux" && profile != "userdata")
                 throw std::runtime_error("Root profile must be linux or userdata");
             if (create && argc == 5 && profile.empty())
                 throw std::runtime_error("Empty root profile refused");
-            // Retain the Uke partition capacity, not Android version metadata.
+            // Retain Uke partition capacity independently of the header policy.
             const auto stock = create ? std::vector<uint8_t>(100663296) : read(argv[2]);
             const auto h = create ? Header{} : inspect(stock);
             const auto kernel = read(argv[create ? 2 : 3]); raw_arm64(kernel);
@@ -116,12 +118,15 @@ int main(int argc, char** argv) {
             if (h.ramdisk || h.signature || capacity != stock.size() || capacity % page ||
                 capacity > limit || page + aligned(kernel.size()) > capacity)
                 throw std::runtime_error("Template or capacity does not admit a kernel-only v4 image");
-            // Android 13+ GKI boot v4 requires os_version=0; version information
-            // belongs in AVB properties. Do not inherit a template's Android
-            // version/patch level, signatures, footer or command line.
+            // Canonical GKI containers retain zero version metadata. The explicit
+            // compatibility mode preserves the previously booted Uke encoding
+            // for ABL with verification disabled and absent primary properties.
+            // This is a firmware input, not an Android/Linux security claim.
+            // Never inherit template signatures, footer or command line.
             std::vector<uint8_t> b(static_cast<size_t>(capacity), 0);
             std::memcpy(b.data(), "ANDROID!", 8);
             put32(b.data() + 8, static_cast<uint32_t>(kernel.size()));
+            if (compatibility) put32(b.data() + 16, 570425768U);
             put32(b.data() + 20, 1584); put32(b.data() + 40, 4);
             if (!profile.empty()) {
                 const std::string selector = "senemos.root=" + profile;
@@ -131,7 +136,7 @@ int main(int argc, char** argv) {
             write_new(argv[create ? 3 : 4], b);
             inspect(b);
         } else {
-            throw std::runtime_error("Usage: boot-image inspect IMAGE | extract IMAGE NEW_KERNEL | pack STOCK IMAGE NEW_BOOT CAPACITY_BYTES | create IMAGE NEW_BOOT [linux|userdata]");
+            throw std::runtime_error("Usage: boot-image inspect IMAGE | extract IMAGE NEW_KERNEL | pack STOCK IMAGE NEW_BOOT CAPACITY_BYTES | create IMAGE NEW_BOOT [linux|userdata] | create-bootloader-compat IMAGE NEW_BOOT [linux|userdata]");
         }
     } catch (const std::exception& e) { std::cerr << "boot-image: " << e.what() << '\n'; return 1; }
 }

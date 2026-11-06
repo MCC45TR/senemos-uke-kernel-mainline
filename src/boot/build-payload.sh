@@ -120,9 +120,11 @@ printf 'UKE_BUILD_STAGE embedded_image elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_s
 bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image"
 bash "$here/check-root-capability.sh" "$out/arch/arm64/boot/Image" reset
 clang++ -std=c++20 -O2 -Wall -Wextra -Werror "$here/boot-image.cpp" -o "$out/boot-image"
-"$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/linux.img"
-"$out/boot-image" create "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
+"$out/boot-image" create-bootloader-compat "$out/arch/arm64/boot/Image" "$out/linux.img"
+"$out/boot-image" create-bootloader-compat "$out/arch/arm64/boot/Image" "$out/userdata.img" userdata
 "$out/boot-image" inspect "$out/linux.img" > "$out/boot-header.json"
+jq -e ' .os_version_encoded==570425768 and (.avb_footer_present|not) ' "$out/boot-header.json" >/dev/null
+"$out/boot-image" inspect "$out/userdata.img" | jq -e ' .os_version_encoded==570425768 and (.avb_footer_present|not) ' >/dev/null
 "$out/boot-image" extract "$out/linux.img" "$out/boot-readback-Image"
 cmp "$out/arch/arm64/boot/Image" "$out/boot-readback-Image"
 "$out/boot-image" extract "$out/userdata.img" "$out/userdata-readback-Image"
