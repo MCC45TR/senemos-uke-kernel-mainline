@@ -9,7 +9,7 @@ output=$(realpath -m "${1:?Source result directory}")
 revision=${2:?Unique unstable revision}
 mode=${3:?check or full}
 proof=${4:?Check release or admitted build}
-[[ $revision == 12208 && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
+[[ $revision == 12209 && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 native_proof_source=$commit
 stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
@@ -105,7 +105,7 @@ awk -v revision="$revision" '
  /^%global senemos_build_release 12207$/ {$0="%global senemos_build_release "revision;changed++}
  /^Requires: uke-kernel-update >= 1[.]8[.]98$/ {$0="Requires: uke-kernel-update >= 1.8.100";updater++}
  /^%changelog$/ {print;print "* Fri Nov 06 2026 Uke contributors - 7.3.1-"revision;print "- Select explicit bootloader compatibility metadata for alternating slots.";print "- Retain canonical zero-header support, protected223 and complete12207 hardware.";print "- Require updater100 for the corrected inactive checkpoint write barrier.";print "";next}
- {print} END {if(changed!=1 || updater!=1)exit 1}
+ {print} END {if(changed!=1 || updater!=2)exit 1}
 ' "$spec" > "$stage/full.spec"
 install -m644 "$stage/full.spec" "$spec"
 if [[ $mode == check ]];then
