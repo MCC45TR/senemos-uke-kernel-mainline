@@ -53,7 +53,13 @@ Historical source, tests and manifests remain unchanged and run before this
 new layer. Actual cumulative AArch64 backend and APM composite objects must
 pass; a subsequent full build also requires linked Image checks.
 
-Source check 29 precedes any full 12215 reservation. Matching physical boot,
+Source check 29/COPR11271890 passes all four 556-case backend modes, original
+controls and mutants, then refuses the new backend at the inherited source
+comparison. Check 30 retains that old checker unchanged in history and adds
+an exact preimage/postimage branch after the new layer marker. Five altered
+source-byte controls and a changed protocol-mask control must still refuse.
+Historical preparation retains its original comparisons before that marker.
+Source check 30 precedes any full 12215 reservation. Matching physical boot,
 protected prepare and safe playback, actual microphone samples, audible DP,
 restart and suspend remain separate device gates. Gray-handover stability,
 initial closed-cover state and intermittent USB loss remain open. Automatic

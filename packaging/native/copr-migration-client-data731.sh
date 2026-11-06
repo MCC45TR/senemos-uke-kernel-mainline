@@ -17,15 +17,15 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-29"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-30"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-29.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-30.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
  rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.protected_gpr_client_data_layer==1 and .protected_config_smmu_native_admitted and .protected_oob_native_backend_admitted and .protected_oob_final_dt_native_admitted and (.protected_gpr_client_data_native_admitted|not) and (.physical_acceptance|not)' >/dev/null
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 else
- [[ $# == 4 && $proof == 29 ]]
+ [[ $# == 4 && $proof == 30 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
@@ -47,12 +47,21 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 jq -e '.source_commit=="b8599070af13fd7522880758ed71230ab322b105" and .kernel_release=="7.3.1-12214-unstable" and .protected_config_smmu_native_admitted and .protected_config_smmu_qualification_build==11271445 and .protected_oob_final_dt_native_admitted and .protected_oob_final_dt_qualification_build==11271114 and .protected_oob_native_backend_admitted and .protected_oob_native_qualification_build==11270738 and .protected_oob_supplier_readiness_before_probe and .cdsp_dma_admission_check==11270377 and .speaker_gain_ceiling==223 and .speaker_protection_graph_admitted and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
-assets=(src/audio/0010-uke-gpr-response-client-data.patch src/audio/apply-client-data731.sh tests/audio-gpr-client-data.c tests/audio-gpr-client-data.sh packaging/native/check-client-data731.sh docs/PROTECTED-GPR-CLIENT-DATA.md manifests/protected-gpr-client-data-20261106.json manifests/kernel-migration-full12214-20261106.json)
+assets=(src/audio/0011-uke-gpr-client-data-source-seal.patch tests/audio-gpr-client-data-seal.sh src/audio/0010-uke-gpr-response-client-data.patch src/audio/apply-client-data731.sh tests/audio-gpr-client-data.c tests/audio-gpr-client-data.sh packaging/native/check-client-data731.sh docs/PROTECTED-GPR-CLIENT-DATA.md manifests/protected-gpr-client-data-20261106.json manifests/kernel-migration-full12214-20261106.json)
 for tree in "$profile" "$boot";do
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
  [[ $(grep -Fo uke7.3.1-12214u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
  sed "s/uke7[.]3[.]1-12214u/uke7.3.1-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
+done
+# Preserve the old checker and admit only the exact new backend delta.
+for tree in "$profile" "$boot";do
+ checker=$tree/packaging/native/check-oob-runtime731.sh
+ printf '%s  %s\n' f222d2ee7b45f5c55fbf684f6951d4c4fe5dc0cbd1b35ae151574a6c2a5064e7 "$checker" | sha256sum -c --strict -
+ install -Dm644 "$checker" "$tree/history-before-gpr-client-data/packaging/native/check-oob-runtime731.sh"
+ patch -d "$tree" --dry-run --batch --fuzz=0 -p1 -i "$owner/src/audio/0011-uke-gpr-client-data-source-seal.patch"
+ patch -d "$tree" --batch --fuzz=0 -p1 -i "$owner/src/audio/0011-uke-gpr-client-data-source-seal.patch"
+ printf '%s  %s\n' 16bced23977bb467ebce7bddf9a4e26fde29d34f6811bf38e214b1dc161ced12 "$checker" | sha256sum -c --strict -
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-gpr-client-data.json"
 printf '%s\n' "$commit" > "$profile/source-commit"

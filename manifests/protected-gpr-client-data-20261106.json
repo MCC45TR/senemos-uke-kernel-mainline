@@ -1,10 +1,10 @@
 {
   "date": "2026-11-06",
-  "scope": "Complete full12214 plus defined GPR response client data; proposed check29, no full reservation",
+  "scope": "Complete full12214 plus defined GPR response client data; proposed check30, no full reservation",
   "parent_build": 11271493,
   "parent_source": "b8599070af13fd7522880758ed71230ab322b105",
   "parent_srpm_sha256": "71c1b5c17cbf19af275db6af904abf20c2d855b2987350404e9f538d16455dc9",
-  "source_check_release": 29,
+  "source_check_release": 30,
   "proposed_full_revision": 12215,
   "full_revision_reserved": false,
   "source_assets": [
@@ -14,7 +14,7 @@
     },
     {
       "path": "src/audio/apply-client-data731.sh",
-      "sha256": "ae1867a2d83c16b4fe48e4f46243231e6606057f70948106f8a66a76920b322f"
+      "sha256": "49868993b9a5d4045419f6c0387f9a34e6e3bc438a5c808b2b5fd8caa1b4e08a"
     },
     {
       "path": "tests/audio-gpr-client-data.c",
@@ -30,15 +30,23 @@
     },
     {
       "path": "packaging/native/copr-migration-client-data731.sh",
-      "sha256": "1e9b05f7594873f3e796a6342360f48398e5bbc530d9c03482e672b1410bedc8"
+      "sha256": "aaafe0da20d84456612cf42c13a9c0d4ef525fc048d4daedcb2b4924cbf988cc"
     },
     {
       "path": "docs/PROTECTED-GPR-CLIENT-DATA.md",
-      "sha256": "7b8347528b6423d9ba8290bde9ae015f75ec653ed91a75b9eb44f4016d1c35dc"
+      "sha256": "85896b9e6d249c11088f711097f52126b54424ec81579bfa6d55bc7f3d8fb3e9"
     },
     {
       "path": "manifests/kernel-migration-full12214-20261106.json",
       "sha256": "324dd40efba856c47bbb44a6c7478bd0bbbcf1301394005e2c1090ecc2a30c6f"
+    },
+    {
+      "path": "src/audio/0011-uke-gpr-client-data-source-seal.patch",
+      "sha256": "54f865e2b097ef46e07bfeb239e42bd58ebe8fd894e54b6c8e8694635494f4e6"
+    },
+    {
+      "path": "tests/audio-gpr-client-data-seal.sh",
+      "sha256": "90118d07f9757d526362dcd4bb835a2b3755307620b35c321a3b981d3ef4c113"
     }
   ],
   "source_preimage_sha256": "785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73",
@@ -61,5 +69,11 @@
     "wire_reserved_mask": "0xfff00000"
   },
   "target_changed": false,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "prior_source_check": {
+    "build": 11271890,
+    "source": "7867c6e63c5b3b5d109233bbfceee1336357723e",
+    "result": "Four556-case modes/original/mutants pass; inherited unextended source seal refuses backend postimage"
+  },
+  "source_seal_refusal_controls": 6
 }

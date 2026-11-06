@@ -21,4 +21,5 @@ cmp "$work/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c" "$before"
 for cc in gcc clang;do for san in 0 1;do
  CC=$cc SANITIZE=$san bash "$profile/tests/audio-gpr-client-data.sh" "$kernel"
 done;done
+bash "$profile/tests/audio-gpr-client-data-seal.sh" "$kernel"
 printf 'GPR defined client data and true-reserved refusal qualified; private tuning and lifetime source unchanged; physical audio remains open.\n'
