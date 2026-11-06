@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/dts-v1/;
+/plugin/;
+/ {
+ fragment@0 {
+  target-path = "/soc/remoteproc-adsp@03000000/glink-edge/qcom,gpr";
+  __overlay__ {
+   #address-cells = <1>; #size-cells = <0>;
+   service@1 {
+    compatible = "qcom,q6apm"; reg = <1>;
+    xiaomi,fs19xx-protected;
+    dais {
+     compatible = "qcom,q6apm-dais"; status = "okay";
+     iommus = <23 0x1001 0x80>, <23 0x1061 0>;
+    };
+   };
+  };
+ };
+};
