@@ -1,10 +1,11 @@
 # Device support in the kernel and Device Tree
 
-6 November 2026. POCO Pad X1 currently runs7.3.1-12206-unstable. Cumulative
-12207 is built through COPR11268117, DNF-installed and fully compared in
-inactive B while A12206 and its modules are retained. Matching boot and physical
-audio/sleep/USB/sensor acceptance remain pending. See the exact
-[qualification record](../manifests/kernel-migration-full12207-20261106.json).
+6 November 2026. POCO Pad X1 runs7.3.1-12211-unstable from B, following
+COPR11269695 and configured repository DNF delivery. Full B, retained A12210
+and modules, six signed RPMs, automatic staging and persistent rollbackoff
+are verified. Native update status is complete B/B. Physical audio, Hall,
+USB wake and full sensor acceptance remain open. See the exact
+[qualification record](../manifests/kernel-migration-full12211-20261106.json).
 The initial read-only survey classified59 project names/109 installed versions;
 that historical count is not a removal instruction or physical acceptance.
 
@@ -21,8 +22,10 @@ in155 seconds. The signed text-only receipt, exact sources and additive patch
 preimages are recorded in
 [`kernel-migration-source-20261105.json`](../manifests/kernel-migration-source-20261105.json).
 This initial result qualifies source/callback/object checks. Later cumulative
-12207 passes full native and inactive-B delivery checks; device acceptance
-remains pending.
+12211 passes full native, DNF/inactive-B delivery and matching B boot checks.
+Protected graph OPEN succeeds, but its large configuration times out waiting
+for a remote GLINK buffer. A real display-idle/RTC test reproduces USB host
+removal. These results remain separate from hardware acceptance.
 
 The native SSC IIO driver now reads the accelerometer child's standard
 `mount-matrix` and exposes `in_accel_mount_matrix` through
@@ -66,11 +69,20 @@ calibration, package or boot operation.
 | Video | V4L2 formats, controls, DMA and codec firmware transport | VA-API translation and media/session negotiation remain; these libraries are not hardware drivers |
 | Cameras | CAMSS, clocks, sensor/EEPROM/actuator drivers | libcamera/IPA, tuning and AF algorithms; both fitted calibrated cameras and rear focus/parking remain required |
 | Audio | ALSA/DSP/codec/amplifier, mandatory safety limits | UCM, WirePlumber/PipeWire, speech processing and orientation routing; existing protection and gain gates remain |
+| Protected calibration | Validate runtime frames, DSP transport, limiting and fault muting | A small userspace loader reads local private calibration; do not move filesystem parsing or per-device data into the kernel |
 | NFC/IR/pogo | Device protocols, HID/input, IR encoders, backlight and power | CLI/permissions, factory credential/firmware admission and desktop preferences remain |
 | WLAN/Bluetooth | Transport, regulators, firmware requests, standard address interface | Exact factory identity currently comes from protected read-only persist files; no proven NVMEM cell justifies removing that loader |
 | Firmware | request_firmware consumers and resource description | Separately versioned lawful firmware; never embed device-private calibration or addresses into public DT/Image |
 | Boot/recovery | Hardware boot interfaces and signed module compatibility | DNF admission, staging, filesystem/RTC persistence and recovery tooling remain |
 | KDE/GNOME | Correct standard hardware interfaces | Use original distribution packages; generic desktop defects cannot be implemented in DT |
+
+Core1.0.7-20 absorbs the unchanged speaker-control metadata through a normal
+versioned DNF upgrade; the standalone speaker-controls RPM is retired.
+`uke-speaker-runtime` remains necessary for private read-only calibration
+staging. The prospective
+[shared-memory configuration core](PROTECTED-OOB-CONFIG.md) does not yet admit
+a DMA backend or physical activation. Do not remove remaining audio/sensor
+providers solely because a source fixture passes.
 
 Front-light `9896de4` / check11263802 and rear-light `f4b5020` / check11264114
 are separately qualified source contributions. The migration source check also

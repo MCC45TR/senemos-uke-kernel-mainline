@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# COPR source/core check only. No full candidate, DMA backend or activation.
+set -Eeuo pipefail
+trap 'printf "OOB core source guard failed at line%s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
+test ! -e /etc/senemos/kernel-update.conf
+[[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
+owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
+output=$(realpath -m "${1:?Source result directory}")
+revision=${2:?Planned ABI, not a reservation}
+proof=${3:?Unique source check release}
+[[ $# == 3 && $revision == 12212 && $proof == 18 ]]
+commit=$(git -C "$owner" rev-parse HEAD)
+stage=$(mktemp -d)
+trap 'find "$stage" -depth -delete' EXIT
+[[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11269695 | jq -er .state) == succeeded ]]
+bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
+[[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
+mkdir -p "$output" "$stage/unpacked"
+curl -q -fLsS --retry 2 --max-time 600 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11269695/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12211.src.rpm -o "$stage/parent.src.rpm"
+printf '%s  %s\n' b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf "$stage/parent.src.rpm" | sha256sum -c --strict -
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$stage/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.1-12211 ]]
+rpm2cpio "$stage/parent.src.rpm" > "$stage/parent.cpio"
+cpio -t --quiet < "$stage/parent.cpio" | awk '/^\/|(^|\/)\.\.($|\/)/ {bad=1} END {exit bad}'
+(cd "$output";cpio -idm --quiet --no-absolute-filenames < "$stage/parent.cpio")
+native=senemos-native-profile-7.3.1.tar.xz
+boot_archive=senemos-uke-boot-recipe.tar.xz
+spec=$output/senemos-uke-linux-kernel-mainline-unstable.spec
+(cd "$output";find . -maxdepth 1 -type f ! -name "${spec##*/}" ! -name "$native" ! -name "$boot_archive" ! -name boot-payload.json -print0 | sort -z | xargs -0 sha256sum) > "$stage/retained"
+for archive in "$native" "$boot_archive";do tar -xJf "$output/$archive" -C "$stage/unpacked";done
+profile=$stage/unpacked/native-profile
+boot=$stage/unpacked/boot-recipe
+(cd "$profile";sha256sum -c --strict --quiet SHA256SUMS)
+(cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
+jq -e '.source_commit=="dba56903ddba878aba8db22d87a9ab130ef1e1db" and .kernel_release=="7.3.1-12211-unstable" and .gpr_static_sleepable_set_cfg_layer==1 and .gpr_async_nonblocking_preserved and .protected_parameter_records_unchanged and .speaker_gain_ceiling==223 and .speaker_protection_graph_admitted and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
+sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
+assets=(src/audio/uke-fs19xx-oob.h tests/audio-fs19xx-oob.c tests/audio-fs19xx-oob.sh
+ tests/audio-fs19xx-oob-native.c docs/PROTECTED-OOB-CONFIG.md
+ manifests/protected-oob-core-20261106.json manifests/kernel-package-migration.json
+ manifests/kernel-migration-full12211-20261106.json docs/KERNEL-PACKAGE-MIGRATION.md
+ docs/STATIC-GPR-INTENT.md)
+for tree in "$profile" "$boot";do
+ for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
+ [[ $(grep -Fo uke7.3.1-12211u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
+ sed "s/uke7[.]3[.]1-12211u/uke7.3.1-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
+ install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
+done
+cat >> "$profile/prepare.sh" <<'CHECK'
+# Complete12211 transport/protected routes and all retained gates passed first.
+install -m644 "$profile/src/audio/uke-fs19xx-oob.h" "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob.h"
+install -m644 "$profile/tests/audio-fs19xx-oob-native.c" "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-check.c"
+for oob_cc in gcc clang;do
+ for oob_san in 0 1;do CC=$oob_cc SANITIZE=$oob_san bash "$profile/tests/audio-fs19xx-oob.sh" "$kernel";done
+done
+# This bridge is compiled only by the text receipt spec, never linked/shipped.
+CHECK
+cp "$profile/source-composition.json" "$profile/source-composition-before-oob-core.json"
+printf '%s\n' "$commit" > "$profile/source-commit"
+jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),oob_core_parent_build:11269695,oob_core_parent_source:"dba56903ddba878aba8db22d87a9ab130ef1e1db",protected_oob_wire_core_layer:1,protected_oob_native_backend_admitted:false,protected_oob_physical_activation:false,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-oob-core.json" > "$profile/source-composition.json"
+install -m644 "$profile/prepare.sh" "$boot/packaging/native/cumulative-prepare.sh"
+sha256sum -c --strict --quiet "$stage/configs"
+for tree in "$profile" "$boot";do
+ if [[ $tree == "$profile" ]];then
+  (cd "$tree";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+ else
+  (cd "$tree";find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$stage/assets.sha256"
+  jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$stage/assets.sha256" > "$stage/assets.json"
+  jq --slurpfile assets "$stage/assets.json" '.source_assets=$assets[0]' "$boot/lock.json" > "$stage/lock.json"
+  install -m644 "$stage/lock.json" "$boot/lock.json"
+ fi
+done
+install -m644 "$boot/lock.json" "$output/boot-payload.json"
+epoch=$(git -C "$owner" show -s --format=%ct HEAD)
+for tree in native-profile boot-recipe;do
+ archive=$native;[[ $tree != boot-recipe ]] || archive=$boot_archive
+ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" "$tree"
+done
+awk -v revision="$revision" '
+ /^%global senemos_build_release 12211$/ {$0="%global senemos_build_release "revision;changed++}
+ {print} END {if(changed!=1)exit 1}
+' "$spec" > "$stage/planned.spec"
+install -m644 "$stage/planned.spec" "$spec"
+# Reuse the authenticated complete native-object receipt packaging, without
+# granting a full build path. Inherited objects plus the prospective core bridge.
+printf '%s  %s\n' 5493807ca28533b0bd0caa497754d99b4d366a852047a1dfb367c46b483830cd "$owner/packaging/native/copr-migration-cohort731.sh" | sha256sum -c --strict -
+awk '/^if \[\[ \$mode == check \]\]; then$/ {copy=1;next} copy && /^fi$/ {exit} copy {print}' "$owner/packaging/native/copr-migration-cohort731.sh" | sed 's| drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o| drivers/soc/qcom/apr.o sound/soc/qcom/qdsp6/audioreach.o sound/soc/qcom/qdsp6/q6apm.o drivers/clk/qcom/camcc-sm7675.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-check.o drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o|' > "$stage/check-packaging.sh"
+test -s "$stage/check-packaging.sh"
+source "$stage/check-packaging.sh"
+sed -i 's/Complete12204/Complete12211/g' "$output/uke-kernel-migration-check.spec"
+(cd "$output";sha256sum -c --strict --quiet "$stage/retained")
+printf 'Complete12211 retained; OOB wire/lifetime core receipt only, backend/physical activation absent. No full NVR reserved.\n'

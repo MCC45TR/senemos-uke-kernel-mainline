@@ -54,3 +54,11 @@ Source/native results do not establish fitted intent allocation, DSP parameter
 acceptance, actual limiting, sound quality, physical speaker safety or complete
 transport/PDR recovery. A signed cumulative COPR/DNF kernel and physical tests
 remain required. No local driver binary or parameter substitution is installed.
+
+Full12211/COPR11269695 subsequently passes1759seconds of native checks and827
+module signatures, is DNF installed and boots in B with A12210 retained.
+Actual5416-byte negotiation receives grant1 but no new adsp_apps intent before
+ETIMEDOUT. Smaller configuration/disable/CLOSE succeeds, with Fault and all4
+outputs muted. Sleepable negotiation alone does not qualify this record. The
+following shared-memory work preserves this API and every cumulative gate;
+see [Protected APM configuration](PROTECTED-OOB-CONFIG.md).
