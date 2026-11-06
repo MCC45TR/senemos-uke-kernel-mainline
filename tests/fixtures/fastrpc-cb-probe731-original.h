@@ -53,4 +53,3 @@ static int fastrpc_cb_probe(struct platform_device *pdev)
 
 	return 0;
 }
-
