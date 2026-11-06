@@ -21,7 +21,7 @@ printf '%s  %s\n' fa595aad93734f829c963c2a90ef7c3673224fd7fdae7b49406e397cde2de2
 cat > "$output/uke-dpu-perf-check.spec" <<'SPEC'
 Name: uke-dpu-perf-check
 Version: 7.3.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Native evidence for checked-state DPU bandwidth calculation
 License: GPL-2.0-only
 Source0: linux-7.3.1.tar.xz
@@ -69,6 +69,10 @@ install -Dm644 dpu-addon/docs/DPU-CHECKED-STATE.md %{buildroot}%{_docdir}/%{name
 %doc %{_docdir}/%{name}/scope.md
 
 %changelog
+* Fri Nov 06 2026 Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-2
+- Match the DRM conditional-iterator form in the synthetic fixture; retain -Werror.
+- Keep the upstream production patch, all state controls and native object scope.
+
 * Fri Nov 06 2026 Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com> - 7.3.1-1
 - Backport upstream480ba24 with actual-state and real AArch64 object evidence.
 SPEC

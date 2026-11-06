@@ -41,7 +41,7 @@ struct dpu_core_perf_params { u64 bw_ctl, core_clk_rate; u32 max_per_pipe_ib; };
 #define for_each_if(c) if (!(c)) {} else
 #define drm_for_each_plane_mask(p,d,m) \
 	for (unsigned int cursor = 0; cursor < 4; cursor++) \
-		if (((m) & (1U << cursor)) && (((p) = (d)->planes[cursor]), 1))
+		for_each_if (((m) & (1U << cursor)) && (((p) = (d)->planes[cursor]), 1))
 static struct drm_plane_state *
 drm_atomic_get_new_plane_state(const struct drm_atomic_commit *state,
 			      struct drm_plane *plane)
