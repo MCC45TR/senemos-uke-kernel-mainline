@@ -85,7 +85,11 @@ static int qcom_glink_tx(struct qcom_glink *g,const void *header,size_t hbytes,c
  memcpy(delivered+delivered_bytes,data,bytes);delivered_bytes+=bytes;++frames;
  return 0;
 }
+/* The unchanged kernel GLINK body uses Kbuild's -Wno-sign-compare policy. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
 #include "actual-glink-send.h"
+#pragma GCC diagnostic pop
 static int rpmsg_trysend(struct glink_channel *c,const void *p,int bytes){
  ++nonblocking;assert(c==&channel);return __qcom_glink_send(c,p,bytes,false);
 }

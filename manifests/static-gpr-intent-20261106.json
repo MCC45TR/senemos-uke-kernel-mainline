@@ -4,7 +4,12 @@
   "parent_source": "a9590a615547c1a95b58789c3a92a248d8d48122",
   "parent_srpm_sha256": "363b8e5a0b8f2e083d5ca27defc7fdb862b1c96cbff02de5cd0ae7773ae96187",
   "planned_revision": 12211,
-  "planned_source_check_release": 16,
+  "planned_source_check_release": 17,
+  "prior_terminal_check": {
+    "copr_build": 11269595,
+    "release": 16,
+    "cause": "Unchanged GLINK source uses Kbuild's disabled sign-compare warning; fixture initially enabled it under -Werror"
+  },
   "observed_large_packet_bytes": 5416,
   "observed_glink_error": -16,
   "unmap_fixture_preimage_sha256": "357891aa9a8b25cbafeab79a3b00e014191ffc069e29a33e1d4205b1228109d0",

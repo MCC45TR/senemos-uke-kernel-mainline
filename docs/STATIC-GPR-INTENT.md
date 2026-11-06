@@ -31,6 +31,13 @@ unmap fixture gains only two mock declarations for the added API; all existing
 assertions remain. Actual APR/AudioReach AArch64 objects and every cumulative
 gate are required before a full candidate.
 
+Initial check16/11269595 stops during preparation because the unchanged GLINK
+fragment triggers sign-compare under the fixture's extra warnings. Linux7.3.1
+scripts/Makefile.warn disables it at the default warning level. Apply that
+same policy only around the imported
+GLINK fragment; keep all other fixture/new-code warnings and -Werror. The
+production patch is unchanged; fresh check17 performs the qualification.
+
 References, unchanged: Linux7.3.1 drivers/soc/qcom/apr.c,
 drivers/rpmsg/qcom_glink_native.c and sound/soc/qcom/qdsp6/audioreach.c;
 current upstreamf66469d9905b39d2c260a15d7d6db450f4db67c1 and remoteproc
