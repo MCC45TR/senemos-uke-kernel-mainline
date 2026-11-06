@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete12211 protected OOB DMA/response backend and qualified FastRPC contribution; source/native check only",
+  "parent_build": 11269695,
+  "parent_source": "dba56903ddba878aba8db22d87a9ab130ef1e1db",
+  "parent_srpm_sha256": "b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf",
+  "core_check": {
+    "copr_build": 11270347,
+    "source": "e08ee5a4c2b486aeb1b957c89daf11df241a82b7",
+    "receipt_sha256": "80df21df9d76d34624d2c6be00dff8aed5f052c12648f89b4903f24072b5feb2",
+    "native_bridge_qualified": true,
+    "core_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d"
+  },
+  "planned_check_release": 21,
+  "planned_full_revision": 12212,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0007-fs19xx-protected-oob.patch",
+      "sha256": "9a1538557c189c405dd13593526c6a50de9424ea892a09c4bc66c26ca0262026"
+    },
+    {
+      "path": "src/audio/uke-audio-config-memory.c",
+      "sha256": "5d9e53e856c0372bc15329aa6ab66dd3c0c229bf550d64545e3d681336e293c2"
+    },
+    {
+      "path": "src/audio/uke-audio-config-memory.h",
+      "sha256": "f6f0fa8498c65879f002763136ff0a0c4b6addab6f04187e0e87efaf378048f1"
+    },
+    {
+      "path": "src/audio/uke-audio-config-dt.h",
+      "sha256": "375c5b3b867136d6d6b77820e1b5cfb511a219b36255b35e168a89b64b91d41b"
+    },
+    {
+      "path": "src/audio/xiaomi,uke-audio-config-memory.yaml",
+      "sha256": "1f140bc6b926d5f6a60f06d94b1ae3b177dda73963ab402d39f74b0b60c58a82"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-oob-backend.c",
+      "sha256": "ae34b184926b8ddd6b0e75699f4c107c020cab6363a84d7c54b9e8e5a87b94e8"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-oob-backend.h",
+      "sha256": "8586cd8eff9717f0ea6be29a5a78735e6e60a0a5608adde180eecb70fb6e7a30"
+    },
+    {
+      "path": "src/audio/apply-oob-backend731.sh",
+      "sha256": "d6b477759b107e1a067f497e279d556bc2f6081e36294edf41d418b6b7cf523d"
+    },
+    {
+      "path": "packaging/native/check-oob-runtime731.sh",
+      "sha256": "d3c872769fa04b7c0621c93a69d33fe211f19b4edd222a8b1fee3cbc1a320182"
+    },
+    {
+      "path": "packaging/native/check-oob-objects731.sh",
+      "sha256": "dd49bb6d7039efe5e2308395937fc93ace5f89db121bb8c3d45f58c158bf5bc6"
+    },
+    {
+      "path": "packaging/native/copr-migration-oob-backend731.sh",
+      "sha256": "76340c75d72fa1ae0f826b8cb00beeb75d7463045def879889ac856d192b42c9"
+    },
+    {
+      "path": "tests/audio-fs19xx-oob-backend.c",
+      "sha256": "7b97169446e76f028282bdf4b01a8edbfd8bb143bccf989ec82c2c20852dbb70"
+    },
+    {
+      "path": "tests/audio-fs19xx-oob-backend.sh",
+      "sha256": "22ae1e0c33a46f6b00add166a38b42218d0a76179e1d161bf887019dd3004320"
+    },
+    {
+      "path": "tests/audio-config-memory.c",
+      "sha256": "2700fcdd3ab6f1e98957d67ce4506b79184e32a0acd2a14543960bc225d3feef"
+    },
+    {
+      "path": "tests/audio-config-dt.c",
+      "sha256": "10cf88399df5572306cd319476a814ad0ffcc8dfd1d9314856d2ac7e010938a0"
+    },
+    {
+      "path": "tests/audio-config-dt.sh",
+      "sha256": "82b6a5c3ccd31626f6054a1a421f5292164f73133e721ea2fb4e5cca3e5c32b4"
+    }
+  ],
+  "runtime_preimage_sha256": "8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57",
+  "runtime_postimage_sha256": "e78e8a70bd192f79c172abdd05eb917f07c9885099f48c7584eda268d897d4bc",
+  "native_backend_admitted": false,
+  "device_installation": false,
+  "physical_activation": false,
+  "physical_acceptance": false,
+  "parameter_records_unchanged": true,
+  "speaker_gain_ceiling": 223,
+  "permanent_provider": "builtin ARCH_QCOM static root node; bind attributes suppressed, no remove path",
+  "dma_context": "Exact frontend SIDs1001/80+1061/0, same runtime group/domain, coherent32-bit DMA, firstSID&0xf in MSW",
+  "ambiguous_ownership": "Erase and retain pages, IOVA, client/port/device/module ownership until restart; refuse reuse",
+  "new_memory_carveout": false,
+  "physical_dma_fallback": false,
+  "dt_source": "Uke fitted frontend contexts copied without modification",
+  "response_checks": [
+    "source/destination domains",
+    "source/destination ports",
+    "nonrecycled per-boot token",
+    "opcode and echoed opcode",
+    "exact header/payload lengths",
+    "nonzero MAP handle",
+    "shared per-module status",
+    "unchanged whole private parameter"
+  ],
+  "cdsp_contribution": {
+    "source": "0f5eb8e6d2f2bae951a50d93f029762ba0aec443",
+    "metadata": "aa2ff4a4203be092a63e0cf9530ddd8f207c83b2",
+    "check": 11270377,
+    "receipt_sha256": "ce2fb1c38c79e81151949fd9c55b4db1eafa798b53a36fdaed20bd1e5be75514",
+    "source_manifest": "manifests/cdsp-dma-admission-20261106.json",
+    "runtime_added": false,
+    "policies_changed": false
+  },
+  "research": [
+    {
+      "repo": "AudioReach/audioreach-kernel",
+      "commit": "6b1abf0c7fb0b8931575f4ef1d1f0926cdc5714f",
+      "files": [
+        "audioreach-driver/q6apm_audio_mem.c",
+        "audioreach-driver/q6apm_audio_mem_cma.c"
+      ],
+      "license": "GPL-2.0",
+      "use": "SID/DMA and ownership comparison; no CMA/physical fallback ported"
+    },
+    {
+      "repo": "gregkh/linux",
+      "ref": "v7.3.1",
+      "files": [
+        "drivers/iommu/arm/arm-smmu/arm-smmu.c",
+        "include/linux/iommu.h",
+        "sound/soc/qcom/qdsp6/q6apm-dai.c",
+        "include/linux/soc/qcom/apr.h"
+      ],
+      "use": "Shared stream groups, DMA domains, native address encoding and GPR framing"
+    }
+  ]
+}

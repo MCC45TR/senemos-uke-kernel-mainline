@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/soc/qcom/xiaomi,uke-audio-config-memory.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Xiaomi Uke audio configuration memory context
+
+maintainers:
+  - Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+
+description: |
+  Permanent DMA context for private APM configuration on Xiaomi Uke. It shares
+  the fitted audio frontend stream IDs and IOMMU domain, while remaining outside
+  the removable GPR and AudioReach device hierarchy. Ambiguous DSP ownership
+  retains an erased dedicated allocation until restart. This node has no MMIO,
+  reserved memory, clock, reset or userspace interface.
+
+properties:
+  compatible:
+    const: xiaomi,uke-audio-config-memory
+
+  iommus:
+    minItems: 2
+    maxItems: 2
+
+required:
+  - compatible
+  - iommus
+
+additionalProperties: false
+
+examples:
+  - |
+    audio-config-memory {
+        compatible = "xiaomi,uke-audio-config-memory";
+        iommus = <&apps_smmu 0x1001 0x80>, <&apps_smmu 0x1061 0>;
+    };

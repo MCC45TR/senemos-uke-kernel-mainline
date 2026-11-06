@@ -52,15 +52,39 @@ still refuses the build. The OOB core's bytes are unchanged.
 Check19/11270202 stopped before SRPM creation: the inherited spec contains the
 same configuration check in both build and install, while the transformation
 required one match. Check20 requires both matches and retains both checks.
-The compiler identity projection and native header bridge remain unqualified.
+Check20/11270347 succeeds477seconds. Its trusted signed text receipt verifies
+395 unchanged parent fields, all four core modes/eight assertion mutants, the
+original configuration refusal/five controls and the actual AArch64 bridge.
+It produces no Image and is not installed on the tablet.
 
-The kernel DMA/response-port backend is not yet admitted or activated. It must
-prove the exact Uke physical/SID address interpretation, device and response
-lifetimes, strict source/token/opcode/length matching, cache barriers and
-bounded quarantine across timeout/removal before replacing the current sender.
-The existing FE uses fitted SIDs0x1001/0x1061; borrowing its PCM allocation or
-assuming another device's DMA context is not an acceptable shortcut. No new
-DT resource, live DMA, calibration access or amplifier operation occurs here.
+The next source candidate adds a permanent built-in DMA supplier outside the
+removable GPR/AudioReach hierarchy. Its root DT node copies the exact fitted
+frontend SIDs0x1001/0x80 and0x1061/0. Allocation requires the same DMA domain
+and IOMMU group as that frontend, a32-bit page-aligned coherent DMA address and
+dedicated8192bytes. The DSP address uses the fitted first SID masked with0xf
+in the high word, matching Linux7.3.1 and AudioReach kernel6b1abf0c's
+`audioreach-driver/q6apm_audio_mem.c` (GPL-2.0,Linaro/Qualcomm).
+No borrowed PCM allocation, physical fallback or reserved-memory range is used.
+
+An independent dynamic GPR port validates both domains/ports, unique token,
+opcode, lengths and mapping handle. Tokens never recycle across APM reloads.
+Cache barriers surround publication and a completed response. Any ambiguous
+send/response retains erased pages, callback/client state, device and module
+references; the supplier refuses reuse until restart. This initial recovery
+limit also applies after APM/PDR removal. A late unmap ACK never frees uncertain
+configuration memory. The callback does not refer to graph or APM driver data.
+
+Only the exact5360-byte protected record selects this backend. Every smaller
+parameter, private identity check, VI/IMCL route, erasure/mute gate and223 gain
+ceiling remains. Original source comparisons run before the layer; later gates
+require the exact complete runtime postimage, including the explicit dispatch.
+Independent fake GPR/DMA/DT fixtures, assertion mutants and actual provider,
+backend, APM composite and ABL objects are required in the next COPR check.
+The backend remains unqualified and is not installed or activated on hardware.
+
+The same cumulative source includes qualified FastRPC DMA-before-session
+admission0f5eb8e6/check11270377. It preserves CDSP PAS/DT/SMMU and manual boot
+policies; no compute runtime package or workload acceptance is added.
 
 The23October2026 WSA884x speaker-protection RFC, patch14/23, sends static
 configuration in512-byte groups at parameter boundaries; a larger individual
