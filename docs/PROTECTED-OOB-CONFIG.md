@@ -101,6 +101,14 @@ depend on that frontend and avoids a supplier/consumer probe cycle. Actual
 initialization fixtures cover defer, controls-only, unprotected/foreign boards
 and allocation/hash/action failures. Native objects are still pending.
 
+Check23/11270678 passes the new startup and all four backend/lease/DT modes,
+then stops when the inherited graph fixture lacks a declaration for the new
+supplier-readiness call. Check24 uses a derived fixture with only a ready
+provider mock; all original assertions and the original fixture remain intact.
+The original91eee9ea hash is verified against the complete parent SRPM.
+Production code remains at the check23 runtime postimage58626ac7; native
+objects and full Image qualification are pending.
+
 The same cumulative source includes qualified FastRPC DMA-before-session
 admission0f5eb8e6/check11270377. It preserves CDSP PAS/DT/SMMU and manual boot
 policies; no compute runtime package or workload acceptance is added.

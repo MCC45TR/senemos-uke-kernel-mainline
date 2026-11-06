@@ -11,7 +11,7 @@
     "native_bridge_qualified": true,
     "core_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d"
   },
-  "planned_check_release": 23,
+  "planned_check_release": 24,
   "planned_full_revision": 12212,
   "full_revision_reserved": false,
   "source_assets": [
@@ -57,7 +57,7 @@
     },
     {
       "path": "packaging/native/copr-migration-oob-backend731.sh",
-      "sha256": "bae825b4b6876d006cee641c90299d99d786f1bdad78e1b2145ee02650643caa"
+      "sha256": "989a9a754f2f5102445ea45f6507b81db9f0d4015430e40c442efae95b2dc5ed"
     },
     {
       "path": "tests/audio-fs19xx-oob-backend.c",
@@ -82,6 +82,10 @@
     {
       "path": "tests/audio-oob-startup.c",
       "sha256": "6c649f8102b27721688ad401f13bc4b959c5f23ffb05faaab46f2dae8d1b862e"
+    },
+    {
+      "path": "tests/audio-controls-only-oob731.sh",
+      "sha256": "c1b822217d345161458e786620f9a7dfef0e11c640b9b04eacfabeffc18cc232"
     }
   ],
   "runtime_preimage_sha256": "8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57",
@@ -141,18 +145,17 @@
     }
   ],
   "prior_source_check": {
-    "release": 22,
-    "copr_build": 11270597,
-    "source": "d67cb05e0f78920676d003897e3f6f237e77817a",
-    "state": "failed246s at inherited prepared gate before native objects",
+    "release": 23,
+    "copr_build": 11270678,
+    "source": "5a3016be976e4c34875bc74bed604fcb388aa4f6",
+    "state": "failed270s before native objects",
     "backend_peer_modes_passed": 4,
     "backend_assertion_mutants_passed": 8,
     "dt_modes_passed": 4,
-    "core_modes_passed": 4,
-    "fastrpc_modes_passed": 4,
-    "failure": "Third active runtime comparator in check-camera-next731.sh still required the original whole runtime",
-    "correction": "Extend all three active comparisons to the same exact preimage/postimage guard; retain complete hashes",
-    "production_backend_dma_runtime_dt_bytes_changed": false
+    "startup_protected_and_controls_modes_passed": 8,
+    "failure": "Inherited graph fixture extracted new initialization without a readiness-provider mock",
+    "correction": "Use a derived admission fixture with only ready-provider mock; preserve original script and all assertions",
+    "production_code_changed_by_correction": false
   },
   "prior_source_checks": [
     {
@@ -167,6 +170,20 @@
       "failure": "Clang synthetic FDT setup assertion; buffer lacked explicit required8-byte alignment",
       "correction": "Explicitly align fixture like the native ABL buffer; report libfdt setup return/alignment",
       "production_backend_dma_runtime_dt_bytes_changed": false
+    },
+    {
+      "release": 22,
+      "copr_build": 11270597,
+      "source": "d67cb05e0f78920676d003897e3f6f237e77817a",
+      "state": "failed246s at inherited prepared gate before native objects",
+      "backend_peer_modes_passed": 4,
+      "backend_assertion_mutants_passed": 8,
+      "dt_modes_passed": 4,
+      "core_modes_passed": 4,
+      "fastrpc_modes_passed": 4,
+      "failure": "Third active runtime comparator in check-camera-next731.sh still required the original whole runtime",
+      "correction": "Extend all three active comparisons to the same exact preimage/postimage guard; retain complete hashes",
+      "production_backend_dma_runtime_dt_bytes_changed": false
     }
   ],
   "active_runtime_guard_comparisons": 3,
@@ -177,5 +194,17 @@
     "Require the same-source successful signed source23 receipt before full12212 construction, and audit provider linkage"
   ],
   "full_mode_requires_same_source_native_receipt": true,
-  "full_mode_requires_trusted_receipt_sha256": true
+  "full_mode_requires_trusted_receipt_sha256": true,
+  "inherited_fixture_adaptation": {
+    "original_path": "tests/audio-controls-only-contract.sh",
+    "original_sha256": "91eee9eae001c10f6a19414d24fa5c448ca8e46b10f91fa251f15491aaa276d7",
+    "derived_path": "tests/audio-controls-only-oob731.sh",
+    "original_preserved": true,
+    "assertions_unchanged": true,
+    "scope": "Ready supplier mock only; actual defer/fault behavior remains covered by independent startup and lease tests"
+  },
+  "source24_changes": [
+    "Preserve the inherited graph fixture and select a derived copy with the new provider readiness mock",
+    "Fresh check24 and same-source full24 receipt gate; production wire/runtime/provider/DT unchanged from23"
+  ]
 }
