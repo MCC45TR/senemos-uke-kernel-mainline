@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete full12214 plus defined GPR response client data; proposed check29, no full reservation",
+  "parent_build": 11271493,
+  "parent_source": "b8599070af13fd7522880758ed71230ab322b105",
+  "parent_srpm_sha256": "71c1b5c17cbf19af275db6af904abf20c2d855b2987350404e9f538d16455dc9",
+  "source_check_release": 29,
+  "proposed_full_revision": 12215,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0010-uke-gpr-response-client-data.patch",
+      "sha256": "bc6a34ddc228eccef2585fe74cbf1fe28fddbcf2a12d0e1312ba1e150bf9a2fd"
+    },
+    {
+      "path": "src/audio/apply-client-data731.sh",
+      "sha256": "ae1867a2d83c16b4fe48e4f46243231e6606057f70948106f8a66a76920b322f"
+    },
+    {
+      "path": "tests/audio-gpr-client-data.c",
+      "sha256": "04509dadb4c5525209f5d516ec7b275d8f82d45fa1728b4fe178315f17585e52"
+    },
+    {
+      "path": "tests/audio-gpr-client-data.sh",
+      "sha256": "7f67e1a975b679dfdea42293f27c55298ae23566217265dc2a7391f3bcf86fdf"
+    },
+    {
+      "path": "packaging/native/check-client-data731.sh",
+      "sha256": "d4f99866f95535cfa6265591d80df3da52441b903e846f3572e05ce2604209da"
+    },
+    {
+      "path": "packaging/native/copr-migration-client-data731.sh",
+      "sha256": "1e9b05f7594873f3e796a6342360f48398e5bbc530d9c03482e672b1410bedc8"
+    },
+    {
+      "path": "docs/PROTECTED-GPR-CLIENT-DATA.md",
+      "sha256": "7b8347528b6423d9ba8290bde9ae015f75ec653ed91a75b9eb44f4016d1c35dc"
+    },
+    {
+      "path": "manifests/kernel-migration-full12214-20261106.json",
+      "sha256": "324dd40efba856c47bbb44a6c7478bd0bbbcf1301394005e2c1090ecc2a30c6f"
+    }
+  ],
+  "source_preimage_sha256": "785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73",
+  "source_postimage_sha256": "bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690",
+  "unchanged_parent_nonidentity_fields": 429,
+  "new_backend_modes": 4,
+  "valid_client_values": 16,
+  "true_reserved_bits": 12,
+  "original_refusal_controls": 2,
+  "assertion_mutants": 4,
+  "actual_objects": [
+    "sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o"
+  ],
+  "protocol_source": {
+    "repository": "AudioReach/audioreach-graphservices",
+    "commit": "558ddfc2c87019496957855c209dd5ece4f6aceb",
+    "path": "gpr/api/gpr_packet.h",
+    "license": "BSD-3-Clause",
+    "wire_reserved_mask": "0xfff00000"
+  },
+  "target_changed": false,
+  "physical_acceptance": false
+}
