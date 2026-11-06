@@ -11,6 +11,7 @@ mode=${3:?check or full}
 proof=${4:?Check release or admitted build}
 [[ $revision == 12208 && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
 commit=$(git -C "$owner" rev-parse HEAD)
+native_proof_source=$commit
 stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 [[ $(curl -q -fLsS --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11268117 | jq -er .state) == succeeded ]]
 if [[ $mode == full ]];then
@@ -21,7 +22,14 @@ if [[ $mode == full ]];then
  evr=$(jq -er .source_package.version "$stage/proof.json")
  curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-$evr.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
- [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
+ qualified_source=$(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit')
+ if [[ $qualified_source != "$commit" ]];then
+  # Reuse native qualification only for the reviewed runtime-dependency overlay.
+  [[ $qualified_source == a97d6f096bd82da7040f7ff68e92d43a29719d00 ]]
+  git -C "$owner" fetch -q --depth=1 origin "$qualified_source"
+  [[ $(git -C "$owner" diff --name-only "$qualified_source" "$commit") == packaging/native/copr-migration-bootcompat731.sh ]]
+  native_proof_source=$qualified_source
+ fi
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 else
  [[ $# == 4 ]]
@@ -74,7 +82,7 @@ for tree in "$profile" "$boot";do
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-boot-compat.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg source "$commit" --arg revision "$revision" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),bootcompat_parent_build:11268117,bootcompat_parent_source:"5fbe231e12679776e5bb069ff6af5b5e9a9db570",boot_header_disabled_verification_fallback_layer:1,shipping_boot_header_mode:"explicit-bootloader-compat",shipping_boot_header_os_version_encoded:570425768,canonical_zero_header_support_retained:true,bootloader_compatibility_physical_accepted:false,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-boot-compat.json" > "$profile/source-composition.json"
+jq --arg source "$commit" --arg revision "$revision" --arg native_proof "$native_proof_source" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.1-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_1-"+$revision+"u"),bootcompat_parent_build:11268117,bootcompat_parent_source:"5fbe231e12679776e5bb069ff6af5b5e9a9db570",boot_header_disabled_verification_fallback_layer:1,bootcompat_native_qualified_source:$native_proof,minimum_kernel_updater:"1.8.100",shipping_boot_header_mode:"explicit-bootloader-compat",shipping_boot_header_os_version_encoded:570425768,canonical_zero_header_support_retained:true,bootloader_compatibility_physical_accepted:false,device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-boot-compat.json" > "$profile/source-composition.json"
 install -m644 "$profile/prepare.sh" "$boot/packaging/native/cumulative-prepare.sh"
 sha256sum -c --strict --quiet "$stage/configs"
 for tree in "$profile" "$boot";do
@@ -95,8 +103,9 @@ for tree in native-profile boot-recipe;do
 done
 awk -v revision="$revision" '
  /^%global senemos_build_release 12207$/ {$0="%global senemos_build_release "revision;changed++}
- /^%changelog$/ {print;print "* Fri Nov 06 2026 Uke contributors - 7.3.1-"revision;print "- Select explicit bootloader compatibility metadata for alternating slots.";print "- Retain canonical zero-header support, protected223 and complete12207 hardware.";print "";next}
- {print} END {if(changed!=1)exit 1}
+ /^Requires: uke-kernel-update >= 1[.]8[.]98$/ {$0="Requires: uke-kernel-update >= 1.8.100";updater++}
+ /^%changelog$/ {print;print "* Fri Nov 06 2026 Uke contributors - 7.3.1-"revision;print "- Select explicit bootloader compatibility metadata for alternating slots.";print "- Retain canonical zero-header support, protected223 and complete12207 hardware.";print "- Require updater100 for the corrected inactive checkpoint write barrier.";print "";next}
+ {print} END {if(changed!=1 || updater!=1)exit 1}
 ' "$spec" > "$stage/full.spec"
 install -m644 "$stage/full.spec" "$spec"
 if [[ $mode == check ]];then
