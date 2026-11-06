@@ -22,8 +22,9 @@ or generic kernel arithmetic service. Native FastRPC remains the compute ABI.
 Exact comparisons: MiCode kernel5712080a and DT94c84aeb; same-SoC OnePlus
 kernel fc892483 and modules/DT1138e00f; Linux7.3.1/79a90760 and current upstream
 f66469d9. Both OEM generic FastRPC callbacks have the same DMA-publication
-order. The Linux files retain their Linux Foundation/Linaro/Qualcomm GPL-2.0
-attribution. The callback controls are extracted Linux code, also GPL-2.0.
+order. The Linux7.3.1 file and extracted callback controls retain GPL-2.0,
+Copyright2011–2018 The Linux Foundation and2018 Linaro Limited. The enclosing
+repository's MIT license does not replace that file-level GPL attribution.
 No donor scripts or binaries are executed, and no board resource is copied.
 
 Vinayak Katoch's21 October v6 CB-lifecycle proposal is an active comparison:

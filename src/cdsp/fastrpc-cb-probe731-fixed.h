@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
+// Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+// Copyright (c) 2018, Linaro Limited
+// Expected callback after the Uke Linux DMA admission ordering correction.
 static int fastrpc_cb_probe(struct platform_device *pdev)
 {
 	struct fastrpc_channel_ctx *cctx;
