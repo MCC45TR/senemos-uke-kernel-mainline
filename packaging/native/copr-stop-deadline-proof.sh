@@ -13,7 +13,8 @@ mkdir "$output" "$work/extracted" "$work/stop-deadline-proof"
 curl -q -fsSL --retry 2 --max-time 600 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11283159/senemos-uke-linux-kernel-mainline-unstable-7.3.3-1.src.rpm -o "$work/parent.src.rpm"
 printf '%s  %s\n' e5de2472b379aaceb212679bb4ef6b8363a2ef26ddc32abaaea2f84bb6cc013e "$work/parent.src.rpm" | sha256sum -c --strict -
 [[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$work/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.3-1 ]]
-rpm2cpio "$work/parent.src.rpm" | (cd "$work/extracted";cpio -idm --quiet --no-absolute-filenames senemos-native-profile-7.3.3.tar.xz)
+rpm2cpio "$work/parent.src.rpm" | (cd "$work/extracted";cpio -idm --quiet --no-absolute-filenames ./senemos-native-profile-7.3.3.tar.xz senemos-native-profile-7.3.3.tar.xz)
+test -s "$work/extracted/senemos-native-profile-7.3.3.tar.xz"
 tar -xJf "$work/extracted/senemos-native-profile-7.3.3.tar.xz" -C "$work/extracted" \
  native-profile/patches/boot/0073-uke-fs19xx-protected-runtime.patch native-profile/src/audio/uke-fs19xx-safety.h
 (cd "$work/extracted/native-profile";jq -r '.retained_inputs|to_entries[]|.value+"  "+.key' "$owner/manifests/stop-deadline-callbacks-20261107.json" | sha256sum -c --strict -)

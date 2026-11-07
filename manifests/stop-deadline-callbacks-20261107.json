@@ -52,7 +52,7 @@
     },
     {
       "path": "packaging/native/copr-stop-deadline-proof.sh",
-      "sha256": "5c8305aa815a92b2595edc469596d6cec21585ec912b5ee75bd6901579a971dd"
+      "sha256": "077ee9aeb3aea6531bdd1446df2ec488ce8c8fbd7ef84a31c49c399567bfc0ca"
     }
   ]
 }
