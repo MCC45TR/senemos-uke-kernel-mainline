@@ -77,7 +77,7 @@ reply. Keep bounded fault shutdown, private erasure, gain and calibration.
  bool q6apm_fs19xx_graph(struct q6apm_graph *graph);
 --- a/sound/soc/qcom/qdsp6/q6apm.c
 +++ b/sound/soc/qcom/qdsp6/q6apm.c
-@@ -1,17 +1,16 @@
+@@ -956,17 +956,16 @@
  int q6apm_graph_stop(struct q6apm_graph *graph)
  {
  	struct audioreach_graph *ar_graph = graph->ar_graph;

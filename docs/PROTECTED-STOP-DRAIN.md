@@ -72,7 +72,7 @@ new layer applies.
 
 ## Qualification and remaining device work
 
-Proposed COPR check35 executes the actual codec mute/readback/event, runtime
+Proposed COPR check36 executes the actual codec mute/readback/event, runtime
 gate/stopping/stopped and graph-stop callbacks with independent I2C and DSP
 drain peers. Four compiler/sanitizer modes cover40 cases, including all20 mute
 I2C operations failing, ignored writes, DSP timeout/error, owner/removal/state
@@ -103,3 +103,11 @@ new callback compilation. Check35 expresses that verified function delta in
 one contextual hunk. Implementation and expected postimage bytes stay unchanged.
 The OEM reference license note is also corrected to distinguish absent file
 headers from the module GPL declaration; no donor implementation is imported.
+
+Check35/COPR11282604 confirms the same exact preimages but GNU patch refuses
+the single hunk anchored at line1, before callback compilation. Check36 gives
+the hunk its actual cumulative source position956. A local git apply/reverse
+check with the exact function after955 inert prefix lines preserves the
+expected function postimage and surrounding bytes. GNU patch is unavailable
+on the tablet; its acceptance and actual cumulative native tests remain COPR
+gates. No compiler or new package is run or installed locally.
