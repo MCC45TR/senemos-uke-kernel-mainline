@@ -66,13 +66,6 @@ for tree in "$profile" "$boot";do
  git -C "$tree" apply --whitespace=error "$owner/src/boot/$guard_patch"
  (cd "$tree";jq -r --arg kind "$kind" '.version_helper_hashes[$kind]|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
  bash "$owner/scripts/normalize-cumulative-version.sh" "$tree" "$kind"
- if [[ $kind == native_profile ]];then
-  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.before+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
-  git -C "$tree" apply --check --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
-  git -C "$tree" apply --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
-  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
-  bash "$owner/tests/cumulative-linked-version-contract.sh" "$tree"
- fi
  [[ $(grep -Fo uke7.3.1-12217u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
  sed "s/uke7[.]3[.]1-12217u/uke${version}-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
@@ -81,6 +74,13 @@ for tree in "$profile" "$boot";do
  git -C "$tree" apply --check --whitespace=error "$owner/src/audio/0018-uke-idle-stop-source-seals.patch"
  git -C "$tree" apply --whitespace=error "$owner/src/audio/0018-uke-idle-stop-source-seals.patch"
  (cd "$tree";jq -r '.checker_hashes|to_entries[]|.value.after+"  "+.key' manifests/idle-stop-worker-20261107.json | sha256sum -c --strict -)
+ if [[ $kind == native_profile ]];then
+  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.before+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+  git -C "$tree" apply --check --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
+  git -C "$tree" apply --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
+  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+  bash "$owner/tests/cumulative-linked-version-contract.sh" "$tree"
+ fi
  # Only retained synthetic peers gain the new callback; no assertion changes.
  (cd "$tree";jq -r '.retained_fixture_hashes|to_entries[]|.value.before+"  "+.key' manifests/audio-vrr-20261107.json | sha256sum -c --strict -)
  git -C "$tree" apply --check --whitespace=error "$owner/src/audio/0019-uke-idle-legacy-fixture.patch"

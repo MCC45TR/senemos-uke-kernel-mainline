@@ -75,7 +75,7 @@
     },
     {
       "path": "packaging/native/copr-migration-stable733.sh",
-      "sha256": "4f938b3abeb40bbd98e36a76a474a7e25242367f0926f81326a331b54b7c90a7"
+      "sha256": "5a83adcb93681b43162e496afdb659bec417920db441ec72d19a8558e473c7f3"
     },
     {
       "path": "packaging/native/check-stable733.sh",
