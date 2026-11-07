@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-07",
+  "scope": "Complete17 plus atomic speaker idle fault classification and O82 VRR saved-floor metadata; source40/full18 unreserved",
+  "parent_build": 11282652,
+  "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
+  "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
+  "source_check_release": 40,
+  "proposed_full_revision": 12218,
+  "full_revision_reserved": false,
+  "unchanged_parent_nonidentity_fields": 463,
+  "source_assets": [
+    {
+      "path": "src/display/0075-o82-vrr-floor-api.patch",
+      "sha256": "5e0976b03a0206e98242e68903f9c576e81881a2587353adfa9295b949e1643d"
+    },
+    {
+      "path": "src/display/apply-vrr-api731.sh",
+      "sha256": "4f1f4d0e1e9455ac31826ba5bc6190395293b0bf9ee31b13c8a0077e503c12e5"
+    },
+    {
+      "path": "tests/o82-vrr-api.c",
+      "sha256": "49620424ba19732aedf7b2660c07800a788cc2a9696800770e74b0e284e8776c"
+    },
+    {
+      "path": "tests/o82-vrr-api.sh",
+      "sha256": "0ad58309f4ffa1a95a2f169f7305ecb675996a4804bed681b26a4e42f8ceb283"
+    },
+    {
+      "path": "packaging/native/check-vrr-api731.sh",
+      "sha256": "3abc559e7a1d5bc70283a56b152b4670a84bcc6c57e9a79f51c5f1ebc261f97f"
+    },
+    {
+      "path": "packaging/native/copr-migration-audio-vrr731.sh",
+      "sha256": "7ad2a720bd8dac93232677bca917e272c62fc831f627c011c105c80a99e48b67"
+    },
+    {
+      "path": "docs/VRR-FLOOR-ABI.md",
+      "sha256": "e1e63c1046f12d947cd328205ac5257da67f7588e9bb8e58ec0a5e0d725229be"
+    },
+    {
+      "path": "src/audio/0017-uke-protected-idle-worker.patch",
+      "sha256": "2ddda04fdaef6e8cf3266e31884e300aede23b2bdc0fe9b3b4af09b0147731cf"
+    },
+    {
+      "path": "src/audio/0018-uke-idle-stop-source-seals.patch",
+      "sha256": "924e35041d1e18e2d0fc4518b4bb46d8d035a2287b76cce4f6599aa46b3c9714"
+    },
+    {
+      "path": "src/audio/apply-idle-stop731.sh",
+      "sha256": "8b166effeefa66014bc46336b6d253d069b602306c536053324ed030094d33bb"
+    },
+    {
+      "path": "tests/audio-idle-stop.c",
+      "sha256": "e0a3d059352e5fc7777ef557a512e4cc21e0d1488c757e3d54c6f327fc810ba1"
+    },
+    {
+      "path": "tests/audio-idle-stop.sh",
+      "sha256": "9cc526922b1e24f67eba81436fb1f3a59a221d9e038a5b1815ec7234421d20cd"
+    },
+    {
+      "path": "packaging/native/check-idle-stop731.sh",
+      "sha256": "63ea8c2ab7b735b45d8101b7d2e8524b8b9a87a3c3ee6351702c33ccc1bd9ba3"
+    },
+    {
+      "path": "docs/PROTECTED-IDLE-WORKER.md",
+      "sha256": "87f6950c5ca1c5d01e4e7341ece3337c9d8d36bf8954201bfba810761932308a"
+    },
+    {
+      "path": "manifests/idle-stop-worker-20261107.json",
+      "sha256": "e7bf17db12c6155da8a00aa0b528dbd5c6997cad8f8d1641f9fb8ea540ec9df9"
+    },
+    {
+      "path": "manifests/kernel-migration-full12217-20261107.json",
+      "sha256": "9f7624d464ff9b6dde8daca67182cf3571dca6298ee44c43eb479c28f2659f80"
+    }
+  ],
+  "before_block_sha256": "4be1dd1953c7b6ed5b2a261d74d2125dbce00bb4f3691d359f0d67603a959615",
+  "after_block_sha256": "9575fc47f923ba59874d88fc4f8bd36d4e8dd02e9d6887b4a5c75b46a67a024a",
+  "kernel_default_zero_retained": true,
+  "no_kde_changes": true,
+  "display_admission_unchanged": true,
+  "physical_acceptance": false
+}
