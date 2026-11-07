@@ -66,7 +66,7 @@ int main(void)
 		case 5: envelope.version++; break;
 		case 6: envelope.header_words--; break;
 		case 7: envelope.packet_bytes--; break;
-		case 8: envelope.reserved++; break;
+		case 8: envelope.reserved = 0x100; break;
 		case 9: envelope.opcode++; break;
 		case 10: response[4] ^= 1; break;
 		case 11: response[8] ^= 1; break;
@@ -85,6 +85,17 @@ int main(void)
 			finish(variant == 15 || variant == 16 ? -EREMOTEIO : -EPROTO, false, 28);
 			if (variant == 15 || variant == 16) assert(query.remote_status == 3);
 		}
+	}
+	/* The complete client byte is valid; every high-byte bit remains reserved. */
+	for (i = 1; i <= 255; i++) {
+		fresh(i & 1, 1, 28);
+		envelope.reserved = i;
+		finish(0, true, 28);
+	}
+	for (i = 8; i < 16; i++) {
+		fresh(0, 1, 28);
+		envelope.reserved = 1U << i;
+		finish(-EPROTO, false, 28);
 	}
 	for (i = 0; i <= 40; i++) {
 		if (i == 24 || i == 28) continue;

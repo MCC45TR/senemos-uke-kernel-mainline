@@ -3,6 +3,9 @@
 uke_stop_root=$(realpath "${1:?Prepared cumulative kernel}")
 uke_stop_codec_view=$uke_stop_root/sound/soc/codecs/fs19xx.c
 uke_stop_runtime_view=$uke_stop_root/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+if [[ -e $uke_stop_root/native-generated/runtime-before-enable-readback.c ]];then
+ uke_stop_runtime_view=$(bash "$uke_stop_root/native-profile/packaging/native/speaker-readback-source-view.sh" "$uke_stop_root")
+fi
 uke_stop_muted_view=$uke_stop_root/sound/soc/codecs/uke-fs19xx-muted-stop.h
 if [[ -e $uke_stop_root/native-generated/codec-before-stop-deadline.c ]];then
  for uke_stop_before in codec-before-stop-deadline.c runtime-before-stop-deadline.c muted-before-stop-deadline.h;do

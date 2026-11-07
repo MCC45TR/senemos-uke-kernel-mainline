@@ -90,7 +90,8 @@ static inline int uke_rb_reply(struct uke_rb_query *q, const struct uke_rb_envel
 	    h->source_domain != 2 || h->destination_domain != 3 ||
 	    h->source_port != 1 || h->destination_port != q->port)
 		return 0;
-	if (!data || h->version || h->header_words != 6 || h->reserved ||
+	/* Linux names16 bits reserved; fitted GPR uses their low byte as client data. */
+	if (!data || h->version || h->header_words != 6 || (h->reserved & 0xff00U) ||
 	    bytes > 28 || h->packet_bytes != 24 + bytes)
 		goto malformed;
 	if (h->opcode == UKE_RB_ACCEPTED) {
@@ -136,4 +137,8 @@ malformed:
 	uke_rb_cancel(q, -EPROTO);
 	return 1;
 }
+#ifdef __KERNEL__
+struct q6apm;
+int q6apm_fs19xx_read_enables(struct q6apm *apm, unsigned int *enabled);
+#endif
 #endif

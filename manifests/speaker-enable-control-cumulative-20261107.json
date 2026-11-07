@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Complete cumulative7333 plus privileged volatile ASoC enable control, existing graph-owner/guard generation and fitted GPR client-byte compatibility; gain223 retained",
+  "parent_full_build": 11283960,
+  "parent_source": "fa9d36d77a0b6dfe73e168e993b688ad5f3374f2",
+  "focused_parent_check": 11284443,
+  "focused_parent_source": "52af6d902d3d00c2ff6d351312112e8dcdc793ae",
+  "parent_check_limit": "Synthetic zero-client-byte transport/parser only; not an actual kernel object or fitted-firmware query",
+  "runtime_before": "2db81985157213fbe61d9d58bd997784264fcee05d34f96f9d4fe1474e92205f",
+  "runtime_after": "e839faa9f2f08a1880d8c94ed6c1ba77b5e70c1731f1a7724acba0b5b5eccf2b",
+  "source_refs": [
+    {
+      "repository": "AudioReach/audioreach-graphservices",
+      "commit": "558ddfc2c87019496957855c209dd5ece4f6aceb",
+      "files": [
+        "spf/api/apm/apm_api.h",
+        "gsl/src/gsl_graph.c",
+        "gpr/api/gpr_packet.h"
+      ],
+      "license": "BSD-3-Clause",
+      "role": "APM in-band GET, alignment/status and full client-byte contract; independent GPL implementation"
+    },
+    {
+      "repository": "MiCode/vendor_qcom_opensource_audio-kernel",
+      "commit": "8eb0eccbc4027ae4a4987e4bced03a4381039714",
+      "files": [
+        "asoc/codecs/fs19xx/fsm_q6afe.c",
+        "asoc/codecs/fs19xx/fsm_q6afe.h",
+        "asoc/codecs/fs19xx/Kbuild"
+      ],
+      "license": "Fourier notice; comparison only, no implementation copied",
+      "role": "Dormant legacy AFE, not an enabled AudioReach limiter-mode ABI"
+    },
+    {
+      "repository": "gregkh/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "files": [
+        "sound/soc/qcom/qdsp6/q6apm.c",
+        "sound/soc/qcom/qdsp6/Makefile",
+        "drivers/soc/qcom/apr.c"
+      ],
+      "license": "GPL-2.0",
+      "role": "Original APM/component/GPR interfaces with all cumulative callback-drain and PCM progress fixes retained"
+    }
+  ],
+  "payload_assets": [
+    "src/audio/uke-fs19xx-readback.c",
+    "src/audio/uke-fs19xx-readback.h",
+    "src/audio/uke-fs19xx-enable-control.h",
+    "src/audio/0026-fs19xx-enable-readback-control.patch",
+    "src/audio/apply-enable-readback733.sh",
+    "tests/audio-fs19xx-readback.c",
+    "tests/audio-fs19xx-readback-backend.c",
+    "tests/audio-fs19xx-readback.sh",
+    "tests/audio-fs19xx-enable-control.c",
+    "tests/audio-fs19xx-enable-control.sh",
+    "packaging/native/speaker-readback-source-view.sh",
+    "packaging/native/check-enable-readback733.sh",
+    "packaging/native/copr-enable-readback733.sh",
+    "docs/SPEAKER-ENABLE-CONTROL.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-fs19xx-readback.c",
+      "sha256": "1172008b947732b508e8973b9a5a910c3eea93fb08bf4a65883a81b73b04f7a5"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-readback.h",
+      "sha256": "fd0f6d58b932b4130b9aa0896dd28edd6bb538586660b1de96e162927112ecc1"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-enable-control.h",
+      "sha256": "aab32ac7c528b2d98049954d94d03301a6328615b1d8a8744459b4faccc8ab20"
+    },
+    {
+      "path": "src/audio/0026-fs19xx-enable-readback-control.patch",
+      "sha256": "8bb50c6532d020a6f8304e40ba3229dbefb11d6979c545e0c4dabcbb72b794b1"
+    },
+    {
+      "path": "src/audio/apply-enable-readback733.sh",
+      "sha256": "97084839a9c8fd4360f19a471a4d4151ed10274d75a5963e630252c60ef28b7b"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback.c",
+      "sha256": "303d4c28ee5e36f3334759db9e59b1910bc1900209c2f00e4b55e46815d5dca6"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback-backend.c",
+      "sha256": "6633e2bb918abc9078ffa1f5450583db0a9b4f59eec3ee8e00cd4f80c70f7aaf"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback.sh",
+      "sha256": "26f781f9febd83849d52271fadcee6151b88718382b7047e6a51c35575313f8a"
+    },
+    {
+      "path": "tests/audio-fs19xx-enable-control.c",
+      "sha256": "0099eaf62409bdf453eb6a303869758f36ebfbe14db43f3343f1aed6e91c88c9"
+    },
+    {
+      "path": "tests/audio-fs19xx-enable-control.sh",
+      "sha256": "041585587fdcf2a79bce2cef07b341ca588893c1a906f84cb9c03e3a1113cffe"
+    },
+    {
+      "path": "packaging/native/speaker-readback-source-view.sh",
+      "sha256": "409c7984962d1566ba402a65692659badf6d221b3da30ccb5691db28439c0136"
+    },
+    {
+      "path": "packaging/native/check-enable-readback733.sh",
+      "sha256": "1bd184d8581f636142c28c713a45f280ab1802e896fa5871897e1b732e085488"
+    },
+    {
+      "path": "packaging/native/copr-enable-readback733.sh",
+      "sha256": "ae22d3281a66b737e22c640a863689891f47fe25fc4b2e60999594a5b63fd716"
+    },
+    {
+      "path": "docs/SPEAKER-ENABLE-CONTROL.md",
+      "sha256": "31fe0b780c14c2acec0e49531fdf450e890b2ad716b5818a8d45912a0c3f7bfd"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "9a0af2a1f0ef56f8675ab16d942360137b14bc44235493cbb40f40c439a3299e"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "2345556bd148da29419818c4befbde65a98022a531192d7b84540a34c6382430"
+    },
+    {
+      "path": "manifests/stop-deadline-cumulative-20261107.json",
+      "sha256": "77225b7f806f03b90d8cbc2f0574c4a602d7b340427e5a71bb7802a0ffb6449b"
+    },
+    {
+      "path": "manifests/pcm-period-cumulative-20261107.json",
+      "sha256": "b16021af1f5c86ffd00a7922441b7643aa3b896707cd1aa6c7de6c8caeef4371"
+    }
+  ],
+  "planned_full_release": 4,
+  "planned_source_check_release": 17,
+  "full_revision_reserved": false,
+  "native_admitted": false,
+  "physical_acceptance": false,
+  "gain_ceiling": 223,
+  "parser_cases_per_mode": 347,
+  "backend_cases_per_mode": 23,
+  "getter_lifecycle_cases_per_mode": 617,
+  "compiler_sanitizer_modes": 4,
+  "parser_mutants_per_compiler": 7,
+  "getter_mutants_per_compiler": 5,
+  "original_runtime_callbacks_unchanged": true,
+  "offline_charging_activation": false
+}

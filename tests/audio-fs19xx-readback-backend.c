@@ -114,7 +114,7 @@ static int gpr_send_port_pkt(gpr_port_t *p, const struct gpr_pkt *packet)
 	uke_rb_put(reply_bytes + 12, 4);
 	uke_rb_put(reply_bytes + 20, !!(requested_mask & (1U << bit)));
 	response = (struct gpr_resp_pkt) {
-		.hdr = { .hdr_size = 6, .pkt_size = 52, .src_domain = 2,
+		.hdr = { .hdr_size = 6, .pkt_size = 52, .src_domain = 2, .reserved = 0xc8,
 			.dest_domain = 3, .src_port = 1, .dest_port = 0x1234,
 			.token = current_token, .opcode = UKE_RB_GET_REPLY },
 		.payload = reply_bytes, .payload_size = 28,

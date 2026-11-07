@@ -18,7 +18,7 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/backend"
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/parser"
 if [[ $sanitize == 0 ]];then
  cp "$work/uke-fs19xx-readback.h" "$work/original.h"
- for mutant in token identity inner-status boolean basic-ack padding;do
+ for mutant in token identity inner-status boolean basic-ack padding reserved-byte;do
   awk -v mutant="$mutant" '
    mutant=="token" && /h->token != q->token/{sub(/h->token != q->token/, "false");changed++}
    mutant=="identity" && /uke_rb_word\(data \+ 4\) != q->instance/{sub(/uke_rb_word\(data \+ 4\) != q->instance/, "false");changed++}
@@ -26,6 +26,7 @@ if [[ $sanitize == 0 ]];then
    mutant=="boolean" && /if \(status > 1\)/{sub(/status > 1/, "false");changed++}
    mutant=="basic-ack" && /if \(!status\)/{sub(/!status/, "false");changed++}
    mutant=="padding" && /\(bytes == 28 && uke_rb_word\(data \+ 24\)\)/{sub(/bytes == 28 && uke_rb_word\(data \+ 24\)/, "false");changed++}
+   mutant=="reserved-byte" && /\(h->reserved & 0xff00U\)/{sub(/h->reserved & 0xff00U/, "h->reserved");changed++}
    {print} END {if(changed!=1)exit 1}
   ' "$work/original.h" > "$work/uke-fs19xx-readback.h"
   "$cc" "${flags[@]}" -I "$work" "$owner/tests/audio-fs19xx-readback.c" -o "$work/mutant"

@@ -52,8 +52,8 @@ static int uke_rb_callback(const struct gpr_resp_pkt *reply, void *context, int 
 	return 0;
 }
 
-/* Draft integration API: not exported or called by the shipping runtime yet.
- * Caller must hold the admitted FS19xx graph/owner mutex through this call.
+/* Internal integration API, not exported outside the existing APM module.
+ * Caller holds the admitted FS19xx graph/owner mutex through this call.
  * gpr_free_port must include the cumulative callback-drain fix0088.
  * Failure is diagnostic only: never reset/reprovision/mute a healthy stream.
  */

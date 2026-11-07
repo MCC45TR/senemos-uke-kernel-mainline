@@ -48,15 +48,15 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "0fbf6c3457673cfaa8564fb536101befbd302186a1c583c43c23789e7a788a70"
+      "sha256": "9a0af2a1f0ef56f8675ab16d942360137b14bc44235493cbb40f40c439a3299e"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "79fd1cb5a147e291b11e0fc1efbba159a1b8bcbaa2553951258862cad1974bc5"
+      "sha256": "2345556bd148da29419818c4befbde65a98022a531192d7b84540a34c6382430"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "18dad0d81266933d3a0e59bba3d82faab7464fdf3de32a2fde0dded8733f320e"
+      "sha256": "77225b7f806f03b90d8cbc2f0574c4a602d7b340427e5a71bb7802a0ffb6449b"
     }
   ],
   "compiler_sanitizer_modes": 4,
