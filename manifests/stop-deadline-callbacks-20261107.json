@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Focused native callback proof only; no full kernel, ABI, installation or physical acceptance",
+  "parent_full_build": 11283159,
+  "parent_full_source": "e6ca7d94e78262ff1e01ea6f780f1b0855df15f6",
+  "parent_full_source_rpm_sha256": "e5de2472b379aaceb212679bb4ef6b8363a2ef26ddc32abaaea2f84bb6cc013e",
+  "codec_preimage_sha256": "d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb",
+  "runtime_fixture_origin_sha256": "d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157",
+  "stop_function_sha256": "e6569ecf3efef40c4613b45faa7891e905c17946096eb36f1434795a4e6278e6",
+  "physical_acceptance": false,
+  "retained_inputs": {
+    "patches/boot/0073-uke-fs19xx-protected-runtime.patch": "0773da4b739ccb468636017946c1198080d374a19aa39ff1eb8706dfbc22baa4",
+    "src/audio/uke-fs19xx-safety.h": "4e995d2e77b77e13a4ec36bb8b20728495fb80504b4b7a18ec3fb1d1516d5941"
+  },
+  "source_assets": [
+    {
+      "path": "src/audio/0020-fs19xx-muted-stop-deadline.patch",
+      "sha256": "8bdd7a426b445ff54a2650ee5b8c4b0fd5be4858f9f0b03d211a6b626ee9e72e"
+    },
+    {
+      "path": "tests/audio-stop-deadline.c",
+      "sha256": "f377f2508f2db8106946cd3dde49d8d6521e410c3401702f23d2665f1ef1a14a"
+    },
+    {
+      "path": "tests/audio-stop-deadline.sh",
+      "sha256": "c6e4583cd14cc770ec329d7b86a534562db22d08eab11b13f0a8facf15cb37a5"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-runtime.inc",
+      "sha256": "1113cf93cd2c26eecf47d74085016794f7b44b09fac4049b30f1343910265ef4"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-query.inc",
+      "sha256": "04b555fb3acf9c7e684786192fb66211a1076db332bf5ffa10ac086d4f4376da"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-graph.inc",
+      "sha256": "875a89932ee876f0f0addf51a8313080429a401299928d95cb6b4a598774cb96"
+    },
+    {
+      "path": "packaging/native/copr-stop-deadline-callbacks.sh",
+      "sha256": "2a71f00dba4d1fa73885a4cc38b08cd51b9622c63eeb9c8ec9b875e72936dd0e"
+    },
+    {
+      "path": "packaging/native/stop-deadline-callbacks.spec",
+      "sha256": "40f082af380161b19ca5bdeece8f331efd2dbf4bbcc192a90978703c7b8cea1a"
+    },
+    {
+      "path": "docs/PROTECTED-STOP-DEADLINE.md",
+      "sha256": "185b835b2868dd5b1279b4d56e9811dd7e07708c7caa66ce20ae43ba75b77077"
+    },
+    {
+      "path": "packaging/native/copr-stop-deadline-proof.sh",
+      "sha256": "5c8305aa815a92b2595edc469596d6cec21585ec912b5ee75bd6901579a971dd"
+    }
+  ]
+}

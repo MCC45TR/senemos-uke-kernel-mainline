@@ -1,0 +1,100 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: fs19xx: separate muted STOP lifetime from startup polling
+
+Keep acknowledged muted VI alive for the existing bounded APM command wait.
+A distinct absolute fallback catches a stalled caller; active-output health,
+gain, calibration and fault publication remain unchanged.
+
+--- a/sound/soc/codecs/fs19xx.c
++++ b/sound/soc/codecs/fs19xx.c
+@@ -18,6 +18,7 @@
+ #include <linux/firmware.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/i2c.h>
++#include <linux/jiffies.h>
+ #include <linux/log2.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+@@ -85,6 +86,8 @@
+ #define FS19XX_UNMUTE_DELAY_MS		30
+ /* Diagnostic polling only; this is not a transducer protection deadline. */
+ #define FS19XX_HEALTH_POLL_MS		250
++/* APM waits 5s. Muted STOP fallback must outlive that bounded command wait. */
++#define FS19XX_STOP_DRAIN_MS		6000
+ 
+ /* Preset file layout; all integers are little endian. */
+ #define FS19XX_SCENE_MUSIC		BIT(0)
+@@ -173,6 +176,8 @@
+ 	unsigned int pll_polls;
+ 	bool powered;
+ 	bool unmuted;
++	bool draining;
++	unsigned long stop_deadline;
+ 	bool speaker_enabled;
+ 	bool stream_active;
+ 	bool suspended;
+@@ -508,6 +513,22 @@
+ 
+ 	if (!fs19xx->powered)
+ 		return;
++	if (fs19xx->draining) {
++		unsigned long now = jiffies;
++
++		/* DAC mute was read back before arming this finite STOP window.
++		 * A pending health worker may run before its timer is moved.
++		 * Never unmute or spend the startup PLL budget while draining.
++		 */
++		if (fs19xx->require_protection && q6apm_fs19xx_configured() &&
++		    time_before(now, fs19xx->stop_deadline)) {
++			mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
++					 fs19xx->stop_deadline - now);
++			return;
++		}
++		ret = -ENODATA;
++		goto stop;
++	}
+ 	if (fs19xx->require_protection && !q6apm_fs19xx_running()) {
+ 		if (!fs19xx->unmuted && q6apm_fs19xx_configured() &&
+ 		    ++fs19xx->pll_polls < FS19XX_LOCK_POLL_COUNT) {
+@@ -551,6 +572,7 @@
+ 		dev_err(fs19xx->dev, "output health failed: %d; amplifier reset\n", ret);
+ 	fs19xx->powered = false;
+ 	fs19xx->unmuted = false;
++	fs19xx->draining = false;
+ 	fs19xx_chip_stop(fs19xx);
+ }
+ 
+@@ -564,6 +586,8 @@
+ 		return -EBUSY;
+ 	if (fs19xx->require_protection && !q6apm_fs19xx_configured())
+ 		return -ENODATA;
++	if (fs19xx->draining)
++		return -EBUSY;
+ 	if (fs19xx->powered)
+ 		return 0;
+ 
+@@ -589,6 +613,7 @@
+ {
+ 	/* The worker checks powered under this lock; never drop it during stop. */
+ 	cancel_delayed_work(&fs19xx->unmute_work);
++	fs19xx->draining = false;
+ 	if (!fs19xx->powered)
+ 		return;
+ 	fs19xx->powered = false;
+--- a/sound/soc/codecs/uke-fs19xx-muted-stop.h
++++ b/sound/soc/codecs/uke-fs19xx-muted-stop.h
+@@ -21,8 +21,12 @@
+ 		return -EIO;
+ 	fs19xx->unmuted = false;
+ 	fs19xx->pll_polls = 0;
+-	/* The existing bounded guard wait stops hardware if DSP STOP stalls. */
++	/* Keep muted VI until STOP replies, with a separate absolute fallback.
++	 * Do not reuse the 2s startup PLL polling budget for a 5s APM wait.
++	 */
++	fs19xx->stop_deadline = jiffies + msecs_to_jiffies(FS19XX_STOP_DRAIN_MS);
++	fs19xx->draining = true;
+ 	mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
+-			 msecs_to_jiffies(FS19XX_LOCK_POLL_MS));
++			 msecs_to_jiffies(FS19XX_STOP_DRAIN_MS));
+ 	return 0;
+ }
