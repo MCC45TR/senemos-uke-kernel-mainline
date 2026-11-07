@@ -23,7 +23,7 @@ static void drop_mutex(struct mutex **m){mutex_unlock(*m);}
 #define guard(t) struct mutex *scope_guard __attribute__((cleanup(drop_mutex)))=take_mutex
 struct notifier_block { unsigned unused; };
 struct work_struct { unsigned unused; };
-struct delayed_work { struct work_struct work; unsigned delay,rearms; };
+struct delayed_work { struct work_struct work; unsigned delay,rearms; bool pending; };
 #define to_delayed_work(p) container_of(p,struct delayed_work,work)
 struct gpio_desc { bool reset; };
 struct regmap { unsigned value[256]; };
@@ -73,7 +73,9 @@ static void gpiod_set_value_cansleep(struct gpio_desc *g,int v){assert(v==1);g->
 #define system_percpu_wq NULL
 #define msecs_to_jiffies(n) (n)
 static int mod_delayed_work(void *queue,struct delayed_work *w,unsigned delay)
-{assert(!queue&&(delay==FS19XX_LOCK_POLL_MS||delay==FS19XX_HEALTH_POLL_MS));w->delay=delay;w->rearms++;return 0;}
+{assert(!queue&&(delay==FS19XX_LOCK_POLL_MS||delay==FS19XX_HEALTH_POLL_MS));bool previous=w->pending;w->delay=delay;w->rearms++;w->pending=true;return previous;}
+static bool cancel_delayed_work(struct delayed_work *w)
+{assert(container_of(w,struct fs19xx_priv,unmute_work)->lock.held);bool previous=w->pending;w->pending=false;w->delay=0;return previous;}
 static int fs19xx_power_on(struct fs19xx_priv *a){assert(uke_fs_guard_running(&fs19xx_guard));a->powered=true;return 0;}
 static bool q6apm_fs19xx_running(void){return uke_fs_guard_running(&fs19xx_guard);}
 static bool q6apm_fs19xx_configured(void){return uke_fs_guard_configured(&fs19xx_guard);}
@@ -114,10 +116,11 @@ static int audioreach_graph_mgmt_cmd(struct audioreach_graph *graph,unsigned com
    assert(maps[i].value[FS19XX_REG_SYSCTRL]==0xef);
    assert(maps[i].value[FS19XX_REG_I2SCTRL]==0x9c08);
    assert(maps[i].value[FS19XX_REG_VOLCTRL]==0xdfc0);
-   assert(amps[i].unmute_work.rearms==1&&amps[i].pll_polls==0);
+   assert(amps[i].unmute_work.rearms==1&&amps[i].unmute_work.pending&&amps[i].pll_polls==0);
   }
   if(simulate_stall){
    for(unsigned poll=1;poll<=FS19XX_LOCK_POLL_COUNT;poll++){
+    assert(amps[0].unmute_work.pending);amps[0].unmute_work.pending=false;
     fs19xx_unmute_work(&amps[0].unmute_work.work);
     assert(!amps[0].unmuted);
     if(poll<FS19XX_LOCK_POLL_COUNT)assert(amps[0].powered&&!gpios[0].reset);
@@ -146,6 +149,7 @@ static void fresh(struct q6apm_graph *graph)
   amps[i].regmap=&maps[i];amps[i].gpio_reset=&gpios[i];amps[i].powered=amps[i].unmuted=true;
   amps[i].stream_active=amps[i].speaker_enabled=true;amps[i].pll_polls=17;
   amps[i].require_protection=true;amps[i].volume=0xdf;
+  amps[i].unmute_work.pending=true;amps[i].unmute_work.delay=FS19XX_HEALTH_POLL_MS;
   maps[i].value[FS19XX_REG_DACCTRL]=0x210;maps[i].value[FS19XX_REG_PWRCTRL]=FS19XX_PWRCTRL_RUN;
   maps[i].value[FS19XX_REG_SYSCTRL]=0xef;maps[i].value[FS19XX_REG_I2SCTRL]=0x9c08;maps[i].value[FS19XX_REG_VOLCTRL]=0xdfc0;
  }
@@ -154,7 +158,7 @@ static void finished(bool failed)
 {
  struct q6apm_fs19xx *fs=current_graph->apm->fs19xx;
  assert(dsp_calls==1&&!current_graph->ar_graph->start_count&&fs->owner==expected_owner);
- for(unsigned i=0;i<4;i++)assert(!amps[i].powered&&!amps[i].unmuted&&gpios[i].reset);
+ for(unsigned i=0;i<4;i++)assert(!amps[i].powered&&!amps[i].unmuted&&gpios[i].reset&&!amps[i].unmute_work.pending);
  assert(fs->data.status==(failed?UKE_FS_FAULT:UKE_FS_PREPARED));
  for(unsigned i=0;i<sizeof(fs->data.cache);i++)assert(fs->data.cache[i]==(failed?0:0x5a));
  assert(erases==(failed?1u:0u)|| (failed&&erases==2));

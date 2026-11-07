@@ -17,15 +17,15 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-37"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-38"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-37.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-38.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
  rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.protected_stop_drain_layer==1 and .protected_gpr_client_byte_native_admitted and .protected_initial_ready_native_admitted and .protected_config_smmu_native_admitted and .protected_oob_native_backend_admitted and .protected_oob_final_dt_native_admitted and (.protected_stop_native_admitted|not) and (.physical_acceptance|not)' >/dev/null
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.1-$revision"
 else
- [[ $# == 4 && $proof == 37 ]]
+ [[ $# == 4 && $proof == 38 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]

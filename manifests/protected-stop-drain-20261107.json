@@ -1,10 +1,10 @@
 {
   "date": "2026-11-07",
-  "scope": "Complete full12216 plus muted output/retained VI transport until DSP GRAPH_STOP; proposed check37 and no full17 reservation",
+  "scope": "Complete full12216 plus muted output/retained VI transport until DSP GRAPH_STOP; proposed check38 and no full17 reservation",
   "parent_build": 11272573,
   "parent_source": "4d9ccc1b9c9d343e63f99e00e77550491aeb6698",
   "parent_srpm_sha256": "021491be63b8068e4c6edae4591817c51a2a5d72ce0ba0b9a118dbe3cf927cee",
-  "source_check_release": 37,
+  "source_check_release": 38,
   "proposed_full_revision": 12217,
   "full_revision_reserved": false,
   "source_assets": [
@@ -26,7 +26,7 @@
     },
     {
       "path": "tests/audio-protected-stop.c",
-      "sha256": "e920a238708fbd26288d6b657dc02c3c4b38a38e6d7c90313cabe1cac2b76467"
+      "sha256": "8ea040fbdfd63fe2087d8dad781570ff7d3e8ce84e07294afdb893dbd56b2597"
     },
     {
       "path": "tests/audio-protected-stop.sh",
@@ -42,11 +42,11 @@
     },
     {
       "path": "packaging/native/copr-migration-protected-stop731.sh",
-      "sha256": "6f9e11de12d07f931da25592ab7ea80101834f9f93bf9c43264c6d45f279b350"
+      "sha256": "48b8bd2fab787de987d22f3ce072dc8cb31425769e84cdfa7ab9c20043bfa016"
     },
     {
       "path": "docs/PROTECTED-STOP-DRAIN.md",
-      "sha256": "78dbd5358634455b70069e8a1d577795c8f8d90caffcc5d69814245c2cda038d"
+      "sha256": "5ddc4b3cf111980b0711e100fec14c209ea2c89a01cfb95047955c1c72a87db9"
     },
     {
       "path": "manifests/kernel-migration-full12216-20261107.json",

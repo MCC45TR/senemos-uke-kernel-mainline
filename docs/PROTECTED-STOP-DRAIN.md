@@ -72,7 +72,7 @@ new layer applies.
 
 ## Qualification and remaining device work
 
-Proposed COPR check37 executes the actual codec mute/readback/event, runtime
+Proposed COPR check38 executes the actual codec mute/readback/event, runtime
 gate/stopping/stopped and graph-stop callbacks with independent I2C and DSP
 drain peers. Four compiler/sanitizer modes cover40 cases, including all20 mute
 I2C operations failing, ignored writes, DSP timeout/error, owner/removal/state
@@ -119,3 +119,11 @@ for this four-file delta and its reverse comparison. A local source-only model
 checks all four postimages and whole-file inverse identities. Actual cumulative
 pre/post seals, the complete original-source inverse comparisons, refusal
 controls and native compilation remain mandatory; no source check is relaxed.
+
+Check37/COPR11282635 passes actual cumulative application, all new pre/post
+source seals and complete inverse comparison, then stops at a missing
+cancel_delayed_work provider declaration in the new test fixture. Check38
+models pending work, modification and cancellation with the actual codec mutex
+held; STOP completion must leave no scheduled amplifier work. Production
+source and postimages stay exact. No new callback execution or native object
+success is claimed for check37.
