@@ -23,12 +23,12 @@ prepare(){
  for function in fs19xx_read_stable fs19xx_chip_stop fs19xx_check_health fs19xx_unmute_output fs19xx_unmute_work fs19xx_power_on fs19xx_power_off;do extract "$source" "$function";done > "$work/native-stop-codec.inc"
  extract "$source" fs19xx_protection_event > "$work/native-stop-event.inc"
 }
-cp "$owner/tests/fixtures/audio-stop7331-runtime.inc" "$work/native-stop-runtime.inc"
+for function in fs19xx_gate q6apm_fs19xx_graph q6apm_fs19xx_stopping q6apm_fs19xx_stopped;do extract "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c" "$function";done > "$work/native-stop-runtime.inc"
 cp "$owner/tests/fixtures/audio-stop7331-query.inc" "$work/native-idle-query.inc"
 cp "$owner/tests/fixtures/audio-stop7331-graph.inc" "$work/native-stop-graph.inc"
 cp "$kernel/sound/soc/codecs/uke-fs19xx-muted-stop.h" "$work/uke-fs19xx-muted-stop.h"
 cp "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-safety.h" "$work/uke-fs19xx-safety.h"
-compile(){ "$cc" "${flags[@]}" -I "$work" "$owner/tests/audio-stop-deadline.c" -o "$work/check"; }
+compile(){ "$cc" "${flags[@]}" -I "$work" "$owner/tests/audio-stop-transition.c" -o "$work/check"; }
 prepare "$codec"
 compile
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/check"
@@ -45,14 +45,17 @@ refuse(){
 if [[ $san == 0 && $ticks == 250 ]];then
  cp "$work/native-stop-codec.inc" "$work/good-codec.inc"
  cp "$work/uke-fs19xx-muted-stop.h" "$work/good-muted.h"
+ cp "$work/native-stop-runtime.inc" "$work/good-runtime.inc"
  prepare "$kernel/codec-before-deadline.c"
  cp "$kernel/muted-before-deadline.h" "$work/uke-fs19xx-muted-stop.h"
  compile;refuse
  printf 'Exact original7331 worker refuses the complete five-second muted drain.\n'
- for mutant in unbounded-deadline premature-deadline lost-fault;do
+ for mutant in unbounded-deadline premature-deadline lost-fault early-mode-one;do
+  cp "$work/good-runtime.inc" "$work/native-stop-runtime.inc"
   cp "$work/good-codec.inc" "$work/native-stop-codec.inc"
   cp "$work/good-muted.h" "$work/uke-fs19xx-muted-stop.h"
   case $mutant in
+   early-mode-one) cp "$owner/tests/fixtures/audio-stop7331-runtime.inc" "$work/native-stop-runtime.inc";;
    unbounded-deadline) sed -i 's/time_before(now, fs19xx->stop_deadline)/(time_before(now, fs19xx->stop_deadline) || true)/' "$work/native-stop-codec.inc";;
    premature-deadline) sed -i 's/msecs_to_jiffies(FS19XX_STOP_DRAIN_MS)/msecs_to_jiffies(2000)/g' "$work/uke-fs19xx-muted-stop.h";;
    lost-fault) sed -i 's/fs19xx->require_protection \&\& q6apm_fs19xx_configured()/fs19xx->require_protection/' "$work/native-stop-codec.inc";;

@@ -24,7 +24,7 @@
     },
     {
       "path": "tests/audio-stop-deadline.sh",
-      "sha256": "c6e4583cd14cc770ec329d7b86a534562db22d08eab11b13f0a8facf15cb37a5"
+      "sha256": "bea7d45c1f5689f9213835df13d907dfff5d099e8f0856e11533f02f6dcc79a3"
     },
     {
       "path": "tests/fixtures/audio-stop7331-runtime.inc",
@@ -40,19 +40,29 @@
     },
     {
       "path": "packaging/native/copr-stop-deadline-callbacks.sh",
-      "sha256": "2a71f00dba4d1fa73885a4cc38b08cd51b9622c63eeb9c8ec9b875e72936dd0e"
+      "sha256": "6e9d9a6912b01b0c2f1566cfbfc6ea4995c89486262c28582fb4562554ca2fe5"
     },
     {
       "path": "packaging/native/stop-deadline-callbacks.spec",
-      "sha256": "40f082af380161b19ca5bdeece8f331efd2dbf4bbcc192a90978703c7b8cea1a"
+      "sha256": "74926b3490eb74eec31216cd7072bc653fdccb5fa052286da64d32262af5f633"
     },
     {
       "path": "docs/PROTECTED-STOP-DEADLINE.md",
-      "sha256": "185b835b2868dd5b1279b4d56e9811dd7e07708c7caa66ce20ae43ba75b77077"
+      "sha256": "61c433c1cc9afe89992d436c8568a9f585c16b98b995de25bf447d423d1dd909"
     },
     {
       "path": "packaging/native/copr-stop-deadline-proof.sh",
       "sha256": "077ee9aeb3aea6531bdd1446df2ec488ce8c8fbd7ef84a31c49c399567bfc0ca"
+    },
+    {
+      "path": "src/audio/0021-fs19xx-publish-muted-gate.patch",
+      "sha256": "80fdd92a3f6699bbecad7049c04ffc40eae66079491d5177979ecf67761bdf6c"
+    },
+    {
+      "path": "tests/audio-stop-transition.c",
+      "sha256": "2176e7b040cfa1146ef29b4b91ae009a5140fddde526ad996419341dcea44548"
     }
-  ]
+  ],
+  "full_runtime_postimage_sha256": "2db81985157213fbe61d9d58bd997784264fcee05d34f96f9d4fe1474e92205f",
+  "sequential_mute_publication_before_full_integration": true
 }

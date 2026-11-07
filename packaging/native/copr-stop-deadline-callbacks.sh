@@ -20,11 +20,17 @@ cp sound/soc/codecs/fs19xx.c codec-before-deadline.c
 cp "$owner/src/audio/uke-fs19xx-muted-stop.h" sound/soc/codecs/uke-fs19xx-muted-stop.h
 cp sound/soc/codecs/uke-fs19xx-muted-stop.h muted-before-deadline.h
 cp "$owner/retained-stop-inputs/uke-fs19xx-safety.h" sound/soc/qcom/qdsp6/uke-fs19xx-safety.h
+cp "$owner/tests/fixtures/audio-stop7331-runtime.inc" sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+cp sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c runtime-before-transition.inc
 git apply --check --whitespace=error "$owner/src/audio/0020-fs19xx-muted-stop-deadline.patch"
 git apply --whitespace=error "$owner/src/audio/0020-fs19xx-muted-stop-deadline.patch"
+git apply --check --whitespace=error "$owner/src/audio/0021-fs19xx-publish-muted-gate.patch"
+git apply --whitespace=error "$owner/src/audio/0021-fs19xx-publish-muted-gate.patch"
 for cc in gcc clang;do for san in 0 1;do for ticks in 100 250 1000;do
  CC=$cc SANITIZE=$san TICKS=$ticks bash "$owner/tests/audio-stop-deadline.sh" "$PWD"
 done;done;done
+git apply --reverse --whitespace=error "$owner/src/audio/0021-fs19xx-publish-muted-gate.patch"
+cmp sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c runtime-before-transition.inc
 git apply --reverse --whitespace=error "$owner/src/audio/0020-fs19xx-muted-stop-deadline.patch"
 cmp sound/soc/codecs/fs19xx.c codec-before-deadline.c
 cmp sound/soc/codecs/uke-fs19xx-muted-stop.h muted-before-deadline.h

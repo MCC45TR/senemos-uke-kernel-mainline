@@ -30,9 +30,11 @@ sha256sum -c --strict --quiet SHA256SUMS
 %build
 test "$(uname -m)" = aarch64
 
-%check
 set -o pipefail
 bash packaging/native/copr-stop-deadline-callbacks.sh "$PWD/native-proof" | tee native-proof.txt
+
+%check
+test -s native-proof.txt
 
 %install
 install -d %{buildroot}%{_datadir}/uke-kernel-migration-check/stop-deadline

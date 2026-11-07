@@ -1,0 +1,38 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: publish muted mode after amplifier readbacks
+
+Keep a live guard during sequential STOP mute callbacks. A pending worker
+then sees either running protected output or its acknowledged muted drain.
+Concurrent real faults remain latched and force the original off notification.
+
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -66,18 +66,27 @@
+ static int fs19xx_gate(unsigned int mode)
+ {
+ 	unsigned long flags;
++	bool publish_after_mute;
+ 	int ret = 0;
+ 
+ 	guard(mutex)(&fs19xx_listeners_lock);
+ 	if (mode && fs19xx_positions != 15)
+ 		return -ENODEV;
+ 	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+-	ret = uke_fs_guard_mode(&fs19xx_guard, mode);
++	/* During STOP, an unnotified amplifier still has a live DSP graph.
++	 * Publish mode1 only after every DAC mute has been read back, so a
++	 * pending health worker cannot mistake sequential mute for a fault.
++	 */
++	publish_after_mute = mode == 1 && uke_fs_guard_running(&fs19xx_guard);
++	if (!publish_after_mute)
++		ret = uke_fs_guard_mode(&fs19xx_guard, mode);
+ 	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+ 	if (ret)
+ 		return ret;
+ 	ret = notifier_to_errno(blocking_notifier_call_chain(&fs19xx_listeners, mode, NULL));
+ 	spin_lock_irqsave(&fs19xx_guard_lock, flags);
++	if (publish_after_mute && !ret)
++		ret = uke_fs_guard_mode(&fs19xx_guard, mode);
+ 	if (mode && (!uke_fs_guard_configured(&fs19xx_guard) || fs19xx_guard.mode != mode))
+ 		ret = -EIO;
+ 	if (ret) {

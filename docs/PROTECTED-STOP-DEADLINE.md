@@ -23,8 +23,9 @@ refused. Running-output health, gain223, calibration and DSP configuration stay.
 
 This repairs a demonstrated lifetime mismatch. It does not prove why the DSP
 has not acknowledged STOP earlier, or that every STOP failure shares one cause.
-The sequential mode1 notification boundary also needs explicit interleaving
-review before full integration. No full kernel or public full revision is
+A second candidate retains running mode during sequential mute callbacks and
+publishes mode1 only after all readbacks. All15 pending-worker combinations
+and faults at each of the four callback positions are added before integration. No full kernel or public full revision is
 reserved by the focused callback proof.
 
 ## Sources and limits
@@ -58,3 +59,10 @@ worker must fail a five-second muted drain; unbounded, premature and lost-fault
 mutants must fail. Complete source inverse comparison remains required.
 Actual cumulative kernel objects, linked modules, all historical gates and
 physical repeated-speaker operation remain separate, mandatory admission.
+
+The first source worker11283603 stops before creating an SRPM because its cpio
+selector omits the leading ./ spelling. Corrected11283606 produces the SRPM,
+but RPM runs install before check, so the receipt does not yet exist. Neither
+executes the new native callbacks or produces binary RPMs. The corrected recipe
+runs native proof in build and requires its receipt in check; callback logic
+is unchanged by that packaging correction. Full kernel releases stay at1.
