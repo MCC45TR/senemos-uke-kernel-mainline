@@ -29,8 +29,15 @@ kernel_next_release() {
  [[ $version =~ ^[1-9][0-9]*\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
  jq -er --arg version "$version" --arg package "$package" '
   if (.items|type)!="array" then error("Incomplete build history") else
+   if $package=="senemos-uke-linux-kernel-mainline-unstable" and
+      any(.items[]; .state!="succeeded" and .state!="failed" and .state!="canceled" and .state!="skipped" and .state!="forked") then
+    error("A full kernel job is still active; keep its actual handle")
+   else . end |
    [.items[]|select(.source_package.name==$package and
-    (.state=="succeeded" or (.source_package.url|type=="string" and length>0)))|
+    (if $package=="senemos-uke-linux-kernel-mainline-unstable" then
+       .state=="succeeded" or .state=="forked" or .published_binary==true
+     else .state=="succeeded" or (.source_package.url|type=="string" and length>0) end))|
+    select($package!="uke-kernel-migration-check" or (.source_package.version|startswith($version+"-")))|
     .source_package.version|
     if type=="string" and test("^[1-9][0-9]*[.](?:0|[1-9][0-9]*)[.](?:0|[1-9][0-9]*)-[1-9][0-9]*(?:[.]fc[0-9]+)?$") then
      capture("^(?<version>[1-9][0-9]*[.](?:0|[1-9][0-9]*)[.](?:0|[1-9][0-9]*))-(?<release>[1-9][0-9]*)(?:[.]fc[0-9]+)?$")

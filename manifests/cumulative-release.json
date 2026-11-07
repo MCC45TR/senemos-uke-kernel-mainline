@@ -3,7 +3,7 @@
   "package": "senemos-uke-linux-kernel-mainline-unstable",
   "channel": "uke-linux-unstable",
   "full_release": 1,
-  "source_check_release": 3,
+  "source_check_release": 4,
   "upstream": {
     "version": "7.3.3",
     "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
@@ -15,5 +15,6 @@
     "source_seals": {
       "drivers/nvmem/core.c": "6cdf164cac773046074a5b7587cd3747564694ea02aa46e86cc5702ded3e6da4"
     }
-  }
+  },
+  "full_release_policy": "increment-after-success"
 }

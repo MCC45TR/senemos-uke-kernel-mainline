@@ -54,7 +54,7 @@ boot=$stage/unpacked/boot-recipe
 jq -e '.source_commit=="a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9" and .kernel_release=="7.3.1-12217-unstable" and .protected_stop_native_admitted and .protected_stop_qualification_build==11282644 and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
 assets=(packaging/native/check-idle-stop731.sh docs/STABLE-733-CUMULATIVE.md manifests/linux-7.3.3.json manifests/stable733-cumulative-20261107.json src/audio/0019-uke-idle-legacy-fixture.patch src/display/0075-o82-vrr-floor-api.patch src/display/apply-vrr-api731.sh tests/o82-vrr-api.c tests/o82-vrr-api.sh packaging/native/check-vrr-api731.sh docs/VRR-FLOOR-ABI.md manifests/audio-vrr-20261107.json src/audio/0017-uke-protected-idle-worker.patch src/audio/0018-uke-idle-stop-source-seals.patch src/audio/apply-idle-stop731.sh tests/audio-idle-stop.c tests/audio-idle-stop.sh packaging/native/check-idle-stop731.sh docs/PROTECTED-IDLE-WORKER.md manifests/idle-stop-worker-20261107.json manifests/kernel-migration-full12217-20261107.json)
-assets+=(tests/camera-nvmem-privacy731-contract.sh scripts/kernel-release.sh manifests/cumulative-release.json scripts/normalize-cumulative-version.sh tests/kernel-release-contract.sh tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh src/boot/stable733-native-version-guards.patch src/boot/stable733-boot-version-guards.patch)
+assets+=(tests/camera-nvmem-privacy731-contract.sh scripts/kernel-release.sh manifests/cumulative-release.json scripts/normalize-cumulative-version.sh tests/kernel-release-contract.sh tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh src/boot/stable733-native-version-guards.patch src/boot/stable733-boot-version-guards.patch src/boot/stable-cumulative-linked-guards.patch tests/cumulative-linked-version-contract.sh packaging/native/refuse-published-release.sh)
 for tree in "$profile" "$boot";do
  (cd "$tree";jq -r '.retained_helper_hashes|to_entries[]|.value.before+"  "+.key' "$owner/manifests/stable733-cumulative-20261107.json" | sha256sum -c --strict -)
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
@@ -66,6 +66,13 @@ for tree in "$profile" "$boot";do
  git -C "$tree" apply --whitespace=error "$owner/src/boot/$guard_patch"
  (cd "$tree";jq -r --arg kind "$kind" '.version_helper_hashes[$kind]|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
  bash "$owner/scripts/normalize-cumulative-version.sh" "$tree" "$kind"
+ if [[ $kind == native_profile ]];then
+  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.before+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+  git -C "$tree" apply --check --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
+  git -C "$tree" apply --whitespace=error "$owner/src/boot/stable-cumulative-linked-guards.patch"
+  (cd "$tree";jq -r '.linked_helper_hashes|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+  bash "$owner/tests/cumulative-linked-version-contract.sh" "$tree"
+ fi
  [[ $(grep -Fo uke7.3.1-12217u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
  sed "s/uke7[.]3[.]1-12217u/uke${version}-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
@@ -146,4 +153,5 @@ if [[ $mode == check ]];then
 fi
 (cd "$output";sha256sum -c --strict --quiet "$stage/retained")
 bash "$owner/tests/kernel-release-contract.sh"
+bash "$owner/tests/failed-full-version-contract.sh"
 printf 'Signed%s-%s prepared with complete17 hardware/audio/VRR controls for%s; no target operation.\n' "$version" "$revision" "$mode"

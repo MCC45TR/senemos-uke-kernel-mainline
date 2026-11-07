@@ -86,3 +86,21 @@ whole-file hash in the signed-upstream plan and retain all three function seals
 and actual privacy assertions. This is not a relaxed checksum. Also compile the
 NVMEM core and exact-ABI CPUCP observer alongside the six other upstream objects.
 Original NVMEM source is GPL-2.0, Srinivas Kandagatla and Maxime Ripard.
+
+## Failed full build and release policy, 7 November 2026
+
+Full11283065 built Image/modules but failed final linked admission because the
+retained speaker checker allowed only7.3.1. No binary RPM was published. Five
+reachable linked helper guards now require the exact generated cumulative ABI;
+all existing native symbol, signature, DT and protection assertions remain.
+Alternate KMS compilation also retains the entire LOCALVERSION suffix.
+Thirty-five metadata cases exercise actual helper guards, including release34
+and rejected foreign/unversioned/zero/padded identities. Native full qualification
+remains separate.
+
+Full releases advance only after success. Failed or canceled source-only attempts
+retain the same public version, with unique COPR handles and immutable commits.
+The publication guard independently inspects every failed matching/newer build
+chroot and refuses binary artifacts, active jobs and already successful versions.
+Source-check receipt counters remain independent to preserve test provenance.
+Thus the corrected next full candidate remains7.3.3-1-unstable.

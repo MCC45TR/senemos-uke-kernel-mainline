@@ -1,10 +1,10 @@
 {
   "date": "2026-11-07",
-  "scope": "Original signed Linux7.3.3 plus complete12217, atomic protected idle, VRR API and phase-correct export checks",
+  "scope": "Signed cumulative upstream with healthy-idle/VRR, exact generated linked ABI and success-only full release progression",
   "parent_build": 11282652,
   "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
   "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
-  "source_check_release": 3,
+  "source_check_release": 4,
   "proposed_full_revision": 1,
   "full_revision_reserved": false,
   "unchanged_parent_nonidentity_fields": 460,
@@ -75,7 +75,7 @@
     },
     {
       "path": "packaging/native/copr-migration-stable733.sh",
-      "sha256": "39cb07078f92e8660712abb76301fd1fed4de85724b10b339f9a374d86f294dc"
+      "sha256": "4f938b3abeb40bbd98e36a76a474a7e25242367f0926f81326a331b54b7c90a7"
     },
     {
       "path": "packaging/native/check-stable733.sh",
@@ -83,7 +83,7 @@
     },
     {
       "path": "docs/STABLE-733-CUMULATIVE.md",
-      "sha256": "e5786c4629352f0a18f3a0f2c570e3c7c4cd9f82329cb6c9d29c3763ea79200c"
+      "sha256": "58e42de842544217186daa2f9d2628c7e025347605c543fdf4217ed4132206d9"
     },
     {
       "path": "tests/unstable-boot-family731-contract.sh",
@@ -107,11 +107,11 @@
     },
     {
       "path": "scripts/kernel-release.sh",
-      "sha256": "3c7c8d51ed82ab845e612081010a91703ad65c8f2388cca1946e0b6e7a534e8d"
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "4d3debb542d75ec80e96ab44d00f969d12ed3cf763a67034eb6d08cd0215adeb"
+      "sha256": "26ac0390b68b55e1757bbfa4e19e82e9ef9b10882604c2ce844df95622c123b5"
     },
     {
       "path": "scripts/normalize-cumulative-version.sh",
@@ -119,11 +119,27 @@
     },
     {
       "path": "tests/kernel-release-contract.sh",
-      "sha256": "dfe9dda71df72b15955acd6c54be37aa238b78a32c2860a75e484a4ed4db9700"
+      "sha256": "9aa99d46795a1ea88e270e3df258326fa43bcbff4c01914d6e694d8ac023dfb4"
     },
     {
       "path": "tests/camera-nvmem-privacy731-contract.sh",
       "sha256": "72f0d8b5ba18e24c30d8a7192fa11e0737c1cabdc1f71f6ba68d021fe1575c58"
+    },
+    {
+      "path": "src/boot/stable-cumulative-linked-guards.patch",
+      "sha256": "7f1d0ee404eb33744c6c34b9224b848bc69e65a7b3cfe544b37f380fc1ebc54d"
+    },
+    {
+      "path": "tests/cumulative-linked-version-contract.sh",
+      "sha256": "6ba736befd38d9c7f564d9b049ed3c8d74571eaf9fb04c97b167b08c267102ce"
+    },
+    {
+      "path": "tests/failed-full-version-contract.sh",
+      "sha256": "ca8406f3ff2a915e36602041c92fc8de406fb8bad04ede36d95af7790b49e690"
+    },
+    {
+      "path": "packaging/native/refuse-published-release.sh",
+      "sha256": "a8f5ce46d9573b9789daaa5acee02563e7716ead69559d22469d647451fda345"
     }
   ],
   "before_block_sha256": "4be1dd1953c7b6ed5b2a261d74d2125dbce00bb4f3691d359f0d67603a959615",
@@ -319,5 +335,39 @@
   "release_plan": "manifests/cumulative-release.json",
   "version_and_revision_generated_from_one_plan": true,
   "observer_uses_compiled_release": true,
-  "upstream_nvmem_privacy_functions_unchanged": true
+  "upstream_nvmem_privacy_functions_unchanged": true,
+  "linked_helper_hashes": {
+    "packaging/native/check-speaker-inclusion.sh": {
+      "before": "0e4ebd8f116bf7250903ca94b2a023f4123d93faa73e172329d0078ff7450e13",
+      "after": "cb67ff984629d920979e76f8a97c24d809b7a7ecf888e8f271e70696e4b48180"
+    },
+    "tests/camcc-controller-linked731-check.sh": {
+      "before": "eaf820a5d22a24bc8b941c2df376f31706d19762c3a5863d9331befd0bd7d7e0",
+      "after": "b9de4749ea1ee030887a565548280c093c43ae09243cc39c175f87a1b54953c8"
+    },
+    "tests/camss-sm7675-linked731-check.sh": {
+      "before": "188b612fca9ce84ed56530dd25aa9f121830e34a0b96794b1cd7e0e94d03a55b",
+      "after": "cbbad1b31e8878f277d2c473f8c3399f1dfbeb95ec4a231b6b9780306cd1bb5d"
+    },
+    "tests/audio-protected-package-contract.sh": {
+      "before": "e842c6f778482d3d3c4722241eac4867614d4c438852f795ada46caf868b1222",
+      "after": "53a694e32547e34f171fda7637b159feda6dca15703d4849a805264a8a3081ce"
+    },
+    "tests/msm-kms-alternate-build.sh": {
+      "before": "b72233bc0fe8dff7366ed20d0042dc704893eaf0bc556be13849dec3047f5e03",
+      "after": "a71389d85369bfb0a6d323f94e5af34e4c506b7c8074bd087bd8710a22416ab7"
+    }
+  },
+  "full_release_policy": "increment-after-success",
+  "failed_full_attempts": [
+    {
+      "copr_build": 11283065,
+      "kernel_release": "7.3.3-1-unstable",
+      "source": "c6a2319146554b6937437394d1f047ad82eb090a",
+      "state": "failed",
+      "duration_seconds": 1687,
+      "phase": "final linked check: retained speaker guard only admitted7.3.1",
+      "binary_rpm_published": false
+    }
+  ]
 }
