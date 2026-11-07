@@ -75,7 +75,7 @@
     },
     {
       "path": "packaging/native/copr-migration-stable733.sh",
-      "sha256": "f3e6411d2d265f76049488211d9bccc098ebed97ca29acc52eecad7fcb87a753"
+      "sha256": "5cfcf80950a7d2ffb67f4d6188ac5c59429f0e79d95b4a4a6347591ee02ac6fc"
     },
     {
       "path": "packaging/native/check-stable733.sh",
@@ -83,7 +83,7 @@
     },
     {
       "path": "docs/STABLE-733-CUMULATIVE.md",
-      "sha256": "ac5a7ce721da757dd611d42b21e4e85a7da5d72e11b1394b1e7d1597e6b14056"
+      "sha256": "736113ad8f8bac643dd613f727ae7aabdb2a67b7a09de3fe0af5138e91dc559c"
     },
     {
       "path": "tests/unstable-boot-family731-contract.sh",
@@ -156,6 +156,15 @@
       "duration_seconds": 511,
       "actual_cumulative_objects_compiled": true,
       "reason": "New export checker expects post-modpost __ksymtab in pre-modpost .o; production compilation and callback tests passed, no full native admission."
+    },
+    {
+      "build": 11282964,
+      "source": "4e2b8a91e415126f66e2bbfe6ba9289b07e457f4",
+      "state": "failed",
+      "duration_seconds": 50,
+      "source_rpm_created": false,
+      "full_revision_reserved": false,
+      "reason": "Copied check publication guard still names obsolete7.3.1-1; correctly refuses it before any7.3.3 SRPM or native stage."
     }
   ],
   "upstream": {

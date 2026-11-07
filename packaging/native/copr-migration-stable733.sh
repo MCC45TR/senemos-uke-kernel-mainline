@@ -23,7 +23,7 @@ if [[ $mode == full ]];then
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.3-$revision"
 else
  [[ $# == 4 && $proof == 1 ]]
- bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
+ bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.3-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
 mkdir -p "$output" "$stage/unpacked"

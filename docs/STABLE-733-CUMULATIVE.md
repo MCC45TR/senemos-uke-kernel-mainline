@@ -45,3 +45,9 @@ Automatic latest-stable tracking must use this cumulative unstable path and a
 serialized release ledger. The previous saved COPR script pins an obsolete
 partial kernel and must be replaced before enabling its hook. A scheduled
 workflow or successful build does not approve hardware or promote stable.
+
+The first733 source-worker attempt11282964 refuses an obsolete731 check tuple
+before creating an SRPM; no733 version or full kernel release is allocated.
+Correct the guard to733 while retaining the unused733 source-check release1.
+The following attempt has a new source commit and COPR handle. Native parsing,
+all callback controls and actual objects still require qualification.
