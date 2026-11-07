@@ -58,7 +58,8 @@
     "packaging/native/speaker-readback-source-view.sh",
     "packaging/native/check-enable-readback733.sh",
     "packaging/native/copr-enable-readback733.sh",
-    "docs/SPEAKER-ENABLE-CONTROL.md"
+    "docs/SPEAKER-ENABLE-CONTROL.md",
+    "src/audio/0027-enable-store-fixture.patch"
   ],
   "source_assets": [
     {
@@ -107,35 +108,39 @@
     },
     {
       "path": "packaging/native/check-enable-readback733.sh",
-      "sha256": "1bd184d8581f636142c28c713a45f280ab1802e896fa5871897e1b732e085488"
+      "sha256": "cac544852ba280f74e63a01904f6ab9671de2b5721fdf1337cd503e637b8fc04"
     },
     {
       "path": "packaging/native/copr-enable-readback733.sh",
-      "sha256": "ae22d3281a66b737e22c640a863689891f47fe25fc4b2e60999594a5b63fd716"
+      "sha256": "936066fc7db0e396537501b1a8041774a0fb4c78f60fd96df8f8c8328a2e1a61"
     },
     {
       "path": "docs/SPEAKER-ENABLE-CONTROL.md",
-      "sha256": "31fe0b780c14c2acec0e49531fdf450e890b2ad716b5818a8d45912a0c3f7bfd"
+      "sha256": "b4d92d8cb69f0d95ee4646a8c0a550d834a03af16b4ac7e0634a11505ec5df6c"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "9a0af2a1f0ef56f8675ab16d942360137b14bc44235493cbb40f40c439a3299e"
+      "sha256": "6d2660881fda4ee4f8fd30f23e0a48ea3f94c325adc9a82c8d69743fdc159d5d"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "2345556bd148da29419818c4befbde65a98022a531192d7b84540a34c6382430"
+      "sha256": "d0c97d1a2c4f5bfdbbcd076dae510cda6339c9b6b87cb130d6231003f4e1841a"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "77225b7f806f03b90d8cbc2f0574c4a602d7b340427e5a71bb7802a0ffb6449b"
+      "sha256": "76f5c89c5d488c92d871fd663788cab2b4919a178e25197c7b45827c9d8fd0e6"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "b16021af1f5c86ffd00a7922441b7643aa3b896707cd1aa6c7de6c8caeef4371"
+      "sha256": "7873d6b42f7fa77e00d453ab50308c78829ace114864caa05850b02afa22eebb"
+    },
+    {
+      "path": "src/audio/0027-enable-store-fixture.patch",
+      "sha256": "59d95fac9b2c00d3540e2e857cb30db8aa697d9c64fc49631aee808d00914529"
     }
   ],
   "planned_full_release": 4,
-  "planned_source_check_release": 17,
+  "planned_source_check_release": 18,
   "full_revision_reserved": false,
   "native_admitted": false,
   "physical_acceptance": false,
@@ -147,5 +152,20 @@
   "parser_mutants_per_compiler": 7,
   "getter_mutants_per_compiler": 5,
   "original_runtime_callbacks_unchanged": true,
-  "offline_charging_activation": false
+  "offline_charging_activation": false,
+  "previous_checks": [
+    {
+      "release": 17,
+      "copr_build": 11284463,
+      "source_commit": "ef6899ee0fdd6d8a11bf8731c1c03008a7d9c57e",
+      "state": "failed",
+      "duration_seconds": 279,
+      "all_new_compiler_sanitizer_modes_passed": true,
+      "all24_new_mutants_refused": true,
+      "new_kernel_objects_reached": false,
+      "reason": "Inherited state-store fixture extracts the added control macro without importing its definition; preserve all replay assertions and add real third-control metadata",
+      "builder_log_sha256": "9ebe511d883484fef69ccff104cccab751686255bc6eb048110fa462f502663e",
+      "full_release_consumed": false
+    }
+  ]
 }

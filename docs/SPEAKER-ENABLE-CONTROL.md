@@ -48,3 +48,16 @@ and establish honest unavailable behavior after teardown.
 Enabled RX/TX bits are not the proprietary limiter mode, VI samples or proof
 of safe243. The separate calibration/output binding, gain conversion, VI
 scale/continuity and physical limiting/containment evidence remain required.
+
+## Initial cumulative check correction
+
+COPR11284463/source17 fails279s after all four new347/23/617-case modes and
+24 required mutants pass. The old state-store fixture extracts the actual
+control table but did not import its new descriptor macro. It fails compilation
+before the new kernel objects; no native-object qualification is claimed.
+The compatibility patch imports the real macro, keeps every original replay
+assertion and additionally verifies the third control is read-only/volatile,
+has no put callback and leaves provisioning READY on store. Its exact original
+and revised sources are sealed. Production C/headers, query and gain stay
+unchanged. Published proof17 is not reused; source18 is history-derived while
+the unreserved full candidate remains4.

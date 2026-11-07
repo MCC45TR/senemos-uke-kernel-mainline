@@ -8,6 +8,9 @@ phase=${3:-objects}
 [[ $phase == source || $phase == objects || $phase == linked ]]
 profile=$kernel/native-profile
 core=$kernel/sound/soc/qcom/qdsp6
+printf '%s  %s\n' \
+ a67238ed0039ad9dc69ddcf421534f27fc884e62b3980f3398fe3cf3eb208daa "$profile/history-before-enable-readback/tests/audio-speaker-state-store-contract.sh" \
+ c7ca84b443be3d8915b0d4bbefd4b1c432d8758849513fa280ea3a285d66a963 "$profile/tests/audio-speaker-state-store-contract.sh" | sha256sum -c --strict --quiet -
 before=$(bash "$profile/packaging/native/speaker-readback-source-view.sh" "$kernel")
 [[ $before == "$kernel/native-generated/runtime-before-enable-readback.c" ]]
 for file in uke-fs19xx-readback.c uke-fs19xx-readback.h uke-fs19xx-enable-control.h;do

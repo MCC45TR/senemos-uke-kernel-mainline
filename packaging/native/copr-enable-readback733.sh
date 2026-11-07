@@ -36,6 +36,10 @@ sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$wo
 for tree in "$profile" "$boot";do
  while IFS= read -r file;do install -Dm644 "$owner/$file" "$tree/$file";done < <(jq -r '.payload_assets[]' "$manifest")
  install -Dm644 "$manifest" "$tree/manifests/${manifest##*/}"
+ printf '%s  %s\n' a67238ed0039ad9dc69ddcf421534f27fc884e62b3980f3398fe3cf3eb208daa "$tree/tests/audio-speaker-state-store-contract.sh" | sha256sum -c --strict -
+ install -Dm644 "$tree/tests/audio-speaker-state-store-contract.sh" "$tree/history-before-enable-readback/tests/audio-speaker-state-store-contract.sh"
+ git -C "$tree" apply --check --whitespace=error "$owner/src/audio/0027-enable-store-fixture.patch"
+ git -C "$tree" apply --whitespace=error "$owner/src/audio/0027-enable-store-fixture.patch"
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-enable-readback.json"
 jq --arg mode "$mode" --arg proof "$proof" '.+{
