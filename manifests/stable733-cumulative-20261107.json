@@ -111,7 +111,7 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "0d86fc5e7e19637bec66860e9876d832ea1b88494444ee2c06cd6ef5c3e7cac7"
+      "sha256": "0fbf6c3457673cfaa8564fb536101befbd302186a1c583c43c23789e7a788a70"
     },
     {
       "path": "scripts/normalize-cumulative-version.sh",

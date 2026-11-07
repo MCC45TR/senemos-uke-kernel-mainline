@@ -36,7 +36,7 @@
     },
     {
       "path": "packaging/native/check-pcm-period733.sh",
-      "sha256": "c02af3ee4d757089383a10f0c63db63dd1b835e170bf16929b07c79e6739cf2a"
+      "sha256": "c5db4fd36620b0772a0083df77965359f61a865be676e6f10f6e81de71cc5107"
     },
     {
       "path": "packaging/native/copr-migration-pcm733.sh",
@@ -48,15 +48,15 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "0d86fc5e7e19637bec66860e9876d832ea1b88494444ee2c06cd6ef5c3e7cac7"
+      "sha256": "0fbf6c3457673cfaa8564fb536101befbd302186a1c583c43c23789e7a788a70"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "cbc25a62d208da45682c1e62c9f9a7ae344ec8256c1e2ad4314b30be000237cb"
+      "sha256": "79fd1cb5a147e291b11e0fc1efbba159a1b8bcbaa2553951258862cad1974bc5"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "5a7dfa5d76ed07e87c3da4373e1ed1463af36366983fe164373a7b3ff24659e7"
+      "sha256": "18dad0d81266933d3a0e59bba3d82faab7464fdf3de32a2fde0dded8733f320e"
     }
   ],
   "compiler_sanitizer_modes": 4,
@@ -66,5 +66,18 @@
   "required_mutants_per_compiler": 3,
   "config_and_cumulative_gates_unchanged": true,
   "gain_ceiling": 223,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "previous_checks": [
+    {
+      "release": 14,
+      "build": 11283937,
+      "source": "6e80efb8f7342b59cebff5365526bc1bc69fa6db",
+      "state": "failed",
+      "duration_seconds": 217,
+      "production_preimage_matched": true,
+      "pcm_native_callbacks_run": false,
+      "reason": "Metadata checker used the reserved AWK close builtin as a variable; rename only, production patch unchanged",
+      "full_release_consumed": false
+    }
+  ]
 }

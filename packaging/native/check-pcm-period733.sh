@@ -26,8 +26,8 @@ done
 extract "$source" q6apm_dai_open > "$work/open"
 extract "$source" q6apm_dai_close > "$work/close"
 # Initialization precedes callback publication; failure closes only a valid graph.
-awk '/spin_lock_init\(&prtd->pcm_period_lock\)/{lock=NR}/INIT_WORK\(&prtd->pcm_period_work/{work=NR}/prtd->graph = q6apm_graph_open/{publish=NR}/^err:/{err=NR}/q6apm_pcm_period_quiesce/{quiesce=NR}/if \(!IS_ERR_OR_NULL\(prtd->graph\)\)/{valid=NR}/q6apm_graph_close\(prtd->graph\)/{close=NR}/kfree\(prtd\)/{release=NR}END{if(!(lock<work&&work<publish&&publish<err&&err<quiesce&&quiesce<valid&&valid<close&&close<release))exit 1}' "$work/open"
-awk '/q6apm_pcm_period_quiesce/{drain=NR}/q6apm_graph_stop\(/{stop=NR}/q6apm_graph_close\(/{close=NR}/kfree\(prtd\)/{release=NR}END{if(!(drain&&drain<stop&&stop<close&&close<release))exit 1}' "$work/close"
+awk '/spin_lock_init\(&prtd->pcm_period_lock\)/{lock=NR}/INIT_WORK\(&prtd->pcm_period_work/{work=NR}/prtd->graph = q6apm_graph_open/{publish=NR}/^err:/{err=NR}/q6apm_pcm_period_quiesce/{quiesce=NR}/if \(!IS_ERR_OR_NULL\(prtd->graph\)\)/{valid=NR}/q6apm_graph_close\(prtd->graph\)/{graph_close_line=NR}/kfree\(prtd\)/{release=NR}END{if(!(lock<work&&work<publish&&publish<err&&err<quiesce&&quiesce<valid&&valid<graph_close_line&&graph_close_line<release))exit 1}' "$work/open"
+awk '/q6apm_pcm_period_quiesce/{drain=NR}/q6apm_graph_stop\(/{stop=NR}/q6apm_graph_close\(/{graph_close_line=NR}/kfree\(prtd\)/{release=NR}END{if(!(drain&&drain<stop&&stop<graph_close_line&&graph_close_line<release))exit 1}' "$work/close"
 [[ $phase != source ]] || exit 0
 object=$out/sound/soc/qcom/qdsp6/q6apm-dai.o
 llvm-readelf -h "$object" | grep -E 'Machine:.*AArch64'
