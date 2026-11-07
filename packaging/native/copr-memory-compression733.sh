@@ -45,7 +45,7 @@ for tree in "$profile" "$boot";do
  install -Dm644 "$manifest" "$tree/manifests/${manifest##*/}"
 done
 cat "$profile/configs/memory-compression733.config" >> "$profile/configs/kernel-manager/resources.config"
-{ sed '/^CONFIG_ZSMALLOC=m$/d' "$history/resource-dependencies.txt";printf '%s\n' CONFIG_842_COMPRESS=y CONFIG_842_DECOMPRESS=y CONFIG_LZ4HC_COMPRESS=y 'CONFIG_ZSWAP_COMPRESSOR_DEFAULT="lz4"'; } > "$profile/configs/kernel-manager/resource-dependencies.txt"
+{ sed '/^CONFIG_ZSMALLOC=m$/d' "$history/resource-dependencies.txt";printf '%s\n' CONFIG_842_COMPRESS=m CONFIG_842_DECOMPRESS=m CONFIG_LZ4HC_COMPRESS=m 'CONFIG_ZSWAP_COMPRESSOR_DEFAULT="lz4"'; } > "$profile/configs/kernel-manager/resource-dependencies.txt"
 mkdir -p "$work/config-tool/scripts"
 tar -xOJf "$output/linux-$version.tar.xz" "linux-$version/scripts/config" > "$work/config-tool/scripts/config"
 bash "$profile/packaging/native/apply-kernel-manager-config.sh" "$work/config-tool" "$profile/native.config" "$work/expanded.config" "$profile/configs/kernel-manager/resources.config"
@@ -70,9 +70,10 @@ for name in senemos-uke-linux-kernel-mainline-unstable.spec uke-kernel-migration
  [[ -e $spec ]] || continue
  phase=linked;[[ $name != uke-kernel-migration-check.spec ]] || phase=objects
  awk -v phase="$phase" '
+  $0=="bash native-profile/packaging/native/prepare-migration-manager731.sh \"$PWD\" %{_uke_out}" {print "bash native-profile/packaging/native/prepare-memory-manager733.sh \"$PWD\" %{_uke_out}";prepared++;next}
   $0=="bash native-profile/packaging/native/check-enable-readback733.sh \"$PWD\" %{_uke_out} "phase {print;print "bash native-profile/packaging/native/check-memory-compression733.sh \"$PWD\" %{_uke_out} "phase;checked++;next}
   /^ drivers\/firmware\/arm_scmi\/uke-cpucp-observe.o / {if(sub(/sound\/soc\/qcom\/qdsp6\/uke-fs19xx-readback.o /,"sound/soc/qcom/qdsp6/uke-fs19xx-readback.o drivers/block/zram/zram.o mm/zswap.o mm/zsmalloc.o "))objects++}
-  {print}END{if(checked!=1||(phase=="objects"&&objects!=1)||(phase=="linked"&&objects))exit 1}
+  {print}END{if(checked!=1||prepared!=1||(phase=="objects"&&objects!=1)||(phase=="linked"&&objects))exit 1}
  ' "$spec" > "$work/updated.spec"
  install -m644 "$work/updated.spec" "$spec"
  grep -Fx '%global debug_package %{nil}' "$spec"

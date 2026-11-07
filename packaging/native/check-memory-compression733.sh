@@ -15,7 +15,7 @@ new=$(jq -er .migration_native_config_sha256 "$meta")
 printf '%s  %s\n' "$old" "$before/native.config" "$new" "$profile/native.config" | sha256sum -c --strict --quiet -
 cmp "$profile/native.config" "$kernel/boot-recipe/packaging/native/native.config"
 cmp <(cat "$before/resources.config" "$profile/configs/memory-compression733.config") "$profile/configs/kernel-manager/resources.config"
-cmp <(sed '/^CONFIG_ZSMALLOC=m$/d' "$before/resource-dependencies.txt";printf '%s\n' CONFIG_842_COMPRESS=y CONFIG_842_DECOMPRESS=y CONFIG_LZ4HC_COMPRESS=y 'CONFIG_ZSWAP_COMPRESSOR_DEFAULT="lz4"') "$profile/configs/kernel-manager/resource-dependencies.txt"
+cmp <(sed '/^CONFIG_ZSMALLOC=m$/d' "$before/resource-dependencies.txt";printf '%s\n' CONFIG_842_COMPRESS=m CONFIG_842_DECOMPRESS=m CONFIG_LZ4HC_COMPRESS=m 'CONFIG_ZSWAP_COMPRESSOR_DEFAULT="lz4"') "$profile/configs/kernel-manager/resource-dependencies.txt"
 # The historical checker changes only its authenticated complete-config hash.
 sed "s/$new/$old/g" "$profile/packaging/native/check-cumulative-camera731.sh" | cmp - "$before/check-cumulative-camera731.sh"
 for line in CONFIG_ZRAM=m CONFIG_ZRAM_BACKEND_LZO=y CONFIG_ZRAM_BACKEND_LZ4=y \

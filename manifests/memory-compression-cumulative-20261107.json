@@ -42,7 +42,8 @@
     "configs/memory-compression733.config",
     "packaging/native/check-memory-compression733.sh",
     "packaging/native/copr-memory-compression733.sh",
-    "docs/MEMORY-COMPRESSION-733.md"
+    "docs/MEMORY-COMPRESSION-733.md",
+    "packaging/native/prepare-memory-manager733.sh"
   ],
   "source_assets": [
     {
@@ -51,11 +52,11 @@
     },
     {
       "path": "packaging/native/check-memory-compression733.sh",
-      "sha256": "8264d9a6ff9ce55391e3c7b605c6443f96d20fa706ca220df4e895f6344b28d0"
+      "sha256": "8f2ea9656a487a3570806878cc76b8b1074cb78a0b773a369cb550cc7dc33aed"
     },
     {
       "path": "packaging/native/copr-memory-compression733.sh",
-      "sha256": "e43ab41f6e4ff587aaebebebb6e001569cc350ce6bcbb844ffe575fa2f217958"
+      "sha256": "5fa6acf7a22de1dc901aafacaffe6dd2d95ec2e63b0984a9d892b43001277080"
     },
     {
       "path": "docs/MEMORY-COMPRESSION-733.md",
@@ -63,23 +64,27 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "7d3aaf56779264bde560b786872512a7275a19877cbf42462f27f509bf447b49"
+      "sha256": "feb1134798b12a9c1c6fcf268ee75052c148ad9fb86c679539480d5e3a19a5d5"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "89a9050885e5ffe08f29bcb9c5860afca08e320ef5edae2534ed823fa2694b6f"
+      "sha256": "32cf74e81fe946432dc998d1807ff93fd6d2c470cdb30e9b9af2ffac35b2293e"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "244ffa3f7b8c1f74078063e6de9e447358519fdb65ba60a18849c7af998bab33"
+      "sha256": "b642beab819901381f8d5c44c2e6b99d5f9926f7d766e8957574c3e046f4d010"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "7f12612dd2d164ec41ea3ec47f6befa19d470ea6e582b77c7cf49a68de44d728"
+      "sha256": "cb0811895743ceaf3ee82f6f5d869f93479372722bb16ac172d26a6c8271a8f2"
     },
     {
       "path": "manifests/speaker-enable-control-cumulative-20261107.json",
-      "sha256": "0ee511bddfe3f06b4b94920f19117c134588d244521bb2e2e1e34573e74e5742"
+      "sha256": "d2a005299a93865813b75e97939c3721eb80c0eeeb83e698b8a7e78d3197f086"
+    },
+    {
+      "path": "packaging/native/prepare-memory-manager733.sh",
+      "sha256": "30981ede5ecfcf8c52c3c098cd9f9f2bf3912a5133fb4096701876aee2975d01"
     }
   ],
   "acceptance": {
@@ -93,5 +98,15 @@
     "physical_roundtrip_and_pressure_acceptance": false,
     "physical_speaker_limiter_qualified": false,
     "gain_ceiling": 223
+  },
+  "prior_attempt": {
+    "build": 11284729,
+    "source": "a40bc8395fa29d340631d72872ff113e27ef2017",
+    "source_release": 20,
+    "state": "failed",
+    "duration_seconds": 415,
+    "stage": "prepare-migration-manager complete config contract",
+    "memory_objects_reached": false,
+    "correction": "Backend-selected compression libraries follow modular ZRAM; preserve dependency checks and add bounded failure diagnostics; native result required"
   }
 }
