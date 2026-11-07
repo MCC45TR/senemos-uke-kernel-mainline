@@ -146,7 +146,9 @@ static int audioreach_graph_mgmt_cmd(struct audioreach_graph *graph,unsigned com
    assert(maps[i].value[FS19XX_REG_SYSCTRL]==0xef);
    assert(maps[i].value[FS19XX_REG_I2SCTRL]==0x9c08);
    assert(maps[i].value[FS19XX_REG_VOLCTRL]==0xdfc0);
-   assert(amps[i].unmute_work.rearms==1&&amps[i].unmute_work.pending&&amps[i].pll_polls==0);
+   /* Four forced pending-worker visits each rearm once; mute arms once. */
+   assert(amps[i].unmute_work.rearms==1+((mute_interleave_mask&BIT(i))?4u:0u));
+   assert(amps[i].unmute_work.pending&&amps[i].pll_polls==0);
   }
   if(simulate_stall){
    for(unsigned poll=1;poll<=FS19XX_LOCK_POLL_COUNT;poll++){

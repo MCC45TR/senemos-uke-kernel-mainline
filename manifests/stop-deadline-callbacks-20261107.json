@@ -60,7 +60,7 @@
     },
     {
       "path": "tests/audio-stop-transition.c",
-      "sha256": "2176e7b040cfa1146ef29b4b91ae009a5140fddde526ad996419341dcea44548"
+      "sha256": "0c5929bb6a351bb0ad728f2f2cad11060c8801de0f3fe50918e52b2054d8abba"
     }
   ],
   "full_runtime_postimage_sha256": "2db81985157213fbe61d9d58bd997784264fcee05d34f96f9d4fe1474e92205f",
