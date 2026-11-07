@@ -120,19 +120,19 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "6d2660881fda4ee4f8fd30f23e0a48ea3f94c325adc9a82c8d69743fdc159d5d"
+      "sha256": "346810fcf03a69784ad021990273ec378f571cdca194fe6bc13948a2b841d1c3"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "d0c97d1a2c4f5bfdbbcd076dae510cda6339c9b6b87cb130d6231003f4e1841a"
+      "sha256": "450547c95bf5753b0e6b2bcb94a251f399b06993700be8129e70611607fc0827"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "76f5c89c5d488c92d871fd663788cab2b4919a178e25197c7b45827c9d8fd0e6"
+      "sha256": "521435d8bc5808ca0434c460134f09f7d67380179d471ba6d8c27addd9b08230"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "7873d6b42f7fa77e00d453ab50308c78829ace114864caa05850b02afa22eebb"
+      "sha256": "35e179219b783661b1f8d24e3430eaa1cd80d57337491481519443f5c8a6b2d4"
     },
     {
       "path": "src/audio/0027-enable-store-fixture.patch",
