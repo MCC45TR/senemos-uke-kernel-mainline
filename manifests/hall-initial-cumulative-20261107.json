@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Complete qualified memory/audio candidate plus optional initial physical lid GPIO with remote IRQ/wake parity",
+  "parent_full_build": 11284537,
+  "parent_full_source": "d8c1f6913d3af8aecdef968bc24da3f5b4d7f811",
+  "qualified_memory_check": 11285035,
+  "qualified_memory_source": "3b2846be84ce4769d39f433c1f5ab3c5c8652cfc",
+  "qualified_memory_receipt_sha256": "c200544b0a86312fc319c1154ab21b05a045abe59a5da22efdd27341456d6aa0",
+  "source_refs": [
+    {
+      "repository": "MiCode/kernel_devicetree",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "files": [
+        "qcom/uke-sm8635.dtsi"
+      ],
+      "license": "No clear SPDX in board file; reference wiring only, independently represented",
+      "role": "Exact Uke hall_pin99 active-low and remote paired lid events"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_oneplus_sm7675",
+      "commit": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "files": [
+        "drivers/soc/qcom/smp2p.c"
+      ],
+      "license": "GPL-2.0-only, Sony/Linux Foundation/Qualcomm notices",
+      "role": "Same-SoC transport comparison, no board GPIO replacement or stationary-state firmware fix"
+    },
+    {
+      "repository": "gregkh/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "files": [
+        "drivers/pinctrl/qcom/pinctrl-msm.c",
+        "include/linux/gpio/consumer.h",
+        "Documentation/driver-api/gpio/consumer.rst"
+      ],
+      "license": "GPL-2.0-only / upstream file attribution retained",
+      "role": "Standard descriptor ASIS acquisition and logical read; provider may enforce GPIO mux, physical ownership parity must be measured"
+    }
+  ],
+  "driver_before": "14a7922f690bf1615ffa925e14e7da612da4d2c0e6338710662f3de0856c7cb3",
+  "driver_after": "4c48d1fda32935c979e30bc8d2e99582ca216e5bf4635b8db072c8a21d09068d",
+  "dt_header_before": "7489b10dd5a6a81fbbb2b44cbf8fc26873e3f6c06f7216ea708a30750ae49d35",
+  "dt_header_after": "f347817677382f164bc5a9566f02140116dbfe8d89e7761417e5997f87da5b6b",
+  "payload_assets": [
+    "src/input/0003-smp2p-switch-physical-startup.patch",
+    "src/input/0004-hall-initial-gpio-dt.patch",
+    "src/input/0005-smp2p-switch-state-gpio-binding.patch",
+    "src/input/apply-hall-initial-gpio733.sh",
+    "tests/hall-initial-gpio-provider.h",
+    "tests/hall-initial-gpio.c",
+    "tests/hall-initial-gpio-dt.cpp",
+    "tests/hall-initial-gpio.sh",
+    "packaging/native/hall-initial-source-view733.sh",
+    "packaging/native/check-hall-initial733.sh",
+    "packaging/native/copr-hall-initial733.sh",
+    "docs/HALL-PHYSICAL-INITIAL-STATE.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/input/0003-smp2p-switch-physical-startup.patch",
+      "sha256": "d1b43194fbe1971be18557dbd62c8e696dc570ee1128b12ffb0c96463c92127c"
+    },
+    {
+      "path": "src/input/0004-hall-initial-gpio-dt.patch",
+      "sha256": "1076882cf164953d9135dd882ac8b265c3196e5190198448f13f668b0ad64282"
+    },
+    {
+      "path": "src/input/0005-smp2p-switch-state-gpio-binding.patch",
+      "sha256": "0581012fd5ac4ef66df4fb017a9032d35af11f6bcd1c90979e1d2ae2c631c53a"
+    },
+    {
+      "path": "src/input/apply-hall-initial-gpio733.sh",
+      "sha256": "1012e6f5ba1cc8b7f58974bb804024a0043fabe74e9fe5333c1da1ea41d107ea"
+    },
+    {
+      "path": "tests/hall-initial-gpio-provider.h",
+      "sha256": "092b07abab11a3adeb9467fa250364e2f4d400fa8dee7052a45aa1061ee778d9"
+    },
+    {
+      "path": "tests/hall-initial-gpio.c",
+      "sha256": "1a7697390786b4347c79758236ddd20c3428395e07c67e3490c96501651f4860"
+    },
+    {
+      "path": "tests/hall-initial-gpio-dt.cpp",
+      "sha256": "de9a940847aa1964e53c518bba477f575c0f867bf791de9d4e50402a837db07c"
+    },
+    {
+      "path": "tests/hall-initial-gpio.sh",
+      "sha256": "a444800048a14c4ebae8326a261ad632f541429ddc5b1414ca4417410c141b3e"
+    },
+    {
+      "path": "packaging/native/hall-initial-source-view733.sh",
+      "sha256": "1bc0cd8628c33adebbf9ab2b005b80e9b4865a17efa8919330db3d9b1d6b60ec"
+    },
+    {
+      "path": "packaging/native/check-hall-initial733.sh",
+      "sha256": "ee45b8fb3b6aced360e70d85063bac410532e00d274291db76829830f6a9e73e"
+    },
+    {
+      "path": "packaging/native/copr-hall-initial733.sh",
+      "sha256": "4f9d71708d3211383bd6edf0e9e2864a645e59cff3cc5c8445533e20e53c9b6a"
+    },
+    {
+      "path": "docs/HALL-PHYSICAL-INITIAL-STATE.md",
+      "sha256": "919d6040da9203ea6a90bfae9426a5c6d034373739a96a52813a18cda398f302"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "250fa2ecfbcf007266b0341464f68151e42f1f7f16eee4f8db675858758267c3"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "fc074d3d30c7457933a8bb0e2b94909af659538701b7faede4cafdd2d50b443b"
+    },
+    {
+      "path": "manifests/stop-deadline-cumulative-20261107.json",
+      "sha256": "784d1aed7f91be2496c2903aac2d66242ccb676650c95cb08fbc7022f2b59f8b"
+    },
+    {
+      "path": "manifests/pcm-period-cumulative-20261107.json",
+      "sha256": "9ddeaf2922c4577faf46707ead375c4e4783964e48c895a6feb6770f3f6b743d"
+    },
+    {
+      "path": "manifests/speaker-enable-control-cumulative-20261107.json",
+      "sha256": "46786233dd3b4172d96602b499e0d4b4f39ddd850d84e610d89eb22618f831a1"
+    },
+    {
+      "path": "manifests/memory-compression-cumulative-20261107.json",
+      "sha256": "e4671cadbc280df68dcc87f35be720b924263ea780da7836b0812d4ecdd252b6"
+    }
+  ],
+  "measured_lead": {
+    "kernel": "7.3.3-4-unstable",
+    "physical_closed_gpio99": "low/input/func0/pullup/2mA",
+    "physical_open_gpio99": "high/input/func0/pullup/2mA",
+    "gpio100_not_qualified": true,
+    "readonly_debug_observations": true,
+    "closed_boot_position_unknown": true
+  },
+  "acceptance": {
+    "new_callbacks_and_original_legacy_assertions_required": true,
+    "four_compiler_sanitizer_modes_required": true,
+    "ten_assertion_mutants_required": true,
+    "optional_gpiolib_off_required": true,
+    "actual_aarch64_driver_and_early_dt_required": true,
+    "stationary_closed_boot": false,
+    "resume_wake": false,
+    "physical_pinmux_ownership_and_remote_irq_parity": false,
+    "physical_speaker_limiter_qualified": false,
+    "gain_ceiling": 223
+  }
+}
