@@ -44,7 +44,7 @@
     },
     {
       "path": "packaging/native/stop-deadline-callbacks.spec",
-      "sha256": "74926b3490eb74eec31216cd7072bc653fdccb5fa052286da64d32262af5f633"
+      "sha256": "e7d0512e17ff8c5008234f30b269bdc48f9f1a9b5e4c87093e85d4f336274f9c"
     },
     {
       "path": "docs/PROTECTED-STOP-DEADLINE.md",

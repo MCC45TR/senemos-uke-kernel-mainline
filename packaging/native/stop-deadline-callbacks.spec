@@ -8,6 +8,7 @@ Source0: stop-deadline-proof.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: gcc
 BuildRequires: clang
+BuildRequires: compiler-rt
 BuildRequires: libasan
 BuildRequires: libubsan
 BuildRequires: git-core
