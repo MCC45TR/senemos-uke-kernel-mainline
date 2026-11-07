@@ -19,12 +19,12 @@ cp "$kernel/sound/soc/codecs/fs19xx.c" "$generated/codec-before-protected-stop.c
 awk '/^int q6apm_graph_stop\(/ {copy=1} copy{print} copy&&/^}/ {found++;exit} END{if(found!=1)exit 1}' "$core/q6apm.c" > "$generated/graph-stop-before-protected-stop.c"
 printf '%s  %s\n' 7ccd1442087c2f26769bae2f3378b33539d7aa6868880d32aac71ad14e91dd43 "$generated/graph-stop-before-protected-stop.c" | sha256sum -c --strict -
 install -m644 "$profile/src/audio/uke-fs19xx-muted-stop.h" "$kernel/sound/soc/codecs/uke-fs19xx-muted-stop.h"
-patch -d "$kernel" --dry-run --batch --fuzz=0 -p1 -i "$profile/src/audio/0015-uke-protected-stop-drain.patch"
-patch -d "$kernel" --batch --fuzz=0 -p1 -i "$profile/src/audio/0015-uke-protected-stop-drain.patch"
+git -C "$kernel" apply --check --whitespace=error "$profile/src/audio/0015-uke-protected-stop-drain.patch"
+git -C "$kernel" apply --whitespace=error "$profile/src/audio/0015-uke-protected-stop-drain.patch"
 bash "$profile/packaging/native/check-protected-stop731.sh" "$kernel" "$generated" source
 work=$(mktemp -d);trap 'find "$work" -depth -delete' EXIT
 for path in sound/soc/codecs/fs19xx.c sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h sound/soc/qcom/qdsp6/q6apm.c;do install -Dm644 "$kernel/$path" "$work/$path";done
-patch -R -d "$work" --batch --fuzz=0 -p1 -i "$profile/src/audio/0015-uke-protected-stop-drain.patch"
+git -C "$work" apply --reverse --whitespace=error "$profile/src/audio/0015-uke-protected-stop-drain.patch"
 cmp "$work/sound/soc/codecs/fs19xx.c" "$generated/codec-before-protected-stop.c"
 cmp "$work/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c" "$generated/runtime-before-protected-stop.c"
 cmp "$work/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h" "$generated/runtime-header-before-protected-stop.h"

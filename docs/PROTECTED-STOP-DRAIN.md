@@ -72,7 +72,7 @@ new layer applies.
 
 ## Qualification and remaining device work
 
-Proposed COPR check36 executes the actual codec mute/readback/event, runtime
+Proposed COPR check37 executes the actual codec mute/readback/event, runtime
 gate/stopping/stopped and graph-stop callbacks with independent I2C and DSP
 drain peers. Four compiler/sanitizer modes cover40 cases, including all20 mute
 I2C operations failing, ignored writes, DSP timeout/error, owner/removal/state
@@ -111,3 +111,11 @@ check with the exact function after955 inert prefix lines preserves the
 expected function postimage and surrounding bytes. GNU patch is unavailable
 on the tablet; its acceptance and actual cumulative native tests remain COPR
 gates. No compiler or new package is run or installed locally.
+
+Check36/COPR11282611 still refuses the GNU hunk at956 before callback
+compilation, despite the extracted complete preimage hash matching the exact
+patch old text. Check37 uses git apply with exact context and whitespace errors
+for this four-file delta and its reverse comparison. A local source-only model
+checks all four postimages and whole-file inverse identities. Actual cumulative
+pre/post seals, the complete original-source inverse comparisons, refusal
+controls and native compilation remain mandatory; no source check is relaxed.
