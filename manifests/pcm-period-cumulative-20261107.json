@@ -44,7 +44,7 @@
     },
     {
       "path": "docs/PCM-PERIOD-RECEIVE-PROGRESS.md",
-      "sha256": "15d1fcb25c005387f6f34b8daac2ec8e4cb2224a6c91fbf407112dae5cba259f"
+      "sha256": "85bededf2eb2942f191c16a653b2569197ffb021a62c07e8c44644f8fd40d0d0"
     },
     {
       "path": "manifests/cumulative-release.json",

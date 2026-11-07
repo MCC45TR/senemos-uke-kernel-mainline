@@ -40,7 +40,7 @@ References remain unchanged under the owner's reference archive. No tuning,
 calibration, board values or donor implementations are copied.
 
 - Signed Linux 7.3.3, d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd:
-  sound/soc/qcom/qdsp6/q6apm-dai.c (GPL-2.0, Linaro 2020),
+  sound/soc/qcom/qdsp6/q6apm-dai.c (GPL-2.0, Linaro 2021),
   drivers/soc/qcom/apr.c (GPL-2.0), and sound/core/pcm_native.c (GPL-2.0-or-later).
   Inspect GPR receive ordering, nonatomic stream locking and release ordering.
   The ALSA driver API documents period batching and stream-lock ownership:

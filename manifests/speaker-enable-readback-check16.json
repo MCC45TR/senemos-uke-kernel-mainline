@@ -1,0 +1,33 @@
+{
+  "copr_build": 11284443,
+  "source_check_release": 16,
+  "state": "succeeded",
+  "duration_seconds": 75,
+  "source_commit": "52af6d902d3d00c2ff6d351312112e8dcdc793ae",
+  "source_tree": "713fb1dc5517e5437013b24f51488577e0107726",
+  "receipt_sha256": "877abc03622377ad7fa6eebaabc884dc68b17afda8e4f67c87e9b7b287644233",
+  "builder_log_sha256": "6b8b69fed08cad6757ea4af17ca5e33ad2b248e6fd18bfed2b736cfbbc1ab559",
+  "trusted_two_rpm_signatures": true,
+  "no_runtime_payload": true,
+  "no_scriptlets": true,
+  "only_rpmlib_dependencies": true,
+  "production_parser_cases_per_mode": 84,
+  "production_transport_cases_per_mode": 23,
+  "compiler_sanitizer_modes": 4,
+  "parser_assertion_mutants": 12,
+  "native_focused_admitted": true,
+  "actual_kernel_object_qualified": false,
+  "runtime_registered": false,
+  "on_device_query_tested": false,
+  "physical_limiter_qualified": false,
+  "gain_ceiling": 223,
+  "full_revision_reserved": false,
+  "qualification_scope": "Production parser/backend under independent synthetic GPR providers, not a kernel-object/linked/full-device qualification",
+  "shipping_kernel_unchanged": "7.3.3-3-unstable",
+  "shipping_source": "fa9d36d77a0b6dfe73e168e993b688ad5f3374f2",
+  "remaining": [
+    "Actual cumulative AArch64 kernel objects and lifecycle integration",
+    "Fixed-module GET_CFG on target while owner/guard generation is valid",
+    "Physical limiter/VI/calibration/gain243 evidence remains separate"
+  ]
+}
