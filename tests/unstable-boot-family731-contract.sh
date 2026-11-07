@@ -15,7 +15,9 @@ expected=senemos-uke-linux-kernel-mainline-unstable
 names=$(query -q --qf '%{NAME}\n')
 [[ $names == "$expected"$'\n'"$expected-core"$'\n'"$expected-modules"$'\n'"$expected-dtbs"$'\n'"$expected-boot"$'\n'"$expected-singleboot" ]]
 parsed=$(query --parse)
-grep -Eq '^Provides: kernel-uname-r\(7[.]3[.]1-[1-9][0-9]*-unstable\)$' <<< "$parsed"
+version=$(query -q --srpm --qf '%{VERSION}')
+[[ $version =~ ^[1-9][0-9]*[.][0-9]+[.][0-9]+$ ]]
+grep -Eq "^Provides: kernel-uname-r\(${version//./[.]}-[1-9][0-9]*-unstable\)$" <<< "$parsed"
 kernel_release=$(sed -n 's/^Provides: kernel-uname-r(\([^)]*\))$/\1/p' <<< "$parsed")
 audio_release=${kernel_release%-unstable}u
 audio_driver=uke${audio_release//./_}

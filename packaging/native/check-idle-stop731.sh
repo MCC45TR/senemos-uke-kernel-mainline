@@ -21,6 +21,15 @@ llvm-nm -g --defined-only "$apm" > "$work/apm"
 llvm-nm -u "$codec" > "$work/codec"
 llvm-nm "$apm" > "$work/exports"
 grep -Eq ' T q6apm_fs19xx_output_fault$' "$work/apm"
-grep -Eq ' [rR] __ksymtab_q6apm_fs19xx_output_fault$' "$work/exports"
+grep -Eq ' [rR] __export_symbol_q6apm_fs19xx_output_fault$' "$work/exports"
+llvm-readelf -rW "$apm" | awk '
+ /^Relocation section / {emit=($0 ~ /[.]rela[.]export_symbol/)}
+ emit {print}' > "$work/export-relocations"
+grep -Eq 'R_AARCH64_ABS64[[:space:]]+[^[:space:]]+[[:space:]]+q6apm_fs19xx_output_fault([[:space:]]|$)' "$work/export-relocations"
+grep -Fx 'EXPORT_SYMBOL_GPL(q6apm_fs19xx_output_fault);' "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c"
 grep -Eq ' U q6apm_fs19xx_output_fault$' "$work/codec"
+if [[ $phase == linked ]];then
+ llvm-nm "$out/sound/soc/qcom/qdsp6/snd-q6apm.ko" > "$work/module-exports"
+ grep -Eq ' [rR] __ksymtab_q6apm_fs19xx_output_fault$' "$work/module-exports"
+fi
 printf 'Actual AArch64 healthy-idle runtime/codec/export passed:%s; physical repeat use remains unqualified.\n' "$phase"
