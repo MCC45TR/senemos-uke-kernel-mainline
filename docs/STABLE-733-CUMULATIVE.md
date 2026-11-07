@@ -61,3 +61,28 @@ branch. Native camera objects admit sequential733 unstable tuples and derive
 LOCALVERSION from that tuple. Keep every old admitted tuple and hardware check;
 all driver implementation bytes remain unchanged. Exact forward/inverse and
 shell syntax checks cover both helper patches; COPR must execute the results.
+
+`manifests/cumulative-release.json` is now the single current tuple. The factory
+and native checker read its upstream identity, full revision and independent
+source-check revision. Image/LOCALVERSION, DT/module destinations, source lock,
+RPM version/release, firmware aliases and audio card/UCM labels are derived from
+that tuple. Historical source pins remain immutable. The exact helper patches
+are authenticated first, then a bounded literal transform admits the selected
+upstream version without editing source guards on every update. A manually
+loaded read-only CPUCP observer compares the running release with its compiled
+UTS_RELEASE instead of the stale731 prefix; board/protocol admission is retained.
+
+The metadata-only release contract exercises1/2/3/34, new-upstream reset,
+malformed values, history gaps and downgrade refusal. Current/future helper
+normalization is checked on exact retained archive copies, without compilation.
+Native object and package checks still establish whether a new upstream version
+is compatible. Release generation cannot bypass an incompatible source gate.
+
+Source733-2/11283049 reaches the retained NVMEM whole-file seal, after source
+preparation and the new audio/VRR callbacks pass, then fails313s. Upstream7.3.2
+fixes bit-shift read-buffer bounds in drivers/nvmem/core.c. The separately sealed
+read, write and mode/privacy functions are byte-identical to731. Pin the new
+whole-file hash in the signed-upstream plan and retain all three function seals
+and actual privacy assertions. This is not a relaxed checksum. Also compile the
+NVMEM core and exact-ABI CPUCP observer alongside the six other upstream objects.
+Original NVMEM source is GPL-2.0, Srinivas Kandagatla and Maxime Ripard.

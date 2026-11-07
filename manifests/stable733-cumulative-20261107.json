@@ -4,7 +4,7 @@
   "parent_build": 11282652,
   "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
   "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
-  "source_check_release": 2,
+  "source_check_release": 3,
   "proposed_full_revision": 1,
   "full_revision_reserved": false,
   "unchanged_parent_nonidentity_fields": 460,
@@ -75,15 +75,15 @@
     },
     {
       "path": "packaging/native/copr-migration-stable733.sh",
-      "sha256": "086bea51dd2b04389a426eed10b7cbb419efe51588bde294ab78e1dc28d5c4e7"
+      "sha256": "39cb07078f92e8660712abb76301fd1fed4de85724b10b339f9a374d86f294dc"
     },
     {
       "path": "packaging/native/check-stable733.sh",
-      "sha256": "dc760c8ca32a7f05f52173822facaeb64fbccc413047f3c14bf808d9534a05c0"
+      "sha256": "0084a738d3f4c969ab2cbac40cdbe37243cfb752506995d34a74ac4f9d6c9689"
     },
     {
       "path": "docs/STABLE-733-CUMULATIVE.md",
-      "sha256": "6c155ad13186ee7179bea5e618278c6a6e7cbc0fcd2e83c4f32d27c74d420fa4"
+      "sha256": "e5786c4629352f0a18f3a0f2c570e3c7c4cd9f82329cb6c9d29c3763ea79200c"
     },
     {
       "path": "tests/unstable-boot-family731-contract.sh",
@@ -104,6 +104,26 @@
     {
       "path": "src/boot/stable733-boot-version-guards.patch",
       "sha256": "b75567d9be77a92c8c439d26470ef5f5800b5f9cf52b505f654fab7bf7d0239f"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "3c7c8d51ed82ab845e612081010a91703ad65c8f2388cca1946e0b6e7a534e8d"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "4d3debb542d75ec80e96ab44d00f969d12ed3cf763a67034eb6d08cd0215adeb"
+    },
+    {
+      "path": "scripts/normalize-cumulative-version.sh",
+      "sha256": "91d31eef5a098304b180bc1b8146487e7ccfa5317430241121f003e4596889fe"
+    },
+    {
+      "path": "tests/kernel-release-contract.sh",
+      "sha256": "dfe9dda71df72b15955acd6c54be37aa238b78a32c2860a75e484a4ed4db9700"
+    },
+    {
+      "path": "tests/camera-nvmem-privacy731-contract.sh",
+      "sha256": "72f0d8b5ba18e24c30d8a7192fa11e0737c1cabdc1f71f6ba68d021fe1575c58"
     }
   ],
   "before_block_sha256": "4be1dd1953c7b6ed5b2a261d74d2125dbce00bb4f3691d359f0d67603a959615",
@@ -183,6 +203,16 @@
       "duration_seconds": 92,
       "source_rpm_created": true,
       "reason": "Original733/122 adaptation and early microphone callbacks pass; retained ABL helper only admits731. Audit finds dependent display/video/REGDMA guards and native tuple helpers; patch exact inherited files without older-copy overwrite."
+    },
+    {
+      "build": 11283049,
+      "version": "7.3.3",
+      "release": 2,
+      "source": "617ceee1e4fab5a879b4250269fa3ca734f56fdb",
+      "state": "failed",
+      "duration_seconds": 313,
+      "source_preparation_passed": true,
+      "reason": "Complete source/new audio/VRR and many inherited controls pass; upstream733 NVMEM buffer fix changes full-file seal. Three separately sealed privacy functions remain byte-identical and exact new archive hash is pinned."
     }
   ],
   "upstream": {
@@ -210,6 +240,10 @@
     "tests/unstable-boot-family731-contract.sh": {
       "before": "3ccb91eee559a307a1c1de8baf1d30e908fb254dc9ae258cf31028b5f253a352",
       "after": "db0bbdf3deac0361d3ac35d7b2423c1c97440154c8b21a6af39592f056b1c600"
+    },
+    "tests/camera-nvmem-privacy731-contract.sh": {
+      "before": "edda7fcc1d6b766d856df882b4bcd402c04501bef0e378d3f90a6f93d7eab182",
+      "after": "72f0d8b5ba18e24c30d8a7192fa11e0737c1cabdc1f71f6ba68d021fe1575c58"
     }
   },
   "version_helper_hashes": {
@@ -281,5 +315,9 @@
         "after": "b8baa60fa0befb44b582ace4189f3fd7711b96574258143e6e2fb08a8f9158ba"
       }
     }
-  }
+  },
+  "release_plan": "manifests/cumulative-release.json",
+  "version_and_revision_generated_from_one_plan": true,
+  "observer_uses_compiled_release": true,
+  "upstream_nvmem_privacy_functions_unchanged": true
 }

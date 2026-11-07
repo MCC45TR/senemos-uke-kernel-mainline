@@ -5,25 +5,33 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 (cd "$owner";jq -r '.source_assets[]|.sha256+"  "+.path' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict --quiet -)
+tuple=$(bash "$owner/scripts/kernel-release.sh" json "$owner/manifests/cumulative-release.json")
+version=$(jq -er .version <<< "$tuple")
+planned_release=$(jq -er .release <<< "$tuple")
+check_release=$(jq -er .source_check_release <<< "$tuple")
+check_evr=$(jq -er .source_check_evr <<< "$tuple")
+upstream=$(jq -c .upstream <<< "$tuple")
+upstream_hash=$(jq -er .source_sha256 <<< "$upstream")
+upstream_epoch=$(jq -er .released_epoch <<< "$upstream")
 output=$(realpath -m "${1:?Source result directory}")
-revision=${2:?Unique unstable revision}
+revision=${2:-$planned_release}
 mode=${3:?check or full}
 proof=${4:?Check release or admitted build}
-[[ $revision == 1 && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
+[[ $revision == "$planned_release" && ($mode == check || $mode == full) && $proof =~ ^[1-9][0-9]*$ ]]
 commit=$(git -C "$owner" rev-parse HEAD)
 stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.3-2"' "$stage/proof.json" >/dev/null
+ jq -e --arg evr "$check_evr" '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version==$evr' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.3-2.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-$check_evr.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
- bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.3-$revision"
+ bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "$version-$revision"
 else
- [[ $# == 4 && $proof == 2 ]]
- bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.3-$proof"
+ [[ $# == 4 && $proof == "$check_release" ]]
+ bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "$version-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
 mkdir -p "$output" "$stage/unpacked"
@@ -46,7 +54,7 @@ boot=$stage/unpacked/boot-recipe
 jq -e '.source_commit=="a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9" and .kernel_release=="7.3.1-12217-unstable" and .protected_stop_native_admitted and .protected_stop_qualification_build==11282644 and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
 assets=(packaging/native/check-idle-stop731.sh docs/STABLE-733-CUMULATIVE.md manifests/linux-7.3.3.json manifests/stable733-cumulative-20261107.json src/audio/0019-uke-idle-legacy-fixture.patch src/display/0075-o82-vrr-floor-api.patch src/display/apply-vrr-api731.sh tests/o82-vrr-api.c tests/o82-vrr-api.sh packaging/native/check-vrr-api731.sh docs/VRR-FLOOR-ABI.md manifests/audio-vrr-20261107.json src/audio/0017-uke-protected-idle-worker.patch src/audio/0018-uke-idle-stop-source-seals.patch src/audio/apply-idle-stop731.sh tests/audio-idle-stop.c tests/audio-idle-stop.sh packaging/native/check-idle-stop731.sh docs/PROTECTED-IDLE-WORKER.md manifests/idle-stop-worker-20261107.json manifests/kernel-migration-full12217-20261107.json)
-assets+=(tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh src/boot/stable733-native-version-guards.patch src/boot/stable733-boot-version-guards.patch)
+assets+=(tests/camera-nvmem-privacy731-contract.sh scripts/kernel-release.sh manifests/cumulative-release.json scripts/normalize-cumulative-version.sh tests/kernel-release-contract.sh tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh src/boot/stable733-native-version-guards.patch src/boot/stable733-boot-version-guards.patch)
 for tree in "$profile" "$boot";do
  (cd "$tree";jq -r '.retained_helper_hashes|to_entries[]|.value.before+"  "+.key' "$owner/manifests/stable733-cumulative-20261107.json" | sha256sum -c --strict -)
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
@@ -57,8 +65,9 @@ for tree in "$profile" "$boot";do
  git -C "$tree" apply --check --whitespace=error "$owner/src/boot/$guard_patch"
  git -C "$tree" apply --whitespace=error "$owner/src/boot/$guard_patch"
  (cd "$tree";jq -r --arg kind "$kind" '.version_helper_hashes[$kind]|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+ bash "$owner/scripts/normalize-cumulative-version.sh" "$tree" "$kind"
  [[ $(grep -Fo uke7.3.1-12217u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
- sed "s/uke7[.]3[.]1-12217u/uke7.3.3-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
+ sed "s/uke7[.]3[.]1-12217u/uke${version}-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"
  # Source archives include both exact17 and authenticated18 checker paths.
  (cd "$tree";jq -r '.checker_hashes|to_entries[]|.value.before+"  "+.key' manifests/idle-stop-worker-20261107.json | sha256sum -c --strict -)
@@ -73,7 +82,7 @@ for tree in "$profile" "$boot";do
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-idle-stop.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg source "$commit" --arg revision "$revision" --arg mode "$mode" --arg proof "$proof" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:("7.3.3-"+$revision+"-unstable"),diagnostic_audio_driver:("uke7_3_3-"+$revision+"u"),upstream_version:"7.3.3",upstream_commit:"d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",upstream_sha256:"79c66dde66cd96877fcde8f7d36aec946b1f423d2b97b5a7b1751b75c764f3d1",upstream_stable_cumulative_layer:1,upstream_stable_parent_version:"7.3.1",upstream_stable_parent_build:11282652,upstream_stable_native_admitted:($mode=="full"),upstream_stable_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),protected_idle_worker_layer:1,protected_idle_parent_build:11282652,protected_idle_parent_source:"a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",protected_idle_atomic_guard_classification:true,protected_idle_real_faults_retained:true,protected_idle_native_admitted:($mode=="full"),protected_idle_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),vrr_saved_floor_api_layer:1,vrr_saved_floor_api_get_only:true,vrr_kernel_default_and_display_admission_unchanged:true,vrr_saved_floor_native_admitted:($mode=="full"),vrr_saved_floor_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-idle-stop.json" > "$profile/source-composition.json"
+jq --argjson tuple "$tuple" --arg source "$commit" --arg revision "$revision" --arg mode "$mode" --arg proof "$proof" '.+{source_commit:$source,rpm_revision:$revision,kernel_release:$tuple.kernel_release,diagnostic_audio_driver:$tuple.audio_driver,upstream_version:$tuple.version,upstream_commit:$tuple.upstream.commit,upstream_sha256:$tuple.upstream.source_sha256,upstream_stable_cumulative_layer:1,upstream_stable_parent_version:"7.3.1",upstream_stable_parent_build:11282652,upstream_stable_native_admitted:($mode=="full"),upstream_stable_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),protected_idle_worker_layer:1,protected_idle_parent_build:11282652,protected_idle_parent_source:"a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",protected_idle_atomic_guard_classification:true,protected_idle_real_faults_retained:true,protected_idle_native_admitted:($mode=="full"),protected_idle_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),vrr_saved_floor_api_layer:1,vrr_saved_floor_api_get_only:true,vrr_kernel_default_and_display_admission_unchanged:true,vrr_saved_floor_native_admitted:($mode=="full"),vrr_saved_floor_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),device_installation:false,physical_acceptance:false}' "$profile/source-composition-before-idle-stop.json" > "$profile/source-composition.json"
 sha256sum -c --strict --quiet "$stage/configs"
 for tree in "$profile" "$boot";do
  if [[ $tree == "$profile" ]];then
@@ -87,20 +96,20 @@ for tree in "$profile" "$boot";do
 done
 install -m644 "$boot/lock.json" "$output/boot-payload.json"
 # Independently authenticate the actual replacement source and original patch queue.
-archive=$output/linux-7.3.3.tar.xz
-curl -q -fLsS --retry 2 --max-time 600 https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.xz -o "$archive"
-printf '%s  %s\n' 79c66dde66cd96877fcde8f7d36aec946b1f423d2b97b5a7b1751b75c764f3d1 "$archive" | sha256sum -c --strict -
-curl -q -fLsS --max-time 45 https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.sign -o "$output/linux-7.3.3.tar.sign"
+archive=$output/linux-$version.tar.xz
+curl -q -fLsS --retry 2 --max-time 600 "$(jq -er .source_url <<< "$upstream")" -o "$archive"
+printf '%s  %s\n' "$upstream_hash" "$archive" | sha256sum -c --strict -
+curl -q -fLsS --max-time 45 "$(jq -er .signature_url <<< "$upstream")" -o "$output/linux-$version.tar.sign"
 keyring=$stage/keyring;mkdir -m700 "$keyring"
 gpg --homedir "$keyring" --batch --import "$output/linux-stable.asc"
-xz -cd "$archive" | gpg --homedir "$keyring" --batch --status-fd 1 --verify "$output/linux-7.3.3.tar.sign" - > "$stage/verification.status"
+xz -cd "$archive" | gpg --homedir "$keyring" --batch --status-fd 1 --verify "$output/linux-$version.tar.sign" - > "$stage/verification.status"
 gpgconf --homedir "$keyring" --kill gpg-agent
 awk '$1=="[GNUPG:]"&&$2=="VALIDSIG"&&$NF=="647F28654894E3BD457199BE38DBBDC86092693E" {good++} END{if(good!=1)exit 1}' "$stage/verification.status"
 signer=$(awk '$1=="[GNUPG:]"&&$2=="VALIDSIG" {print $3}' "$stage/verification.status")
-tar -xOJf "$archive" linux-7.3.3/Makefile | awk '$1=="VERSION"{v=$3}$1=="PATCHLEVEL"{p=$3}$1=="SUBLEVEL"{s=$3}END{if(v"."p"."s!="7.3.3")exit 1}'
+tar -xOJf "$archive" "linux-$version/Makefile" | awk -v expected="$version" '$1=="VERSION"{v=$3}$1=="PATCHLEVEL"{p=$3}$1=="SUBLEVEL"{s=$3}END{if(v"."p"."s!=expected)exit 1}'
 adaptation=$stage/unpacked/senemos-adaptation
 cp "$adaptation/source-lock.json" "$stage/adaptation-parent.json"
-jq --arg signer "$signer" '.version="7.3.3"|.upstream_commit="d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd"|.source_url="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.xz"|.signature_url="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.sign"|.source_sha256="79c66dde66cd96877fcde8f7d36aec946b1f423d2b97b5a7b1751b75c764f3d1"|.source_date_epoch=1793989159|.signer=$signer' "$stage/adaptation-parent.json" > "$adaptation/source-lock.json"
+jq --arg signer "$signer" --argjson upstream "$upstream" '.version=$upstream.version|.upstream_commit=$upstream.commit|.source_url=$upstream.source_url|.signature_url=$upstream.signature_url|.source_sha256=$upstream.source_sha256|.source_date_epoch=$upstream.released_epoch|.signer=$signer' "$stage/adaptation-parent.json" > "$adaptation/source-lock.json"
 jq -S 'del(.version,.upstream_commit,.source_url,.signature_url,.source_sha256,.source_date_epoch,.signer)' "$stage/adaptation-parent.json" > "$stage/old-patch-lock"
 jq -S 'del(.version,.upstream_commit,.source_url,.signature_url,.source_sha256,.source_date_epoch,.signer)' "$adaptation/source-lock.json" | cmp - "$stage/old-patch-lock"
 for suffix in tar.xz tar.sign;do rm "$output/linux-7.3.1.$suffix";done
@@ -109,24 +118,24 @@ for tree in native-profile boot-recipe;do
  archive=$native;[[ $tree != boot-recipe ]] || archive=$boot_archive
  tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/$archive" -C "$stage/unpacked" "$tree"
 done
-mv "$output/$native" "$output/senemos-native-profile-7.3.3.tar.xz"
-tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/senemos-uke-adaptation-7.3.3.tar.xz" -C "$stage/unpacked" senemos-adaptation
+mv "$output/$native" "$output/senemos-native-profile-$version.tar.xz"
+tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/senemos-uke-adaptation-$version.tar.xz" -C "$stage/unpacked" senemos-adaptation
 rm "$output/senemos-uke-adaptation-7.3.1.tar.xz"
-awk -v revision="$revision" '
- /^Version: 7[.]3[.]1$/ {$0="Version: 7.3.3";versioned++}
- /^Summary: Mainline Linux 7[.]3[.]1 / {sub("7.3.1","7.3.3")}
- /^%if "%\{version\}" == "7[.]3[.]1"$/ {sub(/7[.]3[.]1/,"7.3.3")}
- /^export SOURCE_DATE_EPOCH=1793362198$/ {$0="export SOURCE_DATE_EPOCH=1793989159"}
+awk -v version="$version" -v source_epoch="$upstream_epoch" -v revision="$revision" '
+ /^Version: 7[.]3[.]1$/ {$0="Version: "version;versioned++}
+ /^Summary: Mainline Linux 7[.]3[.]1 / {sub(/7[.]3[.]1/,version)}
+ /^%if "%\{version\}" == "7[.]3[.]1"$/ {sub(/7[.]3[.]1/,version)}
+ /^export SOURCE_DATE_EPOCH=1793362198$/ {$0="export SOURCE_DATE_EPOCH="source_epoch}
  /^%global senemos_build_release 12217$/ {$0="%global senemos_build_release "revision;changed++}
  /^bash native-profile\/src\/audio\/apply-protected-stop731.sh / {print;print "bash native-profile/src/audio/apply-idle-stop731.sh \"$PWD\" \"$PWD/native-profile\"";print "bash native-profile/src/display/apply-vrr-api731.sh \"$PWD\" \"$PWD/native-profile\"";prepared++;next}
  /^%check$/ {print;print "bash native-profile/packaging/native/check-stable733.sh \"$PWD\" %{_uke_out} linked";checked++;next}
- /^%changelog$/ {print;print "* Sat Nov 07 2026 Uke contributors - 7.3.3-1";print "- Classify healthy idle atomically while retaining output fault containment.";print "- Expose read-only O82 VRR floor ABI and both parameter type fields.";print "- Preserve complete12217, calibrated protection and automatic A/B staging.";print "";history++;next}
+ /^%changelog$/ {print;print "* Sat Nov 07 2026 Uke contributors - "version"-"revision;print "- Classify healthy idle atomically while retaining output fault containment.";print "- Expose read-only O82 VRR floor ABI and both parameter type fields.";print "- Preserve complete12217, calibrated protection and automatic A/B staging.";print "";history++;next}
  {print} END {if(versioned!=1||changed!=1||history!=1||prepared!=1||checked!=1)exit 1}
  ' "$spec" > "$stage/idle-stop.spec"
 install -m644 "$stage/idle-stop.spec" "$spec"
 if [[ $mode == check ]];then
  printf '%s  %s\n' 5493807ca28533b0bd0caa497754d99b4d366a852047a1dfb367c46b483830cd "$owner/packaging/native/copr-migration-cohort731.sh" | sha256sum -c --strict -
- awk '/^if \[\[ \$mode == check \]\]; then$/ {copy=1;next} copy && /^fi$/ {exit} copy {print}' "$owner/packaging/native/copr-migration-cohort731.sh" | sed 's| drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o| drivers/base/core.o drivers/base/dd.o drivers/gpu/drm/msm/msm_gem_shrinker.o drivers/usb/core/driver.o drivers/usb/core/message.o sound/core/control.o drivers/soc/qcom/apr.o sound/soc/qcom/qdsp6/audioreach.o sound/soc/qcom/qdsp6/q6apm.o sound/soc/codecs/fs19xx.o drivers/clk/qcom/camcc-sm7675.o drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-check.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o sound/soc/qcom/qdsp6/snd-q6apm.o drivers/soc/qcom/uke-audio-config-memory.o drivers/misc/fastrpc.o drivers/iommu/arm/arm-smmu/arm-smmu-qcom.o drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o|' > "$stage/check-packaging.sh"
+ awk '/^if \[\[ \$mode == check \]\]; then$/ {copy=1;next} copy && /^fi$/ {exit} copy {print}' "$owner/packaging/native/copr-migration-cohort731.sh" | sed 's| drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o| drivers/firmware/arm_scmi/uke-cpucp-observe.o drivers/nvmem/core.o drivers/base/core.o drivers/base/dd.o drivers/gpu/drm/msm/msm_gem_shrinker.o drivers/usb/core/driver.o drivers/usb/core/message.o sound/core/control.o drivers/soc/qcom/apr.o sound/soc/qcom/qdsp6/audioreach.o sound/soc/qcom/qdsp6/q6apm.o sound/soc/codecs/fs19xx.o drivers/clk/qcom/camcc-sm7675.o drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-check.o sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o sound/soc/qcom/qdsp6/snd-q6apm.o drivers/soc/qcom/uke-audio-config-memory.o drivers/misc/fastrpc.o drivers/iommu/arm/arm-smmu/arm-smmu-qcom.o drivers/iio/common/uke-ssc/uke-ssc.o drivers/input/misc/qcom-smp2p-switch.o|' > "$stage/check-packaging.sh"
  test -s "$stage/check-packaging.sh"
  source "$stage/check-packaging.sh"
  awk '
@@ -136,4 +145,5 @@ if [[ $mode == check ]];then
  install -m644 "$stage/check.spec" "$output/uke-kernel-migration-check.spec"
 fi
 (cd "$output";sha256sum -c --strict --quiet "$stage/retained")
-printf 'Signed7.3.3 prepared with complete17 hardware/audio/VRR controls for%s; no target operation.\n' "$mode"
+bash "$owner/tests/kernel-release-contract.sh"
+printf 'Signed%s-%s prepared with complete17 hardware/audio/VRR controls for%s; no target operation.\n' "$version" "$revision" "$mode"
