@@ -21,7 +21,7 @@ if [[ $mode == full ]];then
  url=$(curl -qfsSL --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
  curl -qfsSL --max-time 90 "${url}uke-kernel-migration-check-$(jq -er .source_check_evr <<< "$tuple").fc46.aarch64.rpm" -o "$work/proof.rpm"
  printf '%s  %s\n' "$5" "$work/proof.rpm" | sha256sum -c --strict -
- rpm2cpio "$work/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.speaker_enable_readback_layer==1 and .speaker_enable_readback_read_only and .speaker_enable_readback_privileged and .speaker_enable_readback_owner_and_generation and .speaker_enable_readback_client_byte and (.speaker_enable_readback_native_admitted|not) and .speaker_gain_ceiling==223 and (.physical_acceptance|not)' >/dev/null
+ rpm2cpio "$work/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' | jq -e '.speaker_enable_readback_layer==1 and .speaker_enable_readback_alignment_fix_layer==1 and .speaker_enable_readback_alignment_padding_ignored and .speaker_enable_readback_read_only and .speaker_enable_readback_privileged and .speaker_enable_readback_owner_and_generation and .speaker_enable_readback_client_byte and (.speaker_enable_readback_native_admitted|not) and .speaker_gain_ceiling==223 and (.physical_acceptance|not)' >/dev/null
 fi
 bash "$owner/packaging/native/copr-migration-pcm733.sh" "$@"
 native=senemos-native-profile-$version.tar.xz
@@ -46,6 +46,7 @@ jq --arg mode "$mode" --arg proof "$proof" '.+{
  speaker_enable_readback_layer:1,speaker_enable_readback_read_only:true,
  speaker_enable_readback_privileged:true,speaker_enable_readback_owner_and_generation:true,
  speaker_enable_readback_client_byte:true,speaker_enable_readback_shared_dma:false,
+ speaker_enable_readback_alignment_fix_layer:1,speaker_enable_readback_alignment_padding_ignored:true,
  speaker_enable_readback_query_timeout_ms:250,speaker_enable_readback_limiter_claim:false,
  speaker_enable_readback_native_admitted:($mode=="full"),
  speaker_enable_readback_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),

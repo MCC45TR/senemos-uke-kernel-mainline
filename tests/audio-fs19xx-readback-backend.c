@@ -113,6 +113,8 @@ static int gpr_send_port_pkt(gpr_port_t *p, const struct gpr_pkt *packet)
 	uke_rb_put(reply_bytes + 8, parameter);
 	uke_rb_put(reply_bytes + 12, 4);
 	uke_rb_put(reply_bytes + 20, !!(requested_mask & (1U << bit)));
+	/* Optional alignment may contain arbitrary bytes, independently of data. */
+	uke_rb_put(reply_bytes + 24, 0xa5c3f17bU);
 	response = (struct gpr_resp_pkt) {
 		.hdr = { .hdr_size = 6, .pkt_size = 52, .src_domain = 2, .reserved = 0xc8,
 			.dest_domain = 3, .src_port = 1, .dest_port = 0x1234,

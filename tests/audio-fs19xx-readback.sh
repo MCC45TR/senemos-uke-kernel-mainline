@@ -25,7 +25,7 @@ if [[ $sanitize == 0 ]];then
    mutant=="inner-status" && /status = uke_rb_word\(data \+ 16\);/{sub(/uke_rb_word\(data \+ 16\)/, "0");changed++}
    mutant=="boolean" && /if \(status > 1\)/{sub(/status > 1/, "false");changed++}
    mutant=="basic-ack" && /if \(!status\)/{sub(/!status/, "false");changed++}
-   mutant=="padding" && /\(bytes == 28 && uke_rb_word\(data \+ 24\)\)/{sub(/bytes == 28 && uke_rb_word\(data \+ 24\)/, "false");changed++}
+   mutant=="padding" && /status = uke_rb_word\(data \+ 20\);/{print "\tif (bytes == 28 && uke_rb_word(data + 24)) goto malformed;";changed++}
    mutant=="reserved-byte" && /\(h->reserved & 0xff00U\)/{sub(/h->reserved & 0xff00U/, "h->reserved");changed++}
    {print} END {if(changed!=1)exit 1}
   ' "$work/original.h" > "$work/uke-fs19xx-readback.h"

@@ -32,7 +32,7 @@ static void finish(int error, bool enabled, size_t length)
 }
 int main(void)
 {
-	unsigned int channel, enabled, i, variant;
+	unsigned int channel, enabled, i, variant, byte;
 	const size_t lengths[] = {24, 28};
 	for (channel = 0; channel < 2; channel++) {
 		for (enabled = 0; enabled < 2; enabled++) {
@@ -72,7 +72,7 @@ int main(void)
 		case 11: response[8] ^= 1; break;
 		case 12: response[12] = 8; break;
 		case 13: response[20] = 2; break;
-		case 14: response[24] = 1; break;
+		case 14: response[11] ^= 0x80; break;
 		case 15: response[16] = 3; break;
 		case 16: response[0] = 3; break;
 		case 17: response[15] = 0x80; break;
@@ -84,6 +84,22 @@ int main(void)
 		} else {
 			finish(variant == 15 || variant == 16 ? -EREMOTEIO : -EPROTO, false, 28);
 			if (variant == 15 || variant == 16) assert(query.remote_status == 3);
+		}
+	}
+	/* Alignment is not parameter data. Every value of every padding byte
+	 * preserves both enabled and disabled RX/TX results, including stale bytes.
+	 * The byte pattern is synthetic; never embed fitted firmware heap contents.
+	 */
+	for (channel = 0; channel < 2; channel++) {
+		for (enabled = 0; enabled < 2; enabled++) {
+			for (byte = 0; byte < 4; byte++) {
+				for (i = 0; i < 256; i++) {
+					fresh(channel, enabled, 28);
+					memset(response + 24, 0xa5, 4);
+					response[24 + byte] = i;
+					finish(0, enabled, 28);
+				}
+			}
 		}
 	}
 	/* The complete client byte is valid; every high-byte bit remains reserved. */

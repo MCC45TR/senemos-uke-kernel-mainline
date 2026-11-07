@@ -116,9 +116,11 @@ static inline int uke_rb_reply(struct uke_rb_query *q, const struct uke_rb_envel
 	if ((bytes != 24 && bytes != 28) ||
 	    uke_rb_word(data + 4) != q->instance ||
 	    uke_rb_word(data + 8) != q->parameter ||
-	    uke_rb_word(data + 12) != 4 ||
-	    (bytes == 28 && uke_rb_word(data + 24)))
+	    uke_rb_word(data + 12) != 4)
 		goto malformed;
+	/* APM permits optional final alignment. Its bytes have no value contract;
+	 * only the exact four-byte parameter participates in this enable result.
+	 */
 	status = uke_rb_word(data + 16);
 	if (status)
 		goto remote_error;

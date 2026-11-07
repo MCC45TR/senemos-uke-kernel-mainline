@@ -11,6 +11,7 @@ printf '%s  %s\n' \
  2db81985157213fbe61d9d58bd997784264fcee05d34f96f9d4fe1474e92205f "$before" | sha256sum -c --strict --quiet -
 [[ -f $actual && ! -L $actual && -f $before && ! -L $before ]]
 jq -e '.speaker_enable_readback_layer==1 and .speaker_enable_readback_read_only and
+ .speaker_enable_readback_alignment_fix_layer==1 and .speaker_enable_readback_alignment_padding_ignored and
  .speaker_enable_readback_privileged and .speaker_enable_readback_owner_and_generation and
  .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not) and
  (.physical_acceptance|not)' "$profile/source-composition.json" >/dev/null

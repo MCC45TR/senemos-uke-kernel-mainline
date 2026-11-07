@@ -38,6 +38,21 @@ runtime hash and exact inverse delta. New source/backend/ASoC objects and the
 APM composite are separately checked. Extra debug RPMs remain disabled.
 The offline-charging draft stays deferred and is not activated by this layer.
 
+On fitted7334/A, two complete RX/TX enable reads succeed, followed by an RX
+EPROTO. A separate bounded, allowlisted response observation reproduces the
+failure: packet/identity/length, both status fields and boolean are valid;
+only final alignment bytes are nonzero. The graphservices558ddfc2 APM response
+contract allows optional final8-byte alignment and assigns no zero value to
+those bytes. Requiring zero was an incorrect diagnostic-parser restriction.
+The follow-up parser ignores only the optional four alignment bytes; exact
+24/28-byte framing, identities, client/reserved bytes, statuses and boolean
+range remain enforced. No fitted padding bytes are included in source or tests.
+4096 synthetic padding cases cover each byte value and RX/TX enabled/disabled;
+the backend also supplies nonzero synthetic alignment. The padding mutant now
+reintroduces the incorrect zero requirement and must fail. Existing control,
+teardown and protection rules remain. New COPR native and fitted acceptance
+are required; this correction does not authorize243 or claim limiter safety.
+
 Compiler/sanitizer tests cover the production packet parser/backend and the
 actual control initializer/getter, with independent synthetic transport and
 guard changes. Actual cumulative AArch64 object/composite validation precedes

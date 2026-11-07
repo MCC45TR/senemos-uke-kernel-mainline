@@ -68,7 +68,7 @@
     },
     {
       "path": "src/audio/uke-fs19xx-readback.h",
-      "sha256": "fd0f6d58b932b4130b9aa0896dd28edd6bb538586660b1de96e162927112ecc1"
+      "sha256": "0f76f7826257ee8ae947e5db6d6c00df70c71f48d08cd0516e0dc8d7038ae4e0"
     },
     {
       "path": "src/audio/uke-fs19xx-enable-control.h",
@@ -84,15 +84,15 @@
     },
     {
       "path": "tests/audio-fs19xx-readback.c",
-      "sha256": "303d4c28ee5e36f3334759db9e59b1910bc1900209c2f00e4b55e46815d5dca6"
+      "sha256": "0286dc91d678050b7fd8bffb6d3f012808bd39794f330db94b53df25473fd88b"
     },
     {
       "path": "tests/audio-fs19xx-readback-backend.c",
-      "sha256": "6633e2bb918abc9078ffa1f5450583db0a9b4f59eec3ee8e00cd4f80c70f7aaf"
+      "sha256": "20ad0211e81b46168b052b8e0387fc8e4f4e19fdef69f50193aa217cd75622ef"
     },
     {
       "path": "tests/audio-fs19xx-readback.sh",
-      "sha256": "26f781f9febd83849d52271fadcee6151b88718382b7047e6a51c35575313f8a"
+      "sha256": "eaae27c2fb099a9bbd2982f5ed1b7fe499493edf5fe7f65f9e2ded41fdf0a9f2"
     },
     {
       "path": "tests/audio-fs19xx-enable-control.c",
@@ -104,7 +104,7 @@
     },
     {
       "path": "packaging/native/speaker-readback-source-view.sh",
-      "sha256": "409c7984962d1566ba402a65692659badf6d221b3da30ccb5691db28439c0136"
+      "sha256": "a1152d9edff15c9f7a75ae4132aecc7155172901022b3c9561f05d324d3c02c3"
     },
     {
       "path": "packaging/native/check-enable-readback733.sh",
@@ -112,11 +112,11 @@
     },
     {
       "path": "packaging/native/copr-enable-readback733.sh",
-      "sha256": "936066fc7db0e396537501b1a8041774a0fb4c78f60fd96df8f8c8328a2e1a61"
+      "sha256": "c962ffc065d7bef0968758e64f4921fe2d9d4474db66fdd0f0bb94bd5bd99988"
     },
     {
       "path": "docs/SPEAKER-ENABLE-CONTROL.md",
-      "sha256": "b4d92d8cb69f0d95ee4646a8c0a550d834a03af16b4ac7e0634a11505ec5df6c"
+      "sha256": "9d2d453caffb8b5f737e5cfc151ddd18100e1ef799dd78553d1ea97cdcc23a87"
     },
     {
       "path": "manifests/cumulative-release.json",
@@ -167,5 +167,16 @@
       "builder_log_sha256": "9ebe511d883484fef69ccff104cccab751686255bc6eb048110fa462f502663e",
       "full_release_consumed": false
     }
-  ]
+  ],
+  "diagnostic_padding_correction": {
+    "parent_full_build": 11284537,
+    "parent_source": "d8c1f6913d3af8aecdef968bc24da3f5b4d7f811",
+    "observed_kernel": "7.3.3-4-unstable",
+    "observed_failure": "Valid fixed enable reply rejected only for nonzero optional alignment",
+    "contract": "graphservices558ddfc2 apm_api.h APM_CMD_RSP_GET_CFG final optional8-byte alignment has no specified byte value",
+    "scope": "Ignore optional four-byte alignment only; all framing/identity/status/boolean and guard rules retained",
+    "synthetic_padding_cases": 4096,
+    "physical_limiter_qualified": false,
+    "gain_ceiling": 223
+  }
 }
