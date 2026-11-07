@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Cumulative7334 plus qualified enable alignment and upstream ZRAM extra backends/multi and default-off Zswap, without new runtime packages or swap policy",
+  "parent_full_build": 11284537,
+  "parent_full_source": "d8c1f6913d3af8aecdef968bc24da3f5b4d7f811",
+  "qualified_audio_check": 11284652,
+  "qualified_audio_source": "5e451db3750bc42337e600258453dbe9bfeae0a6",
+  "previous_native_config_sha256": "ef98810f064de0f97a1ef9361737d37cd7d7353fdfb0e71fc7979fca456c9136",
+  "source_refs": [
+    {
+      "repository": "gregkh/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "files": [
+        "drivers/block/zram/Kconfig",
+        "drivers/block/zram/Makefile",
+        "drivers/block/zram/backend_lz4hc.c",
+        "drivers/block/zram/backend_deflate.c",
+        "drivers/block/zram/backend_842.c",
+        "mm/Kconfig",
+        "mm/zswap.c",
+        "mm/zsmalloc.c",
+        "lib/Kconfig"
+      ],
+      "license": "GPL-2.0 / GPL-2.0-only per file",
+      "role": "Unmodified upstream Kconfig and implementations; generic memory feature, no board protocol or OEM value transplant"
+    },
+    {
+      "repository": "MCC45TR/senemos-uke-kernel-mainline",
+      "commit": "0823cd051dae53a818fce5dacd356cd7b7c7ae8f",
+      "files": [
+        "configs/kernel-manager/resources.config",
+        "configs/kernel-manager/resource-dependencies.txt",
+        "tests/kernel-manager-config-contract.sh",
+        "packaging/native/apply-kernel-manager-config.sh"
+      ],
+      "license": "Project GPL-2.0",
+      "role": "Existing complete intent/dependency delta checks for all manager roles; original checks remain"
+    }
+  ],
+  "payload_assets": [
+    "configs/memory-compression733.config",
+    "packaging/native/check-memory-compression733.sh",
+    "packaging/native/copr-memory-compression733.sh",
+    "docs/MEMORY-COMPRESSION-733.md"
+  ],
+  "source_assets": [
+    {
+      "path": "configs/memory-compression733.config",
+      "sha256": "406433ebc03c0d6360b0fc142ef0f2aed47078285a55ff453215fcca173e552b"
+    },
+    {
+      "path": "packaging/native/check-memory-compression733.sh",
+      "sha256": "8264d9a6ff9ce55391e3c7b605c6443f96d20fa706ca220df4e895f6344b28d0"
+    },
+    {
+      "path": "packaging/native/copr-memory-compression733.sh",
+      "sha256": "e43ab41f6e4ff587aaebebebb6e001569cc350ce6bcbb844ffe575fa2f217958"
+    },
+    {
+      "path": "docs/MEMORY-COMPRESSION-733.md",
+      "sha256": "2c8420146c654401db0ba4adc782a74ff3aef82d710a1ba6983b4d98c1a824e3"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "7d3aaf56779264bde560b786872512a7275a19877cbf42462f27f509bf447b49"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "89a9050885e5ffe08f29bcb9c5860afca08e320ef5edae2534ed823fa2694b6f"
+    },
+    {
+      "path": "manifests/stop-deadline-cumulative-20261107.json",
+      "sha256": "244ffa3f7b8c1f74078063e6de9e447358519fdb65ba60a18849c7af998bab33"
+    },
+    {
+      "path": "manifests/pcm-period-cumulative-20261107.json",
+      "sha256": "7f12612dd2d164ec41ea3ec47f6befa19d470ea6e582b77c7cf49a68de44d728"
+    },
+    {
+      "path": "manifests/speaker-enable-control-cumulative-20261107.json",
+      "sha256": "0ee511bddfe3f06b4b94920f19117c134588d244521bb2e2e1e34573e74e5742"
+    }
+  ],
+  "acceptance": {
+    "actual_native_zram_zswap_zsmalloc_objects": false,
+    "all_three_reference_config_gates_required": true,
+    "embedded_boot_config_gate_required": true,
+    "seven_zram_backends_required": true,
+    "existing_lzo_rle_default_required": true,
+    "zswap_default_off_required": true,
+    "no_new_swap_or_writeback_policy": true,
+    "physical_roundtrip_and_pressure_acceptance": false,
+    "physical_speaker_limiter_qualified": false,
+    "gain_ceiling": 223
+  }
+}
