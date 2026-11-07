@@ -1,3 +1,4 @@
+%global debug_package %{nil}
 %global proof_release 1
 Name: uke-kernel-migration-check
 Version: 7.3.3
