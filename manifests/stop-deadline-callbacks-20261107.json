@@ -24,7 +24,7 @@
     },
     {
       "path": "tests/audio-stop-deadline.sh",
-      "sha256": "bea7d45c1f5689f9213835df13d907dfff5d099e8f0856e11533f02f6dcc79a3"
+      "sha256": "88e23865264ca1a89e0687c4abb6fd5fc6f8dad42f9ba3469b31517fd564f109"
     },
     {
       "path": "tests/fixtures/audio-stop7331-runtime.inc",

@@ -18,7 +18,7 @@ extract(){
 }
 prepare(){
  local source=$1
- grep -E '^#define FS19XX_(REG_|DACCTRL_|PWRCTRL_|SYSCTRL_|STATUS_|TSCTRL_|VOL_|LOCK_POLL_|HEALTH_POLL_|STOP_DRAIN_)' "$source" > "$work/native-stop-definitions.inc"
+ grep -E '^#define FS19XX_' "$source" > "$work/native-stop-definitions.inc"
  printf '#define APM_CMD_GRAPH_STOP 0x01001003\n' >> "$work/native-stop-definitions.inc"
  for function in fs19xx_read_stable fs19xx_chip_stop fs19xx_check_health fs19xx_unmute_output fs19xx_unmute_work fs19xx_power_on fs19xx_power_off;do extract "$source" "$function";done > "$work/native-stop-codec.inc"
  extract "$source" fs19xx_protection_event > "$work/native-stop-event.inc"
