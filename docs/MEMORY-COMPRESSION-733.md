@@ -27,7 +27,11 @@ intent fragment. Existing full config comparisons and unrelated-mutation
 refusals remain. The allocator change is an explicit intent, rather than a
 hidden dependency override. Historical fragment, dependencies, config and
 checker are retained and authenticated. The historical checker changes only
-its complete native-config digest. New gates check the actual final flags,
+its complete native-config digest. The retained upstream feature comparison
+also admits precisely that one old-to-new digest, checked against both exact
+values and this layer's identity; every other inherited field stays exact.
+The complete original comparison is recovered by an inverse source check.
+New gates check the actual final flags,
 all seven backend descriptors, recompression and Zswap/allocator AArch64
 objects, and the final module/built-in linkage.
 

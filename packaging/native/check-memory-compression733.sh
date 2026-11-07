@@ -18,6 +18,13 @@ cmp <(cat "$before/resources.config" "$profile/configs/memory-compression733.con
 cmp <(sed '/^CONFIG_ZSMALLOC=m$/d' "$before/resource-dependencies.txt";printf '%s\n' CONFIG_842_COMPRESS=m CONFIG_842_DECOMPRESS=m CONFIG_LZ4HC_COMPRESS=m 'CONFIG_ZSWAP_COMPRESSOR_DEFAULT="lz4"') "$profile/configs/kernel-manager/resource-dependencies.txt"
 # The historical checker changes only its authenticated complete-config hash.
 sed "s/$new/$old/g" "$profile/packaging/native/check-cumulative-camera731.sh" | cmp - "$before/check-cumulative-camera731.sh"
+# The upstream retained-feature checker admits only this sealed config digest.
+awk -v old="$old" -v new="$new" '
+ $0==" all($old|to_entries[]; $next[.key]==.value or (.key==\"migration_native_config_sha256\" and .value==\""old"\" and $next.migration_native_config_sha256==\""new"\" and $next.memory_compression_layer==1 and $next.memory_compression_previous_native_config_sha256==.value))\047 \"$profile/source-composition.json\" >/dev/null" {
+  print " all($old|to_entries[]; $next[.key]==.value)\047 \"$profile/source-composition.json\" >/dev/null";n++;next
+ }
+ {print}END{if(n!=1)exit 1}
+' "$profile/packaging/native/check-stable733.sh" | cmp - "$before/check-stable733.sh"
 for line in CONFIG_ZRAM=m CONFIG_ZRAM_BACKEND_LZO=y CONFIG_ZRAM_BACKEND_LZ4=y \
  CONFIG_ZRAM_BACKEND_ZSTD=y CONFIG_ZRAM_DEF_COMP_LZORLE=y \
  'CONFIG_ZRAM_DEF_COMP="lzo-rle"' CONFIG_CRYPTO_LZ4=y CONFIG_CRYPTO_ZSTD=m;do

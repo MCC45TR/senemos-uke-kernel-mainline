@@ -38,6 +38,7 @@ cp "$profile/native.config" "$history/native.config"
 cp "$profile/configs/kernel-manager/resources.config" "$history/resources.config"
 cp "$profile/configs/kernel-manager/resource-dependencies.txt" "$history/resource-dependencies.txt"
 cp "$profile/packaging/native/check-cumulative-camera731.sh" "$history/check-cumulative-camera731.sh"
+cp "$profile/packaging/native/check-stable733.sh" "$history/check-stable733.sh"
 (cd "$history";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 [[ $(grep -Fxc CONFIG_ZSMALLOC=m "$history/resource-dependencies.txt") == 1 ]]
 for tree in "$profile" "$boot";do
@@ -55,6 +56,12 @@ for file in resources.config resource-dependencies.txt;do install -Dm644 "$profi
 new=$(sha256sum "$profile/native.config");new=${new%% *}
 [[ $new != "$old" && $(grep -Fc "$old" "$history/check-cumulative-camera731.sh") -ge 1 ]]
 sed "s/$old/$new/g" "$history/check-cumulative-camera731.sh" > "$profile/packaging/native/check-cumulative-camera731.sh"
+awk -v old="$old" -v new="$new" '
+ $0==" all($old|to_entries[]; $next[.key]==.value)\047 \"$profile/source-composition.json\" >/dev/null" {
+  print " all($old|to_entries[]; $next[.key]==.value or (.key==\"migration_native_config_sha256\" and .value==\""old"\" and $next.migration_native_config_sha256==\""new"\" and $next.memory_compression_layer==1 and $next.memory_compression_previous_native_config_sha256==.value))\047 \"$profile/source-composition.json\" >/dev/null";n++;next
+ }
+ {print}END{if(n!=1)exit 1}
+' "$history/check-stable733.sh" > "$profile/packaging/native/check-stable733.sh"
 cp "$profile/source-composition.json" "$profile/source-composition-before-memory-compression.json"
 jq --arg old "$old" --arg new "$new" --arg mode "$mode" --arg proof "$4" '.+{
  migration_native_config_sha256:$new,memory_compression_layer:1,

@@ -52,35 +52,35 @@
     },
     {
       "path": "packaging/native/check-memory-compression733.sh",
-      "sha256": "8f2ea9656a487a3570806878cc76b8b1074cb78a0b773a369cb550cc7dc33aed"
+      "sha256": "9bf5e4d2fdeaea3a368a163fde5056239b22c2d6392a6d1475a66e130ad01506"
     },
     {
       "path": "packaging/native/copr-memory-compression733.sh",
-      "sha256": "5fa6acf7a22de1dc901aafacaffe6dd2d95ec2e63b0984a9d892b43001277080"
+      "sha256": "2c23b35e280995578303bb409293a3d1fbb1781863bc002a37a5bed270e5095e"
     },
     {
       "path": "docs/MEMORY-COMPRESSION-733.md",
-      "sha256": "2c8420146c654401db0ba4adc782a74ff3aef82d710a1ba6983b4d98c1a824e3"
+      "sha256": "db9791c5401dd179fba7ed10923142f2d5ff0a9189a919b409062611c1c67a57"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "feb1134798b12a9c1c6fcf268ee75052c148ad9fb86c679539480d5e3a19a5d5"
+      "sha256": "1dc5ab9e2676f468c8052573fde941de367c8777b30345754711c4bb8cccadb8"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "32cf74e81fe946432dc998d1807ff93fd6d2c470cdb30e9b9af2ffac35b2293e"
+      "sha256": "ad1e3b03159916baaa6a04595a14b755ab093dc3531910a67134d26818e4158a"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "b642beab819901381f8d5c44c2e6b99d5f9926f7d766e8957574c3e046f4d010"
+      "sha256": "3a2f3b7dc3eb7fe690d7add18c385b778a441b2bfa9530de990eceb2bcd1128e"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "cb0811895743ceaf3ee82f6f5d869f93479372722bb16ac172d26a6c8271a8f2"
+      "sha256": "4d28d7782ee12ec2dacd304d1e9e8e87ff3ea75cf129c4123ec3249e9b1f5983"
     },
     {
       "path": "manifests/speaker-enable-control-cumulative-20261107.json",
-      "sha256": "d2a005299a93865813b75e97939c3721eb80c0eeeb83e698b8a7e78d3197f086"
+      "sha256": "7439c55705b2ef1ccf2a01a04bb9d4203675d13f5910deaeeca404119f191dc6"
     },
     {
       "path": "packaging/native/prepare-memory-manager733.sh",
@@ -108,5 +108,12 @@
     "stage": "prepare-migration-manager complete config contract",
     "memory_objects_reached": false,
     "correction": "Backend-selected compression libraries follow modular ZRAM; preserve dependency checks and add bounded failure diagnostics; native result required"
+  },
+  "config_identity_followup": {
+    "failed_build": 11284750,
+    "source_release": 21,
+    "reason": "All manager/reference configs and native compilation passed; old stable733 inherited field comparison rejects the intentionally changed native-config digest",
+    "correction": "Admit only exact prior/new native-config digest under this layer and require byte-exact inverse; no other retained field exempted",
+    "native_result": false
   }
 }
