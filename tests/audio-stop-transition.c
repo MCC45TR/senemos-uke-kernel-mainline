@@ -11,7 +11,8 @@
 #ifndef UKE_TEST_HZ
 #define UKE_TEST_HZ 1000
 #endif
-static unsigned long jiffies;
+/* The kernel tick source is volatile, including original-code controls. */
+static volatile unsigned long jiffies;
 #define time_before(a,b) ((long)((a)-(b)) < 0)
 #define BIT(n) (1U << (n))
 #define GENMASK(h,l) (((~0U) << (l)) & ((~0U) >> (31-(h))))
