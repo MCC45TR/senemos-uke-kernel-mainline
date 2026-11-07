@@ -1,0 +1,26 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] tests: provide output fault callback to retained codec fixtures
+
+Keep legacy assertions unchanged. The separate idle worker test executes the
+actual atomic helper; historical codec peers retain their fault injection.
+
+--- a/tests/fixtures/audio-protection-mock.h
++++ b/tests/fixtures/audio-protection-mock.h
+@@ -20,6 +20,7 @@
+ static bool UKE_FIXTURE_UNUSED q6apm_fs19xx_configured(void) { return false; }
+ static bool UKE_FIXTURE_UNUSED q6apm_fs19xx_running(void) { return false; }
+ static void UKE_FIXTURE_UNUSED q6apm_fs19xx_fault(void) {}
++static bool UKE_FIXTURE_UNUSED q6apm_fs19xx_output_fault(void) { return true; }
+ static int UKE_FIXTURE_UNUSED q6apm_fs19xx_register(struct notifier_block *p, unsigned position) { (void)p;(void)position;return 0; }
+ static void UKE_FIXTURE_UNUSED q6apm_fs19xx_unregister(struct notifier_block *p, unsigned position) { (void)p;(void)position; }
+ #endif
+--- a/tests/audio-speaker-safety.c
++++ b/tests/audio-speaker-safety.c
+@@ -46,6 +46,7 @@
+ static bool q6apm_fs19xx_configured(void) { return configured; }
+ static bool q6apm_fs19xx_running(void) { return running; }
+ static void q6apm_fs19xx_fault(void) { faults++; configured = false; running = false; }
++static bool q6apm_fs19xx_output_fault(void) { q6apm_fs19xx_fault(); return true; }
+ static int regmap_read(struct fake_bus *bus, unsigned int reg, unsigned int *value)
+ {
+ 	bus->operations++;

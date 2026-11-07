@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COPR only. Exact full17 plus atomic healthy-idle output fault classification.
+# COPR only. Complete17 plus atomic idle, VRR API and retained fixture providers.
 set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 [[ $(rpm --eval '%{_host_cpu}') == aarch64 && $(rpm --eval '%{fedora}') == 46 ]]
@@ -15,13 +15,13 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-40"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-41"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-40.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-41.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
 else
- [[ $# == 4 && $proof == 40 ]]
+ [[ $# == 4 && $proof == 41 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
@@ -44,7 +44,7 @@ boot=$stage/unpacked/boot-recipe
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 jq -e '.source_commit=="a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9" and .kernel_release=="7.3.1-12217-unstable" and .protected_stop_native_admitted and .protected_stop_qualification_build==11282644 and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
-assets=(src/display/0075-o82-vrr-floor-api.patch src/display/apply-vrr-api731.sh tests/o82-vrr-api.c tests/o82-vrr-api.sh packaging/native/check-vrr-api731.sh docs/VRR-FLOOR-ABI.md manifests/audio-vrr-20261107.json src/audio/0017-uke-protected-idle-worker.patch src/audio/0018-uke-idle-stop-source-seals.patch src/audio/apply-idle-stop731.sh tests/audio-idle-stop.c tests/audio-idle-stop.sh packaging/native/check-idle-stop731.sh docs/PROTECTED-IDLE-WORKER.md manifests/idle-stop-worker-20261107.json manifests/kernel-migration-full12217-20261107.json)
+assets=(src/audio/0019-uke-idle-legacy-fixture.patch src/display/0075-o82-vrr-floor-api.patch src/display/apply-vrr-api731.sh tests/o82-vrr-api.c tests/o82-vrr-api.sh packaging/native/check-vrr-api731.sh docs/VRR-FLOOR-ABI.md manifests/audio-vrr-20261107.json src/audio/0017-uke-protected-idle-worker.patch src/audio/0018-uke-idle-stop-source-seals.patch src/audio/apply-idle-stop731.sh tests/audio-idle-stop.c tests/audio-idle-stop.sh packaging/native/check-idle-stop731.sh docs/PROTECTED-IDLE-WORKER.md manifests/idle-stop-worker-20261107.json manifests/kernel-migration-full12217-20261107.json)
 for tree in "$profile" "$boot";do
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
  [[ $(grep -Fo uke7.3.1-12217u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
@@ -55,6 +55,11 @@ for tree in "$profile" "$boot";do
  git -C "$tree" apply --check --whitespace=error "$owner/src/audio/0018-uke-idle-stop-source-seals.patch"
  git -C "$tree" apply --whitespace=error "$owner/src/audio/0018-uke-idle-stop-source-seals.patch"
  (cd "$tree";jq -r '.checker_hashes|to_entries[]|.value.after+"  "+.key' manifests/idle-stop-worker-20261107.json | sha256sum -c --strict -)
+ # Only retained synthetic peers gain the new callback; no assertion changes.
+ (cd "$tree";jq -r '.retained_fixture_hashes|to_entries[]|.value.before+"  "+.key' manifests/audio-vrr-20261107.json | sha256sum -c --strict -)
+ git -C "$tree" apply --check --whitespace=error "$owner/src/audio/0019-uke-idle-legacy-fixture.patch"
+ git -C "$tree" apply --whitespace=error "$owner/src/audio/0019-uke-idle-legacy-fixture.patch"
+ (cd "$tree";jq -r '.retained_fixture_hashes|to_entries[]|.value.after+"  "+.key' manifests/audio-vrr-20261107.json | sha256sum -c --strict -)
 done
 cp "$profile/source-composition.json" "$profile/source-composition-before-idle-stop.json"
 printf '%s\n' "$commit" > "$profile/source-commit"
@@ -80,7 +85,7 @@ awk -v revision="$revision" '
  /^%global senemos_build_release 12217$/ {$0="%global senemos_build_release "revision;changed++}
  /^bash native-profile\/src\/audio\/apply-protected-stop731.sh / {print;print "bash native-profile/src/audio/apply-idle-stop731.sh \"$PWD\" \"$PWD/native-profile\"";print "bash native-profile/src/display/apply-vrr-api731.sh \"$PWD\" \"$PWD/native-profile\"";prepared++;next}
  /^%check$/ {print;print "bash native-profile/packaging/native/check-vrr-api731.sh \"$PWD\" %{_uke_out} linked";checked++;next}
- /^%changelog$/ {print;print "* Sat Nov 07 2026 Uke contributors - 7.3.1-12218";print "- Classify healthy idle atomically while retaining output fault containment.";print "- Preserve complete12217, calibrated protection and automatic A/B staging.";print "";history++;next}
+ /^%changelog$/ {print;print "* Sat Nov 07 2026 Uke contributors - 7.3.1-12218";print "- Classify healthy idle atomically while retaining output fault containment.";print "- Expose read-only O82 VRR floor ABI and both parameter type fields.";print "- Preserve complete12217, calibrated protection and automatic A/B staging.";print "";history++;next}
  {print} END {if(changed!=1||history!=1||prepared!=1||checked!=1)exit 1}
  ' "$spec" > "$stage/idle-stop.spec"
 install -m644 "$stage/idle-stop.spec" "$spec"

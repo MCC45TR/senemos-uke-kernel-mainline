@@ -39,3 +39,11 @@ API/type block changes; exact block hashes and actual AArch64 dpu_encoder.o
 metadata/symbol checks are mandatory. Combined source admission must retain the
 atomic idle speaker correction, all463 complete17 nonidentity fields and every
 historical native control. Physical KDE visibility and cadence remain separate.
+
+Source check39 passed all four74-case idle modes, original17 controls and
+four assertion mutants, then failed a missing output-fault provider in a retained
+unprotected codec fixture. Release40 combined VRR before this failure was
+observed. Release41 adds the callback to two historical synthetic peers, with
+exact pre/post hashes and unchanged assertions. Protected idle testing still
+executes the actual atomic runtime function. No production audio change follows
+from this fixture correction. Native and physical qualification remain required.

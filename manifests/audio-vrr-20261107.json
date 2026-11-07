@@ -1,14 +1,18 @@
 {
   "date": "2026-11-07",
-  "scope": "Complete17 plus atomic speaker idle fault classification and O82 VRR saved-floor metadata; source40/full18 unreserved",
+  "scope": "Complete17 plus atomic speaker idle classification, O82 saved-floor metadata and retained fixture providers; source41/full18 unreserved",
   "parent_build": 11282652,
   "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
   "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
-  "source_check_release": 40,
+  "source_check_release": 41,
   "proposed_full_revision": 12218,
   "full_revision_reserved": false,
   "unchanged_parent_nonidentity_fields": 463,
   "source_assets": [
+    {
+      "path": "src/audio/0019-uke-idle-legacy-fixture.patch",
+      "sha256": "20faa72bb563f2e8efaf34b71b656c39430cc1734a5f0fb73ef9c5454810b285"
+    },
     {
       "path": "src/display/0075-o82-vrr-floor-api.patch",
       "sha256": "5e0976b03a0206e98242e68903f9c576e81881a2587353adfa9295b949e1643d"
@@ -31,11 +35,11 @@
     },
     {
       "path": "packaging/native/copr-migration-audio-vrr731.sh",
-      "sha256": "7ad2a720bd8dac93232677bca917e272c62fc831f627c011c105c80a99e48b67"
+      "sha256": "b822bd60a29500e9cfed2cc6431c07eeccf0b2a38ee9728126209dd93c45be1d"
     },
     {
       "path": "docs/VRR-FLOOR-ABI.md",
-      "sha256": "e1e63c1046f12d947cd328205ac5257da67f7588e9bb8e58ec0a5e0d725229be"
+      "sha256": "a444ab11bb3abf0d4f1caba44beb2063f61edd03b94e9c776ef52dadfcf8999a"
     },
     {
       "path": "src/audio/0017-uke-protected-idle-worker.patch",
@@ -79,5 +83,41 @@
   "kernel_default_zero_retained": true,
   "no_kde_changes": true,
   "display_admission_unchanged": true,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "retained_fixture_hashes": {
+    "tests/fixtures/audio-protection-mock.h": {
+      "before": "b98f50eb9e38ad23c3b1774e5e4d96359713b779bde8e618d7cf5804ed6aaafd",
+      "after": "6b7148a06dc25f880632971d16f2dddacbb76ce6e60813a18706961fa86076d2"
+    },
+    "tests/audio-speaker-safety.c": {
+      "before": "938c1210425a2fc697b34b716d4355179bbf6d8773ff7ba1c468fd1b28798984",
+      "after": "e3a4f081b8a8317cf60076ef0aeda19f17292e3ea8a75ce809ff9b27b5eaa0b4"
+    }
+  },
+  "prior_source_checks": [
+    {
+      "release": 39,
+      "build": 11282878,
+      "source": "a956ca5440fb3c035eb8137f2330e550707ec76c",
+      "state": "failed",
+      "duration_seconds": 211,
+      "new_idle_cases_per_mode": 74,
+      "new_idle_compiler_sanitizer_modes": 4,
+      "original_worker_controls": 2,
+      "idle_assertion_mutants": 4,
+      "reason": "New idle callbacks and source controls pass; inherited unprotected codec fixture lacks output_fault provider before native objects."
+    },
+    {
+      "release": 40,
+      "build": 11282884,
+      "source": "d6943236e42c93167b7bfed31a4463666a67c407",
+      "state": "failed",
+      "scope": "Same production idle and VRR layers; job retained.",
+      "duration_seconds": 206,
+      "vrr_cases_per_mode": 207,
+      "vrr_compiler_sanitizer_modes": 4,
+      "vrr_assertion_mutants": 4,
+      "reason": "New audio and VRR callbacks pass; retained legacy codec fixture lacks output_fault provider before native objects."
+    }
+  ]
 }
