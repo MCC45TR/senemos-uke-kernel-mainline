@@ -51,3 +51,13 @@ before creating an SRPM; no733 version or full kernel release is allocated.
 Correct the guard to733 while retaining the unused733 source-check release1.
 The following attempt has a new source commit and COPR handle. Native parsing,
 all callback controls and actual objects still require qualification.
+
+Check11283045 creates source-check733-1, then stops at the retained ABL source
+version whitelist. The inherited native helpers differ from older repository
+copies. Check release2 therefore patches the exact retained17 native and boot
+helpers, authenticating eight preimages and eight postimages in each archive.
+Add733 to the existing boot/display/video/REGDMA source guards and modern DPU
+branch. Native camera objects admit sequential733 unstable tuples and derive
+LOCALVERSION from that tuple. Keep every old admitted tuple and hardware check;
+all driver implementation bytes remain unchanged. Exact forward/inverse and
+shell syntax checks cover both helper patches; COPR must execute the results.

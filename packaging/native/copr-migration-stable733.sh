@@ -15,14 +15,14 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.3-1"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.3-2"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.3-1.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.3-2.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
  bash "$owner/packaging/native/refuse-published-release.sh" senemos-uke-linux-kernel-mainline-unstable "7.3.3-$revision"
 else
- [[ $# == 4 && $proof == 1 ]]
+ [[ $# == 4 && $proof == 2 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.3-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]
@@ -46,11 +46,17 @@ boot=$stage/unpacked/boot-recipe
 jq -e '.source_commit=="a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9" and .kernel_release=="7.3.1-12217-unstable" and .protected_stop_native_admitted and .protected_stop_qualification_build==11282644 and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$stage/configs"
 assets=(packaging/native/check-idle-stop731.sh docs/STABLE-733-CUMULATIVE.md manifests/linux-7.3.3.json manifests/stable733-cumulative-20261107.json src/audio/0019-uke-idle-legacy-fixture.patch src/display/0075-o82-vrr-floor-api.patch src/display/apply-vrr-api731.sh tests/o82-vrr-api.c tests/o82-vrr-api.sh packaging/native/check-vrr-api731.sh docs/VRR-FLOOR-ABI.md manifests/audio-vrr-20261107.json src/audio/0017-uke-protected-idle-worker.patch src/audio/0018-uke-idle-stop-source-seals.patch src/audio/apply-idle-stop731.sh tests/audio-idle-stop.c tests/audio-idle-stop.sh packaging/native/check-idle-stop731.sh docs/PROTECTED-IDLE-WORKER.md manifests/idle-stop-worker-20261107.json manifests/kernel-migration-full12217-20261107.json)
-assets+=(tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh)
+assets+=(tests/unstable-boot-family731-contract.sh packaging/native/check-stable733.sh src/boot/stable733-native-version-guards.patch src/boot/stable733-boot-version-guards.patch)
 for tree in "$profile" "$boot";do
  (cd "$tree";jq -r '.retained_helper_hashes|to_entries[]|.value.before+"  "+.key' "$owner/manifests/stable733-cumulative-20261107.json" | sha256sum -c --strict -)
  for asset in "${assets[@]}";do install -Dm644 "$owner/$asset" "$tree/$asset";done
  (cd "$tree";jq -r '.retained_helper_hashes|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+ kind=native_profile;guard_patch=stable733-native-version-guards.patch
+ if [[ $tree == "$boot" ]];then kind=boot_recipe;guard_patch=stable733-boot-version-guards.patch;fi
+ (cd "$tree";jq -r --arg kind "$kind" '.version_helper_hashes[$kind]|to_entries[]|.value.before+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
+ git -C "$tree" apply --check --whitespace=error "$owner/src/boot/$guard_patch"
+ git -C "$tree" apply --whitespace=error "$owner/src/boot/$guard_patch"
+ (cd "$tree";jq -r --arg kind "$kind" '.version_helper_hashes[$kind]|to_entries[]|.value.after+"  "+.key' manifests/stable733-cumulative-20261107.json | sha256sum -c --strict -)
  [[ $(grep -Fo uke7.3.1-12217u "$tree/src/audio/uke-audio-card.c" | wc -l) == 2 ]]
  sed "s/uke7[.]3[.]1-12217u/uke7.3.3-${revision}u/g" "$tree/src/audio/uke-audio-card.c" > "$stage/card.c"
  install -m644 "$stage/card.c" "$tree/src/audio/uke-audio-card.c"

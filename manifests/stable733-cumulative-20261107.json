@@ -4,7 +4,7 @@
   "parent_build": 11282652,
   "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
   "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
-  "source_check_release": 1,
+  "source_check_release": 2,
   "proposed_full_revision": 1,
   "full_revision_reserved": false,
   "unchanged_parent_nonidentity_fields": 460,
@@ -75,7 +75,7 @@
     },
     {
       "path": "packaging/native/copr-migration-stable733.sh",
-      "sha256": "5cfcf80950a7d2ffb67f4d6188ac5c59429f0e79d95b4a4a6347591ee02ac6fc"
+      "sha256": "086bea51dd2b04389a426eed10b7cbb419efe51588bde294ab78e1dc28d5c4e7"
     },
     {
       "path": "packaging/native/check-stable733.sh",
@@ -83,7 +83,7 @@
     },
     {
       "path": "docs/STABLE-733-CUMULATIVE.md",
-      "sha256": "736113ad8f8bac643dd613f727ae7aabdb2a67b7a09de3fe0af5138e91dc559c"
+      "sha256": "6c155ad13186ee7179bea5e618278c6a6e7cbc0fcd2e83c4f32d27c74d420fa4"
     },
     {
       "path": "tests/unstable-boot-family731-contract.sh",
@@ -96,6 +96,14 @@
     {
       "path": "manifests/linux-7.3.3.json",
       "sha256": "8a3c13786db9a0445f5065579c7f14a7243efcbd836e3e57319d8f930528b19c"
+    },
+    {
+      "path": "src/boot/stable733-native-version-guards.patch",
+      "sha256": "b40421d1a86de89b576d55b07a0180eaad2bccdab49bdd929c3b80556de2a5db"
+    },
+    {
+      "path": "src/boot/stable733-boot-version-guards.patch",
+      "sha256": "b75567d9be77a92c8c439d26470ef5f5800b5f9cf52b505f654fab7bf7d0239f"
     }
   ],
   "before_block_sha256": "4be1dd1953c7b6ed5b2a261d74d2125dbce00bb4f3691d359f0d67603a959615",
@@ -165,6 +173,16 @@
       "source_rpm_created": false,
       "full_revision_reserved": false,
       "reason": "Copied check publication guard still names obsolete7.3.1-1; correctly refuses it before any7.3.3 SRPM or native stage."
+    },
+    {
+      "build": 11283045,
+      "version": "7.3.3",
+      "release": 1,
+      "source": "1facf41a62bd6e39c7c62c6db7f44d7216c89468",
+      "state": "failed",
+      "duration_seconds": 92,
+      "source_rpm_created": true,
+      "reason": "Original733/122 adaptation and early microphone callbacks pass; retained ABL helper only admits731. Audit finds dependent display/video/REGDMA guards and native tuple helpers; patch exact inherited files without older-copy overwrite."
     }
   ],
   "upstream": {
@@ -192,6 +210,76 @@
     "tests/unstable-boot-family731-contract.sh": {
       "before": "3ccb91eee559a307a1c1de8baf1d30e908fb254dc9ae258cf31028b5f253a352",
       "after": "db0bbdf3deac0361d3ac35d7b2423c1c97440154c8b21a6af39592f056b1c600"
+    }
+  },
+  "version_helper_hashes": {
+    "native_profile": {
+      "prepare.sh": {
+        "before": "fc86aa91268f5925cac29d83262aa54266811ebc615b248e9452f9346b414525",
+        "after": "c271eb98c0cdc20a4668b543d8a112080bbd40b0952583f856c292afde6b7249"
+      },
+      "src/boot/prepare-abl-source.sh": {
+        "before": "819d61d0eca17915da84cf209889ebf6ddef1b7c32b1b2a2337471142b371584",
+        "after": "053f00838f0ffc213e7e767c36c935d423a667db6e9cc54a317c8a0bce8639d6"
+      },
+      "src/display/prepare-source.sh": {
+        "before": "2ee3e0b1bdca1d6aaf46b53aac2379a5ffe2765a4d96d2df48f2f9249760704f",
+        "after": "4e2f55acb9ba4a92b309114b446ddcd4a9d39a6589479373356e42da2645c98b"
+      },
+      "src/display/prepare-o82-regdma.sh": {
+        "before": "74ed6ce15e3a054e8ad887159df11a854be6a1be97fb21f2e23b831709073e63",
+        "after": "1713d9c7054150ead2ab4b573d450ba8c2b33b570bda99ec2c9cd2fed9f42518"
+      },
+      "src/video/prepare-source.sh": {
+        "before": "961e3f0177224953ba361ec4c59fec8a64aac66a7d23bca048303fadfa0dd9a8",
+        "after": "db36eab958cbccfbc43eee9178e2fcd75038c7bb995e9f2a88089e30bece71a8"
+      },
+      "tests/camcc-native-object.sh": {
+        "before": "5ae85afc2f87824f9064a055a2fb249cb672c5540fde5b27c43c6defa4247f30",
+        "after": "cf2e5dd64dd633d162f799243b4331273dfecf6a92b086b0605cf84a9499de3a"
+      },
+      "tests/camss-sm7675-module731-object.sh": {
+        "before": "05ade3f6d853c7a7030d34b5123044ad54d10c700d0aa5dcba4e90be6680bcc7",
+        "after": "af9f4616319d8c80980bca3c6c2bac267391a997f6ebb401ff93fbb3acbc59fa"
+      },
+      "tests/camss-sm7675-phy-object.sh": {
+        "before": "32fb35d016cdbc1271c111a8d2a62eead55d433e1f92bb0bfe779cc146c8562b",
+        "after": "b8baa60fa0befb44b582ace4189f3fd7711b96574258143e6e2fb08a8f9158ba"
+      }
+    },
+    "boot_recipe": {
+      "packaging/native/prepare.sh": {
+        "before": "cf0e81e7732a08f34b4b2666647e7a522034f1da1ebd58ddc7fdefb2af5493ec",
+        "after": "7a8ab04c27ea798f5ae518b38cb6fe85a1cbc2c84466d9fce8c0475cc05856c4"
+      },
+      "src/boot/prepare-abl-source.sh": {
+        "before": "819d61d0eca17915da84cf209889ebf6ddef1b7c32b1b2a2337471142b371584",
+        "after": "053f00838f0ffc213e7e767c36c935d423a667db6e9cc54a317c8a0bce8639d6"
+      },
+      "src/display/prepare-source.sh": {
+        "before": "2ee3e0b1bdca1d6aaf46b53aac2379a5ffe2765a4d96d2df48f2f9249760704f",
+        "after": "4e2f55acb9ba4a92b309114b446ddcd4a9d39a6589479373356e42da2645c98b"
+      },
+      "src/display/prepare-o82-regdma.sh": {
+        "before": "74ed6ce15e3a054e8ad887159df11a854be6a1be97fb21f2e23b831709073e63",
+        "after": "1713d9c7054150ead2ab4b573d450ba8c2b33b570bda99ec2c9cd2fed9f42518"
+      },
+      "src/video/prepare-source.sh": {
+        "before": "961e3f0177224953ba361ec4c59fec8a64aac66a7d23bca048303fadfa0dd9a8",
+        "after": "db36eab958cbccfbc43eee9178e2fcd75038c7bb995e9f2a88089e30bece71a8"
+      },
+      "tests/camcc-native-object.sh": {
+        "before": "5ae85afc2f87824f9064a055a2fb249cb672c5540fde5b27c43c6defa4247f30",
+        "after": "cf2e5dd64dd633d162f799243b4331273dfecf6a92b086b0605cf84a9499de3a"
+      },
+      "tests/camss-sm7675-module731-object.sh": {
+        "before": "05ade3f6d853c7a7030d34b5123044ad54d10c700d0aa5dcba4e90be6680bcc7",
+        "after": "af9f4616319d8c80980bca3c6c2bac267391a997f6ebb401ff93fbb3acbc59fa"
+      },
+      "tests/camss-sm7675-phy-object.sh": {
+        "before": "32fb35d016cdbc1271c111a8d2a62eead55d433e1f92bb0bfe779cc146c8562b",
+        "after": "b8baa60fa0befb44b582ace4189f3fd7711b96574258143e6e2fb08a8f9158ba"
+      }
     }
   }
 }
