@@ -15,13 +15,13 @@ stage=$(mktemp -d);trap 'find "$stage" -depth -delete' EXIT
 if [[ $mode == full ]];then
  [[ $# == 5 && $5 =~ ^[a-f0-9]{64}$ ]]
  curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$proof" > "$stage/proof.json"
- jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-41"' "$stage/proof.json" >/dev/null
+ jq -e '.state=="succeeded" and .source_package.name=="uke-kernel-migration-check" and .source_package.version=="7.3.1-42"' "$stage/proof.json" >/dev/null
  url=$(curl -q -fLsS --max-time 45 "https://copr.fedorainfracloud.org/api_3/build-chroot/$proof/fedora-rawhide-aarch64" | jq -er .result_url)
- curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-41.fc46.aarch64.rpm" -o "$stage/proof.rpm"
+ curl -q -fLsS --max-time 90 "${url}uke-kernel-migration-check-7.3.1-42.fc46.aarch64.rpm" -o "$stage/proof.rpm"
  printf '%s  %s\n' "$5" "$stage/proof.rpm" | sha256sum -c --strict -
  [[ $(rpm2cpio "$stage/proof.rpm" | cpio -i --to-stdout --quiet '*source-commit') == "$commit" ]]
 else
- [[ $# == 4 && $proof == 41 ]]
+ [[ $# == 4 && $proof == 42 ]]
  bash "$owner/packaging/native/refuse-published-release.sh" uke-kernel-migration-check "7.3.1-$proof"
 fi
 [[ ! -e $output || (-d $output && -z $(find "$output" -mindepth 1 -maxdepth 1 -print -quit)) ]]

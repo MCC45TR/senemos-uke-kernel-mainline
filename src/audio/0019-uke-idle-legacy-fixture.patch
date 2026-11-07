@@ -20,7 +20,7 @@ actual atomic helper; historical codec peers retain their fault injection.
  static bool q6apm_fs19xx_configured(void) { return configured; }
  static bool q6apm_fs19xx_running(void) { return running; }
  static void q6apm_fs19xx_fault(void) { faults++; configured = false; running = false; }
-+static bool q6apm_fs19xx_output_fault(void) { q6apm_fs19xx_fault(); return true; }
++static bool __attribute__((unused)) q6apm_fs19xx_output_fault(void) { q6apm_fs19xx_fault(); return true; }
  static int regmap_read(struct fake_bus *bus, unsigned int reg, unsigned int *value)
  {
  	bus->operations++;

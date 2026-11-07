@@ -47,3 +47,9 @@ observed. Release41 adds the callback to two historical synthetic peers, with
 exact pre/post hashes and unchanged assertions. Protected idle testing still
 executes the actual atomic runtime function. No production audio change follows
 from this fixture correction. Native and physical qualification remain required.
+
+Release41 stops in the older preparation phase because the new speaker-safety
+peer is unused before the idle layer and -Werror rejects it. Release42 marks
+that synthetic callback explicitly unused; all assertions and production source
+remain unchanged. Both historical preparation and final prepared-codec phases
+must pass, without disabling compiler warnings.
