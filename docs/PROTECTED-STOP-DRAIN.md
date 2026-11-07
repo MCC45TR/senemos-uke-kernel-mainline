@@ -39,7 +39,10 @@ donor checkout paths are absent, so unchanged exact remote files were reviewed.
 - MiCode/vendor_qcom_opensource_audio-kernel,
   8eb0eccbc4027ae4a4987e4bced03a4381039714,
   `asoc/codecs/fs19xx/fs1958.c`, `fsm_core.c`, `fsm_codec.c` and `Kbuild`,
-  GPL-2.0-only/Fourier Semiconductor attribution. The fitted-family shutdown
+  Fourier Semiconductor copyright notices. These files and Kbuild lack an
+  explicit file-level license. The selected module entrypoint `fsm_i2c.c`
+  declares `MODULE_LICENSE("GPL")`; that does not establish a particular GPL
+  version for every reference file. The fitted-family shutdown
   code distinguishes DAC mute from power and system shutdown. Kbuild lists
   fsm_core, fs1958 and fsm_i2c; a listed file alone is not evidence that every
   codec path is selected in the fitted OEM build. No OEM tuning or board values
@@ -47,7 +50,7 @@ donor checkout paths are absent, so unchanged exact remote files were reviewed.
 - OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675,
   1138e00fee63582a0cc6a53af3286621786827b7,
   `vendor/qcom/opensource/audio-kernel/asoc/msm_common.c`, GPL-2.0-only,
-  Qualcomm attribution. This same-SoC common shutdown path does not implement
+  Linux Foundation/Qualcomm attribution. This same-SoC common shutdown path does not implement
   the project-specific native FS19xx guard or establish its STOP ordering.
 - Upstream Linux d48723711bae9b8cdc56719c448ba42fef28cbee,
   `sound/soc/qcom/qdsp6/q6apm.c`, GPL-2.0/Linaro, retains the ordinary DSP STOP
@@ -69,7 +72,7 @@ new layer applies.
 
 ## Qualification and remaining device work
 
-Proposed COPR check34 executes the actual codec mute/readback/event, runtime
+Proposed COPR check35 executes the actual codec mute/readback/event, runtime
 gate/stopping/stopped and graph-stop callbacks with independent I2C and DSP
 drain peers. Four compiler/sanitizer modes cover40 cases, including all20 mute
 I2C operations failing, ignored writes, DSP timeout/error, owner/removal/state
@@ -93,3 +96,10 @@ signals from AUX0..AUX3 without saving raw audio; its exact-sample-count recorde
 exits1 with empty stderr, so this is bounded signal evidence. Initial wrong
 speaker-position remapping produced two artificial silent channels and is not
 a microphone hardware finding. Preserve HDMI playback and all user preferences.
+
+Initial check34/COPR11282599 authenticates all four exact16 preimages, including
+the complete STOP function, then stops at the second STOP patch hunk before
+new callback compilation. Check35 expresses that verified function delta in
+one contextual hunk. Implementation and expected postimage bytes stay unchanged.
+The OEM reference license note is also corrected to distinguish absent file
+headers from the module GPL declaration; no donor implementation is imported.

@@ -1,16 +1,16 @@
 {
   "date": "2026-11-07",
-  "scope": "Complete full12216 plus muted output/retained VI transport until DSP GRAPH_STOP; proposed check34 and no full17 reservation",
+  "scope": "Complete full12216 plus muted output/retained VI transport until DSP GRAPH_STOP; proposed check35 and no full17 reservation",
   "parent_build": 11272573,
   "parent_source": "4d9ccc1b9c9d343e63f99e00e77550491aeb6698",
   "parent_srpm_sha256": "021491be63b8068e4c6edae4591817c51a2a5d72ce0ba0b9a118dbe3cf927cee",
-  "source_check_release": 34,
+  "source_check_release": 35,
   "proposed_full_revision": 12217,
   "full_revision_reserved": false,
   "source_assets": [
     {
       "path": "src/audio/0015-uke-protected-stop-drain.patch",
-      "sha256": "d50ba66148d624377c3ed6ee04f55dd4367e190b0324f9fd71c7c13bc8492ff7"
+      "sha256": "204c08755cbc66353836c112ab3b822b51f2a8d41b606bc18a320c941a632008"
     },
     {
       "path": "src/audio/0016-uke-protected-stop-source-seals.patch",
@@ -42,11 +42,11 @@
     },
     {
       "path": "packaging/native/copr-migration-protected-stop731.sh",
-      "sha256": "92eacb8fa1514358f1c875a2ba7dfda301db553e303868e0f3e20b6d326b67a6"
+      "sha256": "61f287a7e58a52be18c3cf101f8eebae0437cb085917d611736b71b8e28d60f2"
     },
     {
       "path": "docs/PROTECTED-STOP-DRAIN.md",
-      "sha256": "7b6a719db31b8663e50f49c437f886f79eccba61740e456b11b3c70d0a8ade70"
+      "sha256": "af994543f2be9625ac10d03d0da15e15d87f07c7a8590f8e56b59a9466763522"
     },
     {
       "path": "manifests/kernel-migration-full12216-20261107.json",
@@ -111,5 +111,10 @@
     "sound/soc/codecs/fs19xx.o"
   ],
   "device_installation": false,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "prior_source_check": {
+    "build": 11282599,
+    "source": "45d32b1edfba2a030a64187fde4107d27ffed868",
+    "result": "All four exact16 preimages pass; second split q6apm STOP hunk refuses during dry-run, before new C controls. Check35 uses one whole-function hunk; implementation/postimages unchanged."
+  }
 }
