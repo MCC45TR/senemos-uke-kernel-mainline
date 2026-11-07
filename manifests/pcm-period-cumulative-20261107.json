@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Independent PCM period delivery on complete cumulative7332; hardware root cause and physical acceptance remain unproven",
+  "parent_full_build": 11283796,
+  "parent_full_source": "9b125ecd58c4337254b79a2cc79c244125b47502",
+  "parent_full_srpm_sha256": "be8e480d19f285dc3a13c16b3f4f3bc5883412c43c60a6b98030f600730cebeb",
+  "release_plan": "manifests/cumulative-release.json",
+  "source_before": "acb1773a93e99881ff51bcc78c26e8d48b6e8c59cb396755d47100dd91a6797b",
+  "source_after": "f14978b215fe56b1e5505ca9f36da9633c5631fd7b1be40ae85896aea86d7e65",
+  "payload_assets": [
+    "src/audio/0025-q6apm-defer-pcm-periods.patch",
+    "src/audio/apply-pcm-period733.sh",
+    "tests/pcm-period-worker.c",
+    "tests/pcm-period-worker.sh",
+    "packaging/native/check-pcm-period733.sh",
+    "packaging/native/copr-migration-pcm733.sh",
+    "docs/PCM-PERIOD-RECEIVE-PROGRESS.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/0025-q6apm-defer-pcm-periods.patch",
+      "sha256": "438afb9c9e292e182a7082a65aaf19710a5fa09aad6a31327357a463a1d5eb48"
+    },
+    {
+      "path": "src/audio/apply-pcm-period733.sh",
+      "sha256": "c0d3522aa56737196fa97f001795680344904546a5cccd7f5023dad7937fab47"
+    },
+    {
+      "path": "tests/pcm-period-worker.c",
+      "sha256": "48fdbed056295d8beae55d6711ef77b8f6268b182ed58657a16e3de44a4ea83f"
+    },
+    {
+      "path": "tests/pcm-period-worker.sh",
+      "sha256": "873d702a08b79bded124a2e4194ee5d54e91468e0da1fcea3c1a1e8c8045b60d"
+    },
+    {
+      "path": "packaging/native/check-pcm-period733.sh",
+      "sha256": "c02af3ee4d757089383a10f0c63db63dd1b835e170bf16929b07c79e6739cf2a"
+    },
+    {
+      "path": "packaging/native/copr-migration-pcm733.sh",
+      "sha256": "d561b8e8d21cffba738867b968915a5422a7b572218e3485cd31af5fbfa4dc6c"
+    },
+    {
+      "path": "docs/PCM-PERIOD-RECEIVE-PROGRESS.md",
+      "sha256": "15d1fcb25c005387f6f34b8daac2ec8e4cb2224a6c91fbf407112dae5cba259f"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "0d86fc5e7e19637bec66860e9876d832ea1b88494444ee2c06cd6ef5c3e7cac7"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "cbc25a62d208da45682c1e62c9f9a7ae344ec8256c1e2ad4314b30be000237cb"
+    },
+    {
+      "path": "manifests/stop-deadline-cumulative-20261107.json",
+      "sha256": "5a7dfa5d76ed07e87c3da4373e1ed1463af36366983fe164373a7b3ff24659e7"
+    }
+  ],
+  "compiler_sanitizer_modes": 4,
+  "positive_scenarios_per_mode": 11,
+  "enqueue_close_races_per_mode": 24,
+  "original_event_refusals": 2,
+  "required_mutants_per_compiler": 3,
+  "config_and_cumulative_gates_unchanged": true,
+  "gain_ceiling": 223,
+  "physical_acceptance": false
+}
