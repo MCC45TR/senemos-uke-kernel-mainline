@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Complete cumulative733 source and actual objects, separate from focused callbacks and physical acceptance",
+  "parent_full_build": 11283159,
+  "parent_full_source": "e6ca7d94e78262ff1e01ea6f780f1b0855df15f6",
+  "parent_full_srpm_sha256": "e5de2472b379aaceb212679bb4ef6b8363a2ef26ddc32abaaea2f84bb6cc013e",
+  "focused_callback_build": 11283674,
+  "focused_callback_source": "501bc599ced1e6be2b9c020b399cbbae86f4de33",
+  "focused_callback_rpm_sha256": "ad74e82b447fbb776f3aee6b3bb9e4c56a8c68f452b44d367b0ff0b4c6fadfb7",
+  "callback_cases": 100,
+  "compiler_sanitizer_tick_modes": 12,
+  "payload_assets": [
+    "packaging/native/copr-migration-stop733.sh",
+    "packaging/native/stop-deadline-source-view.sh",
+    "packaging/native/check-stop-deadline733.sh",
+    "src/audio/apply-stop-deadline733.sh",
+    "src/audio/0020-fs19xx-muted-stop-deadline.patch",
+    "src/audio/0021-fs19xx-publish-muted-gate.patch",
+    "src/audio/0023-muted-stop-source-seals.patch",
+    "src/audio/0024-muted-stop-legacy-clock.patch",
+    "tests/audio-stop-transition.c",
+    "tests/audio-stop-deadline.sh",
+    "tests/fixtures/audio-stop7331-runtime.inc",
+    "tests/fixtures/audio-stop7331-query.inc",
+    "tests/fixtures/audio-stop7331-graph.inc",
+    "docs/PROTECTED-STOP-DEADLINE.md",
+    "docs/FASTFETCH-SOC-NAME.md",
+    "manifests/stop-deadline-callbacks-20261107.json"
+  ],
+  "source_assets": [
+    {
+      "path": "packaging/native/copr-migration-stop733.sh",
+      "sha256": "9d9d763ae670071f7d6c41b8d20e20d8125129c4149683474de5c8733f2cfc89"
+    },
+    {
+      "path": "packaging/native/stop-deadline-source-view.sh",
+      "sha256": "d4071a65b499a5b6828c9ad9d58af67f0880e58834e176f00fa1c00d8be49ba6"
+    },
+    {
+      "path": "packaging/native/check-stop-deadline733.sh",
+      "sha256": "fc751bd3de09b746222753545d373512a318e57695c4765047bb65f588568047"
+    },
+    {
+      "path": "src/audio/apply-stop-deadline733.sh",
+      "sha256": "f0d34e284b33df047e490e8f1c3d0470dfc3a40315b48d7e4b7e35076ab0c86d"
+    },
+    {
+      "path": "src/audio/0020-fs19xx-muted-stop-deadline.patch",
+      "sha256": "8bdd7a426b445ff54a2650ee5b8c4b0fd5be4858f9f0b03d211a6b626ee9e72e"
+    },
+    {
+      "path": "src/audio/0021-fs19xx-publish-muted-gate.patch",
+      "sha256": "80fdd92a3f6699bbecad7049c04ffc40eae66079491d5177979ecf67761bdf6c"
+    },
+    {
+      "path": "src/audio/0023-muted-stop-source-seals.patch",
+      "sha256": "992fdde5b77abed043bb3f0da350c11934d556375e8d557b43a823caff6eeb25"
+    },
+    {
+      "path": "src/audio/0024-muted-stop-legacy-clock.patch",
+      "sha256": "999af46df84b0987a6a8f1c7caf7a88f12f881d63d6af1ceb145d7fb97514074"
+    },
+    {
+      "path": "tests/audio-stop-transition.c",
+      "sha256": "8efbbf4224f4cc0946da7aaea0761444c82b6bb542ac8db4e21e5b41f10978ac"
+    },
+    {
+      "path": "tests/audio-stop-deadline.sh",
+      "sha256": "88e23865264ca1a89e0687c4abb6fd5fc6f8dad42f9ba3469b31517fd564f109"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-runtime.inc",
+      "sha256": "1113cf93cd2c26eecf47d74085016794f7b44b09fac4049b30f1343910265ef4"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-query.inc",
+      "sha256": "04b555fb3acf9c7e684786192fb66211a1076db332bf5ffa10ac086d4f4376da"
+    },
+    {
+      "path": "tests/fixtures/audio-stop7331-graph.inc",
+      "sha256": "875a89932ee876f0f0addf51a8313080429a401299928d95cb6b4a598774cb96"
+    },
+    {
+      "path": "docs/PROTECTED-STOP-DEADLINE.md",
+      "sha256": "61c433c1cc9afe89992d436c8568a9f585c16b98b995de25bf447d423d1dd909"
+    },
+    {
+      "path": "docs/FASTFETCH-SOC-NAME.md",
+      "sha256": "dc080f16996de4883aeed221d911dfb605018ae2f79b80ce919dd66df5bf83bf"
+    },
+    {
+      "path": "manifests/stop-deadline-callbacks-20261107.json",
+      "sha256": "d5aa0b69ed4d117953fc49f58a9bb50f8198903eec14de086f5a655e9d8d553b"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "728aac35ed26e2209f8e35f883d302abafad6bf2ff0b0c41a69a3d55aeec871a"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "1a14316c51d403dca25942579ececa9ef1bc1f8587d36542539ba2af7fa35182"
+    }
+  ],
+  "retained_helper_hashes": {
+    "packaging/native/check-oob-runtime731.sh": {
+      "before": "0e7edb447a48d996224a36ba0538930fa8e66343593d6082a64e33a69342af3a",
+      "after": "a7250816ec444b46557d95d4ce9421ce7b962c71a4ce816460213bc4d24967c1"
+    },
+    "packaging/native/check-client-byte-ready731.sh": {
+      "before": "d85845b6db144e64a06c5f0b7cd9c962e39e9f49c17e0b44211257a5089aa026",
+      "after": "7ddb05106d2ed6173a35fcf5e6e8a8fde91e64fb02609ac283db45894e958dde"
+    },
+    "packaging/native/check-speaker-inclusion.sh": {
+      "before": "cb67ff984629d920979e76f8a97c24d809b7a7ecf888e8f271e70696e4b48180",
+      "after": "2be8819919fcceb5a9431745fa7a698f83f530ae96423d0d9a30aedefc625028"
+    },
+    "packaging/native/check-protected-stop731.sh": {
+      "before": "b9403cbb7cbe39fed8f5edaa70ea47dd1d4157b25cdbcf0ca1909f66f3305d7f",
+      "after": "07ea15f74981a0d77446ebb75c7d21cd07e3d21817eb8ab9185c87d907d00d1e"
+    },
+    "packaging/native/check-idle-stop731.sh": {
+      "before": "824f03be9fe1903ac142c4eda24d3a7b29dfa85c486d1cf51dfd1276496c662e",
+      "after": "93cea57bc79d00d9ef98bee3e676750c42bdb50ba7963cd24697591ffe58c1ee"
+    }
+  },
+  "retained_fixture_hashes": {
+    "tests/fixtures/audio-protection-mock.h": {
+      "before": "6b7148a06dc25f880632971d16f2dddacbb76ce6e60813a18706961fa86076d2",
+      "after": "6ebe7c3796f287285b029f1468633e6bb0a6f8437a1d56e9965e15d62a7e7d70"
+    }
+  },
+  "physical_acceptance": false,
+  "full_kernel_reserved": false
+}

@@ -1,0 +1,143 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] packaging: authenticate idle delta before every retained STOP seal
+
+Pin exact18 source and exact17 preimages before all historical controls.
+
+--- a/packaging/native/check-oob-runtime731.sh
++++ b/packaging/native/check-oob-runtime731.sh
+@@ -2,8 +2,20 @@
+ # Retain the original runtime comparison, then require the exact OOB postimage.
+ set -Eeuo pipefail
+ kernel=$(realpath "${1:?Prepared cumulative kernel}")
++# Authenticate idle18 before running exact retained17 source seals.
++idle_runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++idle_codec=$kernel/sound/soc/codecs/fs19xx.c
++if [[ -e $kernel/native-generated/runtime-before-idle-stop.c ]];then
++ printf '%s  %s\n' \
++ d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157 "$idle_runtime" \
++ d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb "$idle_codec" \
++ 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$kernel/native-generated/runtime-before-idle-stop.c" \
++ 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/native-generated/codec-before-idle-stop.c" | sha256sum -c --strict --quiet -
++ idle_runtime=$kernel/native-generated/runtime-before-idle-stop.c
++ idle_codec=$kernel/native-generated/codec-before-idle-stop.c
++fi
+ profile=$kernel/native-profile
+-actual=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++actual=$idle_runtime
+ original=$profile/src/audio/uke-fs19xx-runtime.c
+ # Authenticate the new delta, then run every retained16 seal on its exact preimage.
+ if [[ -e $kernel/native-generated/runtime-before-protected-stop.c ]];then
+@@ -14,7 +26,7 @@
+   0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$before_stop" \
+   3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$actual" \
+   e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8 "$kernel/native-generated/codec-before-protected-stop.c" \
+-  4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/sound/soc/codecs/fs19xx.c" \
++  4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$idle_codec" \
+   465cf1060b9e0252ae5febf3b669034be67c08c86d6e00f42f669bea32c1804c "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h" \
+   aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955 "$kernel/sound/soc/codecs/uke-fs19xx-muted-stop.h" \
+   aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955 "$profile/src/audio/uke-fs19xx-muted-stop.h" | sha256sum -c --strict --quiet -
+--- a/packaging/native/check-client-byte-ready731.sh
++++ b/packaging/native/check-client-byte-ready731.sh
+@@ -2,10 +2,22 @@
+ set -Eeuo pipefail
+ test ! -e /etc/senemos/kernel-update.conf
+ kernel=$(realpath "${1:?Cumulative kernel}")
++# Authenticate idle18 before running exact retained17 source seals.
++idle_runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++idle_codec=$kernel/sound/soc/codecs/fs19xx.c
++if [[ -e $kernel/native-generated/runtime-before-idle-stop.c ]];then
++ printf '%s  %s\n' \
++ d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157 "$idle_runtime" \
++ d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb "$idle_codec" \
++ 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$kernel/native-generated/runtime-before-idle-stop.c" \
++ 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/native-generated/codec-before-idle-stop.c" | sha256sum -c --strict --quiet -
++ idle_runtime=$kernel/native-generated/runtime-before-idle-stop.c
++ idle_codec=$kernel/native-generated/codec-before-idle-stop.c
++fi
+ out=$(realpath "${2:?Native output}")
+ phase=${3:-objects}
+ [[ $phase == objects || $phase == linked ]]
+-runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++runtime=$idle_runtime
+ if [[ -e $kernel/native-generated/runtime-before-protected-stop.c ]];then
+  printf '%s  %s\n' 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$runtime" | sha256sum -c --strict -
+  runtime=$kernel/native-generated/runtime-before-protected-stop.c
+--- a/packaging/native/check-speaker-inclusion.sh
++++ b/packaging/native/check-speaker-inclusion.sh
+@@ -3,6 +3,18 @@
+ set -Eeuo pipefail
+ test ! -e /etc/senemos/kernel-update.conf
+ kernel=$(realpath "${1:?Prepared cumulative kernel}")
++# Authenticate idle18 before running exact retained17 source seals.
++idle_runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++idle_codec=$kernel/sound/soc/codecs/fs19xx.c
++if [[ -e $kernel/native-generated/runtime-before-idle-stop.c ]];then
++ printf '%s  %s\n' \
++ d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157 "$idle_runtime" \
++ d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb "$idle_codec" \
++ 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$kernel/native-generated/runtime-before-idle-stop.c" \
++ 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/native-generated/codec-before-idle-stop.c" | sha256sum -c --strict --quiet -
++ idle_runtime=$kernel/native-generated/runtime-before-idle-stop.c
++ idle_codec=$kernel/native-generated/codec-before-idle-stop.c
++fi
+ phase=${2:?prepared or linked}
+ [[ $phase == prepared || $phase == prepared-protected || $phase == linked ]]
+ [[ $phase != linked || $# == 3 ]]
+@@ -44,7 +56,7 @@
+  if [[ -e $kernel/native-generated/codec-before-protected-stop.c ]];then
+   printf '%s  %s\n' \
+    e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8 "$kernel/native-generated/codec-before-protected-stop.c" \
+-   4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/sound/soc/codecs/fs19xx.c" | sha256sum -c --strict -
++   4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$idle_codec" | sha256sum -c --strict -
+   stop_seal=$(mktemp -d)
+   trap 'find "$stop_seal" -depth -delete' EXIT
+   install -Dm644 "$kernel/native-generated/codec-before-protected-stop.c" "$stop_seal/sound/soc/codecs/fs19xx.c"
+@@ -58,12 +70,12 @@
+   [[ $(grep -Fc 'xiaomi,fs19xx-protected;' <<< "$decoded") == 1 ]]
+  done
+ fi
+-grep -Eq '^#define[[:space:]]+FS19XX_VOL_DEFAULT[[:space:]]+0xdf([[:space:]]|$)' "$kernel/sound/soc/codecs/fs19xx.c"
+-grep -Eq '^#define[[:space:]]+FS19XX_VOL_MAX[[:space:]]+FS19XX_VOL_DEFAULT([[:space:]]|$)' "$kernel/sound/soc/codecs/fs19xx.c"
++grep -Eq '^#define[[:space:]]+FS19XX_VOL_DEFAULT[[:space:]]+0xdf([[:space:]]|$)' "$idle_codec"
++grep -Eq '^#define[[:space:]]+FS19XX_VOL_MAX[[:space:]]+FS19XX_VOL_DEFAULT([[:space:]]|$)' "$idle_codec"
+ case $phase in
+  prepared|prepared-protected)
+   for compiler in gcc clang; do
+-   CC=$compiler bash "$profile/tests/audio-speaker-state-read-contract.sh" "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c"
++   CC=$compiler bash "$profile/tests/audio-speaker-state-read-contract.sh" "$idle_runtime"
+   done
+   ;;
+  linked)
+--- a/packaging/native/check-protected-stop731.sh
++++ b/packaging/native/check-protected-stop731.sh
+@@ -3,6 +3,18 @@
+ set -Eeuo pipefail
+ test ! -e /etc/senemos/kernel-update.conf
+ kernel=$(realpath "${1:?Cumulative kernel}")
++# Authenticate idle18 before running exact retained17 source seals.
++idle_runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++idle_codec=$kernel/sound/soc/codecs/fs19xx.c
++if [[ -e $kernel/native-generated/runtime-before-idle-stop.c ]];then
++ printf '%s  %s\n' \
++ d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157 "$idle_runtime" \
++ d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb "$idle_codec" \
++ 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$kernel/native-generated/runtime-before-idle-stop.c" \
++ 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/native-generated/codec-before-idle-stop.c" | sha256sum -c --strict --quiet -
++ idle_runtime=$kernel/native-generated/runtime-before-idle-stop.c
++ idle_codec=$kernel/native-generated/codec-before-idle-stop.c
++fi
+ out=$(realpath "${2:?Native output or generated source directory}")
+ phase=${3:-objects}
+ [[ $phase == source || $phase == objects || $phase == linked ]]
+@@ -12,9 +24,9 @@
+ jq -e '.protected_stop_drain_layer==1 and .protected_stop_mute_before_dsp and .protected_stop_vi_until_reply and .protected_stop_poweroff_after_reply and .protected_stop_failure_erases and .protected_stop_existing_fault_deadline and .protected_stop_no_gain_calibration_change and .speaker_gain_ceiling==223 and (.speaker_physical_protection_qualified|not)' "$profile/source-composition.json" >/dev/null
+ printf '%s  %s\n' \
+  0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$generated/runtime-before-protected-stop.c" \
+- 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c" \
++ 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$idle_runtime" \
+  e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8 "$generated/codec-before-protected-stop.c" \
+- 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/sound/soc/codecs/fs19xx.c" \
++ 4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$idle_codec" \
+  58bd8b9c9c947632cae1c0951fb0b5facd25a683e8a6b2bd93e0a27d35a0466a "$generated/runtime-header-before-protected-stop.h" \
+  465cf1060b9e0252ae5febf3b669034be67c08c86d6e00f42f669bea32c1804c "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h" \
+  7ccd1442087c2f26769bae2f3378b33539d7aa6868880d32aac71ad14e91dd43 "$generated/graph-stop-before-protected-stop.c" \

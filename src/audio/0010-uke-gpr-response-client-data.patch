@@ -1,0 +1,20 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: preserve defined GPR response client data
+
+GPR assigns wire bits16-19 of the domain word to the remote client.
+Linux currently names those bits within its16-bit reserved field.
+Accept all16 documented client values and retain the true reserved-bit,
+identity, size, opcode, error and lifetime checks.
+
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c
+@@ -46,7 +46,8 @@ static int uke_oob_callback(const struct gpr_resp_pkt *reply, void *context, int
+ 	    header->src_port != UKE_OOB_APM_PORT || header->dest_port != client->port_id)
+ 		goto out;
+ 	/* A matching but malformed reply is ambiguous, never a completion fence. */
+-	if (header->version != GPR_PKT_VER || header->reserved ||
++	/* Linux names the upper16 bits reserved; GPR assigns their low4 to client data. */
++	if (header->version != GPR_PKT_VER || (header->reserved & 0xfff0U) ||
+ 	    header->hdr_size != GPR_PKT_HEADER_WORD_SIZE ||
+ 	    reply->payload_size < 0 || !reply->payload ||
+ 	    (size_t)header->pkt_size != GPR_HDR_SIZE + (size_t)reply->payload_size)

@@ -6,7 +6,13 @@ project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source=$kernel/drivers/nvmem/core.c
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
-printf '%s  %s\n' 006b3a2074a3061bd2dadb4f309427fe44a72ee7b363b7c81d0903c6efe9e7c1 "$source" | sha256sum -c --strict
+# Exact upstream whole-file seal; the three privacy functions stay separately sealed.
+expected=006b3a2074a3061bd2dadb4f309427fe44a72ee7b363b7c81d0903c6efe9e7c1
+if [[ -f $project/manifests/cumulative-release.json ]];then
+ expected=$(jq -er '.upstream.source_seals["drivers/nvmem/core.c"]' "$project/manifests/cumulative-release.json")
+ [[ $expected =~ ^[a-f0-9]{64}$ ]]
+fi
+printf '%s  %s\n' "$expected" "$source" | sha256sum -c --strict
 for function in __nvmem_reg_read __nvmem_reg_write nvmem_bin_attr_get_umode; do
  awk -v name="$function" '$0 ~ "^static (int|umode_t) " name "\\(" {copy=1} copy {print} copy && /^}/ {exit}' "$source" > "$work/$function.h"
 done

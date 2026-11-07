@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "senemos-uke-linux-kernel-mainline-unstable",
+  "channel": "uke-linux-unstable",
+  "full_release": 2,
+  "source_check_release": 13,
+  "upstream": {
+    "version": "7.3.3",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "source_sha256": "79c66dde66cd96877fcde8f7d36aec946b1f423d2b97b5a7b1751b75c764f3d1",
+    "source_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.xz",
+    "signature_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.3.tar.sign",
+    "primary_signer": "647F28654894E3BD457199BE38DBBDC86092693E",
+    "released_epoch": 1793989159,
+    "source_seals": {
+      "drivers/nvmem/core.c": "6cdf164cac773046074a5b7587cd3747564694ea02aa46e86cc5702ded3e6da4"
+    }
+  },
+  "full_release_policy": "increment-after-success"
+}

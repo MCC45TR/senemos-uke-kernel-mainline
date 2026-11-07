@@ -1,0 +1,32 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] packaging: seal the exact client-data backend postimage
+
+The historical OOB comparison remains exact before the new layer. Once its
+preimage marker exists, require the original profile and saved preimage hashes,
+the exact patched backend hash, and the declared protocol masks. All other
+source comparisons remain unchanged.
+
+--- a/packaging/native/check-oob-runtime731.sh
++++ b/packaging/native/check-oob-runtime731.sh
+@@ -18,7 +18,20 @@ printf '%s  %s\n' \
+  8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57 "$original" \
+  58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3 "$actual" | sha256sum -c --strict --quiet -
+ for asset in uke-fs19xx-oob-backend.c uke-fs19xx-oob-backend.h uke-fs19xx-oob.h;do
+- cmp "$profile/src/audio/$asset" "$kernel/sound/soc/qcom/qdsp6/$asset"
++ if [[ $asset == uke-fs19xx-oob-backend.c && -e $kernel/native-generated/backend-before-client-data.c ]];then
++  before=$kernel/native-generated/backend-before-client-data.c
++  [[ -f $before && ! -L $before ]]
++  jq -e '.protected_gpr_client_data_layer==1 and
++   .protected_gpr_client_data_allowed_mask==15 and
++   .protected_gpr_client_data_true_reserved_mask==65520 and
++   .protected_gpr_client_data_identity_and_lifetime_unchanged' "$profile/source-composition.json" >/dev/null
++  printf '%s  %s\n' \
++   785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73 "$profile/src/audio/$asset" \
++   785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73 "$before" \
++   bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690 "$kernel/sound/soc/qcom/qdsp6/$asset" | sha256sum -c --strict --quiet -
++ else
++  cmp "$profile/src/audio/$asset" "$kernel/sound/soc/qcom/qdsp6/$asset"
++ fi
+ done
+ cmp "$profile/src/audio/uke-audio-config-memory.c" "$kernel/drivers/soc/qcom/uke-audio-config-memory.c"
+ cmp "$profile/src/audio/uke-audio-config-memory.h" "$kernel/include/linux/soc/qcom/uke-audio-config-memory.h"

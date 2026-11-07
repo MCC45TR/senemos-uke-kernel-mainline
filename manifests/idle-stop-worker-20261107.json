@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-07",
+  "scope": "Exact full12217 plus healthy-idle worker classification; source39 only, full18 unreserved",
+  "parent_build": 11282652,
+  "parent_source": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
+  "parent_srpm_sha256": "1ed01a889b5b4ccf19eb0a0984851858213a3d3a83310446b57fe820296b21f6",
+  "source_check_release": 39,
+  "proposed_full_revision": 12218,
+  "full_revision_reserved": false,
+  "parent_nonidentity_fields": 463,
+  "source_hashes": {
+    "sound/soc/codecs/fs19xx.c": {
+      "before": "4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2",
+      "after": "d8a9e70f14fd854e3333352199abc0fb5fe8d632c1bf298b25d01d931cc494cb"
+    },
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c": {
+      "before": "3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5",
+      "after": "d9bf78985dd1de6db50daddce2c544d2b88496b085f821bcfdab86a44c4da157"
+    },
+    "include/sound/uke-fs19xx-guard.h": {
+      "before": "f3b03a6846b034f64def55739191354919ecb395eac89685fc845364e6bd889f",
+      "after": "be42db31591220ae1e8a8177e20d85e21cc22a26e4ca881872c0172cd7f6dd99"
+    }
+  },
+  "checker_hashes": {
+    "packaging/native/check-oob-runtime731.sh": {
+      "before": "08da7b78c062d95135c21c12614561bd67494434c848be7671fd5f38119a887b",
+      "after": "0e7edb447a48d996224a36ba0538930fa8e66343593d6082a64e33a69342af3a"
+    },
+    "packaging/native/check-client-byte-ready731.sh": {
+      "before": "b64c55bb7571f271dbde91689a11721546918d5735a4f5ddcf232328a9340773",
+      "after": "d85845b6db144e64a06c5f0b7cd9c962e39e9f49c17e0b44211257a5089aa026"
+    },
+    "packaging/native/check-speaker-inclusion.sh": {
+      "before": "7d543876ba0a3a9524d4216f8c76765c873c83758536d025a664e2a35492f03d",
+      "after": "0e4ebd8f116bf7250903ca94b2a023f4123d93faa73e172329d0078ff7450e13"
+    },
+    "packaging/native/check-protected-stop731.sh": {
+      "before": "91269b6c9ebcee669e768ad2037a8685887591aaf2242f26b302c6fcad404e5c",
+      "after": "b9403cbb7cbe39fed8f5edaa70ea47dd1d4157b25cdbcf0ca1909f66f3305d7f"
+    }
+  },
+  "source_assets": [
+    {
+      "path": "src/audio/0017-uke-protected-idle-worker.patch",
+      "sha256": "2ddda04fdaef6e8cf3266e31884e300aede23b2bdc0fe9b3b4af09b0147731cf"
+    },
+    {
+      "path": "src/audio/0018-uke-idle-stop-source-seals.patch",
+      "sha256": "924e35041d1e18e2d0fc4518b4bb46d8d035a2287b76cce4f6599aa46b3c9714"
+    },
+    {
+      "path": "src/audio/apply-idle-stop731.sh",
+      "sha256": "8b166effeefa66014bc46336b6d253d069b602306c536053324ed030094d33bb"
+    },
+    {
+      "path": "tests/audio-idle-stop.c",
+      "sha256": "e0a3d059352e5fc7777ef557a512e4cc21e0d1488c757e3d54c6f327fc810ba1"
+    },
+    {
+      "path": "tests/audio-idle-stop.sh",
+      "sha256": "9cc526922b1e24f67eba81436fb1f3a59a221d9e038a5b1815ec7234421d20cd"
+    },
+    {
+      "path": "packaging/native/check-idle-stop731.sh",
+      "sha256": "63ea8c2ab7b735b45d8101b7d2e8524b8b9a87a3c3ee6351702c33ccc1bd9ba3"
+    },
+    {
+      "path": "packaging/native/copr-migration-idle-stop731.sh",
+      "sha256": "eff5bbe6c57d381a4e60e4f7e08fa8cb6d1275adca6c544392a9594838ad2ba9"
+    },
+    {
+      "path": "docs/PROTECTED-IDLE-WORKER.md",
+      "sha256": "87f6950c5ca1c5d01e4e7341ece3337c9d8d36bf8954201bfba810761932308a"
+    },
+    {
+      "path": "manifests/kernel-migration-full12217-20261107.json",
+      "sha256": "9f7624d464ff9b6dde8daca67182cf3571dca6298ee44c43eb479c28f2659f80"
+    }
+  ],
+  "physical_acceptance": false
+}
