@@ -77,3 +77,13 @@ Review also removes a redundant timestamp initializer cast: the pinned IIO
 header already supplies a typed compound literal (blob
 `711c00f67371356c913ef0dbf2325e3f4d35266d`). No four-mode, DT or ARM64 endpoint
 qualification follows from source29's partial result.
+
+Source30/COPR11286135 fails466s after all four421-assertion endpoint modes,
+twelve compiled behavioral mutant refusals and four20-check libfdt modes.
+The unchanged upstream QMI encoder includes its host declaration header
+through several Linux shim headers. The endpoint additions were appended
+outside the old include guard, redefining input_handler on repeated includes.
+Guard only those additional declarations; retain every original wire assertion,
+encoder source and sanitizer/warning setting. This correction changes no
+production driver, DT, reducer or hardware writer. Source30 does not qualify
+the postimage QMI replay or actual ARM64 endpoint objects.

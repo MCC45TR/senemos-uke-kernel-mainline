@@ -6,7 +6,7 @@
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11286027,
   "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
-  "source_check_release": 30,
+  "source_check_release": 31,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_complete_qualification": true,
@@ -88,7 +88,7 @@
     },
     {
       "path": "packaging/native/check-dual-light-endpoint733.sh",
-      "sha256": "0343501d1b7423aa1d264ebe2aa1ee3e837da572748ab6527e4f184ee3aef433"
+      "sha256": "ecd344fe2d0a5e3d2d8fda78eb87c5c36e23a0d0cbff238c4b573c6371350c73"
     },
     {
       "path": "packaging/native/copr-dual-light-endpoint733.sh",
@@ -96,15 +96,15 @@
     },
     {
       "path": "docs/DUAL-LIGHT-ENDPOINT.md",
-      "sha256": "82d6e4d5d3501a41f7e1cc0f785420345d1bb0a12f905fa0af5c86a920ec27a9"
+      "sha256": "580338e432e6795b1501a35ddbb88996c42fc6a8355d59c277c1a11d2f20a59e"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "f00e776b42875fb23a5d4c048f8308082aac4afdc0478df0ee874145809a89a7"
+      "sha256": "4061d221dbc647dda9b9295402f977841cd140bb6e5d445eb0f02de6092e64ff"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "83075514446e12cc8863655a2dc0bbbc222b4129df63e46351213db7a2d544a9"
+      "sha256": "53baf09213a2644da91cc94f0316bfe77bf17ba12ebf8b3c9e292cb53ebf0822"
     }
   ],
   "acceptance": {
@@ -134,5 +134,19 @@
     "stage": "First C++ DT fixture rejects three implicit const-void pointer conversions",
     "qualified_scope": "Only one callback mode and six mutants; no DT/four-mode/ARM64 endpoint admission",
     "correction": "Explicit C/C++ compatible pointer casts, unchanged admission logic/warnings; redundant already-typed timestamp initializer cast removed after pinned IIO header review"
+  },
+  "previous_source30": {
+    "source": "f71cfb7f2c7461c281d2b4f864164ab6d01a6436",
+    "copr_build": 11286135,
+    "state": "failed",
+    "duration_seconds": 466,
+    "actual_callback_modes": 4,
+    "actual_assertions_per_mode": 421,
+    "compiled_mutant_refusals": 12,
+    "actual_dt_modes": 4,
+    "actual_dt_checks_per_mode": 20,
+    "stage": "Original QMI encoder replay: appended input_handler shim outside base include guard is redefined by repeated headers",
+    "qualified_scope": "Four callback/DT modes only; no postimage QMI replay, signed receipt or actual ARM64 endpoint qualification",
+    "correction": "Guard the appended host-only declarations; original QMI assertions, production driver and warning/sanitizer settings unchanged"
   }
 }

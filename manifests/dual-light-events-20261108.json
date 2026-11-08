@@ -93,11 +93,11 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "f00e776b42875fb23a5d4c048f8308082aac4afdc0478df0ee874145809a89a7"
+      "sha256": "4061d221dbc647dda9b9295402f977841cd140bb6e5d445eb0f02de6092e64ff"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "d41a15dabfa168e0f6237456fe8c6e42cb6a82527d60c5a3ab0e6fd792219404"
+      "sha256": "ca1ac5ca672ee336ea2872c912309c1891e925adf02824148a646f21e10ceb57"
     },
     {
       "path": "referances/native-als-20261108/dual-light-events24.h",

@@ -46,10 +46,13 @@ if [[ $phase == prepared ]]; then
   install -m644 "$profile/$path" "$work/legacy/$path"
  done
  cat >> "$work/legacy/tests/ssc-native-host.h" <<'HOST'
+#ifndef UKE_SSC_DUAL_NATIVE_HOST_H
+#define UKE_SSC_DUAL_NATIVE_HOST_H
 #include "uke-ssc-dual-light.h"
 #define U64_MAX UINT64_MAX
 #define BIT(n) (1U << (n))
 struct input_handler { void *private; };
+#endif
 HOST
  install -m644 "$work/post.c" "$work/legacy/src/sensors/uke-ssc-iio.c"
  awk '
