@@ -27,6 +27,9 @@ for tree in "$profile" "$boot"; do
  install -Dm644 "$manifest" "$tree/manifests/${manifest##*/}"
 done
 awk -v mode="$mode" '
+ mode=="check" && $0=="%build" {
+  print;print "bash native-profile/tests/o82-avr-early733.sh \"$PWD\" test";early++;next
+ }
  mode=="full" && /^bash native-profile\/src\/audio\/apply-speaker-display733.sh / {
   print;print "bash native-profile/src/display/apply-avr-transaction733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-avr-transaction733.sh \"$PWD\" %{_uke_out} source";apply++;next
@@ -37,17 +40,12 @@ awk -v mode="$mode" '
  mode=="check" && $0=="%install" {
   print "bash native-profile/src/display/apply-avr-transaction733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-avr-transaction733.sh \"$PWD\" %{_uke_out} source"
-  print "bash native-profile/tests/kernel-release-advance.sh native-profile"
-  print "for compiler in gcc clang; do"
-  print " for sanitize in 0 1; do"
-  print "  CC=$compiler SANITIZE=$sanitize bash native-profile/tests/o82-avr-transaction.sh \"$PWD\""
-  print " done"
-  print "done"
+  print "bash native-profile/tests/o82-avr-early733.sh \"$PWD\" verify"
   print "make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_release}-unstable -j4 drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.o drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.o"
   print "bash native-profile/packaging/native/check-avr-transaction733.sh \"$PWD\" %{_uke_out} objects";apply++
  }
  {print}
- END{if(apply!=1||linked!=(mode=="full"?1:0))exit 1}
+ END{if(apply!=1||linked!=(mode=="full"?1:0)||early!=(mode=="check"?1:0))exit 1}
 ' "$spec" > "$work/spec"
 install -m644 "$work/spec" "$spec"
 jq --arg mode "$mode" '.+{

@@ -15,9 +15,12 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
  	int lines, ret;
  
  	if (!state->vrr_enabled)
-@@ -16,18 +18,84 @@
+@@ -14,20 +16,86 @@
+ 	lines = qcom_uke_o82_avr_lines(&state->adjusted_mode, o82_vrr_test_min_hz);
+ 	if (lines <= 0)
  		return -EINVAL;
- 	for (i = 0; i < enc->num_phys_encs; i++)
+-	for (i = 0; i < enc->num_phys_encs; i++)
++	for (i = 0; i < 2; i++)
  		if (!enc->phys_encs[i] || !enc->phys_encs[i]->hw_intf ||
 -		    !enc->phys_encs[i]->hw_intf->ops.setup_avr)
 +		    enc->phys_encs[i]->enable_state == DPU_ENC_DISABLED ||
@@ -40,7 +43,7 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
 +		ret = -EPIPE;
 +		goto out;
 +	}
-+	for (i = 0; i < enc->num_phys_encs; i++) {
++	for (i = 0; i < 2; i++) {
 +		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
 +
 +		ret = intf->ops.get_avr_period(intf, &before[i]);
@@ -56,8 +59,9 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
 +	 * This does not undo DSI/timing changes: return the error so the caller
 +	 * retains its existing pre-flush quarantine/recovery requirement.
  	 */
- 	for (i = 0; i < enc->num_phys_encs; i++) {
+-	for (i = 0; i < enc->num_phys_encs; i++) {
 -		struct dpu_encoder_phys *phys = enc->phys_encs[i];
++	for (i = 0; i < 2; i++) {
 +		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
  
 -		ret = phys->hw_intf->ops.setup_avr(phys->hw_intf, lines, &periods[i]);
@@ -70,7 +74,7 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
 +		ret = -EINVAL;
 +		goto rollback;
 +	}
-+	for (i = 0; i < enc->num_phys_encs; i++) {
++	for (i = 0; i < 2; i++) {
 +		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
 +
 +		ret = intf->ops.get_avr_period(intf, &actual);
@@ -84,7 +88,7 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
 +	ret = 0;
 +	goto out;
 +rollback:
-+	for (i = 0; i < enc->num_phys_encs; i++) {
++	for (i = 0; i < 2; i++) {
 +		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
 +
 +		if (intf->ops.set_avr_period(intf, before[i]))
@@ -95,7 +99,7 @@ Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
 +	/* Never retry a failed transaction on a subsequent page flip. */
 +	enc->avr_failed = true;
 +	if (rollback_failed) {
-+		for (i = 0; i < enc->num_phys_encs; i++) {
++		for (i = 0; i < 2; i++) {
 +			struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
 +
 +			intf->ops.enable_avr(intf, false);

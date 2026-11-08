@@ -66,3 +66,18 @@ without mutation. Failed full7 remains7; the published internal check40 source
 uses the next unique proof41. This helper does not submit a build, write a boot
 slot or turn an incomplete history into admission. Its caller owns the single
 delivery lock and supplies complete current history before source publication.
+
+Source41/COPR11287532 applies the corrected patch and passes the release-plan
+fixture, then fails597s at GCC's maybe-uninitialized analysis of the saved
+period array. The snapshot loop used a mutable encoder count even though the
+callback admits exactly two interfaces. All six loops now use that explicit
+two-interface bound; warnings and sanitizer settings remain enabled.
+
+The callback tests now run at the beginning of source-check build work in an
+isolated copy of the three actual C/header postimages. The inherited source
+tree remains unchanged for its original checks. After the late patch is applied
+to that tree, all three whole-file hashes must match the early tested view
+before compiling the final ARM64 objects. The tests run once, and never run
+again in the full Image build. Metadata fixtures use the selected upstream
+version instead of embedding a release version. These changes improve failure
+feedback; they do not establish the twenty-minute full-build target.
