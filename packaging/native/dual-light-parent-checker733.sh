@@ -5,7 +5,7 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $# == 2 ]]
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
 name=${2:?Historical checker name}
-[[ $name == check-migration-cohort731.sh || $name == check-cumulative-camera731.sh ]]
+[[ $name == check-migration-cohort731.sh || $name == check-cumulative-camera731.sh || $name == check-camera-next731.sh ]]
 profile=$kernel/native-profile
 history=$profile/history-before-dual-light-delivery
 (cd "$history";sha256sum -c --strict --quiet SHA256SUMS)

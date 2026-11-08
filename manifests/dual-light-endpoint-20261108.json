@@ -104,11 +104,11 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "e981b3dafa03593ed81698f151270bf0a4d5f0e1f0a46a94a3ce3aa41e686284"
+      "sha256": "12641be4df177826b175dde33da89a982af7dd84fcb50eed5caf36147c365718"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "7ce69af02da10bae4e4b4041cb49c7b3ac1180ab79a318db86699713b6cda390"
+      "sha256": "155cf669a5c3c761fa521d91d63d3b094b6b571b49310bfaf89204a51cbe3816"
     },
     {
       "path": "tests/ssc-dual-light-schema.cpp",

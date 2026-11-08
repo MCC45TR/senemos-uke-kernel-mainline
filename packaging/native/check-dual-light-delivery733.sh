@@ -22,9 +22,10 @@ for layer in dual-light-events ssc-stream-owners dual-light-endpoint dual-light-
   cmp "$source" "$kernel/boot-recipe/manifests/${source##*/}"
 done
 if [[ $phase == prepared ]]; then
+  bash "$profile/tests/dual-light-checker-inverse.sh" "$profile"
   # Only the SSC comparison is redirected. Every other line/byte of each
   # qualified parent checker must be retained, including its linked checks.
-  for name in check-migration-cohort731.sh check-cumulative-camera731.sh; do
+  for name in check-migration-cohort731.sh check-cumulative-camera731.sh check-camera-next731.sh; do
     original=$profile/history-before-dual-light-delivery/$name
     awk '
       /^dual_light_legacy=\$\(bash / {removed++;next}

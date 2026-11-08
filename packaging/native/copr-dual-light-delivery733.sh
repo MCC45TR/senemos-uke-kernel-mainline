@@ -53,7 +53,7 @@ done
 history=$profile/history-before-dual-light-delivery
 [[ ! -e $history ]]
 mkdir "$history"
-for name in check-migration-cohort731.sh check-cumulative-camera731.sh; do
+for name in check-migration-cohort731.sh check-cumulative-camera731.sh check-camera-next731.sh; do
   cp "$profile/packaging/native/$name" "$history/$name"
   awk '
     $0=="profile=$kernel/native-profile" {

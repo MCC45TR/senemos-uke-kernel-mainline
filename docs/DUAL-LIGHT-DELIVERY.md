@@ -42,3 +42,12 @@ inverse. All Hall callback, GPIO, DT and actual compiled-object checks remain.
 The memory checker likewise reads the authenticated exact cumulative-camera
 parent before checking its config-hash-only inverse. Its complete configuration,
 ZRAM/Zswap, native object and linked-module assertions remain unchanged.
+
+The full6 attempt reached production Image/modules and the linked dual-light
+gate, then correctly stopped at the camera-next checker's original SSC source
+comparison. That third checker now uses the same authenticated inverse view
+as the two earlier checkers. Its complete body, camera GCC and peer object
+checks remain byte-exact after reversing only the narrow source adapter.
+No historical compiled object is substituted. Full delivery remains a separate
+qualification; this correction does not establish a cause for a reported
+audio/video-time panic on the older installed full5 kernel.
