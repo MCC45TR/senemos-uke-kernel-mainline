@@ -4,7 +4,7 @@
   "scope": "Four corner program-channel routing in MFC; physical calibration and VI retain their existing identities",
   "parent_full_build": 11287616,
   "parent_source_commit": "78121e3f24357f2f9bcfb728779279532c8da7cf",
-  "source_stage_draft": true,
+  "source_stage_draft": false,
   "native_callback_lifetime_qualified": false,
   "full_delivery_source_qualified": false,
   "physical_accepted": false,
@@ -23,20 +23,21 @@
     "packaging/native/stage-speaker-quad733.sh",
     "docs/SPEAKER-QUAD-ROTATION.md",
     "tests/speaker-quad-lpass.c",
-    "packaging/native/copr-speaker-quad733.sh"
+    "packaging/native/copr-speaker-quad733.sh",
+    "tests/speaker-quad-card.c"
   ],
   "source_assets": [
     {
       "path": "src/audio/uke-speaker-quad.h",
-      "sha256": "de19e8a274a196cd9fa99e60d0df2060ab649fd2b640c68cbed1d2cb9dab92d4"
+      "sha256": "e2c3dd04eaf5eaf534ae941b659dfa61277816977f42251f5d8de65ffa72fcc0"
     },
     {
       "path": "src/audio/uke-speaker-quad-lpass.h",
-      "sha256": "ea2b7f329d1e88ffc56355a7fdb339a8aece2c5300733cc7dd35af8aa43eec42"
+      "sha256": "0419ecec0ef64dc1e3f95bbd067413b17715c6c17da59e675358a6415b4438ba"
     },
     {
       "path": "src/audio/uke-speaker-quad-control.h",
-      "sha256": "12d12972a802d985e1b3bb54d882a49bda12dca136f574d8c15b2dab932a3115"
+      "sha256": "ccb25ae92bab0751ffb419fff9462b9f4b68e562963be653ceb181eb4b760a3f"
     },
     {
       "path": "src/audio/apply-speaker-quad733.sh",
@@ -44,11 +45,11 @@
     },
     {
       "path": "tests/speaker-quad-route.c",
-      "sha256": "ede950562edd6095c9e6cba589cd90d6591fe23314565fec022ee9650404b07d"
+      "sha256": "c44bcb1837c45fc7891d91b47f338b3c561a3e9be53153b5517689c7f2aa5923"
     },
     {
       "path": "tests/speaker-quad-route.sh",
-      "sha256": "afdf49660ad92aeea837ca975d0c4b8258bd7c8ca3f356b61123a5fd8d2ca209"
+      "sha256": "71d5d58c5b84bd4e62030b3ab60d3afd7c30ae24e3485813638ceafbcf44c450"
     },
     {
       "path": "packaging/native/check-speaker-quad733.sh",
@@ -56,19 +57,23 @@
     },
     {
       "path": "packaging/native/stage-speaker-quad733.sh",
-      "sha256": "5056d666ad7c518946b22d61d48600cacb8b3d26e50d425e1e27d88bac7a2d72"
+      "sha256": "efe2175e691ae5bd4f612ce9d162aefb41bbaa8b62126fa486cfd7e8f1a857ba"
     },
     {
       "path": "docs/SPEAKER-QUAD-ROTATION.md",
-      "sha256": "79d984f5b31e848a45a7e03592f5063a335ccbbd14848c2ba6fb2c06453eca77"
+      "sha256": "4297b6810b8a19652c0ea0d47e6335220e348a317fcbf9ce54daab366d60be3f"
     },
     {
       "path": "tests/speaker-quad-lpass.c",
-      "sha256": "cd4dde8d9faf838a75e5f23d4e135e2aa9fe2157c0a399bb9e4b475344647168"
+      "sha256": "4682d569e092ce16adcd219658e32dc59f1d90a638281575342aa08a673ace5b"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
-      "sha256": "02c84475f43a84b162d60ac6117b5496a989b23c34e60d18b0a4f23c09fb8e28"
+      "sha256": "2da9cc570615eef2fcf43bdb3ce199ddbf7332541038d809fbb2ea1302891281"
+    },
+    {
+      "path": "tests/speaker-quad-card.c",
+      "sha256": "b01664939e05f33ea9733c1edca07eba14c0f4172c82bd860ba6c03d0b891eaf"
     }
   ],
   "donors": [
@@ -97,5 +102,24 @@
     }
   ],
   "actual_lpass_adapter_fixture_prepared": true,
-  "actual_lpass_adapter_fixture_run": false
+  "full_recipe_prepared": true,
+  "exact_source_quad_receipt_required": true,
+  "native_fixture_compiler_sanitizer_modes": 4,
+  "actual_machine_callback_fixture_prepared": true,
+  "concurrent_close_and_live_command_fixture_prepared": true,
+  "previous_source_check": {
+    "build": 11287831,
+    "release": 44,
+    "terminal_state": "failed",
+    "duration_seconds": 622,
+    "route_cases_per_mode": 41,
+    "lpass_cases_per_mode": 24,
+    "compiler_sanitizer_modes": 4,
+    "complete_source_inverse": true,
+    "actual_arm64_compilation_failed": true,
+    "errors": [
+      "current task macro collided with a helper parameter",
+      "ALSA get_channel_map requires a const DAI"
+    ]
+  }
 }

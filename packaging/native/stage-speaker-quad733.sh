@@ -10,10 +10,10 @@ mode=${4:?check or full}
 [[ $mode == check || $mode == full ]]
 manifest=$owner/manifests/speaker-quad-20261108.json
 (cd "$owner";jq -r '.source_assets[]|.sha256+"  "+.path' "$manifest" | sha256sum -c --strict --quiet -)
-# Native callback/lifetime and delivery admission must be completed before a
-# full candidate can consume this draft. A helper test alone cannot grant it.
+# The full entry independently admits a successful exact-source quad receipt.
+# A prepared recipe or fixture source alone does not grant native acceptance.
 if [[ $mode == full ]];then
- jq -e '.full_delivery_source_qualified' "$manifest" >/dev/null
+ jq -e '.full_recipe_prepared' "$manifest" >/dev/null
 fi
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT

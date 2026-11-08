@@ -68,11 +68,11 @@ static int uke_display_set_turn(struct uke_speaker_data *data, unsigned int turn
 	if (turn > 3)
 		return -EINVAL;
 	return snd_soc_dai_set_channel_map(data->rotation_dai, 0, NULL, 4,
-									uke_quad_sources[turn]);
+					 uke_quad_sources[turn]);
 }
 
 static int uke_display_get(struct snd_kcontrol *control,
-					struct snd_ctl_elem_value *value)
+			   struct snd_ctl_elem_value *value)
 {
 	struct snd_soc_card *card = snd_kcontrol_chip(control);
 	struct uke_speaker_data *data = snd_soc_card_get_drvdata(card);
@@ -95,7 +95,7 @@ static int uke_display_get(struct snd_kcontrol *control,
 }
 
 static int uke_display_put(struct snd_kcontrol *control,
-					struct snd_ctl_elem_value *value)
+			   struct snd_ctl_elem_value *value)
 {
 	struct snd_soc_card *card = snd_kcontrol_chip(control);
 	struct uke_speaker_data *data = snd_soc_card_get_drvdata(card);
@@ -122,7 +122,7 @@ static int uke_display_put(struct snd_kcontrol *control,
 		goto rollback;
 	changed = target != old_turn;
 	/* Program material rotates in MFC. Keep every physical amplifier at its
-		* canonical channel selection, with its original calibration and VI path. */
+	 * canonical channel selection, with its original calibration and VI path. */
 	for (i = 0; i < 4; i++) {
 		if (before[i] == 0)
 			continue;

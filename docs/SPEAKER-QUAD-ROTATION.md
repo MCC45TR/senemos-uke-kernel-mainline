@@ -1,7 +1,10 @@
 # Four-channel speaker rotation
 
-Date: 8 November 2026. Source draft; not compiled, enrolled in the cumulative
-delivery or installed. Running kernel7.3.3-7 retains the previous implementation.
+Date: 8 November 2026. Cumulative source candidate; not installed. Running
+kernel7.3.3-7 retains the previous implementation. Native source44 passes41 route and24 LPASS cases in four compiler/sanitizer
+modes, then fails the real ARM64 compile on a current-task macro collision and
+the const DAI callback signature. Both are corrected. Added machine callbacks
+and concurrent close tests require a new complete source45 proof.
 
 The operator's KDE speaker test reports that front-right remains at a fixed
 physical speaker after portrait and inverted rotation. This concerns speaker
@@ -50,6 +53,11 @@ KWin6.8.2 commitf130ab33c8e6f3b9d728aade87836086ae9a8ed4,
 transform separately. The original compositor remains unchanged; session policy
 and rotation lock stay in the existing Control notifier. Closed-cover/external
 display and DPMS require separate acceptance, with no raw-accelerometer override.
+
+The full recipe requires a terminal successful quad receipt for the exact
+source commit and version, bound by an independently admitted digest. It refuses
+an older non-quad entry at the same commit. Prepared fixture and recipe flags
+are not claims that their tests or hardware acceptance passed.
 
 Required next steps: native actual-function and lifecycle tests, real AArch64
 card/LPASS objects and module linkage; source/feature/rollback admission; single

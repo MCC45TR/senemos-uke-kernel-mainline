@@ -4,7 +4,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#define current get_current()
 #include "../src/audio/uke-speaker-quad.h"
+#undef current
 
 struct provider {
 	unsigned int hardware[4], calls, faults;

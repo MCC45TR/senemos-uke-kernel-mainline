@@ -37,22 +37,22 @@ struct uke_quad_route_ops {
  * failed DSP command may have applied: always send the saved mapping back. */
 static inline int uke_quad_route(void *context,
 				 const struct uke_quad_route_ops *ops,
-				 unsigned int *current, unsigned int target)
+				 unsigned int *current_turn, unsigned int target)
 {
 	int ret;
 
-	if (!ops || !ops->apply || !ops->fault || !current ||
-	    *current > 3 || target > 3)
+	if (!ops || !ops->apply || !ops->fault || !current_turn ||
+	    *current_turn > 3 || target > 3)
 		return -EINVAL;
-	if (*current == target)
+	if (*current_turn == target)
 		return 0;
 	ret = ops->apply(context, uke_quad_sources[target]);
 	if (ret < 0) {
-		if (ops->apply(context, uke_quad_sources[*current]) < 0)
+		if (ops->apply(context, uke_quad_sources[*current_turn]) < 0)
 			ops->fault(context);
 		return ret;
 	}
-	*current = target;
+	*current_turn = target;
 	return 1;
 }
 #endif

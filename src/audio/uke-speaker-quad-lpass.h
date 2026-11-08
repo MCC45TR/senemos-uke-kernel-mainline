@@ -4,7 +4,7 @@
 #include "uke-fs19xx-runtime.h"
 #include <sound/uke-fs19xx-guard.h>
 
-static bool uke_quad_target(struct snd_soc_dai *dai)
+static bool uke_quad_target(const struct snd_soc_dai *dai)
 {
 	return dai->id == SECONDARY_TDM_RX_0 &&
 		of_machine_is_compatible("xiaomi,uke") &&
@@ -91,7 +91,7 @@ static int uke_quad_set_map(struct snd_soc_dai *dai, unsigned int tx_num,
 	return uke_quad_route(&context, &uke_quad_ops, &data->uke_quad_turn, turn);
 }
 
-static int uke_quad_get_map(struct snd_soc_dai *dai, unsigned int *tx_num,
+static int uke_quad_get_map(const struct snd_soc_dai *dai, unsigned int *tx_num,
 			    unsigned int *tx, unsigned int *rx_num,
 			    unsigned int *rx)
 {
