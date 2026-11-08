@@ -48,3 +48,19 @@ GPL-2.0-only project code; no GPL-3.0 proxy implementation or donor board data
 is copied. No matching upstream multi-consumer Uke SSC client was established
 by that review. The inactive ownership scaffold is not a proof that a complete
 OSS-equivalent brightness path, Hall boot or power behavior exists.
+
+Review of the pinned Linux IIO header (blob
+`d8944c9e5e906ae663c36934c82489847047a082`) finds two incorrect constants
+in the initial source26 provider fixture: SCALE was1 instead of2 and INT64
+was7 instead of6. These do not change the actual driver, which compiles with
+real kernel headers, but source26 cannot qualify the fixture's selector/result
+ABI. Retain its actual build outcome separately. The corrected fixture pins
+that whole upstream header and tests RAW0, SCALE2, result6, rejected processed/
+unknown selectors and scale reads without acquisition. No physical claim follows.
+
+Source26/COPR11285615 fails397s after1224 GCC positive assertions and the
+first two compiled mutant refusals. The third mutant generator uses an
+unescaped ampersand in an awk replacement and emits invalid C; this is not
+a behavioral refusal or full qualification. Explicit whole-line emission
+replaces the two affected mutations, retaining all compiler warnings and
+assertions. Corrected ABI selectors add eleven assertions per positive mode.

@@ -4,6 +4,10 @@ set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 profile=$(cd -- "$(dirname -- "$0")/.." && pwd)
 driver=${1:?Actual prepared postimage SSC driver}
+api=${2:?Pinned kernel include/linux/iio/types.h}
+# The provider fixture must use real callback selector/result values.
+[[ $(git hash-object "$api") == d8944c9e5e906ae663c36934c82489847047a082 ]]
+grep -Fx '#define IIO_VAL_INT_64 6 /* 64-bit data, val is lower 32 bits */' "$api"
 cc=${CC:-gcc}
 sanitize=${SANITIZE:-0}
 [[ $sanitize == 0 || $sanitize == 1 ]]
@@ -49,9 +53,9 @@ if [[ $sanitize == 0 ]]; then
   awk -v m="$mutant" '
    m=="restart-shared" && /ret = active \? 0 : ssc_start\(s\);/ {sub(/active \? 0 :/,"((void)active, false) ? 0 :");n++}
    m=="stop-shared" && /return remaining \? 0 : ssc_stop\(s\);/ {sub(/remaining \? 0 :/,"((void)remaining, false) ? 0 :");n++}
-   m=="duplicate-owner" && /if \(s->stream_users & user\)/ {sub(/if \(/,"if (false && ");n++}
+   m=="duplicate-owner" && /if \(s->stream_users & user\)/ {print "\tif (false && (s->stream_users & user)) {";n++;next}
    m=="failed-lease" && /^\t\ts->stream_users &= ~user;$/ {sub(/s->stream_users &= ~user;/,"s->stream_users |= user;");n++}
-   m=="no-buffer-snapshot" && /s->ticks && s->registered && s->sample_sequence == sequence/ {sub(/s->ticks &&/,"false && s->ticks &&");n++}
+   m=="no-buffer-snapshot" && /s->ticks && s->registered && s->sample_sequence == sequence/ {print "\t\t    false && s->ticks && s->registered && s->sample_sequence == sequence) {";n++;next}
    {print} END {if(n!=1)exit 1}
   ' "$work/actual.c" > "$work/mutant.c"
   "$cc" "${flags[@]}" -I"$work/include" -I"$work" -I"$profile/src/sensors" "$work/mutant.c" -o "$work/mutant"

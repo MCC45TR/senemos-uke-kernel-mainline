@@ -206,6 +206,25 @@ static int read_value(s64 expected)
 	return ret;
 }
 
+static void selectors_and_result_values(void)
+{
+	const struct iio_chan_spec channel = { .address = 0 };
+	const long invalid[] = { 1, -1, 99 };
+	struct ssc_sensor *s = setup();
+	int low = 17, high = 42;
+
+	CHECK(IIO_CHAN_INFO_RAW == 0 && IIO_CHAN_INFO_SCALE == 2);
+	CHECK(IIO_VAL_INT_64 == 6);
+	f.iio.busy = true;
+	for (unsigned int i = 0; i < sizeof(invalid)/sizeof(invalid[0]); i++) {
+		CHECK(ssc_read_raw(&f.iio, &channel, &low, &high, invalid[i]) == -EINVAL);
+		CHECK(low == 17 && high == 42);
+	}
+	CHECK(ssc_read_raw(&f.iio, &channel, &low, &high, IIO_CHAN_INFO_SCALE) == IIO_VAL_INT_PLUS_MICRO);
+	CHECK(low == 0 && high == 1);
+	CHECK(!s->stream_users && !f.starts && !f.stops && !f.waits && !f.iio.direct && !f.c.control.locked);
+}
+
 static void direct_and_buffer(void)
 {
 	struct ssc_sensor *s = setup();
@@ -276,6 +295,7 @@ int main(void)
 {
 	permutations();
 	invalid_and_restart();
+	selectors_and_result_values();
 	direct_and_buffer();
 	printf("Actual shared SSC stream callbacks: %u assertions passed; controlled providers only.\n", assertions);
 	return 0;

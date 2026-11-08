@@ -27,7 +27,7 @@ cmp "$work/view/$driver" "$kernel/$driver"
 if [[ $phase == prepared ]]; then
  for cc in gcc clang; do
   for sanitize in 0 1; do
-   CC=$cc SANITIZE=$sanitize bash "$profile/tests/ssc-stream-owners.sh" "$work/post.c"
+   CC=$cc SANITIZE=$sanitize bash "$profile/tests/ssc-stream-owners.sh" "$work/post.c" "$kernel/include/linux/iio/types.h"
   done
  done
  # Run every original QMI/metadata/ACK assertion against the actual postimage.

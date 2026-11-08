@@ -8,8 +8,8 @@
 struct owner_test_iio_dev { void *private; bool direct, busy; };
 struct owner_test_iio_chan_spec { unsigned int address; };
 #define IIO_CHAN_INFO_RAW 0
-#define IIO_CHAN_INFO_SCALE 1
-#define IIO_VAL_INT_64 7
+#define IIO_CHAN_INFO_SCALE 2
+#define IIO_VAL_INT_64 6
 static unsigned int assertions;
 #define CHECK(expr) do { assertions++; assert(expr); } while (0)
 static void *iio_priv(struct iio_dev *iio) { return iio->private; }

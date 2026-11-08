@@ -5,7 +5,7 @@
   "parent_full_build": 11285130,
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11285557,
-  "source_check_release": 26,
+  "source_check_release": 27,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_endpoint_integration": true,
@@ -30,19 +30,19 @@
     },
     {
       "path": "tests/ssc-stream-owners-host.h",
-      "sha256": "494cc9ec1f766a3f0a26241ba1478dc6561d2e4ad9f7a2be0e01eef9a1e8d417"
+      "sha256": "068b6f61e48ce1ddb7708b0a6edb3173274f41134864850d1f3f20f6bc6db598"
     },
     {
       "path": "tests/ssc-stream-owners.c",
-      "sha256": "7ad645a0fdad0401b29e69a22572c694c694c4b0331d44d68408bc8902183dda"
+      "sha256": "39e502a6ac1633783afea90766872de5f4fab58e10e6d326125914e39aeeea59"
     },
     {
       "path": "tests/ssc-stream-owners.sh",
-      "sha256": "227d0506f9a7eb6d74d3dd191942a1ddd0190ced54d9a0105ab0a7d970531153"
+      "sha256": "d59f6b255116a17354a07695b6154196cf847a12f09901c0cd94b1d55a586ce6"
     },
     {
       "path": "packaging/native/check-ssc-stream-owners733.sh",
-      "sha256": "2d9840a1b31896699a9408d2133d038f6d996d1769053486f52aebad1f4b0ba3"
+      "sha256": "4bcec14542af032a98e317a5090dd496ef3b9dd0fada0ae2c7360691f0737986"
     },
     {
       "path": "packaging/native/copr-ssc-stream-owners733.sh",
@@ -50,15 +50,15 @@
     },
     {
       "path": "docs/SSC-SHARED-STREAM-OWNERS.md",
-      "sha256": "c74579f65170a9c85ae62d31536295e8d7695c9ef12cca6265f6caef76d22391"
+      "sha256": "53cf95b79a4813b3ddb1c32d466180d9e68cdb37959a3a7d587ed88ae57846c0"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "c20b3744b07dd3628a3e4b8b27099e58527059113da887f05dc1be4f4e61cc6a"
+      "sha256": "8f84f85e2d787d66b3dccb259de8d87acbd7b5af05fb6b5289971c9553a0cff2"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "6e425e6abc2cb38371d9ba98c696af930c07e4565a4532fe5c65866090931f0e"
+      "sha256": "1660a4f097fd246123a0166e443c803323ff27c236a15ca2f4c70251fc0dbe90"
     }
   ],
   "acceptance": {
@@ -72,6 +72,33 @@
     "original_sensor_proxy_event_path": false,
     "physical_cover_brightness_and_power": false,
     "provider_retirement": false,
-    "gain_ceiling": 223
+    "gain_ceiling": 223,
+    "pinned_iio_header_required": true,
+    "real_selector_result_and_scale_refusals_required": true,
+    "assertions_per_mode": 1235
+  },
+  "upstream_iio_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "path": "include/linux/iio/types.h",
+    "blob": "d8944c9e5e906ae663c36934c82489847047a082",
+    "license": "GPL-2.0-only; Jonathan Cameron",
+    "raw_selector": 0,
+    "processed_selector": 1,
+    "scale_selector": 2,
+    "int64_result": 6
+  },
+  "previous_source26": {
+    "source": "3f4e8c98e123e7120290f433ab75ed8408fc4b5c",
+    "copr_build": 11285615,
+    "source_check_release": 26,
+    "qualification_limit": "Original provider fixture uses SCALE1/INT64 result7 instead of actual2/6. Production driver compiles against real kernel headers; fixture selector/result ABI unqualified.",
+    "state": "failed",
+    "duration_seconds": 397,
+    "positive_assertions_observed": 1224,
+    "positive_modes_observed": 1,
+    "compiled_mutant_refusals_observed": 2,
+    "stage": "Third mutant generator emits invalid C because unescaped ampersands expand awk match text",
+    "correction": "Whole-line mutant emission, exact five-mutant text controls, pinned real IIO header and actual selector/result assertions"
   }
 }
