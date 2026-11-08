@@ -68,3 +68,12 @@ parity, DNF upgrade and rollback are qualified. Desktop lux-to-nit preferences,
 DDC transactions and external-output policy remain in standard userspace. No
 new daemon, RPM, KDE/GNOME fork, lux renaming or duplicated backlight LUT is added.
 The current external DDC/hub investigation remains deferred at the user request.
+
+Source29/COPR11286049 fails425s after421 GCC normal callback assertions and
+six compiled behavioral mutant refusals. The first C++ libfdt fixture rejects
+three implicit conversions from `const void *`. Add explicit pointer casts in
+the shared C/C++ helper without permissive flags or changed admission logic.
+Review also removes a redundant timestamp initializer cast: the pinned IIO
+header already supplies a typed compound literal (blob
+`711c00f67371356c913ef0dbf2325e3f4d35266d`). No four-mode, DT or ARM64 endpoint
+qualification follows from source29's partial result.

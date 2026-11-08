@@ -6,12 +6,12 @@
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11286027,
   "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
-  "source_check_release": 29,
+  "source_check_release": 30,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_complete_qualification": true,
   "driver_before_sha256": "eb85f8b56aac951d47208e9b0e7ace6c3a6a0da1ad93f61373b4a1d7e0abd0f6",
-  "driver_after_sha256": "3467a78b2939f4ab03f3b06e580b4d2836cdc69d95c55bd27e560c6793ae0226",
+  "driver_after_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
   "native_header_before_sha256": "98ef66222134bd061b185ccc4b38a5c271621057f13049ba49a2e017cdbf08f5",
   "native_header_after_sha256": "ef78116a822b38cc7a68226c44a3dac01c4ae0a6d88ebc2e7110b5e79da8d1fd",
   "binding_before_sha256": "6ac44534fd8510a2d7e58d0b8652110212f5163ee3ca06f18b7f06b1509876bc",
@@ -52,11 +52,11 @@
   "source_assets": [
     {
       "path": "src/boot/uke-dual-light.h",
-      "sha256": "4d9f4691cdf37d52f14ffff4d2544ea6e56ea4fd709f7adf641524592a04e1a5"
+      "sha256": "eba2a9ebf2fdbb0f2f375a77f1f2076fd6a5ee583f23bb511247e0d1a57d9cf7"
     },
     {
       "path": "src/sensors/0005-ssc-dual-light-endpoint.patch",
-      "sha256": "36f2a54ffd14b43f6bc5993d0795d794ef9aa356d9589dd19e73633bf95d6f0d"
+      "sha256": "ae611d4753f7179886e1c33ec04779fb4a5ebcd5d1a51096aea2c60f5463a494"
     },
     {
       "path": "src/sensors/0006-ssc-dual-light-native-dt.patch",
@@ -96,15 +96,15 @@
     },
     {
       "path": "docs/DUAL-LIGHT-ENDPOINT.md",
-      "sha256": "632ccd7cafd32c5e3cb961f8d886726dbac394b7ce0a84ca777e2295a7ddeb21"
+      "sha256": "82d6e4d5d3501a41f7e1cc0f785420345d1bb0a12f905fa0af5c86a920ec27a9"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "5e491a323c3d99b63df98aee272504c0b4eeb6633ab41cc6a44f93712756bac6"
+      "sha256": "f00e776b42875fb23a5d4c048f8308082aac4afdc0478df0ee874145809a89a7"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "f12e57114eb86aff000a0011d4b62bfb46fcd0433a8e1c7810496e53b4f3c57d"
+      "sha256": "83075514446e12cc8863655a2dc0bbbc222b4129df63e46351213db7a2d544a9"
     }
   ],
   "acceptance": {
@@ -120,6 +120,19 @@
     "original_proxy_event_and_64bit_light_parity": false,
     "physical_cover_light_power": false,
     "provider_retirement": false,
-    "gain_ceiling": 223
+    "gain_ceiling": 223,
+    "actual_callback_assertions_per_mode": 421,
+    "libfdt_checks_per_mode": 20
+  },
+  "previous_source29": {
+    "source": "d32556c38274587daab499b5c89bd7eee1cad86c",
+    "copr_build": 11286049,
+    "state": "failed",
+    "duration_seconds": 425,
+    "actual_gcc_normal_assertions": 421,
+    "compiled_mutant_refusals": 6,
+    "stage": "First C++ DT fixture rejects three implicit const-void pointer conversions",
+    "qualified_scope": "Only one callback mode and six mutants; no DT/four-mode/ARM64 endpoint admission",
+    "correction": "Explicit C/C++ compatible pointer casts, unchanged admission logic/warnings; redundant already-typed timestamp initializer cast removed after pinned IIO header review"
   }
 }

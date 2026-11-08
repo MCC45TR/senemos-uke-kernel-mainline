@@ -625,7 +625,7 @@ for lifecycle changes without a new polling task.
 +		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) | BIT(IIO_CHAN_INFO_SCALE),
 +		.scan_type = { .sign = 's', .realbits = 64, .storagebits = 64, .endianness = IIO_CPU },
 +	};
-+	d->channel[1] = (struct iio_chan_spec)IIO_CHAN_SOFT_TIMESTAMP(1);
++	d->channel[1] = IIO_CHAN_SOFT_TIMESTAMP(1);
 +	iio->name = "uke-ssc-dual-light";
 +	iio->info = &ssc_dual_info;
 +	iio->modes = INDIO_DIRECT_MODE;

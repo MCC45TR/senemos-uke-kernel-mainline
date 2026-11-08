@@ -25,7 +25,7 @@ static int UKE_INIT uke_dual_light_lid(void *fdt)
 		node = fdt_path_offset(fdt, paths[i]);
 		if (node < 0)
 			return -FDT_ERR_BADVALUE;
-		type = fdt_getprop(fdt, node, "qcom,ssc-datatype", &bytes);
+		type = (const char *)fdt_getprop(fdt, node, "qcom,ssc-datatype", &bytes);
 		if (!type || bytes != (int)strlen(datatypes[i]) + 1 ||
 		    strcmp(type, datatypes[i]))
 			return -FDT_ERR_BADVALUE;
@@ -33,12 +33,12 @@ static int UKE_INIT uke_dual_light_lid(void *fdt)
 	lid = fdt_path_offset(fdt, "/hall-lid");
 	if (lid < 0 || fdt_node_check_compatible(fdt, lid, "qcom,smp2p-switch"))
 		return -FDT_ERR_BADVALUE;
-	code = fdt_getprop(fdt, lid, "linux,code", &bytes);
+	code = (const fdt32_t *)fdt_getprop(fdt, lid, "linux,code", &bytes);
 	if (!code || bytes != (int)sizeof(*code) || fdt32_to_cpu(*code) != 0)
 		return -FDT_ERR_BADVALUE;
 	phandle = fdt_get_phandle(fdt, lid);
 	node = fdt_path_offset(fdt, "/firmware/ssc-sensors");
-	old = fdt_getprop(fdt, node, "lid-switch", &bytes);
+	old = (const fdt32_t *)fdt_getprop(fdt, node, "lid-switch", &bytes);
 	if (old && (bytes != (int)sizeof(*old) || !phandle ||
 		    fdt32_to_cpu(*old) != phandle))
 		return -FDT_ERR_BADVALUE;
