@@ -3,7 +3,7 @@
   "package": "senemos-uke-linux-kernel-mainline-unstable",
   "channel": "uke-linux-unstable",
   "full_release": 6,
-  "source_check_release": 34,
+  "source_check_release": 35,
   "upstream": {
     "version": "7.3.3",
     "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",

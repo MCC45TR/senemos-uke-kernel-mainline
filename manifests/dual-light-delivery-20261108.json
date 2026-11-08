@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Cumulative native dual-light full delivery source rehearsal, exact source inverse and actual linked-module gates; physical acceptance separate",
+  "parent_full_build": 11285130,
+  "parent_endpoint_source_build": 11286229,
+  "parent_endpoint_source": "27e4ae45d30a9e27f9754846ae9396d760091712",
+  "full5_spec_sha256": "62812a75886d65fb24d7a33fcecbc717d5616fbd733fa6cbe99a03db107547c9",
+  "payload_assets": [
+    "src/sensors/apply-dual-light733.sh",
+    "packaging/native/dual-light-legacy-view733.sh",
+    "packaging/native/rewrite-dual-light-full-spec733.sh",
+    "packaging/native/check-dual-light-delivery733.sh",
+    "packaging/native/copr-dual-light-delivery733.sh",
+    "tests/dual-light-delivery-spec.sh",
+    "tests/dual-light-delivery-source.sh",
+    "docs/DUAL-LIGHT-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/apply-dual-light733.sh",
+      "sha256": "a2705d08254e476fb75cc9bca443d7ce223d67053130c72e9900802d5436a9ac"
+    },
+    {
+      "path": "packaging/native/dual-light-legacy-view733.sh",
+      "sha256": "70ccc31508ee6f75da2114da05e4200ce25293dd0c4a5540992b45026f631ee2"
+    },
+    {
+      "path": "packaging/native/rewrite-dual-light-full-spec733.sh",
+      "sha256": "c8869278cbaa9058b582562c3bc2f2ce6e4badd1fb6f5c9adeecb1fe7f98d1d5"
+    },
+    {
+      "path": "packaging/native/check-dual-light-delivery733.sh",
+      "sha256": "6a86774e28e55a9cceb7f83cda5536b34005fac6bdaa12375545243593808416"
+    },
+    {
+      "path": "packaging/native/copr-dual-light-delivery733.sh",
+      "sha256": "1bdbe37ac15f9c8014375e17ff00e9d10df8065c03adf29189136ccf013b3d5d"
+    },
+    {
+      "path": "tests/dual-light-delivery-spec.sh",
+      "sha256": "37c294a1b3df71e8d811d057b6de670141b157672ef64ff69e797494171196e8"
+    },
+    {
+      "path": "tests/dual-light-delivery-source.sh",
+      "sha256": "f0762c0853dbb1c7f5c7a7afa03d698a7acbc758236171819290ad9d9435a25c"
+    },
+    {
+      "path": "docs/DUAL-LIGHT-DELIVERY.md",
+      "sha256": "59180b2df6c8ba6f1be7b1496cc5c36c281411d112810de6c74e358883a36b03"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "6d809267b8a9d9cfbd2f1f0ad4c596e045b143ad1c8a7efb3b9985d29c8ad6b1"
+    },
+    {
+      "path": "manifests/dual-light-events-20261108.json",
+      "sha256": "d8f3771bcb8131f8dd1f441231cc5c310ae106af04a281e00d8284fbc6afaed2"
+    },
+    {
+      "path": "manifests/ssc-stream-owners-20261108.json",
+      "sha256": "3e3b92c6b999712e5d1bdb05c69b141b86b805b225f523a74225078fec9d1c73"
+    },
+    {
+      "path": "manifests/dual-light-endpoint-20261108.json",
+      "sha256": "b42de3de3cd5adcd18d83414014ba38fcc937ac980d34a85b2b3d307efb0b894"
+    },
+    {
+      "path": "manifests/hall-initial-cumulative-20261107.json",
+      "sha256": "20afff3ca6727e0cbeb0f3d4767336ebbe99f88c5580ab30548fb52aaf0bbb03"
+    }
+  ],
+  "acceptance": {
+    "production_helper_source_rehearsal_required": true,
+    "whole_source_inverse_required": true,
+    "both_archive_assets_required": true,
+    "actual_arm64_postimage_required": true,
+    "signed_linked_module_required_for_full": true,
+    "physical_cover_light_power_accepted": false,
+    "original_sensor_proxy_parity": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223
+  }
+}
