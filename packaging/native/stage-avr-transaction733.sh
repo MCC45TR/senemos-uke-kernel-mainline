@@ -37,6 +37,7 @@ awk -v mode="$mode" '
  mode=="check" && $0=="%install" {
   print "bash native-profile/src/display/apply-avr-transaction733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-avr-transaction733.sh \"$PWD\" %{_uke_out} source"
+  print "bash native-profile/tests/kernel-release-advance.sh native-profile"
   print "for compiler in gcc clang; do"
   print " for sanitize in 0 1; do"
   print "  CC=$compiler SANITIZE=$sanitize bash native-profile/tests/o82-avr-transaction.sh \"$PWD\""

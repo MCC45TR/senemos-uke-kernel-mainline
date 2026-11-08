@@ -53,23 +53,23 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "332c09cd6f97279a2d529bbdf9495363e197ed5d42b9bd90a2b0cb276f8e1046"
+      "sha256": "ca776fae5230c691ad889645be3f2dc2155ed32063288725cbb8f62c8dbf74e2"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "f561b9f3bdf5eae0d7fe7a7b4c9427fb1a52c09645d001f52a243e35c1501f0c"
+      "sha256": "6993e880b263d2bae4f824528e930ba828651781be2a5e0d31d54485cf77bd73"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "2644a24f35885f8955481af37663534099a5deb4e8ec34eef39bee576d2f0ead"
+      "sha256": "d30a8d5592eefff0d7c88b3aebbe8240f41ee556dc0e5772824c31e8e8594b8e"
     },
     {
       "path": "manifests/dual-light-endpoint-20261108.json",
-      "sha256": "de75b0ff9f371a88a0c809770ae44acb8c04d6f5d8ec4fc646f9107db3e5efd1"
+      "sha256": "a648250281afc7ce17bfcab21355cce6fe309d20db09a23fc2a9ed122f5f64d6"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "4a1f2db4ffcc75a271cf96ca28756ed79a97b45518d399c684ad6ba573b90f3c"
+      "sha256": "6846a4892bd24fdef64a4dc2fe27ae58cf99921695d0b5e8e5d9a7827d0981fe"
     },
     {
       "path": "packaging/native/dual-light-parent-checker733.sh",

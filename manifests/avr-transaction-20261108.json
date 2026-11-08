@@ -15,12 +15,15 @@
     "tests/o82-avr-transaction.sh",
     "packaging/native/check-avr-transaction733.sh",
     "packaging/native/stage-avr-transaction733.sh",
-    "docs/O82-AVR-TRANSACTION.md"
+    "docs/O82-AVR-TRANSACTION.md",
+    "scripts/kernel-release.sh",
+    "scripts/advance-kernel-release.sh",
+    "tests/kernel-release-advance.sh"
   ],
   "source_assets": [
     {
       "path": "src/display/0075-o82-avr-retime-rollback.patch",
-      "sha256": "fd6a2c3805969ab0ebb24429db205f12d04b5bb6e07c6368403745a979146f33"
+      "sha256": "007d0aa8dab646f51b8d7d09849a77b113b6a4be10d9c9e0fa578e6031a9881b"
     },
     {
       "path": "src/display/apply-avr-transaction733.sh",
@@ -40,11 +43,23 @@
     },
     {
       "path": "packaging/native/stage-avr-transaction733.sh",
-      "sha256": "6c1e4428a8e919afa17ede7ef4efafd07822cf86334a81c3888fdce1150bcab7"
+      "sha256": "6c448378f560e31275472fb22f9aaefe09cc561f56f1c0c380006ec54fe48bf0"
     },
     {
       "path": "docs/O82-AVR-TRANSACTION.md",
-      "sha256": "d258ea95242f28b5524d92a2fe3cc679229bc1378477b3135aaa3e1d97501fba"
+      "sha256": "1ad581fc629c32302e11eba951e45a1ae8217572e0c472e9d568e2cf2e59a900"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "scripts/advance-kernel-release.sh",
+      "sha256": "d5b5a946f68ffc13b493fdf2f792e9c1735a54e5b12bc4a3b034ca362dda8904"
+    },
+    {
+      "path": "tests/kernel-release-advance.sh",
+      "sha256": "b546e0c399b8b027bbfad080c4f492df288dd2a3ddbaa6742be45b5a81516664"
     }
   ],
   "donors": [
@@ -59,5 +74,6 @@
       "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
       "scope": "Existing Linux7.3.3 MMIO and encoder locking interfaces; no donor execution"
     }
-  ]
+  ],
+  "version_plan_automatic_nested_seals": true
 }

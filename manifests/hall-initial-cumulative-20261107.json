@@ -107,27 +107,27 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "332c09cd6f97279a2d529bbdf9495363e197ed5d42b9bd90a2b0cb276f8e1046"
+      "sha256": "ca776fae5230c691ad889645be3f2dc2155ed32063288725cbb8f62c8dbf74e2"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "7e161877c1c8ab4440f75dcd7a6719c51a609e2a7f8fb8ee606738583df0bebe"
+      "sha256": "1a4c3580c297e0bbb73a71ecc7348cf374c77fa04e0557d50c825d1d70b3f966"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "7c620f2d0d8ccac7cf8887f96bf631402d1c172e12d306411cae06bb848f86fe"
+      "sha256": "b27bcf992101cca8cf9c48cc02e37a17aea1d57b9252b92cf338435934000505"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "ed76e7465c57557f497051c4805fbb36ace8ca18e78cb67b9c9849b367cfa402"
+      "sha256": "7a04575ed9a94ea4aa59d0c910ce2d450f9cc8caaf3f1b70b303f7e163cb4b6c"
     },
     {
       "path": "manifests/speaker-enable-control-cumulative-20261107.json",
-      "sha256": "322acde60c9d297a3f104f3254f78560b67d4c915350410e236954a835412a7c"
+      "sha256": "e9f95290bebbb2f44674b626cf430b9066f9875a164e857bbd149e4a8010b783"
     },
     {
       "path": "manifests/memory-compression-cumulative-20261107.json",
-      "sha256": "259917fd0a367af52baa79a3e96ac82f38feb7c0a4ede307f3c74f9ce127ed1e"
+      "sha256": "7ee64d81fe700914ff709e0f01d45503550eb11a9b2be61608aa5c05ab744d30"
     }
   ],
   "measured_lead": {

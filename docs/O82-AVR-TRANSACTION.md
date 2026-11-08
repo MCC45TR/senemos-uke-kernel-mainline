@@ -49,3 +49,20 @@ and failed restoration. Three compiled behavioral mutants must be refused.
 Real ARM64 encoder/INTF objects and the final MSM module are checked separately.
 The original source suites run before this late patch and remain tied to the
 same cumulative source receipt. These checks are not physical VRR acceptance.
+
+Source40/COPR11287493 fails606s before the new callback tests: three sparse
+patch hunks are anchored to fragment boundaries rather than their real source
+context. The encoder hunk and retained source/native gates pass. The corrected
+patch uses the original INTF/header surroundings; a text-only apply/inverse
+fixture places those exact source fragments away from file boundaries. Actual
+cumulative application and ARM64 callback qualification remain required.
+
+`scripts/advance-kernel-release.sh COMPLETE_HISTORY PLAN` computes both counters
+with the existing publication rules and updates the plan's dependent manifest
+hashes before writing source files. It preserves unrelated feature fields and
+refuses an unreviewed hash, malformed manifest or nonconsecutive published
+history. Metadata-only fixtures cover nested hashes, idempotence and refusal
+without mutation. Failed full7 remains7; the published internal check40 source
+uses the next unique proof41. This helper does not submit a build, write a boot
+slot or turn an incomplete history into admission. Its caller owns the single
+delivery lock and supplies complete current history before source publication.
