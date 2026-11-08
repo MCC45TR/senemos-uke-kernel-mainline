@@ -6,7 +6,20 @@ umask 077
 profile=$(realpath "${1:?Source profile}")
 schema=$(realpath "${2:?Patched xiaomi,uke-ssc-sensors schema}")
 work=$(mktemp -d)
-trap 'find "$work" -depth -delete' EXIT
+cleanup() {
+  result=$?
+  if ((result)); then
+    while IFS= read -r -d '' log; do
+      if test -s "$log"; then
+        printf 'Dual-light schema diagnostic: %s\n' "${log#"$work"/}" >&2
+        sed -n '1,120p' "$log" >&2
+      fi
+    done < <(find "$work" -type f -name '*.log' -print0)
+  fi
+  find "$work" -depth -delete
+  exit "$result"
+}
+trap cleanup EXIT
 [[ $(rpm -q --qf '%{VERSION}-%{RELEASE}' dt-schema) == 2026.09-1.fc46 ]]
 dt-doc-validate "$schema" > "$work/schema.log" 2>&1
 test ! -s "$work/schema.log"

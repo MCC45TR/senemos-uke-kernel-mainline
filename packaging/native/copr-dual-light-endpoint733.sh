@@ -24,9 +24,10 @@ jq '.+{dual_light_endpoint_layer:1,dual_light_endpoint_standard_iio:true,dual_li
 install -m644 "$work/composition.json" "$profile/source-composition.json"
 spec=$output/uke-kernel-migration-check.spec
 awk '
- $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} prepared" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} prepared";print "bash native-profile/packaging/native/check-dual-light-binding733.sh \"$PWD\" prepared";p++;next}
+ $0=="%build" {print;print "bash native-profile/packaging/native/check-dual-light-binding733.sh \"$PWD\" prepared";b++;next}
+ $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} prepared" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} prepared";p++;next}
  $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} objects" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} objects";print "bash native-profile/packaging/native/check-dual-light-binding733.sh \"$PWD\" objects";o++;next}
- {print}END{if(p!=1||o!=1)exit 1}
+ {print}END{if(p!=1||o!=1||b!=1)exit 1}
 ' "$spec" > "$work/updated.spec"
 install -m644 "$work/updated.spec" "$spec"
 sha256sum -c --strict --quiet "$work/legacy.sha256"

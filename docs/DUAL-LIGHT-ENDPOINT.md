@@ -106,3 +106,12 @@ property/child/matrix controls. Compare the final patched schema and compiled
 producer headers to that qualified input. These are synthetic source checks,
 not a physical board dtbs_check or original SensorProxy acceptance. No Python,
 new daemon or validation tool is installed on the tablet.
+
+Source32/COPR11286205 fails489s after the endpoint/QMI suites and the first
+real-producer synthetic FDT emission. The schema step redirects its diagnostics
+to a temporary file that its cleanup removes. No schema failure cause, complete
+binding result or source32 ARM64 admission can be inferred from that log.
+Keep failure diagnostics on stdout/stderr and run the bounded binding suite
+first in the native build, retaining every later cumulative source/object gate.
+This exposes the actual error without relaxing validation or altering hardware
+sources. Full kernel delivery and gain243 remain separate and unqualified.

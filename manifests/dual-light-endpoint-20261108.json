@@ -6,7 +6,7 @@
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11286027,
   "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
-  "source_check_release": 32,
+  "source_check_release": 33,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_complete_qualification": true,
@@ -95,19 +95,19 @@
     },
     {
       "path": "packaging/native/copr-dual-light-endpoint733.sh",
-      "sha256": "76054fd92d3c10549e3bd478b844d1548d12251deb1d7efcc6ca45336db1ad64"
+      "sha256": "01dec8cb33f80981ee34cdf28fa48f035f402bdeee17071200638898d928e6c5"
     },
     {
       "path": "docs/DUAL-LIGHT-ENDPOINT.md",
-      "sha256": "543c35f813a84daf8465fb1d0fbd10229d77b42fd5a10326659a6d7f1abb9baa"
+      "sha256": "6a3b92a9ff895067b7ea48adfdf7d06ecd2278c110d7e5eec63de8bb948794a5"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "a5d2ac1d62bb2179b5424c7a5f851d363138f5ce1fed734a55f9b4ad8bb50df3"
+      "sha256": "3d91f6c6aeddfa00df15fc09ebe5686c821a81e02e598d9db185b0b76aa26ca7"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "b8b8f37d5fcf8923729d4848d82d0e7ca8693c0e5e6900cfdc8ae3c835e61492"
+      "sha256": "b65843f53d8bcd4131fea11af1f47c5089cd3a1dd4314f207b6958e3256f435c"
     },
     {
       "path": "tests/ssc-dual-light-schema.cpp",
@@ -115,7 +115,7 @@
     },
     {
       "path": "tests/ssc-dual-light-schema.sh",
-      "sha256": "ed50ed6e40c58009b9188bf7f948bf0f0aecb3db7ed130f678796e3abe8bd437"
+      "sha256": "659eca361815d414f0cc21ac045e968483bc25dd8c9de1988ef69f5d0a250b77"
     },
     {
       "path": "packaging/native/check-dual-light-binding733.sh",
@@ -200,5 +200,22 @@
     "complete_native_admission": false,
     "receipt_admitted": false,
     "final_native_log_sha256": "8496ac7a5e74e4d1123c372d79a9bcf9037ff8536cb5c4fb5b5249930ada7286"
+  },
+  "previous_source32": {
+    "source": "d1ddc4b77858989cee6e32f9ca5d2cd38ce5799d",
+    "copr_build": 11286205,
+    "state": "failed",
+    "duration_seconds": 489,
+    "callback_modes": 4,
+    "callback_assertions_per_mode": 421,
+    "dt_modes": 4,
+    "dt_checks_per_mode": 20,
+    "original_postimage_qmi_assertions_passed": true,
+    "actual_schema_cxx_emitter_ran_once": true,
+    "schema_failure_diagnostics_not_preserved": true,
+    "schema_root_cause": "unknown; validation/diagnostic/permission step not yet isolated",
+    "complete_binding_qualified": false,
+    "actual_source32_arm64_gate_not_reached": true,
+    "final_native_log_sha256": "f18ec269202f2574c51310d90cafdba9162c99225309ac80630941dafa1a2ee8"
   }
 }
