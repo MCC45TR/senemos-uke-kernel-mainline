@@ -24,24 +24,35 @@ done
 awk -v mode="$mode" '
  mode=="check" && $0=="%build" {print;print "bash native-profile/tests/speaker-quad-route.sh";early++;next}
  mode=="check" && $0=="%install" {
+  print "bash native-profile/src/health/apply-rproc-event733.sh \"$PWD\""
+  print "bash native-profile/tests/rproc-crash-event.sh \"$PWD\""
+  print "bash native-profile/packaging/native/check-rproc-event733.sh \"$PWD\" %{_uke_out} source"
+  print "make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_release}-unstable -j4 drivers/remoteproc/remoteproc_core.o"
+  print "bash native-profile/packaging/native/check-rproc-event733.sh \"$PWD\" %{_uke_out} objects"
   print "bash native-profile/src/audio/apply-speaker-quad733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} source"
   print "make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_release}-unstable -j4 sound/soc/qcom/qdsp6/q6apm-lpass-dais.o sound/soc/qcom/uke-audio-card.o"
   print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} objects";apply++
  }
  mode=="full" && /^bash native-profile\/packaging\/native\/check-avr-transaction733.sh .* source$/ {
-  print;print "bash native-profile/src/audio/apply-speaker-quad733.sh \"$PWD\""
+  print;print "bash native-profile/src/health/apply-rproc-event733.sh \"$PWD\""
+  print "bash native-profile/packaging/native/check-rproc-event733.sh \"$PWD\" %{_uke_out} source"
+  print "bash native-profile/src/audio/apply-speaker-quad733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} source";apply++;next
  }
  mode=="full" && /^bash native-profile\/packaging\/native\/check-avr-transaction733.sh .* linked$/ {
-  print;print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} linked";linked++;next
+  print;print "bash native-profile/packaging/native/check-rproc-event733.sh \"$PWD\" %{_uke_out} linked"
+  print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} linked";linked++;next
  }
+ mode=="full" && $0=="%description" {print "Requires: uke-control(critical-rollback-v1) >= 1";dependency++}
  {print}
- END{if(apply!=1||early!=(mode=="check"?1:0)||linked!=(mode=="full"?1:0))exit 1}
+ END{if(dependency!=(mode=="full"?1:0)||apply!=1||early!=(mode=="check"?1:0)||linked!=(mode=="full"?1:0))exit 1}
 ' "$spec" > "$work/spec"
 install -m644 "$work/spec" "$spec"
 jq --arg mode "$mode" '.+{
  speaker_quad_layer:1,speaker_quad_mfc_only:true,
+ remoteproc_crash_event_layer:1,remoteproc_crash_event_process_context:true,
+ remoteproc_crash_recovery_policy_unchanged:true,critical_rollback_control_required:true,
  speaker_quad_coefficient_api:1,speaker_quad_no_output_format_change:true,
  speaker_quad_default_prepare_extra_dsp_commands:0,
  speaker_quad_physical_protection_map_unchanged:true,

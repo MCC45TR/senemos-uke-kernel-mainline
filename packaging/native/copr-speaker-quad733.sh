@@ -24,7 +24,7 @@ if [[ $mode == full ]];then
  curl -qfsSL --max-time 90 "$proof_url" -o "$work/proof.rpm"
  printf '%s  %s\n' "$5" "$work/proof.rpm" | sha256sum -c --strict --quiet -
  rpm2cpio "$work/proof.rpm" | cpio -i --to-stdout --quiet '*source-composition.json' > "$work/proof.json"
- jq -e '.speaker_quad_coefficient_api==1 and .speaker_quad_no_output_format_change and .speaker_quad_default_prepare_extra_dsp_commands==0 and .speaker_quad_layer==1 and .speaker_quad_mfc_only and .speaker_quad_physical_protection_map_unchanged and .speaker_quad_graph_lifetime_mutex and .speaker_quad_rollback_fault and (.speaker_quad_native_admitted|not) and (.speaker_quad_new_daemon|not) and (.speaker_quad_live_firmware_accepted|not) and (.speaker_quad_physical_accepted|not)' "$work/proof.json" >/dev/null
+ jq -e '.remoteproc_crash_event_layer==1 and .remoteproc_crash_event_process_context and .critical_rollback_control_required and .speaker_quad_coefficient_api==1 and .speaker_quad_no_output_format_change and .speaker_quad_default_prepare_extra_dsp_commands==0 and .speaker_quad_layer==1 and .speaker_quad_mfc_only and .speaker_quad_physical_protection_map_unchanged and .speaker_quad_graph_lifetime_mutex and .speaker_quad_rollback_fault and (.speaker_quad_native_admitted|not) and (.speaker_quad_new_daemon|not) and (.speaker_quad_live_firmware_accepted|not) and (.speaker_quad_physical_accepted|not)' "$work/proof.json" >/dev/null
 fi
 native=senemos-native-profile-$version.tar.xz
 tar -xJf "$output/$native" -C "$work"

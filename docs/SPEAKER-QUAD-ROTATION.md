@@ -96,3 +96,22 @@ row/column unit gain, rejected short buffers, allocation errors and DSP failures
 The LPASS fixture additionally rejects an extra DSP command at canonical prepare.
 Real ARM64 objects, complete source proof, full9 and device qualification remain
 pending. Do not replay the rejected full8 to manufacture a reproduction.
+
+
+## Native crash events and minimum recovery interface
+
+The incident also includes a late ADSP crash at136s, outside the initial health
+window, and a GPU hang in the first boot. Source47 adds a generic remoteproc
+crash-state notification from the existing process-context worker, after unlock
+and before optional recovery. The IRQ entry, duplicate/offline/deleting guards,
+crash count and recovery-disabled policy are retained. Notifications contain no
+private firmware data. No polling or recovery policy is added to the kernel.
+
+The existing Control acceptance unit consumes remoteproc/coredump events.
+Full9 requires uke-control(critical-rollback-v1), preventing a kernel-only update
+from silently retaining the previous permissive implementation. The new Control
+candidate and this event path still require native and device qualification.
+The crash worker fixture extracts the actual cumulative C function and checks
+its lifecycle, lock ordering, notification failure and unchanged recovery rules.
+USB/MST and GPU causes remain separate investigations; no general stability or
+physical rollback result is inferred from these source tests.

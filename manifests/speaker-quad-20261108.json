@@ -26,7 +26,12 @@
     "packaging/native/copr-speaker-quad733.sh",
     "tests/speaker-quad-card.c",
     "src/audio/uke-speaker-quad-wire.h",
-    "tests/speaker-quad-wire.c"
+    "tests/speaker-quad-wire.c",
+    "src/health/rproc-crash-event.patch",
+    "src/health/apply-rproc-event733.sh",
+    "packaging/native/check-rproc-event733.sh",
+    "tests/rproc-crash-event.c",
+    "tests/rproc-crash-event.sh"
   ],
   "source_assets": [
     {
@@ -59,11 +64,11 @@
     },
     {
       "path": "packaging/native/stage-speaker-quad733.sh",
-      "sha256": "916b5c2ece846e7585e1a2ae2273d7dd9f1d425ca4d6dbd58802e9e496b9fd3e"
+      "sha256": "f4b265a16da0c58107c88e506e25b8f20d0fb87d8f5c743599f8850c80f10069"
     },
     {
       "path": "docs/SPEAKER-QUAD-ROTATION.md",
-      "sha256": "3006488ff5f65339709bef68ef055ba164c47020df81955477f7c489ec0cf1ef"
+      "sha256": "9f1b337af4025c03332d607f055b6920a1f271f0da544dc154b8e00ca5b740c3"
     },
     {
       "path": "tests/speaker-quad-lpass.c",
@@ -71,7 +76,7 @@
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
-      "sha256": "9ac43ee7ce53951c1d7c31cbffa74964770105ffe33c20f0039bc24bf58a079b"
+      "sha256": "4bd9b9385f82ad2c826679d890d7d34c3e734a1633b0d9c88800e9e33c2441e3"
     },
     {
       "path": "tests/speaker-quad-card.c",
@@ -84,6 +89,26 @@
     {
       "path": "tests/speaker-quad-wire.c",
       "sha256": "14872d6bb9a41b9ab9f61eac2ece5e24c508c65082862121fc0cbd255e270ed5"
+    },
+    {
+      "path": "src/health/rproc-crash-event.patch",
+      "sha256": "ea5d1accc0c38b9c962c4537aaa97a996d1d42b429b777d49d63f447e17aa0a4"
+    },
+    {
+      "path": "src/health/apply-rproc-event733.sh",
+      "sha256": "7a4e622d1a2b7f782d5446cfbf4c8c7291965886cb65af9d4b521398fbf0cc7e"
+    },
+    {
+      "path": "packaging/native/check-rproc-event733.sh",
+      "sha256": "d49fbce6cc8a569c6ddce4b7d599919f5d7b918ce19c0714f005f4d758d8757c"
+    },
+    {
+      "path": "tests/rproc-crash-event.c",
+      "sha256": "afa9470a365ae89875f5761c645179e3a74636432ef4bd01fb982c852089eb40"
+    },
+    {
+      "path": "tests/rproc-crash-event.sh",
+      "sha256": "eb83ee13af12538a329d8fe04bafe0a987f151743938ee358b15bdd308b097f8"
     }
   ],
   "donors": [
@@ -120,6 +145,11 @@
       ],
       "license": "BSD-3-Clause",
       "scope": "MFC coefficient-table ABI, Q14 unity matrices and canonical input/output identities; Uke binary firmware acceptance remains unverified"
+    },
+    {
+      "repository": "systemd/systemd",
+      "commit": "8cc40e0c5e9234bf45084751ac53b1fbfe70b492",
+      "scope": "Public sd-device/sd-event interfaces used by the existing Control acceptance unit; no distribution fork"
     }
   ],
   "actual_lpass_adapter_fixture_prepared": true,
@@ -155,5 +185,7 @@
     "battery_telemetry_epipe_observed": true,
     "physical_quad_accepted": false,
     "previous_source": "9e1a01fec4cf16a07653cbf5c16e8b7dfb8e51af"
-  }
+  },
+  "remoteproc_crash_event_prepared": true,
+  "critical_rollback_control_required": true
 }
