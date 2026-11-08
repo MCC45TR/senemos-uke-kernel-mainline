@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Included after the original LPASS callbacks, before q6tdm_ops. */
 #include "uke-speaker-quad.h"
-#include "uke-speaker-quad-wire.h"
+#include "uke-speaker-quad-transport.h"
 #include "uke-fs19xx-runtime.h"
 #include <sound/uke-fs19xx-guard.h>
 
@@ -52,7 +52,7 @@ static int uke_quad_mfc_apply(void *context, const unsigned int *map)
 	}
 	if (!mfc)
 		return -ENODEV;
-	return uke_quad_send_matrix(graph, mfc, map);
+	return audioreach_uke_quad_matrix(graph, mfc, map);
 }
 
 static void uke_quad_mfc_fault(void *context)

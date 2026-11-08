@@ -38,25 +38,30 @@ awk '
  END{if(field!=1||header!=1)exit 1}
 ' "$kernel/sound/soc/qcom/uke-audio-card.c" > "$work/card-before.c"
 cmp "$work/card-before.c" "$saved/sound/soc/qcom/uke-audio-card.c"
-for name in uke-speaker-quad.h uke-speaker-quad-lpass.h uke-speaker-quad-wire.h;do cmp "$core/$name" "$kernel/native-profile/src/audio/$name";done
+cmp <(cat "$saved/sound/soc/qcom/qdsp6/audioreach.c";printf '\n#include "uke-speaker-quad-apm.h"\n') "$core/audioreach.c"
+for name in uke-speaker-quad.h uke-speaker-quad-lpass.h uke-speaker-quad-wire.h uke-speaker-quad-apm.h uke-speaker-quad-transport.h;do cmp "$core/$name" "$kernel/native-profile/src/audio/$name";done
+grep -Fx 'EXPORT_SYMBOL_GPL(audioreach_uke_quad_matrix);' "$core/uke-speaker-quad-apm.h"
 for name in uke-speaker-quad.h uke-speaker-quad-control.h;do cmp "$kernel/sound/soc/qcom/$name" "$kernel/native-profile/src/audio/$name";done
 [[ $phase != source ]] || { printf 'Actual quad source and complete inherited-file inverse passed; no native or physical acceptance.\n';exit 0; }
-for name in sound/soc/qcom/qdsp6/q6apm-lpass-dais sound/soc/qcom/uke-audio-card;do
+for name in sound/soc/qcom/qdsp6/q6apm-lpass-dais sound/soc/qcom/qdsp6/snd-q6apm sound/soc/qcom/uke-audio-card;do
  llvm-readelf -h "$out/$name.o" | grep -F AArch64
  llvm-nm "$out/$name.o" > "$work/${name##*/}.symbols"
 done
 for symbol in uke_quad_get_map uke_quad_set_map uke_quad_prepare uke_quad_shutdown;do
  grep -Eq " [Tt] $symbol$" "$work/q6apm-lpass-dais.symbols"
 done
-for symbol in q6apm_fs19xx_graph q6apm_fs19xx_fault audioreach_alloc_apm_cmd_pkt q6apm_send_cmd_sync;do
+for symbol in q6apm_fs19xx_graph q6apm_fs19xx_fault audioreach_uke_quad_matrix;do
  grep -Eq " U $symbol$" "$work/q6apm-lpass-dais.symbols"
 done
 ! grep -Eq ' U audioreach_set_media_format$' "$work/q6apm-lpass-dais.symbols"
+! grep -Eq ' U (q6apm_send_cmd_sync|audioreach_alloc_apm_cmd_pkt)$' "$work/q6apm-lpass-dais.symbols"
+grep -Eq ' T audioreach_uke_quad_matrix$' "$work/snd-q6apm.symbols"
+! grep -Eq ' U (q6apm_send_cmd_sync|audioreach_uke_quad_matrix)$' "$work/snd-q6apm.symbols"
 for symbol in snd_soc_dai_get_channel_map snd_soc_dai_set_channel_map q6apm_fs19xx_fault;do
  grep -Eq " U $symbol$" "$work/uke-audio-card.symbols"
 done
 if [[ $phase == linked ]];then
- for name in sound/soc/qcom/qdsp6/q6apm-lpass-dais sound/soc/qcom/uke-audio-card;do
+ for name in sound/soc/qcom/qdsp6/q6apm-lpass-dais sound/soc/qcom/qdsp6/snd-q6apm sound/soc/qcom/uke-audio-card;do
   llvm-readelf -h "$out/$name.ko" | grep -F AArch64
  done
 fi

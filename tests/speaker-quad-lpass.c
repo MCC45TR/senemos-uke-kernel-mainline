@@ -53,8 +53,8 @@ static void require_locked(struct snd_soc_dai *dai) {
 		assert(pthread_mutex_trylock(&d->uke_quad_lock.value)==EBUSY);
 	}
 }
-#define UKE_SPEAKER_QUAD_WIRE_H
-static int uke_quad_send_matrix(struct q6apm_graph *graph,
+#define UKE_SPEAKER_QUAD_TRANSPORT_H
+static int audioreach_uke_quad_matrix(struct q6apm_graph *graph,
 		const struct audioreach_module *module,const unsigned int *map) {
 	const u8 ids[]={1,2,5,6};
 	assert(graph==available_graph && module->module_id==MODULE_ID_MFC && module->instance_id==0x442e);

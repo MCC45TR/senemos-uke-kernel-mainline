@@ -31,8 +31,8 @@ static void kfree(void *p) { assert(p && !IS_ERR(p));free(p);frees++; }
 static int q6apm_send_cmd_sync(struct q6apm *apm,const struct gpr_pkt *pkt,int flags) {
  assert(apm && !flags);memcpy(sent,(const unsigned char *)pkt+40,sizeof(sent));sends++;return response;
 }
-#include "../src/audio/uke-speaker-quad.h"
-#include "../src/audio/uke-speaker-quad-wire.h"
+#define EXPORT_SYMBOL_GPL(symbol)
+#include "../src/audio/uke-speaker-quad-apm.h"
 static unsigned int le16(const unsigned char *b) { return b[0]|b[1]<<8; }
 static unsigned int le32(const unsigned char *b) { return le16(b)|le16(b+2)<<16; }
 int main(void) {
@@ -40,7 +40,7 @@ int main(void) {
  struct audioreach_module module={MODULE_ID_MFC,0x442e};
  const unsigned int ids[4]={1,2,5,6};unsigned int cases=0;
  for(unsigned int turn=0;turn<4;turn++) {
-  assert(!uke_quad_send_matrix(&graph,&module,uke_quad_sources[turn]));
+  assert(!audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[turn]));
   assert(le32(sent)==0x442e && le32(sent+4)==0x0800101f && le32(sent+8)==56 && !le32(sent+12));
   const unsigned char *b=sent+16;
   assert(le32(b)==1 && le16(b+4)==4 && le16(b+6)==4);
@@ -65,11 +65,11 @@ int main(void) {
   cases++;
  }
  assert(allocations==frees && sends==4);
- response=-ETIMEDOUT;assert(uke_quad_send_matrix(&graph,&module,uke_quad_sources[1])==-ETIMEDOUT);cases++;
- response=1;assert(uke_quad_send_matrix(&graph,&module,uke_quad_sources[2])==-EIO);cases++;
+ response=-ETIMEDOUT;assert(audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[1])==-ETIMEDOUT);cases++;
+ response=1;assert(audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[2])==-EIO);cases++;
  no_memory=true;unsigned int before=sends;
- assert(uke_quad_send_matrix(&graph,&module,uke_quad_sources[3])==-ENOMEM && sends==before);cases++;
- module.instance_id=0x4040;assert(uke_quad_send_matrix(&graph,&module,uke_quad_sources[0])==-EINVAL);cases++;
+ assert(audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[3])==-ENOMEM && sends==before);cases++;
+ module.instance_id=0x4040;assert(audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[0])==-EINVAL);cases++;
  assert(allocations==frees+1);
  printf("Actual quad coefficient packet: %u fixed-identity/unit-gain/bounds/error cases passed; controlled GPR only.\n",cases);
 }

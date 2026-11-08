@@ -10,7 +10,7 @@ work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 [[ ! -e $core/uke-speaker-quad.h ]]
 mkdir -p "$kernel/native-generated/speaker-quad-before"
-for path in sound/soc/qcom/qdsp6/q6apm-lpass-dais.c sound/soc/qcom/uke-audio-card.c;do
+for path in sound/soc/qcom/qdsp6/q6apm-lpass-dais.c sound/soc/qcom/qdsp6/audioreach.c sound/soc/qcom/uke-audio-card.c;do
  install -Dm644 "$kernel/$path" "$kernel/native-generated/speaker-quad-before/$path"
 done
 awk '
@@ -44,5 +44,8 @@ install -m644 "$profile/src/audio/uke-speaker-quad.h" "$core/"
 install -m644 "$profile/src/audio/uke-speaker-quad.h" "$kernel/sound/soc/qcom/"
 install -m644 "$profile/src/audio/uke-speaker-quad-lpass.h" "$core/"
 install -m644 "$profile/src/audio/uke-speaker-quad-wire.h" "$core/"
+install -m644 "$profile/src/audio/uke-speaker-quad-apm.h" "$core/"
+install -m644 "$profile/src/audio/uke-speaker-quad-transport.h" "$core/"
+printf '\n#include "uke-speaker-quad-apm.h"\n' >> "$core/audioreach.c"
 install -m644 "$profile/src/audio/uke-speaker-quad-control.h" "$kernel/sound/soc/qcom/"
 printf 'Quad program-channel source applied; existing physical topology/calibration/VI/codec files remain unchanged. Native and physical acceptance pending.\n'

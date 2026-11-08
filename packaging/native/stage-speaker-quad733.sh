@@ -31,7 +31,7 @@ awk -v mode="$mode" '
   print "bash native-profile/packaging/native/check-rproc-event733.sh \"$PWD\" %{_uke_out} objects"
   print "bash native-profile/src/audio/apply-speaker-quad733.sh \"$PWD\""
   print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} source"
-  print "make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_release}-unstable -j4 sound/soc/qcom/qdsp6/q6apm-lpass-dais.o sound/soc/qcom/uke-audio-card.o"
+  print "make O=%{_uke_out} ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION=-%{senemos_build_release}-unstable -j4 sound/soc/qcom/qdsp6/q6apm-lpass-dais.o sound/soc/qcom/qdsp6/snd-q6apm.o sound/soc/qcom/uke-audio-card.o"
   print "bash native-profile/packaging/native/check-speaker-quad733.sh \"$PWD\" %{_uke_out} objects";apply++
  }
  mode=="full" && /^bash native-profile\/packaging\/native\/check-avr-transaction733.sh .* source$/ {
@@ -53,7 +53,7 @@ jq --arg mode "$mode" '.+{
  speaker_quad_layer:1,speaker_quad_mfc_only:true,
  remoteproc_crash_event_layer:1,remoteproc_crash_event_process_context:true,
  remoteproc_crash_recovery_policy_unchanged:true,critical_rollback_control_required:true,
- speaker_quad_coefficient_api:1,speaker_quad_no_output_format_change:true,
+ speaker_quad_coefficient_api:1,speaker_quad_composite_transport_export:1,speaker_quad_no_output_format_change:true,
  speaker_quad_default_prepare_extra_dsp_commands:0,
  speaker_quad_physical_protection_map_unchanged:true,
  speaker_quad_graph_lifetime_mutex:true,speaker_quad_rollback_fault:true,

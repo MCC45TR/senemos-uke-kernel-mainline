@@ -31,7 +31,9 @@
     "src/health/apply-rproc-event733.sh",
     "packaging/native/check-rproc-event733.sh",
     "tests/rproc-crash-event.c",
-    "tests/rproc-crash-event.sh"
+    "tests/rproc-crash-event.sh",
+    "src/audio/uke-speaker-quad-apm.h",
+    "src/audio/uke-speaker-quad-transport.h"
   ],
   "source_assets": [
     {
@@ -40,7 +42,7 @@
     },
     {
       "path": "src/audio/uke-speaker-quad-lpass.h",
-      "sha256": "0570bee5b9695cde4706c23f073ee8f1f9640c3465fbe71007499de95c6e02e1"
+      "sha256": "42456ccc065b73bd39ecf1e8b5ae48b12597eb04f23e90995f07f8977c090b76"
     },
     {
       "path": "src/audio/uke-speaker-quad-control.h",
@@ -48,7 +50,7 @@
     },
     {
       "path": "src/audio/apply-speaker-quad733.sh",
-      "sha256": "0a7cb137b3cf3fa8dbb530bca91140c86f2b23693177351d17d99d9eef799b96"
+      "sha256": "4bc98ed68fd2e10c9118bceae53ac25b82c0ac9936f85eea2f29f837c8c84c99"
     },
     {
       "path": "tests/speaker-quad-route.c",
@@ -60,23 +62,23 @@
     },
     {
       "path": "packaging/native/check-speaker-quad733.sh",
-      "sha256": "b00152a7f5932838b56c1f05d84c49208477dceb7ab7dfea1ce4db9f3938ab40"
+      "sha256": "d03081752c2089a9a2922d607d0e26c303c767aea6a5b8ee285533277b7b8a46"
     },
     {
       "path": "packaging/native/stage-speaker-quad733.sh",
-      "sha256": "f4b265a16da0c58107c88e506e25b8f20d0fb87d8f5c743599f8850c80f10069"
+      "sha256": "3616c94f0ac437bd47a447ff8ed96e6ebd547c9efa06cf16e11df252d89d2158"
     },
     {
       "path": "docs/SPEAKER-QUAD-ROTATION.md",
-      "sha256": "9f1b337af4025c03332d607f055b6920a1f271f0da544dc154b8e00ca5b740c3"
+      "sha256": "eb98e3330ed83e1d491596d8ac7357b5743d61660b82e7b81ab13bb9724b11d6"
     },
     {
       "path": "tests/speaker-quad-lpass.c",
-      "sha256": "906e4cd61c5268bcd822281f84e5952c4c36ed5e221eb29a15a788525e718f99"
+      "sha256": "6f4ab7529a3f3536f8628f893b610224e07965c6e24ff27573d147d2d8218a8f"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
-      "sha256": "4bd9b9385f82ad2c826679d890d7d34c3e734a1633b0d9c88800e9e33c2441e3"
+      "sha256": "34f5afdf398c394f8b3e73a62655d3c5cc46e38af26a83e800fa36afd8b42903"
     },
     {
       "path": "tests/speaker-quad-card.c",
@@ -88,7 +90,7 @@
     },
     {
       "path": "tests/speaker-quad-wire.c",
-      "sha256": "14872d6bb9a41b9ab9f61eac2ece5e24c508c65082862121fc0cbd255e270ed5"
+      "sha256": "ff2d040db928f1bb20accdb8862fb8f216eb9f089e66c3b7034236edf8692194"
     },
     {
       "path": "src/health/rproc-crash-event.patch",
@@ -109,6 +111,14 @@
     {
       "path": "tests/rproc-crash-event.sh",
       "sha256": "eb83ee13af12538a329d8fe04bafe0a987f151743938ee358b15bdd308b097f8"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-apm.h",
+      "sha256": "32dc51fba14aefa51e94bbed92f909ffe7a2ac063c042be5715fb75d3dc6293f"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-transport.h",
+      "sha256": "c1d018042c93092992b202bf309366e542373429ba879cef0eae9827f735651c"
     }
   ],
   "donors": [
@@ -187,5 +197,13 @@
     "previous_source": "9e1a01fec4cf16a07653cbf5c16e8b7dfb8e51af"
   },
   "remoteproc_crash_event_prepared": true,
-  "critical_rollback_control_required": true
+  "critical_rollback_control_required": true,
+  "composite_transport_export_prepared": true,
+  "failed_full9": {
+    "build": 11288251,
+    "state": "failed",
+    "duration_seconds": 1363,
+    "error": "LPASS used non-exported q6apm_send_cmd_sync across module boundary",
+    "runtime_rpms_published": false
+  }
 }

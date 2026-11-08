@@ -115,3 +115,7 @@ The crash worker fixture extracts the actual cumulative C function and checks
 its lifecycle, lock ordering, notification failure and unchanged recovery rules.
 USB/MST and GPU causes remain separate investigations; no general stability or
 physical rollback result is inferred from these source tests.
+
+## Module boundary correction
+
+Full9/11288251 fails modpost because q6apm_send_cmd_sync is internal to snd-q6apm. Object compilation alone did not validate that boundary. The coefficient packet now stays inside that existing composite through a narrow GPL-exported audioreach_uke_quad_matrix helper. LPASS imports only that operation; the generic command sender remains unexported. Audioreach's inherited source is byte-exact before the appended implementation include, and its Makefile remains unchanged. Native qualification rebuilds and inspects the actual composite together with LPASS; full modpost and device firmware acceptance remain separate. The unpublished full version stays9, and all prior features/gain223 remain.
