@@ -60,6 +60,7 @@ jq --arg mode "$mode" --arg proof "$4" '.+{
  release_delivery_qualification_build:(if $mode=="full" then ($proof|tonumber) else null end),
  full_build_duration_qualified:false,physical_acceptance:false}' \
  "$work/parent-composition.json" > "$profile/source-composition.json"
+bash "$owner/packaging/native/stage-avr-transaction733.sh" "$profile" "$boot" "$spec" "$mode" "${@:4}"
 (cd "$profile";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot";find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$work/boot-assets"
 jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$work/boot-assets" > "$work/assets.json"

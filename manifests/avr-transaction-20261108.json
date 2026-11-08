@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Dual-INTF AVR period snapshot/readback/rollback; existing atomic quarantine retained",
+  "parent_source_commit": "59966c3d88efbeaaa4cf133b9ef09a24ba1667d9",
+  "parent_full_build": 11287055,
+  "physical_acceptance": false,
+  "full_modeset_rollback": false,
+  "new_runtime_rpms": 0,
+  "new_timers": 0,
+  "payload_assets": [
+    "src/display/0075-o82-avr-retime-rollback.patch",
+    "src/display/apply-avr-transaction733.sh",
+    "tests/o82-avr-transaction.c",
+    "tests/o82-avr-transaction.sh",
+    "packaging/native/check-avr-transaction733.sh",
+    "packaging/native/stage-avr-transaction733.sh",
+    "docs/O82-AVR-TRANSACTION.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/display/0075-o82-avr-retime-rollback.patch",
+      "sha256": "fd6a2c3805969ab0ebb24429db205f12d04b5bb6e07c6368403745a979146f33"
+    },
+    {
+      "path": "src/display/apply-avr-transaction733.sh",
+      "sha256": "7b8f175bedcfdf7b5dbdb8bf04ae4d9e651bca07ac8dc5df87b2dcfec0fb04c6"
+    },
+    {
+      "path": "tests/o82-avr-transaction.c",
+      "sha256": "9280fbe69bdf9834edc237c9e0b46610e07bc7a5a648429f610f117e95b7a614"
+    },
+    {
+      "path": "tests/o82-avr-transaction.sh",
+      "sha256": "b7fd4a8ef2ad6697bcc7e0be1b37f15303c4f5db49f6aa571fd5d43bcabc5117"
+    },
+    {
+      "path": "packaging/native/check-avr-transaction733.sh",
+      "sha256": "f758999e8378bc1db25ea0bba6c5f80b45690252dc652df55ebcd1f76d470003"
+    },
+    {
+      "path": "packaging/native/stage-avr-transaction733.sh",
+      "sha256": "6c1e4428a8e919afa17ede7ef4efafd07822cf86334a81c3888fdce1150bcab7"
+    },
+    {
+      "path": "docs/O82-AVR-TRANSACTION.md",
+      "sha256": "d258ea95242f28b5524d92a2fe3cc679229bc1378477b3135aaa3e1d97501fba"
+    }
+  ],
+  "donors": [
+    {
+      "repository": "MiCode/vendor_opensource_display-drivers",
+      "commit": "44275c404a677d9d9e5230fedd1af2ef02fc7b9a",
+      "path": "msm/sde/sde_hw_intf.c",
+      "scope": "Existing AVR period/control register semantics; downstream API differs"
+    },
+    {
+      "repository": "stable/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "scope": "Existing Linux7.3.3 MMIO and encoder locking interfaces; no donor execution"
+    }
+  ]
+}

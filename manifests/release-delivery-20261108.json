@@ -52,7 +52,7 @@
     },
     {
       "path": "packaging/native/copr-release733.sh",
-      "sha256": "66b49d1216720f5d3534dbf03e3cc2f7a4df958436c6a6bf166673645e0d9bb6"
+      "sha256": "04957575dc88920aa7f363253626eff64d2e51323997ee1253638b3a9d08550c"
     },
     {
       "path": "docs/NATIVE-SPEAKER-DISPLAY.md",

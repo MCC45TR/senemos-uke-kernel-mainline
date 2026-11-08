@@ -1,0 +1,141 @@
+From: Uke contributors
+Subject: [PATCH] drm/msm: restore both O82 AVR periods on live-retime failure
+
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -2,8 +2,10 @@
+ 		const struct drm_crtc_state *state)
+ {
+ 	struct dpu_encoder_virt *enc = to_dpu_encoder_virt(encoder);
+-	u32 periods[2];
++	u32 periods[2], before[2], actual;
++	unsigned long flags;
+ 	unsigned int i;
++	bool rollback_failed = false;
+ 	int lines, ret;
+ 
+ 	if (!state->vrr_enabled)
+@@ -16,18 +18,84 @@
+ 		return -EINVAL;
+ 	for (i = 0; i < enc->num_phys_encs; i++)
+ 		if (!enc->phys_encs[i] || !enc->phys_encs[i]->hw_intf ||
+-		    !enc->phys_encs[i]->hw_intf->ops.setup_avr)
++		    enc->phys_encs[i]->enable_state == DPU_ENC_DISABLED ||
++		    !enc->phys_encs[i]->hw_intf->ops.setup_avr ||
++		    !enc->phys_encs[i]->hw_intf->ops.get_avr_period ||
++		    !enc->phys_encs[i]->hw_intf->ops.set_avr_period ||
++		    !enc->phys_encs[i]->hw_intf->ops.enable_avr)
+ 			return -EPIPE;
+-	/* Both timing generators already contain the new shadow timing. The
+-	 * shared CTL flush latches timing and AVR without disabling either DSI.
+-	 * Keep AVR enabled: no panel reset or touch firmware reload is needed.
++	if (enc->phys_encs[0]->hw_intf == enc->phys_encs[1]->hw_intf)
++		return -EINVAL;
++
++	/* The atomic CRTC lock owns the modeset; serialize MMIO with the
++	 * existing AVR trigger/disable lock. All callbacks below are MMIO only.
++	 */
++	spin_lock_irqsave(&enc->enc_spinlock, flags);
++	if (!dpu_encoder_uke_avr_active(encoder)) {
++		ret = -EPIPE;
++		goto out;
++	}
++	for (i = 0; i < enc->num_phys_encs; i++) {
++		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
++
++		ret = intf->ops.get_avr_period(intf, &before[i]);
++		if (ret)
++			goto out;
++	}
++	if (before[0] != before[1]) {
++		ret = -EINVAL;
++		goto out;
++	}
++	/* Both new shadow timings precede the shared CTL flush. Restore both
++	 * AVR registers on failure, including a partially failing writer.
++	 * This does not undo DSI/timing changes: return the error so the caller
++	 * retains its existing pre-flush quarantine/recovery requirement.
+ 	 */
+ 	for (i = 0; i < enc->num_phys_encs; i++) {
+-		struct dpu_encoder_phys *phys = enc->phys_encs[i];
++		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
+ 
+-		ret = phys->hw_intf->ops.setup_avr(phys->hw_intf, lines, &periods[i]);
++		ret = intf->ops.setup_avr(intf, lines, &periods[i]);
+ 		if (ret)
+-			return ret;
++			goto rollback;
++	}
++	if (periods[0] != periods[1]) {
++		ret = -EINVAL;
++		goto rollback;
++	}
++	for (i = 0; i < enc->num_phys_encs; i++) {
++		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
++
++		ret = intf->ops.get_avr_period(intf, &actual);
++		if (ret)
++			goto rollback;
++		if (actual != periods[i]) {
++			ret = -EIO;
++			goto rollback;
++		}
++	}
++	ret = 0;
++	goto out;
++rollback:
++	for (i = 0; i < enc->num_phys_encs; i++) {
++		struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
++
++		if (intf->ops.set_avr_period(intf, before[i]))
++			rollback_failed = true;
++		if (intf->ops.get_avr_period(intf, &actual) || actual != before[i])
++			rollback_failed = true;
++	}
++	/* Never retry a failed transaction on a subsequent page flip. */
++	enc->avr_failed = true;
++	if (rollback_failed) {
++		for (i = 0; i < enc->num_phys_encs; i++) {
++			struct dpu_hw_intf *intf = enc->phys_encs[i]->hw_intf;
++
++			intf->ops.enable_avr(intf, false);
++		}
++		enc->avr_enabled = false;
++		ret = -EIO;
+ 	}
+-	return periods[0] == periods[1] ? 0 : -EINVAL;
++out:
++	spin_unlock_irqrestore(&enc->enc_spinlock, flags);
++	return ret;
+ }
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
+@@ -1 +1,16 @@
++/* Same register and readback contract as setup_avr; no new hardware mode. */
++static int dpu_hw_intf_get_avr_period(struct dpu_hw_intf *intf, u32 *period)
++{
++	*period = DPU_REG_READ(&intf->hw, INTF_AVR_VTOTAL);
++	return *period ? 0 : -EIO;
++}
++
++static int dpu_hw_intf_set_avr_period(struct dpu_hw_intf *intf, u32 period)
++{
++	if (!period)
++		return -EINVAL;
++	DPU_REG_WRITE(&intf->hw, INTF_AVR_VTOTAL, period);
++	return DPU_REG_READ(&intf->hw, INTF_AVR_VTOTAL) == period ? 0 : -EIO;
++}
++
+ static int dpu_hw_intf_setup_avr(struct dpu_hw_intf *intf, u32 max_lines, u32 *result)
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.c
+@@ -1 +1,3 @@
+ 		c->ops.setup_avr = dpu_hw_intf_setup_avr;
++		c->ops.get_avr_period = dpu_hw_intf_get_avr_period;
++		c->ops.set_avr_period = dpu_hw_intf_set_avr_period;
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_intf.h
+@@ -1 +1,3 @@
+ 	int (*setup_avr)(struct dpu_hw_intf *intf, u32 max_lines, u32 *period);
++	int (*get_avr_period)(struct dpu_hw_intf *intf, u32 *period);
++	int (*set_avr_period)(struct dpu_hw_intf *intf, u32 period);
