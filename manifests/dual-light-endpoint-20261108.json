@@ -6,7 +6,7 @@
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11286027,
   "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
-  "source_check_release": 31,
+  "source_check_release": 32,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_complete_qualification": true,
@@ -47,7 +47,10 @@
     "tests/ssc-dual-light-endpoint.sh",
     "packaging/native/check-dual-light-endpoint733.sh",
     "packaging/native/copr-dual-light-endpoint733.sh",
-    "docs/DUAL-LIGHT-ENDPOINT.md"
+    "docs/DUAL-LIGHT-ENDPOINT.md",
+    "tests/ssc-dual-light-schema.cpp",
+    "tests/ssc-dual-light-schema.sh",
+    "packaging/native/check-dual-light-binding733.sh"
   ],
   "source_assets": [
     {
@@ -88,23 +91,35 @@
     },
     {
       "path": "packaging/native/check-dual-light-endpoint733.sh",
-      "sha256": "ecd344fe2d0a5e3d2d8fda78eb87c5c36e23a0d0cbff238c4b573c6371350c73"
+      "sha256": "fc464f3af5c5bff92e391819da0065c59addabaf0bbc34b019b917433b5e7455"
     },
     {
       "path": "packaging/native/copr-dual-light-endpoint733.sh",
-      "sha256": "253b6a3d51a909b86fa717e89016f0fb91b667451e6575e440aeea202a6232e5"
+      "sha256": "76054fd92d3c10549e3bd478b844d1548d12251deb1d7efcc6ca45336db1ad64"
     },
     {
       "path": "docs/DUAL-LIGHT-ENDPOINT.md",
-      "sha256": "580338e432e6795b1501a35ddbb88996c42fc6a8355d59c277c1a11d2f20a59e"
+      "sha256": "543c35f813a84daf8465fb1d0fbd10229d77b42fd5a10326659a6d7f1abb9baa"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "4061d221dbc647dda9b9295402f977841cd140bb6e5d445eb0f02de6092e64ff"
+      "sha256": "a5d2ac1d62bb2179b5424c7a5f851d363138f5ce1fed734a55f9b4ad8bb50df3"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "53baf09213a2644da91cc94f0316bfe77bf17ba12ebf8b3c9e292cb53ebf0822"
+      "sha256": "b8b8f37d5fcf8923729d4848d82d0e7ca8693c0e5e6900cfdc8ae3c835e61492"
+    },
+    {
+      "path": "tests/ssc-dual-light-schema.cpp",
+      "sha256": "04ef0fbdfba17422fd89254ec9ac6bf5cd43ba2d5e04e4ebcaaf3be6a2235837"
+    },
+    {
+      "path": "tests/ssc-dual-light-schema.sh",
+      "sha256": "ed50ed6e40c58009b9188bf7f948bf0f0aecb3db7ed130f678796e3abe8bd437"
+    },
+    {
+      "path": "packaging/native/check-dual-light-binding733.sh",
+      "sha256": "f12efcebc87cd0db9552aab3adbbc616fd61101719611040048fd87f99d9cb79"
     }
   ],
   "acceptance": {
@@ -148,5 +163,42 @@
     "stage": "Original QMI encoder replay: appended input_handler shim outside base include guard is redefined by repeated headers",
     "qualified_scope": "Four callback/DT modes only; no postimage QMI replay, signed receipt or actual ARM64 endpoint qualification",
     "correction": "Guard the appended host-only declarations; original QMI assertions, production driver and warning/sanitizer settings unchanged"
+  },
+  "binding_validation": {
+    "tool_package": "dt-schema",
+    "version_release": "2026.09-1.fc46",
+    "purpose": "Existing COPR-only upstream Python schema build tool; no target dependency or payload",
+    "real_board_metadata_and_link_producers": true,
+    "compiler_sanitizer_modes": 4,
+    "positive_synthetic_dtbs": 8,
+    "negative_schema_controls": 7,
+    "runtime_board_dtbs_check": false,
+    "physical_acceptance": false
+  },
+  "registration_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "path": "include/linux/iio/iio.h",
+    "blob": "711c00f67371356c913ef0dbf2325e3f4d35266d",
+    "source_macro": "iio_device_register",
+    "required_elf_symbol": "__iio_device_register"
+  },
+  "previous_source31": {
+    "source": "06262f6543721f203986d409d4f35f6d8716b137",
+    "copr_build": 11286171,
+    "state": "failed",
+    "duration_seconds": 578,
+    "callback_modes": 4,
+    "callback_assertions_per_mode": 421,
+    "compiled_mutant_refusals": 12,
+    "dt_modes": 4,
+    "dt_checks_per_mode": 20,
+    "original_postimage_qmi_assertions_passed": true,
+    "real_arm64_driver_composite_early_dt_compiled": true,
+    "config_release_uts_and_aarch64_elf_checks_passed": true,
+    "stage": "Final undefined-symbol check after successful compilation/ELF checks; criterion incorrectly uses IIO macro spelling",
+    "complete_native_admission": false,
+    "receipt_admitted": false,
+    "final_native_log_sha256": "8496ac7a5e74e4d1123c372d79a9bcf9037ff8536cb5c4fb5b5249930ada7286"
   }
 }

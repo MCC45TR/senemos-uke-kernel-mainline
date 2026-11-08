@@ -87,3 +87,22 @@ Guard only those additional declarations; retain every original wire assertion,
 encoder source and sanitizer/warning setting. This correction changes no
 production driver, DT, reducer or hardware writer. Source30 does not qualify
 the postimage QMI replay or actual ARM64 endpoint objects.
+
+Source31/COPR11286171 fails578s after four callback/DT modes, twelve mutants
+and unchanged original QMI assertions pass against the endpoint postimage.
+The real ARM64 SSC driver/composite and early-DT object compile, and config,
+release, UTS and ELF architecture checks pass. The final import criterion
+incorrectly expects iio_device_register, a macro in the pinned Linux header.
+Require its real __iio_device_register symbol, pin header blob
+711c00f67371356c913ef0dbf2325e3f4d35266d and emit the actual required imports.
+There is no complete receipt or physical acceptance for source31.
+
+The next source check also validates the optional lid binding with the existing
+pinned Fedora dt-schema2026.09-1.fc46 build tool. A new synthetic fixture calls
+the actual board metadata producer before the actual lid-link helper. Four
+C++ compiler/sanitizer modes produce unlinked and linked FDTs, with all sensor
+metadata retained. Require eight clean schema results and seven malformed
+property/child/matrix controls. Compare the final patched schema and compiled
+producer headers to that qualified input. These are synthetic source checks,
+not a physical board dtbs_check or original SensorProxy acceptance. No Python,
+new daemon or validation tool is installed on the tablet.

@@ -19,13 +19,13 @@ sha256sum "$profile/src/sensors/uke-ssc-iio.c" "$profile/src/display/uke-abl-nat
 while IFS= read -r path; do install -Dm644 "$owner/$path" "$profile/$path"; done < <(jq -r '.payload_assets[]' "$manifest")
 install -Dm644 "$manifest" "$profile/manifests/${manifest##*/}"
 cp "$profile/source-composition.json" "$profile/source-composition-before-dual-light-endpoint.json"
-jq '.+{dual_light_endpoint_layer:1,dual_light_endpoint_standard_iio:true,dual_light_endpoint_raw_channels_retained:true,dual_light_endpoint_passive_lid:true,dual_light_endpoint_board_phandle:true,dual_light_endpoint_new_polling:false,dual_light_endpoint_native_admitted:false,dual_light_endpoint_binding_qualified:false,dual_light_endpoint_original_proxy_parity:false,dual_light_endpoint_physical_accepted:false}' \
+jq '.+{dual_light_endpoint_layer:1,dual_light_endpoint_standard_iio:true,dual_light_endpoint_raw_channels_retained:true,dual_light_endpoint_passive_lid:true,dual_light_endpoint_board_phandle:true,dual_light_endpoint_new_polling:false,dual_light_endpoint_native_admitted:false,dual_light_endpoint_binding_qualified:false,dual_light_endpoint_original_proxy_parity:false,dual_light_endpoint_physical_accepted:false,dual_light_binding_checks_layer:1,dual_light_binding_schema_qualified:false,dual_light_binding_real_producers:true,dual_light_binding_synthetic_only:true}' \
  "$profile/source-composition-before-dual-light-endpoint.json" > "$work/composition.json"
 install -m644 "$work/composition.json" "$profile/source-composition.json"
 spec=$output/uke-kernel-migration-check.spec
 awk '
- $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} prepared" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} prepared";p++;next}
- $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} objects" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} objects";o++;next}
+ $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} prepared" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} prepared";print "bash native-profile/packaging/native/check-dual-light-binding733.sh \"$PWD\" prepared";p++;next}
+ $0=="bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} objects" {print;print "bash native-profile/packaging/native/check-dual-light-endpoint733.sh \"$PWD\" %{_uke_out} objects";print "bash native-profile/packaging/native/check-dual-light-binding733.sh \"$PWD\" objects";o++;next}
  {print}END{if(p!=1||o!=1)exit 1}
 ' "$spec" > "$work/updated.spec"
 install -m644 "$work/updated.spec" "$spec"

@@ -92,9 +92,11 @@ for file in drivers/iio/common/uke-ssc/uke-ssc-iio.o arch/arm64/kernel/uke-abl.o
  llvm-readelf -h "$out/$file" | grep -E 'Machine:.*AArch64'
 done
 llvm-nm -u "$out/drivers/iio/common/uke-ssc/uke-ssc-iio.o" > "$work/imports"
-for symbol in input_register_handler input_unregister_handler input_register_handle input_unregister_handle input_open_device input_close_device iio_device_register iio_device_unregister; do
- grep -Eq " U $symbol$" "$work/imports"
+[[ $(git hash-object "$kernel/include/linux/iio/iio.h") == 711c00f67371356c913ef0dbf2325e3f4d35266d ]]
+for symbol in input_register_handler input_unregister_handler input_register_handle input_unregister_handle input_open_device input_close_device __iio_device_register iio_device_unregister; do
+ grep -E " U $symbol$" "$work/imports"
 done
+! grep -Eq " U iio_device_register$" "$work/imports"
 ! grep -Eq ' U (hrtimer_start|mod_timer|queue_delayed_work_on|input_grab_device)$' "$work/imports"
 strings "$out/arch/arm64/kernel/uke-abl.o" | grep -Fx lid-switch
 printf 'Actual cumulative AArch64 dual-light SSC/input/IIO composite and early DT link passed; canonical config/release/UTS retained, binding/physical/provider parity still separate.\n'
