@@ -95,11 +95,11 @@
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "37df0da3dc74e5c3d4217bdff926a721fe77dcea7dc67f29cc0bd4b924b935ab"
+      "sha256": "cf6c220cc8ce55efff7b2fe2afdeda2041e60137decbc8abb31fc538304838be"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "6a8edb5093141d0997825943b1742b6c5411b3aabf3950e8a0371d186f0bf5f4"
+      "sha256": "d16f1a93294796cb69ddb50c19b2c7fd78bbcabcf6cd2daf74244a5ad3b16004"
     }
   ],
   "retained_helper_hashes": {
