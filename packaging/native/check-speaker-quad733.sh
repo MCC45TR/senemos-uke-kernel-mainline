@@ -38,7 +38,7 @@ awk '
  END{if(field!=1||header!=1)exit 1}
 ' "$kernel/sound/soc/qcom/uke-audio-card.c" > "$work/card-before.c"
 cmp "$work/card-before.c" "$saved/sound/soc/qcom/uke-audio-card.c"
-for name in uke-speaker-quad.h uke-speaker-quad-lpass.h;do cmp "$core/$name" "$kernel/native-profile/src/audio/$name";done
+for name in uke-speaker-quad.h uke-speaker-quad-lpass.h uke-speaker-quad-wire.h;do cmp "$core/$name" "$kernel/native-profile/src/audio/$name";done
 for name in uke-speaker-quad.h uke-speaker-quad-control.h;do cmp "$kernel/sound/soc/qcom/$name" "$kernel/native-profile/src/audio/$name";done
 [[ $phase != source ]] || { printf 'Actual quad source and complete inherited-file inverse passed; no native or physical acceptance.\n';exit 0; }
 for name in sound/soc/qcom/qdsp6/q6apm-lpass-dais sound/soc/qcom/uke-audio-card;do
@@ -48,9 +48,10 @@ done
 for symbol in uke_quad_get_map uke_quad_set_map uke_quad_prepare uke_quad_shutdown;do
  grep -Eq " [Tt] $symbol$" "$work/q6apm-lpass-dais.symbols"
 done
-for symbol in q6apm_fs19xx_graph q6apm_fs19xx_fault audioreach_set_media_format;do
+for symbol in q6apm_fs19xx_graph q6apm_fs19xx_fault audioreach_alloc_apm_cmd_pkt q6apm_send_cmd_sync;do
  grep -Eq " U $symbol$" "$work/q6apm-lpass-dais.symbols"
 done
+! grep -Eq ' U audioreach_set_media_format$' "$work/q6apm-lpass-dais.symbols"
 for symbol in snd_soc_dai_get_channel_map snd_soc_dai_set_channel_map q6apm_fs19xx_fault;do
  grep -Eq " U $symbol$" "$work/uke-audio-card.symbols"
 done

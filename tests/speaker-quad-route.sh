@@ -19,6 +19,8 @@ for compiler in gcc clang; do
   "$work/lpass"
   "$compiler" "${flags[@]}" -I"$work" -pthread "$owner/tests/speaker-quad-card.c" -o "$work/card"
   "$work/card"
+  "$compiler" "${flags[@]}" "$owner/tests/speaker-quad-wire.c" -o "$work/wire"
+  "$work/wire"
   printf 'Actual quad route passed:%s/sanitize%s; firmware and physical acceptance remain separate.\n' "$compiler" "$sanitize"
  done
 done

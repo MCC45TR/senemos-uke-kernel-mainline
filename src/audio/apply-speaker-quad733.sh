@@ -43,5 +43,6 @@ install -m644 "$work/card.c" "$card"
 install -m644 "$profile/src/audio/uke-speaker-quad.h" "$core/"
 install -m644 "$profile/src/audio/uke-speaker-quad.h" "$kernel/sound/soc/qcom/"
 install -m644 "$profile/src/audio/uke-speaker-quad-lpass.h" "$core/"
+install -m644 "$profile/src/audio/uke-speaker-quad-wire.h" "$core/"
 install -m644 "$profile/src/audio/uke-speaker-quad-control.h" "$kernel/sound/soc/qcom/"
 printf 'Quad program-channel source applied; existing physical topology/calibration/VI/codec files remain unchanged. Native and physical acceptance pending.\n'

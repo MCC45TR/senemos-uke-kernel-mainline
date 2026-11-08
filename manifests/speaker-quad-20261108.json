@@ -24,7 +24,9 @@
     "docs/SPEAKER-QUAD-ROTATION.md",
     "tests/speaker-quad-lpass.c",
     "packaging/native/copr-speaker-quad733.sh",
-    "tests/speaker-quad-card.c"
+    "tests/speaker-quad-card.c",
+    "src/audio/uke-speaker-quad-wire.h",
+    "tests/speaker-quad-wire.c"
   ],
   "source_assets": [
     {
@@ -33,7 +35,7 @@
     },
     {
       "path": "src/audio/uke-speaker-quad-lpass.h",
-      "sha256": "0419ecec0ef64dc1e3f95bbd067413b17715c6c17da59e675358a6415b4438ba"
+      "sha256": "0570bee5b9695cde4706c23f073ee8f1f9640c3465fbe71007499de95c6e02e1"
     },
     {
       "path": "src/audio/uke-speaker-quad-control.h",
@@ -41,7 +43,7 @@
     },
     {
       "path": "src/audio/apply-speaker-quad733.sh",
-      "sha256": "81332491a9eac2e011835051224163a6d9f140948f0e71a55be960c12ae2615c"
+      "sha256": "0a7cb137b3cf3fa8dbb530bca91140c86f2b23693177351d17d99d9eef799b96"
     },
     {
       "path": "tests/speaker-quad-route.c",
@@ -49,31 +51,39 @@
     },
     {
       "path": "tests/speaker-quad-route.sh",
-      "sha256": "71d5d58c5b84bd4e62030b3ab60d3afd7c30ae24e3485813638ceafbcf44c450"
+      "sha256": "134a17009bdca2e6086dbf4de8ea2b2a138220a546869853e1bf3e14f04aa203"
     },
     {
       "path": "packaging/native/check-speaker-quad733.sh",
-      "sha256": "8bf256c961e0e369f2e26cc19d3a02f8d650a45cc8fe08000569652b28357b22"
+      "sha256": "b00152a7f5932838b56c1f05d84c49208477dceb7ab7dfea1ce4db9f3938ab40"
     },
     {
       "path": "packaging/native/stage-speaker-quad733.sh",
-      "sha256": "efe2175e691ae5bd4f612ce9d162aefb41bbaa8b62126fa486cfd7e8f1a857ba"
+      "sha256": "916b5c2ece846e7585e1a2ae2273d7dd9f1d425ca4d6dbd58802e9e496b9fd3e"
     },
     {
       "path": "docs/SPEAKER-QUAD-ROTATION.md",
-      "sha256": "4297b6810b8a19652c0ea0d47e6335220e348a317fcbf9ce54daab366d60be3f"
+      "sha256": "3006488ff5f65339709bef68ef055ba164c47020df81955477f7c489ec0cf1ef"
     },
     {
       "path": "tests/speaker-quad-lpass.c",
-      "sha256": "4682d569e092ce16adcd219658e32dc59f1d90a638281575342aa08a673ace5b"
+      "sha256": "906e4cd61c5268bcd822281f84e5952c4c36ed5e221eb29a15a788525e718f99"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
-      "sha256": "2da9cc570615eef2fcf43bdb3ce199ddbf7332541038d809fbb2ea1302891281"
+      "sha256": "9ac43ee7ce53951c1d7c31cbffa74964770105ffe33c20f0039bc24bf58a079b"
     },
     {
       "path": "tests/speaker-quad-card.c",
       "sha256": "b01664939e05f33ea9733c1edca07eba14c0f4172c82bd860ba6c03d0b891eaf"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-wire.h",
+      "sha256": "5a7e8219e68756e7632a3f7d9c9a3905c85c936284d810b4376982f64e577090"
+    },
+    {
+      "path": "tests/speaker-quad-wire.c",
+      "sha256": "14872d6bb9a41b9ab9f61eac2ece5e24c508c65082862121fc0cbd255e270ed5"
     }
   ],
   "donors": [
@@ -99,6 +109,17 @@
       "commit": "f130ab33c8e6f3b9d728aade87836086ae9a8ed4",
       "path": "src/wayland/output_interface.cpp",
       "scope": "Read-only transform/native-size event comparison; original compositor retained"
+    },
+    {
+      "repository": "AudioReach/audioreach-engine",
+      "commit": "5773bf8e627c9857481dd338a9ec4aea4a49afd3",
+      "paths": [
+        "modules/cmn/pcm_mf_cnv/capi/mfc/api/mfc_api.h",
+        "modules/processing/channel_mixer/api/chmixer_common_api.h",
+        "modules/processing/channel_mixer/capi/src/capi_chmixer.cpp"
+      ],
+      "license": "BSD-3-Clause",
+      "scope": "MFC coefficient-table ABI, Q14 unity matrices and canonical input/output identities; Uke binary firmware acceptance remains unverified"
     }
   ],
   "actual_lpass_adapter_fixture_prepared": true,
@@ -121,5 +142,18 @@
       "current task macro collided with a helper parameter",
       "ALSA get_channel_map requires a const DAI"
     ]
+  },
+  "coefficient_api_prepared": true,
+  "coefficient_param_id": "0x0800101f",
+  "output_media_format_reconfiguration": false,
+  "canonical_prepare_extra_dsp_commands": 0,
+  "coefficient_wire_test_prepared": true,
+  "previous_full_device_rejected": {
+    "build": 11287899,
+    "kernel": "7.3.3-8-unstable",
+    "adsp_fatal_observed": true,
+    "battery_telemetry_epipe_observed": true,
+    "physical_quad_accepted": false,
+    "previous_source": "9e1a01fec4cf16a07653cbf5c16e8b7dfb8e51af"
   }
 }

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Included after the original LPASS callbacks, before q6tdm_ops. */
 #include "uke-speaker-quad.h"
+#include "uke-speaker-quad-wire.h"
 #include "uke-fs19xx-runtime.h"
 #include <sound/uke-fs19xx-guard.h>
 
@@ -18,16 +19,12 @@ struct uke_quad_context {
 
 static int uke_quad_mfc_apply(void *context, const unsigned int *map)
 {
-	static const u8 channel_ids[] = {
-		PCM_CHANNEL_FL, PCM_CHANNEL_FR, PCM_CHANNEL_LS, PCM_CHANNEL_RS
-	};
 	struct uke_quad_context *ctx = context;
 	struct q6apm_graph *graph = ctx->data->graph[ctx->dai->id];
 	struct audioreach_module_config cfg;
 	struct audioreach_sub_graph *sg;
 	struct audioreach_container *container;
 	struct audioreach_module *module, *mfc = NULL;
-	unsigned int slot;
 
 	if (uke_quad_turn(map, 4) < 0)
 		return -EINVAL;
@@ -55,10 +52,7 @@ static int uke_quad_mfc_apply(void *context, const unsigned int *map)
 	}
 	if (!mfc)
 		return -ENODEV;
-	memset(cfg.channel_map, 0, sizeof(cfg.channel_map));
-	for (slot = 0; slot < 4; slot++)
-		cfg.channel_map[slot] = channel_ids[map[slot]];
-	return audioreach_set_media_format(graph, mfc, &cfg);
+	return uke_quad_send_matrix(graph, mfc, map);
 }
 
 static void uke_quad_mfc_fault(void *context)
@@ -121,8 +115,11 @@ static int uke_quad_prepare(struct snd_pcm_substream *substream, struct snd_soc_
 	ret = q6apm_lpass_dai_prepare(substream, dai);
 	if (ret < 0)
 		return ret;
-	/* Original prepare configures every endpoint with its fixed physical map.
-	 * Replace only MFC program-channel order before START/unmute. */
+	/* Preserve the default prepare command stream exactly. In particular,
+	 * never repeat OUTPUT_MEDIA_FORMAT after graph_prepare, even at zero.
+	 * Non-default rotation uses the dedicated unity-matrix coefficient API. */
+	if (!data->uke_quad_turn)
+		return 0;
 	ret = uke_quad_mfc_apply(&context, uke_quad_sources[data->uke_quad_turn]);
 	if (ret < 0) {
 		q6apm_fs19xx_fault();

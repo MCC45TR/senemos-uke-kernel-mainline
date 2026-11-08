@@ -53,17 +53,19 @@ static void require_locked(struct snd_soc_dai *dai) {
 		assert(pthread_mutex_trylock(&d->uke_quad_lock.value)==EBUSY);
 	}
 }
-static int audioreach_set_media_format(struct q6apm_graph *graph,
-		const struct audioreach_module *module,const struct audioreach_module_config *cfg) {
+#define UKE_SPEAKER_QUAD_WIRE_H
+static int uke_quad_send_matrix(struct q6apm_graph *graph,
+		const struct audioreach_module *module,const unsigned int *map) {
+	const u8 ids[]={1,2,5,6};
 	assert(graph==available_graph && module->module_id==MODULE_ID_MFC && module->instance_id==0x442e);
-	assert(cfg->num_channels==4 && cfg->sample_rate==48000 && cfg->bit_width==16);
 	assert(!pthread_mutex_lock(&rendezvous));
 	if(block_send) {
 		send_entered=true;assert(!pthread_cond_broadcast(&progress));
 		while(!release_send)assert(!pthread_cond_wait(&progress,&rendezvous));
 	}
 	assert(!pthread_mutex_unlock(&rendezvous));
-	memcpy(last_map,cfg->channel_map,sizeof(last_map));sends++;
+	for(unsigned int i=0;i<4;i++)last_map[i]=ids[map[i]];
+	sends++;
 	return sends==fail_send || sends==fail_restore ? -EIO:0;
 }
 static int q6apm_lpass_dai_prepare(struct snd_pcm_substream *s,struct snd_soc_dai *dai) {
@@ -117,7 +119,8 @@ int main(void) {
 		assert(!uke_quad_prepare(NULL,&dai) && !uke_quad_trigger(NULL,1,&dai));
 		assert(!uke_quad_get_map(&dai,&tx,NULL,&rx,map) && tx==0 && rx==4);
 		assert(uke_quad_turn(map,rx)==(int)turn);
-		for(unsigned int i=0;i<4;i++)assert(last_map[i]==ids[uke_quad_sources[turn][i]]);
+		if(turn)for(unsigned int i=0;i<4;i++)assert(last_map[i]==ids[uke_quad_sources[turn][i]]);
+		else assert(sends==before); /* Exact original prepare: no extra DSP command. */
 		assert(!memcmp(&canonical,&data.module_config[40],sizeof(canonical)));
 		uke_quad_shutdown(NULL,&dai);assert(!data.graph[40]);cases++;
 	}

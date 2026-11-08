@@ -42,6 +42,8 @@ awk -v mode="$mode" '
 install -m644 "$work/spec" "$spec"
 jq --arg mode "$mode" '.+{
  speaker_quad_layer:1,speaker_quad_mfc_only:true,
+ speaker_quad_coefficient_api:1,speaker_quad_no_output_format_change:true,
+ speaker_quad_default_prepare_extra_dsp_commands:0,
  speaker_quad_physical_protection_map_unchanged:true,
  speaker_quad_graph_lifetime_mutex:true,speaker_quad_rollback_fault:true,
  speaker_quad_new_daemon:false,speaker_quad_native_admitted:($mode=="full"),

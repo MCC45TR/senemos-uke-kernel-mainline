@@ -65,3 +65,34 @@ cumulative COPR/DNF delivery; four physical KDE corner tests, live rotation,
 idle reopen, suspend/resume, fault/restart and closed-cover/external behavior.
 Gain remains223. No new RPM, service, software audio mixer or per-sample CPU
 processing is introduced. Microphone remapping is a separate open task.
+
+
+## Device rejection and coefficient candidate
+
+Full8/11287899 boots with matching Image/modules/DT and settings, but ADSP
+audio_process crashes and battery queries subsequently return EPIPE. The operator
+reports display/USB instability, long freezes and reboots. Full8 is rejected.
+Source45 fixtures and ARM64 objects did not prove live firmware safety. Running7
+is restored while the replacement is qualified; gain remains223.
+
+The new candidate removes the second OUTPUT_MEDIA_FORMAT command after prepare.
+Canonical rotation0 emits exactly the original prepare command stream. Other
+rotations use PARAM_ID_CHMIXER_COEFF(0x0800101f), one56-byte table: fixed FL/FR/LS/RS
+input and output identities with a4x4 Q14 permutation. Each row and column has
+one unity coefficient(16384), no mixing gain or physical protection remapping.
+Live changes use this coefficient API, not format renegotiation. Snapshot,
+rollback, fault containment and the graph-lifetime mutex remain.
+
+AudioReach engine5773bf8e627c9857481dd338a9ec4aea4a49afd3, BSD-3-Clause,
+modules/cmn/pcm_mf_cnv/capi/mfc/api/mfc_api.h explicitly includes this parameter;
+modules/processing/channel_mixer/api/chmixer_common_api.h specifies the table
+layout, canonical maps and unit-gain coefficient bounds. The unchanged source
+is retained as reference. Uke binary module support and physical playback still
+require measurement. The extra format command is a source-level regression
+candidate, not a proven explanation for every USB/display or reboot symptom.
+
+The added native fixture checks actual request bytes, fixed channel identities,
+row/column unit gain, rejected short buffers, allocation errors and DSP failures.
+The LPASS fixture additionally rejects an extra DSP command at canonical prepare.
+Real ARM64 objects, complete source proof, full9 and device qualification remain
+pending. Do not replay the rejected full8 to manufacture a reproduction.
