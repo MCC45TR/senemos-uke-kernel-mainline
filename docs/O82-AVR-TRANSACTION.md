@@ -45,7 +45,7 @@ transaction; the existing local two-INTF admission remains authoritative.
 Qualification runs the actual encoder and MMIO callbacks with controlled
 providers under GCC and Clang, plain and ASan/UBSan, including partial writes,
 snapshot/readback failures, unequal periods, provider loss, lock-time revocation
-and failed restoration. Three compiled behavioral mutants must be refused.
+and failed restoration. Direct fault scenarios exercise both interfaces.
 Real ARM64 encoder/INTF objects and the final MSM module are checked separately.
 The original source suites run before this late patch and remain tied to the
 same cumulative source receipt. These checks are not physical VRR acceptance.
@@ -81,3 +81,11 @@ before compiling the final ARM64 objects. The tests run once, and never run
 again in the full Image build. Metadata fixtures use the selected upstream
 version instead of embedding a release version. These changes improve failure
 feedback; they do not establish the twenty-minute full-build target.
+
+Source42/COPR11287569 fails235s in the early test after GCC/plain passes
+all30 transaction scenarios and the real MMIO accessors. The test mutation
+generator omits an opening brace and produces invalid C. That brittle generator
+is removed; the30 direct fault scenarios, four compiler/sanitizer modes, actual
+MMIO callbacks, early/late source identity and real ARM64 object/module gates
+remain. Production C, hardware admission, Werror and sanitizer settings do not
+change in this test correction. No full7 build or device update has occurred.

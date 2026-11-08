@@ -36,7 +36,7 @@
     },
     {
       "path": "tests/o82-avr-transaction.sh",
-      "sha256": "b7fd4a8ef2ad6697bcc7e0be1b37f15303c4f5db49f6aa571fd5d43bcabc5117"
+      "sha256": "9f6fc1a7c3d7f34fb9ac97d0115d734b6ecb2f00c5779c07cd9df9022387abee"
     },
     {
       "path": "packaging/native/check-avr-transaction733.sh",
@@ -48,7 +48,7 @@
     },
     {
       "path": "docs/O82-AVR-TRANSACTION.md",
-      "sha256": "923b8b05bc92037c9a00c15f272591c1021cfb311ef2e1e76c5155fe065e678d"
+      "sha256": "dd8863aad20755ef9ae2dfe8fcc38841f92dfa18b34c66b65107587688e6a9ee"
     },
     {
       "path": "scripts/kernel-release.sh",
@@ -82,5 +82,7 @@
   ],
   "version_plan_automatic_nested_seals": true,
   "early_tests_do_not_modify_inherited_sources": true,
-  "final_native_files_match_early_tested_view": true
+  "final_native_files_match_early_tested_view": true,
+  "direct_fault_scenarios_required": true,
+  "test_mutation_generator_removed": true
 }

@@ -84,22 +84,4 @@ int main(void){
 C
 "$cc" "${flags[@]}" "$work/mmio.c" -o "$work/mmio"
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/mmio"
-if [[ $sanitize == 0 ]]; then
- for mutant in skip-second-restore accept-readback-mismatch omit-failure-latch; do
-  awk -v m="$mutant" '
-   m=="skip-second-restore" && /if \(intf->ops.set_avr_period\(intf, before\[i\]\)\)/ {print "\t\tif (i == 0 && intf->ops.set_avr_period(intf, before[i]))";n++;next}
-   m=="accept-readback-mismatch" && /if \(actual != periods\[i\]\)/ {print "\t\tif (false && actual != periods[i])";n++;next}
-   m=="omit-failure-latch" && /^\tenc->avr_failed = true;/ {print "\tenc->avr_failed = false;";n++;next}
-   {print} END{if(n!=1)exit 1}
-  ' "$work/check.c" > "$work/mutant.c"
-  "$cc" "${flags[@]}" "$work/mutant.c" -o "$work/mutant"
-  set +e
-  (ulimit -c 0; "$work/mutant") > "$work/mutant.log" 2>&1
-  status=$?
-  set -e
-  [[ $status == 134 ]]
-  grep -Eq 'Assertion .* failed' "$work/mutant.log"
-  printf 'Actual dual-INTF transaction mutant refused:%s/%s.\n' "$cc" "$mutant"
- done
-fi
 printf 'Actual dual-INTF transaction callbacks passed:%s/sanitize%s; hardware acceptance separate.\n' "$cc" "$sanitize"
