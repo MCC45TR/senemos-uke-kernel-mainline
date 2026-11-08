@@ -81,7 +81,7 @@
     },
     {
       "path": "packaging/native/check-dual-light-events733.sh",
-      "sha256": "4ef7afb90512d58ffec061c4eb361a00669544058d815164f98e3ef05427f6f9"
+      "sha256": "728d76ec104616e4b9dda389a8b6fe16fe80891fc90bd07c200a685f63e48e78"
     },
     {
       "path": "packaging/native/copr-dual-light-events733.sh",
@@ -93,11 +93,11 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "8f84f85e2d787d66b3dccb259de8d87acbd7b5af05fb6b5289971c9553a0cff2"
+      "sha256": "468e46b4ec9c040ca59fedf07e9cb5d4172def1cb1a396d76a6ee132b84fc4bc"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "91c51f644ae6792f6896a5750069d692b92f11de37efd9e0f955e4322a3fa50e"
+      "sha256": "ac1a668c0a20ed750099c35d511bc01732397787887601a8672d7d4377f2226f"
     },
     {
       "path": "referances/native-als-20261108/dual-light-events24.h",

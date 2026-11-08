@@ -64,3 +64,14 @@ unescaped ampersand in an awk replacement and emits invalid C; this is not
 a behavioral refusal or full qualification. Explicit whole-line emission
 replaces the two affected mutations, retaining all compiler warnings and
 assertions. Corrected ABI selectors add eleven assertions per positive mode.
+
+Source27/COPR11285628 fails502s after all four1235-assertion modes, ten
+behavioral mutants, original QMI replay and the actual ARM64 driver/composite
+compile. A later cumulative gate still requires the old driver and correctly
+rejects the postimage. Keep that gate unchanged: compile the new postimage
+only at the end of the source-only build section. The order regression checks
+the actual injector, exact retained spec, former source27 ordering and malformed
+hooks. The final compile also passes the canonical LOCALVERSION explicitly
+and verifies unchanged release, UTS header and native config before/after it;
+source27's command had regenerated release headers without that argument.
+Neither partial source27 results nor this correction admit a runtime feature.

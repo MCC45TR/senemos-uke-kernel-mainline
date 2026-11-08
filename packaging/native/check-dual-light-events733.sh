@@ -20,7 +20,14 @@ work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 install -m644 "$profile/tests/ssc-dual-light-native.c" "$work/ssc-dual-light-proof.c"
 printf 'obj-m += ssc-dual-light-proof.o\nccflags-y += -I%s/src/sensors\n' "$profile" > "$work/Makefile"
-make -s -C "$kernel" O="$out" M="$work" ARCH=arm64 LLVM=1 LLVM_IAS=1 W=1 ssc-dual-light-proof.o
+release=$(jq -er .kernel_release "$profile/source-composition.json")
+version=$(jq -er .upstream_version "$profile/source-composition.json")
+[[ $release == "$version"-*-unstable ]]
+localversion=${release#"$version"}
+[[ $(cat "$out/include/config/kernel.release") == "$release" ]]
+sha256sum "$out/.config" "$out/include/config/kernel.release" "$out/include/generated/utsrelease.h" > "$work/build-identities.sha256"
+make -s -C "$kernel" O="$out" M="$work" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="$localversion" W=1 ssc-dual-light-proof.o
+sha256sum -c --strict --quiet "$work/build-identities.sha256"
 llvm-readelf -h "$work/ssc-dual-light-proof.o" | grep -E 'Machine:.*AArch64'
 llvm-nm "$work/ssc-dual-light-proof.o" | grep -E ' T uke_ssc_light_native_proof$'
 printf '%s  %s\n' c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd "$kernel/drivers/iio/common/uke-ssc/uke-ssc-iio.c" | sha256sum -c --strict --quiet -

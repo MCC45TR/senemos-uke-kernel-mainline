@@ -5,7 +5,7 @@
   "parent_full_build": 11285130,
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11285557,
-  "source_check_release": 27,
+  "source_check_release": 28,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_endpoint_integration": true,
@@ -21,7 +21,9 @@
     "tests/ssc-stream-owners.sh",
     "packaging/native/check-ssc-stream-owners733.sh",
     "packaging/native/copr-ssc-stream-owners733.sh",
-    "docs/SSC-SHARED-STREAM-OWNERS.md"
+    "docs/SSC-SHARED-STREAM-OWNERS.md",
+    "packaging/native/inject-ssc-stream-checks.awk",
+    "tests/ssc-stream-check-order.sh"
   ],
   "source_assets": [
     {
@@ -42,23 +44,35 @@
     },
     {
       "path": "packaging/native/check-ssc-stream-owners733.sh",
-      "sha256": "4bcec14542af032a98e317a5090dd496ef3b9dd0fada0ae2c7360691f0737986"
+      "sha256": "ebe14ce438b7c972ef0bd8dfa3ab7a9aafa842579deb9a10f817af993282465f"
     },
     {
       "path": "packaging/native/copr-ssc-stream-owners733.sh",
-      "sha256": "b8a615e91354dc3028229f6a1a5f3727ea21160d54d99a7f54ad93460890ff71"
+      "sha256": "83fd5cbce6f505a59d823559a86b2412e9d8fe3af46798d11180d6ceccc71fc5"
     },
     {
       "path": "docs/SSC-SHARED-STREAM-OWNERS.md",
-      "sha256": "53cf95b79a4813b3ddb1c32d466180d9e68cdb37959a3a7d587ed88ae57846c0"
+      "sha256": "995674b10424403e155a5fdfa24c42a01b73c5d81315d37850108f2a5e8aaa60"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "8f84f85e2d787d66b3dccb259de8d87acbd7b5af05fb6b5289971c9553a0cff2"
+      "sha256": "468e46b4ec9c040ca59fedf07e9cb5d4172def1cb1a396d76a6ee132b84fc4bc"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "1660a4f097fd246123a0166e443c803323ff27c236a15ca2f4c70251fc0dbe90"
+      "sha256": "49f5062635fc1972fa24a0fe3336b214660a403f98268f4e167dc480bf33322c"
+    },
+    {
+      "path": "packaging/native/inject-ssc-stream-checks.awk",
+      "sha256": "3cfdea0b8e76efb7bd9d00203f735ed9ee553b4c39d5f21e99072671a1b2cb85"
+    },
+    {
+      "path": "tests/ssc-stream-check-order.sh",
+      "sha256": "1377bbb3e49701e44ab4a751a28c00a03b803190eae0eb6fb707bdf7015c4887"
+    },
+    {
+      "path": "packaging/native/check-dual-light-events733.sh",
+      "sha256": "728d76ec104616e4b9dda389a8b6fe16fe80891fc90bd07c200a685f63e48e78"
     }
   ],
   "acceptance": {
@@ -75,7 +89,10 @@
     "gain_ceiling": 223,
     "pinned_iio_header_required": true,
     "real_selector_result_and_scale_refusals_required": true,
-    "assertions_per_mode": 1235
+    "assertions_per_mode": 1235,
+    "postimage_compile_after_all_retained_checks": true,
+    "exact_build_identities_required": true,
+    "order_regression_required": true
   },
   "upstream_iio_api": {
     "repository": "gregkh/linux",
@@ -100,5 +117,18 @@
     "compiled_mutant_refusals_observed": 2,
     "stage": "Third mutant generator emits invalid C because unescaped ampersands expand awk match text",
     "correction": "Whole-line mutant emission, exact five-mutant text controls, pinned real IIO header and actual selector/result assertions"
+  },
+  "previous_source27": {
+    "source": "e5ed41b2f0a270caf6c72205a05502daa74ff3cb",
+    "copr_build": 11285628,
+    "state": "failed",
+    "duration_seconds": 502,
+    "positive_assertions_per_mode": 1235,
+    "positive_modes_observed": 4,
+    "compiled_mutant_refusals_observed": 10,
+    "original_qmi_replay_passed": true,
+    "actual_aarch64_shared_driver_compiled": true,
+    "qualification_limit": "Later retained cumulative byte-exact SSC gate correctly rejects postimage; no signed completed receipt",
+    "correction": "Keep every legacy check and compile postimage last in source-only build; pin unchanged LOCALVERSION/config/release/UTS through both new compile commands"
   }
 }

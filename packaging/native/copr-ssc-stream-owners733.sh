@@ -23,11 +23,8 @@ jq '.+{ssc_shared_stream_owners_layer:1,ssc_shared_stream_raw_buffer_wired:true,
  "$profile/source-composition-before-stream-owners.json" > "$work/composition.json"
 install -m644 "$work/composition.json" "$profile/source-composition.json"
 spec=$output/uke-kernel-migration-check.spec
-awk '
- $0=="bash native-profile/packaging/native/check-dual-light-events733.sh \"$PWD\" %{_uke_out} prepared" {print;print "bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} prepared";prepared++;next}
- $0=="bash native-profile/packaging/native/check-dual-light-events733.sh \"$PWD\" %{_uke_out} objects" {print;print "bash native-profile/packaging/native/check-ssc-stream-owners733.sh \"$PWD\" %{_uke_out} objects";objects++;next}
- {print}END{if(prepared!=1||objects!=1)exit 1}
-' "$spec" > "$work/updated.spec"
+bash "$owner/tests/ssc-stream-check-order.sh"
+awk -f "$owner/packaging/native/inject-ssc-stream-checks.awk" "$spec" > "$work/updated.spec"
 install -m644 "$work/updated.spec" "$spec"
 sha256sum -c --strict --quiet "$work/legacy.sha256"
 (cd "$profile";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)

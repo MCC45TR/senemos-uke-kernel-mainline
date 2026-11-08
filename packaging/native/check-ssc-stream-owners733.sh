@@ -58,8 +58,15 @@ install -m644 "$kernel/$driver" "$kernel/native-generated/ssc-before-stream-owne
 git -C "$kernel" apply --check --whitespace=error "$delta"
 git -C "$kernel" apply --whitespace=error "$delta"
 printf '%s  %s\n' "$after" "$kernel/$driver" | sha256sum -c --strict --quiet -
-make -C "$kernel" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1 KCFLAGS=-Werror W=1 \
+release=$(jq -er .kernel_release "$profile/source-composition.json")
+version=$(jq -er .upstream_version "$profile/source-composition.json")
+[[ $release == "$version"-*-unstable ]]
+localversion=${release#"$version"}
+[[ $(cat "$out/include/config/kernel.release") == "$release" ]]
+sha256sum "$out/.config" "$out/include/config/kernel.release" "$out/include/generated/utsrelease.h" > "$work/retained-build-identities.sha256"
+make -C "$kernel" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="$localversion" KCFLAGS=-Werror W=1 \
  drivers/iio/common/uke-ssc/uke-ssc.o
+sha256sum -c --strict --quiet "$work/retained-build-identities.sha256"
 object=$out/drivers/iio/common/uke-ssc/uke-ssc-iio.o
 test -s "$object"
 if llvm-readelf -h "$object" > "$work/architecture" 2>/dev/null; then
@@ -70,3 +77,4 @@ else
 fi
 test -s "$out/drivers/iio/common/uke-ssc/uke-ssc.o"
 printf 'Actual AArch64 SSC shared-owner driver and composite compiled; wire/protocol, Hall/DT/config retained. No combined IIO/Hall endpoint or physical acceptance.\n'
+printf 'SSC postimage compiled after all retained source/object gates; exact kernel release, UTS header and native config preserved.\n'
