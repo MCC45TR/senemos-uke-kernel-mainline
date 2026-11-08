@@ -72,7 +72,7 @@ fi
 printf '%s  %s\n' "$before" "$kernel/$driver" | sha256sum -c --strict --quiet -
 cmp "$profile/src/display/uke-abl-native.h" "$kernel/arch/arm64/kernel/uke-abl-native.h"
 cmp "$profile/src/boot/bindings/firmware/xiaomi,uke-ssc-sensors.yaml" "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
-for path in "$delta" "$profile/src/sensors/0006-ssc-dual-light-native-dt.patch" "$profile/src/sensors/0007-ssc-dual-light-binding.patch" "$profile/src/sensors/0008-ssc-dual-light-input-dependency.patch"; do
+for path in "$delta" "$profile/src/sensors/0006-ssc-dual-light-native-dt.patch" "$profile/src/sensors/0007-ssc-dual-light-binding.patch" "$profile/src/sensors/0008-ssc-dual-light-input-dependency.patch" "$profile/src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch"; do
  git -C "$kernel" apply --check --whitespace=error "$path"
  git -C "$kernel" apply --whitespace=error "$path"
 done

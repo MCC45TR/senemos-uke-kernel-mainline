@@ -13,8 +13,11 @@ install -Dm644 "$profile/src/boot/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
 printf '%s  %s\n' 6ac44534fd8510a2d7e58d0b8652110212f5163ee3ca06f18b7f06b1509876bc "$work/view/$path" | sha256sum -c --strict --quiet -
 git -C "$work/view" apply --check --whitespace=error "$profile/src/sensors/0007-ssc-dual-light-binding.patch"
 git -C "$work/view" apply --whitespace=error "$profile/src/sensors/0007-ssc-dual-light-binding.patch"
+install -Dm644 "$work/view/$path" "$work/unique/$path"
+git -C "$work/view" apply --check --whitespace=error "$profile/src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch"
+git -C "$work/view" apply --whitespace=error "$profile/src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch"
 if [[ $phase == prepared ]]; then
-  bash "$profile/tests/ssc-dual-light-schema.sh" "$profile" "$work/view/$path"
+  bash "$profile/tests/ssc-dual-light-schema.sh" "$profile" "$work/view/$path" "$work/unique/$path"
 else
   cmp "$work/view/$path" "$kernel/$path"
   cmp "$profile/src/boot/uke-hardware.h" "$kernel/arch/arm64/kernel/uke-hardware.h"

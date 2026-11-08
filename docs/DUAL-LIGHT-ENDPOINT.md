@@ -115,3 +115,18 @@ Keep failure diagnostics on stdout/stderr and run the bounded binding suite
 first in the native build, retaining every later cumulative source/object gate.
 This exposes the actual error without relaxing validation or altering hardware
 sources. Full kernel delivery and gain243 remain separate and unqualified.
+
+Source33/COPR11286215 fails229s and preserves the first schema diagnostic:
+the actual nine-entry acceleration matrix is rejected for non-unique elements.
+The producer correctly retains repeated zero/one coefficients. The old binding
+uses `string-array`, whose dt-schema definition requires uniqueness. Change
+only mount-matrix to `non-unique-string-array`; retain its nine entries,
+acceleration-only admission and all other property constraints. No sample,
+axis transform, driver, GPIO or firmware data changes.
+
+The exact dt-schema types source is pinned at commit
+5687115902ba74c1cd80bdab4772cc2cdfa75778, `dtschema/schemas/types.yaml`
+blob eb5f2f879317ecabaa44846366c4d4540d539a98. Its existing BSD-2-Clause
+schema definitions establish the distinction; no schema-tool code is copied.
+Replay the original unique binding against the actual emitted matrix as a
+negative control before claiming the eight positive/seven negative new cases.

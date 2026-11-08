@@ -5,6 +5,7 @@ test ! -e /etc/senemos/kernel-update.conf
 umask 077
 profile=$(realpath "${1:?Source profile}")
 schema=$(realpath "${2:?Patched xiaomi,uke-ssc-sensors schema}")
+legacy=$(realpath "${3:?Previous unique-coefficient binding}")
 work=$(mktemp -d)
 cleanup() {
   result=$?
@@ -43,6 +44,9 @@ for cxx in g++ clang++; do
   done
 done
 base=$work/g++-0/linked.dtb
+dt-validate -s "$legacy" -l xiaomi,uke-ssc-sensors "$base" > "$work/unique-matrix.log" 2>&1 || true
+grep -q 'accelerometer:mount-matrix:.*non-unique elements' "$work/unique-matrix.log"
+printf 'Original unique-coefficient binding rejects the actual valid mount matrix; unchanged positional coefficients retained.\n'
 for mode in missing-remoteproc lid-wide lid-string child-type child-label extra-property short-matrix; do
   cp "$base" "$work/$mode.dtb"
   case $mode in

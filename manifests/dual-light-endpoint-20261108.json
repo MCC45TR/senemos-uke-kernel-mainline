@@ -6,7 +6,7 @@
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
   "parent_source_check": 11286027,
   "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
-  "source_check_release": 33,
+  "source_check_release": 34,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_complete_qualification": true,
@@ -50,7 +50,8 @@
     "docs/DUAL-LIGHT-ENDPOINT.md",
     "tests/ssc-dual-light-schema.cpp",
     "tests/ssc-dual-light-schema.sh",
-    "packaging/native/check-dual-light-binding733.sh"
+    "packaging/native/check-dual-light-binding733.sh",
+    "src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch"
   ],
   "source_assets": [
     {
@@ -91,7 +92,7 @@
     },
     {
       "path": "packaging/native/check-dual-light-endpoint733.sh",
-      "sha256": "fc464f3af5c5bff92e391819da0065c59addabaf0bbc34b019b917433b5e7455"
+      "sha256": "de5c2b3055bc8b4ae2b35419d8ae17580a051096006eb9bf56181b8c78463061"
     },
     {
       "path": "packaging/native/copr-dual-light-endpoint733.sh",
@@ -99,15 +100,15 @@
     },
     {
       "path": "docs/DUAL-LIGHT-ENDPOINT.md",
-      "sha256": "6a3b92a9ff895067b7ea48adfdf7d06ecd2278c110d7e5eec63de8bb948794a5"
+      "sha256": "ba2f46e5ed60b43cd4436f7bb460d283a95c39ef98a4e117c7c747385ac38eb4"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "3d91f6c6aeddfa00df15fc09ebe5686c821a81e02e598d9db185b0b76aa26ca7"
+      "sha256": "8f41489625952fb6fc04c7207c7ff984878c5a2a520843546ce25d1cfb40f558"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "b65843f53d8bcd4131fea11af1f47c5089cd3a1dd4314f207b6958e3256f435c"
+      "sha256": "e2492d7219f3c4b6c4dedc182b7742fa5c2e668a8e22d3126a7dfb199d1e404b"
     },
     {
       "path": "tests/ssc-dual-light-schema.cpp",
@@ -115,11 +116,15 @@
     },
     {
       "path": "tests/ssc-dual-light-schema.sh",
-      "sha256": "659eca361815d414f0cc21ac045e968483bc25dd8c9de1988ef69f5d0a250b77"
+      "sha256": "7dea2b3f789e6c6e6e23c0300e62745040ac398d451784db1152e0daeb015e18"
     },
     {
       "path": "packaging/native/check-dual-light-binding733.sh",
-      "sha256": "f12efcebc87cd0db9552aab3adbbc616fd61101719611040048fd87f99d9cb79"
+      "sha256": "0323ad4f8d27dc1ddf51cdf85612f8e6f8c43728aab3772d5798d249ec0dde5b"
+    },
+    {
+      "path": "src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch",
+      "sha256": "e4667113de6fe0ef51b45a091010a0b4cbc4d3f6fc57074887fe6eb26afb2450"
     }
   ],
   "acceptance": {
@@ -173,7 +178,17 @@
     "positive_synthetic_dtbs": 8,
     "negative_schema_controls": 7,
     "runtime_board_dtbs_check": false,
-    "physical_acceptance": false
+    "physical_acceptance": false,
+    "original_unique_matrix_refusal_required": true,
+    "mount_matrix_coefficients_and_cardinality_unchanged": true,
+    "schema_type_reference": {
+      "repository": "devicetree-org/dt-schema",
+      "commit": "5687115902ba74c1cd80bdab4772cc2cdfa75778",
+      "path": "dtschema/schemas/types.yaml",
+      "blob": "eb5f2f879317ecabaa44846366c4d4540d539a98",
+      "license": "BSD-2-Clause",
+      "type": "non-unique-string-array"
+    }
   },
   "registration_api": {
     "repository": "gregkh/linux",
@@ -217,5 +232,16 @@
     "complete_binding_qualified": false,
     "actual_source32_arm64_gate_not_reached": true,
     "final_native_log_sha256": "f18ec269202f2574c51310d90cafdba9162c99225309ac80630941dafa1a2ee8"
+  },
+  "previous_source33": {
+    "source": "05041259b6edc7e36265c1b9ef120f85e4602311",
+    "copr_build": 11286215,
+    "state": "failed",
+    "duration_seconds": 229,
+    "first_schema_emitter_compiled_and_ran": true,
+    "diagnostic": "accelerometer:mount-matrix has non-unique elements; valid positional zero/one repetitions rejected by old string-array type",
+    "complete_binding_qualified": false,
+    "all_later_cumulative_gates_not_reached": true,
+    "final_native_log_sha256": "2fa11accea9693b81a221e6ca4f8330648d551a5ea5b5bfe8a385e790379f72a"
   }
 }
