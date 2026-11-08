@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Four corner program-channel routing in MFC; physical calibration and VI retain their existing identities",
+  "parent_full_build": 11287616,
+  "parent_source_commit": "78121e3f24357f2f9bcfb728779279532c8da7cf",
+  "source_stage_draft": true,
+  "native_callback_lifetime_qualified": false,
+  "full_delivery_source_qualified": false,
+  "physical_accepted": false,
+  "gain_ceiling": 223,
+  "new_runtime_rpms": 0,
+  "new_services": 0,
+  "per_sample_cpu_processing": false,
+  "payload_assets": [
+    "src/audio/uke-speaker-quad.h",
+    "src/audio/uke-speaker-quad-lpass.h",
+    "src/audio/uke-speaker-quad-control.h",
+    "src/audio/apply-speaker-quad733.sh",
+    "tests/speaker-quad-route.c",
+    "tests/speaker-quad-route.sh",
+    "packaging/native/check-speaker-quad733.sh",
+    "packaging/native/stage-speaker-quad733.sh",
+    "docs/SPEAKER-QUAD-ROTATION.md",
+    "tests/speaker-quad-lpass.c",
+    "packaging/native/copr-speaker-quad733.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-speaker-quad.h",
+      "sha256": "de19e8a274a196cd9fa99e60d0df2060ab649fd2b640c68cbed1d2cb9dab92d4"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-lpass.h",
+      "sha256": "ea2b7f329d1e88ffc56355a7fdb339a8aece2c5300733cc7dd35af8aa43eec42"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-control.h",
+      "sha256": "12d12972a802d985e1b3bb54d882a49bda12dca136f574d8c15b2dab932a3115"
+    },
+    {
+      "path": "src/audio/apply-speaker-quad733.sh",
+      "sha256": "81332491a9eac2e011835051224163a6d9f140948f0e71a55be960c12ae2615c"
+    },
+    {
+      "path": "tests/speaker-quad-route.c",
+      "sha256": "ede950562edd6095c9e6cba589cd90d6591fe23314565fec022ee9650404b07d"
+    },
+    {
+      "path": "tests/speaker-quad-route.sh",
+      "sha256": "afdf49660ad92aeea837ca975d0c4b8258bd7c8ca3f356b61123a5fd8d2ca209"
+    },
+    {
+      "path": "packaging/native/check-speaker-quad733.sh",
+      "sha256": "8bf256c961e0e369f2e26cc19d3a02f8d650a45cc8fe08000569652b28357b22"
+    },
+    {
+      "path": "packaging/native/stage-speaker-quad733.sh",
+      "sha256": "5056d666ad7c518946b22d61d48600cacb8b3d26e50d425e1e27d88bac7a2d72"
+    },
+    {
+      "path": "docs/SPEAKER-QUAD-ROTATION.md",
+      "sha256": "79d984f5b31e848a45a7e03592f5063a335ccbbd14848c2ba6fb2c06453eca77"
+    },
+    {
+      "path": "tests/speaker-quad-lpass.c",
+      "sha256": "cd4dde8d9faf838a75e5f23d4e135e2aa9fe2157c0a399bb9e4b475344647168"
+    },
+    {
+      "path": "packaging/native/copr-speaker-quad733.sh",
+      "sha256": "02c84475f43a84b162d60ac6117b5496a989b23c34e60d18b0a4f23c09fb8e28"
+    }
+  ],
+  "donors": [
+    {
+      "repository": "MiCode/vendor_qcom_opensource_audio-kernel",
+      "commit": "8eb0eccbc4027ae4a4987e4bced03a4381039714",
+      "path": "asoc/codecs/fs19xx/fsm_core.c",
+      "scope": "Actual OEM stereo-only CHS12 selection, not a four-corner implementation",
+      "license": "GPL-2.0-only"
+    },
+    {
+      "repository": "stable/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "paths": [
+        "sound/soc/qcom/qdsp6/q6apm-lpass-dais.c",
+        "sound/soc/qcom/qdsp6/audioreach.c",
+        "sound/soc/qcom/qdsp6/audioreach.h"
+      ],
+      "scope": "Existing MFC ordered-channel media format and backend graph callbacks"
+    },
+    {
+      "repository": "KDE/kwin",
+      "commit": "f130ab33c8e6f3b9d728aade87836086ae9a8ed4",
+      "path": "src/wayland/output_interface.cpp",
+      "scope": "Read-only transform/native-size event comparison; original compositor retained"
+    }
+  ],
+  "actual_lpass_adapter_fixture_prepared": true,
+  "actual_lpass_adapter_fixture_run": false
+}
