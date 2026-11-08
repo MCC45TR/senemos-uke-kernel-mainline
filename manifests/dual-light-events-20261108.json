@@ -4,7 +4,7 @@
   "scope": "Source-only event reducer for native dual ALS and rear-only closed-cover behavior; no runtime integration or provider replacement",
   "parent_full_build": 11285130,
   "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
-  "source_check_release": 24,
+  "source_check_release": 25,
   "proposed_full_release": 6,
   "full_release_reserved": false,
   "full_build_refused_until_integration": true,
@@ -59,20 +59,21 @@
     "tests/ssc-dual-light-native.c",
     "packaging/native/check-dual-light-events733.sh",
     "packaging/native/copr-dual-light-events733.sh",
-    "docs/DUAL-LIGHT-EVENT-REDUCER.md"
+    "docs/DUAL-LIGHT-EVENT-REDUCER.md",
+    "referances/native-als-20261108/dual-light-events24.h"
   ],
   "source_assets": [
     {
       "path": "src/sensors/uke-ssc-dual-light.h",
-      "sha256": "e62f6e396fa7f9c11d8c28918a2cb200a6c539ea33cb19accadb2c8217e6a809"
+      "sha256": "e8f7d56fca1e4b97448c2503f49a17eaba94d4f2716c6b633d45e3e75f1b4ea4"
     },
     {
       "path": "tests/ssc-dual-light-events.c",
-      "sha256": "0ee7d59930581b21805f2920e1c6b361287deb6a27fdb33a380adcc388ff76d7"
+      "sha256": "eb27d51992e9a8f2edb7920ff264b48d9373c82d102a88ab9890058c554b5a4f"
     },
     {
       "path": "tests/ssc-dual-light-events.sh",
-      "sha256": "ccea5e0a679c901a0e52a20ce65a8fe00ee55a1363f720bf982d226758b67e3c"
+      "sha256": "63be163a2173ceec91b3fd984615e7f13f953587b4b3a1344a7f6cee1c40623d"
     },
     {
       "path": "tests/ssc-dual-light-native.c",
@@ -80,7 +81,7 @@
     },
     {
       "path": "packaging/native/check-dual-light-events733.sh",
-      "sha256": "d5ff0476887be9706cdaeae06acfe8c4be3a0bf31ec04e72ebfee368f5b7f6cd"
+      "sha256": "4ef7afb90512d58ffec061c4eb361a00669544058d815164f98e3ef05427f6f9"
     },
     {
       "path": "packaging/native/copr-dual-light-events733.sh",
@@ -88,20 +89,23 @@
     },
     {
       "path": "docs/DUAL-LIGHT-EVENT-REDUCER.md",
-      "sha256": "8efb0f885e6eb9cd7262f9aaecdeae0e7342b71c026653af017476a84809778f"
+      "sha256": "88527177bfd199aa6b856970e6820b0e75757c07f577251f409d732de20b7b0a"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "d4932bcb8e7f80cab8a583d7fbe56fc96939f7791ce137d4bd83ea91ea55c293"
+      "sha256": "1033058903d7434bb1ff3bab9149fbea8da168d2b7f1b09f05920f23cbd5fc79"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "9c252a57a743d589ff9166a450f795748e2f09e5e04ebe23698f6f9572150393"
+      "sha256": "9ee15321eebb3e21ed8814fd5240da2b7ac6c293945eeb4c54071a21e2f42fa2"
+    },
+    {
+      "path": "referances/native-als-20261108/dual-light-events24.h",
+      "sha256": "e62f6e396fa7f9c11d8c28918a2cb200a6c539ea33cb19accadb2c8217e6a809"
     }
   ],
   "acceptance": {
     "four_compiler_modes_required": true,
-    "ten_behavioral_mutants_required": true,
     "real_aarch64_compile_consumer_required": true,
     "actual_driver_integration": false,
     "hall_event_subscription": false,
@@ -111,6 +115,18 @@
     "monitor_ddc_accepted": false,
     "physical_power_accepted": false,
     "provider_retirement": false,
-    "gain_ceiling": 223
+    "gain_ceiling": 223,
+    "twelve_behavioral_mutants_required": true,
+    "two_original_header_refusals_required": true,
+    "assertions_per_mode": 549
+  },
+  "previous_source_trial": {
+    "source": "9f3b9b35f23489c1d9c0794e328008cb5e483044",
+    "copr_build": 11285551,
+    "source_check_release": 24,
+    "state": "failed",
+    "stage": "Third behavioral mutant fails compilation because removed epoch comparison leaves an unused parameter under -Werror",
+    "qualified_scope": "Only GCC normal548 positive assertions and two mutant refusals observed; no full qualification",
+    "correction": "Retain warning gates and consume ignored epoch in mutant; add original-header replay refusal and ignored-front timestamp watermark"
   }
 }

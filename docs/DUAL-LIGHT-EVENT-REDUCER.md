@@ -47,8 +47,20 @@ support remain required work. Hardware power and physical parity need separate
 measurement. DDC capability and monitor preference also need real acceptance.
 
 The COPR-only contract compiles the actual header under GCC and Clang, with and
-without ASan/UBSan, rejects five behavioral mutants per compiler and compiles a
+without ASan/UBSan, rejects six behavioral mutants per compiler and the original source24 header and compiles a
 small consumer with real AArch64 kernel headers. That consumer is a test object,
 not the shipping SSC driver. The cumulative driver, DT and native config stay
 byte-exact and all previous sound, Hall and memory gates must pass again. These
 tests cannot establish sensor, cover, display, power or suspend functionality.
+
+The source24 trial, COPR 11285551, stops after the GCC 548-assertion positive
+case and two behavioral mutant refusals. Removing the epoch guard made its
+parameter unused, so the next mutant failed compilation under retained
+`-Werror`; that is not a behavioral refusal or complete qualification. The
+revised mutant still consumes the parameter while ignoring it, preserving
+all warnings and requiring an assertion failure. Review also adds a replay
+after reopening: ignored front events retain their timestamp watermark,
+without retaining front illumination or issuing a request. A byte-exact
+source24 header must fail that new assertion under both compilers. Source25
+requires 549 positive assertions per mode, twelve behavioral mutants and two
+original-header refusals. Native and physical integration remain pending.

@@ -13,7 +13,7 @@ if [[ $phase == prepared ]];then
    CC=$cc SANITIZE=$sanitize bash "$profile/tests/ssc-dual-light-events.sh"
   done
  done
- printf 'Dual-light event reducer source gate passed; ten mutants refused. SSC/Hall/IIO/DDC integration and hardware parity remain pending.\n'
+ printf 'Dual-light event reducer source gate passed; twelve mutants and original source24 replay refused. SSC/Hall/IIO/DDC integration and hardware parity remain pending.\n'
  exit 0
 fi
 work=$(mktemp -d)

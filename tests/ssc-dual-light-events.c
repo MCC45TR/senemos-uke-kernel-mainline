@@ -73,6 +73,7 @@ static void lid_transitions(void)
 	CHECK(uke_ssc_light_update(&pair, 3, 0, 11, 500, &out) == 0 && out == -77);
 	CHECK(uke_ssc_light_lid(&pair, true, false, &out) == -EAGAIN && out == -77);
 	CHECK(uke_ssc_light_required(&pair) == 3U && pair.valid == 2U);
+	CHECK(uke_ssc_light_update(&pair, 3, 0, 11, 500, &out) == -ESTALE && out == -77);
 	CHECK(uke_ssc_light_update(&pair, 3, 1, 11, 80, &out) == -EAGAIN && out == -77);
 	CHECK(uke_ssc_light_update(&pair, 3, 0, 12, 30, &out) == 1 && out == 80);
 	CHECK(uke_ssc_light_lid(&pair, true, true, &out) == 0);

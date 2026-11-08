@@ -80,8 +80,13 @@ static inline int uke_ssc_light_update(struct uke_ssc_light_pair *pair,
 	if (epoch != pair->epoch || !ticks || ticks <= pair->ticks[side])
 		return -ESTALE;
 	/* An occluded front sensor cannot contribute to rear-only output. */
-	if (!(uke_ssc_light_required(pair) & (1U << side)))
+	if (!(uke_ssc_light_required(pair) & (1U << side))) {
+		/* Retain the watermark so a late closed-cover indication cannot
+		 * masquerade as the first fresh front sample after reopening.
+		 */
+		pair->ticks[side] = ticks;
 		return 0;
+	}
 	if (micro_lux < 0)
 		return -ERANGE;
 	pair->ticks[side] = ticks;

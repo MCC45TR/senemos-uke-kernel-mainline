@@ -16,13 +16,23 @@ cp "$root/src/sensors/uke-ssc-dual-light.h" "$work/include/"
 "$cc" "${flags[@]}" -I"$work/include" "$root/tests/ssc-dual-light-events.c" -o "$work/test"
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 "$work/test"
 if [[ $sanitize == 0 ]];then
- for mutation in always-both front-while-closed stale-epoch accept-duplicate keep-old-front;do
+ cp "$root/referances/native-als-20261108/dual-light-events24.h" "$work/include/uke-ssc-dual-light.h"
+ "$cc" "${flags[@]}" -I"$work/include" "$root/tests/ssc-dual-light-events.c" -o "$work/original"
+ set +e
+ (ulimit -c 0; "$work/original") > "$work/original.log" 2>&1
+ original_status=$?
+ set -e
+ [[ $original_status == 134 ]]
+ grep -Eq 'Assertion .* failed' "$work/original.log"
+ printf 'Original source24 header refused by closed-cover replay assertion:%s.\n' "$cc"
+ for mutation in always-both front-while-closed stale-epoch accept-duplicate keep-old-front forget-ignored-clock;do
   awk -v m="$mutation" '
    m=="always-both" && /return pair->lid_known && pair->lid_closed \? 2U : 3U;/ {sub(/2U : 3U/,"3U : 3U");n++}
    m=="front-while-closed" && /^\tif \(required == 3U && / {sub(/required == 3U && /,"");n++}
-   m=="stale-epoch" && /^\tif \(epoch != pair->epoch / {sub(/epoch != pair->epoch \|\| /,"");n++}
+   m=="stale-epoch" && /^\tif \(epoch != pair->epoch / {sub(/epoch != pair->epoch/,"((void)epoch, false)");n++}
    m=="accept-duplicate" && /ticks <= pair->ticks\[side\]/ {sub(/ticks <=/,"ticks <");n++}
    m=="keep-old-front" && /pair->valid &= ~1U;/ {sub(/pair->valid &= ~1U;/,"pair->valid |= 0U;");n++}
+   m=="forget-ignored-clock" && /^\t\tpair->ticks\[side\] = ticks;$/ {sub(/pair->ticks\[side\] = ticks;/,"(void)ticks;");n++}
    {print} END {if(n!=1)exit 1}
   ' "$root/src/sensors/uke-ssc-dual-light.h" > "$work/include/uke-ssc-dual-light.h"
   "$cc" "${flags[@]}" -I"$work/include" "$root/tests/ssc-dual-light-events.c" -o "$work/mutant"
