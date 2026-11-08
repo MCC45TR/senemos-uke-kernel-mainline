@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Source-only actual SSC shared stream ownership foundation; no combined IIO endpoint, Hall subscription, runtime provider or physical acceptance",
+  "parent_full_build": 11285130,
+  "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+  "parent_source_check": 11285557,
+  "source_check_release": 26,
+  "proposed_full_release": 6,
+  "full_release_reserved": false,
+  "full_build_refused_until_endpoint_integration": true,
+  "driver_before_sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd",
+  "driver_after_sha256": "eb85f8b56aac951d47208e9b0e7ace6c3a6a0da1ad93f61373b4a1d7e0abd0f6",
+  "source_refs": [
+    "manifests/dual-light-events-20261108.json"
+  ],
+  "payload_assets": [
+    "src/sensors/0004-ssc-shared-stream-owners.patch",
+    "tests/ssc-stream-owners-host.h",
+    "tests/ssc-stream-owners.c",
+    "tests/ssc-stream-owners.sh",
+    "packaging/native/check-ssc-stream-owners733.sh",
+    "packaging/native/copr-ssc-stream-owners733.sh",
+    "docs/SSC-SHARED-STREAM-OWNERS.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0004-ssc-shared-stream-owners.patch",
+      "sha256": "53a651cb7606bbe5b20a2b90731a240d526fada7833cd1c6e9d905dddf2a14c2"
+    },
+    {
+      "path": "tests/ssc-stream-owners-host.h",
+      "sha256": "494cc9ec1f766a3f0a26241ba1478dc6561d2e4ad9f7a2be0e01eef9a1e8d417"
+    },
+    {
+      "path": "tests/ssc-stream-owners.c",
+      "sha256": "7ad645a0fdad0401b29e69a22572c694c694c4b0331d44d68408bc8902183dda"
+    },
+    {
+      "path": "tests/ssc-stream-owners.sh",
+      "sha256": "227d0506f9a7eb6d74d3dd191942a1ddd0190ced54d9a0105ab0a7d970531153"
+    },
+    {
+      "path": "packaging/native/check-ssc-stream-owners733.sh",
+      "sha256": "2d9840a1b31896699a9408d2133d038f6d996d1769053486f52aebad1f4b0ba3"
+    },
+    {
+      "path": "packaging/native/copr-ssc-stream-owners733.sh",
+      "sha256": "b8a615e91354dc3028229f6a1a5f3727ea21160d54d99a7f54ad93460890ff71"
+    },
+    {
+      "path": "docs/SSC-SHARED-STREAM-OWNERS.md",
+      "sha256": "c74579f65170a9c85ae62d31536295e8d7695c9ef12cca6265f6caef76d22391"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "c20b3744b07dd3628a3e4b8b27099e58527059113da887f05dc1be4f4e61cc6a"
+    },
+    {
+      "path": "manifests/dual-light-events-20261108.json",
+      "sha256": "6e425e6abc2cb38371d9ba98c696af930c07e4565a4532fe5c65866090931f0e"
+    }
+  ],
+  "acceptance": {
+    "four_actual_callback_modes_required": true,
+    "ten_compiled_behavioral_mutants_required": true,
+    "original_qmi_assertions_unchanged": true,
+    "whole_driver_inverse_required": true,
+    "actual_aarch64_driver_composite_required": true,
+    "combined_iio_endpoint": false,
+    "hall_input_subscription": false,
+    "original_sensor_proxy_event_path": false,
+    "physical_cover_brightness_and_power": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223
+  }
+}
