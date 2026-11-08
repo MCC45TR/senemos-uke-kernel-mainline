@@ -38,3 +38,7 @@ desktop-package fork. Gain243 remains conditional on qualified physical protecti
 The Hall acceptance checker also authenticates the narrowly extended SSC
 checker and reads its exact qualified parent for its historical whole-body
 inverse. All Hall callback, GPIO, DT and actual compiled-object checks remain.
+
+The memory checker likewise reads the authenticated exact cumulative-camera
+parent before checking its config-hash-only inverse. Its complete configuration,
+ZRAM/Zswap, native object and linked-module assertions remain unchanged.

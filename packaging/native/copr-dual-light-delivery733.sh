@@ -73,6 +73,14 @@ awk '
  {if(sub(/"\$profile\/packaging\/native\/check-migration-cohort731.sh"/,"\"$dual_light_parent_cohort\""))paths++;print}
  END{if(init!=1||paths!=1)exit 1}
 ' "$history/check-hall-initial733.sh" > "$profile/packaging/native/check-hall-initial733.sh"
+cp "$profile/packaging/native/check-memory-compression733.sh" "$history/check-memory-compression733.sh"
+awk '
+ $0=="profile=$kernel/native-profile" {
+   print;print "dual_light_parent_camera=$(bash \"$profile/packaging/native/dual-light-parent-checker733.sh\" \"$kernel\" check-cumulative-camera731.sh)";init++;next
+ }
+ {if(sub(/"\$profile\/packaging\/native\/check-cumulative-camera731.sh"/,"\"$dual_light_parent_camera\""))paths++;print}
+ END{if(init!=1||paths!=1)exit 1}
+' "$history/check-memory-compression733.sh" > "$profile/packaging/native/check-memory-compression733.sh"
 (cd "$history";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 cp "$profile/source-composition.json" "$profile/source-composition-before-dual-light-delivery.json"
 if [[ $mode == full ]]; then

@@ -38,6 +38,12 @@ if [[ $phase == prepared ]]; then
     END{if(removed!=1||restored!=1)exit 1}
   ' "$profile/packaging/native/check-hall-initial733.sh" | cmp - "$profile/history-before-dual-light-delivery/check-hall-initial733.sh"
   [[ $(bash "$profile/packaging/native/dual-light-parent-checker733.sh" "$kernel" check-migration-cohort731.sh) == "$profile/history-before-dual-light-delivery/check-migration-cohort731.sh" ]]
+  awk '
+    /^dual_light_parent_camera=\$\(bash / {removed++;next}
+    {if(sub(/"\$dual_light_parent_camera"/,"\"$profile/packaging/native/check-cumulative-camera731.sh\""))restored++;print}
+    END{if(removed!=1||restored!=1)exit 1}
+  ' "$profile/packaging/native/check-memory-compression733.sh" | cmp - "$profile/history-before-dual-light-delivery/check-memory-compression733.sh"
+  [[ $(bash "$profile/packaging/native/dual-light-parent-checker733.sh" "$kernel" check-cumulative-camera731.sh) == "$profile/history-before-dual-light-delivery/check-cumulative-camera731.sh" ]]
   bash "$profile/tests/dual-light-delivery-spec.sh" "$profile" "$profile/tests/fixtures/dual-light-full5.spec"
   bash "$profile/tests/dual-light-delivery-source.sh" "$kernel"
   printf 'Dual-light delivery prepared: both archives, unchanged historical checker bodies and actual production helper qualification passed; full linked image/physical gates separate.\n'

@@ -32,11 +32,11 @@
     },
     {
       "path": "packaging/native/check-dual-light-delivery733.sh",
-      "sha256": "e16a63ff338408555d990ca4f34db875a57461e3ee6693b83b9e91238ebbdd26"
+      "sha256": "8448e14660f0f5ccbc018fa6d9a7c6c6b8bbd8328f4e7c7dc945210574c89d0f"
     },
     {
       "path": "packaging/native/copr-dual-light-delivery733.sh",
-      "sha256": "d52cd68cec7777400a1766fd7fe95ee34129f7b941ddd9d4d3fac518800dc3dc"
+      "sha256": "2d57aa582c7b86e05b593a04a72abd9153310c80b54c20b6a3b1fccf8d42920d"
     },
     {
       "path": "tests/dual-light-delivery-spec.sh",
@@ -48,27 +48,27 @@
     },
     {
       "path": "docs/DUAL-LIGHT-DELIVERY.md",
-      "sha256": "f2cd739abaea7f13cf0ef625b0d6758e01b05e7108d989c4b9f2f6533fba9ac5"
+      "sha256": "55f5d95b61c67af86d3fdcb709edf1edfa85a889c9658a82e8459e50a346d7e8"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "bedc3cb4cf2b090a870c9f297ecb42c83e59a5d0bc07977edbd2e11eed3720b4"
+      "sha256": "e981b3dafa03593ed81698f151270bf0a4d5f0e1f0a46a94a3ce3aa41e686284"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "b72ac4c4141424cfba86a3ece649fd340d2cbe650c9ec7e3fb82d0be03956748"
+      "sha256": "94a16d3b216d0dc58e5327ccd202ea851072e0a895e92c9223ac6120e95cb093"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "1255b2ae26e7044937ac00a7ab5d56784911bb5b32356132507034c77d5ebadb"
+      "sha256": "7ce69af02da10bae4e4b4041cb49c7b3ac1180ab79a318db86699713b6cda390"
     },
     {
       "path": "manifests/dual-light-endpoint-20261108.json",
-      "sha256": "a207488579b37d7931c339b03480aa706c1805b5b9402c5a68d4a4a6f050c40f"
+      "sha256": "c72325a15970caf368a737b408fe09244a1bebc23fb9d007418b830a1363970c"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "c1b0de0aad80432ca5b6936e4407d5d300291f11536699b1a3c52e8ed00c309c"
+      "sha256": "1a1898b1306445c2571d05371b4ac27fb41cc27e75731502277e1bc921a6b0f0"
     },
     {
       "path": "packaging/native/dual-light-parent-checker733.sh",
