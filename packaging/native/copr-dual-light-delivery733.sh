@@ -65,6 +65,14 @@ for name in check-migration-cohort731.sh check-cumulative-camera731.sh; do
     {print}END{if(init!=1||comparison!=1)exit 1}
   ' "$history/$name" > "$profile/packaging/native/$name"
 done
+cp "$profile/packaging/native/check-hall-initial733.sh" "$history/check-hall-initial733.sh"
+awk '
+ $0=="profile=$kernel/native-profile" {
+   print;print "dual_light_parent_cohort=$(bash \"$profile/packaging/native/dual-light-parent-checker733.sh\" \"$kernel\" check-migration-cohort731.sh)";init++;next
+ }
+ {if(sub(/"\$profile\/packaging\/native\/check-migration-cohort731.sh"/,"\"$dual_light_parent_cohort\""))paths++;print}
+ END{if(init!=1||paths!=1)exit 1}
+' "$history/check-hall-initial733.sh" > "$profile/packaging/native/check-hall-initial733.sh"
 (cd "$history";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 cp "$profile/source-composition.json" "$profile/source-composition-before-dual-light-delivery.json"
 if [[ $mode == full ]]; then

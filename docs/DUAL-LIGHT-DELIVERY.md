@@ -34,3 +34,7 @@ closed-cover GPIO path and normal IRQ/resume must be measured separately on Uke.
 Brightness units, acquisition, desktop curve and observed comfort are separate
 requirements. There is no new polling timer, daemon, forged sensor capability or
 desktop-package fork. Gain243 remains conditional on qualified physical protection.
+
+The Hall acceptance checker also authenticates the narrowly extended SSC
+checker and reads its exact qualified parent for its historical whole-body
+inverse. All Hall callback, GPIO, DT and actual compiled-object checks remain.

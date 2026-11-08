@@ -56,11 +56,11 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "6d809267b8a9d9cfbd2f1f0ad4c596e045b143ad1c8a7efb3b9985d29c8ad6b1"
+      "sha256": "bedc3cb4cf2b090a870c9f297ecb42c83e59a5d0bc07977edbd2e11eed3720b4"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "d8f3771bcb8131f8dd1f441231cc5c310ae106af04a281e00d8284fbc6afaed2"
+      "sha256": "b72ac4c4141424cfba86a3ece649fd340d2cbe650c9ec7e3fb82d0be03956748"
     },
     {
       "path": "packaging/native/inject-ssc-stream-checks.awk",

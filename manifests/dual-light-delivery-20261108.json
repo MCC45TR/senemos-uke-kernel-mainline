@@ -14,7 +14,8 @@
     "packaging/native/copr-dual-light-delivery733.sh",
     "tests/dual-light-delivery-spec.sh",
     "tests/dual-light-delivery-source.sh",
-    "docs/DUAL-LIGHT-DELIVERY.md"
+    "docs/DUAL-LIGHT-DELIVERY.md",
+    "packaging/native/dual-light-parent-checker733.sh"
   ],
   "source_assets": [
     {
@@ -31,11 +32,11 @@
     },
     {
       "path": "packaging/native/check-dual-light-delivery733.sh",
-      "sha256": "6a86774e28e55a9cceb7f83cda5536b34005fac6bdaa12375545243593808416"
+      "sha256": "e16a63ff338408555d990ca4f34db875a57461e3ee6693b83b9e91238ebbdd26"
     },
     {
       "path": "packaging/native/copr-dual-light-delivery733.sh",
-      "sha256": "1bdbe37ac15f9c8014375e17ff00e9d10df8065c03adf29189136ccf013b3d5d"
+      "sha256": "d52cd68cec7777400a1766fd7fe95ee34129f7b941ddd9d4d3fac518800dc3dc"
     },
     {
       "path": "tests/dual-light-delivery-spec.sh",
@@ -47,27 +48,31 @@
     },
     {
       "path": "docs/DUAL-LIGHT-DELIVERY.md",
-      "sha256": "59180b2df6c8ba6f1be7b1496cc5c36c281411d112810de6c74e358883a36b03"
+      "sha256": "f2cd739abaea7f13cf0ef625b0d6758e01b05e7108d989c4b9f2f6533fba9ac5"
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "6d809267b8a9d9cfbd2f1f0ad4c596e045b143ad1c8a7efb3b9985d29c8ad6b1"
+      "sha256": "bedc3cb4cf2b090a870c9f297ecb42c83e59a5d0bc07977edbd2e11eed3720b4"
     },
     {
       "path": "manifests/dual-light-events-20261108.json",
-      "sha256": "d8f3771bcb8131f8dd1f441231cc5c310ae106af04a281e00d8284fbc6afaed2"
+      "sha256": "b72ac4c4141424cfba86a3ece649fd340d2cbe650c9ec7e3fb82d0be03956748"
     },
     {
       "path": "manifests/ssc-stream-owners-20261108.json",
-      "sha256": "3e3b92c6b999712e5d1bdb05c69b141b86b805b225f523a74225078fec9d1c73"
+      "sha256": "1255b2ae26e7044937ac00a7ab5d56784911bb5b32356132507034c77d5ebadb"
     },
     {
       "path": "manifests/dual-light-endpoint-20261108.json",
-      "sha256": "b42de3de3cd5adcd18d83414014ba38fcc937ac980d34a85b2b3d307efb0b894"
+      "sha256": "a207488579b37d7931c339b03480aa706c1805b5b9402c5a68d4a4a6f050c40f"
     },
     {
       "path": "manifests/hall-initial-cumulative-20261107.json",
-      "sha256": "20afff3ca6727e0cbeb0f3d4767336ebbe99f88c5580ab30548fb52aaf0bbb03"
+      "sha256": "c1b0de0aad80432ca5b6936e4407d5d300291f11536699b1a3c52e8ed00c309c"
+    },
+    {
+      "path": "packaging/native/dual-light-parent-checker733.sh",
+      "sha256": "c1e817cb0fa4d8306ce16d034f945a72d6bd8f241bbee445a7dfba5691e1b490"
     }
   ],
   "acceptance": {
