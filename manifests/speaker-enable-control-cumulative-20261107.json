@@ -120,19 +120,19 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "468e46b4ec9c040ca59fedf07e9cb5d4172def1cb1a396d76a6ee132b84fc4bc"
+      "sha256": "5e491a323c3d99b63df98aee272504c0b4eeb6633ab41cc6a44f93712756bac6"
     },
     {
       "path": "manifests/stable733-cumulative-20261107.json",
-      "sha256": "fc1fc87204115afb46b8dbae3fb6d90d458b5358a00f8b947099381f90feb7ad"
+      "sha256": "3fc4ea3d071271ed95c02f9e62372da2e7ddc8c343109021c01a3632cfe982ac"
     },
     {
       "path": "manifests/stop-deadline-cumulative-20261107.json",
-      "sha256": "08d23ad82e0d25c6c851fe5fda4b9466b324a17b522c936d0f66c9c05d6d921c"
+      "sha256": "bc8336a2033c957d211b53f3c5983197cc817f49a894cb3785bb19d7d8af757b"
     },
     {
       "path": "manifests/pcm-period-cumulative-20261107.json",
-      "sha256": "016338920f1ddd625eef5d506473fffd38d654be87d30b9167cbc25fb43e4802"
+      "sha256": "aa1602c2adc686c26982f783619f88447062f3169c9995167231a9ed345d24c8"
     },
     {
       "path": "src/audio/0027-enable-store-fixture.patch",

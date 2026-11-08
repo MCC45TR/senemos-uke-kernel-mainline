@@ -1,0 +1,28 @@
+--- a/arch/arm64/kernel/uke-abl-native.h
++++ b/arch/arm64/kernel/uke-abl-native.h
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ #ifdef __KERNEL__
+ #include "uke-hardware.h"
++#include "uke-dual-light.h"
+ #include "uke-bwmon.h"
+ #include "uke-cpu-bwmon.h"
+ #include "uke-memlat.h"
+@@ -9,6 +10,7 @@
+ #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+ #endif
+ #include "../boot/uke-hardware.h"
++#include "../boot/uke-dual-light.h"
+ #include "../boot/uke-bwmon.h"
+ #include "../boot/uke-cpu-bwmon.h"
+ #include "../boot/uke-memlat.h"
+@@ -171,6 +173,9 @@
+ 	ret = uke_hardware_names(fdt);
+ 	if (ret)
+ 		return ret;
++	ret = uke_dual_light_lid(fdt);
++	if (ret)
++		return ret;
+ 	ret = uke_hardware_simplify(fdt);
+ 	if (ret)
+ 		return ret;

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Source-only actual native dual-light IIO and passive Hall lifecycle; no full image, on-device test, binding acceptance or provider retirement",
+  "parent_full_build": 11285130,
+  "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+  "parent_source_check": 11286027,
+  "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
+  "source_check_release": 29,
+  "proposed_full_release": 6,
+  "full_release_reserved": false,
+  "full_build_refused_until_complete_qualification": true,
+  "driver_before_sha256": "eb85f8b56aac951d47208e9b0e7ace6c3a6a0da1ad93f61373b4a1d7e0abd0f6",
+  "driver_after_sha256": "3467a78b2939f4ab03f3b06e580b4d2836cdc69d95c55bd27e560c6793ae0226",
+  "native_header_before_sha256": "98ef66222134bd061b185ccc4b38a5c271621057f13049ba49a2e017cdbf08f5",
+  "native_header_after_sha256": "ef78116a822b38cc7a68226c44a3dac01c4ae0a6d88ebc2e7110b5e79da8d1fd",
+  "binding_before_sha256": "6ac44534fd8510a2d7e58d0b8652110212f5163ee3ca06f18b7f06b1509876bc",
+  "source_refs": [
+    "manifests/dual-light-events-20261108.json",
+    "manifests/ssc-stream-owners-20261108.json"
+  ],
+  "input_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "files": [
+      {
+        "path": "drivers/input/input.c",
+        "blob": "01c91fec9b7eba92835855b4531ddfafe78990c4"
+      },
+      {
+        "path": "include/linux/input.h",
+        "blob": "3381608127f72d30040915e19873fc91d7315687"
+      }
+    ],
+    "license": "GPL-2.0 / original upstream file notices",
+    "compatibility": "API and managed-parent comparison only; not board or physical acceptance"
+  },
+  "payload_assets": [
+    "src/boot/uke-dual-light.h",
+    "src/sensors/0005-ssc-dual-light-endpoint.patch",
+    "src/sensors/0006-ssc-dual-light-native-dt.patch",
+    "src/sensors/0007-ssc-dual-light-binding.patch",
+    "src/sensors/0008-ssc-dual-light-input-dependency.patch",
+    "tests/ssc-dual-light-dt.cpp",
+    "tests/ssc-dual-light-endpoint-host.h",
+    "tests/ssc-dual-light-endpoint.c",
+    "tests/ssc-dual-light-endpoint.sh",
+    "packaging/native/check-dual-light-endpoint733.sh",
+    "packaging/native/copr-dual-light-endpoint733.sh",
+    "docs/DUAL-LIGHT-ENDPOINT.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/boot/uke-dual-light.h",
+      "sha256": "4d9f4691cdf37d52f14ffff4d2544ea6e56ea4fd709f7adf641524592a04e1a5"
+    },
+    {
+      "path": "src/sensors/0005-ssc-dual-light-endpoint.patch",
+      "sha256": "36f2a54ffd14b43f6bc5993d0795d794ef9aa356d9589dd19e73633bf95d6f0d"
+    },
+    {
+      "path": "src/sensors/0006-ssc-dual-light-native-dt.patch",
+      "sha256": "4ffc32a0ad6bfa06dffa9f31f59fbcaae54a987e354b91f00ab921372acb915e"
+    },
+    {
+      "path": "src/sensors/0007-ssc-dual-light-binding.patch",
+      "sha256": "33941c7cdec500a42fc1d1c7d9ffb79281402b96340e31acc9f966b9243e5bcf"
+    },
+    {
+      "path": "src/sensors/0008-ssc-dual-light-input-dependency.patch",
+      "sha256": "8d8b47eaef0bdb1cbfb32b92d1609dd48e879ca439b45f1afaf2dc4c970a33aa"
+    },
+    {
+      "path": "tests/ssc-dual-light-dt.cpp",
+      "sha256": "0ebe7555ed8268758d7ce65e20d1f469d9c5a6aa8fa6a7fd3335a968a0f78ca1"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint-host.h",
+      "sha256": "a28cf4c50e9256d2d732978f6a0d9b64b6bd02fe422dc53c024e34f4237cbd1e"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint.c",
+      "sha256": "b8b02f08058a621411b43e953aad5b1653da05c8e7444de12018be820e85846c"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint.sh",
+      "sha256": "2c4e5378a6017a93134d3b70622944838a76f8053626179967b749bfff18296b"
+    },
+    {
+      "path": "packaging/native/check-dual-light-endpoint733.sh",
+      "sha256": "0343501d1b7423aa1d264ebe2aa1ee3e837da572748ab6527e4f184ee3aef433"
+    },
+    {
+      "path": "packaging/native/copr-dual-light-endpoint733.sh",
+      "sha256": "253b6a3d51a909b86fa717e89016f0fb91b667451e6575e440aeea202a6232e5"
+    },
+    {
+      "path": "docs/DUAL-LIGHT-ENDPOINT.md",
+      "sha256": "632ccd7cafd32c5e3cb961f8d886726dbac394b7ce0a84ca777e2295a7ddeb21"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "5e491a323c3d99b63df98aee272504c0b4eeb6633ab41cc6a44f93712756bac6"
+    },
+    {
+      "path": "manifests/ssc-stream-owners-20261108.json",
+      "sha256": "f12e57114eb86aff000a0011d4b62bfb46fcd0433a8e1c7810496e53b4f3c57d"
+    }
+  ],
+  "acceptance": {
+    "actual_endpoint_callbacks_four_modes_required": true,
+    "twelve_compiled_behavioral_mutants_required": true,
+    "four_libfdt_modes_required": true,
+    "original_qmi_assertions_unchanged": true,
+    "whole_driver_inverse_required": true,
+    "actual_aarch64_ssc_and_early_dt_required": true,
+    "canonical_config_release_uts_required": true,
+    "binding_qualified": false,
+    "installed_on_target": false,
+    "original_proxy_event_and_64bit_light_parity": false,
+    "physical_cover_light_power": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223
+  }
+}
