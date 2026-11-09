@@ -32,13 +32,19 @@ static int q6apm_send_cmd_sync(struct q6apm *apm,const struct gpr_pkt *pkt,int f
  assert(apm && !flags);memcpy(sent,(const unsigned char *)pkt+40,sizeof(sent));sends++;return response;
 }
 #define EXPORT_SYMBOL_GPL(symbol)
+#include "actual-q6apm-channel-ids.h"
+#ifdef UKE_QUAD_APM_HEADER
+#include UKE_QUAD_APM_HEADER
+#else
 #include "../src/audio/uke-speaker-quad-apm.h"
+#endif
 static unsigned int le16(const unsigned char *b) { return b[0]|b[1]<<8; }
 static unsigned int le32(const unsigned char *b) { return le16(b)|le16(b+2)<<16; }
 int main(void) {
  struct q6apm apm={};struct q6apm_graph graph={&apm};
  struct audioreach_module module={MODULE_ID_MFC,0x442e};
- const unsigned int ids[4]={1,2,5,6};unsigned int cases=0;
+ /* Independent wire contract: upstream q6apm and AudioReach media_fmt_api agree. */
+ const unsigned int ids[4]={1,2,4,5};unsigned int cases=0;
  for(unsigned int turn=0;turn<4;turn++) {
   assert(!audioreach_uke_quad_matrix(&graph,&module,uke_quad_sources[turn]));
   assert(le32(sent)==0x442e && le32(sent+4)==0x0800101f && le32(sent+8)==56 && !le32(sent+12));

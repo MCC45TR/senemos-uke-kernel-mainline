@@ -17,7 +17,9 @@ static inline void uke_quad_le16(unsigned char *wire, unsigned int value)
 static inline int uke_quad_encode(unsigned char *wire, unsigned int bytes,
 				  const unsigned int *map)
 {
-	static const unsigned int ids[] = { 1, 2, 5, 6 };
+	static const unsigned int ids[] = {
+		PCM_CHANNEL_FL, PCM_CHANNEL_FR, PCM_CHANNEL_LS, PCM_CHANNEL_RS
+	};
 	unsigned int row;
 
 	if (!wire || bytes != UKE_QUAD_COEFF_BYTES || uke_quad_turn(map, 4) < 0)

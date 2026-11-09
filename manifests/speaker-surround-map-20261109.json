@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "source_check_release": 58,
+  "parent_full_build": 11293047,
+  "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
+  "parent_srpm_sha256": "939972a60903f943387fc1d3e1983ec4e2dc1917267355c97e2e95f8dcc0e26f",
+  "parent_spec_sha256": "3d667256af3ecb7b47103258a62fc4b1c3b806ef78dd0b05d91c73bef8b97011",
+  "native_spec_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11292922/uke-kernel-migration-check.spec",
+  "native_spec_sha256": "08d30b1908e8e56fc74f071fa1d10293ffb6a0a84b4a3af813e3ae7311d34927",
+  "native_qualified": false,
+  "full_kernel_delivery_ready": false,
+  "physical_accepted": false,
+  "quad_identity_before": [
+    1,
+    2,
+    5,
+    6
+  ],
+  "quad_identity_after": [
+    1,
+    2,
+    4,
+    5
+  ],
+  "surround_input_counts": [
+    6,
+    8
+  ],
+  "topology_expanded": false,
+  "dsp_downmix_active": false,
+  "desktop_profiles_advertised": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/audio/uke-speaker-quad-wire.h",
+    "src/audio/0030-audioreach-surround-channel-map.patch",
+    "tests/speaker-quad-wire.c",
+    "tests/speaker-quad-lpass.c",
+    "tests/speaker-quad-route.sh",
+    "tests/audioreach-surround-map.c",
+    "packaging/native/check-surround-map733.sh",
+    "docs/SPEAKER-SURROUND-CHANNEL-MAP.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-speaker-quad-wire.h",
+      "sha256": "43e02700748b8271e1b9c4b9581709a5b1b08e31829f1d6bcad50d104e891c08"
+    },
+    {
+      "path": "src/audio/0030-audioreach-surround-channel-map.patch",
+      "sha256": "a3a3257dcd603470118e2bd250cf6b26529ca5df2cc669eaa689f7a58c4b7b49"
+    },
+    {
+      "path": "tests/speaker-quad-wire.c",
+      "sha256": "96ccefefe9b8cebd813656dbc3a3cf8c4b5e687b3d4f8b09225b596edd92ed9b"
+    },
+    {
+      "path": "tests/speaker-quad-lpass.c",
+      "sha256": "67742e96b8357fd06b4c8fc6e55366b55292a2bb17bc65adb8c277b76d98c07e"
+    },
+    {
+      "path": "tests/speaker-quad-route.sh",
+      "sha256": "23027594219a32032d93b064c4fbfc26499755ebd60e5e6155992c161b33d1fc"
+    },
+    {
+      "path": "tests/audioreach-surround-map.c",
+      "sha256": "d0923af57b67482ae6bb79d07afeb40810f932fdf55e0dd5214feaf2312be79f"
+    },
+    {
+      "path": "packaging/native/check-surround-map733.sh",
+      "sha256": "14ad1a96f20ffd4743d4c59d19fa04ed99c430986e5efa17a1d7358882abdf6e"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-CHANNEL-MAP.md",
+      "sha256": "620beada0c95f049b507c97d96f58579eb45bab1f4560136d524aa2fc59ee19c"
+    },
+    {
+      "path": "packaging/native/copr-surround-map733.sh",
+      "sha256": "951ea8e83824f8059bf6381fed4488b3870292bd8917351433848a2c1da388fd"
+    }
+  ]
+}

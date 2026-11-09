@@ -11,10 +11,8 @@ typedef uint8_t u8;
 #define SECONDARY_TDM_RX_0 40
 #define SNDRV_PCM_STREAM_PLAYBACK 0
 #define MODULE_ID_MFC 0x07001015
-#define PCM_CHANNEL_FL 1
-#define PCM_CHANNEL_FR 2
-#define PCM_CHANNEL_LS 5
-#define PCM_CHANNEL_RS 6
+#include "actual-q6apm-channel-ids.h"
+#include "actual-audioreach-map.inc"
 struct mutex { pthread_mutex_t value; };
 static struct mutex *lock_mutex(struct mutex *m) { assert(!pthread_mutex_lock(&m->value));return m; }
 static void unlock_mutex(struct mutex **m) { assert(!pthread_mutex_unlock(&(*m)->value)); }
@@ -56,7 +54,8 @@ static void require_locked(struct snd_soc_dai *dai) {
 #define UKE_SPEAKER_QUAD_TRANSPORT_H
 static int audioreach_uke_quad_matrix(struct q6apm_graph *graph,
 		const struct audioreach_module *module,const unsigned int *map) {
-	const u8 ids[]={1,2,5,6};
+	u8 ids[4];
+	audioreach_set_default_channel_mapping(ids, 4);
 	assert(graph==available_graph && module->module_id==MODULE_ID_MFC && module->instance_id==0x442e);
 	assert(!pthread_mutex_lock(&rendezvous));
 	if(block_send) {
@@ -106,10 +105,12 @@ int main(void) {
 	struct q6apm_graph graph={.id=40,.admitted=true,.info=&info};
 	struct q6apm_lpass_dai_data data={};
 	struct snd_soc_dai dai={.id=40,.dev=&data};
-	const u8 ids[4]={1,2,5,6};
+	const u8 ids[4]={1,2,4,5};
 	unsigned int tx=9,rx=0,map[4],cases=0;
 	assert(!pthread_mutex_init(&data.uke_quad_lock.value,NULL));
-	data.module_config[40]=(struct audioreach_module_config){4,48000,16,0,{1,2,5,6}};
+	data.module_config[40]=(struct audioreach_module_config){4,48000,16,0,{}};
+	audioreach_set_default_channel_mapping(data.module_config[40].channel_map, 4);
+	assert(!memcmp(data.module_config[40].channel_map, ids, sizeof(ids)));
 	const struct audioreach_module_config canonical=data.module_config[40];
 	available_graph=&graph;
 	for(unsigned int turn=0;turn<4;turn++) {

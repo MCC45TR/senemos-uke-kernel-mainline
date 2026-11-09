@@ -3,10 +3,16 @@
 set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
+kernel=$(realpath "${1:-$owner/..}")
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 ulimit -c 0
 mkdir -p "$work/sound"
+awk '/^#define PCM_CHANNEL_(FL|FR|FC|LS|RS|LFE|LB|RB)[[:space:]]/ {print;n++} END{if(n!=8)exit 1}' \
+ "$kernel/sound/soc/qcom/qdsp6/q6apm.h" > "$work/actual-q6apm-channel-ids.h"
+awk '/^void audioreach_set_default_channel_mapping\(/ {emit=1} emit{print} emit&&/^}/{exit}' \
+ "$kernel/sound/soc/qcom/qdsp6/audioreach.c" > "$work/actual-audioreach-map.inc"
+test -s "$work/actual-audioreach-map.inc"
 printf '/* Controlled fixture declarations are provided by the test TU. */\n' > "$work/uke-fs19xx-runtime.h"
 cp "$work/uke-fs19xx-runtime.h" "$work/sound/uke-fs19xx-guard.h"
 for compiler in gcc clang; do
@@ -19,7 +25,7 @@ for compiler in gcc clang; do
   "$work/lpass"
   "$compiler" "${flags[@]}" -I"$work" -pthread "$owner/tests/speaker-quad-card.c" -o "$work/card"
   "$work/card"
-  "$compiler" "${flags[@]}" "$owner/tests/speaker-quad-wire.c" -o "$work/wire"
+  "$compiler" "${flags[@]}" -I"$work" "$owner/tests/speaker-quad-wire.c" -o "$work/wire"
   "$work/wire"
   printf 'Actual quad route passed:%s/sanitize%s; firmware and physical acceptance remain separate.\n' "$compiler" "$sanitize"
  done
