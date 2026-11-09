@@ -24,3 +24,11 @@ existing boot/recovery path before any encrypted volume is considered.
 
 Full build, signed RPM admission, supported DNF transition and tablet tests are
 separate acceptance steps. Keep the accepted rollback kernel during delivery.
+
+The compact ALSA card identity is generated from the same central tuple as UCM
+and firmware aliases in both archives. The transformation checks the immutable
+parent card digest and a complete source inverse, and refuses mixed inputs
+before any write. The actual linked card module must contain the selected
+identity. An initial candidate was canceled before binary publication after
+its source still named the previous card revision; its kernel release number
+is retained for the corrected unpublished candidate.

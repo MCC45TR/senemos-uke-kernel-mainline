@@ -38,6 +38,8 @@ boot=$work/boot-recipe
 cmp "$work/proof.json" "$profile/source-composition.json"
 jq -e '.source_commit=="94519d8219168251bbdd074ff601aaceff42d980" and .power_response_candidate_layer==1 and .mst_depth_candidate_layer==1 and .speaker_gain_ceiling==223 and (.physical_acceptance|not)' "$work/proof.json" >/dev/null
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$work/configs.sha256"
+bash "$owner/tests/audio-tuple-delivery733.sh" "$owner" "$profile/src/audio/uke-audio-card.c"
+bash "$owner/packaging/native/retarget-audio-tuple733.sh" "$profile" "$boot" "$owner/manifests/cumulative-release.json"
 for tree in "$profile" "$boot";do
  while IFS= read -r file;do install -Dm644 "$owner/$file" "$tree/$file";done < <(jq -r '.payload_assets[]' "$manifest")
  install -Dm644 "$manifest" "$tree/manifests/mst-power-delivery-20261109.json"

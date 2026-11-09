@@ -55,4 +55,9 @@ llvm-nm "$out/vmlinux" | awk '$NF=="uke_profile_set"{found=1}END{exit !found}'
 cmp "$profile/native.config" "$kernel/boot-recipe/packaging/native/native.config"
 grep -Fx '# CONFIG_DM_CRYPT is not set' "$out/.config"
 grep -Fx '# CONFIG_FS_ENCRYPTION is not set' "$out/.config"
+tuple=$(bash "$profile/scripts/kernel-release.sh" json "$profile/manifests/cumulative-release.json")
+audio_name=uke$(jq -er .version <<< "$tuple")-$(jq -er .release <<< "$tuple")u
+[[ ${audio_name//./_} == "$(jq -er .diagnostic_audio_driver "$profile/source-composition.json")" ]]
+strings "$out/sound/soc/qcom/uke-audio-card.ko" | grep -Fx "$audio_name"
+printf 'Full compact ALSA source/module tuple matches the production UCM/firmware release:%s.\n' "$audio_name"
 printf 'Full MST/power linked: actual ARM64 DP/DPU accessor resolves in msm.ko and saver provider in vmlinux; production config retained.\n'

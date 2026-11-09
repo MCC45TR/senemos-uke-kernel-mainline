@@ -30,7 +30,9 @@
     "packaging/native/prepare-mst-power-delivery733.sh",
     "packaging/native/copr-mst-power-full733.sh",
     "tests/mst-power-full-spec733.sh",
-    "docs/MST-POWER-DELIVERY-733.md"
+    "docs/MST-POWER-DELIVERY-733.md",
+    "packaging/native/retarget-audio-tuple733.sh",
+    "tests/audio-tuple-delivery733.sh"
   ],
   "source_assets": [
     {
@@ -39,11 +41,11 @@
     },
     {
       "path": "packaging/native/prepare-mst-power-delivery733.sh",
-      "sha256": "0cfb4b72d0a0ad6d3f8170a863cde3efceea53f72bb9317e641a917da8643fc8"
+      "sha256": "c7a911c0590f447d4ed81040400773c52fd063148c9a067fa0f3297309afc70d"
     },
     {
       "path": "packaging/native/copr-mst-power-full733.sh",
-      "sha256": "9c85be55898558c580ab7487342f7fbdd5c66957fceb91594c4fde8ad2e064b0"
+      "sha256": "426e821cad1c608f67a64ad075bcf004212b4b732634a95feea81e42425256bb"
     },
     {
       "path": "tests/mst-power-full-spec733.sh",
@@ -51,11 +53,21 @@
     },
     {
       "path": "docs/MST-POWER-DELIVERY-733.md",
-      "sha256": "bd18d790b0da7011426d6959a5f78ed1912bc45a31f2d1836cd646d3f0d3649f"
+      "sha256": "106a97f57394962df3c047b932420a9e1ec30e8992dbb984cd1a50aaeaa53b37"
     },
     {
       "path": "manifests/cumulative-release.json",
       "sha256": "a17bd395ba042e38410d9c976eb59c18e039cfef180f8142a3eb348ad244e750"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "eeffa29df9e466799cc5349d76101a84f29de0fd97c9be3133a02ca27784dc79"
+    },
+    {
+      "path": "tests/audio-tuple-delivery733.sh",
+      "sha256": "e51f762d830a79eefcd28fe2cc998b085644ac01080fd1f3fc94138926f548e1"
     }
-  ]
+  ],
+  "compact_audio_tuple_from_central_plan": true,
+  "compact_audio_tuple_linked_check": true
 }
