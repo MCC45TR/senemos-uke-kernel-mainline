@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 66,
+  "parent_full_build": 11293047,
+  "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
+  "parent_srpm_sha256": "939972a60903f943387fc1d3e1983ec4e2dc1917267355c97e2e95f8dcc0e26f",
+  "parent_spec_sha256": "3d667256af3ecb7b47103258a62fc4b1c3b806ef78dd0b05d91c73bef8b97011",
+  "required_stream_source": "584afd2ea3a9426863e9e45a765a4edfb1aa3f08",
+  "required_stream_build": 11293736,
+  "qualification_scope": "Original ALSA topology compiler, UCM parser and channel-only source inverse; not a kernel build or device test",
+  "native_qualified": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "protected_gain": 223,
+  "physical_output_count": 4,
+  "input_profile_channels": [
+    6,
+    8
+  ],
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "parent_assets": [
+    {
+      "path": "src/audio/build-protected-topology.sh",
+      "sha256": "73a840705bb321e5a05d3b11f799b1378de88677b71c9fbcfa662076484118e4"
+    },
+    {
+      "path": "src/audio/POCO-Pad-X1.conf",
+      "sha256": "83193dd68fe748983d2febad6c345d7adb60481fe714469f530bb6e60eb994dd"
+    },
+    {
+      "path": "src/audio/POCO-Pad-X1-Microphone-Capture.conf",
+      "sha256": "f95b4118a3def618655d877c70d76fb12149ebfc36e634f78825ceb41971a128"
+    },
+    {
+      "path": "src/audio/desktop/array-ucm2/Speaker-HiFi.conf",
+      "sha256": "7c49434779fd2c00b1ad25d4459fe2bef80521ece3871ae20a58152b524b9461"
+    },
+    {
+      "path": "src/audio/desktop/array-ucm2/POCO-Pad-X1.conf",
+      "sha256": "8be93de527e2d77dd10dc4a5ba6c5c7abaa93e3386c2eceea5bede3b434e0ce3"
+    },
+    {
+      "path": "src/audio/desktop/wireplumber/80-uke-microphone-array.conf",
+      "sha256": "699cf71e340dde4f9a3115b4153bf402ba5b8b00ea4ff90ac225dd0da22bade9"
+    }
+  ],
+  "payload_assets": [
+    "src/audio/prepare-surround-profiles733.sh",
+    "packaging/native/check-surround-profiles733.sh",
+    "tests/speaker-surround-ucm.cpp",
+    "docs/SPEAKER-SURROUND-PROFILES.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/prepare-surround-profiles733.sh",
+      "sha256": "a750b4f7993bb3d6a4a7145a7964ea4dbcbf229aa2ecb130ca8efeea2edbb8cb"
+    },
+    {
+      "path": "packaging/native/check-surround-profiles733.sh",
+      "sha256": "24288ca2ccbe8d928564ad898459abdd537bb4625cd6e723cb4d57e8c0d59a19"
+    },
+    {
+      "path": "tests/speaker-surround-ucm.cpp",
+      "sha256": "08016a492519de5c52c47a666302db830896ecbedd3d8b9b89ed2beee9a81271"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-PROFILES.md",
+      "sha256": "513e1d24f20c5d4b36ddb8f039869a251607eb15222d12054ffa2d6427d6111b"
+    },
+    {
+      "path": "packaging/native/copr-surround-profiles733.sh",
+      "sha256": "959755018cb7b7e8d75756c188dd5bac457b39e9044d5bd23f5438102a7167f9"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "3261559b7f050f1691b0001544b8497469dea818a3b03136fc5cca0478b595ee"
+    }
+  ]
+}
