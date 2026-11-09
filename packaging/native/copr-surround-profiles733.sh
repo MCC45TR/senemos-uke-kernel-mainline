@@ -43,7 +43,7 @@ Summary: Focused Uke protected surround profile source qualification
 License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: surround-profiles-proof.tar.xz
-BuildRequires: gcc-c++, clang, alsa-utils, alsa-lib-devel, pkgconf-pkg-config, nodejs, jq
+BuildRequires: gcc-c++, clang, alsa-utils, alsa-topology-utils, alsa-lib-devel, pkgconf-pkg-config, nodejs, jq
 ExclusiveArch: aarch64
 %global debug_package %{nil}
 

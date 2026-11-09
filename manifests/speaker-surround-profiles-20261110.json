@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 66,
+  "source_check_release": 67,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -72,7 +72,7 @@
     },
     {
       "path": "packaging/native/copr-surround-profiles733.sh",
-      "sha256": "959755018cb7b7e8d75756c188dd5bac457b39e9044d5bd23f5438102a7167f9"
+      "sha256": "a4a13cd09578f4a199d64be506c48dc8ad56c04dff2b4aa2cb8252355fac8daf"
     },
     {
       "path": "LICENSE",
