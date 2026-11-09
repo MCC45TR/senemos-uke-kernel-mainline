@@ -41,6 +41,8 @@ static int uke_surround_stream_channels(struct snd_pcm_substream *substream)
 			return -EBUSY;
 		channels = count;
 	}
-	return channels ? channels : -ENOLINK;
+	if (!channels)
+		return -ENOLINK;
+	return channels;
 }
 #endif

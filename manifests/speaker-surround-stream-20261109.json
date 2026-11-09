@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "source_check_release": 64,
+  "source_check_release": 65,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -147,7 +147,7 @@
     },
     {
       "path": "src/audio/uke-speaker-surround-stream.h",
-      "sha256": "acb8f1f12c727676c5a6bf27b67b111a0df9488f4cd80cef72de6f90e6461060"
+      "sha256": "48b438e9de9a715fb22be826b2ed9688512b144963a00ed4eb222a7086501bb2"
     },
     {
       "path": "src/audio/uke-speaker-surround-fe.h",
@@ -175,7 +175,7 @@
     },
     {
       "path": "docs/SPEAKER-SURROUND-STREAM.md",
-      "sha256": "8c86735bdaaa3828f8aefaa7806584dd4704fa5e252190400df9769a925d8d63"
+      "sha256": "2b2d191549b5aea31a814637fe8a2cd653b1e1f921e21f1dc729632a0303710d"
     },
     {
       "path": "packaging/native/preflight-surround-stream733.sh",
@@ -240,14 +240,25 @@
   "peak_bound_q14": 16384,
   "audio_freezable_worker_layer": 1,
   "worker_queue_sites": 6,
-  "previous_attempt": {
-    "source_check_release": 63,
-    "copr_build": 11293692,
-    "source_commit": "d8ad68afa4876a418efc4c16af319e76d4c47566",
-    "state": "failed",
-    "duration_seconds": 699,
-    "phase": "new FE fixture compilation",
-    "reason": "Raw UAPI annotation macros absent and controlled hw_params type conflicted with the real UAPI tag; hardware/object result not reached"
-  },
-  "speaker_surround_stream_layer": 1
+  "speaker_surround_stream_layer": 1,
+  "previous_attempts": [
+    {
+      "source_check_release": 63,
+      "copr_build": 11293692,
+      "source_commit": "d8ad68afa4876a418efc4c16af319e76d4c47566",
+      "state": "failed",
+      "duration_seconds": 699,
+      "phase": "new FE fixture compilation",
+      "reason": "Raw UAPI annotation macros absent and controlled hw_params type conflicted with the real UAPI tag; hardware/object result not reached"
+    },
+    {
+      "source_check_release": 64,
+      "copr_build": 11293726,
+      "source_commit": "f1a4912b8c65fae6501230067a37153352f22d4c",
+      "state": "failed",
+      "duration_seconds": 82,
+      "phase": "early type preflight",
+      "reason": "Unsigned channel count mixed with negative errno in conditional return; replace with explicit absent-stream branch"
+    }
+  ]
 }

@@ -48,3 +48,8 @@ distinct controlled-provider tag. An early GCC/Clang syntax-only preflight
 now precedes cumulative preparation. Hardware code and every runtime assertion
 are retained; the final controlled callbacks and real ARM64 objects remain
 required. No support or physical acceptance follows from the failed fixture.
+
+The early64 preflight11293726 stopped82s after an unsigned-count/negative-errno
+conditional triggered -Werror=sign-compare. The implementation now returns
+-ENOLINK in an explicit branch before returning the bounded channel count.
+No warning is disabled and no acceptance assertion is removed.
