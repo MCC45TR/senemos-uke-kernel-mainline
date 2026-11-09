@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "source_check_release": 61,
+  "source_check_release": 62,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -118,7 +118,7 @@
     },
     {
       "path": "src/audio/0031-fs19xx-freezable-health.patch",
-      "sha256": "29d465f7aadc8abb5061d0e8427bf0821f44c327b076821de487c88990a97edf"
+      "sha256": "422d9de6ba97421fd8694d8eef66b2b183f414ed159d8585b6db21099f3439ef"
     },
     {
       "path": "tests/audio-stop-transition.c",
@@ -130,11 +130,11 @@
     },
     {
       "path": "packaging/native/check-audio-freeze733.sh",
-      "sha256": "f857313d5a6edc75376a97865a34cce53fde1eb2f464d09725654590bc6f2b26"
+      "sha256": "4ff6ad7405e86e23b8a9f7474f438e4b073ea415567998a2a649c0d8ef028577"
     },
     {
       "path": "docs/AUDIO-SYSTEM-SLEEP-WORKER.md",
-      "sha256": "5143d7d714e0f2fff75df1e36cf7cd31cac107f7efbf909bb7ea46c629649e11"
+      "sha256": "ca2381fcf1359634cc69855577407b5d6764d6246ef47dcf5c8d9aaddd2123bd"
     }
   ],
   "parent_native_admission": {
@@ -190,5 +190,12 @@
   "lfe_retained": true,
   "peak_bound_q14": 16384,
   "audio_freezable_worker_layer": 1,
-  "worker_queue_sites": 5
+  "worker_queue_sites": 6,
+  "previous_attempt": {
+    "copr_build": 11293529,
+    "source_check_release": 61,
+    "state": "failed",
+    "duration_seconds": 697,
+    "reason": "Real STOP callback still scheduled the same worker from the included mute helper on the nonfreezable queue; actual provider caught the missing sixth site"
+  }
 }

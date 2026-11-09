@@ -3,7 +3,7 @@ Subject: [PATCH] ASoC: fs19xx: freeze delayed health work across system sleep
 
 The health worker performs I2C transfers. Do not let it run after adapters
 have suspended. The system freezable queue drains before device suspend and
-thaws after device resume. Keep all five delays, mute/STOP/fault callbacks,
+thaws after device resume. Keep all six delays, mute/STOP/fault callbacks,
 registers, gain and cancel paths unchanged. Runtime PM remains separate.
 
 --- a/sound/soc/codecs/fs19xx.c
@@ -51,5 +51,16 @@ registers, gain and cancel paths unchanged. Runtime PM remains separate.
 -	mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
 +	mod_delayed_work(system_freezable_wq, &fs19xx->unmute_work,
  			 msecs_to_jiffies(FS19XX_UNMUTE_DELAY_MS));
+ 	return 0;
+ }
+--- a/sound/soc/codecs/uke-fs19xx-muted-stop.h
++++ b/sound/soc/codecs/uke-fs19xx-muted-stop.h
+@@ -26,7 +26,7 @@
+ 	 */
+ 	fs19xx->stop_deadline = jiffies + msecs_to_jiffies(FS19XX_STOP_DRAIN_MS);
+ 	fs19xx->draining = true;
+-	mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,
++	mod_delayed_work(system_freezable_wq, &fs19xx->unmute_work,
+ 			 msecs_to_jiffies(FS19XX_STOP_DRAIN_MS));
  	return 0;
  }

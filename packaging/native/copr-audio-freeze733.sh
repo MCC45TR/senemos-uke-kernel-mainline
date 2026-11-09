@@ -58,7 +58,7 @@ jq --arg commit "$commit" --argjson release "$release" '.+{
  speaker_surround_coeff_layer:1,speaker_surround_coeff_tables:[4,6,8],
  speaker_surround_lfe_retained:true,speaker_surround_peak_bound_q14:16384,
  speaker_surround_coeff_native_admitted:false,
- audio_freezable_worker_layer:1,audio_health_freezable_queue_sites:5,
+ audio_freezable_worker_layer:1,audio_health_freezable_queue_sites:6,
  audio_freezable_worker_native_admitted:false,audio_system_sleep_physical_accepted:false
 }' "$profile/source-composition.json" > "$work/composition.json"
 install -m644 "$work/composition.json" "$profile/source-composition.json"

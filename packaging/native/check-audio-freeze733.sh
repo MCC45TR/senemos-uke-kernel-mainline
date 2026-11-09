@@ -6,20 +6,27 @@ kernel=$(realpath "${1:?Prepared cumulative kernel}")
 out=$(realpath "${2:?Existing native output}")
 profile=$kernel/native-profile
 codec=$kernel/sound/soc/codecs/fs19xx.c
+muted=$kernel/sound/soc/codecs/uke-fs19xx-muted-stop.h
 patch=$profile/src/audio/0031-fs19xx-freezable-health.patch
 work=$kernel/native-generated/audio-freeze733
 [[ ! -e $work ]]
 mkdir -p "$work/inverse/sound/soc/codecs"
 ulimit -c 0
 printf '%s  %s\n' 7259901dd2d2121d816e7084142ae55fcfe5838a3f5e70affbe42e8dbd55b319 "$codec" | sha256sum -c --strict --quiet -
+printf '%s  %s\n' 3aad113fa488771192f549e09dbaf118ff86fac70dbf7ad939589fa8d10191f7 "$muted" | sha256sum -c --strict --quiet -
 cp "$codec" "$work/before.c"
+cp "$muted" "$work/before-muted.h"
 git -C "$kernel" apply --check --whitespace=error "$patch"
 git -C "$kernel" apply --whitespace=error "$patch"
 [[ $(grep -Fc 'mod_delayed_work(system_freezable_wq, &fs19xx->unmute_work,' "$codec") == 5 ]]
 ! grep -F 'mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,' "$codec"
+[[ $(grep -Fc 'mod_delayed_work(system_freezable_wq, &fs19xx->unmute_work,' "$muted") == 1 ]]
+! grep -F 'mod_delayed_work(system_percpu_wq, &fs19xx->unmute_work,' "$muted"
 cp "$codec" "$work/inverse/sound/soc/codecs/fs19xx.c"
+cp "$muted" "$work/inverse/sound/soc/codecs/uke-fs19xx-muted-stop.h"
 git -C "$work/inverse" apply -R --whitespace=error "$patch"
 cmp "$work/before.c" "$work/inverse/sound/soc/codecs/fs19xx.c"
+cmp "$work/before-muted.h" "$work/inverse/sound/soc/codecs/uke-fs19xx-muted-stop.h"
 for cc in gcc clang;do
  for san in 0 1;do
   for ticks in 100 250 1000;do
@@ -43,4 +50,4 @@ llvm-readelf -h "$out/sound/soc/codecs/fs19xx.o" | grep -F AArch64
 llvm-nm -u "$out/sound/soc/codecs/fs19xx.o" > "$work/undefined-symbols.txt"
 grep -E '[[:space:]]U[[:space:]]+system_freezable_wq$' "$work/undefined-symbols.txt"
 ! grep -E '[[:space:]]U[[:space:]]+system_percpu_wq$' "$work/undefined-symbols.txt"
-printf 'Actual ARM64 FS19xx uses the system freezable queue at all five sites; full-source inverse retains registers, gain and fault paths. No physical suspend acceptance.\n'
+printf 'Actual ARM64 FS19xx uses the system freezable queue at all six sites; full-source inverse retains registers, gain and fault paths. No physical suspend acceptance.\n'

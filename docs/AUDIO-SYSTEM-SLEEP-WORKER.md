@@ -5,10 +5,11 @@
 ADSP remained running when evidence was collected. This does not establish the
 root cause of every USB, battery, display or DSP incident.
 
-The current codec uses five delayed-work scheduling sites on
+The current codec and included mute helper use six delayed-work scheduling sites on
 `system_percpu_wq`: initial unmute, bounded PLL/configured waits, periodic active
-health and the finite muted STOP deadline. This queue is not freezable. The
-candidate changes only those five queue pointers to `system_freezable_wq`.
+health, the finite muted STOP deadline and initial mute-transport wait. This
+queue is not freezable. The candidate changes only those six queue pointers to
+`system_freezable_wq`.
 Linux drains freezable work during the system-freeze phase and does not start
 new work until thaw. Thus this worker cannot start I2C transfers in the device
 suspend interval. Existing component suspend/resume, locking, cancellation,
@@ -32,3 +33,9 @@ import system_freezable_wq and no longer import system_percpu_wq. These checks
 do not execute Linux device suspend on a tablet or prove physical protection.
 Require recoverable repeated audio/DP/USB suspend and resume tests before any
 physical success claim. No new worker, timer, daemon or runtime package is added.
+
+Source61/COPR11293529 failed697s at the actual queue provider: the codec
+changed five sites, but its included muted-STOP helper still scheduled the same
+worker on the old queue. The correction includes that sixth site and verifies
+both whole-source inverses. The assertion is retained, not relaxed; the failure
+found incomplete implementation before full-kernel delivery.
