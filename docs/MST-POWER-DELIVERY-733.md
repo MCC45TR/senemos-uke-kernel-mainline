@@ -32,3 +32,10 @@ before any write. The actual linked card module must contain the selected
 identity. An initial candidate was canceled before binary publication after
 its source still named the previous card revision; its kernel release number
 is retained for the corrected unpublished candidate.
+
+The compact ALSA identity transformer also accepts an explicitly pinned parent
+card digest for later cumulative archives. It discovers the one existing compact
+literal only after both source copies match that digest, retargets both, and
+checks a whole-file inverse before writing. Data-only tests cover10-to11/12 and
+11-to12, replay/stale-digest refusal and mixed-copy pre-mutation refusal. This
+does not reserve or submit a new full kernel.
