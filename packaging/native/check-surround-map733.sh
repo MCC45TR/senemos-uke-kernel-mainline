@@ -17,7 +17,7 @@ awk '/^void audioreach_set_default_channel_mapping\(/ {emit=1} emit{print} emit&
 git -C "$kernel" apply --check --whitespace=error "$profile/src/audio/0030-audioreach-surround-channel-map.patch"
 git -C "$kernel" apply --whitespace=error "$profile/src/audio/0030-audioreach-surround-channel-map.patch"
 awk '/^void audioreach_set_default_channel_mapping\(/ {emit=1} emit{print} emit&&/^}/{exit}' "$file" > "$work/actual-audioreach-map.inc"
-for header in uke-speaker-quad-apm.h uke-speaker-quad-wire.h uke-speaker-quad.h uke-speaker-quad-transport.h;do
+for header in uke-speaker-quad-apm.h uke-speaker-quad-wire.h uke-speaker-surround-wire.h uke-speaker-quad.h uke-speaker-quad-transport.h;do
  cp "$profile/src/audio/$header" "$work/bad/$header"
 done
 # Recreate the demonstrated historical numeric identity error only.

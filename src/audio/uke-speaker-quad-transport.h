@@ -7,4 +7,7 @@ struct audioreach_module;
 int audioreach_uke_quad_matrix(struct q6apm_graph *graph,
 			      const struct audioreach_module *module,
 			      const unsigned int *map);
+int audioreach_uke_surround_matrix(struct q6apm_graph *graph,
+				  const struct audioreach_module *module,
+				  const unsigned int *map);
 #endif
