@@ -40,3 +40,11 @@ The exact OEM amplifier route/calibration remains the established Uke graph;
 no other-board native surround renderer is established by the donor inventory.
 Native actual-callback fixtures and fresh ARM64 FE/LPASS objects are required;
 their success is separate from full linkage, package and physical admission.
+
+Source63/COPR11293692 failed699s while compiling the new controlled FE
+fixture: raw UAPI annotations were not defined and its model reused the real
+hw_params tag. The correction supplies normal annotation semantics and a
+distinct controlled-provider tag. An early GCC/Clang syntax-only preflight
+now precedes cumulative preparation. Hardware code and every runtime assertion
+are retained; the final controlled callbacks and real ARM64 objects remain
+required. No support or physical acceptance follows from the failed fixture.

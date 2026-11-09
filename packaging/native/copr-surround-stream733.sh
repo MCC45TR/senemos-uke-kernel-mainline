@@ -36,6 +36,7 @@ release=$(jq -er .source_check_release "$manifest")
 awk -v release="$release" '
  $0=="%global senemos_build_release 10" {print "%global senemos_build_release 11";k++;next}
  /^Release: 57%\{\?dist\}$/ {print "Release: " release "%{?dist}";r++;next}
+ $0=="bash native-profile/prepare.sh \"$PWD\"" {print "bash native-profile/packaging/native/preflight-surround-stream733.sh \"$PWD\"";early++}
  $0=="%install" {print "bash native-profile/packaging/native/check-surround-map733.sh \"$PWD\" %{_uke_out}";print "bash native-profile/packaging/native/check-surround-coeff733.sh \"$PWD\" %{_uke_out}";print "bash native-profile/packaging/native/check-audio-freeze733.sh \"$PWD\" %{_uke_out}";print "bash native-profile/packaging/native/check-surround-stream733.sh \"$PWD\" %{_uke_out}";i++}
  $0=="%changelog" {
   print;print "* Mon Nov 09 2026 Uke contributors - 7.3.3-" release
@@ -44,7 +45,7 @@ awk -v release="$release" '
   print "";c++;next
  }
  {print}
- END{if(k!=1||r!=1||i!=1||c!=1)exit 1}
+ END{if(k!=1||r!=1||i!=1||c!=1||early!=1)exit 1}
 ' "$work/native57.spec" > "$output/uke-kernel-migration-check.spec"
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"

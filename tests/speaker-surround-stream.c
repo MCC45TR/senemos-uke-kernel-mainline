@@ -4,7 +4,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+/* Raw kernel UAPI keeps annotations stripped by normal headers_install. */
+#define __user
+#define __packed __attribute__((packed))
 #include <sound/asound.h>
+/* Keep actual UAPI constants while supplying a controlled params provider. */
+#define snd_pcm_hw_params uke_test_hw_params
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 struct snd_pcm_hw_params {unsigned channels,rate;snd_pcm_format_t format;};
 #define params_channels(p) ((p)->channels)

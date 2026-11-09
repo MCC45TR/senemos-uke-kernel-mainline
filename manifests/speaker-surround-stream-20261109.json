@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "source_check_release": 63,
+  "source_check_release": 64,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -61,7 +61,8 @@
     "tests/speaker-surround-stream.c",
     "tests/speaker-surround-lpass.c",
     "packaging/native/check-surround-stream733.sh",
-    "docs/SPEAKER-SURROUND-STREAM.md"
+    "docs/SPEAKER-SURROUND-STREAM.md",
+    "packaging/native/preflight-surround-stream733.sh"
   ],
   "source_assets": [
     {
@@ -162,7 +163,7 @@
     },
     {
       "path": "tests/speaker-surround-stream.c",
-      "sha256": "743ecc769ed45707b2d068b95222b1f5878ad05fea7d33594124c34a40f35ecb"
+      "sha256": "fe9cbf3911d03e0064838c49f9f0b6550086c25be9a52614dd5a6e087b46de03"
     },
     {
       "path": "tests/speaker-surround-lpass.c",
@@ -174,7 +175,11 @@
     },
     {
       "path": "docs/SPEAKER-SURROUND-STREAM.md",
-      "sha256": "abfacb9ccb13538646b1526b55e7cacb61ccd8b2ab1c9d6fa99d2c47b483e81b"
+      "sha256": "8c86735bdaaa3828f8aefaa7806584dd4704fa5e252190400df9769a925d8d63"
+    },
+    {
+      "path": "packaging/native/preflight-surround-stream733.sh",
+      "sha256": "56a7d13b4d624e507ffdedd26019052e0d16875027b9a6076ca37c063202afa9"
     }
   ],
   "parent_native_admission": {
@@ -236,11 +241,13 @@
   "audio_freezable_worker_layer": 1,
   "worker_queue_sites": 6,
   "previous_attempt": {
-    "copr_build": 11293529,
-    "source_check_release": 61,
+    "source_check_release": 63,
+    "copr_build": 11293692,
+    "source_commit": "d8ad68afa4876a418efc4c16af319e76d4c47566",
     "state": "failed",
-    "duration_seconds": 697,
-    "reason": "Real STOP callback still scheduled the same worker from the included mute helper on the nonfreezable queue; actual provider caught the missing sixth site"
+    "duration_seconds": 699,
+    "phase": "new FE fixture compilation",
+    "reason": "Raw UAPI annotation macros absent and controlled hw_params type conflicted with the real UAPI tag; hardware/object result not reached"
   },
   "speaker_surround_stream_layer": 1
 }
