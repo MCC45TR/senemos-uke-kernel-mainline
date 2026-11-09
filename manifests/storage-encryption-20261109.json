@@ -7,7 +7,7 @@
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11291638/uke-kernel-migration-check-7.3.3-53.src.rpm",
   "parent_srpm_sha256": "785c1adafcf16b7e95be9e19703bda0865a89907aafb46e8ae88996f242bf6d6",
   "parent_spec_sha256": "8de6698e4c8aaca6a96bc9d0d728cf32b16d95431b6c969434bcc045f7269825",
-  "source_check_release": 55,
+  "source_check_release": 56,
   "full_delivery_ready": false,
   "native_qualified": false,
   "encrypted_io_accepted": false,
@@ -30,7 +30,7 @@
     },
     {
       "path": "packaging/native/check-storage-encryption733.sh",
-      "sha256": "d90f9ffc7beea8eaaa8e02af2f0b547c8d6cec9a6c561ba2ce05f78fce9564fe"
+      "sha256": "d934b1a7b5059a42638da85ec23d58d1eb1695e84e8995b81547f40e77b76bfa"
     },
     {
       "path": "packaging/native/copr-storage-encryption733.sh",
