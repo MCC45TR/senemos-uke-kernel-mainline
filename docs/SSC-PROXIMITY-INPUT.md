@@ -38,3 +38,19 @@ composite. Physical acceptance separately requires initial near/far, event
 delivery, simultaneous IIO/input access, last-close demand, DSP restart,
 suspend/resume, sensor selection and original Fedora D-Bus parity. Full kernel
 delivery and provider retirement are not authorized by a source receipt alone.
+
+The cumulative delivery adapter includes proximity and crash-history assets in
+both native-profile and boot-recipe archives. Full builds apply both patches
+after retained source preparation and before building the Image and modules.
+Final checks inspect the actual new SSC module and built-in remoteproc symbols;
+they do not substitute older source or objects. The original dual-light and
+legacy SSC comparisons use a SHA-pinned inverse of only the additive proximity
+patch. Unrelated source changes must still fail those comparisons.
+
+The full-spec text test is pinned to successful full9 (11289655), verifies a
+whole-text inverse and rejects invalid ordering, missing dependencies, duplicate
+anchors, a stable-family input or repeated application without changing rejected
+input. Compiler/sanitizer suites stay in source qualification rather than being
+rerun during every full build. Full delivery also requires the exact-source
+receipt and `uke-control(critical-crash-count-v1) >= 1`. These delivery checks do
+not establish physical sensing, power parity or a safe provider retirement.

@@ -3,7 +3,7 @@ set -Eeuo pipefail
 test ! -e /etc/senemos/kernel-update.conf
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
 out=$(realpath -m "${2:?Native output}")
-phase=${3:?source or objects}
+phase=${3:?source, objects or linked}
 profile=$kernel/native-profile
 manifest=$profile/manifests/rproc-crash-count-20261109.json
 driver=drivers/remoteproc/remoteproc_sysfs.c
@@ -23,11 +23,17 @@ case $phase in
   bash "$profile/tests/rproc-crash-count.sh" "$kernel"
   printf 'Native read-only crash count source inverse and four callback modes passed; crash worker/recovery unchanged.\n'
   ;;
- objects)
+ objects|linked)
   object=$out/drivers/remoteproc/remoteproc_sysfs.o
   llvm-readelf -h "$object" | grep -F AArch64
   llvm-nm "$object" | awk '$3=="crash_count_show"{show=1}$3=="dev_attr_crash_count"{attr=1}END{if(!show||!attr)exit 1}'
   printf 'Actual AArch64 remoteproc crash_count sysfs object passed; no physical fault/fallback acceptance.\n'
+  if [[ $phase == linked ]]; then
+   grep -Fx CONFIG_REMOTEPROC=y "$out/.config"
+   test -s "$out/arch/arm64/boot/Image"
+   llvm-nm "$out/vmlinux" | awk '$3~/^crash_count_show([.]|$)/{show=1}$3~/^dev_attr_crash_count([.]|$)/{attr=1}END{if(!show||!attr)exit 1}'
+   printf 'Read-only remoteproc crash history is linked into the production kernel; physical fallback remains separate.\n'
+  fi
   ;;
  *) exit 2;;
 esac

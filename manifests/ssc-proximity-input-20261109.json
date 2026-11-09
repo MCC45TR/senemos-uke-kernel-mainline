@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "scope": "Additive native SSC proximity switch; source-only cumulative candidate",
+  "scope": "Additive native SSC proximity and authenticated cumulative full delivery; physical acceptance separate",
   "parent_source": "98b48c4cb6902411cc0077efac75c989ae9a46c0",
   "parent_source_check": 11288316,
   "parent_full_build": 11289655,
-  "source_check_release": 50,
-  "full_recipe_prepared": false,
+  "source_check_release": 51,
+  "full_recipe_prepared": true,
   "full_release_reserved": false,
   "driver_before_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
   "driver_after_sha256": "3ee32c5c3a0e704d0f9864546393855093e245940c8fd20d7371663962307e15",
@@ -18,7 +18,14 @@
     "tests/ssc-proximity-input.c",
     "tests/ssc-proximity-input.sh",
     "packaging/native/check-proximity-input733.sh",
-    "docs/SSC-PROXIMITY-INPUT.md"
+    "docs/SSC-PROXIMITY-INPUT.md",
+    "packaging/native/proximity-legacy-view733.sh",
+    "packaging/native/rewrite-proximity-full-spec733.sh",
+    "packaging/native/stage-proximity-input733.sh",
+    "tests/proximity-delivery-spec.sh",
+    "tests/proximity-delivery-source.sh",
+    "packaging/native/dual-light-legacy-view733.sh",
+    "packaging/native/check-dual-light-delivery733.sh"
   ],
   "source_assets": [
     {
@@ -47,15 +54,15 @@
     },
     {
       "path": "packaging/native/check-proximity-input733.sh",
-      "sha256": "7effe00554572ef8a1770313592c06b224f2f796e3f9e234d181546fcaa36a31"
+      "sha256": "bc3a265ee4bff25158c0005777c872f9b766866ae1a137f0583e9d687eee724d"
     },
     {
       "path": "docs/SSC-PROXIMITY-INPUT.md",
-      "sha256": "8259a5a76def1cbb6684a923bf0a0fe873ac8be306a9588e5a60462bb0ea8d08"
+      "sha256": "c00ec428e92a3d7b4dcb1ece2ba5c69c0115f791ac30285bc318217079e745fe"
     },
     {
       "path": "packaging/native/copr-proximity-input733.sh",
-      "sha256": "540f411f8862d2c418343590351eb870e95504e93c79aa3a918d4b32e3894a23"
+      "sha256": "ce57fcc90ffc693afa2e282487fe4ef71129bbab3299d4c73fd94730cdb45e69"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
@@ -63,11 +70,39 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "f7994b8498382b422bbdc44f163cee493757f147e242aac7a5100315acfcf110"
+      "sha256": "d9b483f4380c948206519e8e9af53cf82d598a32108d5526ecca38289ac3c525"
     },
     {
       "path": "manifests/speaker-quad-20261108.json",
       "sha256": "20f33737f9c58573f26262bd411b1658544bd0392e9799ccac70e4155b012425"
+    },
+    {
+      "path": "packaging/native/proximity-legacy-view733.sh",
+      "sha256": "7b851b61e3e3027df6ce74e3a37619baa34b83ce72b82fa6e74a3a85925ef4b4"
+    },
+    {
+      "path": "packaging/native/rewrite-proximity-full-spec733.sh",
+      "sha256": "05a85f59ee8b1f61b9186fcfe78fc5b8597a5cac4b705ab58a9ff6edabc4dc0b"
+    },
+    {
+      "path": "packaging/native/stage-proximity-input733.sh",
+      "sha256": "8575a47da26eaa717595de405babefbdf5b4110acf83121a0d4aa14407240de4"
+    },
+    {
+      "path": "tests/proximity-delivery-spec.sh",
+      "sha256": "9618c5ae277a98e93685cd90178e4cf22a36a7c0679094c26ce68e8f84c72671"
+    },
+    {
+      "path": "tests/proximity-delivery-source.sh",
+      "sha256": "6f1031f54d12e495c42bd0dc3aeeb34b5da82102275c721f5685dfc873781c65"
+    },
+    {
+      "path": "packaging/native/dual-light-legacy-view733.sh",
+      "sha256": "cf17dbe697a37bc0f49a2ff9374f9a9a2d243d27c194154960b1b320d0bc3abe"
+    },
+    {
+      "path": "packaging/native/check-dual-light-delivery733.sh",
+      "sha256": "2b09ffbf01debe5a5537a6884e880aebce7800699c1cb56f51c54acdcb3b5a8b"
     }
   ],
   "acceptance": {
@@ -88,7 +123,11 @@
     "new_runtime_packages": 0,
     "new_timers": 0,
     "raw_iio_and_calibration_unchanged": true,
-    "gain_ceiling": 223
+    "gain_ceiling": 223,
+    "authenticated_legacy_inverse_required": true,
+    "full_spec_whole_text_inverse_required": true,
+    "actual_linked_ssc_module_required": true,
+    "full_recipe_native_qualified": false
   },
   "consumer_reference": {
     "fedora_nevra": "iio-sensor-proxy-3.9-3.fc45.aarch64",

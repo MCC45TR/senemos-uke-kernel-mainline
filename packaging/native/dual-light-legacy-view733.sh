@@ -24,7 +24,11 @@ if [[ $actual == "$before" ]]; then
   printf '%s\n' "$kernel"
   exit 0
 fi
-printf '%s  %s\n' "$(jq -er .driver_after_sha256 "$manifest")" "$kernel/$driver" \
+ssc_source=$kernel
+if [[ -f $profile/manifests/ssc-proximity-input-20261109.json ]]; then
+  ssc_source=$(bash "$profile/packaging/native/proximity-legacy-view733.sh" "$kernel")
+fi
+printf '%s  %s\n' "$(jq -er .driver_after_sha256 "$manifest")" "$ssc_source/$driver" \
  "$(jq -er .native_header_after_sha256 "$manifest")" "$kernel/$native" \
  | sha256sum -c --strict --quiet -
 [[ -d $history && -f $history/SHA256SUMS ]]
@@ -38,7 +42,11 @@ for pair in "src/sensors/uke-ssc-dual-light.h:${driver%/*}/uke-ssc-dual-light.h"
 done
 work=$(mktemp -d "$kernel/native-generated/dual-light-inverse.XXXXXX")
 trap 'find "$work" -depth -delete' EXIT
-for path in "${paths[@]}"; do install -Dm644 "$kernel/$path" "$work/$path"; done
+for path in "${paths[@]}"; do
+  input=$kernel/$path
+  [[ $path != "$driver" ]] || input=$ssc_source/$path
+  install -Dm644 "$input" "$work/$path"
+done
 patches=(0004-ssc-shared-stream-owners.patch 0005-ssc-dual-light-endpoint.patch
  0006-ssc-dual-light-native-dt.patch 0007-ssc-dual-light-binding.patch
  0008-ssc-dual-light-input-dependency.patch 0009-ssc-mount-matrix-nonunique-binding.patch)

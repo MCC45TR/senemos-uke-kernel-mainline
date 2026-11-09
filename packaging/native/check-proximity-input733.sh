@@ -25,6 +25,8 @@ case $phase in
     CC=$cc SANITIZE=$sanitize bash "$profile/tests/ssc-proximity-input.sh" "$kernel/$driver"
    done
   done
+  bash "$profile/packaging/native/check-dual-light-delivery733.sh" "$kernel" "$out" source
+  bash "$profile/tests/proximity-delivery-source.sh" "$kernel"
   printf 'Native proximity source inverse and four actual callback modes passed; original IIO/wire/DT retained.\n'
   ;;
  objects)
@@ -38,7 +40,10 @@ case $phase in
  linked)
   module=$out/drivers/iio/common/uke-ssc/uke-ssc.ko
   test -s "$module"
-  llvm-nm "$module" | grep -E '[[:space:]]U[[:space:]]input_(register_device|event)$'
+  llvm-nm "$module" | awk '
+   $2=="U" && $3=="input_register_device" || $1=="U" && $2=="input_register_device" {registration=1}
+   $2=="U" && $3=="input_event" || $1=="U" && $2=="input_event" {event=1}
+   END {if(!registration || !event)exit 1}'
   printf 'Native SSC proximity input is in the linked production module; physical parity remains unqualified.\n'
   ;;
  *) exit 2;;

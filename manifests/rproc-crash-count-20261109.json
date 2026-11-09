@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "scope": "Source-only read-only framework crash history; crash worker and recovery unchanged",
+  "scope": "Read-only crash history with cumulative full delivery; crash worker and recovery unchanged",
   "parent_source": "62c412da67d4848435ee321f4ff0ee9d7b508d5f",
   "parent_source_check": 11290008,
   "parent_full_build": 11289655,
-  "source_check_release": 50,
+  "source_check_release": 51,
   "full_revision_reserved": false,
   "driver_before_sha256": "cd7d42735363ee2fbe5c8dfd039dd2c5d1d4226726c802ba2470ab61d5cfdd72",
   "driver_after_sha256": "02069dea5b86fade492f62880071b0ec70e8876e949defd305f455b99dba5346",
@@ -41,7 +41,7 @@
     },
     {
       "path": "packaging/native/check-rproc-count733.sh",
-      "sha256": "579c7d98f64b0865bf5fbc9915e1af38be821be81ae83cbef1e9b9cf3546a097"
+      "sha256": "811ff7181d9be59c75e5d38f760786ca1cf6aaf81d5398f2b6ce0ce682bdac61"
     },
     {
       "path": "docs/REMOTEPROC-CRASH-HISTORY.md",
@@ -56,7 +56,9 @@
     "physical_fault_and_fallback": false,
     "new_runtime_packages": 0,
     "new_timers": 0,
-    "gain_ceiling": 223
+    "gain_ceiling": 223,
+    "actual_linked_builtin_counter_required": true,
+    "matching_control_capability_required": "uke-control(critical-crash-count-v1) >= 1"
   },
   "primary_sources": [
     {

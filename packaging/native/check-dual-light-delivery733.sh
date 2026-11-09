@@ -5,8 +5,8 @@ test ! -e /etc/senemos/kernel-update.conf
 [[ $# == 3 ]]
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
 out=$(realpath -m "${2:?Native output}")
-phase=${3:?prepared, objects or linked}
-[[ $phase == prepared || $phase == objects || $phase == linked ]]
+phase=${3:?prepared, source, objects or linked}
+[[ $phase == prepared || $phase == source || $phase == objects || $phase == linked ]]
 profile=$kernel/native-profile
 manifest=$profile/manifests/dual-light-delivery-20261108.json
 work=$(mktemp -d)
@@ -51,7 +51,15 @@ if [[ $phase == prepared ]]; then
   exit 0
 fi
 fixture=$kernel/native-generated/dual-light-delivery-fixture
-for file in "${paths[@]}"; do cmp "$kernel/$file" "$fixture/$file"; done
+ssc_source=$kernel
+if [[ -f $profile/manifests/ssc-proximity-input-20261109.json ]]; then
+  ssc_source=$(bash "$profile/packaging/native/proximity-legacy-view733.sh" "$kernel")
+fi
+for file in "${paths[@]}"; do
+  input=$kernel/$file
+  [[ $file != drivers/iio/common/uke-ssc/uke-ssc-iio.c ]] || input=$ssc_source/$file
+  cmp "$input" "$fixture/$file"
+done
 for pair in "src/sensors/uke-ssc-dual-light.h:drivers/iio/common/uke-ssc/uke-ssc-dual-light.h" \
  "src/boot/uke-dual-light.h:arch/arm64/kernel/uke-dual-light.h"; do
   cmp "$profile/${pair%%:*}" "$kernel/${pair#*:}"
@@ -68,6 +76,10 @@ if [[ $phase == objects ]]; then
 fi
 legacy=$(bash "$profile/packaging/native/dual-light-legacy-view733.sh" "$kernel")
 for file in "${paths[@]}"; do cmp "$legacy/$file" "$fixture/native-generated/before-dual-light/$file"; done
+if [[ $phase == source ]]; then
+  printf 'Actual retained dual-light source comparisons pass through the authenticated proximity inverse; real objects remain separate.\n'
+  exit 0
+fi
 release=$(jq -er .kernel_release "$profile/source-composition.json")
 [[ $(cat "$out/include/config/kernel.release") == "$release" ]]
 grep -Fx CONFIG_INPUT=y "$out/.config"
