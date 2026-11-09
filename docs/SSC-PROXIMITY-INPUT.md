@@ -23,7 +23,8 @@ release behavior also needs upstream review before claiming demand/power parity.
 This candidate does not replace or retire the currently installed provider.
 
 The kernel patch is original GPL-2.0-only integration. SensorProxy 3.9 is reviewed
-as a GPL-3.0-or-later consumer contract; none of its implementation is copied.
+as a GPLv3 consumer contract; the input file specifies GPL-3.0-only and none of
+its implementation is copied.
 The AOSP CHRE SEE helper at `d020c8b148343e39140397e5a38e1431307fadd2`,
 `platform/slpi/see/see_helper.cc` (Apache-2.0, AOSP), independently interprets the
 proximity enum as a near bit. It is protocol comparison, not copied kernel code

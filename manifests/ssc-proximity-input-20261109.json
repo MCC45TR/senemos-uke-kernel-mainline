@@ -5,7 +5,7 @@
   "parent_source": "98b48c4cb6902411cc0077efac75c989ae9a46c0",
   "parent_source_check": 11288316,
   "parent_full_build": 11289655,
-  "source_check_release": 49,
+  "source_check_release": 50,
   "full_recipe_prepared": false,
   "full_release_reserved": false,
   "driver_before_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
@@ -51,11 +51,11 @@
     },
     {
       "path": "docs/SSC-PROXIMITY-INPUT.md",
-      "sha256": "82e621ee71aeac5c13e57972a82b51f11b6a3733b67576f0c374435599ce2c68"
+      "sha256": "8259a5a76def1cbb6684a923bf0a0fe873ac8be306a9588e5a60462bb0ea8d08"
     },
     {
       "path": "packaging/native/copr-proximity-input733.sh",
-      "sha256": "b230fb363f8031f235e7b3c2a81330ccd9d81b2cf184fdcfef6d4f9e77fb73ba"
+      "sha256": "540f411f8862d2c418343590351eb870e95504e93c79aa3a918d4b32e3894a23"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
@@ -63,7 +63,7 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "6c17305ab76a2e541a98099a1d00013344ba1bd197375d10aa66bc5e724ece77"
+      "sha256": "f7994b8498382b422bbdc44f163cee493757f147e242aac7a5100315acfcf110"
     },
     {
       "path": "manifests/speaker-quad-20261108.json",
@@ -94,7 +94,7 @@
     "fedora_nevra": "iio-sensor-proxy-3.9-3.fc45.aarch64",
     "archive_sha256": "19a4ae99b1b8af603fc789841025f9747bf445418d69ec7389e75adb6c8186bf",
     "path": "src/drv-input-proximity.c",
-    "license": "GPL-3.0-or-later; reviewed contract only, no implementation copied"
+    "license": "GPL-3.0-only in the input file; reviewed contract only, no implementation copied"
   },
   "protocol_reference": {
     "repository": "https://android.googlesource.com/platform/system/chre",

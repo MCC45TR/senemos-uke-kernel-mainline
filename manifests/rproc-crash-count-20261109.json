@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "Source-only read-only framework crash history; crash worker and recovery unchanged",
+  "parent_source": "62c412da67d4848435ee321f4ff0ee9d7b508d5f",
+  "parent_source_check": 11290008,
+  "parent_full_build": 11289655,
+  "source_check_release": 50,
+  "full_revision_reserved": false,
+  "driver_before_sha256": "cd7d42735363ee2fbe5c8dfd039dd2c5d1d4226726c802ba2470ab61d5cfdd72",
+  "driver_after_sha256": "02069dea5b86fade492f62880071b0ec70e8876e949defd305f455b99dba5346",
+  "payload_assets": [
+    "src/health/rproc-crash-count.patch",
+    "src/health/sysfs-class-remoteproc-crash-count",
+    "src/health/apply-rproc-count733.sh",
+    "tests/rproc-crash-count.c",
+    "tests/rproc-crash-count.sh",
+    "packaging/native/check-rproc-count733.sh",
+    "docs/REMOTEPROC-CRASH-HISTORY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/health/rproc-crash-count.patch",
+      "sha256": "89c97d809e45f0edc6dc76b7c6264651c9decee59ebcddeea8c875e2db43ed5c"
+    },
+    {
+      "path": "src/health/sysfs-class-remoteproc-crash-count",
+      "sha256": "8fb499606fa19b45215c12a6fcb4a1fd5cdde798dca633db0279420a8b134013"
+    },
+    {
+      "path": "src/health/apply-rproc-count733.sh",
+      "sha256": "239a8e82f6ac50747c67b6e542628994193e55252049c220f44354f5aed52a37"
+    },
+    {
+      "path": "tests/rproc-crash-count.c",
+      "sha256": "a631bc6e3a6a71b4972812fecb57a5b2727c8a2f505afcae0a24d3d213d76c6e"
+    },
+    {
+      "path": "tests/rproc-crash-count.sh",
+      "sha256": "b7a3d1fa4e4c1e933a54c27aa2eed2130945eada4d7d7cdc879db1334f7d2610"
+    },
+    {
+      "path": "packaging/native/check-rproc-count733.sh",
+      "sha256": "579c7d98f64b0865bf5fbc9915e1af38be821be81ae83cbef1e9b9cf3546a097"
+    },
+    {
+      "path": "docs/REMOTEPROC-CRASH-HISTORY.md",
+      "sha256": "0379c8118f169076e4b0d0f052a018c901f8e1ab24e5aab02b59c07b69b40b4c"
+    }
+  ],
+  "acceptance": {
+    "whole_sysfs_inverse_required": true,
+    "unchanged_current_crash_worker_required": true,
+    "four_actual_callback_modes_required": true,
+    "actual_aarch64_sysfs_object_required": true,
+    "physical_fault_and_fallback": false,
+    "new_runtime_packages": 0,
+    "new_timers": 0,
+    "gain_ceiling": 223
+  },
+  "primary_sources": [
+    {
+      "repository": "gregkh/linux",
+      "ref": "v7.3.3",
+      "path": "drivers/remoteproc/remoteproc_sysfs.c",
+      "blob": "925b0cdbe57788cfedaef668868624293e42135b"
+    },
+    {
+      "repository": "gregkh/linux",
+      "ref": "v7.3.3",
+      "path": "include/linux/remoteproc.h",
+      "blob": "a44368737b39a52a11177204b70f58064bab53fe"
+    },
+    {
+      "repository": "torvalds/linux",
+      "path": "drivers/remoteproc/remoteproc_sysfs.c",
+      "blob": "c37736ff4acc63402e9a88ddb8c6a1680fa79930"
+    }
+  ]
+}
