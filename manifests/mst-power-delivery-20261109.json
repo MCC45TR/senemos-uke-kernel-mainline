@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "Cumulative full11 recipe; MST depth and saver CPU QoS; no physical acceptance",
+  "qualified_source": "94519d8219168251bbdd074ff601aaceff42d980",
+  "qualified_tree": "75ad3a282f960c820ad117ce198a42ab25df5023",
+  "qualified_build": 11292922,
+  "qualified_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11292922/uke-kernel-migration-check-7.3.3-57.src.rpm",
+  "qualified_srpm_sha256": "acc59c8e54b0255da870d0207b8197bab6a834c4688b2c03ce08e773f4a366b8",
+  "qualified_spec_sha256": "08d30b1908e8e56fc74f071fa1d10293ffb6a0a84b4a3af813e3ae7311d34927",
+  "qualified_receipt_sha256": "4cc443008b66e8c17fb8f2e644e74f049cc79f15cb7e53b5dc516fa678cab9bc",
+  "full_parent_build": 11291017,
+  "full_parent_spec_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11291017/senemos-uke-linux-kernel-mainline-unstable.spec",
+  "full_parent_spec_sha256": "5a99594006a2719f5cfcfe409faa4fb44d662a964d08cb71a0ebffdcd304a1cf",
+  "full_release": 11,
+  "full_reserved": false,
+  "full_build_passed": false,
+  "installed_on_target": false,
+  "mst_physical_multisink_accepted": false,
+  "mst_hdr_accepted": false,
+  "mst_dsc_accepted": false,
+  "power_energy_accepted": false,
+  "power_latency_accepted": false,
+  "production_config_unchanged": true,
+  "storage_encryption_fragment_applied": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "packaging/native/rewrite-mst-power-full733.sh",
+    "packaging/native/prepare-mst-power-delivery733.sh",
+    "packaging/native/copr-mst-power-full733.sh",
+    "tests/mst-power-full-spec733.sh",
+    "docs/MST-POWER-DELIVERY-733.md"
+  ],
+  "source_assets": [
+    {
+      "path": "packaging/native/rewrite-mst-power-full733.sh",
+      "sha256": "592f98dc149082f9cf053f58ca3b4680a2767dfe3df37f190fee83d3e1e5c158"
+    },
+    {
+      "path": "packaging/native/prepare-mst-power-delivery733.sh",
+      "sha256": "0cfb4b72d0a0ad6d3f8170a863cde3efceea53f72bb9317e641a917da8643fc8"
+    },
+    {
+      "path": "packaging/native/copr-mst-power-full733.sh",
+      "sha256": "9c85be55898558c580ab7487342f7fbdd5c66957fceb91594c4fde8ad2e064b0"
+    },
+    {
+      "path": "tests/mst-power-full-spec733.sh",
+      "sha256": "c2e563f066906882d853101de604492bd77d337b1cbc20919d4127414764815e"
+    },
+    {
+      "path": "docs/MST-POWER-DELIVERY-733.md",
+      "sha256": "bd18d790b0da7011426d6959a5f78ed1912bc45a31f2d1836cd646d3f0d3649f"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "a17bd395ba042e38410d9c976eb59c18e039cfef180f8142a3eb348ad244e750"
+    }
+  ]
+}
