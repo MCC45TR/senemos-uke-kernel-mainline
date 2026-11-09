@@ -10,22 +10,26 @@ manifest=$owner/manifests/platform-profile-response-20261109.json
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 parent=$(jq -er .parent_commit "$manifest")
-git init -q "$work/base"
-git -C "$work/base" remote add origin https://github.com/MCC45TR/senemos-uke-kernel-mainline.git
-git -C "$work/base" fetch --depth=1 origin "$parent"
-git -C "$work/base" checkout -q --detach FETCH_HEAD
-[[ $(git -C "$work/base" rev-parse HEAD) == "$parent" ]]
-# Keep the bound parent release tuple and every earlier qualification gate.
-bash "$work/base/packaging/native/copr-proximity-input733.sh" "$output" 10 check 52
+# Consume the immutable published SRPM. Re-running its source constructor would
+# correctly refuse to generate the already published source52 version.
+curl -qfsSL --retry 2 --max-time 180 "$(jq -er .parent_srpm_url "$manifest")" -o "$work/parent.rpm"
+printf '%s  %s\n' "$(jq -er .parent_srpm_sha256 "$manifest")" "$work/parent.rpm" | sha256sum -c --strict --quiet -
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$work/parent.rpm") == uke-kernel-migration-check-7.3.3-52 ]]
+rpm2cpio "$work/parent.rpm" | cpio -t --quiet > "$work/paths"
+awk '/^\/|(^|\/)\.\.($|\/)/{bad=1}END{exit bad}' "$work/paths"
+mkdir "$output"
+rpm2cpio "$work/parent.rpm" | (cd "$output";cpio -idm --quiet --no-absolute-filenames)
 spec=$output/uke-kernel-migration-check.spec
 printf '%s  %s\n' "$(jq -er .parent_spec_sha256 "$manifest")" "$spec" | sha256sum -c --strict --quiet -
-version=$(jq -er .upstream.version "$work/base/manifests/cumulative-release.json")
+version=$(jq -er .upstream.version "$owner/manifests/cumulative-release.json")
 release=$(jq -er .source_check_release "$manifest")
 native=senemos-native-profile-$version.tar.xz
 tar -xJf "$output/$native" -C "$work"
 tar -xJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$work"
 profile=$work/native-profile
 boot=$work/boot-recipe
+(cd "$profile";sha256sum -c --strict --quiet SHA256SUMS)
+(cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 for tree in "$profile" "$boot";do
  while IFS= read -r file;do install -Dm644 "$owner/$file" "$tree/$file";done < <(jq -r '.payload_assets[]' "$manifest")
  install -Dm644 "$manifest" "$tree/manifests/platform-profile-response-20261109.json"

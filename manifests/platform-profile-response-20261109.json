@@ -35,11 +35,13 @@
     },
     {
       "path": "packaging/native/copr-profile-response733.sh",
-      "sha256": "db809bd4ce94276f787001583e90a95be43bf2f2d1747d4e5eeb6acecb0d205e"
+      "sha256": "6815ffc9bd5f19198353697c94b205fb84b5fde93b38c52dea502ef6898be2bb"
     },
     {
       "path": "docs/RESPONSIVE-SAVER-EXPERIMENT.md",
       "sha256": "3e464c3555d3ac316b2857f2a9f755538e74193b90a4047290ab9201f760dc9c"
     }
-  ]
+  ],
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11290970/uke-kernel-migration-check-7.3.3-52.src.rpm",
+  "parent_srpm_sha256": "6c85d659c041ace595365cbbd43ff10a400656f97cc9a099d165b51ad50533b3"
 }
