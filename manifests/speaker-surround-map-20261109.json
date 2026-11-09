@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-09",
-  "source_check_release": 58,
+  "source_check_release": 59,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -70,7 +70,7 @@
     },
     {
       "path": "packaging/native/check-surround-map733.sh",
-      "sha256": "14ad1a96f20ffd4743d4c59d19fa04ed99c430986e5efa17a1d7358882abdf6e"
+      "sha256": "d3e98e530fd4aba20808136148e1704e4886c755d6e63f99efd8a623e928b6e3"
     },
     {
       "path": "docs/SPEAKER-SURROUND-CHANNEL-MAP.md",
