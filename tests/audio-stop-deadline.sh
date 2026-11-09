@@ -10,6 +10,8 @@ cc=${CC:-gcc};san=${SANITIZE:-0};ticks=${TICKS:-1000}
 work=$(mktemp -d);trap 'find "$work" -depth -delete' EXIT
 ulimit -c 0
 flags=(-std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter -fno-omit-frame-pointer "-DUKE_TEST_HZ=$ticks")
+[[ ${FREEZABLE:-0} == 0 || ${FREEZABLE:-0} == 1 ]]
+[[ ${FREEZABLE:-0} == 0 ]] || flags+=(-DUKE_TEST_FREEZABLE_QUEUE=1)
 [[ $san == 0 ]] || flags+=(-fsanitize=address,undefined -fno-sanitize-recover=all)
 codec=$kernel/sound/soc/codecs/fs19xx.c
 extract(){

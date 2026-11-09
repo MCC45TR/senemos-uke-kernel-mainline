@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "source_check_release": 61,
+  "parent_full_build": 11293047,
+  "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
+  "parent_srpm_sha256": "939972a60903f943387fc1d3e1983ec4e2dc1917267355c97e2e95f8dcc0e26f",
+  "parent_spec_sha256": "3d667256af3ecb7b47103258a62fc4b1c3b806ef78dd0b05d91c73bef8b97011",
+  "native_spec_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11292922/uke-kernel-migration-check.spec",
+  "native_spec_sha256": "08d30b1908e8e56fc74f071fa1d10293ffb6a0a84b4a3af813e3ae7311d34927",
+  "native_qualified": false,
+  "full_kernel_delivery_ready": false,
+  "physical_accepted": false,
+  "quad_identity_before": [
+    1,
+    2,
+    5,
+    6
+  ],
+  "quad_identity_after": [
+    1,
+    2,
+    4,
+    5
+  ],
+  "surround_input_counts": [
+    6,
+    8
+  ],
+  "topology_expanded": false,
+  "dsp_downmix_active": false,
+  "desktop_profiles_advertised": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/audio/uke-speaker-quad-wire.h",
+    "src/audio/0030-audioreach-surround-channel-map.patch",
+    "tests/speaker-quad-wire.c",
+    "tests/speaker-quad-lpass.c",
+    "tests/speaker-quad-route.sh",
+    "tests/audioreach-surround-map.c",
+    "packaging/native/check-surround-map733.sh",
+    "docs/SPEAKER-SURROUND-CHANNEL-MAP.md",
+    "src/audio/uke-speaker-surround-wire.h",
+    "src/audio/uke-speaker-quad-apm.h",
+    "src/audio/uke-speaker-quad-transport.h",
+    "src/audio/apply-speaker-quad733.sh",
+    "tests/speaker-surround-wire.c",
+    "packaging/native/check-surround-coeff733.sh",
+    "docs/SPEAKER-SURROUND-COEFFICIENTS.md",
+    "src/audio/0031-fs19xx-freezable-health.patch",
+    "tests/audio-stop-transition.c",
+    "tests/audio-stop-deadline.sh",
+    "packaging/native/check-audio-freeze733.sh",
+    "docs/AUDIO-SYSTEM-SLEEP-WORKER.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-speaker-quad-wire.h",
+      "sha256": "43e02700748b8271e1b9c4b9581709a5b1b08e31829f1d6bcad50d104e891c08"
+    },
+    {
+      "path": "src/audio/0030-audioreach-surround-channel-map.patch",
+      "sha256": "a3a3257dcd603470118e2bd250cf6b26529ca5df2cc669eaa689f7a58c4b7b49"
+    },
+    {
+      "path": "tests/speaker-quad-wire.c",
+      "sha256": "96ccefefe9b8cebd813656dbc3a3cf8c4b5e687b3d4f8b09225b596edd92ed9b"
+    },
+    {
+      "path": "tests/speaker-quad-lpass.c",
+      "sha256": "67742e96b8357fd06b4c8fc6e55366b55292a2bb17bc65adb8c277b76d98c07e"
+    },
+    {
+      "path": "tests/speaker-quad-route.sh",
+      "sha256": "23027594219a32032d93b064c4fbfc26499755ebd60e5e6155992c161b33d1fc"
+    },
+    {
+      "path": "tests/audioreach-surround-map.c",
+      "sha256": "d0923af57b67482ae6bb79d07afeb40810f932fdf55e0dd5214feaf2312be79f"
+    },
+    {
+      "path": "packaging/native/check-surround-map733.sh",
+      "sha256": "1f548f7bc1ce3d4b2cc46eb17c732c091159625a36c006d436440f22f5032b6c"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-CHANNEL-MAP.md",
+      "sha256": "620beada0c95f049b507c97d96f58579eb45bab1f4560136d524aa2fc59ee19c"
+    },
+    {
+      "path": "src/audio/uke-speaker-surround-wire.h",
+      "sha256": "2b837f79ab5bff6ca065d3581ba2e5472ef8cd6c75137a14eb3965f9541706f1"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-apm.h",
+      "sha256": "9bb331d1c98f4244e6eca7736f72fe809ba1f365ddb9246c99bc5228bd519a95"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-transport.h",
+      "sha256": "c999e61c9c041070f025dd9e55fdffccff7a7e9f1ff2bea8a60b2de09f247e7a"
+    },
+    {
+      "path": "src/audio/apply-speaker-quad733.sh",
+      "sha256": "98c82f3fa646d0288f80cec9bb2f519397aa1fd1eeb290fc9a19a100da1abeac"
+    },
+    {
+      "path": "tests/speaker-surround-wire.c",
+      "sha256": "d78fb372044d965b7813e134d78cef3265e6c2784bbb3f35977a9691c7185965"
+    },
+    {
+      "path": "packaging/native/check-surround-coeff733.sh",
+      "sha256": "9a0811b43ed51fe7a61276dfec8ab5039246335bd9c7f0750369a71a93aa492d"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-COEFFICIENTS.md",
+      "sha256": "67c05ea20b5b8e3af73d035e6fb753c13d055939ca37c488852da36e1c7f1a8d"
+    },
+    {
+      "path": "src/audio/0031-fs19xx-freezable-health.patch",
+      "sha256": "29d465f7aadc8abb5061d0e8427bf0821f44c327b076821de487c88990a97edf"
+    },
+    {
+      "path": "tests/audio-stop-transition.c",
+      "sha256": "e866eed3e540270e793cffde4f71169f3cbedd77b88d264376a4983614dacbfa"
+    },
+    {
+      "path": "tests/audio-stop-deadline.sh",
+      "sha256": "8092f4d926363cc20a0e61d68a4f4a1bd5da970a8530986f4b99671ef5f02207"
+    },
+    {
+      "path": "packaging/native/check-audio-freeze733.sh",
+      "sha256": "f857313d5a6edc75376a97865a34cce53fde1eb2f464d09725654590bc6f2b26"
+    },
+    {
+      "path": "docs/AUDIO-SYSTEM-SLEEP-WORKER.md",
+      "sha256": "5143d7d714e0f2fff75df1e36cf7cd31cac107f7efbf909bb7ea46c629649e11"
+    }
+  ],
+  "parent_native_admission": {
+    "copr_build": 11293495,
+    "state": "succeeded",
+    "source_commit": "4cb5a1c21a3b315c0a0c0f23828c942a504f2c10",
+    "source_tree": "5e568af58e0076f49b62a5372f75b0c14fdc06d1",
+    "source_check_release": 60,
+    "parent_full_build": 11293047,
+    "duration_seconds": 696,
+    "retained_full11_source_fields": 665,
+    "actual_source_worker_verified": true,
+    "actual_spec_sha256": "179894d00ebf6bd032d54aaa74a4658c2c9cde836c3252f4fd0a44f0ae3d0607",
+    "receipt_sha256": "0458690d9f5c0df533e59da42dd914d8a63197d4d8d66ebc1fb4faa4ba702c6e",
+    "native_log_sha256": "ba293770adbf5c399efcbc6ef0c9b53b83bd089dfa6d3e708016e284684331c0",
+    "callback_modes": 4,
+    "historical_behavior_refusals": 4,
+    "surround_coeff_callback_modes": 4,
+    "missing_lfe_refusals": 2,
+    "coefficient_tables": [
+      4,
+      6,
+      8
+    ],
+    "digital_peak_bound_q14": 16384,
+    "actual_aarch64_audioreach_composite": true,
+    "whole_source_inverse": true,
+    "quad_expected_ids": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "surround_input_counts": [
+      6,
+      8
+    ],
+    "topology_expanded": false,
+    "dsp_downmix_active": false,
+    "desktop_profiles_advertised": false,
+    "physical_accepted": false,
+    "full_kernel_built": false,
+    "installed_on_target": false,
+    "new_runtime_packages": 0,
+    "new_services": 0
+  },
+  "coefficient_tables": [
+    4,
+    6,
+    8
+  ],
+  "coefficient_bytes": 220,
+  "lfe_retained": true,
+  "peak_bound_q14": 16384,
+  "audio_freezable_worker_layer": 1,
+  "worker_queue_sites": 5
+}

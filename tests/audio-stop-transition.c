@@ -87,7 +87,12 @@ static int regmap_write(struct regmap *m,unsigned reg,unsigned value)
 }
 static void msleep(unsigned n){assert(n==10);}
 static void gpiod_set_value_cansleep(struct gpio_desc *g,int v){assert(v==1);g->reset=true;}
+#ifdef UKE_TEST_FREEZABLE_QUEUE
+#define system_percpu_wq ((void *)1)
+#define system_freezable_wq NULL
+#else
 #define system_percpu_wq NULL
+#endif
 #define msecs_to_jiffies(n) (((unsigned long)(n)*UKE_TEST_HZ+999)/1000)
 static int mod_delayed_work(void *queue,struct delayed_work *w,unsigned delay)
 {assert(!queue&&((delay>0&&delay<=msecs_to_jiffies(FS19XX_STOP_DRAIN_MS))));bool previous=w->pending;w->delay=delay;w->rearms++;w->pending=true;return previous;}
