@@ -16,6 +16,17 @@ mkdir -p "$work/before"
 ln -s "$profile" "$work/before/native-profile"
 install -Dm644 "$legacy/$driver" "$work/before/$driver"
 [[ $(bash "$view" "$work/before") == "$work/before" ]]
+# The real %prep creates a Git repository. Exercise the source adapter inside
+# that context as well as the ordinary temporary-directory fixtures.
+nested=$work/nested
+mkdir -p "$nested/native-generated"
+ln -s "$profile" "$nested/native-profile"
+install -Dm644 "$kernel/$driver" "$nested/$driver"
+git -C "$nested" -c init.defaultBranch=senemos init -q
+normalized=$(bash "$view" "$nested")
+cmp "$normalized/$driver" "$legacy/$driver"
+cmp "$nested/$driver" "$kernel/$driver"
+printf 'Proximity inverse preserves actual source inside a prepared Git repository.\n'
 for variant in altered-postimage altered-preimage wrong-inverse; do
  copy=$work/$variant
  mkdir -p "$copy/native-profile/manifests" "$copy/native-profile/src/sensors" "$copy/native-generated"

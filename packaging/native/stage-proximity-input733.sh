@@ -50,6 +50,7 @@ jq --arg mode "$mode" '.+{
  rproc_crash_count_native_admitted:($mode=="full"),rproc_crash_count_physical_accepted:false,
  proximity_delivery_layer:1,proximity_delivery_both_archives:true,
  proximity_delivery_authenticated_legacy_inverse:true,
+ proximity_delivery_git_context_independent:true,
  critical_crash_count_control_required:true,proximity_delivery_linked_accepted:false}' \
  "$profile/source-composition.json" > "$work/composition"
 install -m644 "$work/composition" "$profile/source-composition.json"

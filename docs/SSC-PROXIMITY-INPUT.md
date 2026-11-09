@@ -46,6 +46,9 @@ Final checks inspect the actual new SSC module and built-in remoteproc symbols;
 they do not substitute older source or objects. The original dual-light and
 legacy SSC comparisons use a SHA-pinned inverse of only the additive proximity
 patch. Unrelated source changes must still fail those comparisons.
+Temporary inverse work is isolated from the prepared kernel Git repository;
+otherwise Git can ignore patch paths outside the current nested directory.
+The source test covers this real preparation context and preserves actual input.
 
 The full-spec text test is pinned to successful full9 (11289655), verifies a
 whole-text inverse and rejects invalid ordering, missing dependencies, duplicate

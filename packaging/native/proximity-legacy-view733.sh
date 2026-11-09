@@ -1,7 +1,6 @@
 #!/usr/bin/bash
-# COPR-only authenticated source comparison; never substitutes old objects.
+# Authenticated source-text comparison; no compiler or device access.
 set -Eeuo pipefail
-test ! -e /etc/senemos/kernel-update.conf
 [[ $# == 1 ]]
 kernel=$(realpath "${1:?Prepared cumulative kernel}")
 profile=$kernel/native-profile
@@ -15,7 +14,9 @@ if [[ $actual == "$before" ]]; then
  exit 0
 fi
 [[ $actual == "$after" ]]
-work=$(mktemp -d "$kernel/native-generated/proximity-inverse.XXXXXX")
+# Stay outside a prepared kernel repository. git apply from an untracked
+# nested directory can silently ignore all paths outside that directory.
+work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 install -Dm644 "$kernel/$driver" "$work/$driver"
 git -C "$work" apply --reverse --check --whitespace=error "$profile/src/sensors/0010-ssc-proximity-input.patch"

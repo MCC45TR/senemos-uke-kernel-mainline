@@ -40,7 +40,7 @@ for pair in "src/sensors/uke-ssc-dual-light.h:${driver%/*}/uke-ssc-dual-light.h"
  "src/boot/uke-dual-light.h:arch/arm64/kernel/uke-dual-light.h"; do
   cmp "$profile/${pair%%:*}" "$kernel/${pair#*:}"
 done
-work=$(mktemp -d "$kernel/native-generated/dual-light-inverse.XXXXXX")
+work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 for path in "${paths[@]}"; do
   input=$kernel/$path

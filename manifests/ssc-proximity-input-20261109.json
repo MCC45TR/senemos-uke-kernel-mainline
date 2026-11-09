@@ -5,7 +5,7 @@
   "parent_source": "98b48c4cb6902411cc0077efac75c989ae9a46c0",
   "parent_source_check": 11288316,
   "parent_full_build": 11289655,
-  "source_check_release": 51,
+  "source_check_release": 52,
   "full_recipe_prepared": true,
   "full_release_reserved": false,
   "driver_before_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
@@ -58,11 +58,11 @@
     },
     {
       "path": "docs/SSC-PROXIMITY-INPUT.md",
-      "sha256": "c00ec428e92a3d7b4dcb1ece2ba5c69c0115f791ac30285bc318217079e745fe"
+      "sha256": "5704a54c63be82abd6c990435bcec2c17e6cfe2830dbc4cb55e5afa1db4be517"
     },
     {
       "path": "packaging/native/copr-proximity-input733.sh",
-      "sha256": "ce57fcc90ffc693afa2e282487fe4ef71129bbab3299d4c73fd94730cdb45e69"
+      "sha256": "37ae2c2e912e4c11b688a146cf77d63a17052357642864948eeb6e3cf9b71a90"
     },
     {
       "path": "packaging/native/copr-speaker-quad733.sh",
@@ -70,7 +70,7 @@
     },
     {
       "path": "manifests/cumulative-release.json",
-      "sha256": "d9b483f4380c948206519e8e9af53cf82d598a32108d5526ecca38289ac3c525"
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
     },
     {
       "path": "manifests/speaker-quad-20261108.json",
@@ -78,7 +78,7 @@
     },
     {
       "path": "packaging/native/proximity-legacy-view733.sh",
-      "sha256": "7b851b61e3e3027df6ce74e3a37619baa34b83ce72b82fa6e74a3a85925ef4b4"
+      "sha256": "256a6c9e4896ecd58053dd456023ac4c2066c5161e8c305c83a5023b2bea6097"
     },
     {
       "path": "packaging/native/rewrite-proximity-full-spec733.sh",
@@ -86,7 +86,7 @@
     },
     {
       "path": "packaging/native/stage-proximity-input733.sh",
-      "sha256": "8575a47da26eaa717595de405babefbdf5b4110acf83121a0d4aa14407240de4"
+      "sha256": "ca12fc1926d109ab073431784097252a7c970fa0efe274cf950c19d105f7f22e"
     },
     {
       "path": "tests/proximity-delivery-spec.sh",
@@ -94,11 +94,11 @@
     },
     {
       "path": "tests/proximity-delivery-source.sh",
-      "sha256": "6f1031f54d12e495c42bd0dc3aeeb34b5da82102275c721f5685dfc873781c65"
+      "sha256": "70a4dee28b231728c5ed6987b27b3cbc3834dfa8591745a30c064cd3f3c527ba"
     },
     {
       "path": "packaging/native/dual-light-legacy-view733.sh",
-      "sha256": "cf17dbe697a37bc0f49a2ff9374f9a9a2d243d27c194154960b1b320d0bc3abe"
+      "sha256": "1c0f382ded0608144007ff4fca8fa95dc2e9ddf3a0318f28a010db82834fec85"
     },
     {
       "path": "packaging/native/check-dual-light-delivery733.sh",
@@ -127,7 +127,8 @@
     "authenticated_legacy_inverse_required": true,
     "full_spec_whole_text_inverse_required": true,
     "actual_linked_ssc_module_required": true,
-    "full_recipe_native_qualified": false
+    "full_recipe_native_qualified": false,
+    "outer_git_context_required": true
   },
   "consumer_reference": {
     "fedora_nevra": "iio-sensor-proxy-3.9-3.fc45.aarch64",
