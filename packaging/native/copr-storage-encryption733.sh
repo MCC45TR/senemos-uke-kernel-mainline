@@ -36,6 +36,7 @@ for tree in "$profile" "$boot";do
 done
 awk -v release="$release" -v version="$version" '
  /^Release: 53%\{\?dist\}$/ {print "Release: " release "%{?dist}";r++;next}
+ /^ExclusiveArch: aarch64$/ {print "BuildRequires: nodejs";n++}
  $0=="%install" {print "bash native-profile/packaging/native/check-storage-encryption733.sh \"$PWD\" %{_uke_out}";i++}
  $0=="%check" {
   print "install -m644 native-generated/storage-encryption733/candidate.config %{buildroot}%{_docdir}/%{name}/storage-encryption-candidate.config"
@@ -49,7 +50,7 @@ awk -v release="$release" -v version="$version" '
   print "";c++;next
  }
  {print}
- END{if(r!=1||i!=1||c!=1||k!=1)exit 1}
+ END{if(r!=1||i!=1||c!=1||k!=1||n!=1)exit 1}
 ' "$spec" > "$work/spec"
 install -m644 "$work/spec" "$spec"
 commit=$(git -C "$owner" rev-parse HEAD)
