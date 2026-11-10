@@ -61,6 +61,8 @@ SPEC
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 mkdir -p %{_uke_out}
+# The parent gravity source comparison consumes this pre-application fixture.
+bash native-profile/packaging/native/check-dual-light-delivery733.sh "$PWD" %{_uke_out} prepared
 SPEC
  awk '/^bash native-profile\/tests\/mainline-boot-status-contract.sh$/{emit=1} emit{print} emit&&/^bash native-profile\/packaging\/native\/prepare-gravity-full733.sh .* source$/{found++;exit}END{if(found!=1)exit 1}' "$full"
  cat <<'SPEC'
