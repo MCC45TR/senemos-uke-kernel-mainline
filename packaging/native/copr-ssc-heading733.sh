@@ -56,7 +56,7 @@ Text-only integer magnetic heading and shared-stream callback qualification.
 No full kernel, runtime provider or physical sensor acceptance is supplied.
 
 SPEC
- awk '$0=="%prep"{emit=1} $0=="%build"{exit} emit{if($0=="bash native-profile/prepare.sh \"$PWD\""){print "(cd native-profile;sha256sum -c --strict --quiet SHA256SUMS)";print "bash native-profile/tests/ssc-heading-math.sh"}print}' "$full"
+ awk '$0=="%prep"{emit=1} $0=="%build"{exit} emit{if($0=="bash native-profile/prepare.sh \"$PWD\""){print "(cd native-profile;sha256sum -c --strict --quiet SHA256SUMS)";print "bash native-profile/tests/ssc-heading-math.sh";print "bash native-profile/packaging/native/preflight-ssc-heading733.sh \"$PWD\""}print}' "$full"
  cat <<'SPEC'
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1

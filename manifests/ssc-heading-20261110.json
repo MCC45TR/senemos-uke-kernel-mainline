@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 82,
+  "source_check_release": 83,
   "parent_full_build": 11299947,
   "parent_source": "34eecdd537a3e6a50e9fde6a3ee70e65786a2f6f",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11299947/senemos-uke-linux-kernel-mainline-unstable-7.3.3-16.src.rpm",
@@ -37,6 +37,7 @@
     "tests/ssc-heading-math.sh",
     "tests/ssc-heading-callbacks.c",
     "tests/ssc-heading-callbacks.sh",
+    "packaging/native/preflight-ssc-heading733.sh",
     "packaging/native/check-ssc-heading733.sh",
     "docs/SSC-MAGNETIC-HEADING.md",
     "manifests/ssc-heading-20261110.json"
@@ -64,7 +65,7 @@
     },
     {
       "path": "tests/ssc-heading-callbacks.c",
-      "sha256": "69f09ee71196fb12bdfade4f168dd55b77941e360573123bd12384d54dbad183"
+      "sha256": "d5c769fb5c0d4db219cfc2b4abb4b345c23c9136a3bb96687cc8e408eebfd21e"
     },
     {
       "path": "tests/ssc-heading-callbacks.sh",
@@ -80,7 +81,11 @@
     },
     {
       "path": "packaging/native/copr-ssc-heading733.sh",
-      "sha256": "f86a105c7ae0a0c0c1880d62beec22c6962861dcc9c99b4aade68903733cf313"
+      "sha256": "5b3b5007ed07434017e37196772c7118bd42902430aaf8e08cd3e6da3ff1543a"
+    },
+    {
+      "path": "packaging/native/preflight-ssc-heading733.sh",
+      "sha256": "c37c563b2a51a1049375031294bbf68b1a70d77e7c1bb08f0867533e9ebf3e96"
     }
   ],
   "primary_contracts": [
