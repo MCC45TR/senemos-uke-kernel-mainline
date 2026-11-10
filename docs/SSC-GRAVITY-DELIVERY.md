@@ -25,6 +25,9 @@ Unrelated checks keep the actual source root, especially Git patch checks,
 kernelrelease and speaker inclusion. Passing the projection to those checks
 would reject its symbolic directory branches or change the output's source
 association; a separate recipe boundary check prevents that regression.
+The parent-view variable is initialized in the RPM check shell where it is
+used. A data-only phase-scope test rejects the actual failed full14 recipe,
+whose build-shell assignment did not survive into the separate check shell.
 
 Production config, prior composition fields, protected audio gain223, raw
 sensor channels, firmware suppliers, boot compatibility and A/B recovery are

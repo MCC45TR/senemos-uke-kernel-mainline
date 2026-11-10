@@ -40,7 +40,8 @@
     "packaging/native/prepare-gravity-full733.sh",
     "packaging/native/gravity-legacy-view733.sh",
     "tests/gravity-delivery-source.sh",
-    "docs/SSC-GRAVITY-DELIVERY.md"
+    "docs/SSC-GRAVITY-DELIVERY.md",
+    "tests/gravity-recipe-scope.sh"
   ],
   "source_assets": [
     {
@@ -85,7 +86,7 @@
     },
     {
       "path": "packaging/native/rewrite-gravity-full733.sh",
-      "sha256": "9c95cda337ba8e18f9c7853fbc555c50a0ca582c74634b8ebaf44c11386513b4"
+      "sha256": "16726f3df59ea4d60fd4fad9dda3ec6685081137ee118847768bdadd846d7abf"
     },
     {
       "path": "packaging/native/prepare-gravity-full733.sh",
@@ -101,11 +102,11 @@
     },
     {
       "path": "docs/SSC-GRAVITY-DELIVERY.md",
-      "sha256": "62bc705660123d58b27c505a1bc3d981037a7891c8694f72428534b4c8ae6832"
+      "sha256": "745c9f84bc9be6faa2e2886ec446803658c342e5ead1b831f13a8c407cb8a53a"
     },
     {
       "path": "packaging/native/copr-gravity-full733.sh",
-      "sha256": "b43137f2bb472479cabbb966df9fc36b72b34bbbdb83fe515296446d03c5e5fe"
+      "sha256": "37913b8441fc2bb369dbf7fb27e8344106918303cbaae1d0e22f8710a5ab566b"
     },
     {
       "path": "packaging/native/retarget-audio-tuple733.sh",
@@ -118,6 +119,10 @@
     {
       "path": "manifests/cumulative-release.json",
       "sha256": "419d105ae6fb3a0badad81f68dc2ceb3e3cb7b8f9d0c6bebef91668bb909355e"
+    },
+    {
+      "path": "tests/gravity-recipe-scope.sh",
+      "sha256": "9a0bca8f94c36d67deaa4425e94975f8a7d3f1df590b2ae2b9e1afc8c2d019ac"
     }
   ]
 }

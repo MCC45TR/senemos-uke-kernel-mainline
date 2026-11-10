@@ -32,6 +32,9 @@ jq --arg source "$(jq -er .proof.source "$manifest")" --argjson proof "$(jq -er 
  .protected_gain==223 and (.physical_accepted|not)' "$work/proof.json" >/dev/null
 (cd "$owner";jq -r '.source_assets[]|.sha256+"  "+.path' "$work/proof.json" | sha256sum -c --strict --quiet -)
 bash "$owner/packaging/native/rewrite-gravity-full733.sh" "$work/parent.spec" "$output/senemos-uke-linux-kernel-mainline-unstable.spec" "$manifest" "$owner/manifests/cumulative-release.json"
+curl -qfsSL --max-time 40 --max-filesize 1048576 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11297002/senemos-uke-linux-kernel-mainline-unstable.spec -o "$work/unscoped.spec"
+printf '%s  %s\n' 3abbb18d3366f193929a753fa2689c3385e44cfbac2b1e4dfe5051efdde8a5d3 "$work/unscoped.spec" | sha256sum -c --strict --quiet -
+bash "$owner/tests/gravity-recipe-scope.sh" "$output/senemos-uke-linux-kernel-mainline-unstable.spec" "$work/unscoped.spec"
 tar -xJf "$output/senemos-native-profile-7.3.3.tar.xz" -C "$work"
 tar -xJf "$output/senemos-uke-boot-recipe.tar.xz" -C "$work"
 profile=$work/native-profile

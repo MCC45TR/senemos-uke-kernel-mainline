@@ -45,7 +45,9 @@ const abiBefore='cmp native-profile/src/sensors/sysfs-driver-uke-ssc Documentati
 const abiAfter='cmp native-profile/src/sensors/sysfs-driver-uke-ssc "$gravity_parent/Documentation/ABI/testing/sysfs-driver-uke-ssc"';
 if(priorLinked.split(abiBefore).length!==2)throw Error('Parent ABI comparison count');
 const parentLine='gravity_parent=$(bash native-profile/packaging/native/gravity-legacy-view733.sh "$PWD")\n';
-const projected=parentLine+oldCalls.replace(abiBefore,abiAfter);
+const checkStart='%check\n';
+if(oldCalls.split(checkStart).length!==2)throw Error('Parent RPM check-shell boundary');
+const projected=oldCalls.replace(checkStart,checkStart+parentLine).replace(abiBefore,abiAfter);
 after=after.slice(0,begin)+projected+after.slice(end);
 const added=[];
 for(const phase of ['source','linked','install']){
