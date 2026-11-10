@@ -93,7 +93,7 @@
     },
     {
       "path": "packaging/native/gravity-legacy-view733.sh",
-      "sha256": "97158c12a813440d47fa849985eb21a8ceafcf64e5a3c9eaf7f573bbdfe0911f"
+      "sha256": "02233fb162e2aa3f530cc301ead9049fba6e9cca9de7a02cea1fdb1da7d6b162"
     },
     {
       "path": "tests/gravity-delivery-source.sh",

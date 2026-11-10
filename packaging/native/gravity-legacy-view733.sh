@@ -22,20 +22,32 @@ for file in drivers/iio/common/uke-ssc/uke-ssc-iio.c arch/arm64/kernel/uke-hardw
 done
 printf '%s  %s\n' "$(jq -er .driver_before_sha256 "$profile/manifests/ssc-gravity-20261110.json")" "$inverse/drivers/iio/common/uke-ssc/uke-ssc-iio.c" | sha256sum -c --strict --quiet -
 view=$(mktemp -d "$kernel/native-generated/gravity-parent-view.XXXXXX")
-node - "$kernel" "$view" "$inverse" <<'NODE'
-const fs=require('fs'),path=require('path'),[kernel,view,inverse]=process.argv.slice(2);
-const changed=['drivers/iio/common/uke-ssc/uke-ssc-iio.c','arch/arm64/kernel/uke-hardware.h','Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml','Documentation/ABI/testing/sysfs-driver-uke-ssc'];
-function project(relative){
- const source=path.join(kernel,relative),target=path.join(view,relative);
- if(changed.includes(relative)){fs.copyFileSync(path.join(inverse,relative),target);return;}
- if(relative===''||changed.some(p=>p.startsWith(relative+'/'))){
-  if(relative)fs.mkdirSync(target);
-  for(const name of fs.readdirSync(source)){if(name==='.git')continue;project(relative?relative+'/'+name:name);}
- }else fs.symlinkSync(source,target);
+project(){
+ local relative=$1 source target entry name child path descend
+ source=$kernel/$relative
+ target=$view/$relative
+ mkdir -p "$target"
+ for entry in "$source"/* "$source"/.[!.]* "$source"/..?*;do
+  [[ -e $entry || -L $entry ]] || continue
+  name=$(basename "$entry")
+  [[ $name != .git ]] || continue
+  child=$relative/$name
+  child=$(printf '%s' "$child" | sed 's,^/,,')
+  if [[ -f $inverse/$child ]];then
+   install -m644 "$inverse/$child" "$view/$child"
+   continue
+  fi
+  descend=false
+  for path in drivers/iio/common/uke-ssc/uke-ssc-iio.c arch/arm64/kernel/uke-hardware.h Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml Documentation/ABI/testing/sysfs-driver-uke-ssc;do
+   [[ $path != "$child/"* ]] || descend=true
+  done
+  if $descend;then project "$child";else ln -s "$entry" "$view/$child";fi
+ done
 }
-project('');
-for(const p of changed)if(!fs.readFileSync(path.join(view,p)).equals(fs.readFileSync(path.join(inverse,p))))throw Error('Parent projection changed');
-NODE
+project ''
+for file in drivers/iio/common/uke-ssc/uke-ssc-iio.c arch/arm64/kernel/uke-hardware.h Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml Documentation/ABI/testing/sysfs-driver-uke-ssc;do
+ cmp "$inverse/$file" "$view/$file"
+done
 git -C "$view" init -q
 (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
 printf '%s\n' "$view"
