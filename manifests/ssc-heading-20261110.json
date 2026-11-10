@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 81,
+  "parent_full_build": 11299947,
+  "parent_source": "34eecdd537a3e6a50e9fde6a3ee70e65786a2f6f",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11299947/senemos-uke-linux-kernel-mainline-unstable-7.3.3-16.src.rpm",
+  "parent_srpm_sha256": "c5b5b7ee239978d71aaa6c2e033304b72282a51f5c26746bbf92eaf1cc616345",
+  "parent_spec_sha256": "5d4b41f86c4f4a1479985c38898da17bf7a8251a5c954848ebb322c8b6f6dced",
+  "source_units": [
+    {
+      "path": "drivers/iio/common/uke-ssc/uke-ssc-iio.c",
+      "before_sha256": "3e884908c7d3616488329a76b631e245cd5ce1add8a6a84806a5096d095c3f98",
+      "after_sha256": "0ce13ce84852f73f7c8bc473a49e52b5ac675f4d3189d5a3160791acabebfa2d"
+    }
+  ],
+  "heading_type": "IIO_ROT/IIO_MOD_NORTH_MAGN_TILT_COMP",
+  "heading_scale": "0.000001 degree",
+  "firmware_datatype": "rotv",
+  "game_rv_never_magnetic_heading": true,
+  "original_quaternion_abi_unchanged": true,
+  "firmware_reliability_gate_retained": true,
+  "heading_scan_bytes": 16,
+  "heading_timestamp_offset": 8,
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "protected_gain": 223,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0017-ssc-magnetic-heading.patch",
+    "src/sensors/uke-ssc-heading.h",
+    "src/sensors/uke-ssc-heading-input.h",
+    "tests/ssc-heading-math.c",
+    "tests/ssc-heading-math.sh",
+    "tests/ssc-heading-callbacks.c",
+    "tests/ssc-heading-callbacks.sh",
+    "packaging/native/check-ssc-heading733.sh",
+    "docs/SSC-MAGNETIC-HEADING.md",
+    "manifests/ssc-heading-20261110.json"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0017-ssc-magnetic-heading.patch",
+      "sha256": "885aa9a94f88292ec396731596a6150c0d619338d3ddf53cde99c41a3f2a757e"
+    },
+    {
+      "path": "src/sensors/uke-ssc-heading.h",
+      "sha256": "a34e5644f974c7405c5de7fe093dff2063cd85aa248baa996f13b0a23aca01e1"
+    },
+    {
+      "path": "src/sensors/uke-ssc-heading-input.h",
+      "sha256": "992263c974b27163d07075cc4f158ccf6d324844996cf2dfce5f9900b38a719c"
+    },
+    {
+      "path": "tests/ssc-heading-math.c",
+      "sha256": "6c18d5bf4ce663a027cb7461572002fcddf899872c96a4ea30a882f63164c85a"
+    },
+    {
+      "path": "tests/ssc-heading-math.sh",
+      "sha256": "83aa9cc3a438c5523d26f1acbc4f736083dcf90570e31798f778ef6ff68c4e09"
+    },
+    {
+      "path": "tests/ssc-heading-callbacks.c",
+      "sha256": "69f09ee71196fb12bdfade4f168dd55b77941e360573123bd12384d54dbad183"
+    },
+    {
+      "path": "tests/ssc-heading-callbacks.sh",
+      "sha256": "4575366e67de42b20fafd4635afd3d6046421bcd8657b47102b02d3858f8bebc"
+    },
+    {
+      "path": "packaging/native/check-ssc-heading733.sh",
+      "sha256": "a3fd07740f170f975a327ee8b0f8ef7c8dc5a1b231cf10d8e902d863a746e046"
+    },
+    {
+      "path": "docs/SSC-MAGNETIC-HEADING.md",
+      "sha256": "cb78871ec8ea4ec41ecacdc104694c04649916944fcd499bb4cdff4e59ec50d1"
+    },
+    {
+      "path": "packaging/native/copr-ssc-heading733.sh",
+      "sha256": "b0919446c67ba4694566fd9d0a7d6b271898c9a097cf08b0cde87d0a86a71a0a"
+    }
+  ],
+  "primary_contracts": [
+    {
+      "repository": "https://github.com/qualcomm/sensinghub",
+      "commit": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+      "path": "apis/proto/sns_rotv.proto",
+      "sha256": "68e3f73d218f3f2db4c594ff18451430a0fcda340e3d79ef9bb31a25fb604ae4",
+      "license": "BSD-3-Clause-Clear"
+    },
+    {
+      "repository": "https://github.com/torvalds/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "path": "drivers/iio/magnetometer/hid-sensor-magn-3d.c",
+      "sha256": "39806fe460b8485a4553194a640a27cf6738f334e83dd5224d53306f7bdcdad5",
+      "license": "GPL-2.0-only"
+    },
+    {
+      "repository": "https://github.com/aosp-mirror/platform_frameworks_base",
+      "commit": "22626107841e928d472e8258c0d2cefccf9c9b81",
+      "path": "core/java/android/hardware/SensorManager.java",
+      "sha256": "0ac54f4c8db320c31fc8e9f0f076e6167fe982a8cb1a21194c79bec74dff836d",
+      "license": "Apache-2.0",
+      "scope": "Math relationship only;no Java or GPL3 libssc code copied"
+    }
+  ]
+}
