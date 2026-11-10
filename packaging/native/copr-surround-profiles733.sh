@@ -30,6 +30,11 @@ jq -e '.source_commit=="4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1" and .kernel_re
 commit=$(git -C "$owner" rev-parse HEAD)
 tree=$(git -C "$owner" rev-parse HEAD^{tree})
 jq --arg commit "$commit" --arg tree "$tree" '.+{source_commit:$commit,source_tree:$tree}' "$manifest" > "$work/proof/surround-profile-qualification.json"
+mkdir -p "$profile/referances"
+curl -qfsSL --max-time 60 "$(jq -er .alsa_ucm_source.url "$manifest")" -o "$profile/referances/alsa-ucm-parser.c"
+printf '%s  %s\n' "$(jq -er .alsa_ucm_source.sha256 "$manifest")" "$profile/referances/alsa-ucm-parser.c" | sha256sum -c --strict --quiet -
+curl -qfsSL --max-time 60 "$(jq -er .alsa_ucm_source.license_url "$manifest")" -o "$work/proof/COPYING.alsa-lib"
+printf '%s  %s\n' "$(jq -er .alsa_ucm_source.license_sha256 "$manifest")" "$work/proof/COPYING.alsa-lib" | sha256sum -c --strict --quiet -
 install -m644 "$owner/LICENSE" "$work/proof/LICENSE"
 (cd "$work/proof";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
@@ -40,7 +45,7 @@ Name: uke-kernel-migration-check
 Version: 7.3.3
 Release: @RELEASE@%{?dist}
 Summary: Focused Uke protected surround profile source qualification
-License: GPL-2.0-only AND MIT
+License: GPL-2.0-only AND MIT AND LGPL-2.0-or-later
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: surround-profiles-proof.tar.xz
 BuildRequires: gcc-c++, clang, alsa-utils, alsa-topology-utils, alsa-lib-devel, pkgconf-pkg-config, nodejs, jq
@@ -68,6 +73,7 @@ install -Dm644 surround-profile-qualification.json %{buildroot}%{_docdir}/%{name
 install -Dm644 parent-source-composition.json %{buildroot}%{_docdir}/%{name}/parent-source-composition.json
 install -Dm644 SHA256SUMS %{buildroot}%{_docdir}/%{name}/source-assets.sha256
 install -Dm644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
+install -Dm644 COPYING.alsa-lib %{buildroot}%{_licensedir}/%{name}/COPYING.alsa-lib
 
 %files
 %{_docdir}/%{name}

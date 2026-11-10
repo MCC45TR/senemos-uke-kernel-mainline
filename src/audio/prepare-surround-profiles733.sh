@@ -39,11 +39,11 @@ cp "$ucm/POCO-Pad-X1.conf" "$work/ucm/POCO-Pad-X1.conf"
 cat >> "$work/ucm/POCO-Pad-X1.conf" <<'UCM'
 
 # Six/eight program channels are rendered to four protected physical outputs.
-SectionUseCase."HiFi Surround 5.1" {
+SectionUseCase."HiFiSurround51" {
  File "/Qualcomm/@UKE_AUDIO_DRIVER@/Speaker-Surround51.conf"
  Comment "5.1 input to four internal speakers through ADSP"
 }
-SectionUseCase."HiFi Surround 7.1" {
+SectionUseCase."HiFiSurround71" {
  File "/Qualcomm/@UKE_AUDIO_DRIVER@/Speaker-Surround71.conf"
  Comment "7.1 input to four internal speakers through ADSP"
 }

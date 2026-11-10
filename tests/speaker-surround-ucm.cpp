@@ -6,6 +6,10 @@
 #include <cstring>
 #include <memory>
 #include <string>
+// Exact original ALSA UCM semantic validator, extracted from its pinned source.
+#define snd_error(...) ((void)0)
+#include "actual-alsa-ucm-name.inc"
+#undef snd_error
 using Config=std::unique_ptr<snd_config_t,decltype(&snd_config_delete)>;
 static Config load(const char* file) {
  snd_config_t* raw=nullptr;assert(!snd_config_top(&raw));Config config(raw,snd_config_delete);
@@ -21,7 +25,7 @@ static std::string serialized(snd_config_t* config) {
  const std::string result(data,bytes);snd_output_close(output);return result;
 }
 int main(int argc,char** argv) {
- assert(argc==5);auto base=load(argv[1]);const auto expected=serialized(base.get());
+ assert(argc==5);assert(!parse_is_name_safe("HiFi Surround 5.1"));assert(!parse_is_name_safe("HiFi Surround 7.1"));auto base=load(argv[1]);const auto expected=serialized(base.get());
  for(int i=2;i<=3;i++) {
   auto config=load(argv[i]);long channels=0;const char* pcm=nullptr;
   auto* count=node(config.get(),"SectionDevice.Speaker.Value.PlaybackChannels");
@@ -32,12 +36,13 @@ int main(int argc,char** argv) {
   assert(serialized(config.get())==expected);
  }
  auto root=load(argv[4]);
- for(const char* name:{"HiFi Surround 5.1","HiFi Surround 7.1"}) {
-  // Dots in a use-case name are literal ALSA node IDs, not search separators.
+ for(const char* name:{"HiFiSurround51","HiFiSurround71"}) {
+  // Syntactically valid ALSA config IDs still need UCM semantic validation.
   auto* cases=node(root.get(),"SectionUseCase");bool found=false;
   snd_config_iterator_t i,next;
   snd_config_for_each(i,next,cases) {
    const char* id=nullptr;assert(!snd_config_get_id(snd_config_iterator_entry(i),&id));
+   assert(parse_is_name_safe(id));
    if(!strcmp(id,name))found=true;
   }
   assert(found);

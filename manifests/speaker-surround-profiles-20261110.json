@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 67,
+  "source_check_release": 68,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -9,7 +9,7 @@
   "parent_spec_sha256": "3d667256af3ecb7b47103258a62fc4b1c3b806ef78dd0b05d91c73bef8b97011",
   "required_stream_source": "584afd2ea3a9426863e9e45a765a4edfb1aa3f08",
   "required_stream_build": 11293736,
-  "qualification_scope": "Original ALSA topology compiler, UCM parser and channel-only source inverse; not a kernel build or device test",
+  "qualification_scope": "Original ALSA topology/config parser plus exact pinned UCM semantic-name validator and old-ID rejection; not a full kernel/device test",
   "native_qualified": false,
   "installed_on_target": false,
   "physical_accepted": false,
@@ -56,27 +56,37 @@
   "source_assets": [
     {
       "path": "src/audio/prepare-surround-profiles733.sh",
-      "sha256": "a750b4f7993bb3d6a4a7145a7964ea4dbcbf229aa2ecb130ca8efeea2edbb8cb"
+      "sha256": "4aa105be4d94609e93622e68c4c4848b1aefa1887601771c14db7d1502398f1c"
     },
     {
       "path": "packaging/native/check-surround-profiles733.sh",
-      "sha256": "24288ca2ccbe8d928564ad898459abdd537bb4625cd6e723cb4d57e8c0d59a19"
+      "sha256": "f0e254b944d0fa1a7dfa6d8af2d6e8edda340b08a5f987770cf2441a747954ba"
     },
     {
       "path": "tests/speaker-surround-ucm.cpp",
-      "sha256": "08016a492519de5c52c47a666302db830896ecbedd3d8b9b89ed2beee9a81271"
+      "sha256": "3fdc2f615a0a2d07bf4ae5f795fc9e02d8d9b8b30fbe3d2f681d3ceb79735096"
     },
     {
       "path": "docs/SPEAKER-SURROUND-PROFILES.md",
-      "sha256": "513e1d24f20c5d4b36ddb8f039869a251607eb15222d12054ffa2d6427d6111b"
+      "sha256": "20ea9cbab78024dfbbda954bea8181ac600580e271b6ce1f8fedb4e3c1cf1f9c"
     },
     {
       "path": "packaging/native/copr-surround-profiles733.sh",
-      "sha256": "a4a13cd09578f4a199d64be506c48dc8ad56c04dff2b4aa2cb8252355fac8daf"
+      "sha256": "ece4bba66a6579bf317b03d1d22fab543e535ac4577415d61710f4b817643d35"
     },
     {
       "path": "LICENSE",
       "sha256": "3261559b7f050f1691b0001544b8497469dea818a3b03136fc5cca0478b595ee"
     }
-  ]
+  ],
+  "alsa_ucm_source": {
+    "repository": "https://github.com/alsa-project/alsa-lib",
+    "commit": "a7babcb8e6361719bf18fa96f11354d125447500",
+    "path": "src/ucm/parser.c",
+    "url": "https://raw.githubusercontent.com/alsa-project/alsa-lib/a7babcb8e6361719bf18fa96f11354d125447500/src/ucm/parser.c",
+    "sha256": "e6fb9df54268e43d83ae8a2ac679c44330f370e932d43dfd69504910c3e15a40",
+    "license": "LGPL-2.0-or-later",
+    "license_url": "https://raw.githubusercontent.com/alsa-project/alsa-lib/a7babcb8e6361719bf18fa96f11354d125447500/COPYING",
+    "license_sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+  }
 }

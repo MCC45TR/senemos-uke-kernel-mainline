@@ -20,11 +20,20 @@ const changed=[];for(let i=0;i<before.length;i++)if(before[i]!==after[i]){if(bef
 if(!changed.length||changed.length>2)throw Error('Unexpected FE capability copy count');
 console.log('Compiled protected topology: only '+changed.length+' frontend max-channel capability byte(s) change4-to8; all graph bytes retained.');
 NODE
+printf '%s  %s\n' e6fb9df54268e43d83ae8a2ac679c44330f370e932d43dfd69504910c3e15a40 "$profile/referances/alsa-ucm-parser.c" | sha256sum -c --strict --quiet -
+awk '/^static int parse_is_name_safe\(/ {copy=1} copy{print} copy&&/^}/{n++;exit} END{if(n!=1)exit 1}' "$profile/referances/alsa-ucm-parser.c" > "$work/actual-alsa-ucm-name.inc"
+sed 's/HiFiSurround51/HiFi Surround 5.1/;s/HiFiSurround71/HiFi Surround 7.1/' "$work/ucm/POCO-Pad-X1.conf" > "$work/historical-unsafe-ucm.conf"
+ulimit -c 0
 for cc in g++ clang++;do
  "$cc" -std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror "$profile/tests/speaker-surround-ucm.cpp" \
-  $(pkg-config --cflags --libs alsa) -o "$work/ucm-check"
+  -I"$work" $(pkg-config --cflags --libs alsa) -o "$work/ucm-check"
  "$work/ucm-check" "$profile/src/audio/desktop/array-ucm2/Speaker-HiFi.conf" \
   "$work/ucm/Speaker-Surround51.conf" "$work/ucm/Speaker-Surround71.conf" "$work/ucm/POCO-Pad-X1.conf"
+ status=0
+ "$work/ucm-check" "$profile/src/audio/desktop/array-ucm2/Speaker-HiFi.conf" "$work/ucm/Speaker-Surround51.conf" "$work/ucm/Speaker-Surround71.conf" "$work/historical-unsafe-ucm.conf" > "$work/$cc-semantic-refusal.log" 2>&1 || status=$?
+ [[ $status == 134 ]]
+ grep -F 'parse_is_name_safe(id)' "$work/$cc-semantic-refusal.log"
+ printf 'Original ALSA semantic UCM names pass and historical dotted IDs refuse:%s.\n' "$cc"
 done
 jq '."monitor.alsa.rules"[].matches[] |= if ."node.name"=="~alsa_input[.]platform-sound-uke[.].*__Mic__source" then
  ."node.name"="alsa_input.platform-sound-uke.HiFi__Mic__source" else . end' "$work/microphone-rules.conf" | jq -S . > "$work/wp-inverse.json"
