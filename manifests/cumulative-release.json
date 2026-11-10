@@ -2,8 +2,8 @@
   "schema_version": 1,
   "package": "senemos-uke-linux-kernel-mainline-unstable",
   "channel": "uke-linux-unstable",
-  "full_release": 13,
-  "source_check_release": 72,
+  "full_release": 14,
+  "source_check_release": 76,
   "upstream": {
     "version": "7.3.3",
     "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",

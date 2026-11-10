@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "full_release": 14,
+  "source_check_release": 76,
+  "parent_full_release": 13,
+  "parent_full_build": 11295536,
+  "parent_source": "780dd1a0642bad824e3d6491d4f7a8fb4e0fc665",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11295536/senemos-uke-linux-kernel-mainline-unstable-7.3.3-13.src.rpm",
+  "parent_srpm_sha256": "553d395bab4079a830fb735b7e2c38ecd272b13bf176065073fafbc10cded43c",
+  "parent_spec_sha256": "6e0fc89e347a5d527ef0c4c2a56c39e937ca408ad12a3007406a243d78f093b0",
+  "parent_audio_card_sha256": "57ec5ff772d24693edbcdabeed4c23f21ada966a71df555e6cf5bbdd0d622457",
+  "proof": {
+    "build": 11296588,
+    "version": "7.3.3-76",
+    "source_check_release": 76,
+    "source": "8b787aa02d640e8ff114642c2ba1378b8f240cfc",
+    "receipt_sha256": "f8a84c2ec85c26a8a5623f5c7e2fa62ca58bc1bd52149664409ae7bcf9855c01"
+  },
+  "retained_full13_source_fields": 708,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0011-ssc-gravity-linear-input.patch",
+    "src/sensors/0012-ssc-gravity-native-dt.patch",
+    "src/sensors/apply-gravity733.sh",
+    "packaging/native/check-gravity733.sh",
+    "tests/ssc-gravity.c",
+    "tests/ssc-gravity.sh",
+    "docs/SSC-GRAVITY-LINEAR.md",
+    "src/sensors/0013-ssc-gravity-observation-abi.patch",
+    "packaging/native/copr-gravity733.sh",
+    "manifests/ssc-gravity-20261110.json",
+    "packaging/native/rewrite-gravity-full733.sh",
+    "packaging/native/prepare-gravity-full733.sh",
+    "packaging/native/gravity-legacy-view733.sh",
+    "tests/gravity-delivery-source.sh",
+    "docs/SSC-GRAVITY-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0011-ssc-gravity-linear-input.patch",
+      "sha256": "6ad89007b6767b63c4235afc35c361769ab489eeaac74cab1cbe76e15554e505"
+    },
+    {
+      "path": "src/sensors/0012-ssc-gravity-native-dt.patch",
+      "sha256": "c4fcb96f853f81ea2a747e7b029937a4188f2676249f8e9d8ca4e43c6377fe03"
+    },
+    {
+      "path": "src/sensors/apply-gravity733.sh",
+      "sha256": "82c51f66593ed4698b24b8f3edc523a8e1b4b0d5ea08f8d36493f6c05ed9bc5f"
+    },
+    {
+      "path": "packaging/native/check-gravity733.sh",
+      "sha256": "bb2248ed594793cfbd2ab2448f061f09da7770354c33011da2b6b7ddb5b891e4"
+    },
+    {
+      "path": "tests/ssc-gravity.c",
+      "sha256": "5ce7c78f7d66950188aabfa94c75c38f8d9bb95c13e420ae48192cd7d427adbc"
+    },
+    {
+      "path": "tests/ssc-gravity.sh",
+      "sha256": "0255358ba53677e4960585d87b38149d59ca0860b28acc32c5bfbcce582aec2f"
+    },
+    {
+      "path": "docs/SSC-GRAVITY-LINEAR.md",
+      "sha256": "fb23c2452fda97bd036c32d2562598a95812a3c2afd7cbacade82545112f249b"
+    },
+    {
+      "path": "src/sensors/0013-ssc-gravity-observation-abi.patch",
+      "sha256": "40691be9319b68eab0f39eaaaeae071b6c5f336fa3b79f30f9ff0f177f52c95d"
+    },
+    {
+      "path": "packaging/native/copr-gravity733.sh",
+      "sha256": "74293ad668a2c727291a3a989ff633309a2885de84b2f4f54fe156c83f2ef763"
+    },
+    {
+      "path": "manifests/ssc-gravity-20261110.json",
+      "sha256": "2f31a342906857f9bfa543d8dbd235c0d85a4d67fbce4277ca0111ab649dc940"
+    },
+    {
+      "path": "packaging/native/rewrite-gravity-full733.sh",
+      "sha256": "3b41d71baaa484b28b08dbea487039f50665d57a6ac9ef0cf3c119060a25180d"
+    },
+    {
+      "path": "packaging/native/prepare-gravity-full733.sh",
+      "sha256": "ee631971d33df41a8917b27a56b41102cf78468612a8a3adc90a9c7b61166e7d"
+    },
+    {
+      "path": "packaging/native/gravity-legacy-view733.sh",
+      "sha256": "97158c12a813440d47fa849985eb21a8ceafcf64e5a3c9eaf7f573bbdfe0911f"
+    },
+    {
+      "path": "tests/gravity-delivery-source.sh",
+      "sha256": "c204d8ce1e5b81bdfa08b7658fc3015a7147d33f4bf6ea33fca0e1b5f8db0682"
+    },
+    {
+      "path": "docs/SSC-GRAVITY-DELIVERY.md",
+      "sha256": "e201ca23d978a0960158b36ce4692ed1a45e1a0387df0ffc04493797b001e123"
+    },
+    {
+      "path": "packaging/native/copr-gravity-full733.sh",
+      "sha256": "b43137f2bb472479cabbb966df9fc36b72b34bbbdb83fe515296446d03c5e5fe"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "419d105ae6fb3a0badad81f68dc2ceb3e3cb7b8f9d0c6bebef91668bb909355e"
+    }
+  ]
+}
