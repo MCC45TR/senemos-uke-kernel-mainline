@@ -3,8 +3,8 @@ Subject: [PATCH] iio: uke-ssc: publish the gravity and linear acceleration strea
 
 The standard sns_gravity.proto event carries six m/s2 values: gravity XYZ,
 then linear acceleration XYZ. Publish both triplets from a single demand-owned
-firmware request with the standard IIO gravity/acceleration types. Name the
-second triplet linear so it cannot replace the physical accelerometer in
+firmware request with the standard IIO gravity/acceleration types. Use the
+standard IIO linear-axis modifiers so this stream cannot replace the physical accelerometer in
 existing desktop discovery rules. Preserve host timestamps and raw sensor paths.
 
 A firmware fusion endpoint may advertise physical=false; only the explicitly
@@ -163,16 +163,20 @@ No AP-side fusion, DSP algorithm, calibration or persistent sample is introduced
  static const unsigned long ssc_scalar_masks[] = { 1, 0 };
  
  static void ssc_close_client(struct ssc_controller *c)
-@@ -1265,7 +1276,7 @@
+@@ -1265,8 +1276,11 @@
  static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
  {
  	struct iio_dev *iio;
 -	unsigned int count = s->description->dimensions == 3 ? 3 : 1, i;
 +	unsigned int count = ssc_sample_channels(s->description), i;
  	const enum iio_modifier axis[] = { IIO_MOD_X, IIO_MOD_Y, IIO_MOD_Z };
++	const enum iio_modifier linear_axis[] = {
++		IIO_MOD_LINEAR_X, IIO_MOD_LINEAR_Y, IIO_MOD_LINEAR_Z,
++	};
  
  	iio = devm_iio_device_alloc(c->dev, sizeof(struct ssc_sensor *));
-@@ -1279,9 +1290,13 @@
+ 	if (!iio)
+@@ -1279,9 +1293,13 @@
  			.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),
  			.scan_type = { .sign = 's', .realbits = 64, .storagebits = 64, .endianness = IIO_CPU },
  		};
@@ -183,12 +187,12 @@ No AP-side fusion, DSP algorithm, calibration or persistent sample is introduced
 +			s->channel[i].channel2 = axis[i % 3];
 +			if (s->description->kind == SSC_GRAVITY && i >= 3) {
 +				s->channel[i].type = IIO_ACCEL;
-+				s->channel[i].extend_name = "linear";
++				s->channel[i].channel2 = linear_axis[i - 3];
 +			}
  			if (s->has_mount_matrix)
  				s->channel[i].ext_info = ssc_mount_matrix_info;
  		}
-@@ -1294,7 +1309,8 @@
+@@ -1294,7 +1312,8 @@
  	iio->modes = INDIO_DIRECT_MODE;
  	iio->channels = s->channel;
  	iio->num_channels = count + 1;

@@ -32,11 +32,12 @@ for cc in gcc clang;do
   "$work/check"
   printf 'Actual SSC gravity callbacks passed:%s/sanitize%s.\n' "$cc" "$san"
  done
- for bad in truncated virtual;do
+ for bad in truncated virtual legacy_abi;do
   cp "$work/good.inc" "$work/actual-gravity-callbacks.inc"
   case $bad in
    truncated) sed -i 's/i < ssc_sample_channels(d)/i < (d->dimensions == 3 ? 3 : 1)/' "$work/actual-gravity-callbacks.inc";;
    virtual) sed -i 's/description->kind == SSC_GRAVITY)/description->kind != SSC_GRAVITY)/' "$work/actual-gravity-callbacks.inc";;
+   legacy_abi) sed -i 's/s->channel\[i\].channel2 = linear_axis\[i - 3\]/s->channel[i].channel2 = linear_axis[i - 3]; s->channel[i].channel2 = axis[i - 3]; s->channel[i].extend_name = "linear"/' "$work/actual-gravity-callbacks.inc";;
   esac
   ! cmp -s "$work/good.inc" "$work/actual-gravity-callbacks.inc"
   "$cc" -std=gnu11 -O2 -UNDEBUG -Wall -Wextra -Werror -I"$work/include" -I"$work" -I"$core" "$core/uke-ssc-protocol.c" "$profile/tests/ssc-gravity.c" -o "$work/bad"

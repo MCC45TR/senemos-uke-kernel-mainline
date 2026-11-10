@@ -7,8 +7,8 @@ six-channel IIO device preserves the acquisition relationship and uses the
 existing demand/shared-owner, generation, ordering and suspend/restart machinery.
 It adds no resident task, independent poller or AP-side fusion algorithm.
 
-The first triplet uses IIO_GRAVITY. The second uses IIO_ACCEL with the `linear`
-channel suffix, so original desktop rules requiring physical `in_accel_x_raw`
+The first triplet uses IIO_GRAVITY. The second uses IIO_ACCEL with the standard
+IIO_MOD_LINEAR_X/Y/Z modifiers, so original desktop rules requiring physical `in_accel_x_raw`
 do not mistake the new fusion output for the retained accelerometer. Values
 use signed64-bit micro-units with scale10^-6. Both triplets and the host receipt
 timestamp share a scan; firmware tick ordering remains separate. No guessed
@@ -31,6 +31,12 @@ Primary sources inspected unchanged:
 - Linux7.3.3 d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd, GPL-2.0,
   `include/uapi/linux/iio/types.h`, IIO_GRAVITY/IIO_ACCEL, and
   `include/linux/iio/buffer.h`, timestamp placement and buffer-size admission.
+  The same pinned revision defines IIO_MOD_LINEAR_X/Y/Z, maps them to linear_x/y/z in
+  `drivers/iio/industrialio-core.c` (SHA256
+  ffd4c134d69436d4168927a2959cb10c5491d59f54bf57d34b85489ac7a171a5),
+  and documents `in_accel_linear_x/y/z_raw` and gravity in m/s² in
+  `Documentation/ABI/testing/sysfs-bus-iio` (SHA256
+  5cca29b4ff3aec9b328c04724ce6243b07bc161f2382e69cf89826faeeb2ae12).
 - Uke OEM sensor registry/HAL evidence remains the pinned board source from
   the donor inventory; firmware-facing standard metadata, not a hardcoded
   fitted chip, determines runtime admission. No applicable same-SoC native

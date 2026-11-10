@@ -14,7 +14,7 @@ for patch in src/sensors/0011-ssc-gravity-linear-input.patch src/sensors/0012-ss
  git -C "$kernel" apply --check --whitespace=error "$profile/$patch"
  git -C "$kernel" apply --whitespace=error "$profile/$patch"
 done
-printf '%s  %s\n' 0fc9eafc99332bd80b792f145f3c2ce2c6a80bdbdd34cb0de36ab5d305b0a9b5 "$kernel/${files[0]}" | sha256sum -c --strict --quiet -
+printf '%s  %s\n' c5cc05ccc22656c913dd98c735e4bb52cb9ab9f8b0e84bd48ad2d43f25c47e63 "$kernel/${files[0]}" | sha256sum -c --strict --quiet -
 for file in "${files[@]}";do install -Dm644 "$kernel/$file" "$work/inverse/$file";done
 git -C "$work/inverse" init -q
 for patch in src/sensors/0013-ssc-gravity-observation-abi.patch src/sensors/0012-ssc-gravity-native-dt.patch src/sensors/0011-ssc-gravity-linear-input.patch;do git -C "$work/inverse" apply -R --whitespace=error "$profile/$patch";done

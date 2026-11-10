@@ -105,9 +105,9 @@ int main(void){
  int val=55,val2=66;assert(ssc_read_scale(d,&val,&val2)==IIO_VAL_INT_PLUS_MICRO&&val==0&&val2==1);checks++;
  assert(ssc_allocate_iio(&c,&s)==0&&s.iio==&allocated&&private_sensor==&s&&s.iio->num_channels==7);
  for(unsigned i=0;i<6;i++){
-  const struct iio_chan_spec *ch=&s.channel[i];assert(ch->type==(i<3?IIO_GRAVITY:IIO_ACCEL)&&ch->modified&&ch->channel2==(i%3==0?IIO_MOD_X:i%3==1?IIO_MOD_Y:IIO_MOD_Z));
+  const struct iio_chan_spec *ch=&s.channel[i];assert(ch->type==(i<3?IIO_GRAVITY:IIO_ACCEL)&&ch->modified&&ch->channel2==(i<3?(i==0?IIO_MOD_X:i==1?IIO_MOD_Y:IIO_MOD_Z):(i==3?IIO_MOD_LINEAR_X:i==4?IIO_MOD_LINEAR_Y:IIO_MOD_LINEAR_Z)));
   assert(ch->address==i&&ch->scan_index==(int)i&&ch->scan_type.realbits==64&&ch->scan_type.storagebits==64&&ch->scan_type.sign=='s');
-  assert((i<3&&!ch->extend_name)||(i>=3&&ch->extend_name&&!strcmp(ch->extend_name,"linear")));assert(!ch->ext_info);checks++;
+  assert(!ch->extend_name);assert(!ch->ext_info);checks++;
  }
  assert(s.channel[6].type==IIO_TIMESTAMP&&s.channel[6].scan_index==6&&s.iio->available_scan_masks[0]==63&&s.iio->available_scan_masks[1]==0);checks++;
  allocation_fails=true;assert(ssc_allocate_iio(&c,&s)==-ENOMEM);allocation_fails=false;buffer_error=-EIO;assert(ssc_allocate_iio(&c,&s)==-EIO);buffer_error=0;checks+=2;
