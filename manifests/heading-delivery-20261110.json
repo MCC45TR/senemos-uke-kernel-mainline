@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "parent_full_release": 16,
+  "parent_full_build": 11299947,
+  "parent_source": "34eecdd537a3e6a50e9fde6a3ee70e65786a2f6f",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11299947/senemos-uke-linux-kernel-mainline-unstable-7.3.3-16.src.rpm",
+  "parent_srpm_sha256": "c5b5b7ee239978d71aaa6c2e033304b72282a51f5c26746bbf92eaf1cc616345",
+  "parent_spec_sha256": "5d4b41f86c4f4a1479985c38898da17bf7a8251a5c954848ebb322c8b6f6dced",
+  "parent_audio_card_sha256": "0846d9999cef2d61fd3365292f6b94a989987f22e8e0995e7db10dd9ba6a590e",
+  "proof": {
+    "build": 11300558,
+    "version": "7.3.3-84",
+    "source_check_release": 84,
+    "source": "2ca1edfb8d5800694c49e01a97aeda85f35fe7f0",
+    "receipt_sha256": "ecc1c90b77ac0660833b809513234563b7d904ea37b9ed23c76d2db5306ee7d8"
+  },
+  "full_release_policy": "derive-next-successful-family-revision",
+  "retained_full16_source_fields": 732,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0017-ssc-magnetic-heading.patch",
+    "src/sensors/uke-ssc-heading.h",
+    "src/sensors/uke-ssc-heading-input.h",
+    "tests/ssc-heading-math.c",
+    "tests/ssc-heading-math.sh",
+    "tests/ssc-heading-callbacks.c",
+    "tests/ssc-heading-callbacks.sh",
+    "packaging/native/preflight-ssc-heading733.sh",
+    "packaging/native/check-ssc-heading733.sh",
+    "docs/SSC-MAGNETIC-HEADING.md",
+    "manifests/ssc-heading-20261110.json",
+    "packaging/native/prepare-heading-full733.sh",
+    "packaging/native/heading-legacy-view733.sh",
+    "packaging/native/rewrite-heading-full733.sh",
+    "tests/heading-recipe-scope.sh",
+    "docs/SSC-MAGNETIC-HEADING-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0017-ssc-magnetic-heading.patch",
+      "sha256": "885aa9a94f88292ec396731596a6150c0d619338d3ddf53cde99c41a3f2a757e"
+    },
+    {
+      "path": "src/sensors/uke-ssc-heading.h",
+      "sha256": "a34e5644f974c7405c5de7fe093dff2063cd85aa248baa996f13b0a23aca01e1"
+    },
+    {
+      "path": "src/sensors/uke-ssc-heading-input.h",
+      "sha256": "1e730cb5f41cdd66a7e120f928a012e0664556da22ca85882de9890f4013950c"
+    },
+    {
+      "path": "tests/ssc-heading-math.c",
+      "sha256": "b07ac246ac92fe7d511d5e9aefa6083a9a9ed6a4c93afab840a9186067dd5f3c"
+    },
+    {
+      "path": "tests/ssc-heading-math.sh",
+      "sha256": "83aa9cc3a438c5523d26f1acbc4f736083dcf90570e31798f778ef6ff68c4e09"
+    },
+    {
+      "path": "tests/ssc-heading-callbacks.c",
+      "sha256": "69f09ee71196fb12bdfade4f168dd55b77941e360573123bd12384d54dbad183"
+    },
+    {
+      "path": "tests/ssc-heading-callbacks.sh",
+      "sha256": "4575366e67de42b20fafd4635afd3d6046421bcd8657b47102b02d3858f8bebc"
+    },
+    {
+      "path": "packaging/native/preflight-ssc-heading733.sh",
+      "sha256": "c37c563b2a51a1049375031294bbf68b1a70d77e7c1bb08f0867533e9ebf3e96"
+    },
+    {
+      "path": "packaging/native/check-ssc-heading733.sh",
+      "sha256": "a3fd07740f170f975a327ee8b0f8ef7c8dc5a1b231cf10d8e902d863a746e046"
+    },
+    {
+      "path": "docs/SSC-MAGNETIC-HEADING.md",
+      "sha256": "cb78871ec8ea4ec41ecacdc104694c04649916944fcd499bb4cdff4e59ec50d1"
+    },
+    {
+      "path": "manifests/ssc-heading-20261110.json",
+      "sha256": "2e4ede9ef7ad941270e9cade783a993eb6df563ad25c73fcd9d4aba100e5fe2a"
+    },
+    {
+      "path": "packaging/native/prepare-heading-full733.sh",
+      "sha256": "8c63bb1ee2462ab3e9a9ce4d87a75228cd8bc33e8dce4c28ca84118c2b74da1b"
+    },
+    {
+      "path": "packaging/native/heading-legacy-view733.sh",
+      "sha256": "e3f359698d0445981a86066500b38eee7e772a148485c1d837300b9baecf317e"
+    },
+    {
+      "path": "packaging/native/rewrite-heading-full733.sh",
+      "sha256": "e3253226bcbecf406de6eba1026ff98cbfacd14b789b8fde2da0c0aefb6ba98c"
+    },
+    {
+      "path": "tests/heading-recipe-scope.sh",
+      "sha256": "204c7f7d5a42f40bbfe573f50e0e0328f9303c3dd79e6d42efef2bcd307fb739"
+    },
+    {
+      "path": "docs/SSC-MAGNETIC-HEADING-DELIVERY.md",
+      "sha256": "ba0b786f594be54186b97c32d9700c3c1b1d6eaea553bac823bdc2bd681a39b6"
+    },
+    {
+      "path": "packaging/native/copr-heading-full733.sh",
+      "sha256": "af196a16c8d7d8634d60a21a667a4f813c405e6f594fd8768b061ec2d0fa4f73"
+    }
+  ]
+}
