@@ -22,6 +22,7 @@ tar -xJf "$output/senemos-native-profile-7.3.3.tar.xz" -C "$work"
 profile=$work/native-profile
 (cd "$profile";sha256sum -c --strict --quiet SHA256SUMS)
 jq -e '.source_commit=="b14c66405258832ccf92ba9a46cfceb03f635755" and .kernel_release=="7.3.3-12-unstable" and .speaker_gain_ceiling==223' "$profile/source-composition.json" >/dev/null
+printf '%s  %s\n' "$(jq -er .parent_format_fixture_sha256 "$manifest")" "$profile/tests/audio-pcm-formats-contract.sh" | sha256sum -c --strict --quiet -
 install -m644 "$profile/source-composition.json" "$profile/pcm-parent-source-composition.json"
 while IFS= read -r file;do install -Dm644 "$owner/$file" "$profile/$file";done < <(jq -r '.payload_assets[]' "$manifest")
 commit=$(git -C "$owner" rev-parse HEAD)

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 71,
+  "source_check_release": 72,
   "parent_full_build": 11293945,
   "parent_source": "b14c66405258832ccf92ba9a46cfceb03f635755",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293945/senemos-uke-linux-kernel-mainline-unstable-7.3.3-12.src.rpm",
@@ -23,7 +23,8 @@
     "src/audio/prepare-pcm-surround733.sh",
     "packaging/native/check-pcm-surround733.sh",
     "tests/pcm-surround-encoders.c",
-    "docs/PCM-SURROUND-ENCODERS.md"
+    "docs/PCM-SURROUND-ENCODERS.md",
+    "tests/audio-pcm-formats-contract.sh"
   ],
   "source_assets": [
     {
@@ -47,8 +48,13 @@
       "sha256": "1ad0714c3b865eb56278ec3e4c6c4c9305ebf20aafb67bf4cc39ea4f6855c69c"
     },
     {
+      "path": "tests/audio-pcm-formats-contract.sh",
+      "sha256": "68fa870f0a7c2360250cbdabe1ad3257e437c9b5b166c0d58f2ac8d074e3a5e2"
+    },
+    {
       "path": "packaging/native/copr-pcm-surround733.sh",
-      "sha256": "837362c0cb139cd9e2681ba1b6766319787ddb688bde53c1c9eabb7fd318b7a1"
+      "sha256": "8424e65e8693dc1c0d71954e1ec7c9d1a81848dfeccccc1dbfd8de269f0ba9b3"
     }
-  ]
+  ],
+  "parent_format_fixture_sha256": "86f3f1bc718a9f67381af8ba1bd22bca7d5d97dff55edab2564061ca2a68b88d"
 }
