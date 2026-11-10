@@ -101,7 +101,8 @@
     "tests/ssc-quaternion.sh",
     "packaging/native/check-quaternion733.sh",
     "docs/SSC-QUATERNION.md",
-    "manifests/ssc-quaternion-20261110.json"
+    "manifests/ssc-quaternion-20261110.json",
+    "packaging/native/preflight-quaternion733.sh"
   ],
   "source_assets": [
     {
@@ -134,7 +135,11 @@
     },
     {
       "path": "packaging/native/copr-quaternion733.sh",
-      "sha256": "8ff341db9da2f8fcf4269b65be08a0772cc858909001d9e7c001e9b5140d9e66"
+      "sha256": "4d920696eba0954261a34289332edd9854a72d9fa3e8fc33737cc27ea9026f20"
+    },
+    {
+      "path": "packaging/native/preflight-quaternion733.sh",
+      "sha256": "20b843d5f2a8c189f16c767c7ebed31b67cb4c2c363d128096f41e1bffe1e0c6"
     }
   ]
 }

@@ -61,6 +61,7 @@ SPEC
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 mkdir -p %{_uke_out}
+bash native-profile/packaging/native/preflight-quaternion733.sh "$PWD"
 # The parent gravity source comparison consumes this pre-application fixture.
 bash native-profile/packaging/native/check-dual-light-delivery733.sh "$PWD" %{_uke_out} prepared
 SPEC
