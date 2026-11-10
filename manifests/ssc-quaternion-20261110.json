@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 78,
+  "source_check_release": 79,
   "parent_full_build": 11297525,
   "parent_source": "909b7eb39cb97fc164964b4cb92bc1dc1da7b48c",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11297525/senemos-uke-linux-kernel-mainline-unstable-7.3.3-14.src.rpm",
@@ -118,7 +118,7 @@
     },
     {
       "path": "tests/ssc-quaternion.c",
-      "sha256": "6e8bdd5fd4e02f6132d31f3f49c01b02deba6fe1c08ea40a67043422bb69a904"
+      "sha256": "8590acea8fa815db4fe13f5ebfaf1a338d7d666a68c609f0b87d134ff84d7bd6"
     },
     {
       "path": "tests/ssc-quaternion.sh",
