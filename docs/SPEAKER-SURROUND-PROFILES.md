@@ -50,3 +50,9 @@ LGPL-2.0-or-later. Preserve the upstream notice and COPYING in the source proof.
 Both compiler modes must reject the historical dotted-ID configuration using
 that actual validator. Ordinary configuration syntax/AST equivalence remains
 required, but is not presented as full UCM semantic/device acceptance.
+
+The first semantic proof68/11295371 stops46s because its controlled logger
+redefines snd_error already supplied by the original ALSA headers. Use that
+original logger directly; retain Werror, the exact validator and all positive/
+negative expectations. This fixture failure does not undo the observed local
+UCM repair or establish a distributable package result.

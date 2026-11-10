@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 68,
+  "source_check_release": 69,
   "parent_full_build": 11293047,
   "parent_source": "4b4cf375b2a749a1961cda7e8927b8a7d27cb4d1",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable-7.3.3-11.src.rpm",
@@ -64,11 +64,11 @@
     },
     {
       "path": "tests/speaker-surround-ucm.cpp",
-      "sha256": "3fdc2f615a0a2d07bf4ae5f795fc9e02d8d9b8b30fbe3d2f681d3ceb79735096"
+      "sha256": "7d21719a10f1689797a431bb2b6899c45d68aa10a119e70b365b3b1104ec2354"
     },
     {
       "path": "docs/SPEAKER-SURROUND-PROFILES.md",
-      "sha256": "20ea9cbab78024dfbbda954bea8181ac600580e271b6ce1f8fedb4e3c1cf1f9c"
+      "sha256": "a0290e7f10cfc89f2faee7a4adaf7d439ce1ebdfa726b74f70658eec11090e4d"
     },
     {
       "path": "packaging/native/copr-surround-profiles733.sh",

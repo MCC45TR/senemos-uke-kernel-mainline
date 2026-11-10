@@ -7,9 +7,7 @@
 #include <memory>
 #include <string>
 // Exact original ALSA UCM semantic validator, extracted from its pinned source.
-#define snd_error(...) ((void)0)
 #include "actual-alsa-ucm-name.inc"
-#undef snd_error
 using Config=std::unique_ptr<snd_config_t,decltype(&snd_config_delete)>;
 static Config load(const char* file) {
  snd_config_t* raw=nullptr;assert(!snd_config_top(&raw));Config config(raw,snd_config_delete);
