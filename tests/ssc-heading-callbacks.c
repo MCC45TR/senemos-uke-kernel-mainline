@@ -54,7 +54,7 @@ static void mutex_unlock(int *p){assert(*p);*p=0;}
 #define spin_unlock_irqrestore(p,f) do{assert((f)==0&&*(p));*(p)=0;}while(0)
 #define lockdep_assert_held(p) assert(*(p)==1)
 static int ssc_start(struct ssc_sensor *s){assert(s->controller->control&&!s->controller->state);starts++;if(!start_error)s->stream_active=true;return start_error;}
-static int ssc_stop(struct ssc_sensor *s){assert(s->controller->control&&!s->controller->state);stops++;s->stream_active=false;if(disconnect_on_stop)s->controller->current=false;if(poison_on_stop)memset(s->sample,0,sizeof(s->sample));return stop_error;}
+static int ssc_stop(struct ssc_sensor *s){assert(s->controller->control&&!s->controller->state&&!s->stream_users);stops++;s->stream_active=false;if(disconnect_on_stop)s->controller->current=false;if(poison_on_stop)memset(s->sample,0,sizeof(s->sample));return stop_error;}
 #include "actual-heading-streams.inc"
 static bool iio_device_claim_direct(struct iio_dev *i){assert(i);claims++;return claim_ok;}
 static void iio_device_release_direct(struct iio_dev *i){assert(i);releases++;}

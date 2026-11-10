@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 83,
+  "source_check_release": 84,
   "parent_full_build": 11299947,
   "parent_source": "34eecdd537a3e6a50e9fde6a3ee70e65786a2f6f",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11299947/senemos-uke-linux-kernel-mainline-unstable-7.3.3-16.src.rpm",
@@ -53,7 +53,7 @@
     },
     {
       "path": "src/sensors/uke-ssc-heading-input.h",
-      "sha256": "992263c974b27163d07075cc4f158ccf6d324844996cf2dfce5f9900b38a719c"
+      "sha256": "1e730cb5f41cdd66a7e120f928a012e0664556da22ca85882de9890f4013950c"
     },
     {
       "path": "tests/ssc-heading-math.c",
@@ -65,7 +65,7 @@
     },
     {
       "path": "tests/ssc-heading-callbacks.c",
-      "sha256": "d5c769fb5c0d4db219cfc2b4abb4b345c23c9136a3bb96687cc8e408eebfd21e"
+      "sha256": "69f09ee71196fb12bdfade4f168dd55b77941e360573123bd12384d54dbad183"
     },
     {
       "path": "tests/ssc-heading-callbacks.sh",

@@ -25,7 +25,7 @@ static int ssc_heading_read_raw(struct iio_dev *iio,
  struct ssc_controller *c = s->controller;
  unsigned long flags;
  s64 q[4];
- s32 heading;
+ s32 heading = 0;
  bool cached;
  int ret, stop_ret;
 
