@@ -18,7 +18,7 @@ cp "$kernel/include/uapi/linux/iio/types.h" "$work/actual-iio-types.h"
 extract(){ awk -v start="$2" '$0~start{emit=1}emit{print}emit&&/^}/{found++;exit}END{if(found!=1)exit 1}' "$1"; }
 # The enum is one line; extract it alone to avoid duplicating the next struct.
 awk '/^#define SSC_(SENSOR_COUNT|SAMPLE_MAX|FRONT_LIGHT|REAR_LIGHT) /{print;n++} /^enum ssc_kind /{print;n++}END{if(n!=5)exit 1}' "$core/uke-ssc-iio.c" > "$work/actual-gravity-descriptions.inc"
-for start in '^struct ssc_description [{]' '^static const struct ssc_description ssc_descriptions\[';do extract "$core/uke-ssc-iio.c" "$start" >> "$work/actual-gravity-descriptions.inc";done
+for start in '^struct ssc_description [{]' '^static const struct ssc_description ssc_descriptions[[]';do extract "$core/uke-ssc-iio.c" "$start" >> "$work/actual-gravity-descriptions.inc";done
 for name in ssc_sample_channels ssc_rate ssc_sample_values ssc_attributes_usable ssc_read_scale ssc_allocate_iio ssc_publish_locked;do
  extract "$core/uke-ssc-iio.c" "^static .* $name[(]" >> "$work/actual-gravity-callbacks.inc"
 done

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 74,
+  "source_check_release": 75,
   "parent_full_build": 11295536,
   "parent_source": "780dd1a0642bad824e3d6491d4f7a8fb4e0fc665",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11295536/senemos-uke-linux-kernel-mainline-unstable-7.3.3-13.src.rpm",
@@ -69,7 +69,7 @@
     },
     {
       "path": "tests/ssc-gravity.sh",
-      "sha256": "bf6d7be2fa41d046f6c033c2b169d8860c3d597fdfb57579ea161b926523ff47"
+      "sha256": "b29b8892941c850136ceb9cdc6655d84f172c6cd2ffe2817f1ae10a272ab87a5"
     },
     {
       "path": "docs/SSC-GRAVITY-LINEAR.md",
