@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 73,
+  "source_check_release": 74,
   "parent_full_build": 11295536,
   "parent_source": "780dd1a0642bad824e3d6491d4f7a8fb4e0fc665",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11295536/senemos-uke-linux-kernel-mainline-unstable-7.3.3-13.src.rpm",
@@ -43,7 +43,8 @@
     "packaging/native/check-gravity733.sh",
     "tests/ssc-gravity.c",
     "tests/ssc-gravity.sh",
-    "docs/SSC-GRAVITY-LINEAR.md"
+    "docs/SSC-GRAVITY-LINEAR.md",
+    "src/sensors/0013-ssc-gravity-observation-abi.patch"
   ],
   "source_assets": [
     {
@@ -52,15 +53,15 @@
     },
     {
       "path": "src/sensors/0012-ssc-gravity-native-dt.patch",
-      "sha256": "cbf2c4c5b1b1aaed9d6b29227484c2fe5422a01b7800cd421e26185a09d62dbf"
+      "sha256": "c4fcb96f853f81ea2a747e7b029937a4188f2676249f8e9d8ca4e43c6377fe03"
     },
     {
       "path": "src/sensors/apply-gravity733.sh",
-      "sha256": "646157d14ad09486a1b264b596b0b5f7609a12770091eacc99338980150000ab"
+      "sha256": "365e78cb16e198b95d555c42c6889fa65506e251f1744cd5d3578dcd00174c03"
     },
     {
       "path": "packaging/native/check-gravity733.sh",
-      "sha256": "e9aaf2320c98c7dfeb7a96c39fb7c6cd90437099dbe6db315e751728f1dd60cd"
+      "sha256": "bb2248ed594793cfbd2ab2448f061f09da7770354c33011da2b6b7ddb5b891e4"
     },
     {
       "path": "tests/ssc-gravity.c",
@@ -73,6 +74,10 @@
     {
       "path": "docs/SSC-GRAVITY-LINEAR.md",
       "sha256": "b26e28e0067f37952262afafcb89562836f1c177cc44d16679d89d40702dcb5c"
+    },
+    {
+      "path": "src/sensors/0013-ssc-gravity-observation-abi.patch",
+      "sha256": "40691be9319b68eab0f39eaaaeae071b6c5f336fa3b79f30f9ff0f177f52c95d"
     },
     {
       "path": "packaging/native/copr-gravity733.sh",

@@ -1,0 +1,46 @@
+From: Uke contributors
+Subject: [PATCH] ABI: uke-ssc: document the ninth supported gravity datatype
+
+Update only the four bounded controller-count ranges for the declared native
+gravity endpoint. Registration/readiness still does not imply fitted sensor
+availability, calibrated samples or physical acceptance.
+
+---
+--- a/Documentation/ABI/testing/sysfs-driver-uke-ssc
++++ b/Documentation/ABI/testing/sysfs-driver-uke-ssc
+@@ -38,7 +38,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of supported sensor datatypes declared in the
+-                controller's Device Tree, from 0 through 8. It does not identify
++                controller's Device Tree, from 0 through 9. It does not identify
+                 fitted chips or establish physical sensor availability.
+ 
+ What:           /sys/devices/.../ssc_discovered_sensors
+@@ -46,7 +46,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors with an admitted SUID in
+-                the current client generation, from 0 through 8. Zero is
++                the current client generation, from 0 through 9. Zero is
+                 reported when the client is not current. No SUID is exposed.
+ 
+ What:           /sys/devices/.../ssc_ready_sensors
+@@ -54,7 +54,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors with accepted metadata in
+-                the current client generation, from 0 through 8. Zero is
++                the current client generation, from 0 through 9. Zero is
+                 reported when the client is not current. This does not report
+                 samples, calibration or physical accuracy.
+ 
+@@ -63,7 +63,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors whose IIO devices have
+-                been registered, from 0 through 8. Registered devices may remain
++                been registered, from 0 through 9. Registered devices may remain
+                 present after a service disappears, so this count alone does
+                 not prove that samples are available.
+ 

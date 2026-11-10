@@ -6,8 +6,8 @@ fitted sensor/calibration claim. The native driver still requires discovery,
 matching API/stream metadata and valid six-value events. Preserve every existing
 supplier, sensor description and Hall/dual-light relationship.
 
---- a/arch/arm64/kernel/uke-abl-native.h
-+++ b/arch/arm64/kernel/uke-abl-native.h
+--- a/arch/arm64/kernel/uke-hardware.h
++++ b/arch/arm64/kernel/uke-hardware.h
 @@ -108,5 +108,6 @@ static int UKE_INIT uke_hardware_names(void *fdt)
  		UKE_SENSOR("sar", "Capacitive SAR", "sar", "SX937x"),
  		UKE_SENSOR("sensor-temperature", "Physical sensor temperature", "sensor_temperature", "LSM6DSO\0QMI8658"),

@@ -10,11 +10,12 @@ bash "$profile/tests/ssc-gravity.sh" "$kernel"
 dt-doc-validate "$kernel/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml"
 # The public schema must admit only the new logical endpoint beside prior nodes.
 node - "$kernel" <<'NODE'
-const fs=require('fs'),p=process.argv[2],old=p+'/native-generated/ssc-gravity733/before',driver='drivers/iio/common/uke-ssc/uke-ssc-iio.c',native='arch/arm64/kernel/uke-abl-native.h',binding='Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml';
+const fs=require('fs'),p=process.argv[2],old=p+'/native-generated/ssc-gravity733/before',driver='drivers/iio/common/uke-ssc/uke-ssc-iio.c',native='arch/arm64/kernel/uke-hardware.h',binding='Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml',abi='Documentation/ABI/testing/sysfs-driver-uke-ssc';
 let n=fs.readFileSync(p+'/'+native,'utf8'),b=fs.readFileSync(p+'/'+binding,'utf8');
 const line='\t\tUKE_SENSOR("gravity", "Gravity and linear acceleration", "gravity", "SSC firmware fusion"),\n';if(n.split(line).length!==2||n.replace(line,'')!==fs.readFileSync(old+'/'+native,'utf8'))throw Error('Unrelated DT ownership changed');
 b=b.replace('|sensor-temperature|gravity)$','|sensor-temperature)$').replace(', sar, sensor_temperature, gravity]',', sar, sensor_temperature]');if(b!==fs.readFileSync(old+'/'+binding,'utf8'))throw Error('Existing binding changed');
-for(const path of [driver,native,binding])if(!fs.statSync(p+'/'+path).isFile())throw Error('Missing prepared source');
+const doc=fs.readFileSync(p+'/'+abi,'utf8');if(doc.split('from 0 through 9').length!==5||doc.replaceAll('from 0 through 9','from 0 through 8')!==fs.readFileSync(old+'/'+abi,'utf8'))throw Error('Unrelated ABI change');
+for(const path of [driver,native,binding,abi])if(!fs.statSync(p+'/'+path).isFile())throw Error('Missing prepared source');
 console.log('Gravity DT: one firmware description and two schema alternatives only; existing sensor/Hall/panel resource text retained.');
 NODE
 (cd "$kernel";sha256sum -c --strict --quiet native-generated/ssc-gravity733/applied.sha256)
