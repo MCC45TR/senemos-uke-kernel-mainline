@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 85,
+  "parent_full_build": 11300656,
+  "parent_source": "f48a602935a98ad830a07f853a8f7ee6a67f7f72",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300656/senemos-uke-linux-kernel-mainline-unstable-7.3.3-17.src.rpm",
+  "parent_srpm_sha256": "d982712a559dcfb3a720a405db06609e39903596b1fcb3600386fa9941c68063",
+  "parent_spec_sha256": "2f0f70ad10d8eedb4f588093dfe6a3cc758dafe7301312483d9e7c019363fde9",
+  "retained_parent_fields": 741,
+  "input_abi": 1,
+  "source_units": [
+    {
+      "path": "drivers/iio/common/uke-ssc/uke-ssc-iio.c",
+      "before_sha256": "0ce13ce84852f73f7c8bc473a49e52b5ac675f4d3189d5a3160791acabebfa2d",
+      "after_sha256": "f7c689e893e8696dcf093cf859dbb07dfc6b31b5332ce4108a19be13252efca1"
+    }
+  ],
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "protected_gain": 223,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0018-ssc-proximity-input-abi.patch",
+    "tests/ssc-proximity-abi.c",
+    "tests/ssc-proximity-abi.sh",
+    "packaging/native/check-ssc-proximity-abi733.sh",
+    "docs/SSC-PROXIMITY-INPUT-ABI.md",
+    "manifests/ssc-proximity-abi-20261110.json"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0018-ssc-proximity-input-abi.patch",
+      "sha256": "dd3f26e96d5adc22f22f51e4f714757a9a2941bee76414f4d92d0fd4e1c282e9"
+    },
+    {
+      "path": "tests/ssc-proximity-abi.c",
+      "sha256": "3d58f8d9aae5c3201a58365629be295495df51e7f3b44866bf47bb035500d197"
+    },
+    {
+      "path": "tests/ssc-proximity-abi.sh",
+      "sha256": "66d108c0d85961de4850d47a64329df2badabebb2c0072f7e090deb6363c1ac0"
+    },
+    {
+      "path": "packaging/native/check-ssc-proximity-abi733.sh",
+      "sha256": "1b4f92de2295710eb3dacf881ab6ba31ba6f909529bbbcc104054cdd1746f078"
+    },
+    {
+      "path": "docs/SSC-PROXIMITY-INPUT-ABI.md",
+      "sha256": "1ae522a7a2ae4164a71cbca2172ac6f344e580269379d582104443a13736d2e8"
+    },
+    {
+      "path": "packaging/native/copr-ssc-proximity-abi733.sh",
+      "sha256": "8ce28461254766463f7e78b8455a1dcd3da943bb3bcb672d01c8ed2c25452f94"
+    }
+  ],
+  "iio_attribute": "ssc_proximity_input_abi"
+}
