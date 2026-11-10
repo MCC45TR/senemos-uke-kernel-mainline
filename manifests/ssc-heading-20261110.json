@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 81,
+  "source_check_release": 82,
   "parent_full_build": 11299947,
   "parent_source": "34eecdd537a3e6a50e9fde6a3ee70e65786a2f6f",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11299947/senemos-uke-linux-kernel-mainline-unstable-7.3.3-16.src.rpm",
