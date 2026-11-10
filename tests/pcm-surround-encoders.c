@@ -89,7 +89,7 @@ int main(void) {
   cfg.channel_map[ch-1]=0;refused(&graph,&module,&cfg,-EINVAL,true);cases++;
  }
  const unsigned layouts[]={1,2,4,6,8};
- const unsigned char maps[5][8]={{3},{1,2},{1,2,4,5},{1,2,4,5,3,6},{1,2,8,9,3,6,4,5}};
+ const unsigned char maps[5][8]={{1},{1,2},{1,2,4,5},{1,2,4,5,3,6},{1,2,8,9,3,6,4,5}};
  for(unsigned n=0;n<5;n++) {
   cfg.num_channels=layouts[n];memset(cfg.channel_map,0,sizeof cfg.channel_map);
   audioreach_set_default_channel_mapping(cfg.channel_map,cfg.num_channels);

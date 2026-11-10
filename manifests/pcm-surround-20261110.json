@@ -40,7 +40,7 @@
     },
     {
       "path": "tests/pcm-surround-encoders.c",
-      "sha256": "88427cb1b96ff5972afb9e56d64b4a502bf1a289e0e95ab7ee5aa2e056b341c4"
+      "sha256": "ef1273f56242399a113111479c46ab3523eb87f4a407a87dde09919bfd2ff4c0"
     },
     {
       "path": "docs/PCM-SURROUND-ENCODERS.md",
