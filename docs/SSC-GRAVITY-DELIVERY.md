@@ -15,12 +15,16 @@ proximity imports and the production module ABI. The existing core RPM
 contains the source hashes and qualified metadata; no new runtime package,
 daemon, independent polling stream or AP fusion algorithm is introduced.
 
-Old source comparisons run against a projection that reverses all four
+Only nine old SSC source comparisons run against a projection that reverses all four
 gravity source units and proves equality with their sealed parent preimages.
 Only those four text leaves are copied; all other source paths point to the
 actual cumulative tree. Actual Image, objects, modules, signing and ABI checks
 continue to use the real new production output. No historical checker or
 assertion is deleted, and the actual source is checked unchanged afterward.
+Unrelated checks keep the actual source root, especially Git patch checks,
+kernelrelease and speaker inclusion. Passing the projection to those checks
+would reject its symbolic directory branches or change the output's source
+association; a separate recipe boundary check prevents that regression.
 
 Production config, prior composition fields, protected audio gain223, raw
 sensor channels, firmware suppliers, boot compatibility and A/B recovery are

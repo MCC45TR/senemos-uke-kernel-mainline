@@ -85,7 +85,7 @@
     },
     {
       "path": "packaging/native/rewrite-gravity-full733.sh",
-      "sha256": "3b41d71baaa484b28b08dbea487039f50665d57a6ac9ef0cf3c119060a25180d"
+      "sha256": "9c95cda337ba8e18f9c7853fbc555c50a0ca582c74634b8ebaf44c11386513b4"
     },
     {
       "path": "packaging/native/prepare-gravity-full733.sh",
@@ -101,7 +101,7 @@
     },
     {
       "path": "docs/SSC-GRAVITY-DELIVERY.md",
-      "sha256": "e201ca23d978a0960158b36ce4692ed1a45e1a0387df0ffc04493797b001e123"
+      "sha256": "62bc705660123d58b27c505a1bc3d981037a7891c8694f72428534b4c8ae6832"
     },
     {
       "path": "packaging/native/copr-gravity-full733.sh",
