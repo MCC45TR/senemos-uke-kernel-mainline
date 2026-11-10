@@ -58,7 +58,13 @@ if [[ $phase == source ]];then
  printf 'Full surround source: complete map/freezer/FE inverses and protected topology retained; four physical outputs and gain223.\n'
  exit 0
 fi
-(cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+if [[ -s $kernel/native-generated/pcm-surround733/applied.sha256 ]];then
+ bash "$profile/src/audio/verify-pcm-surround733.sh" "$kernel"
+ # The new unit must invert to the old sealed unit; every other file is checked directly.
+ (cd "$kernel";awk '$2!="sound/soc/qcom/qdsp6/audioreach.c"{print}' "$work/applied.sha256" | sha256sum -c --strict --quiet -)
+else
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+fi
 (cd "$work";sha256sum -c --strict --quiet "$work/legacy.sha256")
 [[ $phase != verify ]] || exit 0
 if [[ $phase == install ]];then
