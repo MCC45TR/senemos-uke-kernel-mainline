@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-11-10",
-  "source_check_release": 85,
+  "source_check_release": 86,
   "parent_full_build": 11300656,
   "parent_source": "f48a602935a98ad830a07f853a8f7ee6a67f7f72",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300656/senemos-uke-linux-kernel-mainline-unstable-7.3.3-17.src.rpm",
@@ -46,7 +46,7 @@
     },
     {
       "path": "packaging/native/check-ssc-proximity-abi733.sh",
-      "sha256": "1b4f92de2295710eb3dacf881ab6ba31ba6f909529bbbcc104054cdd1746f078"
+      "sha256": "c2bb27cf3af7d1c60771e4cfac1a736fc93e345255a10db2251b8d03ca41f036"
     },
     {
       "path": "docs/SSC-PROXIMITY-INPUT-ABI.md",
