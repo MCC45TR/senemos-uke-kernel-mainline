@@ -1,0 +1,37 @@
+From: Uke contributors
+Subject: [PATCH] arm64: uke: describe the firmware gravity fusion endpoint
+
+Declare the standard SSC gravity datatype without a new AP bus client or a
+fitted sensor/calibration claim. The native driver still requires discovery,
+matching API/stream metadata and valid six-value events. Preserve every existing
+supplier, sensor description and Hall/dual-light relationship.
+
+--- a/arch/arm64/kernel/uke-abl-native.h
++++ b/arch/arm64/kernel/uke-abl-native.h
+@@ -108,5 +108,6 @@ static int UKE_INIT uke_hardware_names(void *fdt)
+ 		UKE_SENSOR("sar", "Capacitive SAR", "sar", "SX937x"),
+ 		UKE_SENSOR("sensor-temperature", "Physical sensor temperature", "sensor_temperature", "LSM6DSO\0QMI8658"),
++		UKE_SENSOR("gravity", "Gravity and linear acceleration", "gravity", "SSC firmware fusion"),
+ #undef UKE_SENSOR
+ 	};
+ 	static const char *const cores[] = {
+--- a/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
++++ b/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
+@@ -33,7 +33,7 @@
+     description: Paired board lid input used to select the unoccluded ambient-light sensor.
+ 
+ patternProperties:
+-  '^(accelerometer|gyroscope|magnetometer|front-light|rear-light|color-temperature|proximity|flicker|sar|sensor-temperature)$':
++  '^(accelerometer|gyroscope|magnetometer|front-light|rear-light|color-temperature|proximity|flicker|sar|sensor-temperature|gravity)$':
+     type: object
+     properties:
+       compatible:
+@@ -41,7 +41,7 @@
+       label: true
+       qcom,ssc-datatype:
+         $ref: /schemas/types.yaml#/definitions/string
+-        enum: [accel, gyro, mag, ambient_light, ambient_light_back, cct_front, proximity, flicker, sar, sensor_temperature]
++        enum: [accel, gyro, mag, ambient_light, ambient_light_back, cct_front, proximity, flicker, sar, sensor_temperature, gravity]
+         description: SSC datatype used by the native discovery client.
+       xiaomi,model-candidates:
+         $ref: /schemas/types.yaml#/definitions/string-array

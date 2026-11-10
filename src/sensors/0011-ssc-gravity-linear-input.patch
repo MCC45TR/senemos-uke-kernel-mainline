@@ -1,0 +1,200 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: publish the gravity and linear acceleration stream
+
+The standard sns_gravity.proto event carries six m/s2 values: gravity XYZ,
+then linear acceleration XYZ. Publish both triplets from a single demand-owned
+firmware request with the standard IIO gravity/acceleration types. Name the
+second triplet linear so it cannot replace the physical accelerometer in
+existing desktop discovery rules. Preserve host timestamps and raw sensor paths.
+
+A firmware fusion endpoint may advertise physical=false; only the explicitly
+bound gravity datatype/API can use this exception. Streaming, availability,
+rate, generation, ordering and sample-status gates remain. Increase the bounded
+sample storage and preserve timestamp placement for existing scalar/XYZ scans.
+No AP-side fusion, DSP algorithm, calibration or persistent sample is introduced.
+
+---
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -31,7 +31,8 @@
+ #define SSC_QMI_REPORT_LARGE 0x22
+ #define SSC_REPORT_TYPE_LARGE 1
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
+-#define SSC_SENSOR_COUNT 8
++#define SSC_SENSOR_COUNT 9
++#define SSC_SAMPLE_MAX 6
+ #define SSC_FRONT_LIGHT 3
+ #define SSC_REAR_LIGHT 4
+ 
+@@ -46,7 +47,7 @@
+ 	SSC_STREAM_INPUT = SSC_STREAM_DUAL,
+ };
+ 
+-enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE };
++enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE, SSC_GRAVITY };
+ struct ssc_description {
+ 	const char *datatype, *api, *name;
+ 	enum ssc_kind kind;
+@@ -65,8 +66,15 @@
+ 	{ "sar", "sns_sar.proto", "uke-ssc-sar", SSC_SAR, IIO_PROXIMITY, 1, 1 },
+ 	/* The physical sensor API uses Celsius; IIO temperature uses millicelsius. */
+ 	{ "sensor_temperature", "sns_sensor_temperature.proto", "uke-ssc-sensor-temperature", SSC_TEMPERATURE, IIO_TEMP, 1, 1000 },
++	/* One firmware stream supplies gravity XYZ, then linear acceleration XYZ. */
++	{ "gravity", "sns_gravity.proto", "uke-ssc-gravity", SSC_GRAVITY, IIO_GRAVITY, 6, 1000000 },
+ };
+ 
++static unsigned int ssc_sample_channels(const struct ssc_description *d)
++{
++	return d->kind == SSC_GRAVITY ? 6 : d->dimensions == 3 ? 3 : 1;
++}
++
+ struct ssc_controller;
+ struct ssc_sensor {
+ 	struct ssc_controller *controller;
+@@ -74,14 +82,14 @@
+ 	struct iio_dev *iio;
+ 	struct input_dev *input;
+ 	bool input_registered, input_open;
+-	struct iio_chan_spec channel[4];
++	struct iio_chan_spec channel[SSC_SAMPLE_MAX + 1];
+ 	struct uke_ssc_suid suid;
+ 	struct uke_ssc_attributes attributes;
+ 	struct iio_mount_matrix mount_matrix;
+ 	bool has_mount_matrix;
+ 	struct completion metadata_done, sample_done;
+ 	u64 revision, sample_sequence, ticks;
+-	s64 sample[3];
++	s64 sample[SSC_SAMPLE_MAX];
+ 	u32 rate;
+ 	unsigned int stream_users;
+ 	int error;
+@@ -143,7 +151,7 @@
+ 	enum uke_ssc_command pending_command;
+ 	struct ssc_sensor *pending_sensor;
+ 	/* An on-change indication may precede its enable acknowledgement. */
+-	s64 pending_sample[3];
++	s64 pending_sample[SSC_SAMPLE_MAX];
+ 	u64 pending_ticks, pending_revision;
+ 	bool pending_sample_valid;
+ 	bool removed, paused, client_open, client_known, pending, lookup_fault;
+@@ -420,19 +428,20 @@
+ static void ssc_proximity_feed_locked(struct ssc_sensor *s);
+ 
+ /* The caller holds c->state; values have passed the sensor's exact API decoder. */
+-static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[3], u64 ticks)
++static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[SSC_SAMPLE_MAX], u64 ticks)
+ {
+ 	if (!ssc_current(s->controller) || !s->ready || !s->stream_active ||
+ 	    !ticks || (s->ticks && ticks <= s->ticks))
+ 		return;
+ 	s->ticks = ticks;
+-	memcpy(s->sample, value, sizeof(s->sample));
++	memset(s->sample, 0, sizeof(s->sample));
++	memcpy(s->sample, value, ssc_sample_channels(s->description) * sizeof(*value));
+ 	s->sample_sequence++;
+ 	s->error = 0;
+ 	if (s->buffered && s->registered) {
+-		s64 scan[4] = {};
++		s64 scan[SSC_SAMPLE_MAX + 1] = {};
+ 
+-		memcpy(scan, value, sizeof(s->sample));
++		memcpy(scan, s->sample, sizeof(s->sample));
+ 		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
+ 	}
+ 	complete(&s->sample_done);
+@@ -560,7 +569,7 @@
+ }
+ 
+ static int ssc_sample_values(struct ssc_sensor *s, const struct uke_ssc_event *event,
+-			     s64 value[3])
++			     s64 value[SSC_SAMPLE_MAX])
+ {
+ 	const struct ssc_description *d = s->description;
+ 	struct uke_ssc_sample sample;
+@@ -598,7 +607,7 @@
+ 	/* This API specifies HIGH for valid data and UNRELIABLE while stabilizing. */
+ 	if (d->kind == SSC_TEMPERATURE && sample.status != 3)
+ 		return -EAGAIN;
+-	for (i = 0; i < (d->dimensions == 3 ? 3 : 1); i++) {
++	for (i = 0; i < ssc_sample_channels(d); i++) {
+ 		ret = uke_ssc_fixed(sample.value[i], d->multiplier, &value[i]);
+ 		if (ret || (d->kind == SSC_LIGHT && value[i] < 0))
+ 			return ret ? ret : -ERANGE;
+@@ -609,13 +618,14 @@
+ static bool ssc_attributes_usable(const struct ssc_description *description,
+ 				 const struct uke_ssc_attributes *attributes)
+ {
+-	bool streaming = description->dimensions == 3 || description->kind == SSC_TEMPERATURE;
++	bool streaming = description->dimensions >= 3 || description->kind == SSC_TEMPERATURE;
+ 	bool logical_rear = description->kind == SSC_LIGHT &&
+ 		!strcmp(description->datatype, "ambient_light_back") &&
+ 		!strcmp(attributes->name, "sip1328 back ambient");
+ 
+ 	/* The available OEM rear ALS explicitly advertises physical=false. */
+-	return attributes->available && (attributes->physical || logical_rear) &&
++	return attributes->available &&
++	       (attributes->physical || logical_rear || description->kind == SSC_GRAVITY) &&
+ 	       !attributes->hlos_incompatible &&
+ 	       attributes->stream_type <= 1 && (attributes->stream_type || ssc_rate(attributes)) &&
+ 	       (!streaming || !attributes->stream_type);
+@@ -668,7 +678,7 @@
+ 			continue;
+ 		for (j = 0; j < events->count; j++) {
+ 			const struct uke_ssc_event *event = &events->event[j];
+-			s64 scan[4] = {};
++			s64 scan[SSC_SAMPLE_MAX + 1] = {};
+ 
+ 			if (is_lookup) {
+ 				if (event->message != 768)
+@@ -1044,7 +1054,7 @@
+ 		 */
+ 		if (ssc_current(c) && s->ready && s->stream_active && !s->error &&
+ 		    s->ticks && s->registered && s->sample_sequence == sequence) {
+-			s64 scan[4] = {};
++			s64 scan[SSC_SAMPLE_MAX + 1] = {};
+ 
+ 			memcpy(scan, s->sample, sizeof(s->sample));
+ 			iio_push_to_buffers_with_ts(iio, scan, sizeof(scan), iio_get_time_ns(iio));
+@@ -1075,6 +1085,7 @@
+ 	.postenable = ssc_buffer_enable, .predisable = ssc_buffer_disable,
+ };
+ static const unsigned long ssc_xyz_masks[] = { 7, 0 };
++static const unsigned long ssc_gravity_masks[] = { 63, 0 };
+ static const unsigned long ssc_scalar_masks[] = { 1, 0 };
+ 
+ static void ssc_close_client(struct ssc_controller *c)
+@@ -1265,7 +1276,7 @@
+ static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
+ {
+ 	struct iio_dev *iio;
+-	unsigned int count = s->description->dimensions == 3 ? 3 : 1, i;
++	unsigned int count = ssc_sample_channels(s->description), i;
+ 	const enum iio_modifier axis[] = { IIO_MOD_X, IIO_MOD_Y, IIO_MOD_Z };
+ 
+ 	iio = devm_iio_device_alloc(c->dev, sizeof(struct ssc_sensor *));
+@@ -1279,9 +1290,13 @@
+ 			.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),
+ 			.scan_type = { .sign = 's', .realbits = 64, .storagebits = 64, .endianness = IIO_CPU },
+ 		};
+-		if (count == 3) {
++		if (count >= 3) {
+ 			s->channel[i].modified = 1;
+-			s->channel[i].channel2 = axis[i];
++			s->channel[i].channel2 = axis[i % 3];
++			if (s->description->kind == SSC_GRAVITY && i >= 3) {
++				s->channel[i].type = IIO_ACCEL;
++				s->channel[i].extend_name = "linear";
++			}
+ 			if (s->has_mount_matrix)
+ 				s->channel[i].ext_info = ssc_mount_matrix_info;
+ 		}
+@@ -1294,7 +1309,8 @@
+ 	iio->modes = INDIO_DIRECT_MODE;
+ 	iio->channels = s->channel;
+ 	iio->num_channels = count + 1;
+-	iio->available_scan_masks = count == 3 ? ssc_xyz_masks : ssc_scalar_masks;
++	iio->available_scan_masks = count == 6 ? ssc_gravity_masks :
++		count == 3 ? ssc_xyz_masks : ssc_scalar_masks;
+ 	return devm_iio_kfifo_buffer_setup(c->dev, iio, &ssc_buffer_ops);
+ }
+ 
