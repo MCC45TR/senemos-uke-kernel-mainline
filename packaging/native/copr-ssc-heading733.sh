@@ -56,12 +56,12 @@ Text-only integer magnetic heading and shared-stream callback qualification.
 No full kernel, runtime provider or physical sensor acceptance is supplied.
 
 SPEC
- awk '$0=="%prep"{emit=1} $0=="%build"{exit} emit{print}' "$full"
+ awk '$0=="%prep"{emit=1} $0=="%build"{exit} emit{if($0=="bash native-profile/prepare.sh \"$PWD\""){print "(cd native-profile;sha256sum -c --strict --quiet SHA256SUMS)";print "bash native-profile/tests/ssc-heading-math.sh"}print}' "$full"
  cat <<'SPEC'
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 mkdir -p %{_uke_out}
-bash native-profile/tests/ssc-heading-math.sh
+
 # The parent gravity source comparison consumes this pre-application fixture.
 bash native-profile/packaging/native/check-dual-light-delivery733.sh "$PWD" %{_uke_out} prepared
 SPEC

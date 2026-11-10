@@ -56,7 +56,7 @@
     },
     {
       "path": "tests/ssc-heading-math.c",
-      "sha256": "6c18d5bf4ce663a027cb7461572002fcddf899872c96a4ea30a882f63164c85a"
+      "sha256": "b07ac246ac92fe7d511d5e9aefa6083a9a9ed6a4c93afab840a9186067dd5f3c"
     },
     {
       "path": "tests/ssc-heading-math.sh",
@@ -80,7 +80,7 @@
     },
     {
       "path": "packaging/native/copr-ssc-heading733.sh",
-      "sha256": "b0919446c67ba4694566fd9d0a7d6b271898c9a097cf08b0cde87d0a86a71a0a"
+      "sha256": "f86a105c7ae0a0c0c1880d62beec22c6962861dcc9c99b4aade68903733cf313"
     }
   ],
   "primary_contracts": [

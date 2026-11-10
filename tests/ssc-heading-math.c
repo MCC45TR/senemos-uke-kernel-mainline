@@ -4,9 +4,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "uke-ssc-heading.h"
 
-static unsigned long checks;
+static unsigned long checks, bound_refusals;
 static double worst;
 static void compare(const s64 q[4])
 {
@@ -37,12 +38,17 @@ int main(void)
   double y=cos(a)*cos(b)*sin(c)-sin(a)*sin(b)*cos(c);
   double z=sin(a)*cos(b)*cos(c)-cos(a)*sin(b)*sin(c);
   double w=cos(a)*cos(b)*cos(c)+sin(a)*sin(b)*sin(c);
-  for(scale=996000;scale<=1004000;scale+=4000){q[0]=llround(x*scale);q[1]=llround(y*scale);q[2]=llround(z*scale);q[3]=llround(w*scale);compare(q);}
+  for(scale=996000;scale<=1004000;scale+=4000){q[0]=llround(x*scale);q[1]=llround(y*scale);q[2]=llround(z*scale);q[3]=llround(w*scale);
+   bool outside=false;for(i=0;i<4;i++)outside|=q[i]<-1000000||q[i]>1000000;
+   if(outside){output=123;assert(uke_ssc_heading_microdegrees(q,&output)==-ERANGE&&output==123);checks++;bound_refusals++;}
+   else compare(q);}
  }
  output=123;assert(uke_ssc_heading_microdegrees(NULL,&output)==-EINVAL&&output==123);assert(uke_ssc_heading_microdegrees(known[0],NULL)==-EINVAL);
  const s64 bad[][4]={{0,0,0,0},{0,0,0,500000},{1000000,1000000,1000000,1000000},{LLONG_MAX,0,0,0},{LLONG_MIN,0,0,0},{0,0,0,1000001},{0,0,0,1010000}};
  for(i=0;i<(int)(sizeof(bad)/sizeof(bad[0]));i++){output=123;assert(uke_ssc_heading_microdegrees(bad[i],&output)==-ERANGE&&output==123);}
  const s64 vertical[4]={707107,0,0,707107};output=123;assert(uke_ssc_heading_microdegrees(vertical,&output)==-ENODATA&&output==123);
+ assert(bound_refusals==14);
+ printf("Heading geometric domain: %lu accepted references and %lu expected component-bound refusals.\n",checks-bound_refusals,bound_refusals);
  printf("Actual integer heading: %lu unit/sign/tilt/scale cases; maximum error %.9f degree; invalid/overflow/vertical refusal; no physical acceptance.\n",checks,worst);
  return 0;
 }
