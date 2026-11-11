@@ -44,7 +44,7 @@
     },
     {
       "path": "packaging/native/charge-observe-legacy-view733.sh",
-      "sha256": "7385da1beb86b49f78d6c49bf5c5f833f224f28b54278f6d0637a207ff44948c"
+      "sha256": "3689b4119448b5182d0f479bf2ce19a4158c3df00b593c0215380521adebdd27"
     },
     {
       "path": "packaging/native/rewrite-charge-observe-full733.sh",
