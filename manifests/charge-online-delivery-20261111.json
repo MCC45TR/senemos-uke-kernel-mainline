@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11300975,
+  "parent_full_release": 18,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300975/senemos-uke-linux-kernel-mainline-unstable-7.3.3-18.src.rpm",
+  "parent_srpm_sha256": "57f25ca9cc24cf5ef713f478479d968143fc697e43fbf03b36574132d91e9400",
+  "parent_spec_sha256": "1483872425a820ad1ebb566595c6a7368054af9d7d5a966a71062492821ab9f8",
+  "parent_audio_card_sha256": "794882caa59fd94480b1f398ef30cb940764a7a3acd3540ed1d8d3dde8210188",
+  "retained_parent_fields": 747,
+  "protected_gain": 223,
+  "proof": {
+    "build": 11302735,
+    "version": "7.3.3-88",
+    "source_check_release": 88,
+    "source": "190e934c1f3147349237d6b2b8532598547cffaf",
+    "source_tree": "218959a2ed9985332343a9379c6e489e95025491",
+    "receipt_sha256": "8382bbf585dddcf18b4a694dd5501c78ef38dc7e514d47a7b6c4cf77ea5acbe4"
+  },
+  "source_assets": [
+    {
+      "path": "src/power/0002-uke-existing-cap-online-reapply.patch",
+      "sha256": "1d5b06c0d48f319e47a52309d123dfc65e1a9f566c8d0c94db9ad24ecb578e4c"
+    },
+    {
+      "path": "tests/charge-online-cap.c",
+      "sha256": "53661cca8734b4e536d2957cc9c7d7d18871e95e0791c7595ce56f827cd4a8b7"
+    },
+    {
+      "path": "tests/charge-online-cap.sh",
+      "sha256": "a73e5e4f6cc291998aef3bbd631802f2f60a748f814b8ede22e3c2558ff8ed9e"
+    },
+    {
+      "path": "docs/CHARGE-EXISTING-BAND-ONLINE.md",
+      "sha256": "9e07b357a51ea018e3e27b4dc7399034a10e18e22ea4337cd7b8f7f10ab297ea"
+    },
+    {
+      "path": "packaging/native/check-charge-online-cap733.sh",
+      "sha256": "6de443a5260e0339962ffb7dd76c740679e4b36e0fd1cd5486d3bbc6ec48ed53"
+    },
+    {
+      "path": "packaging/native/prepare-charge-online-full733.sh",
+      "sha256": "f44f566a253e96a63e1f307b1a6cfbad19d11133ca2918f2d51ef3c5139beb29"
+    },
+    {
+      "path": "packaging/native/rewrite-charge-online-full733.sh",
+      "sha256": "8f2a6c4ae2ffe58ba82cc31861fa229be3e547b9f7bdc4b8214d03634629015d"
+    },
+    {
+      "path": "docs/CHARGE-ONLINE-CUMULATIVE-DELIVERY.md",
+      "sha256": "3dd126b5c4992afa607bab19fe483025665a6e95557160fa1910669ddb28609d"
+    },
+    {
+      "path": "packaging/native/copr-charge-online-cap733.sh",
+      "sha256": "72f15bbe5164f8b3f06689139c903c447e960d2a849a8398d88ca765d460d418"
+    },
+    {
+      "path": "packaging/native/copr-charge-online-full733.sh",
+      "sha256": "e9875f4a281659adbe5cf39fe36322b2ac90cc583b3a0eefb7b54716530e9d92"
+    }
+  ],
+  "payload_assets": [
+    "src/power/0002-uke-existing-cap-online-reapply.patch",
+    "tests/charge-online-cap.c",
+    "tests/charge-online-cap.sh",
+    "docs/CHARGE-EXISTING-BAND-ONLINE.md",
+    "packaging/native/check-charge-online-cap733.sh",
+    "manifests/charge-online-cap-20261111.json",
+    "packaging/native/prepare-charge-online-full733.sh",
+    "packaging/native/rewrite-charge-online-full733.sh",
+    "docs/CHARGE-ONLINE-CUMULATIVE-DELIVERY.md"
+  ],
+  "production_config_unchanged": true,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "physical_cutoff_accepted": false,
+  "autonomous_restore_accepted": false
+}
