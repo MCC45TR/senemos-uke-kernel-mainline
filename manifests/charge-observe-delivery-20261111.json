@@ -44,7 +44,7 @@
     },
     {
       "path": "packaging/native/charge-observe-legacy-view733.sh",
-      "sha256": "3689b4119448b5182d0f479bf2ce19a4158c3df00b593c0215380521adebdd27"
+      "sha256": "cc1157aa1d13bf9fd51c84e0b237a312a646a480faeae11b2a5f1d6abddd899b"
     },
     {
       "path": "packaging/native/rewrite-charge-observe-full733.sh",
@@ -61,6 +61,10 @@
     {
       "path": "tests/charge-observe-recipe.sh",
       "sha256": "c6d2efd7584941c1c6da01e79bf47abc244278dce69349efd6a41837d808b8d3"
+    },
+    {
+      "path": "tests/charge-observe-parent-view.sh",
+      "sha256": "e0fe5885dae6f0db2ff200c9522341eddfa28763e2b9d46d12acff6621fb6fd7"
     }
   ],
   "payload_assets": [
@@ -73,7 +77,8 @@
     "packaging/native/charge-observe-legacy-view733.sh",
     "packaging/native/rewrite-charge-observe-full733.sh",
     "docs/CHARGE-OBSERVE-CUMULATIVE-DELIVERY.md",
-    "tests/charge-observe-recipe.sh"
+    "tests/charge-observe-recipe.sh",
+    "tests/charge-observe-parent-view.sh"
   ],
   "production_config_unchanged": true,
   "encryption_fragment_enabled_in_full": false,

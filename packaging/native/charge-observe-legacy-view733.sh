@@ -23,5 +23,5 @@ while IFS=$'\t' read -r path before;do
  fi
 done < <(jq -r '.source_units[]|[.path,.before_sha256]|@tsv' "$contract")
 cmp "$kernel/Documentation/ABI/testing/sysfs-driver-uke-charge-online" "$parent/Documentation/ABI/testing/sysfs-driver-uke-charge-online"
-[[ $(realpath "$parent/native-profile") == "$profile" ]]
+[[ $(realpath "$parent/native-profile") == "$(realpath "$profile")" ]]
 printf '%s\n' "$parent"
