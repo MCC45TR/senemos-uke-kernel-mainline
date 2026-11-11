@@ -25,6 +25,10 @@ static struct {
 	int fault;
 	int primary_error;
 	int rollback_error;
+	/* Permanent CRM owner installs both hooks only after transport admission. */
+	int (*before_suspend)(void *context);
+	int (*after_resume)(void *context);
+	void *transport_context;
 } cam_cc_power;
 
 static int cam_cc_power_fail(int primary, int rollback, unsigned int uncertain)
@@ -70,6 +74,12 @@ static int __maybe_unused cam_cc_power_resume(struct device *dev)
 	ret = clk_prepare_enable(cam_cc_power.iface);
 	if (!ret) {
 		WRITE_ONCE(cam_cc_power.iface_on, true);
+		if (cam_cc_power.after_resume) {
+			ret = cam_cc_power.after_resume(cam_cc_power.transport_context);
+			if (ret)
+				/* Partial rearm must retain interface, rails and permanent IRQ. */
+				return cam_cc_power_fail(ret, 0, 0);
+		}
 		return 0;
 	}
 
@@ -104,6 +114,13 @@ static int __maybe_unused cam_cc_power_suspend(struct device *dev)
 	if (!cam_cc_power.iface_on || cam_cc_power.votes != CAM_CC_POWER_RAILS)
 		return cam_cc_power_fail(-EUCLEAN, 0, 0);
 
+	if (cam_cc_power.before_suspend) {
+		ret = cam_cc_power.before_suspend(cam_cc_power.transport_context);
+		if (ret == -EBUSY)
+			return ret;
+		if (ret)
+			return cam_cc_power_fail(ret, 0, 0);
+	}
 	clk_disable_unprepare(cam_cc_power.iface);
 	WRITE_ONCE(cam_cc_power.iface_on, false);
 	for (rail = ARRAY_SIZE(cam_cc_sm7675_regulators) - 1; rail >= 0; rail--) {

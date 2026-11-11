@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Candidate OEM transport bootstrap order on actual12101 failing gate evidence",
+  "tested_source_commit": "4024165658f2fc852741bf3905ceb6717fbb6ad4",
+  "copr_build": 11261918,
+  "package": "uke-camcc-probe-check-1.0-3",
+  "state": "succeeded",
+  "duration_seconds": 85,
+  "source_manifest": "manifests/camcc-oem-bootstrap-20261105.json",
+  "result": {
+    "actual_catalog_imported": true,
+    "actual_before_array_and_unchanged_callbacks": true,
+    "before_counterexample": "critical-gate-verify/-5/0x132ec/0 then readiness134",
+    "compilers": [
+      "gcc",
+      "clang"
+    ],
+    "variants": [
+      "ordinary",
+      "asan_ubsan"
+    ],
+    "fault_boundaries": 80,
+    "required_mutants": [
+      "frozen-phase",
+      "stale-readback",
+      "live-sysfs-read"
+    ],
+    "cold_boot_on_and_active_crm_controls": true,
+    "dependency_model_is_hypothetical": true,
+    "physical_cause_or_effectiveness": false
+  },
+  "artifacts": {
+    "source_log_gzip_sha256": "38ca58d9e2c3c3e78cff54d7c7b942399def366ac6cc35523ff938d91d4f7bdf",
+    "native_log_gzip_sha256": "94696ec54902a0593be2d2d97dd5d3f198347e4679beae7428012bfed56c40b7",
+    "signed_text_rpm_sha256": "de2131f81efbf804a79f73897b2c9408f3ea4c31806005d9affd69ed9d86ef0f",
+    "source_commit_verified": true,
+    "signing_key": "2204a661ea630a5303500085538797e72a3e4eca",
+    "no_runtime_dependencies_scripts_or_triggers": true
+  },
+  "delivery": {
+    "full_kernel_built": false,
+    "new_kernel_revision_reserved": false,
+    "tablet_install": false,
+    "boot_change": false,
+    "EEPROM_access": false,
+    "lens_operation": false
+  },
+  "next": "One full cumulative kernel preserving all qualified contributions, then signed DNF and cached physical probe observation; full calibrated cameras and rear focus remain required"
+}

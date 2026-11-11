@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Versioned root-generator and ordinary systemd handoff; code draft, no native or device charger qualification",
+  "parent_kernel": "7.3.3-3-unstable",
+  "parent_build": 11283960,
+  "parent_source": "fa9d36d77a0b6dfe73e168e993b688ad5f3374f2",
+  "parent_root_control": "2.9.0-3",
+  "planned_root_provider": "uke-control",
+  "required_root_capability": "uke-control(offline-target-generator-v1) >= 1",
+  "extra_runtime_package": false,
+  "extra_daemon": false,
+  "original_systemd_commit": "63511d7283d7d0e2a2fc28075481afaf1a7be8f5",
+  "required_native_modes": 4,
+  "filesystem_cases_per_mode": 22,
+  "required_mutant_refusals": 8,
+  "native_qualified": false,
+  "physical_charger_qualified": false,
+  "production_before": {
+    "src/boot/offline-switch-root.cpp": "a56fb778646f472b46e74e8d5c2be344b68f7d73aec5e1a42c91c31bdc905a64",
+    "tests/offline-boot-contract.sh": "5fbad47d511aff9cad2a04e3e93040a34469250b6e9b584ba31b85281d6d3dad"
+  },
+  "source_assets": [
+    {
+      "path": "src/boot/offline-switch-root.cpp",
+      "sha256": "2949769c1511bdff82cec57f1efbf6518abb59c42971923c439d1c6b51d5a08f"
+    },
+    {
+      "path": "src/boot/offline-target-generator.cpp",
+      "sha256": "8c40047fd37928711fc30bd768e7c4051c4f62bb11b041e3568d42c3436ebfc1"
+    },
+    {
+      "path": "src/boot/offline/target.hpp",
+      "sha256": "dde3d1c074e9bca856493c3deaabfa2303c66f6b5f1b7aa7d41fd158cbc51508"
+    },
+    {
+      "path": "src/boot/offline/io.hpp",
+      "sha256": "a237d32ebb451c8abcaeebea2531a95ed8b93126274b20911ab07ae487e01766"
+    },
+    {
+      "path": "src/boot/offline/boot-mode.hpp",
+      "sha256": "e9bc5ea7e7cf05e0e7946dd243a6c868d33c948b396d77343b05bb8f00c2d004"
+    },
+    {
+      "path": "tests/offline-boot-contract.sh",
+      "sha256": "1955df6e7d6b59b3d26cfd34c094f7bf99ac229bf86a2650d8917a51eca0e265"
+    },
+    {
+      "path": "tests/offline-target.cpp",
+      "sha256": "6e678a668e4753edd4a33567be4905757ca68fb76940d6031d31ad50fe990f47"
+    },
+    {
+      "path": "tests/offline-target.sh",
+      "sha256": "847372329cfa77b929729918b65b1aa19dce76d48536708bfa7ad94c8da47bf5"
+    },
+    {
+      "path": "docs/OFFLINE-TARGET-HANDOFF.md",
+      "sha256": "ba869e1e04855020a7e95c03a092d8b6dd4ec4931b6f6d21ca10c7e16731b724"
+    }
+  ]
+}

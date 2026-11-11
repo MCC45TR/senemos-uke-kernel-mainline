@@ -12,9 +12,11 @@
 #include "camcc-sm7675-data.h"
 #include "provider/camcc-sm7675-power.h"
 #include "provider/camcc-sm7675-owner.h"
+#include "provider/camcc-sm7675-crm-pm.h"
 #include "provider/camcc-sm7675-crm-guard.h"
 #include "provider/camcc-sm7675-clocks.h"
 #include "provider/camcc-sm7675-handoff.h"
+#include "provider/camcc-sm7675-crm-ccf.h"
 #include "provider/camcc-sm7675-registration.h"
 
 static ssize_t controller_state_show(struct device *dev,
@@ -37,9 +39,47 @@ static ssize_t crm_mode_show(struct device *dev,
 }
 static DEVICE_ATTR_RO(crm_mode);
 
+static ssize_t probe_phase_show(struct device *dev,
+			       struct device_attribute *attribute, char *buffer)
+{
+	const char *phase = READ_ONCE(cam_cc_native.probe.phase);
+
+	return sysfs_emit(buffer, "%s\n", phase ?: "not-started");
+}
+static DEVICE_ATTR_RO(probe_phase);
+
+static ssize_t probe_error_show(struct device *dev,
+			       struct device_attribute *attribute, char *buffer)
+{
+	return sysfs_emit(buffer, "%d\n", READ_ONCE(cam_cc_native.probe.error));
+}
+static DEVICE_ATTR_RO(probe_error);
+
+static ssize_t probe_gate_register_show(struct device *dev,
+				       struct device_attribute *attribute, char *buffer)
+{
+	if (!READ_ONCE(cam_cc_native.probe.gate_started))
+		return -ENODATA;
+	return sysfs_emit(buffer, "%#x\n", READ_ONCE(cam_cc_native.probe.gate_reg));
+}
+static DEVICE_ATTR_RO(probe_gate_register);
+
+static ssize_t probe_gate_readback_show(struct device *dev,
+				       struct device_attribute *attribute, char *buffer)
+{
+	if (!READ_ONCE(cam_cc_native.probe.gate_read_valid))
+		return -ENODATA;
+	return sysfs_emit(buffer, "%#x\n", READ_ONCE(cam_cc_native.probe.gate_readback));
+}
+static DEVICE_ATTR_RO(probe_gate_readback);
+
 static struct attribute *cam_cc_native_attrs[] = {
 	&dev_attr_controller_state.attr,
 	&dev_attr_crm_mode.attr,
+	&dev_attr_probe_phase.attr,
+	&dev_attr_probe_error.attr,
+	&dev_attr_probe_gate_register.attr,
+	&dev_attr_probe_gate_readback.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(cam_cc_native);

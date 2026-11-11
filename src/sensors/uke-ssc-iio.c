@@ -60,6 +60,8 @@ struct ssc_sensor {
 	struct iio_chan_spec channel[4];
 	struct uke_ssc_suid suid;
 	struct uke_ssc_attributes attributes;
+	struct iio_mount_matrix mount_matrix;
+	bool has_mount_matrix;
 	struct completion metadata_done, sample_done;
 	u64 revision, sample_sequence, ticks;
 	s64 sample[3];
@@ -515,7 +517,20 @@ static int ssc_sample_values(struct ssc_sensor *s, const struct uke_ssc_event *e
 	}
 	if (event->message != 1025)
 		return -ENOMSG;
-	ret = uke_ssc_decode_sample(event->payload, d->dimensions, &sample);
+	/* These identified Uke ALS endpoints also report six fields.
+	 * Publish only the first lux field; other channels retain unknown units.
+	 */
+	if (d->kind == SSC_LIGHT &&
+	    ((!strcmp(d->datatype, "ambient_light") &&
+	      !strcmp(s->attributes.name, "stk_stk3bcx")) ||
+	     (!strcmp(d->datatype, "ambient_light_back") &&
+	      !strcmp(s->attributes.name, "sip1328 back ambient")))) {
+		ret = uke_ssc_decode_sample(event->payload, 0, &sample);
+		if (!ret && sample.count != 2 && sample.count != 6)
+			ret = -EBADMSG;
+	} else {
+		ret = uke_ssc_decode_sample(event->payload, d->dimensions, &sample);
+	}
 	if (ret || !sample.status)
 		return ret ? ret : -EAGAIN;
 	/* This API specifies HIGH for valid data and UNRELIABLE while stabilizing. */
@@ -533,8 +548,13 @@ static bool ssc_attributes_usable(const struct ssc_description *description,
 				 const struct uke_ssc_attributes *attributes)
 {
 	bool streaming = description->dimensions == 3 || description->kind == SSC_TEMPERATURE;
+	bool logical_rear = description->kind == SSC_LIGHT &&
+		!strcmp(description->datatype, "ambient_light_back") &&
+		!strcmp(attributes->name, "sip1328 back ambient");
 
-	return attributes->available && attributes->physical && !attributes->hlos_incompatible &&
+	/* The available OEM rear ALS explicitly advertises physical=false. */
+	return attributes->available && (attributes->physical || logical_rear) &&
+	       !attributes->hlos_incompatible &&
 	       attributes->stream_type <= 1 && (attributes->stream_type || ssc_rate(attributes)) &&
 	       (!streaming || !attributes->stream_type);
 }
@@ -1009,6 +1029,50 @@ out:
 	mutex_unlock(&c->control);
 }
 
+static const struct iio_mount_matrix *
+ssc_get_mount_matrix(const struct iio_dev *iio, const struct iio_chan_spec *channel)
+{
+	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+
+	return &s->mount_matrix;
+}
+
+static const struct iio_chan_spec_ext_info ssc_mount_matrix_info[] = {
+	IIO_MOUNT_MATRIX(IIO_SHARED_BY_TYPE, ssc_get_mount_matrix),
+	{},
+};
+
+static int ssc_read_mount_matrix(struct ssc_controller *c, struct ssc_sensor *s,
+				 struct device_node *node)
+{
+	struct iio_mount_matrix matrix;
+	const int elements = ARRAY_SIZE(matrix.rotation);
+	unsigned int i;
+	int ret;
+
+	/* Absence is unknown, rather than an invented identity rotation. */
+	if (!of_find_property(node, "mount-matrix", NULL))
+		return 0;
+	if (s->description->kind != SSC_ACCEL)
+		return -EINVAL;
+	ret = of_property_count_strings(node, "mount-matrix");
+	if (ret != elements)
+		return ret < 0 ? ret : -EINVAL;
+	ret = of_property_read_string_array(node, "mount-matrix", matrix.rotation,
+					  elements);
+	if (ret != elements)
+		return ret < 0 ? ret : -EINVAL;
+	/* Own the strings independently of a dynamically removed firmware node. */
+	for (i = 0; i < ARRAY_SIZE(matrix.rotation); i++) {
+		matrix.rotation[i] = devm_kstrdup(c->dev, matrix.rotation[i], GFP_KERNEL);
+		if (!matrix.rotation[i])
+			return -ENOMEM;
+	}
+	s->mount_matrix = matrix;
+	s->has_mount_matrix = true;
+	return 0;
+}
+
 static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
 {
 	struct iio_dev *iio;
@@ -1029,6 +1093,8 @@ static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
 		if (count == 3) {
 			s->channel[i].modified = 1;
 			s->channel[i].channel2 = axis[i];
+			if (s->has_mount_matrix)
+				s->channel[i].ext_info = ssc_mount_matrix_info;
 		}
 		if (s->description->multiplier != 1)
 			s->channel[i].info_mask_shared_by_type = BIT(IIO_CHAN_INFO_SCALE);
@@ -1140,6 +1206,11 @@ static int ssc_probe(struct platform_device *pdev)
 			if (c->sensor[i].declared) {
 				of_node_put(child);
 				return -EINVAL;
+			}
+			ret = ssc_read_mount_matrix(c, &c->sensor[i], child);
+			if (ret) {
+				of_node_put(child);
+				return ret;
 			}
 			c->sensor[i].declared = true;
 		}

@@ -1,0 +1,65 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: classify output faults atomically with normal stop
+
+The existing guard lock serializes gate-zero publication and output-fault
+classification. Healthy idle stops hardware without a false Fault; real guard
+failures retain the original fault/mute path. Calibration and gain stay exact.
+
+--- a/sound/soc/codecs/fs19xx.c
++++ b/sound/soc/codecs/fs19xx.c
+@@ -546,9 +546,9 @@
+ 	return;
+ 
+ stop:
+-	dev_err(fs19xx->dev, "output health failed: %d; amplifier reset\n", ret);
+-	if (fs19xx->require_protection)
+-		q6apm_fs19xx_fault();
++	/* Atomically distinguish a healthy idle transition from a real fault. */
++	if (!fs19xx->require_protection || q6apm_fs19xx_output_fault())
++		dev_err(fs19xx->dev, "output health failed: %d; amplifier reset\n", ret);
+ 	fs19xx->powered = false;
+ 	fs19xx->unmuted = false;
+ 	fs19xx_chip_stop(fs19xx);
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -106,6 +106,23 @@
+ }
+ EXPORT_SYMBOL_GPL(q6apm_fs19xx_fault);
+ 
++/* Codec mutex held: decide under the same lock that publishes gate zero. */
++bool q6apm_fs19xx_output_fault(void)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&fs19xx_guard_lock, flags);
++	if (!fs19xx_guard.faulted && fs19xx_guard.mode == 0) {
++		spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
++		return false;
++	}
++	uke_fs_guard_trip(&fs19xx_guard);
++	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
++	queue_work(system_highpri_wq, &fs19xx_fault_work);
++	return true;
++}
++EXPORT_SYMBOL_GPL(q6apm_fs19xx_output_fault);
++
+ int q6apm_fs19xx_register(struct notifier_block *listener, unsigned int position)
+ {
+ 	int ret;
+--- a/include/sound/uke-fs19xx-guard.h
++++ b/include/sound/uke-fs19xx-guard.h
+@@ -12,6 +12,7 @@
+ bool q6apm_fs19xx_configured(void);
+ bool q6apm_fs19xx_running(void);
+ void q6apm_fs19xx_fault(void);
++bool q6apm_fs19xx_output_fault(void);
+ #else
+ static inline int q6apm_fs19xx_register(struct notifier_block *n, unsigned int p)
+ { return -EOPNOTSUPP; }
+@@ -19,5 +20,6 @@
+ static inline bool q6apm_fs19xx_configured(void) { return false; }
+ static inline bool q6apm_fs19xx_running(void) { return false; }
+ static inline void q6apm_fs19xx_fault(void) {}
++static inline bool q6apm_fs19xx_output_fault(void) { return true; }
+ #endif
+ #endif

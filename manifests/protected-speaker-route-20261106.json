@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-06",
+  "parent_build": 11269020,
+  "parent_source": "514536ca7d4015048f2b6b9a4d8871612ac4de28",
+  "parent_srpm_sha256": "2088fddf829a01fe7b2b466960a0c365891b38f18d2e31c06ec273b4990355c1",
+  "builder_preimage_sha256": "3ff2b5affd4881a6ce903782afa02cee24351ada1ef3b18643dd2a1687a4381a",
+  "base_topology_sha256": "83193dd68fe748983d2febad6c345d7adb60481fe714469f530bb6e60eb994dd",
+  "planned_revision": 12210,
+  "planned_source_check_release": 15,
+  "entry_module": "0x442e",
+  "gain_ceiling": 223,
+  "physical_acceptance": false,
+  "prior_terminal_check": {
+    "copr_build": 11269329,
+    "release": 14,
+    "cause": "Actual prepared callbacks do not use the mock dev_get_drvdata; -Werror rejects the unused helper before the new fixture executes"
+  }
+}

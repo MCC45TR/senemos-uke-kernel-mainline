@@ -34,6 +34,7 @@ static bool model_warn(bool condition) { return condition; }
 #define PTR_ERR(x) ((int)(intptr_t)(x))
 #define ERR_PTR(x) ((void *)(intptr_t)(x))
 typedef uint32_t u32;
+typedef uint64_t u64;
 typedef uint8_t u8;
 typedef uint64_t resource_size_t;
 static void mutex_lock(int *lock) { (void)lock; }

@@ -1,0 +1,137 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: i2c: ov08d10: report crop geometry on the 7.3.1 state API
+
+Adapt the geometry from Max Bretschneider's v2 4/4 to the retained driver:
+https://lists.openwall.net/linux-kernel/2026/10/23/2170
+
+Keep the three-argument pad callback, private mutex, active cur_mode cache
+and per-file TRY state. Initialize TRY crop on open and update it with TRY
+format; read ACTIVE crop from the mode under the same mutex as set_fmt.
+No mode register, timing, power, sensor address or hardware gate changes.
+Original GPL-2.0/Intel attribution is retained; geometry is adapted from
+Max Bretschneider's authored proposal, not fitted calibration evidence.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+
+--- a/drivers/media/i2c/ov08d10.c
++++ b/drivers/media/i2c/ov08d10.c
+@@ -65,6 +65,14 @@
+ #define OV08D10_REG_FLIP_OPT			0x32
+ #define OV08D10_REG_FLIP_MASK			0x3
+ 
++/* Native coordinates from the OV08D10 reference register sets. */
++#define OV08D10_NATIVE_WIDTH			3288
++#define OV08D10_NATIVE_HEIGHT			2476
++#define OV08D10_PIXEL_ARRAY_LEFT		4
++#define OV08D10_PIXEL_ARRAY_TOP			8
++#define OV08D10_PIXEL_ARRAY_WIDTH		3280
++#define OV08D10_PIXEL_ARRAY_HEIGHT		2464
++
+ #define to_ov08d10(_sd)		container_of(_sd, struct ov08d10, sd)
+ 
+ struct ov08d10_reg {
+@@ -110,6 +118,9 @@
+ 
+ 	/* Number of data lanes */
+ 	u8 data_lanes;
++
++	/* Analogue crop rectangle, in native sensor coordinates. */
++	struct v4l2_rect crop;
+ };
+ 
+ /* 3280x2460, 3264x2448 need 720Mbps/lane, 2 lanes - 19.2 MHz */
+@@ -630,6 +641,7 @@
+ 		},
+ 		.link_freq_index = 0,
+ 		.data_lanes = 2,
++		.crop = { .left = 4, .top = 8, .width = 3280, .height = 2460 },
+ 	},
+ 	{
+ 		.width = 3264,
+@@ -643,6 +655,7 @@
+ 		},
+ 		.link_freq_index = 0,
+ 		.data_lanes = 2,
++		.crop = { .left = 12, .top = 16, .width = 3264, .height = 2448 },
+ 	},
+ 	{
+ 		.width = 1632,
+@@ -656,6 +669,7 @@
+ 		},
+ 		.link_freq_index = 1,
+ 		.data_lanes = 2,
++		.crop = { .left = 12, .top = 16, .width = 3264, .height = 2448 },
+ 	}}
+ };
+ 
+@@ -1204,6 +1218,7 @@
+ 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
+ 		*v4l2_subdev_state_get_format(sd_state, fmt->pad) =
+ 								fmt->format;
++		*v4l2_subdev_state_get_crop(sd_state, fmt->pad) = mode->crop;
+ 	} else {
+ 		ov08d10->cur_mode = mode;
+ 		__v4l2_ctrl_s_ctrl(ov08d10->link_freq, mode->link_freq_index);
+@@ -1292,6 +1307,45 @@
+ 	return 0;
+ }
+ 
++static int ov08d10_get_selection(struct v4l2_subdev *sd,
++				struct v4l2_subdev_state *sd_state,
++				struct v4l2_subdev_selection *sel)
++{
++	struct ov08d10 *ov08d10 = to_ov08d10(sd);
++
++	if (sel->pad || (sel->which != V4L2_SUBDEV_FORMAT_TRY &&
++			sel->which != V4L2_SUBDEV_FORMAT_ACTIVE))
++		return -EINVAL;
++
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++		mutex_lock(&ov08d10->mutex);
++		if (sel->which == V4L2_SUBDEV_FORMAT_TRY)
++			sel->r = *v4l2_subdev_state_get_crop(sd_state, sel->pad);
++		else
++			sel->r = ov08d10->cur_mode->crop;
++		mutex_unlock(&ov08d10->mutex);
++		return 0;
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r = (struct v4l2_rect) {
++			.width = OV08D10_NATIVE_WIDTH,
++			.height = OV08D10_NATIVE_HEIGHT,
++		};
++		return 0;
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r = (struct v4l2_rect) {
++			.left = OV08D10_PIXEL_ARRAY_LEFT,
++			.top = OV08D10_PIXEL_ARRAY_TOP,
++			.width = OV08D10_PIXEL_ARRAY_WIDTH,
++			.height = OV08D10_PIXEL_ARRAY_HEIGHT,
++		};
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++
+ static int ov08d10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
+ {
+ 	struct ov08d10 *ov08d10 = to_ov08d10(sd);
+@@ -1299,6 +1353,8 @@
+ 	mutex_lock(&ov08d10->mutex);
+ 	ov08d10_update_pad_format(ov08d10, &ov08d10->priv_lane->sp_modes[0],
+ 				  v4l2_subdev_state_get_format(fh->state, 0));
++	*v4l2_subdev_state_get_crop(fh->state, 0) =
++		ov08d10->priv_lane->sp_modes[0].crop;
+ 	mutex_unlock(&ov08d10->mutex);
+ 
+ 	return 0;
+@@ -1313,6 +1369,7 @@
+ 	.get_fmt = ov08d10_get_format,
+ 	.enum_mbus_code = ov08d10_enum_mbus_code,
+ 	.enum_frame_size = ov08d10_enum_frame_size,
++	.get_selection = ov08d10_get_selection,
+ };
+ 
+ static const struct v4l2_subdev_ops ov08d10_subdev_ops = {

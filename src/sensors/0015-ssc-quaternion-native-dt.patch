@@ -1,0 +1,77 @@
+From: Uke contributors
+Subject: [PATCH] arm64: uke: declare firmware quaternion endpoints
+
+Declare three standard SSC firmware fusion datatypes without fitted chip or
+calibration claims. Exact API and availability metadata still gates registration.
+Preserve existing physical sensors, raw channels and Hall/ALS resource ownership.
+
+--- a/arch/arm64/kernel/uke-hardware.h
++++ b/arch/arm64/kernel/uke-hardware.h
+@@ -108,6 +108,9 @@
+ 		UKE_SENSOR("sar", "Capacitive SAR", "sar", "SX937x"),
+ 		UKE_SENSOR("sensor-temperature", "Physical sensor temperature", "sensor_temperature", "LSM6DSO\0QMI8658"),
+ 		UKE_SENSOR("gravity", "Gravity and linear acceleration", "gravity", "SSC firmware fusion"),
++		UKE_SENSOR("rotation-vector", "ENU rotation vector", "rotv", "SSC firmware fusion"),
++		UKE_SENSOR("game-rotation-vector", "Relative rotation vector", "game_rv", "SSC firmware fusion"),
++		UKE_SENSOR("geomagnetic-rotation-vector", "Geomagnetic ENU rotation vector", "geomag_rv", "SSC firmware fusion"),
+ #undef UKE_SENSOR
+ 	};
+ 	static const char *const cores[] = {
+--- a/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
++++ b/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
+@@ -33,7 +33,7 @@
+     description: Paired board lid input used to select the unoccluded ambient-light sensor.
+ 
+ patternProperties:
+-  '^(accelerometer|gyroscope|magnetometer|front-light|rear-light|color-temperature|proximity|flicker|sar|sensor-temperature|gravity)$':
++  '^(accelerometer|gyroscope|magnetometer|front-light|rear-light|color-temperature|proximity|flicker|sar|sensor-temperature|gravity|rotation-vector|game-rotation-vector|geomagnetic-rotation-vector)$':
+     type: object
+     properties:
+       compatible:
+@@ -41,7 +41,7 @@
+       label: true
+       qcom,ssc-datatype:
+         $ref: /schemas/types.yaml#/definitions/string
+-        enum: [accel, gyro, mag, ambient_light, ambient_light_back, cct_front, proximity, flicker, sar, sensor_temperature, gravity]
++        enum: [accel, gyro, mag, ambient_light, ambient_light_back, cct_front, proximity, flicker, sar, sensor_temperature, gravity, rotv, game_rv, geomag_rv]
+         description: SSC datatype used by the native discovery client.
+       xiaomi,model-candidates:
+         $ref: /schemas/types.yaml#/definitions/string-array
+--- a/Documentation/ABI/testing/sysfs-driver-uke-ssc
++++ b/Documentation/ABI/testing/sysfs-driver-uke-ssc
+@@ -38,7 +38,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of supported sensor datatypes declared in the
+-                controller's Device Tree, from 0 through 9. It does not identify
++                controller's Device Tree, from 0 through 12. It does not identify
+                 fitted chips or establish physical sensor availability.
+ 
+ What:           /sys/devices/.../ssc_discovered_sensors
+@@ -46,7 +46,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors with an admitted SUID in
+-                the current client generation, from 0 through 9. Zero is
++                the current client generation, from 0 through 12. Zero is
+                 reported when the client is not current. No SUID is exposed.
+ 
+ What:           /sys/devices/.../ssc_ready_sensors
+@@ -54,7 +54,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors with accepted metadata in
+-                the current client generation, from 0 through 9. Zero is
++                the current client generation, from 0 through 12. Zero is
+                 reported when the client is not current. This does not report
+                 samples, calibration or physical accuracy.
+ 
+@@ -63,7 +63,7 @@
+ Contact:        Uke Linux maintainers
+ Description:
+                 Read-only count of declared sensors whose IIO devices have
+-                been registered, from 0 through 9. Registered devices may remain
++                been registered, from 0 through 12. Registered devices may remain
+                 present after a service disappears, so this count alone does
+                 not prove that samples are available.
+ 

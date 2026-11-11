@@ -1,0 +1,67 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] packaging: seal muted-stop delta and retain every original16 gate
+
+Validate exact new source then run historical checks on authenticated preimages.
+
+--- a/packaging/native/check-oob-runtime731.sh
++++ b/packaging/native/check-oob-runtime731.sh
+@@ -5,6 +5,21 @@
+ profile=$kernel/native-profile
+ actual=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+ original=$profile/src/audio/uke-fs19xx-runtime.c
++# Authenticate the new delta, then run every retained16 seal on its exact preimage.
++if [[ -e $kernel/native-generated/runtime-before-protected-stop.c ]];then
++ before_stop=$kernel/native-generated/runtime-before-protected-stop.c
++ [[ -f $before_stop && ! -L $before_stop ]]
++ jq -e '.protected_stop_drain_layer==1 and .protected_stop_mute_before_dsp and .protected_stop_vi_until_reply and .protected_stop_poweroff_after_reply and .protected_stop_failure_erases and .speaker_gain_ceiling==223' "$profile/source-composition.json" >/dev/null
++ printf '%s  %s\n' \
++  0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$before_stop" \
++  3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$actual" \
++  e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8 "$kernel/native-generated/codec-before-protected-stop.c" \
++  4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/sound/soc/codecs/fs19xx.c" \
++  465cf1060b9e0252ae5febf3b669034be67c08c86d6e00f42f669bea32c1804c "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h" \
++  aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955 "$kernel/sound/soc/codecs/uke-fs19xx-muted-stop.h" \
++  aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955 "$profile/src/audio/uke-fs19xx-muted-stop.h" | sha256sum -c --strict --quiet -
++ actual=$before_stop
++fi
+ marker=$kernel/native-generated/uke-oob-native-layer
+ if [[ ! -e $marker ]];then
+  cmp "$original" "$actual"
+--- a/packaging/native/check-client-byte-ready731.sh
++++ b/packaging/native/check-client-byte-ready731.sh
+@@ -5,9 +5,14 @@
+ out=$(realpath "${2:?Native output}")
+ phase=${3:-objects}
+ [[ $phase == objects || $phase == linked ]]
++runtime=$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++if [[ -e $kernel/native-generated/runtime-before-protected-stop.c ]];then
++ printf '%s  %s\n' 3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5 "$runtime" | sha256sum -c --strict -
++ runtime=$kernel/native-generated/runtime-before-protected-stop.c
++fi
+ printf '%s  %s\n' \
+  6d9b4b98558345593762a2f10291d7d17f1279453bc8dacb15ee42c4a33d5113 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c" \
+- 0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c" | sha256sum -c --strict -
++ 0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$runtime" | sha256sum -c --strict -
+ bash "$kernel/native-profile/packaging/native/check-client-data731.sh" "$kernel" "$out" "$phase"
+ object=$out/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o
+ llvm-readelf -h "$object" | grep -E 'Machine:.*AArch64'
+--- a/packaging/native/check-speaker-inclusion.sh
++++ b/packaging/native/check-speaker-inclusion.sh
+@@ -41,7 +41,17 @@
+ elif [[ $phase != prepared || $flags != 1 ]]; then
+  [[ $flags == 0 ]]
+  jq -e '.speaker_protected_layer_commit|type=="string" and test("^[0-9a-f]{40}$")' "$composition" >/dev/null
++ if [[ -e $kernel/native-generated/codec-before-protected-stop.c ]];then
++  printf '%s  %s\n' \
++   e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8 "$kernel/native-generated/codec-before-protected-stop.c" \
++   4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2 "$kernel/sound/soc/codecs/fs19xx.c" | sha256sum -c --strict -
++  stop_seal=$(mktemp -d)
++  trap 'find "$stop_seal" -depth -delete' EXIT
++  install -Dm644 "$kernel/native-generated/codec-before-protected-stop.c" "$stop_seal/sound/soc/codecs/fs19xx.c"
++  git -C "$stop_seal" apply --reverse --check --include=sound/soc/codecs/fs19xx.c "$profile/patches/boot/0073-uke-fs19xx-protected-runtime.patch"
++ else
+  git -C "$kernel" apply --reverse --check --include=sound/soc/codecs/fs19xx.c "$profile/patches/boot/0073-uke-fs19xx-protected-runtime.patch"
++ fi
+  for variant in 36 42; do
+   decoded=$(fdtdump "$kernel/native-generated/display-$variant.dtbo" 2>/dev/null)
+   [[ $(grep -Fc 'foursemi,require-protection;' <<< "$decoded") == 4 ]]

@@ -78,3 +78,20 @@ matched vote/IRQ/LUT/voltage ownership and implementation. The disabled-mode
 guard alone establishes neither complete firmware handoff nor physical support.
 Its actual resource/admission source and native probe ordering are qualified
 separately in ordinary/fail-fast sanitizer checks and real kernel object builds.
+
+4 November 2026: cumulative11003 physically binds but reports `fault -5` and
+`crm_mode=unchecked`. That does not locate the failed boundary or prove active
+CRM. The next source candidate caches the existing probe phase, boundary errno
+and last critical gate/readback. Four scalar read-only sysfs attributes expose
+these observations; unavailable readback returns ENODATA instead of a guessed
+zero. The original quarantine log also includes cached power votes and errors.
+No additional register read, power reference, retry, EEPROM access or actuator
+operation is introduced. Clean retries reset observations only after ownership
+succeeds; quarantine and later refused probes preserve the first failure.
+Successful registration remains distinct from later runtime/handoff faults.
+The fixture imports the actual show callbacks and requires unsafe phase-reset,
+stale-readback and live-sysfs-MMIO mutations to fail. COPR11260755, source
+a1afff0dd7d42ea7c5a979519417d6f371c3ebae, passes GCC/Clang ordinary and
+ASan/UBSan runs, all80 probe fault points and all three required mutations.
+The complete AArch64 object/link/package checks remain gates of the next
+cumulative kernel. These modeled results do not identify the physical fault.

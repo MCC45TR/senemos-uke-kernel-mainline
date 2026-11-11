@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 72,
+  "parent_full_build": 11293945,
+  "parent_source": "b14c66405258832ccf92ba9a46cfceb03f635755",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293945/senemos-uke-linux-kernel-mainline-unstable-7.3.3-12.src.rpm",
+  "parent_srpm_sha256": "7889e2efb4a15780737d5d6c2f712fd5f093f1194232940162f020a7b128298b",
+  "parent_spec_sha256": "b85fdf18606c2b52dbf35b0755b9884deeec872878b36ff7cf2f683de37e026e",
+  "protected_gain": 223,
+  "physical_output_count": 4,
+  "pcm_input_max": 8,
+  "compressed_behavior_unchanged": true,
+  "dma_lifecycle_changed": false,
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/audio/0033-audioreach-eight-channel-pcm.patch",
+    "src/audio/prepare-pcm-surround733.sh",
+    "packaging/native/check-pcm-surround733.sh",
+    "tests/pcm-surround-encoders.c",
+    "docs/PCM-SURROUND-ENCODERS.md",
+    "tests/audio-pcm-formats-contract.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/0033-audioreach-eight-channel-pcm.patch",
+      "sha256": "a7f3ecbfe16b5cd45f2fb56f6445f5a81402d45e8e0aaf1d439de23ac19396f7"
+    },
+    {
+      "path": "src/audio/prepare-pcm-surround733.sh",
+      "sha256": "b8e603a9441ce6ca3ac3b154900d67843b5669e9238229424b1f0e05766cbad7"
+    },
+    {
+      "path": "packaging/native/check-pcm-surround733.sh",
+      "sha256": "bd526bc234f5a738238c61c2b254ab9aa1deff4709da2dcd754d424e7cf7738f"
+    },
+    {
+      "path": "tests/pcm-surround-encoders.c",
+      "sha256": "ef1273f56242399a113111479c46ab3523eb87f4a407a87dde09919bfd2ff4c0"
+    },
+    {
+      "path": "docs/PCM-SURROUND-ENCODERS.md",
+      "sha256": "1ad0714c3b865eb56278ec3e4c6c4c9305ebf20aafb67bf4cc39ea4f6855c69c"
+    },
+    {
+      "path": "tests/audio-pcm-formats-contract.sh",
+      "sha256": "68fa870f0a7c2360250cbdabe1ad3257e437c9b5b166c0d58f2ac8d074e3a5e2"
+    },
+    {
+      "path": "packaging/native/copr-pcm-surround733.sh",
+      "sha256": "8424e65e8693dc1c0d71954e1ec7c9d1a81848dfeccccc1dbfd8de269f0ba9b3"
+    }
+  ],
+  "parent_format_fixture_sha256": "86f3f1bc718a9f67381af8ba1bd22bca7d5d97dff55edab2564061ca2a68b88d"
+}

@@ -9,9 +9,11 @@ read -r -a cflags <<< "$(pkg-config --cflags alsa)"
 read -r -a libs <<< "$(pkg-config --libs alsa)"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror "${cflags[@]}" \
  "$root/src/audio/desktop/tests/audio-policy.cpp" "${libs[@]}" -o "$work/parser"
-for release in 7.3.1-103 7.3.1-104; do
+for release in 7.3.1-103 7.3.1-104 7.3.1-7006-unstable; do
  stage=$work/$release
- driver=uke${release//./_}
+ audio_release=${release%-unstable}
+ [[ $release != *-unstable ]] || audio_release+=u
+ driver=uke${audio_release//./_}
  mkdir "$stage"
  bash "$root/src/audio/desktop/install-policy.sh" "$stage" "$release"
  conf=$stage/usr/share/alsa/ucm2/Qualcomm/$driver

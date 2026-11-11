@@ -3,6 +3,8 @@
 #ifndef UKE_CAMCC_SM7675_CLOCKS_H
 #define UKE_CAMCC_SM7675_CLOCKS_H
 
+#include "camcc-sm7675-crm-clock.h"
+
 struct cam_cc_clock {
 	struct clk_regmap *clock;
 	const struct clk_ops *native;
@@ -10,6 +12,7 @@ struct cam_cc_clock {
 	struct clk_init_data init;
 	bool prepared;
 	bool voted;
+	struct cam_cc_crm_clock *crm;
 	int (*disable_check)(struct cam_cc_clock *clock);
 };
 
@@ -59,7 +62,11 @@ static int cam_cc_clock_prepare(struct clk_hw *hw)
 			return cam_cc_clock_fail(ret, CAM_CC_POWER_RAILS);
 		clock->voted = true;
 	}
-	if (clock->native->prepare && clock->native->prepare != clk_prepare_regmap) {
+	if (clock->crm) {
+		ret = cam_cc_crm_clock_prepare(clock->crm);
+		if (ret)
+			return cam_cc_clock_fail(ret, 0);
+	} else if (clock->native->prepare && clock->native->prepare != clk_prepare_regmap) {
 		ret = clock->native->prepare(hw);
 		if (ret)
 			/* Calibration may have started; retain its voltage and resources. */
@@ -80,7 +87,13 @@ static void cam_cc_clock_unprepare(struct clk_hw *hw)
 		cam_cc_clock_fail(-EUCLEAN, 0);
 		return;
 	}
-	if (clock->native->unprepare && clock->native->unprepare != clk_unprepare_regmap)
+	if (clock->crm) {
+		ret = cam_cc_crm_clock_unprepare(clock->crm);
+		if (ret) {
+			cam_cc_clock_fail(ret, 0);
+			return;
+		}
+	} else if (clock->native->unprepare && clock->native->unprepare != clk_unprepare_regmap)
 		clock->native->unprepare(hw);
 	if (READ_ONCE(cam_cc_power.fault))
 		return;
@@ -105,23 +118,44 @@ static int cam_cc_clock_pre_rate(struct clk_hw *hw, unsigned long old_rate,
 
 	if (ret)
 		return ret;
-	if (!clock->clock->vdd_data.rate_max)
-		return 0;
-	ret = clk_find_vdd_level(hw, &clock->clock->vdd_data, new_rate);
-	if (ret < 0)
-		return ret;
-	ret = clk_pre_change_regmap(hw, old_rate, new_rate);
-	return ret ? cam_cc_clock_fail(ret, CAM_CC_POWER_RAILS) : 0;
+	if (clock->crm) {
+		ret = cam_cc_crm_clock_validate(clock->crm, old_rate, new_rate);
+		if (ret)
+			return ret == -ERANGE ? ret : cam_cc_clock_fail(ret, 0);
+	}
+	if (clock->clock->vdd_data.rate_max) {
+		ret = clk_find_vdd_level(hw, &clock->clock->vdd_data, new_rate);
+		if (ret < 0)
+			return ret;
+		ret = clk_pre_change_regmap(hw, old_rate, new_rate);
+		if (ret)
+			return cam_cc_clock_fail(ret, CAM_CC_POWER_RAILS);
+	}
+	if (clock->crm) {
+		ret = cam_cc_crm_clock_pre(clock->crm, old_rate, new_rate);
+		if (ret)
+			return cam_cc_clock_fail(ret, 0);
+	}
+	return 0;
 }
 
 static int cam_cc_clock_post_rate(struct clk_hw *hw, unsigned long old_rate,
 				  unsigned long new_rate)
 {
 	struct cam_cc_clock *clock = cam_cc_clock_find(hw);
+	bool voltage;
 	int ret = cam_cc_clock_access(clock);
 
 	if (ret)
 		return ret;
+	if (clock->crm) {
+		/* Restore an aborted acknowledged vote before reducing its voltage. */
+		ret = cam_cc_crm_clock_post(clock->crm, old_rate, new_rate, &voltage);
+		if (ret)
+			return cam_cc_clock_fail(ret, 0);
+		if (!voltage)
+			return 0;
+	}
 	if (!clock->clock->vdd_data.rate_max)
 		return 0;
 	ret = clk_post_change_regmap(hw, old_rate, new_rate);
@@ -135,6 +169,8 @@ static int cam_cc_clock_enable(struct clk_hw *hw)
 
 	if (ret)
 		return ret;
+	if (clock->crm)
+		return cam_cc_clock_fail(-EOPNOTSUPP, 0);
 	if (!clock->prepared)
 		return cam_cc_clock_fail(-EUCLEAN, 0);
 	ret = clock->native->enable(hw);
@@ -148,6 +184,10 @@ static void cam_cc_clock_disable(struct clk_hw *hw)
 
 	if (cam_cc_clock_access(clock))
 		return;
+	if (clock->crm) {
+		cam_cc_clock_fail(-EOPNOTSUPP, 0);
+		return;
+	}
 	if (!clock->prepared) {
 		cam_cc_clock_fail(-EUCLEAN, 0);
 		return;
@@ -170,7 +210,8 @@ static int cam_cc_clock_set_rate(struct clk_hw *hw, unsigned long rate,
 
 	if (ret)
 		return ret;
-	ret = clock->native->set_rate(hw, rate, parent_rate);
+	ret = clock->crm ? cam_cc_crm_clock_commit(clock->crm, rate) :
+		clock->native->set_rate(hw, rate, parent_rate);
 	return ret ? cam_cc_clock_fail(ret, 0) : 0;
 }
 
@@ -181,6 +222,8 @@ static int cam_cc_clock_set_parent(struct clk_hw *hw, u8 index)
 
 	if (ret)
 		return ret;
+	if (clock->crm)
+		return cam_cc_clock_fail(-EOPNOTSUPP, 0);
 	ret = clock->native->set_parent(hw, index);
 	return ret ? cam_cc_clock_fail(ret, 0) : 0;
 }
@@ -193,6 +236,8 @@ static int cam_cc_clock_set_rate_parent(struct clk_hw *hw, unsigned long rate,
 
 	if (ret)
 		return ret;
+	if (clock->crm)
+		return cam_cc_clock_fail(-EOPNOTSUPP, 0);
 	ret = clock->native->set_rate_and_parent(hw, rate, parent_rate, index);
 	return ret ? cam_cc_clock_fail(ret, 0) : 0;
 }

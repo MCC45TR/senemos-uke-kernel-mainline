@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete12212 plus protected DMA supplier composition after actual native overlay; proposed source check27, not full reservation",
+  "parent_build": 11270769,
+  "parent_source": "7b3b8a8079ac21d1fd5db9f74bb508c4290da0ef",
+  "parent_srpm_sha256": "80b8340e18cd4abbd5bc40a5696c40264fd5b84aedf31fbf5e76824b020363d0",
+  "proposed_full_revision": 12213,
+  "full_revision_reserved": false,
+  "source_check_release": 27,
+  "source_assets": [
+    {
+      "path": "src/audio/0008-arm64-uke-oob-after-native.patch",
+      "sha256": "b4a87b327b31945eab47a12a72a5e29617fb0315b7ff57888bb48070ff2ff62e"
+    },
+    {
+      "path": "src/audio/apply-oob-composed731.sh",
+      "sha256": "f6d13ea1bdc156707a1cc3dc94b77b46cea1f4554c683f29c50ea74f339f1735"
+    },
+    {
+      "path": "tests/audio-oob-entry.c",
+      "sha256": "58224a37afe791d30c678781b14a3b9bb42a71a520a68b5e2bc5d45cefab7aa5"
+    },
+    {
+      "path": "tests/audio-oob-entry.sh",
+      "sha256": "d3ce92c0c41870f8a029af28e91940db8a1d5e6d23d973e44264ea878610117c"
+    },
+    {
+      "path": "tests/audio-oob-entry-overlay.dts",
+      "sha256": "2587fe8f3cfb99ad4c6409081eb197d19675c621cb1223eab57d811a3aad8403"
+    },
+    {
+      "path": "packaging/native/copr-migration-oob-final-dt731.sh",
+      "sha256": "d7b4651d740534701a4f79a39685fc77a86226c25457c9252bdae3ff41f289f8"
+    }
+  ],
+  "observed12212": {
+    "matching_a_boot": true,
+    "raw_b12211_preserved": true,
+    "automatic_staging": true,
+    "rollback_preference": "off preserved",
+    "alsa_card_count": 0,
+    "live_dma_supplier_node_present": false,
+    "protected_stream_attempted": false
+  },
+  "change": "Remove early no-op; reopen packed buffer and compose same supplier after successful native selection; preserve publication refusal",
+  "transport_changed": false,
+  "protection_changed": false,
+  "parameters_changed": false,
+  "hardware_resources_changed": false,
+  "local_compilation": false,
+  "physical_acceptance": false,
+  "test_scope": "Actual production entry with controlled real-libfdt base/native overlay boundaries; not a full DPU or hardware fixture",
+  "required_modes": [
+    "gcc/plain",
+    "gcc/asan-ubsan",
+    "clang/plain",
+    "clang/asan-ubsan"
+  ],
+  "required_controls": [
+    "Original entry missing supplier",
+    "Actual entry restored-capacity mutant"
+  ],
+  "required_native_objects": [
+    "arch/arm64/kernel/uke-abl.o",
+    "drivers/soc/qcom/uke-audio-config-memory.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o",
+    "drivers/misc/fastrpc.o"
+  ],
+  "prior_source_checks": [
+    {
+      "release": 25,
+      "copr_build": 11271046,
+      "source": "17b5b4e3fb94c4c580b462e94b972cb6e9a66a7b",
+      "state": "failed164s in preparation",
+      "builder_log_sha256": "f037c6b698b94f5130908c31f60ebcd32f9f7b5e87160a64e8857c26d4e6a3fd",
+      "baseline_backend_lease_dt_modes_passed": 4,
+      "baseline_startup_modes_passed": 8,
+      "exact_forward_inverse_entry_patch_passed": true,
+      "actual_new_entry_modes_passed": 0,
+      "actual_aarch64_objects_built": false,
+      "failure": "Extractor started at the forward declaration and copied unrelated preprocessor text before the first function body",
+      "correction": "Require the complete function-definition line ending in closing parenthesis; exclude semicolon declarations",
+      "production_patch_changed": false
+    },
+    {
+      "release": 26,
+      "copr_build": 11271075,
+      "source": "4f10cebb71dbbfb796b9f3f714cda408cb9f5e21",
+      "state": "failed166s in preparation",
+      "builder_log_sha256": "f37e057307b431ee5ebca2ba175b3a5fd219506159f0281dbfbe72eda6cd7deb",
+      "baseline_backend_lease_dt_modes_passed": 4,
+      "baseline_startup_modes_passed": 8,
+      "exact_forward_inverse_entry_patch_passed": true,
+      "actual_new_entry_modes_passed": 0,
+      "actual_aarch64_objects_built": false,
+      "failure": "Fixture adds a deliberately preexisting supplier to its already packed input without reopening capacity",
+      "correction": "Restore the private fixture input capacity before adding that negative node; print node-construction error details",
+      "production_patch_changed": false
+    }
+  ]
+}

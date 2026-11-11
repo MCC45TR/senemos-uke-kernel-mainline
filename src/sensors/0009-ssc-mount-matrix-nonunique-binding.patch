@@ -1,0 +1,20 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] dt-bindings: Uke SSC: allow repeated mount-matrix coefficients
+
+A mount matrix has positional entries and legitimately repeats zero and one.
+The generic string-array type requires unique values. Use its non-unique
+counterpart for this property only, retaining the nine-element cardinality
+and acceleration-only admission. Do not change the matrix data or other
+string-array properties.
+
+--- a/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
++++ b/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
+@@ -51,7 +51,7 @@
+         description: Alternative registry model names; no fitted identity claim.
+       mount-matrix:
+         description: Rotation from firmware-reported acceleration to the native panel axes.
+-        $ref: /schemas/types.yaml#/definitions/string-array
++        $ref: /schemas/types.yaml#/definitions/non-unique-string-array
+         minItems: 9
+         maxItems: 9
+     allOf:

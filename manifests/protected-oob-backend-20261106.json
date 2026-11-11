@@ -1,0 +1,210 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete12211 protected OOB DMA/response backend and qualified FastRPC contribution; source/native check only",
+  "parent_build": 11269695,
+  "parent_source": "dba56903ddba878aba8db22d87a9ab130ef1e1db",
+  "parent_srpm_sha256": "b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf",
+  "core_check": {
+    "copr_build": 11270347,
+    "source": "e08ee5a4c2b486aeb1b957c89daf11df241a82b7",
+    "receipt_sha256": "80df21df9d76d34624d2c6be00dff8aed5f052c12648f89b4903f24072b5feb2",
+    "native_bridge_qualified": true,
+    "core_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d"
+  },
+  "planned_check_release": 24,
+  "planned_full_revision": 12212,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0007-fs19xx-protected-oob.patch",
+      "sha256": "d018b0e616205429d6d48974862ee0eba26fc7a8462a77db446f56029bbf719a"
+    },
+    {
+      "path": "src/audio/uke-audio-config-memory.c",
+      "sha256": "64f5d892285d2b32425f3b446b9c1024335a73ceb0604b52ae6e83f8bfc1d447"
+    },
+    {
+      "path": "src/audio/uke-audio-config-memory.h",
+      "sha256": "21a315ae322b90f55caec9ce58d982cee94a12d9e4607d7c508bebf56ad3db28"
+    },
+    {
+      "path": "src/audio/uke-audio-config-dt.h",
+      "sha256": "375c5b3b867136d6d6b77820e1b5cfb511a219b36255b35e168a89b64b91d41b"
+    },
+    {
+      "path": "src/audio/xiaomi,uke-audio-config-memory.yaml",
+      "sha256": "1f140bc6b926d5f6a60f06d94b1ae3b177dda73963ab402d39f74b0b60c58a82"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-oob-backend.c",
+      "sha256": "785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-oob-backend.h",
+      "sha256": "995e8e33e0d523a0ad510e2b2db77e2c1f4a90cf4609a5cc88f3b1cce9264717"
+    },
+    {
+      "path": "src/audio/apply-oob-backend731.sh",
+      "sha256": "d6b477759b107e1a067f497e279d556bc2f6081e36294edf41d418b6b7cf523d"
+    },
+    {
+      "path": "packaging/native/check-oob-runtime731.sh",
+      "sha256": "f222d2ee7b45f5c55fbf684f6951d4c4fe5dc0cbd1b35ae151574a6c2a5064e7"
+    },
+    {
+      "path": "packaging/native/check-oob-objects731.sh",
+      "sha256": "621fdaf37551428af9f4bbd12009192a7d118bde46687be3ccdf4563a68568e5"
+    },
+    {
+      "path": "packaging/native/copr-migration-oob-backend731.sh",
+      "sha256": "989a9a754f2f5102445ea45f6507b81db9f0d4015430e40c442efae95b2dc5ed"
+    },
+    {
+      "path": "tests/audio-fs19xx-oob-backend.c",
+      "sha256": "a126999e270656459ab9a0b9334511ff0215b5720b843da979dd54e6cc83ae6f"
+    },
+    {
+      "path": "tests/audio-fs19xx-oob-backend.sh",
+      "sha256": "c412602beaa0ea2fe639042657e2fd03532b45b5074ec4db294996f574a96886"
+    },
+    {
+      "path": "tests/audio-config-memory.c",
+      "sha256": "faaa2a2c8f2c50c73ca51a145df51a6e3bc2f4e097f93e7bc65197271e728bae"
+    },
+    {
+      "path": "tests/audio-config-dt.c",
+      "sha256": "31f8b6476cce521d3d85d81fbefd9653c3631bbaefadac7848998999073b61e9"
+    },
+    {
+      "path": "tests/audio-config-dt.sh",
+      "sha256": "82b6a5c3ccd31626f6054a1a421f5292164f73133e721ea2fb4e5cca3e5c32b4"
+    },
+    {
+      "path": "tests/audio-oob-startup.c",
+      "sha256": "6c649f8102b27721688ad401f13bc4b959c5f23ffb05faaab46f2dae8d1b862e"
+    },
+    {
+      "path": "tests/audio-controls-only-oob731.sh",
+      "sha256": "c1b822217d345161458e786620f9a7dfef0e11c640b9b04eacfabeffc18cc232"
+    }
+  ],
+  "runtime_preimage_sha256": "8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57",
+  "runtime_postimage_sha256": "58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3",
+  "native_backend_admitted": false,
+  "device_installation": false,
+  "physical_activation": false,
+  "physical_acceptance": false,
+  "parameter_records_unchanged": true,
+  "speaker_gain_ceiling": 223,
+  "permanent_provider": "builtin ARCH_QCOM static root node; bind attributes suppressed, no remove path",
+  "dma_context": "Exact frontend SIDs1001/80+1061/0, same runtime group/domain, coherent32-bit DMA, firstSID&0xf in MSW",
+  "ambiguous_ownership": "Erase and retain pages, IOVA, client/port/device/module ownership until restart; refuse reuse",
+  "new_memory_carveout": false,
+  "physical_dma_fallback": false,
+  "dt_source": "Uke fitted frontend contexts copied without modification",
+  "response_checks": [
+    "source/destination domains",
+    "source/destination ports",
+    "nonrecycled per-boot token",
+    "opcode and echoed opcode",
+    "exact header/payload lengths",
+    "nonzero MAP handle",
+    "shared per-module status",
+    "unchanged whole private parameter"
+  ],
+  "cdsp_contribution": {
+    "source": "0f5eb8e6d2f2bae951a50d93f029762ba0aec443",
+    "metadata": "aa2ff4a4203be092a63e0cf9530ddd8f207c83b2",
+    "check": 11270377,
+    "receipt_sha256": "ce2fb1c38c79e81151949fd9c55b4db1eafa798b53a36fdaed20bd1e5be75514",
+    "source_manifest": "manifests/cdsp-dma-admission-20261106.json",
+    "runtime_added": false,
+    "policies_changed": false
+  },
+  "research": [
+    {
+      "repo": "AudioReach/audioreach-kernel",
+      "commit": "6b1abf0c7fb0b8931575f4ef1d1f0926cdc5714f",
+      "files": [
+        "audioreach-driver/q6apm_audio_mem.c",
+        "audioreach-driver/q6apm_audio_mem_cma.c"
+      ],
+      "license": "GPL-2.0",
+      "use": "SID/DMA and ownership comparison; no CMA/physical fallback ported"
+    },
+    {
+      "repo": "gregkh/linux",
+      "ref": "v7.3.1",
+      "files": [
+        "drivers/iommu/arm/arm-smmu/arm-smmu.c",
+        "include/linux/iommu.h",
+        "sound/soc/qcom/qdsp6/q6apm-dai.c",
+        "include/linux/soc/qcom/apr.h"
+      ],
+      "use": "Shared stream groups, DMA domains, native address encoding and GPR framing"
+    }
+  ],
+  "prior_source_check": {
+    "release": 23,
+    "copr_build": 11270678,
+    "source": "5a3016be976e4c34875bc74bed604fcb388aa4f6",
+    "state": "failed270s before native objects",
+    "backend_peer_modes_passed": 4,
+    "backend_assertion_mutants_passed": 8,
+    "dt_modes_passed": 4,
+    "startup_protected_and_controls_modes_passed": 8,
+    "failure": "Inherited graph fixture extracted new initialization without a readiness-provider mock",
+    "correction": "Use a derived admission fixture with only ready-provider mock; preserve original script and all assertions",
+    "production_code_changed_by_correction": false
+  },
+  "prior_source_checks": [
+    {
+      "release": 21,
+      "copr_build": 11270572,
+      "source": "a6a5310c494721f7a72a1847c4e1230605dad87c",
+      "state": "failed168s in preparation before native objects",
+      "backend_peer_modes_passed": 3,
+      "backend_assertion_mutants_passed": 8,
+      "core_modes_passed": 4,
+      "fastrpc_modes_passed": 4,
+      "failure": "Clang synthetic FDT setup assertion; buffer lacked explicit required8-byte alignment",
+      "correction": "Explicitly align fixture like the native ABL buffer; report libfdt setup return/alignment",
+      "production_backend_dma_runtime_dt_bytes_changed": false
+    },
+    {
+      "release": 22,
+      "copr_build": 11270597,
+      "source": "d67cb05e0f78920676d003897e3f6f237e77817a",
+      "state": "failed246s at inherited prepared gate before native objects",
+      "backend_peer_modes_passed": 4,
+      "backend_assertion_mutants_passed": 8,
+      "dt_modes_passed": 4,
+      "core_modes_passed": 4,
+      "fastrpc_modes_passed": 4,
+      "failure": "Third active runtime comparator in check-camera-next731.sh still required the original whole runtime",
+      "correction": "Extend all three active comparisons to the same exact preimage/postimage guard; retain complete hashes",
+      "production_backend_dma_runtime_dt_bytes_changed": false
+    }
+  ],
+  "active_runtime_guard_comparisons": 3,
+  "native_supplier_readiness_before_card_probe": true,
+  "source23_changes": [
+    "Extend the third active exact-runtime comparison",
+    "Defer admitted APM probe until the permanent DMA supplier is ready, without depending on the frontend",
+    "Require the same-source successful signed source23 receipt before full12212 construction, and audit provider linkage"
+  ],
+  "full_mode_requires_same_source_native_receipt": true,
+  "full_mode_requires_trusted_receipt_sha256": true,
+  "inherited_fixture_adaptation": {
+    "original_path": "tests/audio-controls-only-contract.sh",
+    "original_sha256": "91eee9eae001c10f6a19414d24fa5c448ca8e46b10f91fa251f15491aaa276d7",
+    "derived_path": "tests/audio-controls-only-oob731.sh",
+    "original_preserved": true,
+    "assertions_unchanged": true,
+    "scope": "Ready supplier mock only; actual defer/fault behavior remains covered by independent startup and lease tests"
+  },
+  "source24_changes": [
+    "Preserve the inherited graph fixture and select a derived copy with the new provider readiness mock",
+    "Fresh check24 and same-source full24 receipt gate; production wire/runtime/provider/DT unchanged from23"
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Following full cumulative unstable camera candidate; both complete fitted calibrated cameras and focus remain required",
+  "kernel_parent": {
+    "copr_build": 11262313,
+    "source_commit": "45d8355e366e6b75e43f441ca99b517302adf522",
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11262313/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203.src.rpm",
+    "sha256": "db31b8a612b3caf5aedbfb681eb1140688072cb6dffaa104946877c65d341b57",
+    "rpm_nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12203"
+  },
+  "combined_source_check": 11263219,
+  "ssc": {
+    "admission": "qualified",
+    "source_commit": "52ece641276acda0c691db55f6cacd659be67287",
+    "copr_build": 11263123,
+    "layer": 2,
+    "superseded": {
+      "source_commit": "0dcfd5bcd42867dbf15853fa20e9e64b18ce136e",
+      "copr_build": 11263021,
+      "reason": "uncovered fault130/recovery128/ACK stale sample; withdrawn"
+    }
+  },
+  "layers": [
+    {
+      "role": "governor",
+      "source_commit": "faca9d65778fda479d08df41785873d40c09e80f",
+      "copr_build": 11262345
+    },
+    {
+      "role": "observer",
+      "source_commit": "13fb0ff522531924c0e96f81cef59d7c64b93eb8",
+      "copr_build": 11262314
+    },
+    {
+      "role": "pogo",
+      "source_commit": "e9867405d0773065880863ea2df0dbd6242f5894",
+      "copr_build": 11262381
+    },
+    {
+      "role": "ssc",
+      "source_commit": "52ece641276acda0c691db55f6cacd659be67287",
+      "copr_build": 11263123
+    },
+    {
+      "role": "inclusion",
+      "source_commit": "33a5dc574401b67472e9bea65e5ff7084635f601",
+      "copr_build": 11263017
+    },
+    {
+      "role": "inclusion_spec",
+      "source_commit": "096e6c551162331c6bf0bfe2dbb71dd6cac42277",
+      "qualification": "pure spec edit/repeat/refusal; runtime admission unchanged"
+    }
+  ],
+  "required_checks": [
+    {
+      "copr_build": 11262313,
+      "source_commit": "45d8355e366e6b75e43f441ca99b517302adf522",
+      "feature": "full running production baseline"
+    },
+    {
+      "copr_build": 11262989,
+      "source_commit": "772775e39f631156d8161cdf96f5e5b37d532365",
+      "feature": "qualified three-layer governor/observer/pogo union"
+    },
+    {
+      "copr_build": 11263019,
+      "source_commit": "933cdd27eacbb38278c89e8fe345ad85cd391153",
+      "feature": "exact GCC camera gates and actual probe/object"
+    },
+    {
+      "copr_build": 11263017,
+      "source_commit": "33a5dc574401b67472e9bea65e5ff7084635f601",
+      "feature": "speaker source and observer inclusion guards"
+    },
+    {
+      "copr_build": 11263123,
+      "source_commit": "52ece641276acda0c691db55f6cacd659be67287",
+      "feature": "corrected acknowledged SSC staging and fault/recovery invalidation"
+    },
+    {
+      "copr_build": 11263153,
+      "source_commit": "6d1bac6ae7da5edb9aa3a8e85732b7eef2b9bef1",
+      "feature": "qualified combined governor/observer/pogo/corrected SSC/camera GCC objects"
+    },
+    {
+      "copr_build": 11263219,
+      "source_commit": "b7f83a1064a9fb610672a5c4db87f7d41a645d17",
+      "feature": "qualified common production assembly, six roles and camera GCC"
+    }
+  ],
+  "assets": [
+    {
+      "path": "src/camera/provider/0006-gcc-cliffs-camera-config.patch",
+      "sha256": "a1d8a4c33aabbbf297913e686922cc69e3573cd1ae5ddc7bb3d54446220d3128"
+    },
+    {
+      "path": "src/camera/provider/apply-gcc-config731.sh",
+      "sha256": "12b47a18437375190cb5276aedaa31fe8982b935f801e0c10a55a6a029af3451"
+    },
+    {
+      "path": "tests/camera-gcc-config731-contract.sh",
+      "sha256": "858bc68a3c631b83967e1eac91d36420d902aa6e6fcd33ba27226a08a4d88694"
+    },
+    {
+      "path": "tests/camera-gcc-config731-object.sh",
+      "sha256": "d5334e6849969f46c21508dc732d7c945e81b6aee1b601051e208b87f50d8983"
+    },
+    {
+      "path": "docs/CAMERA-GCC-CONFIG731.md",
+      "sha256": "d898510df31e64d1bcedea85c99330c7750f5cfbd5270af172a7867a5fc8c4fe"
+    },
+    {
+      "path": "manifests/camera-gcc-config731-20261105.json",
+      "sha256": "599f2641dbd66072f26bc79bee66eb3122a475b52a0242993c50daa502783d25"
+    },
+    {
+      "path": "packaging/native/check-camera-next731.sh",
+      "sha256": "21349b804e8719b96ba2fbf845f73907104c6fb4a57fbf258b969874505520a8"
+    }
+  ],
+  "physical_acceptance": false,
+  "calibration_consumed": false,
+  "rear_focus": false,
+  "runtime_input_freeze": "2026-11-05; complete12203 plus six role inputs and qualified camera GCC; later new extensions enter following freeze",
+  "deferred_new_extensions": [
+    {
+      "feature": "Kernel Manager resource configuration",
+      "source_commit": "4a590c694a9a91a0ba85f8aeaa60f2ef7aedbcf8",
+      "copr_build": 11263166,
+      "state_at_freeze": "running; not yet qualified",
+      "disposition": "following candidate after this frozen camera correction; preserve all existing kernel features/config",
+      "observed_result": "11263166 failed after freeze; no qualified production input"
+    }
+  ],
+  "combined_source_check_source": "b7f83a1064a9fb610672a5c4db87f7d41a645d17",
+  "combined_source_check_receipt_sha256": "1577565f5978d4bfbe125857790e636e28d3cd0c8cbd43b544ab594a78e02b83"
+}

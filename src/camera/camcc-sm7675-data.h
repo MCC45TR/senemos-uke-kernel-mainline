@@ -3463,10 +3463,11 @@ static struct clk_alpha_pll *cam_cc_sm7675_plls[] = {
 };
 
 static u32 cam_cc_sm7675_critical_cbcrs[] = {
+	/* Preserve the Uke OEM transport bootstrap order (camcc-cliffs.c). */
+	0x13318, /* CAM_CC_DRV_AHB_CLK */
+	0x13314, /* CAM_CC_DRV_XO_CLK */
 	0x132ec, /* CAM_CC_GDSC_CLK */
 	0x13308, /* CAM_CC_SLEEP_CLK */
-	0x13314, /* CAM_CC_DRV_XO_CLK */
-	0x13318, /* CAM_CC_DRV_AHB_CLK */
 };
 
 #define CAM_CC_SM7675_REGMAP_FORMAT \

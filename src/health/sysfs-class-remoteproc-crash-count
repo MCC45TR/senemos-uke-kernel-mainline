@@ -1,0 +1,20 @@
+What:           /sys/class/remoteproc/remoteproc*/crash_count
+Date:           November 2026
+Contact:        Uke Linux contributors
+Description:
+                Read-only unsigned decimal count of crashes handled for this
+                registered remote processor, followed by a newline. The count
+                is retained across automatic firmware recovery and ordinary
+                stop/start. It is reset when the remoteproc object is recreated
+                and follows the existing unsigned 32-bit counter's wraparound.
+
+                Reading this attribute does not query firmware, start a remote
+                processor, change recovery policy or wait for a DSP operation.
+                It is a snapshot, not an atomic snapshot of state and count.
+
+                Event consumers should subscribe to remoteproc notifications
+                before reading the initial count. The existing crash change
+                event remains the event source; this attribute has no timer,
+                acknowledgement, writable reset or independent poll protocol.
+                A missing attribute on an older kernel means history is unknown,
+                rather than proving that no crash occurred.

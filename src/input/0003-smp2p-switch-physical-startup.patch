@@ -1,0 +1,76 @@
+From: Uke contributors
+Subject: [PATCH] Input: sample an optional board GPIO for initial SMP2P state
+
+Read only a declared input when firmware has no valid initial event pair.
+Preserve its direction, require two matching samples and release the line.
+Normal remote IRQ, wake and bounded retry semantics remain unchanged.
+
+--- a/drivers/input/misc/qcom-smp2p-switch.c
++++ b/drivers/input/misc/qcom-smp2p-switch.c
+@@ -1,5 +1,8 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Paired Qualcomm SMP2P switch events; physical GPIOs remain remote-owned. */
++/* Paired SMP2P events, with an optional physical initial-level sample. */
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+@@ -44,13 +47,55 @@
+ 	return closed;
+ }
+ 
++/* Firmware may leave its paired event entry at00 until the cover moves.
++ * Borrow the board-declared physical input only for this initial sample;
++ * retain its direction and release it before reporting. IRQs stay remote.
++ */
++static int smp2p_switch_read_initial(struct smp2p_switch *sw)
++{
++	struct gpio_desc *gpio;
++	int state, next, ret;
++
++	state = smp2p_switch_read(sw);
++	if (state >= 0 || !IS_ENABLED(CONFIG_GPIOLIB) ||
++	    !device_property_present(sw->dev, "state-gpios"))
++		return state;
++	gpio = gpiod_get(sw->dev, "state", GPIOD_ASIS);
++	if (IS_ERR(gpio))
++		return PTR_ERR(gpio);
++	if (!gpio)
++		return -ENODEV;
++	ret = gpiod_get_direction(gpio);
++	if (ret != 1) {
++		if (!ret)
++			ret = -EINVAL;
++		goto put;
++	}
++	state = gpiod_get_value_cansleep(gpio);
++	if (state < 0) {
++		ret = state;
++		goto put;
++	}
++	usleep_range(1000, 2000);
++	next = gpiod_get_value_cansleep(gpio);
++	if (next < 0)
++		ret = next;
++	else if (state > 1 || next > 1)
++		ret = -EIO;
++	else
++		ret = state == next ? state : -EAGAIN;
++put:
++	gpiod_put(gpio);
++	return ret;
++}
++
+ /* Serialize asynchronous initial reads with the paired interrupt handlers. */
+ static int smp2p_switch_report(struct smp2p_switch *sw, int irq)
+ {
+ 	int state;
+ 
+ 	mutex_lock(&sw->lock);
+-	state = smp2p_switch_read(sw);
++	state = irq ? smp2p_switch_read(sw) : smp2p_switch_read_initial(sw);
+ 	if (state >= 0) {
+ 		if (irq == sw->open_irq && !state && device_may_wakeup(sw->dev))
+ 			pm_wakeup_event(sw->dev, 500);

@@ -1,0 +1,67 @@
+diff --git a/drivers/iio/common/uke-ssc/uke-ssc-iio.c b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+index 90136b97..ecb3542b 100644
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -40,6 +40,10 @@ enum ssc_stream_user {
+ 	SSC_STREAM_DIRECT = 1U,
+ 	SSC_STREAM_BUFFER = 2U,
+ 	SSC_STREAM_DUAL = 4U,
++	/* Auxiliary ownership is per SUID. Only ALS uses DUAL; only the
++	 * distinct physical proximity SUID can use the input consumer.
++	 */
++	SSC_STREAM_INPUT = SSC_STREAM_DUAL,
+ };
+ 
+ enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE };
+@@ -68,6 +72,8 @@ struct ssc_sensor {
+ 	struct ssc_controller *controller;
+ 	const struct ssc_description *description;
+ 	struct iio_dev *iio;
++	struct input_dev *input;
++	bool input_registered, input_open;
+ 	struct iio_chan_spec channel[4];
+ 	struct uke_ssc_suid suid;
+ 	struct uke_ssc_attributes attributes;
+@@ -411,6 +417,7 @@ static void ssc_client_reset(struct qmi_handle *qmi)
+ }
+ 
+ static void ssc_dual_feed_locked(struct ssc_sensor *s);
++static void ssc_proximity_feed_locked(struct ssc_sensor *s);
+ 
+ /* The caller holds c->state; values have passed the sensor's exact API decoder. */
+ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[3], u64 ticks)
+@@ -430,6 +437,7 @@ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[3], u64 tic
+ 	}
+ 	complete(&s->sample_done);
+ 	ssc_dual_feed_locked(s);
++	ssc_proximity_feed_locked(s);
+ 	/* Coalesce acquisition events in the existing serialized worker. It
+ 	 * performs no new request when the demanded streams are unchanged.
+ 	 */
+@@ -950,6 +958,8 @@ static int ssc_stream_put(struct ssc_sensor *s, unsigned int user)
+ 	return remaining ? 0 : ssc_stop(s);
+ }
+ 
++#include "uke-ssc-proximity-input.h"
++
+ static int ssc_read_raw(struct iio_dev *iio, const struct iio_chan_spec *channel,
+ 			int *val, int *val2, long mask)
+ {
+@@ -1203,6 +1213,9 @@ static void ssc_reconcile(struct work_struct *work)
+ 	ssc_dual_reconcile(c);
+ out:
+ 	mutex_unlock(&c->control);
++	ret = ssc_proximity_register(c);
++	if (ret)
++		dev_warn_ratelimited(c->dev, "Proximity input registration failed: %d\n", ret);
+ }
+ 
+ static const struct iio_mount_matrix *
+@@ -1789,6 +1802,7 @@ static void ssc_shutdown(struct ssc_controller *c)
+ 	ssc_close_client(c);
+ 	mutex_unlock(&c->control);
+ 	/* Never unregister while holding control: a reader may be waiting for it. */
++	ssc_proximity_unregister(c);
+ 	if (c->dual.registered)
+ 		iio_device_unregister(c->dual.iio);
+ 	for (i = 0; i < SSC_SENSOR_COUNT; i++)

@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11302747,
+  "parent_full_release": 19,
+  "parent_source": "69bc24d5130de702292e463d18c231a1c14d10c5",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11302747/senemos-uke-linux-kernel-mainline-unstable-7.3.3-19.src.rpm",
+  "parent_srpm_sha256": "a10851a837067521b1225fe5ffa68c5d34a3ae61b38e7341f2cb6394d4b809cc",
+  "parent_spec_sha256": "786fdcdedef553ba5fd9a0185c2ff51bb41a22c720074a49f783bfaca287986e",
+  "retained_parent_fields": 753,
+  "source_check_release": 89,
+  "source_units": [
+    {
+      "path": "drivers/power/supply/qcom_battmgr.c",
+      "before_sha256": "d9d2c5165342870fffddd2a2aa5edfa4cf4886bad158760b5eb1fb5a5e4802c2",
+      "after_sha256": "cac2ca201e5f2f33bf5474a3cd83130c3fca2fcb5af510c8259f2e823e697c7e"
+    }
+  ],
+  "patches": [
+    "patches/7.3.0/0122-uke-battery-status-notification.patch",
+    "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch"
+  ],
+  "native_qualified": false,
+  "physical_cutoff_accepted": false,
+  "new_charge_set_operations": 0,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "protected_gain": 223,
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0122-uke-battery-status-notification.patch",
+      "sha256": "9ae02caf93213fa8bcc7abc0862fcc18c2361ce14d6f640c90aee0f95b59f0c3"
+    },
+    {
+      "path": "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch",
+      "sha256": "6e953578edaed6e0e793f1c7b4c6157a2b7ab03a1c8ff987461898e5806b9ede"
+    },
+    {
+      "path": "tests/battery-event-health.sh",
+      "sha256": "7d944bf638acbf2fdba47d51e2a24afdf7c7b73f9a5f6121456449652bc455b7"
+    },
+    {
+      "path": "docs/BATTERY-EVENT-HEALTH.md",
+      "sha256": "8aeb7a4a947526e926972a58196808340a14bb6af26207d855b2385c778ccb9e"
+    },
+    {
+      "path": "packaging/native/check-battery-event-health733.sh",
+      "sha256": "5c6079b6488bf78fbdea601523871ea0d138cd279191a692547472946d1d3329"
+    },
+    {
+      "path": "packaging/native/copr-battery-event-health733.sh",
+      "sha256": "6e34ae0aba813f4e8fcb59637ee3d4f4c405f272bfaf9308d1d704f01dc67dea"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0122-uke-battery-status-notification.patch",
+    "patches/7.3.0/0124-uke-reported-zero-cycle-count.patch",
+    "tests/battery-event-health.sh",
+    "docs/BATTERY-EVENT-HEALTH.md",
+    "packaging/native/check-battery-event-health733.sh",
+    "manifests/battery-event-health-20261111.json"
+  ]
+}

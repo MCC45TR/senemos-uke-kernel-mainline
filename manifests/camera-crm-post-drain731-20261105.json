@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Adopt independently reproduced CRM post-drain correction before provider activation",
+  "status": "Post-drain correction source/native-object qualified; managed provider integration remains pending",
+  "parent": {
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+    "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+    "rpm_nvr": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204",
+    "copr_build": 11263248,
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f"
+  },
+  "required_checks": [
+    11263248,
+    11264022,
+    11264111,
+    11264217,
+    11264495
+  ],
+  "inputs": [
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-transport.h",
+      "sha256": "aed38b958f98312b5cd4cf6678d37c49f223840126468710589b535df8bd24ed"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-lut.h",
+      "sha256": "db49bf4213a2b837212acc064e185a431de9ec43e692c346e533f43c19108049"
+    },
+    {
+      "path": "tests/camera-crm-core-contract.sh",
+      "sha256": "66f12343100ad7380b8245bc9264c52240fb5e9809fdb046337f7231ed437cde"
+    },
+    {
+      "path": "tests/camera-crm-backend-contract.sh",
+      "sha256": "f38a95b17a0d94ceace53c38f278f40e9b28c4a2ee161ad51fde171564f05eb7"
+    },
+    {
+      "path": "tests/camera-crm-backend-object731.sh",
+      "sha256": "8d51bb1195fd50fb61b88971f310e89ff2bb02543e7d4a31fd757b8383e6ab82"
+    },
+    {
+      "path": "tests/camera-crm-drain-contract.sh",
+      "sha256": "f5efc89599d80f2d9a345520362ec0b94245a2ccc30c96a7d5a6c7c213da3a31"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-core-check.cpp",
+      "sha256": "4fb00f756450877c5665fb5e12a0eb1c2d025490175f99e34b84ab856d288dca"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-lut-check.cpp",
+      "sha256": "3522b187071ec0a9e7341170b283e90da5e9c47bf5b98290f8e4f24578406fd8"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-transport-check.c",
+      "sha256": "ef169621af16515d4b8d9e800b222cb4ccb3b6c578fff2a1182fd88c30e65ec8"
+    },
+    {
+      "path": "tests/fixtures/camera-crm-drain-review.c",
+      "sha256": "669c56f431d24cae5128bef201110dc28a527f594cb4a826f237a4c1bb8c235b"
+    },
+    {
+      "path": "patches/camera/0002-crm-post-drain-validation.patch",
+      "sha256": "806bac057f44be0893d139a1e942b3aec6b69c0eaef6f0cda5233dfa6cc0893a"
+    },
+    {
+      "path": "docs/camera-crm-core.md",
+      "sha256": "5e5c8a7303ba7be0e1385488e12ffc43c276bf311af1119f0510f62f0c662f3d"
+    },
+    {
+      "path": "docs/camera-crm-backend.md",
+      "sha256": "02485a42ca77436edb7549c0d2d4944f930ee7d182b043822e88924a395968cc"
+    },
+    {
+      "path": "docs/camera-crm-lifecycle.md",
+      "sha256": "38aeafe1a600cfd67f6eab38c4f5bde1ef843e2b60f0c244eef85fff5b6992c8"
+    },
+    {
+      "path": "docs/camera-crm-post-drain.md",
+      "sha256": "73620b1f0a43061591cdb97936f63ddca8849482c657cc594ef7549d83d6ada1"
+    },
+    {
+      "path": "manifests/camera-crm-core-20261105.json",
+      "sha256": "f12b4c02361f8edd804d43f717029017d4f20d33005d5576f3208f852a8c7cbc"
+    },
+    {
+      "path": "manifests/camera-crm-backend731-20261105.json",
+      "sha256": "0506000f3054491118c4a20486d1f150df5880c4e1b5c699ef819870899b1cf6"
+    },
+    {
+      "path": "manifests/camera-crm-lifecycle731-20261105.json",
+      "sha256": "42085b8cbdd3af9a09db0875adf4823db18310d18ecab2424bb9fd8b065cd5a2"
+    },
+    {
+      "path": "manifests/camera-crm-source-review-20261105.json",
+      "sha256": "75562f01489e28eb6ca4c6940ddbb61834db55e278624efdd77816261e028c31"
+    }
+  ],
+  "oracle_inputs": [
+    {
+      "reference_file": "oem571-crm.c",
+      "path": "drivers/soc/qcom/crm.c",
+      "sha256": "b55fbbfa0235d1fed3112bbc134a7c835214819b8d318bc2b408940a5dbb0e48",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-clk-rcg2.c",
+      "path": "drivers/clk/qcom/clk-rcg2.c",
+      "sha256": "87b1645f20fd2ddbe07344ad707c74f81df9871bb53902b9243c1f617584da20",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "reference_file": "oem571-tcs.h",
+      "path": "include/soc/qcom/tcs.h",
+      "sha256": "3183aaa5964d6354cdb47cd87930c084d1feaf19e7481fefe1b973dd102d8c8f",
+      "spdx": "GPL-2.0"
+    }
+  ],
+  "baseline_header_sha256": "b18add1f6da4243210a0fc44abef5795e1d788182f8b6c2ce2a92871451c593b",
+  "proposed_header_sha256": "aed38b958f98312b5cd4cf6678d37c49f223840126468710589b535df8bd24ed",
+  "independent_review": {
+    "source": "6fca0233537195336534b48fdd14c9371c1e4fa5",
+    "copr_build": 11264495,
+    "state": "succeeded; API independently verified",
+    "cases_per_mode": 16,
+    "compiler_modes": 4,
+    "patch_sha256": "806bac057f44be0893d139a1e942b3aec6b69c0eaef6f0cda5233dfa6cc0893a",
+    "fixture_sha256": "669c56f431d24cae5128bef201110dc28a527f594cb4a826f237a4c1bb8c235b",
+    "native_kernel_object": false,
+    "physical_causality": false
+  },
+  "qualification": {
+    "package": "uke-camera-crm-core-check",
+    "version_release": "7.3.1-5",
+    "copr_build": 11264557,
+    "requires_exact_original_assertion134": true,
+    "requires_all16_review_cases": true,
+    "requires_native_aarch64_object": true,
+    "requires_retained_original_preparation": true,
+    "state": "succeeded",
+    "source_commit": "2d90d80b63d68565c93a6311857f09166164f7f4",
+    "duration_seconds": 215,
+    "signed_text_rpm_sha256": "f56bb64582b9b60103a8e21d024bb454fcc78ec35aca0bc2b8c9eacfbb170503",
+    "native_log_download_sha256": "f30466cb98414a8122cc71ae45317789befb0a7c73f3dd21c263ee0f46d95dda",
+    "native_object_sha256": "1d6323e14ced3d5d253999007ab792ff306cc512b06432eca90d40311e5959fc",
+    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "original_failure_assertion134_passed": true,
+    "review_cases_per_mode": 16,
+    "compiler_modes": 4,
+    "all_prior_contracts_passed": true,
+    "native_aarch64_object_passed": true,
+    "parent_checks_retained": 19,
+    "receipt_installed": false
+  },
+  "activation": {
+    "provider_integration": false,
+    "guard_changed": false,
+    "post_drain_fixed": true,
+    "post_drain_qualified": true,
+    "managed_ccf_complete": false,
+    "runtime_pm_wired": false,
+    "physical_acceptance": false
+  },
+  "delivery_pair_observed": {
+    "transaction": 113,
+    "command_line": "dnf update --refresh -y",
+    "updater": "uke-kernel-update1.8.97-1.fc46",
+    "helper": "uke-cdsp-pogo-firmware0.2-8.fc46",
+    "same_kernel_raw_boots_trial_policy_preserved": true,
+    "current124_firmware_verified": true
+  },
+  "pending_delivery_dependency": {
+    "updater": "uke-kernel-update >=1.8.97",
+    "helper": "uke-cdsp-pogo-firmware >=0.2-8",
+    "qualified_and_installed": true,
+    "kernel_delivery": false,
+    "automatic_staging_must_remain_enabled": true
+  }
+}

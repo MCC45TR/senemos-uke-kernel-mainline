@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "Complete11003 with all ready workspace contributions: qualified SSC observations and cached CAMCC probe diagnostics",
+  "family": "senemos-uke-linux-kernel-mainline-unstable",
+  "abi_suffix": "-unstable",
+  "baseline": {
+    "copr_build": 11260288,
+    "source_commit": "261d85e218906f78d37810db78a4aa80cd900067",
+    "release": "7.3.1-11003-unstable"
+  },
+  "ssc": {
+    "cohort_producer_source": "ad6b68ff403d57bc8e64b4f92e0dcfa41ea43e09",
+    "qualified_source": "afe3b4171cb552775d92561451db877bbb3732de",
+    "check_copr_build": 11260554,
+    "manifest": "manifests/ssc-observation-cohort-20261104.json"
+  },
+  "camera": {
+    "source_commit": "a1afff0dd7d42ea7c5a979519417d6f371c3ebae",
+    "check_copr_build": 11260755,
+    "qualification_scope": "Actual probe/show callbacks with modeled framework/MMIO; full Kbuild and hardware remain separate",
+    "cached_only": true,
+    "additional_mmio": false,
+    "physical_cause_qualified": false,
+    "check_state": "succeeded",
+    "check_log_sha256": "a17ca2aef3bf3e85b5a2df57d038f333cc52926e29540dd3150af621c422028b"
+  },
+  "retained": [
+    "RTC read-only counter gate",
+    "CAMCC stage1 and inactive GENI/EEPROM/sensor/capture gates",
+    "O82 HSIC/SixZone v4 and empty color default",
+    "CDSP/pogo and manual secure DSP boot",
+    "corrected networking and Waydroid capability",
+    "NFC I2C-core wake ownership",
+    "complete baseline config/DT/firmware and all other source-composition features"
+  ],
+  "all_active_workspace_handoffs_reviewed": true,
+  "kernel_delivery": {
+    "single_coordinator": true,
+    "automatic_seamless_staging": true,
+    "preserve_local_rollback_choice": true,
+    "stable_promotion": false
+  },
+  "imports": [
+    {
+      "sha256": "e23073d611db9476b013b617e8a621477e18d07030b43f0405f7062532df76b7",
+      "path": "src/camera/camcc-sm7675.c"
+    },
+    {
+      "sha256": "cc9e889c4e51556dbc08630b5b358c2f921d337be73c81cce513b853e5c2b8f6",
+      "path": "src/camera/prepare-controller731.sh"
+    },
+    {
+      "sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578",
+      "path": "src/camera/provider/camcc-sm7675-handoff.h"
+    },
+    {
+      "sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb",
+      "path": "src/camera/provider/camcc-sm7675-registration.h"
+    },
+    {
+      "sha256": "d982b5ecbac6c5a19afc4b65aea8adccde76414327c8cd8a7661d938fbe6b78e",
+      "path": "src/camera/provider/sysfs-driver-camcc-sm7675"
+    },
+    {
+      "sha256": "5eabbe60907dbc9bc57c102ff4d8356dcadc865b2c7ef3bcf2184d2de577b678",
+      "path": "src/camera/provider/NATIVE731.md"
+    },
+    {
+      "sha256": "bc3d1affcc24cf9362545b4487761afc96f3f56597fdd52114b6463d44590639",
+      "path": "tests/camcc-native731-contract.sh"
+    },
+    {
+      "sha256": "395f298a75249ffc34efcf5e8bcb9cc3298a80f286e3d4c51c99ececf7adfad8",
+      "path": "tests/fixtures/camcc-native-check.c"
+    },
+    {
+      "sha256": "eaf820a5d22a24bc8b941c2df376f31706d19762c3a5863d9331befd0bd7d7e0",
+      "path": "tests/camcc-controller-linked731-check.sh"
+    }
+  ],
+  "imports_before": [
+    {
+      "sha256": "6c380ab8a405d3a5cf204ec04077551aafcd581df5f48780d13e8e0a39811df6",
+      "path": "src/camera/camcc-sm7675.c"
+    },
+    {
+      "sha256": "6a89912c883cab6bfd22c58604a51ebab7a1d1eeaca445687ad06084df82bfcf",
+      "path": "src/camera/prepare-controller731.sh"
+    },
+    {
+      "sha256": "26052b833635bfb420ef96440512b19c18807645576db24382a831b3c9f2d985",
+      "path": "src/camera/provider/camcc-sm7675-handoff.h"
+    },
+    {
+      "sha256": "2bde205761903828a3b520b31fd46819532da02486971961d0b182bd8ea8364b",
+      "path": "src/camera/provider/camcc-sm7675-registration.h"
+    },
+    {
+      "sha256": "b0fc026b82170b617a1b76e46f55b9c7a776a5d1c42d5f073dd15d97610c0c35",
+      "path": "src/camera/provider/NATIVE731.md"
+    },
+    {
+      "sha256": "d81301fd2716a9daaf86957388b9dc6a546c8667d51300ab6f2d575f22b39118",
+      "path": "tests/camcc-native731-contract.sh"
+    },
+    {
+      "sha256": "c2831c5621e7be7e76b85fd9a2af2a2ad30e22fb13fddcdfd532431a165a3423",
+      "path": "tests/fixtures/camcc-native-check.c"
+    },
+    {
+      "sha256": "3c61d2e140bca7c28d00774b96ab9c20e64f829263355d5128addb0a0dce94fb",
+      "path": "tests/camcc-controller-linked731-check.sh",
+      "preimage_transform": "Exact published copr-unstable-boot731.sh namespace extension: append optional -unstable suffix to release guard",
+      "repository_preimage_sha256": "579785c6e5ab03d74c3fee163897a6a18b9a4886c8bdc3b2ff3cb83abac1aafe"
+    }
+  ],
+  "new_paths": [
+    "src/camera/provider/sysfs-driver-camcc-sm7675"
+  ],
+  "unchanged": [
+    {
+      "sha256": "af2369d63c2731e6e840c9a2560de9884c51c5819cd7f24c89e026f6ddc73fb4",
+      "path": "src/camera/camcc-sm7675-data.h"
+    },
+    {
+      "sha256": "a07351d69e55b214683fccf038b911e50c4bb76fe1ccb1556ee67f359807422c",
+      "path": "src/camera/provider/camcc-sm7675-power.h"
+    },
+    {
+      "sha256": "ea1a0381e6bbf4f77f3122035c9c4251a18cd987c72e80a1aaab09fe0c2111b2",
+      "path": "src/camera/provider/camcc-sm7675-owner.h"
+    },
+    {
+      "sha256": "d465d09ce5567e471e2f81ab0a2e89751551ea6a5c7072eaf160f0c7a00df113",
+      "path": "src/camera/provider/camcc-sm7675-clocks.h"
+    },
+    {
+      "sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d",
+      "path": "src/camera/provider/camcc-sm7675-crm-guard.h"
+    },
+    {
+      "sha256": "046fb1f198076896493e5af3071df908a1366280912724cf9f3b643199ee8796",
+      "path": "src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h"
+    }
+  ],
+  "physical_camera_acceptance": false
+}

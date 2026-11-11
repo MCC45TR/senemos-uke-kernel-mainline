@@ -1,0 +1,92 @@
+--- a/tests/o82-panel-contract.sh
++++ b/tests/o82-panel-contract.sh
+@@ -137,9 +137,14 @@
+ static void atomic64_set(atomic64_t *state,u64 value) {state->value=value;}
+ struct blocking_notifier_head {u64 last; unsigned int calls;};
+ static int gesture_notify_result, gesture_retains, gesture_releases;
++static bool require_touch_before_off, panel_off_started;
+ static int blocking_notifier_call_chain(struct blocking_notifier_head *head,unsigned long event,void *data) {
+     assert(head && data);
+-    if(event==UKE_O82_TOUCH_RETAIN) {++gesture_retains; return gesture_notify_result;}
++    if(event==UKE_O82_TOUCH_RETAIN) {
++        if(require_touch_before_off)
++            assert(!panel_off_started && "Touch retention must precede panel OFF commands");
++        ++gesture_retains; return gesture_notify_result;
++    }
+     if(event==UKE_O82_TOUCH_RELEASE) {++gesture_releases; return 0;}
+     assert(!event); head->last=*(u64 *)data; ++head->calls; return 0;
+ }
+@@ -308,6 +313,11 @@
+ }
+ static ssize_t transfer(struct mipi_dsi_host *host,const struct mipi_dsi_msg *m) {
+     assert((m->flags==MIPI_DSI_MSG_USE_LPM || m->flags==0) && m->channel==0 && m->tx_len>0);
++    /* Exact Uke OFF commands: display off, sleep in, power off. */
++    if(require_touch_before_off && m->type==0x05 && m->tx_len==1) {
++        const u8 command=*(const u8 *)m->tx_buf;
++        if(command==0x28 || command==0x10 || command==0x4f) panel_off_started=true;
++    }
+     if (m->flags==MIPI_DSI_MSG_USE_LPM) {
+         lpm_transfers++;
+         if(video_started) {
+@@ -488,6 +498,7 @@
+ }
+ static struct o82_panel context(int variant,int mode) {
+     gesture_notify_result=gesture_retains=gesture_releases=0;
++    require_touch_before_off=panel_off_started=false;
+     static const struct drm_panel_funcs funcs={.enable=o82_enable,.disable=o82_disable};
+     static struct host_ops ops={transfer};
+     static struct mipi_dsi_host hosts[2]={{&ops,0},{&ops,1}};
+@@ -533,24 +544,50 @@
+     return ctx;
+ }
+ int main(void) {
+-    {
+-        struct o82_panel c=context(0,3);
++    for(int variant=2;variant<4;variant++) for(int mode=0;mode<7;mode++) {
++        struct o82_panel c=context(variant,mode);
+         assert(!o82_prepare(&c.panel));
++        require_touch_before_off=true;
+         gesture_notify_result=NOTIFY_STOP;
+         assert(!o82_unprepare(&c.panel));
+-        assert(!c.prepared && c.gesture_retained && gesture_retains==1);
++        assert(!c.prepared && c.gesture_retained && gesture_retains==1 && panel_off_started);
+         for(int i=0;i<3;i++) assert(balance[i]==1);
+         assert(!o82_unprepare(&c.panel) && gesture_retains==1);
+         const int released=gesture_releases;
+         pps_start=transfers+2*c.active->on_count-pps_transfers;
++        /* Batch packet indices describe one powered ON sequence. */
++        on_batch_calls=on_batch_total=on_complete=0;
+         assert(!o82_prepare(&c.panel) && !c.gesture_retained);
+         assert(gesture_releases==released+1);
+         for(int i=0;i<3;i++) assert(balance[i]==1);
++        panel_off_started=false;
+         assert(!o82_unprepare(&c.panel) && c.gesture_retained);
+         c.removing=true;
+         assert(!o82_unprepare(&c.panel) && !c.gesture_retained);
+         for(int i=0;i<3;i++) assert(!balance[i]);
+     }
++    for(int variant=2;variant<4;variant++) for(int fault=0;fault<3;fault++) {
++        struct o82_panel c=context(variant,3);
++        assert(!o82_prepare(&c.panel));
++        require_touch_before_off=true;
++        gesture_notify_result=NOTIFY_STOP;
++        if(fault==0) transfer_failure=transfers;
++        if(fault==1) transfer_short=transfers;
++        if(fault==2) gesture_notify_result=0; /* Touch refuses retention. */
++        assert(o82_unprepare(&c.panel)==(fault==2 ? 0:-EIO));
++        assert(gesture_retains==1 && gesture_releases==1 && panel_off_started);
++        assert(!c.prepared && !c.gesture_retained);
++        for(int i=0;i<3;i++) assert(!balance[i] && !loads[i]);
++    }
++    for(int variant=2;variant<4;variant++) {
++        struct o82_panel c=context(variant,3);
++        assert(!o82_unprepare(&c.panel) && !gesture_retains && !transfers);
++        assert(!o82_prepare(&c.panel));
++        c.prepared=false; /* Failed cleanup may leave supplies enabled. */
++        gesture_notify_result=NOTIFY_STOP;
++        assert(!o82_unprepare(&c.panel) && !gesture_retains && !c.gesture_retained);
++        for(int i=0;i<3;i++) assert(!balance[i] && !loads[i]);
++    }
+     for(int result=0;result<4;result++) {
+         struct o82_panel ctx=context(0,3);
+         probe_backlight=result==0 ? ctx.backlight:result==1 ? NULL:ERR_PTR(result==2 ? -EIO:-ENODEV);

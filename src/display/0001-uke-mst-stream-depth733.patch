@@ -1,0 +1,258 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm/dp: retain MST stream depth in connector atomic state
+
+Keep chosen RGB depth, payload PBN and DPU/DP output packing consistent for
+each MST connector. Preserve the 8-bpc default and allow standard max-bpc10
+requests when the sink, route and downstream budget admit them. Generic MST
+atomic checking continues to reject aggregate oversubscription. HDR and DSC
+MST remain separate work; no SST behavior or board resources are changed.
+
+Source comparisons: Uke OEM display44275c4 and SM7675 OnePlus1138e00f
+derive PBN from per-stream timing bpp. Upstream Linux7.3.3 DRM helpers own
+connector state lifetime and aggregate payload admission. GPL-2.0-only.
+
+diff --git a/drivers/gpu/drm/msm/dp/dp_mst_drm.c b/drivers/gpu/drm/msm/dp/dp_mst_drm.c
+--- a/drivers/gpu/drm/msm/dp/dp_mst_drm.c
++++ b/drivers/gpu/drm/msm/dp/dp_mst_drm.c
+@@ -13,6 +13,8 @@
+ 
+ #include "dp_mst_drm.h"
+ #include "dp_panel.h"
++#include "dp_utils.h"
++#include "msm_drv.h"
+ 
+ #define to_dp_mst_connector(x) \
+ 		container_of((x), struct msm_dp_mst_connector, connector)
+@@ -25,6 +27,14 @@
+ 	struct msm_dp_mst *dp_mst;
+ };
+ 
++/* Selected bpp belongs to the connector atomic state, never the shared SST panel. */
++struct msm_dp_mst_connector_state {
++	struct drm_connector_state base;
++	unsigned int bpp;
++};
++
++#define to_mst_state(x) container_of(x, struct msm_dp_mst_connector_state, base)
++
+ struct msm_dp_mst_encoder {
+ 	struct drm_encoder *enc;
+ 	int stream_id;
+@@ -81,15 +91,63 @@
+ 	kfree(mst_conn);
+ }
+ 
++static void msm_dp_mst_connector_destroy_state(struct drm_connector *connector,
++					       struct drm_connector_state *state)
++{
++	__drm_atomic_helper_connector_destroy_state(state);
++	kfree(to_mst_state(state));
++}
++
++static void msm_dp_mst_connector_reset(struct drm_connector *connector)
++{
++	struct msm_dp_mst_connector_state *state;
++
++	if (connector->state)
++		msm_dp_mst_connector_destroy_state(connector, connector->state);
++	connector->state = NULL;
++	state = kzalloc_obj(*state);
++	if (!state)
++		return;
++	__drm_atomic_helper_connector_reset(connector, &state->base);
++	state->bpp = 24;
++}
++
++static struct drm_connector_state *
++msm_dp_mst_connector_duplicate_state(struct drm_connector *connector)
++{
++	struct msm_dp_mst_connector_state *state;
++
++	if (!connector->state)
++		return NULL;
++	state = kmemdup(to_mst_state(connector->state), sizeof(*state), GFP_KERNEL);
++	if (!state)
++		return NULL;
++	__drm_atomic_helper_connector_duplicate_state(connector, &state->base);
++	return &state->base;
++}
++
+ static const struct drm_connector_funcs msm_dp_drm_mst_connector_funcs = {
+ 	.debugfs_init = msm_dp_mst_debugfs_init,
+-	.reset = drm_atomic_helper_connector_reset,
++	.reset = msm_dp_mst_connector_reset,
+ 	.destroy = dp_mst_connector_destroy,
+ 	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+-	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
++	.atomic_duplicate_state = msm_dp_mst_connector_duplicate_state,
++	.atomic_destroy_state = msm_dp_mst_connector_destroy_state,
+ };
+ 
++unsigned int msm_dp_mst_output_bpc(const struct msm_dp *dp,
++				    const struct drm_connector *connector)
++{
++	unsigned int bpp;
++
++	if (!dp || !dp->mst_active || !connector || !connector->state ||
++	    connector->funcs != &msm_dp_drm_mst_connector_funcs ||
++	    to_dp_mst_connector(connector)->dp_mst->msm_dp != dp)
++		return 0;
++	bpp = to_mst_state(connector->state)->bpp;
++	return bpp == 24 || bpp == 30 ? bpp / 3 : 0;
++}
++
+ /* DP MST Connector OPs */
+ static int
+ msm_dp_mst_connector_detect(struct drm_connector *connector,
+@@ -168,6 +226,16 @@
+ 	struct msm_dp_mst_connector *mst_conn = to_dp_mst_connector(connector);
+ 	struct msm_dp_mst *mst = mst_conn->dp_mst;
+ 
++	struct drm_connector_state *old = drm_atomic_get_old_connector_state(state, connector);
++	struct drm_connector_state *next = drm_atomic_get_new_connector_state(state, connector);
++	struct drm_crtc_state *crtc_state;
++
++	if (next && next->crtc && old && old->max_requested_bpc != next->max_requested_bpc) {
++		crtc_state = drm_atomic_get_crtc_state(state, next->crtc);
++		if (IS_ERR(crtc_state))
++			return PTR_ERR(crtc_state);
++		crtc_state->mode_changed = true;
++	}
+ 	return drm_dp_atomic_release_time_slots(state, &mst->mst_mgr, mst_conn->mst_port);
+ }
+ 
+@@ -365,6 +433,31 @@
+ 	drm_connector_put(connector);
+ }
+ 
++static int msm_dp_mst_select_bpp(const struct drm_connector_state *conn_state,
++				 const struct drm_display_mode *mode,
++				 const struct msm_dp_link_info *caps, int full_pbn)
++{
++	const struct drm_display_info *info = &conn_state->connector->display_info;
++	int bpp, pbn;
++
++	if (mode->clock <= 0 || mode->clock > DP_MAX_PIXEL_CLK_KHZ || full_pbn <= 0)
++		return -EINVAL;
++	if (conn_state->hdr_output_metadata || conn_state->colorspace ||
++	    drm_mode_is_420_only(info, mode))
++		return -EOPNOTSUPP;
++	bpp = msm_dp_utils_select_bpp(info->bpc, conn_state->max_requested_bpc ?: 8,
++		mode->clock, caps->rate, caps->num_lanes, false, false,
++		info->is_hdmi ? info->max_tmds_clock : 0);
++	if (bpp < 0)
++		return bpp;
++	for (; bpp >= 24; bpp -= 6) {
++		pbn = drm_dp_calc_pbn_mode(mode->clock, bpp << 4);
++		if (pbn > 0 && pbn <= full_pbn)
++			return bpp;
++	}
++	return -ENOSPC;
++}
++
+ int msm_dp_mst_stream_atomic_check(struct drm_encoder *enc,
+ 				   struct drm_crtc_state *crtc_state,
+ 				   struct drm_connector_state *conn_state)
+@@ -379,12 +472,11 @@
+ 
+ 	if (!drm_atomic_crtc_needs_modeset(crtc_state) || !crtc_state->active)
+ 		return 0;
+-	if (conn_state->hdr_output_metadata || conn_state->colorspace ||
+-	    drm_mode_is_420_only(&conn_state->connector->display_info, &crtc_state->mode))
+-		return -EOPNOTSUPP;
+-
+-	bpp = 24;
+-	pbn = drm_dp_calc_pbn_mode(crtc_state->mode.clock, bpp << 4);
++	bpp = msm_dp_mst_select_bpp(conn_state, &crtc_state->adjusted_mode,
++				    &mst->link->link_caps, mst_conn->mst_port->full_pbn);
++	if (bpp < 0)
++		return bpp;
++	pbn = drm_dp_calc_pbn_mode(crtc_state->adjusted_mode.clock, bpp << 4);
+ 
+ 	mst_state = drm_atomic_get_mst_topology_state(crtc_state->state, &mst->mst_mgr);
+ 	if (IS_ERR(mst_state))
+@@ -398,6 +490,8 @@
+ 	if (slots < 0)
+ 		return slots;
+ 
++	/* The global DRM MST check still enforces aggregate topology bandwidth. */
++	to_mst_state(conn_state)->bpp = bpp;
+ 	return 0;
+ }
+ 
+@@ -571,6 +665,16 @@
+ 
+ 	drm_connector_helper_add(connector, &msm_dp_drm_mst_connector_helper_funcs);
+ 	connector->funcs->reset(connector);
++	if (!connector->state) {
++		rc = -ENOMEM;
++		goto err_connector;
++	}
++	rc = drm_connector_attach_max_bpc_property(connector, 8, 10);
++	if (rc)
++		goto err_connector;
++	/* Preserve the prior 8-bpc default. Standard max-bpc requests opt into ten. */
++	connector->state->max_requested_bpc = 8;
++	connector->state->max_bpc = 8;
+ 
+ 	/* add all encoders as possible encoders */
+ 	for (i = 0; i < mst->max_streams; i++) {
+diff --git a/drivers/gpu/drm/msm/dp/dp_display.c b/drivers/gpu/drm/msm/dp/dp_display.c
+--- a/drivers/gpu/drm/msm/dp/dp_display.c
++++ b/drivers/gpu/drm/msm/dp/dp_display.c
+@@ -792,9 +792,11 @@
+ 
+ 	dp = container_of(msm_dp_display, struct msm_dp_display_private, msm_dp_display);
+ 
+-	if (msm_dp_display->mst_active)
+-		bpp = 24;
+-	else if (msm_dp_display_check_video_test(msm_dp_display))
++	if (msm_dp_display->mst_active) {
++		bpp = msm_dp_mst_output_bpc(msm_dp_display, msm_dp_panel->connector) * 3;
++		if (bpp != 24 && bpp != 30)
++			return -EINVAL;
++	} else if (msm_dp_display_check_video_test(msm_dp_display))
+ 		bpp = msm_dp_display_get_test_bpp(msm_dp_display);
+ 	else if (of_device_is_compatible(msm_dp_display->pdev->dev.of_node, "qcom,sm7675-dp"))
+ 		bpp = msm_dp_output_bpc(msm_dp_display, adjusted_mode) * 3;
+diff --git a/drivers/gpu/drm/msm/msm_drv.h b/drivers/gpu/drm/msm/msm_drv.h
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -378,6 +378,8 @@
+ int msm_dp_mst_stream_atomic_check(struct drm_encoder *enc,
+ 				   struct drm_crtc_state *crtc_state,
+ 				   struct drm_connector_state *conn_state);
++unsigned int msm_dp_mst_output_bpc(const struct msm_dp *dp,
++				    const struct drm_connector *connector);
+ int __init msm_dp_register(void);
+ void __exit msm_dp_unregister(void);
+ int msm_dp_modeset_init(struct msm_dp *dp_display, struct drm_device *dev,
+@@ -392,6 +394,11 @@
+ 			       const struct drm_display_mode *mode);
+ 
+ #else
++static inline unsigned int msm_dp_mst_output_bpc(const struct msm_dp *dp,
++					       const struct drm_connector *connector)
++{
++	return 0;
++}
+ static inline int __init msm_dp_register(void)
+ {
+ 	return -EINVAL;
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -271,7 +271,11 @@
+ 	    of_machine_is_compatible("xiaomi,uke")) {
+ 		struct msm_drm_private *priv = drm_enc->dev->dev_private;
+ 		unsigned int id = dpu_enc->disp_info.h_tile_instance[0];
+-		if (msm_dp_output_bpc(priv->kms->dp[id], mode) == 10)
++		unsigned int bpc = msm_dp_mst_output_bpc(priv->kms->dp[id], dpu_enc->connector);
++
++		if (!bpc)
++			bpc = msm_dp_output_bpc(priv->kms->dp[id], mode);
++		if (bpc == 10)
+ 			return DRM_FORMAT_XRGB2101010;
+ 	}
+ 

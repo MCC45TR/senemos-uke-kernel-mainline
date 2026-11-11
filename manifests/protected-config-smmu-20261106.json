@@ -1,0 +1,63 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete full12213 plus exact permanent protected-audio supplier SMMU context admission; proposed check28, no full reservation",
+  "parent_build": 11271186,
+  "parent_source": "d6ae32b18314388051eb6af0249af8d98ec1848c",
+  "parent_srpm_sha256": "372e6eebbe86cfcba2f2d20371133c295ae561b98c5003be5e645da3bb1c1d67",
+  "source_check_release": 28,
+  "proposed_full_revision": 12214,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0009-uke-audio-config-smmu.patch",
+      "sha256": "39bfec73ed29a83a49de078ff3b1b238566397f7bbf55e118445ea7514f1cdba"
+    },
+    {
+      "path": "src/audio/uke-audio-config-smmu.c",
+      "sha256": "7f867e0f692501f2cf308ec5eecb11eb10fc14e7818d884cda509e3ef83cb01d"
+    },
+    {
+      "path": "src/audio/apply-config-smmu731.sh",
+      "sha256": "e8842f6fa46d1b2baf08eb3ecaf79c17dd9f9bf1377ca78401f7d8eae9af8dde"
+    },
+    {
+      "path": "tests/audio-config-smmu.c",
+      "sha256": "b5ba8df1c0b1b854d42d0d976795b5361a44372b9b47333a6f3e3d77bce4762f"
+    },
+    {
+      "path": "tests/audio-config-smmu.sh",
+      "sha256": "1894bba2824732118c7d23aa59f53e55b9c6f711bd751a97b93f1869a8a7d1e5"
+    },
+    {
+      "path": "packaging/native/check-config-smmu731.sh",
+      "sha256": "cdd08cf50fa3762f919198787e13f5fc65226636333e2ca7be57f8a4d3a84fe3"
+    },
+    {
+      "path": "packaging/native/copr-migration-config-smmu731.sh",
+      "sha256": "f0bc5748660e70f1e77894108379ef520f343fcf7ff29673f6acc34ce9cdb4b3"
+    },
+    {
+      "path": "docs/PROTECTED-CONFIG-SMMU.md",
+      "sha256": "886cf7a6bff80b31b5a180f42ba5ca222383c0a7717b604da192614c3d42b332"
+    },
+    {
+      "path": "manifests/kernel-migration-full12213-20261106.json",
+      "sha256": "102546608e263f7d05a3fea247135723a73ff95cbfb67b9fbe88ba1edc5c5d48"
+    }
+  ],
+  "source_preimage_sha256": "4ff6bd3c30fa30f949f7f6c11a02f9e11abb687f15afa67d61bfb4c5731c499e",
+  "source_postimage_sha256": "ebebdc288110bc5eac1ab4f19e9ea8f48f6585650fdcba340e8cf47a0339cde3",
+  "unchanged_parent_nonidentity_fields": 421,
+  "new_actual_allocator_modes": 4,
+  "original_refusal_controls": 2,
+  "assertion_mutants": 6,
+  "actual_objects": [
+    "drivers/iommu/arm/arm-smmu/arm-smmu-qcom.o",
+    "drivers/soc/qcom/uke-audio-config-memory.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o",
+    "arch/arm64/kernel/uke-abl.o",
+    "drivers/misc/fastrpc.o"
+  ],
+  "target_changed": false,
+  "physical_acceptance": false
+}

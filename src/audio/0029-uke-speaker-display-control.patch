@@ -1,0 +1,52 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: uke: coordinate display rotation through one card control
+
+Keep the codec's OEM position map and protected register access. Expose one
+machine control, validate all four codec controls before registration, and
+roll back every endpoint on a failed request. An incomplete rollback enters
+the existing latched amplifier fault path. Screen transform policy stays
+with the session; no accelerometer or desktop policy is added to the driver.
+
+--- a/sound/soc/qcom/uke-audio-card.c
++++ b/sound/soc/qcom/uke-audio-card.c
+@@ -109,12 +109,17 @@
+ 
+ struct uke_speaker_data {
+ 	struct snd_soc_jack jack;
++	struct snd_soc_card *card;
++	struct mutex rotation_lock;
++	struct snd_kcontrol *rotation_controls[4];
+ 	bool microphones;
+ 	bool capture_prepared;
+ 	u32 microphone_analog_gain[4];
+ 	u32 microphone_digital_gain[4];
+ };
+ 
++#include "uke-speaker-display-control.h"
++
+ static int uke_speaker_hdmi_init(struct snd_soc_pcm_runtime *rtd)
+ {
+ 	struct uke_speaker_data *data = snd_soc_card_get_drvdata(rtd->card);
+@@ -162,10 +167,10 @@
+ 		}
+ 	}
+ 	if (data->microphones)
+-		return frontends == 3 && backends == 3 && seen == 7 &&
+-		       fe_seen == 7 ? 0 : -EINVAL;
+-	return frontends == 2 && backends == 2 && seen == 3 &&
+-	       fe_seen == 3 ? 0 : -EINVAL;
++		return frontends == 3 && backends == 3 && seen == 7 && fe_seen == 7 ?
++			uke_speaker_display_init(card) : -EINVAL;
++	return frontends == 2 && backends == 2 && seen == 3 && fe_seen == 3 ?
++		uke_speaker_display_init(card) : -EINVAL;
+ }
+ 
+ static int uke_microphone_late_probe(struct snd_soc_card *card)
+@@ -347,6 +352,7 @@
+ 	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
+ 	if (!card || !data)
+ 		return -ENOMEM;
++	mutex_init(&data->rotation_lock);
+ 	data->microphones = of_device_is_compatible(dev->of_node,
+ 						    "xiaomi,uke-microphone-audio-card");
+ 	card->dev = dev;

@@ -170,8 +170,17 @@ static int cam_cc_native_register_clocks(struct device *dev)
 /* Keep the permanent driver bound after uncertain/partial publication. */
 static int cam_cc_native_quarantine(struct device *dev, int error)
 {
+	cam_cc_native_probe_complete(error);
 	cam_cc_native_fail(error);
-	dev_err(dev, "camera controller fault %d; resources retained until reboot\n", error);
+	dev_err(dev, "camera controller fault %d at %s; "
+		"gate_valid=%u gate=%#x read_valid=%u readback=%#x "
+		"proxy=%#x votes=%#x uncertain=%#x iface=%u primary=%d rollback=%d; "
+		"resources retained until reboot\n",
+		error, cam_cc_native.probe.phase ?: "not-started",
+		cam_cc_native.probe.gate_started, cam_cc_native.probe.gate_reg,
+		cam_cc_native.probe.gate_read_valid, cam_cc_native.probe.gate_readback,
+		cam_cc_native.proxy_votes, cam_cc_power.votes, cam_cc_power.uncertain_rails,
+		cam_cc_power.iface_on, cam_cc_power.primary_error, cam_cc_power.rollback_error);
 	return 0;
 }
 
@@ -190,23 +199,32 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	map = cam_cc_owner_create(pdev);
 	if (IS_ERR(map))
 		return PTR_ERR(map);
+	/* Reset only after ownership succeeds: a refused second probe retains evidence. */
+	cam_cc_native.probe = (struct cam_cc_native_probe_observation) {
+		.phase = "parent-clocks",
+	};
 	ret = cam_cc_native_parents_get(dev);
 	if (ret)
 		goto clean_failure;
+	cam_cc_native_probe_phase("crm-map");
 	ret = cam_cc_crm_guard_map(pdev);
 	if (ret)
 		goto clean_failure;
+	cam_cc_native_probe_phase("clocks-init");
 	ret = cam_cc_clocks_init();
 	if (ret)
 		goto clean_failure;
+	cam_cc_native_probe_phase("pm-set-suspended");
 	ret = pm_runtime_set_suspended(dev);
 	if (ret)
 		goto clean_failure;
+	cam_cc_native_probe_phase("proxy-votes");
 	ret = cam_cc_native_proxy_get();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
 	pm_runtime_enable(dev);
 	cam_cc_native.pm_enabled = true;
+	cam_cc_native_probe_phase("runtime-resume");
 	ret = pm_runtime_resume_and_get(dev);
 	if (ret < 0)
 		return cam_cc_native_quarantine(dev, ret);
@@ -217,23 +235,39 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_critical_cbcrs); i++) {
 		u32 value;
 
+		cam_cc_native.probe.gate_started = true;
+		cam_cc_native.probe.gate_reg = cam_cc_sm7675_critical_cbcrs[i];
+		cam_cc_native.probe.gate_read_valid = false;
+		cam_cc_native.probe.gate_readback = 0;
+		cam_cc_native_probe_phase("critical-gate-write");
 		ret = regmap_update_bits(map, cam_cc_sm7675_critical_cbcrs[i], BIT(0), BIT(0));
-		if (!ret)
+		if (!ret) {
+			cam_cc_native_probe_phase("critical-gate-read");
 			ret = regmap_read(map, cam_cc_sm7675_critical_cbcrs[i], &value);
-		if (!ret && !(value & BIT(0)))
-			ret = -EIO;
+		}
+		if (!ret) {
+			cam_cc_native.probe.gate_readback = value;
+			cam_cc_native.probe.gate_read_valid = true;
+			cam_cc_native_probe_phase("critical-gate-verify");
+			if (!(value & BIT(0)))
+				ret = -EIO;
+		}
 		if (ret)
 			return cam_cc_native_quarantine(dev, ret);
 	}
+	cam_cc_native_probe_phase("crm-admission");
 	ret = cam_cc_crm_guard_admit();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_phase("boot-handoff");
 	ret = cam_cc_native_handoff_init();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_phase("pll-configuration");
 	ret = cam_cc_native_plls_configure();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_phase("begin-publication");
 	ret = cam_cc_owner_begin_publication();
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
@@ -243,26 +277,33 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	cam_cc_native_reset.rcdev.nr_resets = ARRAY_SIZE(cam_cc_sm7675_resets);
 	cam_cc_native_reset.regmap = map;
 	cam_cc_native_reset.reset_map = cam_cc_sm7675_resets;
+	cam_cc_native_probe_phase("reset-registration");
 	ret = reset_controller_register(&cam_cc_native_reset.rcdev);
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_phase("clock-registration");
 	ret = cam_cc_native_register_clocks(dev);
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
 	cam_cc_native_gdsc.dev = dev;
+	cam_cc_native_probe_phase("domain-registration");
 	ret = gdsc_register(&cam_cc_native_gdsc, &cam_cc_native_reset.rcdev, map);
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_phase("clock-provider");
 	ret = of_clk_add_hw_provider(dev->of_node, cam_cc_native_clock_get, &cam_cc_native);
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
 	WRITE_ONCE(cam_cc_native.ready, true);
+	cam_cc_native_probe_phase("ready");
+	cam_cc_native_probe_complete(0);
 	dev_info(dev, "native camera clocks/domains ready; firmware handoff pending\n");
 	return 0;
 
 clean_failure:
 	if (cam_cc_owner_busy())
 		return cam_cc_native_quarantine(dev, ret);
+	cam_cc_native_probe_complete(ret);
 	cam_cc_crm_guard_put();
 	cam_cc_native_parents_put();
 	return cam_cc_owner_probe_failed(ret);

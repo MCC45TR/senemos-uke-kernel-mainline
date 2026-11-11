@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 76,
+  "parent_full_build": 11295536,
+  "parent_source": "780dd1a0642bad824e3d6491d4f7a8fb4e0fc665",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11295536/senemos-uke-linux-kernel-mainline-unstable-7.3.3-13.src.rpm",
+  "parent_srpm_sha256": "553d395bab4079a830fb735b7e2c38ecd272b13bf176065073fafbc10cded43c",
+  "parent_spec_sha256": "6e0fc89e347a5d527ef0c4c2a56c39e937ca408ad12a3007406a243d78f093b0",
+  "driver_before_sha256": "3ee32c5c3a0e704d0f9864546393855093e245940c8fd20d7371663962307e15",
+  "driver_after_sha256": "c5cc05ccc22656c913dd98c735e4bb52cb9ab9f8b0e84bd48ad2d43f25c47e63",
+  "new_datatype": "gravity",
+  "new_api": "sns_gravity.proto",
+  "channels": [
+    "gravity_x",
+    "gravity_y",
+    "gravity_z",
+    "linear_acceleration_x",
+    "linear_acceleration_y",
+    "linear_acceleration_z"
+  ],
+  "unit": "m/s^2",
+  "scale": "0.000001",
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "protected_gain": 223,
+  "old_runtime_providers_retired": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "primary_protocol": {
+    "repository": "https://github.com/qualcomm/sensinghub",
+    "commit": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+    "path": "apis/proto/sns_gravity.proto",
+    "sha256": "506af7b4134433f6123852a31c01daca9768027db1345d8ecad2a4f63d9b2028",
+    "license": "BSD-3-Clause-Clear"
+  },
+  "payload_assets": [
+    "src/sensors/0011-ssc-gravity-linear-input.patch",
+    "src/sensors/0012-ssc-gravity-native-dt.patch",
+    "src/sensors/apply-gravity733.sh",
+    "packaging/native/check-gravity733.sh",
+    "tests/ssc-gravity.c",
+    "tests/ssc-gravity.sh",
+    "docs/SSC-GRAVITY-LINEAR.md",
+    "src/sensors/0013-ssc-gravity-observation-abi.patch"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0011-ssc-gravity-linear-input.patch",
+      "sha256": "6ad89007b6767b63c4235afc35c361769ab489eeaac74cab1cbe76e15554e505"
+    },
+    {
+      "path": "src/sensors/0012-ssc-gravity-native-dt.patch",
+      "sha256": "c4fcb96f853f81ea2a747e7b029937a4188f2676249f8e9d8ca4e43c6377fe03"
+    },
+    {
+      "path": "src/sensors/apply-gravity733.sh",
+      "sha256": "82c51f66593ed4698b24b8f3edc523a8e1b4b0d5ea08f8d36493f6c05ed9bc5f"
+    },
+    {
+      "path": "packaging/native/check-gravity733.sh",
+      "sha256": "bb2248ed594793cfbd2ab2448f061f09da7770354c33011da2b6b7ddb5b891e4"
+    },
+    {
+      "path": "tests/ssc-gravity.c",
+      "sha256": "5ce7c78f7d66950188aabfa94c75c38f8d9bb95c13e420ae48192cd7d427adbc"
+    },
+    {
+      "path": "tests/ssc-gravity.sh",
+      "sha256": "0255358ba53677e4960585d87b38149d59ca0860b28acc32c5bfbcce582aec2f"
+    },
+    {
+      "path": "docs/SSC-GRAVITY-LINEAR.md",
+      "sha256": "fb23c2452fda97bd036c32d2562598a95812a3c2afd7cbacade82545112f249b"
+    },
+    {
+      "path": "src/sensors/0013-ssc-gravity-observation-abi.patch",
+      "sha256": "40691be9319b68eab0f39eaaaeae071b6c5f336fa3b79f30f9ff0f177f52c95d"
+    },
+    {
+      "path": "packaging/native/copr-gravity733.sh",
+      "sha256": "74293ad668a2c727291a3a989ff633309a2885de84b2f4f54fe156c83f2ef763"
+    }
+  ],
+  "standard_linear_modifiers": true,
+  "linear_channel_abi": "in_accel_linear_x/y/z_raw",
+  "linux_abi": {
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "path": "Documentation/ABI/testing/sysfs-bus-iio",
+    "sha256": "5cca29b4ff3aec9b328c04724ce6243b07bc161f2382e69cf89826faeeb2ae12"
+  }
+}

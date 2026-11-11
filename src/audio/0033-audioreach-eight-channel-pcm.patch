@@ -1,0 +1,77 @@
+From: Uke contributors
+Subject: [PATCH] ASoC: qcom: encode bounded eight-channel PCM media formats
+
+The frontend and Uke MFC accept six/eight inputs, but both PCM transport
+encoders still reject counts above four. Bound PCM counts by the actual
+channel-map capacity and require enough nonzero entries before allocation.
+Keep compressed-format channel validation unchanged.
+
+The AudioReach media format length excludes alignment and the enclosing
+parameter TLV. Encode the actual PCM payload size, leaving zero-filled
+packet alignment and S16/S24/S32 storage semantics unchanged. This does not
+change physical speaker count, amplifier gains, VI or calibration.
+
+---
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -143,7 +143,7 @@
+ 				sizeof(struct apm_pcm_module_media_fmt_cmd) + \
+ 				ch * sizeof(uint8_t), 8)
+ 
+-#define APM_PCM_OUT_FMT_CFG_PSIZE(p, n) ALIGN(struct_size(p, channel_mapping, n), 4)
++#define APM_PCM_OUT_FMT_CFG_PSIZE(p, n) struct_size(p, channel_mapping, n)
+ 
+ struct apm_i2s_module_intf_cfg {
+ 	struct apm_module_param_data param_data;
+@@ -1181,6 +1181,22 @@
+ 	return -EINVAL;
+ }
+ 
++/* Validate before allocating or sending a PCM format packet. Sparse physical
++ * maps are compacted below, but must supply every declared logical channel.
++ */
++static bool audioreach_pcm_channels_valid(const struct audioreach_module_config *cfg)
++{
++	unsigned int i, mapped = 0;
++
++	if (!cfg->num_channels || cfg->num_channels > AR_PCM_MAX_NUM_CHANNEL)
++		return false;
++	for (i = 0; i < AR_PCM_MAX_NUM_CHANNEL; i++)
++		if (cfg->channel_map[i])
++			mapped++;
++
++	return mapped >= cfg->num_channels;
++}
++
+ static int audioreach_pcm_set_media_format(struct q6apm_graph *graph,
+ 					   const struct audioreach_module *module,
+ 					   const struct audioreach_module_config *mcfg)
+@@ -1194,7 +1210,7 @@
+ 
+ 	if (word_size < 0)
+ 		return word_size;
+-	if (num_channels > 4) {
++	if (!audioreach_pcm_channels_valid(mcfg)) {
+ 		dev_err(graph->dev, "Error: Invalid channels (%d)!\n", num_channels);
+ 		return -EINVAL;
+ 	}
+@@ -1287,7 +1303,8 @@
+ 
+ 	if (word_size < 0)
+ 		return word_size;
+-	if (num_channels > 4) {
++	if (mcfg->fmt == SND_AUDIOCODEC_PCM ?
++	    !audioreach_pcm_channels_valid(mcfg) : num_channels > 4) {
+ 		dev_err(graph->dev, "Error: Invalid channels (%d)!\n", num_channels);
+ 		return -EINVAL;
+ 	}
+@@ -1313,7 +1330,8 @@
+ 	if (mcfg->fmt == SND_AUDIOCODEC_PCM) {
+ 		header->data_format = DATA_FORMAT_FIXED_POINT;
+ 		header->fmt_id =  MEDIA_FMT_ID_PCM;
+-		header->payload_size = payload_size - sizeof(*header);
++		/* The media length excludes the parameter TLV and alignment padding. */
++		header->payload_size = sizeof(*cfg) + num_channels * sizeof(cfg->channel_mapping[0]);
+ 
+ 		p = p + sizeof(*header);
+ 		cfg = p;

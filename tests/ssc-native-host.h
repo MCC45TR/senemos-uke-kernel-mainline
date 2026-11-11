@@ -30,6 +30,7 @@
 #define MODULE_LICENSE(x)
 #define MODULE_DESCRIPTION(x)
 #define GFP_KERNEL 0
+struct iio_mount_matrix { const char *rotation[9]; };
 #define kzalloc(n,f) calloc(1,n)
 #define kmalloc(n,f) malloc(n)
 #define kfree(p) free(p)

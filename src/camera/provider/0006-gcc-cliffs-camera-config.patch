@@ -1,0 +1,47 @@
+From: Uke contributors
+Subject: [PATCH] clk: qcom: restore the Cliffs camera configuration gates
+
+The Uke OEM GCC enables camera AHB, HF XO and SF XO before publishing
+its clocks. The native GCC retained the video gates but omitted these
+three camera gates. A NULL always-on clock slot can still satisfy the
+consumer clock API; it does not enable the missing GCC registers.
+
+Restore only the exact Uke camera gates, preserving video, display and
+GPU policy. Propagate write errors before publication. CAMCC still
+verifies its own transport gates and refuses active CRM. No camera bus,
+sensor, EEPROM or capture graph is activated here.
+
+OEM: MiCode 5712080a4b0c0b1a879e6d145c601c649ddaddfd,
+drivers/clk/qcom/gcc-cliffs.c (GPL-2.0-only; Linux Foundation/Qualcomm).
+Same-SoC OnePlus fc892483f1d61f245924681eb5abd563564d9cba is identical.
+Electrical cause/effect requires a separate cumulative Uke boot trial.
+
+--- a/drivers/clk/qcom/gcc-cliffs.c
++++ b/drivers/clk/qcom/gcc-cliffs.c
+@@ -3171,6 +3171,17 @@ static int gcc_cliffs_probe(struct platform_device *pdev)
+ 	if (IS_ERR(regmap))
+ 		return PTR_ERR(regmap);
+ 
++	/* Exact Uke OEM camera AHB, HF XO and SF XO configuration gates. */
++	ret = regmap_update_bits(regmap, 0x26004, BIT(0), BIT(0));
++	if (ret)
++		return ret;
++	ret = regmap_update_bits(regmap, 0x26028, BIT(0), BIT(0));
++	if (ret)
++		return ret;
++	ret = regmap_update_bits(regmap, 0x2602c, BIT(0), BIT(0));
++	if (ret)
++		return ret;
++
+ 	/* OEM requires both configuration gates before any video GDSC access. */
+ 	ret = regmap_update_bits(regmap, 0x32004, BIT(0), BIT(0));
+ 	if (ret)
+@@ -3180,7 +3191,7 @@ static int gcc_cliffs_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Video bring-up does not force camera/display/GPU gates. */
++	/* Camera/video configuration does not force display/GPU gates. */
+ 	ret = clk_vdd_proxy_vote(&pdev->dev, &gcc_cliffs_desc);
+ 	if (ret)
+ 		return ret;

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "scope": "Qualified OV08D10 geometry on complete12101 plus the exact qualified touch layer",
+  "copr_build": 11261165,
+  "package": "uke-camera-geometry-check-7.3.1-1",
+  "state": "succeeded",
+  "tested_source_commit": "9398700a6375a309f572d588a9e448cdbc4b0736",
+  "source_manifest": "manifests/camera-geometry731-20261105.json",
+  "parent": {
+    "kernel_release": "7.3.1-12101-unstable",
+    "source_commit": "bba194e74ab97dcb848887fa62430c20f9d755d9",
+    "copr_build": 11260781,
+    "touch_source": "0e320d96f0d2dc155df224dd0e9712719a1d1f08",
+    "touch_check": 11261044
+  },
+  "result": {
+    "retained_profile_boot_config_firmware_admission": true,
+    "actual_prepared_driver_hashes": true,
+    "original_missing_hook_assertion134": [
+      "gcc",
+      "clang"
+    ],
+    "modes": 3,
+    "independent_try_files": 2,
+    "bayer_flip_combinations": 4,
+    "compilers": [
+      "gcc",
+      "clang"
+    ],
+    "variants": [
+      "ordinary",
+      "ubsan",
+      "asan_ubsan"
+    ],
+    "active_controls_and_try_isolation": true,
+    "invalid_selections_and_repeat_reads": true,
+    "required_mutants": [
+      "binned-crop",
+      "try-state",
+      "active-state"
+    ],
+    "all_mutants_assert134": true,
+    "real_aarch64_sensor_object": true,
+    "actual_callback_and_pad_ops_symbols": true,
+    "qualified_touch_controls_retained": true,
+    "full_kernel_image": false,
+    "linked_module": false
+  },
+  "artifacts": {
+    "source_log_gzip_sha256": "348462058c4ab9c4828670c87679e0661b522f025bc227338e9801dabcd8fb98",
+    "native_log_gzip_sha256": "b72f4e001784409c75f0bea4adc0b85202f2e7f60c0d67d4c3289fc602cda1fe",
+    "text_receipt_rpm_sha256": "8180d321e5587642290d583c01692abb0947284a9961e9cbb60b616897aa55c7",
+    "signing_key": "2204a661ea630a5303500085538797e72a3e4eca",
+    "signed_source_commit_verified": true,
+    "no_runtime_dependencies_scripts_or_triggers": true
+  },
+  "delivery": {
+    "new_kernel_revision": false,
+    "kernel_rpm": false,
+    "tablet_install": false,
+    "boot_or_slot_change": false,
+    "physical_camera_acceptance": false,
+    "calibration_consumption": false,
+    "rear_focus_acceptance": false
+  },
+  "next": "Observe12101 cached CAMCC failure; qualify one following complete kernel with this geometry and touch layer, then signed DNF and full physical acceptance"
+}

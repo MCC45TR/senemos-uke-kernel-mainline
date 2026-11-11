@@ -54,6 +54,11 @@ sha256sum "$kernel/drivers/clk/qcom/clk-regmap.c"
 printf '%s  %s\n' 8e1ffc25007a64b61f59b0c20dc6077b5595125b28582c020f47925bbe8da7e4 \
     "$kernel/drivers/clk/qcom/clk-regmap.c" | sha256sum -c -
 sed '/^#include /d' "$project/src/camera/provider/camcc-sm7675-clocks.h" > "$work/provider-clocks.h"
+for part in core lut clock; do
+    sed '/^#include <linux\//d' "$project/src/camera/provider/camcc-sm7675-crm-$part.h" \
+        > "$work/camcc-sm7675-crm-$part.h"
+done
+sed -i '1i #include "camcc-sm7675-crm-clock.h"' "$work/provider-clocks.h"
 awk '/^int clk_(pre_change_regmap|post_change_regmap|prepare_regmap)\(/ ||
      /^void clk_unprepare_regmap\(/ {copy=1}
      copy {print; if ($0=="}")copy=0}' \
@@ -77,3 +82,57 @@ printf 'CAMCC clocks: native Rivian prepare lacks the required voltage vote (exp
     -Wno-unused-but-set-variable -I"$work" "${flags[@]}" \
     "$project/tests/fixtures/camcc-clocks-check.c" -o "$work/clocks"
 "$work/clocks"
+
+[[ ${CAMCC_CRM_CLOCKS_TEST:-0} == 1 ]] || exit 0
+"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+    -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
+    -Wno-unused-but-set-variable -I"$work" "${flags[@]}" \
+    "$project/tests/fixtures/camcc-crm-clock-check.c" -o "$work/crm-clocks"
+"$work/crm-clocks"
+awk '/^struct cam_cc_clock \{/ {copy=1} copy {print;if($0=="};")exit}' \
+    "$project/src/camera/provider/camcc-sm7675-clocks.h" > "$work/ccf-clock-state.h"
+sed '/^#include /d' "$project/src/camera/provider/camcc-sm7675-crm-ccf.h" > "$work/crm-ccf.h"
+"${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror -Wno-unused-parameter \
+    -I"$work" "${flags[@]}" "$project/tests/fixtures/camcc-crm-ccf-check.c" -o "$work/crm-ccf"
+"$work/crm-ccf"
+
+[[ ${CAMCC_CRM_MUTATIONS:-0} == 1 ]] || exit 0
+cp "$work/camcc-sm7675-crm-clock.h" "$work/crm-clock.saved"
+cp "$work/provider-clocks.h" "$work/clock-wrapper.saved"
+cp "$work/provider-power.h" "$work/power-wrapper.saved"
+for mutation in deferred-vote abort-no-restore lower-before-abort busy-powers-off resume-drops-interface; do
+    cp "$work/crm-clock.saved" "$work/camcc-sm7675-crm-clock.h"
+    cp "$work/clock-wrapper.saved" "$work/provider-clocks.h"
+    cp "$work/power-wrapper.saved" "$work/provider-power.h"
+    case $mutation in
+        deferred-vote)
+            sed 's/if (c->prepared \&\& old_rate != new_rate)$/if (false)/' \
+                "$work/crm-clock.saved" > "$work/camcc-sm7675-crm-clock.h";;
+        abort-no-restore)
+            sed 's/if (c->prepared \&\& old_rate != new_rate) {/if (false) {/' \
+                "$work/crm-clock.saved" > "$work/camcc-sm7675-crm-clock.h";;
+        lower-before-abort)
+            sed '/Restore an aborted acknowledged vote/a\		(void)clk_post_change_regmap(hw, old_rate, new_rate);' \
+                "$work/clock-wrapper.saved" > "$work/provider-clocks.h";;
+        busy-powers-off)
+            sed 's/if (ret == -EBUSY)/if (false)/' \
+                "$work/power-wrapper.saved" > "$work/provider-power.h";;
+        resume-drops-interface)
+            sed '/Partial rearm must retain interface/{n;s/return cam_cc_power_fail(ret, 0, 0);/return (clk_disable_unprepare(cam_cc_power.iface), cam_cc_power_fail(ret, 0, 0));/;}' \
+                "$work/power-wrapper.saved" > "$work/provider-power.h";;
+    esac
+    "${CC:-cc}" -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+        -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare \
+        -Wno-unused-but-set-variable -I"$work" \
+        "$project/tests/fixtures/camcc-crm-clock-check.c" -o "$work/crm-mutant"
+    set +e
+    ("$work/crm-mutant" > "$work/crm-mutant.log" 2>&1) 2>/dev/null
+    mutant_status=$?
+    set -e
+    if [[ $mutant_status != 134 ]] || ! grep -q 'Assertion' "$work/crm-mutant.log"; then
+        cat "$work/crm-mutant.log" >&2
+        printf 'CRM CCF/PM mutation did not fail an assertion: %s (exit %s)\n' "$mutation" "$mutant_status" >&2
+        exit 1
+    fi
+done
+printf 'All5 deferred-vote/ABORT/voltage-order/PM-busy/rearm-retention mutations refused with assertion134\n'
