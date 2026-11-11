@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11304282,
+  "parent_full_release": 22,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11304282/senemos-uke-linux-kernel-mainline-unstable-7.3.3-22.src.rpm",
+  "parent_srpm_sha256": "3bdae451d8d08442ca9bdb715d666b748565bffc79ec779057cc12c1392e0842",
+  "parent_spec_sha256": "0c320c64f760cef309f002ac76c0f5c366ae899d7ccf15aa58a215a39fb69d8d",
+  "parent_audio_card_sha256": "1c7ca886f0054f0804ea25c17dc1df0a38d6586c132d23560e71f6164363c757",
+  "retained_parent_fields": 768,
+  "protected_gain": 223,
+  "proof": {
+    "build": 11305076,
+    "version": "7.3.3-95",
+    "source_check_release": 95,
+    "source": "a204f9a9f62e7053e47f11f3ce133d195966c13e",
+    "source_tree": "145f0ce166c31c84bb8b1e7ccfe7fa5c538c1b1e",
+    "receipt_sha256": "669e1a4bd552607ad78931cb7063a879d7e68b38194a8e79e885c68111f5a468"
+  },
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0125-uke-versioned-protection-observation.patch",
+      "sha256": "ebd09b7724ef66d7d358b8010f12d764390561e584d94387b0409002f17d7bce"
+    },
+    {
+      "path": "tests/battery-protection-observe-v2.sh",
+      "sha256": "2f104d84fa27115d273ec23fb435b2ea175f4833125fb2cfe7faddfb37231793"
+    },
+    {
+      "path": "packaging/native/check-charge-observe733.sh",
+      "sha256": "e5c94b81ae95bf7f6f8f72096e2b4c9c65621024081b80a6c9e362076a8b26ff"
+    },
+    {
+      "path": "docs/CHARGE-PROTECTION-OBSERVE-V2.md",
+      "sha256": "36718112f123645c9d4269a5b8adb8f01949966a306f8bef58c240f3499736f7"
+    },
+    {
+      "path": "packaging/native/copr-charge-observe733.sh",
+      "sha256": "1902c4992517c11b54d917ca8b1a329cbdcf93cfc6640cd6f1d2c171a96d3b3b"
+    },
+    {
+      "path": "packaging/native/prepare-charge-observe-full733.sh",
+      "sha256": "093588e92281fcd109e542a433808fbb6db4f6e72d162bb352469a1bb2776280"
+    },
+    {
+      "path": "packaging/native/charge-observe-legacy-view733.sh",
+      "sha256": "7385da1beb86b49f78d6c49bf5c5f833f224f28b54278f6d0637a207ff44948c"
+    },
+    {
+      "path": "packaging/native/rewrite-charge-observe-full733.sh",
+      "sha256": "5c74d013deb8282241eb6ce2c9c18ed1ff7a9b7d0200dc011f5b802c08f6181a"
+    },
+    {
+      "path": "packaging/native/copr-charge-observe-full733.sh",
+      "sha256": "d37f5a75dd266e165d112b1425d6b39f9cd8300bb8af8e3319f6b5ed62b10473"
+    },
+    {
+      "path": "docs/CHARGE-OBSERVE-CUMULATIVE-DELIVERY.md",
+      "sha256": "f1efbc803e2552e3de3d6861f993013646726e30023662f262a4bc7600969504"
+    },
+    {
+      "path": "tests/charge-observe-recipe.sh",
+      "sha256": "c6d2efd7584941c1c6da01e79bf47abc244278dce69349efd6a41837d808b8d3"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0125-uke-versioned-protection-observation.patch",
+    "tests/battery-protection-observe-v2.sh",
+    "packaging/native/check-charge-observe733.sh",
+    "docs/CHARGE-PROTECTION-OBSERVE-V2.md",
+    "manifests/charge-observe-v2-20261111.json",
+    "packaging/native/prepare-charge-observe-full733.sh",
+    "packaging/native/charge-observe-legacy-view733.sh",
+    "packaging/native/rewrite-charge-observe-full733.sh",
+    "docs/CHARGE-OBSERVE-CUMULATIVE-DELIVERY.md",
+    "tests/charge-observe-recipe.sh"
+  ],
+  "production_config_unchanged": true,
+  "encryption_fragment_enabled_in_full": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "legacy_guard_retired": false,
+  "physical_protection_accepted": false
+}
