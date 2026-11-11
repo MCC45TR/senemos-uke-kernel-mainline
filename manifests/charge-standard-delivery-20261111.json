@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11303077,
+  "parent_full_release": 20,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11303077/senemos-uke-linux-kernel-mainline-unstable-7.3.3-20.src.rpm",
+  "parent_srpm_sha256": "2368b2823eccaa1495bf5577fdc0542d407fb54c861c2881b97c333cc6aaed32",
+  "parent_spec_sha256": "7561e58075cb5b23c8aea5576d65268301fab7563ea72a9a7624fce26d2b1088",
+  "parent_audio_card_sha256": "02fda566cf4c237b99d0d2a50db3e5cf7f365df3cc3676ace26897c57c452aa7",
+  "retained_parent_fields": 758,
+  "protected_gain": 223,
+  "proof": {
+    "build": 11303293,
+    "version": "7.3.3-92",
+    "source_check_release": 92,
+    "source": "7abb0f794df5538759c6bee2608aa1aa5e6a19d7",
+    "source_tree": "119875ec213dee0e01b3b7d1ec4d1c4d576b6d95",
+    "receipt_sha256": "6ac564ec1795665ad1a839a8d531543a3f9e6e3faef176ba106853bc82d334ac"
+  },
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0123-uke-readonly-desktop-thresholds.patch",
+      "sha256": "52ca760246228fead36716d6fb390187a01202a59df7f230f459c7554d80ec6e"
+    },
+    {
+      "path": "tests/battery-observed-thresholds.sh",
+      "sha256": "05e9b5fcef5664df1612e728a16188b7f00130f12bd6adec9b3f3cebaf99135d"
+    },
+    {
+      "path": "configs/storage-encryption733.config",
+      "sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086"
+    },
+    {
+      "path": "tests/storage-encryption-config733.mjs",
+      "sha256": "8bf47ecfdadad7152166371d7d2d3f3874240705098f28d826b77eb31307f495"
+    },
+    {
+      "path": "packaging/native/check-storage-encryption733.sh",
+      "sha256": "d934b1a7b5059a42638da85ec23d58d1eb1695e84e8995b81547f40e77b76bfa"
+    },
+    {
+      "path": "packaging/native/check-charge-standard-storage733.sh",
+      "sha256": "2669be1bf98d5cc0c23f9fa0a4bc0dcb26d8cd36e7b3420c4b1ac62342424eeb"
+    },
+    {
+      "path": "docs/CHARGE-STANDARD-STORAGE-733.md",
+      "sha256": "65d0e8ac70ac1c2a0039c1e103d9f8f57ecb5bd9088a46490203d30b15bb175a"
+    },
+    {
+      "path": "packaging/native/copr-charge-standard-storage733.sh",
+      "sha256": "a550dcb6d1517e66eda7be0462acec0121683e977cf32dc09bc7fb3180d932c9"
+    },
+    {
+      "path": "packaging/native/prepare-charge-standard-full733.sh",
+      "sha256": "7570933dc865666416a9108c1807a8695b90311d7a7a4304389dc47902a59d3c"
+    },
+    {
+      "path": "packaging/native/charge-standard-legacy-view733.sh",
+      "sha256": "59ee4eded79e56243cc7b711467fdc8da8ad8f22e3c31952d40e8d8381841829"
+    },
+    {
+      "path": "packaging/native/rewrite-charge-standard-full733.sh",
+      "sha256": "81b7181c4fc48fa63016fc5abf35bbf38989e6445b4f4ac4ba51ac1edb3b55ef"
+    },
+    {
+      "path": "packaging/native/copr-charge-standard-full733.sh",
+      "sha256": "7063a09eec57596e83a071972fcf29fc8d36766d8d91c5af1623519e10d92171"
+    },
+    {
+      "path": "docs/CHARGE-STANDARD-CUMULATIVE-DELIVERY.md",
+      "sha256": "72b56d06e69d485e5ec13b3c06cc6419a8c22a3ebffff03358ed7819f26ba432"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0123-uke-readonly-desktop-thresholds.patch",
+    "tests/battery-observed-thresholds.sh",
+    "configs/storage-encryption733.config",
+    "tests/storage-encryption-config733.mjs",
+    "packaging/native/check-storage-encryption733.sh",
+    "packaging/native/check-charge-standard-storage733.sh",
+    "docs/CHARGE-STANDARD-STORAGE-733.md",
+    "manifests/charge-standard-storage-20261111.json",
+    "packaging/native/prepare-charge-standard-full733.sh",
+    "packaging/native/charge-standard-legacy-view733.sh",
+    "packaging/native/rewrite-charge-standard-full733.sh",
+    "docs/CHARGE-STANDARD-CUMULATIVE-DELIVERY.md"
+  ],
+  "production_config_unchanged": true,
+  "encryption_fragment_enabled_in_full": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "physical_cutoff_accepted": false
+}
