@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11300975,
+  "parent_full_release": 18,
+  "parent_srpm_sha256": "57f25ca9cc24cf5ef713f478479d968143fc697e43fbf03b36574132d91e9400",
+  "parent_spec_sha256": "1483872425a820ad1ebb566595c6a7368054af9d7d5a966a71062492821ab9f8",
+  "retained_parent_fields": 747,
+  "sysfs_operation": "uke_charge_apply_existing_cap_online",
+  "existing_cap": {
+    "enabled": true,
+    "start": 70,
+    "end": 80
+  },
+  "explicit_request_only": true,
+  "online_soc_min": 80,
+  "online_soc_max": 100,
+  "request_replay": false,
+  "general_control_admission": false,
+  "physical_cutoff_accepted": false,
+  "native_qualified": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "source_units": [
+    {
+      "path": "drivers/power/supply/qcom_battmgr.c",
+      "before_sha256": "5dbb99b4bccb418749d499e2c08999e23af05c50bfb440976cc01feab22b18fd",
+      "after_sha256": "0b188372783211a3da0db2aca9dbb1d960495cd757178acef363ac07c241c95f"
+    },
+    {
+      "path": "drivers/power/supply/qcom_battmgr_uke_control.h",
+      "before_sha256": "e02b68da7e10b2173ce3b0a3c8e24bf48fbab7bd01dc4f5fea6d16562c6423bd",
+      "after_sha256": "e0d82e37df7b91c23aa6668ce779960cfd63b74ac0995acbd965bffcbd889c06"
+    }
+  ],
+  "source_assets": [
+    {
+      "path": "src/power/0002-uke-existing-cap-online-reapply.patch",
+      "sha256": "d11f351fb27c473d6d034f81a3c8a35adfb8a305fa7ea25f6f1f37ff6aed87bf"
+    },
+    {
+      "path": "tests/charge-online-cap.c",
+      "sha256": "53661cca8734b4e536d2957cc9c7d7d18871e95e0791c7595ce56f827cd4a8b7"
+    },
+    {
+      "path": "tests/charge-online-cap.sh",
+      "sha256": "a73e5e4f6cc291998aef3bbd631802f2f60a748f814b8ede22e3c2558ff8ed9e"
+    },
+    {
+      "path": "docs/CHARGE-EXISTING-BAND-ONLINE.md",
+      "sha256": "d331824cc6867b2e425f39f21837e43a116188d4c9414a2a8d2c190d90e52422"
+    }
+  ]
+}
