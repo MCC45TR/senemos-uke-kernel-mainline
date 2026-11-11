@@ -8,7 +8,7 @@
   "parent_srpm_sha256": "da4ea560897d1c1681dc909c8365009af15547ff1bf237941f52138f1268fd4a",
   "parent_spec_sha256": "c6aa57e106b3398e7227aa7ada64ef83e8bea851eee6d061537b6988d589bfca",
   "parent_profile_sha256": "9a0148dda24d742baa8750d6a03922317bfdd4e1530f724d0bf30f4391921360",
-  "source_check_release": 96,
+  "source_check_release": 97,
   "retained_parent_fields": 774,
   "prior_native_proof": {
     "build": 11303293,
@@ -87,15 +87,15 @@
     },
     {
       "path": "packaging/native/check-storage-cohort733.sh",
-      "sha256": "e4de19ffe6a0343fe5b57c5ae2a23f4019d982c45577a6dd8ce06bbe34548120"
+      "sha256": "6ceb4717f4c1c0f6980ec72b43dce4a12c61f287415d0be789e788b5498250a5"
     },
     {
       "path": "packaging/native/copr-storage-cohort733.sh",
-      "sha256": "76deadeb61bfc2d7064f658d8d534dd9f93d31bbc3b863474a58cdabd6e4b9f8"
+      "sha256": "e99a4b198ef335a671770e9555914ce67a8d2a11a1333f986d7c36e1a942fec6"
     },
     {
       "path": "docs/STORAGE-COHORT-QUALIFICATION.md",
-      "sha256": "92ca3d3fd50587be881057f1bb8d4eeb870b36b093ad1698abe58f4149278a61"
+      "sha256": "b910de6a1554e23b888f86000facc9f0d3e39a3a4cad787f3d24d0bcb990b632"
     },
     {
       "path": "configs/storage-encryption733.config",
@@ -104,6 +104,10 @@
     {
       "path": "tests/storage-cohort-data.sh",
       "sha256": "ed6fbcf2227730bc6dfd3a43ed0f10734b23006ae88b7dab78798ff249ac652f"
+    },
+    {
+      "path": "packaging/native/check-storage-history733.sh",
+      "sha256": "f165dcf62b4519f05eb932a0385f6c5659b4a59063e1d7a9d60df18043f84f7d"
     }
   ],
   "payload_assets": [
@@ -111,6 +115,7 @@
     "packaging/native/check-storage-cohort733.sh",
     "docs/STORAGE-COHORT-QUALIFICATION.md",
     "configs/storage-encryption733.config",
+    "packaging/native/check-storage-history733.sh",
     "manifests/storage-cohort-20261111.json"
   ],
   "native_qualified": false,
@@ -118,5 +123,10 @@
   "encrypted_io_accepted": false,
   "volume_or_key_operations": false,
   "new_runtime_packages": 0,
-  "protected_gain": 223
+  "protected_gain": 223,
+  "previous_attempt": {
+    "build": 11307169,
+    "source_check_release": 96,
+    "result": "four resolved deltas passed; nonembedded config supplied to embedded historical guard; object build not reached"
+  }
 }

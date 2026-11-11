@@ -63,6 +63,10 @@ SPEC
 %build
 export ARCH=arm64 LLVM=1 LLVM_IAS=1
 mkdir -p %{_uke_out}
+SPEC
+ awk '/^for role in cdsp waydroid cdsp-before; do$/{emit=1} emit{print} emit&&/^bash native-profile\/packaging\/native\/prepare-memory-manager733.sh /{found++;exit}END{if(found!=1)exit 1}' "$full"
+ cat <<'SPEC'
+bash native-profile/packaging/native/check-storage-history733.sh "$PWD" %{_uke_out}
 bash native-profile/packaging/native/check-dual-light-delivery733.sh "$PWD" %{_uke_out} prepared
 SPEC
  awk '/^bash native-profile\/tests\/mainline-boot-status-contract.sh$/{emit=1} emit{print} emit&&/^bash native-profile\/packaging\/native\/prepare-charge-observe-full733.sh .* source$/{found++;exit}END{if(found!=1)exit 1}' "$full"
@@ -75,6 +79,10 @@ install -Dm644 native-profile/storage-cohort-source-qualification.json %{buildro
 install -Dm644 native-profile/storage-cohort-parent-source-composition.json %{buildroot}%{_docdir}/%{name}/storage-cohort-parent-source-composition.json
 install -Dm644 native-generated/storage-cohort733/resolved-cohort.json %{buildroot}%{_docdir}/%{name}/resolved-cohort.json
 install -Dm644 native-generated/storage-cohort733/native-objects.sha256 %{buildroot}%{_docdir}/%{name}/native-objects.sha256
+install -Dm644 native-generated/storage-cohort-history733/accepted.sha256 %{buildroot}%{_docdir}/%{name}/historical-configs.sha256
+for role in cdsp waydroid cdsp-before;do
+ install -Dm644 native-generated/storage-cohort-history733/$role.config %{buildroot}%{_docdir}/%{name}/historical-$role.config
+done
 for role in native cdsp waydroid cdsp-before;do
  for phase in before after;do
   install -Dm644 native-generated/storage-cohort733/$phase-$role/.config %{buildroot}%{_docdir}/%{name}/$phase-$role.config

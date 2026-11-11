@@ -27,8 +27,9 @@ node "$profile/tests/storage-cohort733.mjs" verify "$profile" "$work"
 for phase in before after;do
  bash "$profile/tests/governor-config-contract.sh" "$work/$phase-cdsp-before/.config" "$work/$phase-cdsp/.config"
 done
-bash "$profile/tests/cdsp-pogo-toolchain-contract.sh" "$work/before-cdsp-before/.config"
-bash "$profile/tests/cdsp-pogo-config-contract.sh" "$work/before-cdsp-before/.config"
+# These immutable full23 references were checked in their original embedded
+# initramfs context. The final nonembedded compiler configs are separate.
+(cd "$kernel/native-generated/storage-cohort-history733";sha256sum -c --strict --quiet accepted.sha256)
 # Exercise real refusal paths, keeping the accepted config files unchanged.
 cp "$work/after-native/.config" "$work/accepted-native.config"
 sed -i 's/^CONFIG_NR_CPUS=.*/CONFIG_NR_CPUS=4095/' "$work/after-native/.config"

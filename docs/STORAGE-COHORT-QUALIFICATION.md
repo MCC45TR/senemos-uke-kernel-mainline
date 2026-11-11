@@ -30,3 +30,13 @@ camera, migration and boot configuration gates, real linked Image/modules,
 signed RPMs and supported DNF/A-B delivery. These source checks do not enable
 encryption on the installed filesystem. FDE, FBE, ICE/HIE, TEE key management,
 mapper-aware boot and independent Live Recovery remain open acceptance work.
+
+Source96/COPR11307169 passes all four resolved eight-option deltas and both
+governor comparisons, then fails before object compilation: the added historical
+pogo hash was given the new nonembedded compiler configuration instead of its
+original embedded-initramfs reference. The corrected recipe retains the exact
+full23 reference preparation and runs the unchanged original guard in that
+context. It preserves those real historical outputs separately from final
+compiler configs. The actual full23 package also records pahole0, so the raw
+seed's older pahole130 is not a reason to add a different build tool. No
+functional setting or compiler identity is hidden from comparison.
