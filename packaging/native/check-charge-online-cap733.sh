@@ -11,6 +11,7 @@ mkdir -p "$work"
 abi=$(jq -er .abi_document.path "$contract")
 [[ ! -e $kernel/$abi ]]
 while IFS=$'\t' read -r path digest;do
+ sha256sum "$kernel/$path"
  printf '%s  %s\n' "$digest" "$kernel/$path" | sha256sum -c --strict --quiet -
  install -Dm644 "$kernel/$path" "$work/before/$path"
 done < <(jq -r '.source_units[]|[.path,.before_sha256]|@tsv' "$contract")

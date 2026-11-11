@@ -54,3 +54,11 @@ ARM64 battery object, retain every full18 source/config/DT/audio gate, verify
 signed packages and normal DNF/A-B recovery, then measure battery current,
 charge counter, status and voltage through a controlled request. Do not mark
 70/80 cutoff, autonomous restart or physical protection accepted from a build.
+
+The first native receipt87 stopped before new callbacks/objects because its
+preimage was reconstructed from a newer working source manifest. The actual
+full18 source lock excludes later patches0122/0123/0124/0126; its installed
+module also lacks their protocol attribute. Receipt88 pins the exact full18
+driver/header preimages instead. Those unshipped metadata changes are not
+silently imported as a charging fix. The complete full18 recipe remains the
+parent; no checksum check or physical acceptance gate is weakened.

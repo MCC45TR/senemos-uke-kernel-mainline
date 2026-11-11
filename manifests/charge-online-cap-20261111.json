@@ -24,13 +24,13 @@
   "source_units": [
     {
       "path": "drivers/power/supply/qcom_battmgr.c",
-      "before_sha256": "5dbb99b4bccb418749d499e2c08999e23af05c50bfb440976cc01feab22b18fd",
-      "after_sha256": "0b188372783211a3da0db2aca9dbb1d960495cd757178acef363ac07c241c95f"
+      "before_sha256": "0d04e4ea8baad97a1c590cc4c753eb56efbbb8759851e3848c88ae4ba0e8708e",
+      "after_sha256": "d9d2c5165342870fffddd2a2aa5edfa4cf4886bad158760b5eb1fb5a5e4802c2"
     },
     {
       "path": "drivers/power/supply/qcom_battmgr_uke_control.h",
-      "before_sha256": "e02b68da7e10b2173ce3b0a3c8e24bf48fbab7bd01dc4f5fea6d16562c6423bd",
-      "after_sha256": "e0d82e37df7b91c23aa6668ce779960cfd63b74ac0995acbd965bffcbd889c06"
+      "before_sha256": "8eced0e43f2cd6dd3811c76db9b7a3718b3fe77ca50c0bdbd8f3e84627c004e5",
+      "after_sha256": "37f652d5e2b654a720baca24c653d7152f8a1f664a23cb8826842f3ebf67ea85"
     }
   ],
   "source_assets": [
@@ -48,18 +48,18 @@
     },
     {
       "path": "docs/CHARGE-EXISTING-BAND-ONLINE.md",
-      "sha256": "d331824cc6867b2e425f39f21837e43a116188d4c9414a2a8d2c190d90e52422"
+      "sha256": "9e07b357a51ea018e3e27b4dc7399034a10e18e22ea4337cd7b8f7f10ab297ea"
     },
     {
       "path": "packaging/native/check-charge-online-cap733.sh",
-      "sha256": "92ad4ddfc1fe86004803e6f367ff26d9621bf59424489d0154bdc2f4f24738b1"
+      "sha256": "6de443a5260e0339962ffb7dd76c740679e4b36e0fd1cd5486d3bbc6ec48ed53"
     },
     {
       "path": "packaging/native/copr-charge-online-cap733.sh",
       "sha256": "72f15bbe5164f8b3f06689139c903c447e960d2a849a8398d88ca765d460d418"
     }
   ],
-  "source_check_release": 87,
+  "source_check_release": 88,
   "parent_source": "e93816a180473c1bf5c45314ffeb4fd599cecf4a",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300975/senemos-uke-linux-kernel-mainline-unstable-7.3.3-18.src.rpm",
   "protected_gain": 223,
@@ -74,5 +74,12 @@
     "docs/CHARGE-EXISTING-BAND-ONLINE.md",
     "packaging/native/check-charge-online-cap733.sh",
     "manifests/charge-online-cap-20261111.json"
-  ]
+  ],
+  "previous_source_check": {
+    "build": 11302725,
+    "release": 87,
+    "state": "failed",
+    "reason": "Working manifest included four post-parent patches; actual full18 preimage pin corrected before any new callback/object acceptance.",
+    "duration_seconds": 313
+  }
 }
