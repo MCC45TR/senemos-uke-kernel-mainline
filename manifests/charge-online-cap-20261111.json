@@ -36,7 +36,7 @@
   "source_assets": [
     {
       "path": "src/power/0002-uke-existing-cap-online-reapply.patch",
-      "sha256": "d11f351fb27c473d6d034f81a3c8a35adfb8a305fa7ea25f6f1f37ff6aed87bf"
+      "sha256": "1d5b06c0d48f319e47a52309d123dfc65e1a9f566c8d0c94db9ad24ecb578e4c"
     },
     {
       "path": "tests/charge-online-cap.c",
@@ -49,6 +49,30 @@
     {
       "path": "docs/CHARGE-EXISTING-BAND-ONLINE.md",
       "sha256": "d331824cc6867b2e425f39f21837e43a116188d4c9414a2a8d2c190d90e52422"
+    },
+    {
+      "path": "packaging/native/check-charge-online-cap733.sh",
+      "sha256": "92ad4ddfc1fe86004803e6f367ff26d9621bf59424489d0154bdc2f4f24738b1"
+    },
+    {
+      "path": "packaging/native/copr-charge-online-cap733.sh",
+      "sha256": "72f15bbe5164f8b3f06689139c903c447e960d2a849a8398d88ca765d460d418"
     }
+  ],
+  "source_check_release": 87,
+  "parent_source": "e93816a180473c1bf5c45314ffeb4fd599cecf4a",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300975/senemos-uke-linux-kernel-mainline-unstable-7.3.3-18.src.rpm",
+  "protected_gain": 223,
+  "abi_document": {
+    "path": "Documentation/ABI/testing/sysfs-driver-uke-charge-online",
+    "sha256": "c1e37303fe4550d807b1da9d30861a1485e3090bba6a5df5c34c8e0bdfa0c458"
+  },
+  "payload_assets": [
+    "src/power/0002-uke-existing-cap-online-reapply.patch",
+    "tests/charge-online-cap.c",
+    "tests/charge-online-cap.sh",
+    "docs/CHARGE-EXISTING-BAND-ONLINE.md",
+    "packaging/native/check-charge-online-cap733.sh",
+    "manifests/charge-online-cap-20261111.json"
   ]
 }

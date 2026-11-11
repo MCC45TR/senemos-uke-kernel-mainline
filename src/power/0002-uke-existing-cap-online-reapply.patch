@@ -122,3 +122,22 @@ index 9f40e28f..42ecad85 100644
  static int qcom_battmgr_uke_control_split(const char *buf, size_t count,
  					 char *data, size_t size, char **words, size_t capacity)
  {
+diff --git a/Documentation/ABI/testing/sysfs-driver-uke-charge-online b/Documentation/ABI/testing/sysfs-driver-uke-charge-online
+new file mode 100644
+--- /dev/null
++++ b/Documentation/ABI/testing/sysfs-driver-uke-charge-online
+@@ -0,0 +1,14 @@
++What:           /sys/bus/platform/devices/.../uke_charge_apply_existing_cap_online
++Date:           November 2026
++KernelVersion:  7.3.3
++Contact:        Uke kernel contributors
++Description:
++                Root-only explicit one-shot request, write literal 1.
++                Requires the existing enabled 70/80 band, present/Good battery,
++                online input, fresh SOC 80..100 and no latched protection fault.
++                Shares the offline probe's lifecycle, deadline and quarantine.
++                Sends only enable=1,target=80,delta=10; no preference change,
++                arbitrary selector, current, voltage, input suspend or replay.
++                Success means correlated receipt and same-epoch configuration
++                GETs only, not physical charge cutoff or autonomous protection.
++                Opaque/failed outcomes stay uncertain until separately measured.
