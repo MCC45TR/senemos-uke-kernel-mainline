@@ -87,6 +87,11 @@ static void ssc_schedule_locked(struct ssc_controller *c){(void)c;assert(false);
 static void complete(struct completion *c){c->done++;}
 static void ssc_dual_feed_locked(struct ssc_sensor *s){(void)s;}
 static void ssc_proximity_feed_locked(struct ssc_sensor *s){(void)s;}
+/* Final cumulative publish also fans out to heading; its lifecycle has a
+ * separate actual-callback fixture. Keep this boundary available before and
+ * after that additive layer without changing the quaternion assertions.
+ */
+static void __attribute__((unused)) ssc_heading_feed_locked(struct ssc_sensor *s){(void)s;}
 static s64 iio_get_time_ns(struct iio_dev *i){(void)i;return 987654321;}
 static int iio_push_to_buffers_with_ts(struct iio_dev *i,void *p,size_t bytes,s64 t){assert(bytes>=i->scan_bytes&&i->scan_bytes<=sizeof emitted);if(i->timestamp)memcpy((char *)p+i->timestamp_offset,&t,sizeof t);memcpy(emitted,p,i->scan_bytes);emitted_size=i->scan_bytes;pushes++;return 0;}
 static void mutex_lock(int *lock){assert(!*lock);*lock=1;}

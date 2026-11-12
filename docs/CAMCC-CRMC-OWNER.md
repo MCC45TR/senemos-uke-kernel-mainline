@@ -19,7 +19,7 @@ must retain state after uncertain partial publication. Exact register/IRQ
 topology remains attributed to Uke DT94c84aeb and kernel5712080a, with the
 same-SoC comparison pinned in the existing source review. No donor file changed.
 
-Native107 preserves the complete, byte-identical accepted24 source preparation
+Native108 preserves the complete, byte-identical accepted24 source preparation
 and all source inputs. It adopts the complete CRM/CCF backend qualified at
 source7a7aa63, plus the declared passive resource changes, before compiling
 the actual AArch64 controller and forced CCF/transport adapters with-Werror.
@@ -59,7 +59,14 @@ It retains the full object gate and unchanged production source. A separate
 SSC fixture counter rename avoids a collision with stdio puts; it changes no
 production code or assertions.
 
-The source is prepared, not yet qualified by native107. Permanent IRQ ownership,
+Native107/11318571 passed the actual AArch64 provider and forced CRM/CCF
+adapter objects, plus all four new SSC streaming callback modes and both old
+cache regression controls. It failed342s when the retained pre-heading
+quaternion fixture lacked the later heading fanout boundary. Native108 adds
+that controlled boundary, preserving every quaternion assertion and the
+separate actual heading lifecycle checks. Production source is unchanged.
+
+The source is prepared, not yet qualified by native108. Permanent IRQ ownership,
 powered transport attachment, all38 firmware-managed objects, parent snapshots,
 inherited AP votes and synchronization remain required before removing the
 firmware-enabled refusal. Full cumulative kernel linkage, signed DNF delivery

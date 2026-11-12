@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Actual permanent passive CRMC ownership; firmware-enabled CRM remains refused",
-  "source_check_release": 107,
+  "source_check_release": 108,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
@@ -45,11 +45,11 @@
   "source_assets": [
     {
       "path": "docs/CAMCC-CRMC-OWNER.md",
-      "sha256": "d956fd84fffe787fac96e9065ccc9f2a62b112e804d7dfc3025f172efd5635a5"
+      "sha256": "352514858734aa5c67feba4e3bea2be2f84bdca10b4e9aa62a1818dc26a48d90"
     },
     {
       "path": "packaging/native/copr-camcc-resource733-check.sh",
-      "sha256": "25165ff8afe469e192af185f885f670626c8199cf5204ec0928060c364623a64"
+      "sha256": "48bb8be6fadf20c995d692ccb4b600fd91f3859cf7c189a93af36b77ddf17f34"
     },
     {
       "path": "src/camera/camcc-sm7675-data.h",
@@ -484,13 +484,14 @@
     "corrected_with_literal_callbacks": true
   },
   "previous_native_attempt": {
-    "build": 11318558,
-    "release": 106,
+    "build": 11318571,
+    "release": 107,
     "state": "failed",
-    "elapsed_seconds": 331,
-    "real_provider_aarch64_werror_compiled": true,
-    "source_prep_closure_and_four_callback_modes_passed": true,
-    "cause": "Import guard expected ioremap_prot instead of exact ARM64 __ioremap_prot",
+    "elapsed_seconds": 342,
+    "actual_provider_and_forced_adapter_aarch64_passed": true,
+    "all_new_ssc_callback_modes_passed": 4,
+    "old_cache_regressions_refused": 2,
+    "cause": "Retained pre-heading quaternion fixture lacked final heading fanout boundary",
     "production_code_unchanged": true
   }
 }

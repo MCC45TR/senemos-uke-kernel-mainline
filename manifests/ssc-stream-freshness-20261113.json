@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Streaming buffers wait for an actual report; on-change replay and all shared stream ownership retained",
-  "source_check_release": 107,
+  "source_check_release": 108,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "qualified_camcc_check": null,
@@ -40,15 +40,19 @@
     },
     {
       "path": "docs/SSC-STREAM-FRESHNESS.md",
-      "sha256": "a494af3720c69397be053b94df868518b5b97413b482403e1134944cc1b8b59f"
+      "sha256": "9639aa9ad94fedfdb006634cf6499ccd7e1edc94caa2571fab2bfc3d4c2f5e9b"
     },
     {
       "path": "packaging/native/copr-ssc-stream-freshness733-check.sh",
-      "sha256": "6e743c0429a632e7dc037f8b67ffd27009c3c49d91d92d9984ddb69cc96f2598"
+      "sha256": "795a33125b32330166bdc2d3248c00c727a24042ef4ea0dcee07c45b1e2e817f"
     },
     {
       "path": "packaging/native/prepare-ssc-postimage733.sh",
       "sha256": "8eab58b373b131b9a3e621c6131b4624cd86629c689dcbfebcf17ea9e1b749b9"
+    },
+    {
+      "path": "tests/ssc-quaternion-buffer.c",
+      "sha256": "8612847532d94072cd19de0008f4c5d0f4a210dfcadbdcfe29cf6988c5cd0591"
     }
   ],
   "previous_camcc_attempt": 11318457,
@@ -63,13 +67,16 @@
   },
   "source_generation_failure": 11318537,
   "previous_native_attempt": {
-    "build": 11318558,
-    "release": 106,
+    "build": 11318571,
+    "release": 107,
     "state": "failed",
-    "elapsed_seconds": 331,
-    "real_provider_aarch64_werror_compiled": true,
-    "source_prep_closure_and_four_callback_modes_passed": true,
-    "cause": "Import guard expected ioremap_prot instead of exact ARM64 __ioremap_prot",
+    "elapsed_seconds": 342,
+    "actual_provider_and_forced_adapter_aarch64_passed": true,
+    "all_new_ssc_callback_modes_passed": 4,
+    "old_cache_regressions_refused": 2,
+    "cause": "Retained pre-heading quaternion fixture lacked final heading fanout boundary",
     "production_code_unchanged": true
-  }
+  },
+  "legacy_quaternion_fixture_before_sha256": "a594dc18e3a45981d4f0d29e462541c4ac7ccbbddac9980de145f6070611c72c",
+  "legacy_quaternion_fixture_after_sha256": "8612847532d94072cd19de0008f4c5d0f4a210dfcadbdcfe29cf6988c5cd0591"
 }
