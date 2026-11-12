@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Actual permanent passive CRMC ownership; firmware-enabled CRM remains refused",
-  "source_check_release": 104,
+  "source_check_release": 105,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
@@ -37,11 +37,11 @@
   "source_assets": [
     {
       "path": "docs/CAMCC-CRMC-OWNER.md",
-      "sha256": "abc36ef2bfbaf67800755f1a7affcad86910f724dd3bfdd9510f2d36b0b35a5f"
+      "sha256": "ae7d1ad4747c7d358b7bbb5250690c4099d8d5fc1d780bf3542f9deb9a797a50"
     },
     {
       "path": "packaging/native/copr-camcc-resource733-check.sh",
-      "sha256": "0402f7683cb20f2fc7c9a450b08520eb00945ff3390bbce6b501d064499f2a5e"
+      "sha256": "18aaef7f398fda44059ee429cfaae21018e1de8f3d9a2798b6e034d4ff53c978"
     },
     {
       "path": "src/camera/camcc-sm7675-data.h",
@@ -325,7 +325,14 @@
     },
     {
       "path": "tests/fixtures/camcc-native-check.c",
-      "sha256": "e2aa9a2230a5a08821448852c0379be2ff3b9fb2efa74062998a554741af772c"
+      "sha256": "5ebd9344d4201e860179af3973a81817e8de59cedc7301272ac51959fb7933c1"
     }
-  ]
+  ],
+  "previous_check": {
+    "release": 104,
+    "build": 11318429,
+    "state": "failed",
+    "elapsed_seconds": 241,
+    "cause": "Probe-observation fixture retained pre-CRMC boundary positions; actual resource/FDT/guard plain checks passed"
+  }
 }

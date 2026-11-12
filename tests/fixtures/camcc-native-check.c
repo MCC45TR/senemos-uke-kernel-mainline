@@ -543,8 +543,8 @@ static void probe_observations(void)
 	assert(cam_cc_native.probe.complete);
 	check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
 	int normal_steps = steps;
-	/* The successful sequence is unchanged: caching introduces no boundary call. */
-	assert(normal_steps == 41);
+	/* CRMC adds one pre-power lookup; observation itself adds no boundary call. */
+	assert(normal_steps == 42);
 	for (int i = 0; i < 4096; i++)
 		check_probe_observation("ready", 0, true, LAST_CRITICAL_GATE, true, 1);
 	/* A runtime reset fault must not rewrite the successful probe's history. */
@@ -554,10 +554,10 @@ static void probe_observations(void)
 	for (int gate = 0; gate < 4; gate++) {
 		for (int operation = 0; operation < 3; operation++) {
 			defaults(false);
-			/* Existing boundaries: owner, three parents, map, init, suspended,
+			/* Boundaries: owner, three parents, two maps, init, suspended,
 			 * three proxy votes, resume, then each gate's update/read pair.
 			 */
-			if (operation < 2) fail_at = 12 + 2 * gate + operation;
+			if (operation < 2) fail_at = 13 + 2 * gate + operation;
 			else stuck_gate = gate;
 			assert(!cam_cc_native_probe(&model_device));
 			const char *phase = operation == 0 ? "critical-gate-write" :
@@ -577,17 +577,17 @@ static void probe_observations(void)
 		}
 	}
 	for (int rail = 0; rail < 3; rail++) {
-		defaults(false); fail_at = 8 + rail;
+		defaults(false); fail_at = 9 + rail;
 		assert(!cam_cc_native_probe(&model_device));
 		check_probe_observation("proxy-votes", -EREMOTEIO, false, 0, false, 0);
 	}
-	defaults(false); fail_at = 11;
+	defaults(false); fail_at = 12;
 	assert(!cam_cc_native_probe(&model_device));
 	check_probe_observation("runtime-resume", -EREMOTEIO, false, 0, false, 0);
 	defaults(false); crm_active = true;
 	assert(!cam_cc_native_probe(&model_device));
 	check_probe_observation("crm-admission", -EOPNOTSUPP, true, LAST_CRITICAL_GATE, true, 1);
-	for (int boundary = 26; boundary <= 30; boundary += 4) {
+	for (int boundary = 27; boundary <= 31; boundary += 4) {
 		defaults(false); fail_at = boundary;
 		assert(!cam_cc_native_probe(&model_device));
 		assert(cam_cc_power.primary_error == -EREMOTEIO);

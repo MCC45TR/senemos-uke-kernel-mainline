@@ -34,7 +34,7 @@ spec=$output/uke-kernel-migration-check.spec
 awk '
  /^%description/{exit}
  /^Name:/{$0="Name: uke-kernel-migration-check"}
- /^Release:/{$0="Release: 104%{?dist}"}
+ /^Release:/{$0="Release: 105%{?dist}"}
  /^Summary:/{$0="Summary: Native Uke CAMCC permanent resource qualification"}
  /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next}
  {print}
@@ -91,7 +91,7 @@ test -s %{buildroot}%{_datadir}/%{name}/camcc-resource-checks.txt
 %{_datadir}/%{name}/*
 
 %changelog
-* Fri Nov 13 2026 Uke contributors - 7.3.3-104
+* Fri Nov 13 2026 Uke contributors - 7.3.3-105
 - Own exact CRMC resources permanently before provider power or publication.
 - Preserve firmware-enabled refusal and test clean unwind and fault retention.
 SPEC

@@ -19,7 +19,7 @@ must retain state after uncertain partial publication. Exact register/IRQ
 topology remains attributed to Uke DT94c84aeb and kernel5712080a, with the
 same-SoC comparison pinned in the existing source review. No donor file changed.
 
-Native104 preserves the complete, byte-identical accepted24 source preparation
+Native105 preserves the complete, byte-identical accepted24 source preparation
 and all source inputs. It overlays only the declared driver, registration and
 new passive resource header before compiling the actual AArch64 controller
 with-Werror. Actual resource callbacks run against Linux allocation/lookup
@@ -28,7 +28,13 @@ Existing FDT, CRM mode refusal, registration, handoff and mutation controls
 remain. The source factory produces text evidence only; local/tablet builds,
 Image/module production and device activation are prohibited.
 
-The source is prepared, not yet qualified by native104. Permanent IRQ ownership,
+Native104/11318429 failed after241s: the first resource, FDT and guard controls
+passed, but the observation fixture still expected41 boundaries. CRMC added
+one lookup before power. Native105 updates that count to42 and shifts the
+explicit gate/proxy/resume/PLL failure positions by one. It retains every
+assertion; the production driver and firmware refusal are unchanged.
+
+The source is prepared, not yet qualified by native105. Permanent IRQ ownership,
 powered transport attachment, all38 firmware-managed objects, parent snapshots,
 inherited AP votes and synchronization remain required before removing the
 firmware-enabled refusal. Full cumulative kernel linkage, signed DNF delivery
