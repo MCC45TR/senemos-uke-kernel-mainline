@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Actual permanent passive CRMC ownership; firmware-enabled CRM remains refused",
+  "source_check_release": 104,
+  "parent_full_build": 11309609,
+  "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
+  "parent_srpm_sha256": "1e706589d0e58ca0e71a778c244e307d8138f2844a48efbeb8c266865fc7beb3",
+  "parent_spec_sha256": "5a48a3e09469cad3de544e92323cdbfd52adeb323cb2f8485943f4773d351275",
+  "qualified_dt": {
+    "build": 11318374,
+    "source": "120abd214bd8b07e42b225e95e9266c677c3c4f2",
+    "report_sha256": "616492b905e85594c97d4a63065309d4a0e18906d048e45ad95c7aa033bbb570"
+  },
+  "firmware_guard_sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d",
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "physical_camera_accepted": false,
+  "crm_activation_allowed": false,
+  "new_runtime_packages": 0,
+  "archive_assets": [
+    "src/camera",
+    "tests/camcc-crmc-resource-contract.sh",
+    "tests/fixtures/camcc-crmc-resource-check.c",
+    "tests/camcc-resource-object733.sh",
+    "tests/camcc-controller-fdt731-contract.sh",
+    "tests/fixtures/camcc-controller-fdt-check.c",
+    "tests/camcc-crm-guard731-contract.sh",
+    "tests/fixtures/camcc-crm-guard-check.c",
+    "tests/camcc-native731-contract.sh",
+    "tests/fixtures/camcc-native-check.c",
+    "tests/fixtures/camcc-critical-before12101.h",
+    "docs/CAMCC-CRMC-OWNER.md",
+    "packaging/native/copr-camcc-resource733-check.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "docs/CAMCC-CRMC-OWNER.md",
+      "sha256": "abc36ef2bfbaf67800755f1a7affcad86910f724dd3bfdd9510f2d36b0b35a5f"
+    },
+    {
+      "path": "packaging/native/copr-camcc-resource733-check.sh",
+      "sha256": "0402f7683cb20f2fc7c9a450b08520eb00945ff3390bbce6b501d064499f2a5e"
+    },
+    {
+      "path": "src/camera/camcc-sm7675-data.h",
+      "sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d"
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "a13e95a27e8001f20b7b19cacb389d60bdb5de0a85899d5ef752b08918d7090b"
+    },
+    {
+      "path": "src/camera/camss/0001-media-camss-return-phy-setup-errors.patch",
+      "sha256": "1cabc9d7e38da87b1fb6746a7a551cc49b663da73355997a7dd187336a2d1d63"
+    },
+    {
+      "path": "src/camera/camss/0002-media-camss-sm7675-resources.patch",
+      "sha256": "2f29098c2c344613d4e48a60f270434ab778a6042979f2c4901834ec704ab947"
+    },
+    {
+      "path": "src/camera/camss/README731.md",
+      "sha256": "de6e5807063f3f8b67569024b26b418fcf407e91b56b07f1879a1157b144a447"
+    },
+    {
+      "path": "src/camera/camss/camss-sm7675-data.h",
+      "sha256": "791521c3d91fe304a516cc7513d8da287cea8172e4f272639e7ecc5d587b0dea"
+    },
+    {
+      "path": "src/camera/camss/camss-sm7675-phy-ops.h",
+      "sha256": "e4cc580b724c1f4bd172e80cf71d429e47cba81a88663c66ff33080866d27c11"
+    },
+    {
+      "path": "src/camera/camss/csiphy-sm7675.h",
+      "sha256": "ad087da04c35e9a1b493cc0d13d6a23b95a1a661904d8670858975a17a9261c6"
+    },
+    {
+      "path": "src/camera/cci/0001-i2c-qcom-cci-initialize-all-completions.patch",
+      "sha256": "c9dc6160546eaacc252ffe01622ef68b51c1646ad0187dc4794011a4ccd35235"
+    },
+    {
+      "path": "src/camera/cci/README731.md",
+      "sha256": "54359ee0f864d4d38812562d1b00ee60520db2aff4a2c17a9a90472edef4c6a5"
+    },
+    {
+      "path": "src/camera/eeprom/0001-at24-readonly-vcc.patch",
+      "sha256": "77c513c26ca23dc961b3a6b99e63269446e0bbd3f1e2a249590fde2c2ba98fc3"
+    },
+    {
+      "path": "src/camera/eeprom/0002-at24-readonly-vcc-binding.patch",
+      "sha256": "886e676c368d96fb14a35dfac277ae479422f3b0fc58f50a92ddc400962c90eb"
+    },
+    {
+      "path": "src/camera/eeprom/0003-rpmh-front-vio.patch",
+      "sha256": "b1bc2398789f14f770c544c0436db7d573a6b2f3ea407306494a43bf39072420"
+    },
+    {
+      "path": "src/camera/eeprom/FRONT731.md",
+      "sha256": "9e6a69f1de94c979e57e019d94e5bedb246202e4d37b2c152006689e39eaaa54"
+    },
+    {
+      "path": "src/camera/eeprom/README731.md",
+      "sha256": "c44e9e27bcad1ee957c6207f329f7677bf153c60239d4d993bf52dce3487dd07"
+    },
+    {
+      "path": "src/camera/eeprom/at24-vcc-readonly.h",
+      "sha256": "da0a8c3c1dfff9741dd599d5e3b3070ec1d048d4c880c056024be4eb78bdc0dd"
+    },
+    {
+      "path": "src/camera/eeprom/front-eeprom-abl-hook.patch",
+      "sha256": "e4e7a3b969218b0cec8ebc472b32c6b24eae8983107bd0208261bb41adefd57a"
+    },
+    {
+      "path": "src/camera/eeprom/front-eeprom-prepare-hook.patch",
+      "sha256": "37ea04ab208839dd53e79834d75f3f702de6ce956692e1483ded145ad7a626c0"
+    },
+    {
+      "path": "src/camera/eeprom/uke-front-eeprom-dt.h",
+      "sha256": "8d975c344b18011cbf4b4e670292a08c46b4f91be1a6e2a76d4990f354ad72cb"
+    },
+    {
+      "path": "src/camera/include/dt-bindings/clock/qcom,sm7675-camcc.h",
+      "sha256": "046fb1f198076896493e5af3071df908a1366280912724cf9f3b643199ee8796"
+    },
+    {
+      "path": "src/camera/prepare-controller731.sh",
+      "sha256": "6add647c9f32ea587ee65adcd7a89a7fed68994537e3ea5327791a5ee997a066"
+    },
+    {
+      "path": "src/camera/provider/0001-clk-qcom-gdsc-collapse-error.patch",
+      "sha256": "9f9328746a9192dbf756f6401714b62648322ddef4315d916209199e84a32f4e"
+    },
+    {
+      "path": "src/camera/provider/0001-gdsc-registration-unwind731.patch",
+      "sha256": "43da3e4441b4e10b29c8581eabd9f6c2052b9d8a5a48c139b4ddd261702cddc2"
+    },
+    {
+      "path": "src/camera/provider/0002-clk-qcom-gdsc-controller-pm.patch",
+      "sha256": "75dc00dfcd74e2f5723268f4ffa1bf6c66d49224a116e462fe30a32485e6f6b8"
+    },
+    {
+      "path": "src/camera/provider/0003-clk-qcom-gdsc-registration-unwind.patch",
+      "sha256": "9605851ea457c9faa5e370a07820bc9778f4de6d5bb9161d1b13acced9b857d4"
+    },
+    {
+      "path": "src/camera/provider/0004-clk-qcom-gdsc-permanent-storage.patch",
+      "sha256": "d3ff1f16e10986940fbb71f38fefe7961b6375008985756810cbb9273db4881e"
+    },
+    {
+      "path": "src/camera/provider/0005-clk-qcom-build-native-sm7675.patch",
+      "sha256": "332d468965a2039732f58afc8ce88b308bc61ea17411bbbc09206da1d8d12d49"
+    },
+    {
+      "path": "src/camera/provider/0006-gcc-cliffs-camera-config.patch",
+      "sha256": "a1d8a4c33aabbbf297913e686922cc69e3573cd1ae5ddc7bb3d54446220d3128"
+    },
+    {
+      "path": "src/camera/provider/CLOCKS731.md",
+      "sha256": "42b5e28b0b03e3fabc0db881f2edd3432788ab273dd0c6c9bec2c8eda3e075f2"
+    },
+    {
+      "path": "src/camera/provider/CONTROLLER731.md",
+      "sha256": "2a1cd7c55a1d6801bbef6adae1a63aa1da8a8ff47d337b3dd21423a90ab18e64"
+    },
+    {
+      "path": "src/camera/provider/GDSC-STORAGE731.md",
+      "sha256": "a6d1477d176080871096bd89205ae19e03a142203e5ca8bf847ede2f563047e5"
+    },
+    {
+      "path": "src/camera/provider/NATIVE731.md",
+      "sha256": "5eabbe60907dbc9bc57c102ff4d8356dcadc865b2c7ef3bcf2184d2de577b678"
+    },
+    {
+      "path": "src/camera/provider/OWNER731.md",
+      "sha256": "f5489857a2f6822496d791723e977bfa2605569e262735dfe1f6fa4552bcb285"
+    },
+    {
+      "path": "src/camera/provider/README731.md",
+      "sha256": "9e13431a58d55aa9e0f785335dad16e40b1906c99bbb6add668f02177fc1ebde"
+    },
+    {
+      "path": "src/camera/provider/apply-gcc-config731.sh",
+      "sha256": "12b47a18437375190cb5276aedaa31fe8982b935f801e0c10a55a6a029af3451"
+    },
+    {
+      "path": "src/camera/provider/camcc-abl-hook.patch",
+      "sha256": "514b2cfe462bd28005250c8b3f98d9b6c378761dbb9685c5b4d2450f2e85cc49"
+    },
+    {
+      "path": "src/camera/provider/camcc-prepare-hook.patch",
+      "sha256": "1658feef3b8e0321a59ee474538c085e4c70ef6e7def043e176d9fb460e64c08"
+    },
+    {
+      "path": "src/camera/provider/camcc-scope-hook.patch",
+      "sha256": "6b5fd1d89c67b3c0b143cd2d96c06e9ad79fcbfc12018cc8be33eb7efe272b3e"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-clocks.h",
+      "sha256": "6fc088f78067a7405bcb6f59e9eda19caddfdea3a6ab5673e3e344e2bcad721a"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-ccf.h",
+      "sha256": "9e2e087ccf07f70015ec36c88d64940bf0483ff49cab705078f81e6739c48188"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-clock.h",
+      "sha256": "6a4958f7673df8d3f334dcf22a402aae948db687eb396e991f32eb44ebb9de84"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-guard.h",
+      "sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-lut.h",
+      "sha256": "db49bf4213a2b837212acc064e185a431de9ec43e692c346e533f43c19108049"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-pm.h",
+      "sha256": "1bb48c48db0a215ba236b6075fa1df88b4fa9de05c903cb751e93375c365eebd"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-transport.h",
+      "sha256": "aed38b958f98312b5cd4cf6678d37c49f223840126468710589b535df8bd24ed"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crmc-resource.h",
+      "sha256": "baf553909677d534f5a3319ce47cc75e45bac83fd6bc820b8bb9de474bba5056"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-handoff.h",
+      "sha256": "bb5149f0cd32f747797687f604e28dd821f3f43c62108ecae97c33e0389cf438"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-owner.h",
+      "sha256": "ea1a0381e6bbf4f77f3122035c9c4251a18cd987c72e80a1aaab09fe0c2111b2"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-power.h",
+      "sha256": "bb15f4cbf333bfa89373af0daae26cb5de9b250e9739c4217a44e0102be9801c"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-registration.h",
+      "sha256": "f012d4674f79ede320aa56df1b046766b1dc3f9c654a0b700ee505db2945c27a"
+    },
+    {
+      "path": "src/camera/provider/sysfs-driver-camcc-sm7675",
+      "sha256": "d982b5ecbac6c5a19afc4b65aea8adccde76414327c8cd8a7661d938fbe6b78e"
+    },
+    {
+      "path": "src/camera/provider/uke-camcc-dt.h",
+      "sha256": "7ce37bfa582cbc4c390339ff934f579e045e961add64a4b1ab7f23786e460f33"
+    },
+    {
+      "path": "src/camera/sensors/0001-dt-bindings-media-ov13b10.patch",
+      "sha256": "4dbdd01cfb748d19b3173e176b0defb319c279b6f28ea6399233fe8259342928"
+    },
+    {
+      "path": "src/camera/sensors/0002-media-i2c-ov13b10-of-match.patch",
+      "sha256": "47bf6a3b60d8d8e1c9b7aa4e199990321f6e1f1ec435e2634080886f542dd690"
+    },
+    {
+      "path": "src/camera/sensors/0003-ov08d10-probe-debug-lanes.patch",
+      "sha256": "ef063136ce9820723d5144b5d51c8c9c8380c67515cd14d5131dc9011b3a67c5"
+    },
+    {
+      "path": "src/camera/sensors/0004-ov08d10-exposure-read-errors.patch",
+      "sha256": "94054f0b0cb715d5b8fa810746fb027b4789dd1b2d7385cab4b260006919c266"
+    },
+    {
+      "path": "src/camera/sensors/0005-ov08d10-selection731.patch",
+      "sha256": "1fc8b19a865c6ff118bae8b516fae9b709c326c944fcf201971594c119c6eae9"
+    },
+    {
+      "path": "src/camera/sensors/README731.md",
+      "sha256": "3df2925f45b3024f122a0bd5e637dd824993b2804b41ca1f9c4c684ce8fe3a5a"
+    },
+    {
+      "path": "src/camera/sleep/0001-camcc-quarantine-s2idle.patch",
+      "sha256": "9cc60f1c0aba9255996fea8ca1417ff41cbb2b633766b00c88eb566ded4b854c"
+    },
+    {
+      "path": "src/camera/sleep/camcc-sm7675-sleep.h",
+      "sha256": "35d517c3ab92ce4bd71fcce3b00f1cb5ad0e40438c25430feaf3a2d9be9facbb"
+    },
+    {
+      "path": "tests/camcc-controller-fdt731-contract.sh",
+      "sha256": "2b18346075ed6f3dd2502367006ee0db6eac122561a3e8e017d6306ec2e14bc9"
+    },
+    {
+      "path": "tests/camcc-crm-guard731-contract.sh",
+      "sha256": "6d1fcf82caa6a3e6e9e7434eb354b675c6fb0d0fdd5f00f15ce7c5d22310cb02"
+    },
+    {
+      "path": "tests/camcc-crmc-resource-contract.sh",
+      "sha256": "863806373fc734ec0b6ec5feb5c19aeb3fd740e14952fa6f1f5d3f9e0a9451b6"
+    },
+    {
+      "path": "tests/camcc-native731-contract.sh",
+      "sha256": "1bed2e5a77fe91778b66fedcff92bf39dc899103ea4ce3b917242409532ef620"
+    },
+    {
+      "path": "tests/camcc-resource-object733.sh",
+      "sha256": "2e1226a3cc77cf56f34d020c2191a15f36477890ae951291f3769aedde277d24"
+    },
+    {
+      "path": "tests/fixtures/camcc-controller-fdt-check.c",
+      "sha256": "4f881c35b3be3980bfdc62be9167053871538292a346ec7a862cb802c0db71b3"
+    },
+    {
+      "path": "tests/fixtures/camcc-critical-before12101.h",
+      "sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8"
+    },
+    {
+      "path": "tests/fixtures/camcc-crm-guard-check.c",
+      "sha256": "dfb505a9bcfb9a4f016cbc641b2f351f7b0ec597cb53e8a7a3ebfce112ce5a5d"
+    },
+    {
+      "path": "tests/fixtures/camcc-crmc-resource-check.c",
+      "sha256": "129bc941623db9910e23e012efe58fc41c5cbf70b64d71c08365e2b52dbffeec"
+    },
+    {
+      "path": "tests/fixtures/camcc-native-check.c",
+      "sha256": "e2aa9a2230a5a08821448852c0379be2ff3b9fb2efa74062998a554741af772c"
+    }
+  ]
+}

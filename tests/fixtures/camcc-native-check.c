@@ -84,7 +84,7 @@ struct qcom_reset_controller { struct reset_controller_dev rcdev; struct regmap 
 static int steps, fail_at, resources, registered_clocks, reset_published, domain_published, clock_published;
 static int configured_plls, sync_error, sync_calls, genpd_syncs;
 static bool model_domains_on, first_resume, boot_drop_fault, domain_sync_fault;
-static bool crm_mapping, crm_active, busy_at_suspend;
+static bool crm_mapping, crmc_mapping, crm_active, busy_at_suspend;
 static int stuck_gate;
 static bool bootstrap_dependency;
 static unsigned int bootstrap_requests;
@@ -228,7 +228,7 @@ static struct regmap *cam_cc_owner_create(struct platform_device *pdev)
 static int cam_cc_owner_probe_failed(int error)
 {
 	assert(!cam_cc_power.publication_started && !model_device.dev.usage);
-	assert(!crm_mapping);
+	assert(!crm_mapping && !crmc_mapping);
 	resources = 0; cam_cc_power.dev = NULL; cam_cc_power.map = NULL; return error;
 }
 static bool cam_cc_owner_busy(void)
@@ -244,7 +244,7 @@ static int cam_cc_crm_guard_map(struct platform_device *pdev)
 }
 static int cam_cc_crm_guard_admit(void)
 {
-	assert(crm_mapping && model_device.dev.active && model_device.dev.usage > 0);
+	assert(crm_mapping && crmc_mapping && model_device.dev.active && model_device.dev.usage > 0);
 	assert(!configured_plls && !registered_clocks && !reset_published);
 	for (unsigned int i = 0; i < ARRAY_SIZE(cam_cc_sm7675_critical_cbcrs); i++)
 		assert(model_map.words[cam_cc_sm7675_critical_cbcrs[i] / 4] & BIT(0));
@@ -253,8 +253,20 @@ static int cam_cc_crm_guard_admit(void)
 }
 static void cam_cc_crm_guard_put(void)
 {
-	assert(!model_device.dev.active && !cam_cc_power.publication_started);
+	assert(!model_device.dev.active && !cam_cc_power.publication_started && !crmc_mapping);
 	crm_mapping = false;
+}
+static int cam_cc_crmc_resource_map(struct platform_device *pdev)
+{
+	assert(pdev == &model_device && resources && crm_mapping && !crmc_mapping);
+	int ret = step(); if (ret) return ret;
+	crmc_mapping = true; return 0;
+}
+static void cam_cc_crmc_resource_put(void)
+{
+	assert(!model_device.dev.active && !cam_cc_power.publication_started);
+	assert(!crmc_mapping || crm_mapping);
+	crmc_mapping = false;
 }
 static int cam_cc_owner_begin_publication(void)
 {
@@ -412,7 +424,7 @@ static void defaults(bool boot_on)
 	reset_published = domain_published = clock_published = 0;
 	configured_plls = sync_error = sync_calls = genpd_syncs = sequence_size = 0;
 	model_domains_on = boot_on; first_resume = boot_drop_fault = domain_sync_fault = false;
-	crm_mapping = crm_active = busy_at_suspend = false;
+	crm_mapping = crmc_mapping = crm_active = busy_at_suspend = false;
 	stuck_gate = -1;
 	bootstrap_dependency = false;
 	bootstrap_requests = 0;
@@ -442,7 +454,8 @@ static void normal_lifecycle(void)
 	for (int on = 0; on < 2; on++) {
 		defaults(on); assert(!cam_cc_native_probe(&model_device));
 		assert(resources && cam_cc_native.ready && !cam_cc_power.fault);
-		assert(steps == (on ? 39 : 41));
+		assert(steps == (on ? 40 : 42));
+		assert(crm_mapping && crmc_mapping);
 		assert(reset_published && domain_published && clock_published && registered_clocks == 5);
 		assert(configured_plls == (on ? 0 : 2));
 		assert(model_driver.sync_state == cam_cc_native_sync_state);
@@ -490,7 +503,7 @@ static void probe_failures(void)
 				assert(cam_cc_native.probe.complete && cam_cc_native.probe.error == reference_errors[failure - 1]);
 				assert(!strcmp(cam_cc_native.probe.phase, reference_phases[failure - 1]));
 			}
-			if (failure <= 7) {
+			if (failure <= 8) {
 				assert(ret == -EREMOTEIO && !resources && !cam_cc_power.fault);
 				assert(!parent_clks[0].references && !parent_clks[1].references && !parent_clks[2].references);
 			} else {
@@ -509,7 +522,7 @@ static void probe_failures(void)
 	defaults(true); crm_active = true;
 	assert(!cam_cc_native_probe(&model_device));
 	assert(cam_cc_power.fault && cam_cc_power.primary_error == -EOPNOTSUPP);
-	assert(resources && crm_mapping && model_device.dev.active && cam_cc_native.probe_pm_held);
+	assert(resources && crm_mapping && crmc_mapping && model_device.dev.active && cam_cc_native.probe_pm_held);
 	assert(!configured_plls && !registered_clocks && !reset_published && !domain_published && !clock_published);
 	assert(!cam_cc_native.ready);
 	int before_sync = steps; cam_cc_native_sync_state(&model_device.dev); assert(steps == before_sync);
