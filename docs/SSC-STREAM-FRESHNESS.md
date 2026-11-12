@@ -27,12 +27,12 @@ SSC hardware ticks into host time or establish a physical sample's age before
 its report reached the host. Cached on-change state still uses subscription
 time; consumers needing acquisition age must not treat that as a new report.
 
-Native106 exercises the actual publish/enable/disable callbacks for all12
+The corrected native106 exercises the actual publish/enable/disable callbacks for all12
 datatypes with GCC/Clang ordinary and address/undefined sanitizers. It checks
 streaming joins, unchanged on-change replay, early-ACK deduplication, values,
 scan padding, duplicate enables, failures and release. An actual-body mutation
 restoring the former unconditional cache replay must fail. The complete
-accepted24 preparation and complete CAMCC106 checks remain; quaternion layout, heading
+accepted24 preparation and complete CAMCC checks remain; quaternion layout, heading
 lifecycle, proximity ABI and real AArch64 SSC objects are checked separately.
 
 The source is prepared, not yet natively qualified or delivered. Gravity's
@@ -40,3 +40,10 @@ physical frame/mount transform remains unadmitted. This change does not justify
 copying the accelerometer's matrix or opening a new raw-device permission.
 The existing Control package remains the owner of any required session bridge;
 keyboard inclination policy remains in its userspace client.
+
+Full24 applies its later SSC layers during the source portion of build,
+after prep. The native check reproduces that exact final SSC postimage from
+the prepared c7a271fb driver and15 retained patches before applying the new
+condition. Protocol and Makefile bytes remain unchanged. This assembly is
+specific to the source check; full delivery must retain the complete ordered
+source stages and place the new change after proximity ABI admission.

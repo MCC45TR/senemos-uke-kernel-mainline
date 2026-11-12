@@ -5,7 +5,7 @@ set -Eeuo pipefail
 owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 manifest=$owner/manifests/ssc-stream-freshness-20261113.json
 output=$(realpath -m "$1")
-[[ $(curl -qfsSL --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11318457 | jq -er .state) == failed ]]
+[[ $(curl -qfsSL --max-time 45 https://copr.fedorainfracloud.org/api_3/build/11318537 | jq -er .state) == failed ]]
 (cd "$owner"; jq -r '.source_assets[]|.sha256+"  "+.path' "$manifest" | sha256sum -c --strict --quiet -)
 bash "$owner/packaging/native/copr-camcc-resource733-check.sh" "$output"
 stage=$(mktemp -d)
@@ -19,10 +19,11 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
  -cJf "$output/uke-ssc-stream-freshness.tar.xz" -C "$stage" ssc-stream-freshness
 node - "$output/uke-kernel-migration-check.spec" <<'JS'
 const fs=require('fs'),p=process.argv[2];let s=fs.readFileSync(p,'utf8');
-function replaceOnce(old,next){if(s.split(old).length!==2)throw Error('Inherited recipe drift: '+old);s=s.replace(old,next);}
+function replaceOnce(old,next){if(s.split(old).length!==2)throw Error('Inherited recipe drift: '+old);s=s.replace(old,()=>next);}
 if(!s.includes('Release: 106%{?dist}'))throw Error('Wrong cumulative source-check release');
 replaceOnce('Source190: uke-camcc-resource.tar.xz','Source190: uke-camcc-resource.tar.xz\nSource191: uke-ssc-stream-freshness.tar.xz');
 replaceOnce('\n%build\n',`\ntar -xJf %{SOURCE191}
+bash ssc-stream-freshness/packaging/native/prepare-ssc-postimage733.sh "$PWD"
 bash ssc-stream-freshness/src/sensors/apply-stream-freshness733.sh "$PWD" "$PWD/ssc-stream-freshness"
 cp drivers/iio/common/uke-ssc/uke-ssc-iio.c %{_topdir}/ssc-final-source.c
 git apply -R ssc-stream-freshness/src/sensors/0019-ssc-streaming-buffer-fresh-sample.patch

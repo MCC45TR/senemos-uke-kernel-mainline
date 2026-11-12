@@ -19,7 +19,7 @@ must retain state after uncertain partial publication. Exact register/IRQ
 topology remains attributed to Uke DT94c84aeb and kernel5712080a, with the
 same-SoC comparison pinned in the existing source review. No donor file changed.
 
-Native106 preserves the complete, byte-identical accepted24 source preparation
+The corrected native106 preserves the complete, byte-identical accepted24 source preparation
 and all source inputs. It adopts the complete CRM/CCF backend qualified at
 source7a7aa63, plus the declared passive resource changes, before compiling
 the actual AArch64 controller and forced CCF/transport adapters with-Werror.
@@ -41,11 +41,16 @@ Native105/11318457 failed after265s. All four compiler/sanitizer modes and82
 probe fault boundaries passed. The actual object then exposed missing CRM PM
 headers: accepted24's packaged profile contained the older provider, despite
 the newer qualified sources existing in Git. Replacing only three files was
-incomplete. Native106 installs the complete declared closure and preserves the
+incomplete. The corrected candidate installs the complete declared closure and preserves the
 already packaged s2idle projection. It also repeats the provider/VDD/CCF/PM
 controls. No missing include or existing feature is suppressed.
 
-The source is prepared, not yet qualified by native106. Permanent IRQ ownership,
+The first native106 source job11318537 failed during source generation: a JavaScript replacement
+interpreted the dollar/end-quote in a shell expression and duplicated recipe
+text. The single-section guard refused the result; no SRPM or native build was
+published. The corrected native106 uses literal replacement callbacks and offline rendering.
+
+The source is prepared, not yet qualified by native107. Permanent IRQ ownership,
 powered transport attachment, all38 firmware-managed objects, parent snapshots,
 inherited AP votes and synchronization remain required before removing the
 firmware-enabled refusal. Full cumulative kernel linkage, signed DNF delivery
