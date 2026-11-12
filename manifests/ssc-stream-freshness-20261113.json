@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Streaming buffers wait for an actual report; on-change replay and all shared stream ownership retained",
+  "source_check_release": 106,
+  "parent_full_build": 11309609,
+  "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
+  "qualified_camcc_check": 11318457,
+  "driver_before_sha256": "f7c689e893e8696dcf093cf859dbb07dfc6b31b5332ce4108a19be13252efca1",
+  "driver_after_sha256": "f86be00568afe4fa28acb570742f374f0b0283e2f4fe2b73d97b2de777c892d8",
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "device_changed": false,
+  "gravity_frame_admitted": false,
+  "physical_sensor_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "primary_protocol": {
+    "repository": "https://github.com/qualcomm/sensinghub",
+    "revision": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+    "path": "apis/proto/sns_std_sensor.proto",
+    "sha256": "e54b42b2a64fc2866d32904212937c37de350ee3d6d7a865451f4e226436afce"
+  },
+  "source_assets": [
+    {
+      "path": "src/sensors/0019-ssc-streaming-buffer-fresh-sample.patch",
+      "sha256": "a8b1b131408e790ff739f4426a01bce4d62b10d67774cb062ab529f46af6c5a6"
+    },
+    {
+      "path": "src/sensors/apply-stream-freshness733.sh",
+      "sha256": "d7b4faa2d4628cc21cd86c6a7ba24445b53dc3ada16ae2158954a29c30d255df"
+    },
+    {
+      "path": "tests/ssc-stream-freshness.sh",
+      "sha256": "d56da24677431ddce35ee326b88b14e80b2144640d599601f1c80029fc4727db"
+    },
+    {
+      "path": "tests/ssc-stream-freshness.c",
+      "sha256": "9cdec86915b934a6bca6a24c77302ef2eb3ac9f114bb2726c3b919cf5488f3de"
+    },
+    {
+      "path": "docs/SSC-STREAM-FRESHNESS.md",
+      "sha256": "3ded1084e586fee34737c4f3444314737e380e4c54052258aced8ff305a49908"
+    },
+    {
+      "path": "packaging/native/copr-ssc-stream-freshness733-check.sh",
+      "sha256": "402af1a5f46954ac1d1216ac61089bc32dd1ed677de144acb938d5d8d1d2b310"
+    }
+  ]
+}
