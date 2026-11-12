@@ -19,7 +19,7 @@ must retain state after uncertain partial publication. Exact register/IRQ
 topology remains attributed to Uke DT94c84aeb and kernel5712080a, with the
 same-SoC comparison pinned in the existing source review. No donor file changed.
 
-The corrected native106 preserves the complete, byte-identical accepted24 source preparation
+Native107 preserves the complete, byte-identical accepted24 source preparation
 and all source inputs. It adopts the complete CRM/CCF backend qualified at
 source7a7aa63, plus the declared passive resource changes, before compiling
 the actual AArch64 controller and forced CCF/transport adapters with-Werror.
@@ -49,6 +49,15 @@ The first native106 source job11318537 failed during source generation: a JavaSc
 interpreted the dollar/end-quote in a shell expression and duplicated recipe
 text. The single-section guard refused the result; no SRPM or native build was
 published. The corrected native106 uses literal replacement callbacks and offline rendering.
+
+Corrected106/11318558 passed prep, complete closure, all resource/DT/refusal,
+82-boundary and provider/VDD/CCF/PM controls. The real AArch64 provider compiled
+with-Werror. The subsequent import guard expected ioremap_prot, but exact
+Linux7.3.3 arch/arm64/include/asm/io.h maps ioremap to __ioremap_prot. The job
+failed331s; native107 requires that exact symbol and prints missing imports.
+It retains the full object gate and unchanged production source. A separate
+SSC fixture counter rename avoids a collision with stdio puts; it changes no
+production code or assertions.
 
 The source is prepared, not yet qualified by native107. Permanent IRQ ownership,
 powered transport attachment, all38 firmware-managed objects, parent snapshots,

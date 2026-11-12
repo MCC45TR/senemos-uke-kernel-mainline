@@ -27,7 +27,7 @@ SSC hardware ticks into host time or establish a physical sample's age before
 its report reached the host. Cached on-change state still uses subscription
 time; consumers needing acquisition age must not treat that as a new report.
 
-The corrected native106 exercises the actual publish/enable/disable callbacks for all12
+Native107 exercises the actual publish/enable/disable callbacks for all12
 datatypes with GCC/Clang ordinary and address/undefined sanitizers. It checks
 streaming joins, unchanged on-change replay, early-ACK deduplication, values,
 scan padding, duplicate enables, failures and release. An actual-body mutation

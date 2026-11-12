@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Streaming buffers wait for an actual report; on-change replay and all shared stream ownership retained",
-  "source_check_release": 106,
+  "source_check_release": 107,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "qualified_camcc_check": null,
@@ -36,15 +36,15 @@
     },
     {
       "path": "tests/ssc-stream-freshness.c",
-      "sha256": "9cdec86915b934a6bca6a24c77302ef2eb3ac9f114bb2726c3b919cf5488f3de"
+      "sha256": "9cdd6ae902107adf8652afdcb785ca737de148cede01544b8abc1ca41704dd4a"
     },
     {
       "path": "docs/SSC-STREAM-FRESHNESS.md",
-      "sha256": "a51c3dcd3b5e4e220fb2af13ba1f6850366c774e3efddba7c15a0a418077e60a"
+      "sha256": "a494af3720c69397be053b94df868518b5b97413b482403e1134944cc1b8b59f"
     },
     {
       "path": "packaging/native/copr-ssc-stream-freshness733-check.sh",
-      "sha256": "c8df0d0f3f39c22dbb7b6b92c6d94759f19ac2f31825024cca99ac4cdc6a79e5"
+      "sha256": "6e743c0429a632e7dc037f8b67ffd27009c3c49d91d92d9984ddb69cc96f2598"
     },
     {
       "path": "packaging/native/prepare-ssc-postimage733.sh",
@@ -61,5 +61,15 @@
     "makefile_retained": true,
     "full_delivery_must_apply_after_proximity_abi": true
   },
-  "source_generation_failure": 11318537
+  "source_generation_failure": 11318537,
+  "previous_native_attempt": {
+    "build": 11318558,
+    "release": 106,
+    "state": "failed",
+    "elapsed_seconds": 331,
+    "real_provider_aarch64_werror_compiled": true,
+    "source_prep_closure_and_four_callback_modes_passed": true,
+    "cause": "Import guard expected ioremap_prot instead of exact ARM64 __ioremap_prot",
+    "production_code_unchanged": true
+  }
 }

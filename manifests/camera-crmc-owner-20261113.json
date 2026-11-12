@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Actual permanent passive CRMC ownership; firmware-enabled CRM remains refused",
-  "source_check_release": 106,
+  "source_check_release": 107,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
@@ -45,11 +45,11 @@
   "source_assets": [
     {
       "path": "docs/CAMCC-CRMC-OWNER.md",
-      "sha256": "424d29c84857e3ab53b31459b3dcca11cd0e8da29da5364119bac26f3270f75c"
+      "sha256": "d956fd84fffe787fac96e9065ccc9f2a62b112e804d7dfc3025f172efd5635a5"
     },
     {
       "path": "packaging/native/copr-camcc-resource733-check.sh",
-      "sha256": "025bde2704d8ec88973f1c405bfe892e41bbf32b06e2711a0c8830e5a2722119"
+      "sha256": "25165ff8afe469e192af185f885f670626c8199cf5204ec0928060c364623a64"
     },
     {
       "path": "src/camera/camcc-sm7675-data.h",
@@ -321,7 +321,7 @@
     },
     {
       "path": "tests/camcc-resource-object733.sh",
-      "sha256": "2aab086ff385172e7d6380241641cc26b1e32687685c6eef7a0f45b2a61e0795"
+      "sha256": "ebb6b878213060d05da01316f24c230e3d46f7fef8ab2ad3084c7491cb51eeb0"
     },
     {
       "path": "tests/fixtures/camcc-clocks-check.c",
@@ -482,5 +482,15 @@
     "srpm_published": false,
     "cause": "String replacement expanded shell dollar/end-quote; unique section guard refused generation",
     "corrected_with_literal_callbacks": true
+  },
+  "previous_native_attempt": {
+    "build": 11318558,
+    "release": 106,
+    "state": "failed",
+    "elapsed_seconds": 331,
+    "real_provider_aarch64_werror_compiled": true,
+    "source_prep_closure_and_four_callback_modes_passed": true,
+    "cause": "Import guard expected ioremap_prot instead of exact ARM64 __ioremap_prot",
+    "production_code_unchanged": true
   }
 }

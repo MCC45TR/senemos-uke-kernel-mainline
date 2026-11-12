@@ -35,7 +35,7 @@ struct ssc_sensor {
 static struct ssc_sensor sensors[SSC_SENSOR_COUNT];
 static struct ssc_controller controller;
 static struct iio_dev iio;
-static unsigned int gets, puts, pushes, time_reads;
+static unsigned int stream_gets, stream_puts, pushes, time_reads;
 static int get_error;
 static bool early_report;
 static s64 now, emitted_time, emitted[SSC_SAMPLE_MAX];
@@ -74,14 +74,14 @@ static void report(struct ssc_sensor *s, u64 ticks)
 static int ssc_stream_get(struct ssc_sensor *s, unsigned int user)
 {
 	assert(user==SSC_STREAM_BUFFER && controller.control && !controller.state);
-	gets++;
+	stream_gets++;
 	if (get_error) return get_error;
 	s->stream_active=true;
 	if (early_report) report(s,s->ticks+1);
 	return 0;
 }
 static int ssc_stream_put(struct ssc_sensor *s, unsigned int user)
-{ (void)s; assert(user==SSC_STREAM_BUFFER && controller.control && !controller.state); puts++; return 0; }
+{ (void)s; assert(user==SSC_STREAM_BUFFER && controller.control && !controller.state); stream_puts++; return 0; }
 static struct ssc_sensor *reset(unsigned int index, unsigned int stream_type)
 {
 	memset(sensors,0,sizeof(sensors)); memset(&controller,0,sizeof(controller));
@@ -92,7 +92,7 @@ static struct ssc_sensor *reset(unsigned int index, unsigned int stream_type)
 	s->attributes.stream_type=stream_type; memcpy(s->sample,values,sizeof(values));
 	iio.sensor=s; iio.channels=ssc_sample_channels(s->description);
 	iio.scan_bytes=s->description->kind==SSC_QUATERNION?64:(iio.channels+1)*8;
-	gets=puts=pushes=time_reads=0; early_report=false; get_error=0; now=1000000000;
+	stream_gets=stream_puts=pushes=time_reads=0; early_report=false; get_error=0; now=1000000000;
 	return s;
 }
 int main(void)
@@ -100,23 +100,23 @@ int main(void)
 	for(unsigned int index=0;index<SSC_SENSOR_COUNT;index++) {
 		struct ssc_sensor *s=reset(index,0);
 		assert(!ssc_buffer_enable(&iio));
-		assert(gets==1 && !pushes && !time_reads && s->buffered);
-		assert(ssc_buffer_enable(&iio)==-EBUSY && gets==1);
+		assert(stream_gets==1 && !pushes && !time_reads && s->buffered);
+		assert(ssc_buffer_enable(&iio)==-EBUSY && stream_gets==1);
 		now+=2000000000; report(s,101);
 		assert(pushes==1 && time_reads==1 && emitted_time==now);
 		assert(!memcmp(emitted,values,iio.channels*sizeof(s64)));
 		s64 stamp;memcpy(&stamp,padding+iio.channels*8,8);assert(stamp==now);
 		for(unsigned int i=(iio.channels+1)*8;i<iio.scan_bytes;i++)assert(!padding[i]);
 		now++; report(s,101); assert(pushes==1 && time_reads==1);
-		assert(!ssc_buffer_disable(&iio) && puts==1 && !s->buffered);
+		assert(!ssc_buffer_disable(&iio) && stream_puts==1 && !s->buffered);
 		report(s,102); assert(pushes==1);
 		s=reset(index,1); assert(!ssc_buffer_enable(&iio));
 		assert(pushes==1 && time_reads==1 && emitted_time==now);
-		assert(!ssc_buffer_disable(&iio) && puts==1);
+		assert(!ssc_buffer_disable(&iio) && stream_puts==1);
 		for(unsigned int type=0;type<=1;type++) {
 			s=reset(index,type);early_report=true;
 			assert(!ssc_buffer_enable(&iio) && pushes==1 && s->sample_sequence==5);
-			assert(!ssc_buffer_disable(&iio) && puts==1);
+			assert(!ssc_buffer_disable(&iio) && stream_puts==1);
 		}
 		s=reset(index,0);get_error=-ETIMEDOUT;
 		assert(ssc_buffer_enable(&iio)==-ETIMEDOUT && !s->buffered && !pushes && !time_reads);

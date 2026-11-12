@@ -16,8 +16,13 @@ make -C "$kernel" ARCH=arm64 LLVM=1 LLVM_IAS=1 O="$output" \
  LOCALVERSION=-24-unstable KCFLAGS=-Werror -j4 drivers/clk/qcom/camcc-sm7675.o
 object=$output/drivers/clk/qcom/camcc-sm7675.o
 llvm-readelf -h "$object" | grep -E 'Machine:.*AArch64'
-for symbol in platform_get_irq_byname __request_region ioremap_prot; do
- llvm-nm --undefined-only "$object" | awk -v s="$symbol" '$NF==s{found=1}END{exit !found}'
+llvm-nm --undefined-only "$object" > "$output/camcc-resource-undefined.txt"
+for symbol in platform_get_irq_byname __request_region __ioremap_prot; do
+ if ! awk -v s="$symbol" '$NF==s{found=1}END{exit !found}' "$output/camcc-resource-undefined.txt";then
+  printf 'Required native CAMCC import missing: %s\n' "$symbol" >&2
+  cat "$output/camcc-resource-undefined.txt" >&2
+  exit 1
+ fi
 done
 for marker in crmc-map crm-admission firmware-enabled-refused; do
  grep -aqF "$marker" "$object"
