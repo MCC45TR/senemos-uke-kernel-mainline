@@ -34,7 +34,7 @@ spec=$output/uke-kernel-migration-check.spec
 awk '
  /^%description/{exit}
  /^Name:/{$0="Name: uke-kernel-migration-check"}
- /^Release:/{$0="Release: 105%{?dist}"}
+ /^Release:/{$0="Release: 106%{?dist}"}
  /^Summary:/{$0="Summary: Native Uke CAMCC permanent resource qualification"}
  /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next}
  {print}
@@ -52,13 +52,7 @@ SPEC
 awk '/^%prep$/{emit=1}/^%build$/{exit}emit{print}' "$parent" >> "$spec"
 cat >> "$spec" <<'SPEC'
 tar -xJf %{SOURCE190}
-# Only the three declared runtime files differ from accepted24. The FDT
-# converter is qualified separately; no generated or device DT is replaced here.
-install -m644 camcc-resource/src/camera/camcc-sm7675.c drivers/clk/qcom/
-for part in registration crmc-resource;do
- install -m644 camcc-resource/src/camera/provider/camcc-sm7675-$part.h drivers/clk/qcom/provider/
-done
-cmp camcc-resource/src/camera/provider/camcc-sm7675-crm-guard.h drivers/clk/qcom/provider/camcc-sm7675-crm-guard.h
+bash camcc-resource/src/camera/provider/apply-native-crm733.sh "$PWD" "$PWD/camcc-resource"
 
 %build
 set -o pipefail
@@ -73,6 +67,11 @@ for compiler in gcc clang;do
   CC="$compiler" CAMCC_CRM_TEST_FLAGS="$flags" bash camcc-resource/tests/camcc-crm-guard731-contract.sh | tee -a %{_topdir}/camcc-resource-checks.txt
   CC="$compiler" CAMCC_NATIVE_TEST_FLAGS="$flags" CAMCC_NATIVE_MUTATIONS=1 bash camcc-resource/tests/camcc-native731-contract.sh "$PWD" | tee -a %{_topdir}/camcc-resource-checks.txt
  done
+done
+bash native-profile/tests/camcc-quarantine-sleep.sh | tee -a %{_topdir}/camcc-resource-checks.txt
+for compiler in gcc clang;do
+ CC="$compiler" CAMCC_CLOCKS_TEST=1 CAMCC_CRM_CLOCKS_TEST=1 CAMCC_CRM_MUTATIONS=1 bash camcc-resource/tests/camcc-provider-contract.sh "$PWD" | tee -a %{_topdir}/camcc-resource-checks.txt
+ CC="$compiler" CAMCC_CLOCKS_TEST=1 CAMCC_CRM_CLOCKS_TEST=1 CAMCC_TEST_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer' bash camcc-resource/tests/camcc-provider-contract.sh "$PWD" | tee -a %{_topdir}/camcc-resource-checks.txt
 done
 bash camcc-resource/tests/camcc-resource-object733.sh "$PWD" "$PWD/resource-object" native-profile/native.config | tee -a %{_topdir}/camcc-resource-checks.txt
 
@@ -91,7 +90,7 @@ test -s %{buildroot}%{_datadir}/%{name}/camcc-resource-checks.txt
 %{_datadir}/%{name}/*
 
 %changelog
-* Fri Nov 13 2026 Uke contributors - 7.3.3-105
+* Fri Nov 13 2026 Uke contributors - 7.3.3-106
 - Own exact CRMC resources permanently before provider power or publication.
 - Preserve firmware-enabled refusal and test clean unwind and fault retention.
 SPEC

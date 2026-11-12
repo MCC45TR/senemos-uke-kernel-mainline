@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Actual permanent passive CRMC ownership; firmware-enabled CRM remains refused",
-  "source_check_release": 105,
+  "source_check_release": 106,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
@@ -32,16 +32,24 @@
     "tests/fixtures/camcc-native-check.c",
     "tests/fixtures/camcc-critical-before12101.h",
     "docs/CAMCC-CRMC-OWNER.md",
-    "packaging/native/copr-camcc-resource733-check.sh"
+    "packaging/native/copr-camcc-resource733-check.sh",
+    "src/camera/provider/apply-native-crm733.sh",
+    "tests/camcc-provider-contract.sh",
+    "tests/fixtures/camcc-clocks-check.c",
+    "tests/fixtures/camcc-crm-ccf-check.c",
+    "tests/fixtures/camcc-crm-ccf-object.c",
+    "tests/fixtures/camcc-crm-clock-check.c",
+    "tests/fixtures/camcc-power-before-owner.h",
+    "tests/fixtures/camcc-provider-check.c"
   ],
   "source_assets": [
     {
       "path": "docs/CAMCC-CRMC-OWNER.md",
-      "sha256": "ae7d1ad4747c7d358b7bbb5250690c4099d8d5fc1d780bf3542f9deb9a797a50"
+      "sha256": "f3522a8d30585d35cc2c9a531755b581fad26a5c1dc13e5a3126c6306893cdc2"
     },
     {
       "path": "packaging/native/copr-camcc-resource733-check.sh",
-      "sha256": "18aaef7f398fda44059ee429cfaae21018e1de8f3d9a2798b6e034d4ff53c978"
+      "sha256": "025bde2704d8ec88973f1c405bfe892e41bbf32b06e2711a0c8830e5a2722119"
     },
     {
       "path": "src/camera/camcc-sm7675-data.h",
@@ -184,6 +192,10 @@
       "sha256": "12b47a18437375190cb5276aedaa31fe8982b935f801e0c10a55a6a029af3451"
     },
     {
+      "path": "src/camera/provider/apply-native-crm733.sh",
+      "sha256": "72adc29515a88534a71d8de415b510e5e9728a7597b2c985908f3900f5263319"
+    },
+    {
       "path": "src/camera/provider/camcc-abl-hook.patch",
       "sha256": "514b2cfe462bd28005250c8b3f98d9b6c378761dbb9685c5b4d2450f2e85cc49"
     },
@@ -304,8 +316,16 @@
       "sha256": "1bed2e5a77fe91778b66fedcff92bf39dc899103ea4ce3b917242409532ef620"
     },
     {
+      "path": "tests/camcc-provider-contract.sh",
+      "sha256": "18f1562bc9a1fb0a1769b607df9287cda3916549ddc8f1f4ce238a6bfd236158"
+    },
+    {
       "path": "tests/camcc-resource-object733.sh",
-      "sha256": "2e1226a3cc77cf56f34d020c2191a15f36477890ae951291f3769aedde277d24"
+      "sha256": "2aab086ff385172e7d6380241641cc26b1e32687685c6eef7a0f45b2a61e0795"
+    },
+    {
+      "path": "tests/fixtures/camcc-clocks-check.c",
+      "sha256": "d40ed4d9d3e59b76697a20ae91dd572568a1a03482870a30ca2045f7b7625d44"
     },
     {
       "path": "tests/fixtures/camcc-controller-fdt-check.c",
@@ -314,6 +334,18 @@
     {
       "path": "tests/fixtures/camcc-critical-before12101.h",
       "sha256": "3baf1b5212347d5bb0045cf08c79a433aa1b0feccd82becf73af2f4ec2547fe8"
+    },
+    {
+      "path": "tests/fixtures/camcc-crm-ccf-check.c",
+      "sha256": "f6807bc2541a16acbb21c0a3024c8cf2ed53aebcb3cb6e88b8b72348a0c4a832"
+    },
+    {
+      "path": "tests/fixtures/camcc-crm-ccf-object.c",
+      "sha256": "c2ad11c353ac4d5d18c754515c17e76bc2d7fce1f2c0bb6d21ca97dc8fd934b4"
+    },
+    {
+      "path": "tests/fixtures/camcc-crm-clock-check.c",
+      "sha256": "0943eaeff4d19a591ff507ec2f3fe2ef5dcec735e27b9ef64f75d8794cdcd2b3"
     },
     {
       "path": "tests/fixtures/camcc-crm-guard-check.c",
@@ -326,13 +358,122 @@
     {
       "path": "tests/fixtures/camcc-native-check.c",
       "sha256": "5ebd9344d4201e860179af3973a81817e8de59cedc7301272ac51959fb7933c1"
+    },
+    {
+      "path": "tests/fixtures/camcc-power-before-owner.h",
+      "sha256": "64abce3115d67a21c06598ceb9319f4a5e5cc614f63e88cfa2a7a9f8a1ffd4ee"
+    },
+    {
+      "path": "tests/fixtures/camcc-provider-check.c",
+      "sha256": "25ec50543dc1aef5cca3d9d6f632050b908d6dfb893c8b64bd67c2e2265b635b"
     }
   ],
   "previous_check": {
-    "release": 104,
-    "build": 11318429,
+    "release": 105,
+    "build": 11318457,
     "state": "failed",
-    "elapsed_seconds": 241,
-    "cause": "Probe-observation fixture retained pre-CRMC boundary positions; actual resource/FDT/guard plain checks passed"
-  }
+    "elapsed_seconds": 265,
+    "cause": "Accepted24 packaged provider omits qualified CRM headers; complete closure and preserved s2idle projection required",
+    "all_four_resource_converter_guard_registration_modes_passed": true
+  },
+  "runtime_units": [
+    {
+      "path": "drivers/clk/qcom/camcc-sm7675.c",
+      "source_path": "src/camera/camcc-sm7675.c",
+      "before_sha256": "89a9ec6a6afc54c6fbb247ecdd2cbefdc22a1b2cc6718eb244e87784eb17fd9b",
+      "after_sha256": "13efecb7bb82e2bfc77011637686ff810dd0d4711bebfc5c1dfc74328fc4b98d"
+    },
+    {
+      "path": "drivers/clk/qcom/camcc-sm7675-data.h",
+      "source_path": "src/camera/camcc-sm7675-data.h",
+      "before_sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d",
+      "after_sha256": "e5f0d8fc0c93fac95eaeadb07697fcf1cc45190cee643e93be38f897c7c9ff9d"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-power.h",
+      "source_path": "src/camera/provider/camcc-sm7675-power.h",
+      "before_sha256": "a07351d69e55b214683fccf038b911e50c4bb76fe1ccb1556ee67f359807422c",
+      "after_sha256": "bb15f4cbf333bfa89373af0daae26cb5de9b250e9739c4217a44e0102be9801c"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-owner.h",
+      "source_path": "src/camera/provider/camcc-sm7675-owner.h",
+      "before_sha256": "08ee7b2f8befffa743997d04f807cecad9b8c569ed08e3ce1103e3dd427d8b2e",
+      "after_sha256": "08ee7b2f8befffa743997d04f807cecad9b8c569ed08e3ce1103e3dd427d8b2e"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-clocks.h",
+      "source_path": "src/camera/provider/camcc-sm7675-clocks.h",
+      "before_sha256": "d465d09ce5567e471e2f81ab0a2e89751551ea6a5c7072eaf160f0c7a00df113",
+      "after_sha256": "6fc088f78067a7405bcb6f59e9eda19caddfdea3a6ab5673e3e344e2bcad721a"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-handoff.h",
+      "source_path": "src/camera/provider/camcc-sm7675-handoff.h",
+      "before_sha256": "1724aa1c477b40fa2fdd9004fe37e17cbeaf7bac32a324a14e025ccea65ef578",
+      "after_sha256": "bb5149f0cd32f747797687f604e28dd821f3f43c62108ecae97c33e0389cf438"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-registration.h",
+      "source_path": "src/camera/provider/camcc-sm7675-registration.h",
+      "before_sha256": "46152cd75b71ac57c59373a8f7463a93c23efd47f16740eab2e660b825b528cb",
+      "after_sha256": "f012d4674f79ede320aa56df1b046766b1dc3f9c654a0b700ee505db2945c27a"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-guard.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-guard.h",
+      "before_sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d",
+      "after_sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crmc-resource.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crmc-resource.h",
+      "before_sha256": null,
+      "after_sha256": "baf553909677d534f5a3319ce47cc75e45bac83fd6bc820b8bb9de474bba5056"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-core.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "before_sha256": null,
+      "after_sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-lut.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-lut.h",
+      "before_sha256": null,
+      "after_sha256": "db49bf4213a2b837212acc064e185a431de9ec43e692c346e533f43c19108049"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-clock.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-clock.h",
+      "before_sha256": null,
+      "after_sha256": "6a4958f7673df8d3f334dcf22a402aae948db687eb396e991f32eb44ebb9de84"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-ccf.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-ccf.h",
+      "before_sha256": null,
+      "after_sha256": "9e2e087ccf07f70015ec36c88d64940bf0483ff49cab705078f81e6739c48188"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-transport.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-transport.h",
+      "before_sha256": null,
+      "after_sha256": "aed38b958f98312b5cd4cf6678d37c49f223840126468710589b535df8bd24ed"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-pm.h",
+      "source_path": "src/camera/provider/camcc-sm7675-crm-pm.h",
+      "before_sha256": null,
+      "after_sha256": "1bb48c48db0a215ba236b6075fa1df88b4fa9de05c903cb751e93375c365eebd"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-sleep.h",
+      "source_path": "src/camera/sleep/camcc-sm7675-sleep.h",
+      "before_sha256": "35d517c3ab92ce4bd71fcce3b00f1cb5ad0e40438c25430feaf3a2d9be9facbb",
+      "after_sha256": "35d517c3ab92ce4bd71fcce3b00f1cb5ad0e40438c25430feaf3a2d9be9facbb"
+    }
+  ],
+  "qualified_backend_source": "7a7aa63b41215a395ea64a7ee50ece4ff17a0b9d",
+  "preserve_s2idle": true
 }

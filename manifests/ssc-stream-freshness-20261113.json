@@ -5,7 +5,7 @@
   "source_check_release": 106,
   "parent_full_build": 11309609,
   "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
-  "qualified_camcc_check": 11318457,
+  "qualified_camcc_check": null,
   "driver_before_sha256": "f7c689e893e8696dcf093cf859dbb07dfc6b31b5332ce4108a19be13252efca1",
   "driver_after_sha256": "f86be00568afe4fa28acb570742f374f0b0283e2f4fe2b73d97b2de777c892d8",
   "native_qualified": false,
@@ -40,11 +40,13 @@
     },
     {
       "path": "docs/SSC-STREAM-FRESHNESS.md",
-      "sha256": "3ded1084e586fee34737c4f3444314737e380e4c54052258aced8ff305a49908"
+      "sha256": "6e65ed3af9b3d2b9143e2ec19bc4801647bbd1e15b778d0265e1c0a4c8b4d660"
     },
     {
       "path": "packaging/native/copr-ssc-stream-freshness733-check.sh",
-      "sha256": "402af1a5f46954ac1d1216ac61089bc32dd1ed677de144acb938d5d8d1d2b310"
+      "sha256": "b828ba6e81da3cd4d4c4d6f9de54ef1661162a52193b9273b484f255159bc781"
     }
-  ]
+  ],
+  "previous_camcc_attempt": 11318457,
+  "complete_camcc_closure_in_same_check": true
 }

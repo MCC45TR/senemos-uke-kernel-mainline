@@ -32,7 +32,7 @@ datatypes with GCC/Clang ordinary and address/undefined sanitizers. It checks
 streaming joins, unchanged on-change replay, early-ACK deduplication, values,
 scan padding, duplicate enables, failures and release. An actual-body mutation
 restoring the former unconditional cache replay must fail. The complete
-accepted24 preparation and CAMCC105 checks remain; quaternion layout, heading
+accepted24 preparation and complete CAMCC106 checks remain; quaternion layout, heading
 lifecycle, proximity ABI and real AArch64 SSC objects are checked separately.
 
 The source is prepared, not yet natively qualified or delivered. Gravity's
