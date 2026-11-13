@@ -22,7 +22,7 @@ are exported. The kernel counter may use its selected virtual/physical access;
 the diagnostic does not assert equality with Qualcomm's fitted timestamp epoch.
 
 Every existing driver byte outside three declared insertions is preserved by
-the patch's whole-file inverse. Native109 is designed to retain the complete
+the patch's whole-file inverse. Native110 is designed to retain the complete
 native108 preparation and tests, then apply this layer and test the actual new
 callback in eight compiler/config/sanitizer modes plus six mutant refusals.
 The actual resulting AArch64 SSC object must compile with-Werror, keep the new
@@ -36,3 +36,11 @@ bounded uncertainty, acquisition-time conversion, generation/suspend behavior,
 gravity frame and original Fedora SensorProxy parity remain separate gates.
 See the [ABI](../src/sensors/sysfs-driver-uke-ssc-time-reference) and
 [source manifest](../manifests/ssc-time-reference-20261113.json).
+
+Native109/11321858 passed six callback modes and the GCC semantic refusals,
+but Clang disabled-counter mode refused set-only clock fixture inputs with
+-Werror. Host-clock inputs and their mutations are now confined to the enabled
+configuration; disabled modes still assert zero clock calls/reference fields
+and every cache/generation/bounds invariant. No warning or assertion is
+removed, and the production driver patch is byte-identical. Native110 remains
+source-only until its actual final AArch64 object and retained gates pass.

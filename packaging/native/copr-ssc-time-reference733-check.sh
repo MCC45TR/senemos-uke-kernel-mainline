@@ -27,7 +27,7 @@ epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/uke-ssc-time-reference.tar.xz" -C "$work" ssc-time-reference
 node - "$spec" <<'JS'
 const fs=require('fs'),p=process.argv[2],before=fs.readFileSync(p,'utf8');let after=before;const changes=[];function once(a,b){if(after.split(a).length!==2)throw Error('Native108 recipe anchor');after=after.replace(a,()=>b);changes.push([a,b]);}
-once('Release: 108%{?dist}','Release: 109%{?dist}');
+once('Release: 108%{?dist}','Release: 110%{?dist}');
 once('Source191: uke-ssc-stream-freshness.tar.xz','Source191: uke-ssc-stream-freshness.tar.xz\nSource192: uke-ssc-time-reference.tar.xz');
 once('\n%build\n','\ntar -xJf %{SOURCE192}\n(cd ssc-time-reference; jq -r \'.source_assets[]|.sha256+"  "+.path\' manifests/ssc-time-reference-20261113.json | sha256sum -c --strict --quiet -)\n\n%build\n');
 once('\n%install\n',`
@@ -47,8 +47,8 @@ once('\n%check\n',`
 install -m644 camcc-resource/source-commit %{buildroot}%{_datadir}/%{name}/parent-native108-source-commit
 install -m644 ssc-time-reference/source-commit ssc-time-reference/manifests/ssc-time-reference-20261113.json ssc-time-reference/src/sensors/sysfs-driver-uke-ssc-time-reference %{buildroot}%{_datadir}/%{name}/
 \n%check\n`);
-once('* Fri Nov 13 2026 Uke contributors - 7.3.3-108','* Fri Nov 13 2026 Uke contributors - 7.3.3-109\n- Qualify a root-only demand snapshot before SSC hardware-clock admission.');
-let inverse=after;for(const[a,b]of changes.reverse()){if(inverse.split(b).length!==2)throw Error('Native109 inverse anchor');inverse=inverse.replace(b,()=>a);}if(inverse!==before)throw Error('Unrelated native recipe edit');fs.writeFileSync(p,after);
+once('* Fri Nov 13 2026 Uke contributors - 7.3.3-108','* Fri Nov 13 2026 Uke contributors - 7.3.3-110\n- Qualify a root-only demand snapshot before SSC hardware-clock admission.');
+let inverse=after;for(const[a,b]of changes.reverse()){if(inverse.split(b).length!==2)throw Error('Native110 inverse anchor');inverse=inverse.replace(b,()=>a);}if(inverse!==before)throw Error('Unrelated native recipe edit');fs.writeFileSync(p,after);
 JS
 sha256sum -c --strict --quiet "$work/retained.sha256"
-printf 'Native109 constructor:exact native108 whole recipe inverse and all source assets retained;root-only diagnostic and actual final SSC object added. No full Image or device operation.\n'
+printf 'Native110 constructor:exact native108 whole recipe inverse and all source assets retained;root-only diagnostic and actual final SSC object added. No full Image or device operation.\n'

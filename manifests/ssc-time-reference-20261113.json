@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-13",
   "scope": "Root-only on-demand native SSC counter reference; no acquisition-time or gravity-frame admission",
-  "native_check_release": 109,
+  "native_check_release": 110,
   "parent_full_kernel": {
     "release": 25,
     "build": 11318688,
@@ -53,7 +53,7 @@
     },
     {
       "path": "tests/ssc-time-reference.c",
-      "sha256": "a44353ea394603f80f12451ac02029e04191d119a94af093a8af2cc0b804b51d"
+      "sha256": "f303ed4e3dd21876e43e9db22d38459c8081d951ec94f0dd5debf0b71a339fd0"
     },
     {
       "path": "tests/ssc-time-reference.sh",
@@ -61,7 +61,7 @@
     },
     {
       "path": "docs/SSC-TIME-REFERENCE.md",
-      "sha256": "b6f1e6a2efd774fb720aa4916f13b69bfda86f3d120b3526bca50b208ce9c3a7"
+      "sha256": "54cbda567314c4f47ac5f4477d5d5dcbd00eab5020f512aa53b119b2c2d8fd2b"
     },
     {
       "path": "docs/SSC-HARDWARE-TIME-REVIEW.md",
@@ -73,7 +73,12 @@
     },
     {
       "path": "packaging/native/copr-ssc-time-reference733-check.sh",
-      "sha256": "93535672fd94ffe61755d488be77793762ea38db0b01c6ec04c267de718c4e3f"
+      "sha256": "df1145e9096987c3d7aea4f321a3e9c86e500706fc0f048b3f3fe20f669fdedb"
     }
-  ]
+  ],
+  "prior_failed_native": {
+    "release": 109,
+    "build": 11321858,
+    "scope": "Clang disabled-clock fixture set-only globals; six callback modes passed, no final AArch64 object or full/runtime admission"
+  }
 }

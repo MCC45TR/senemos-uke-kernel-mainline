@@ -30,8 +30,10 @@ struct device_attribute {
 #define DEVICE_ATTR(name, permissions, callback, store) \
 	struct device_attribute dev_attr_##name = { permissions, callback }
 static unsigned int locks, unlocks, frequency_reads, counter_reads, time_reads;
+#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
 static u32 frequency = 19200000;
 static u64 counter = 100000, before = 200000, after = 200080;
+#endif
 static int *locked;
 #define spin_lock_irqsave(lock, flags) do { \
 	assert(!locked && *(lock) == 0);locked = (lock);*(lock) = 1; \
@@ -141,9 +143,11 @@ int main(void) {
 	for (unsigned int i = 0; i < SSC_SENSOR_COUNT; i++)
 		c.sensor[i].ticks = c.sensor[i].sample_sequence = UINT64_MAX;
 	check(&c);
+#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
 	frequency = 0;check(&c);frequency = 19200000;
 	counter = 0;check(&c);counter = UINT64_MAX;
 	before = 200;after = 100;check(&c);
 	before = after = UINT64_MAX;check(&c);
+#endif
 	puts("Actual SSC time-reference callback:root0400,clock brackets,all cache/generation states,bounds and no state mutation pass;mapping unadmitted");
 }
