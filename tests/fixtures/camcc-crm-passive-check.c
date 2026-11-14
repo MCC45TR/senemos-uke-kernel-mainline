@@ -12,6 +12,7 @@ typedef uint64_t u64;
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define BIT(n) (1U << (n))
 #define READ_ONCE(x) (x)
+#define WRITE_ONCE(x,v) ((x)=(v))
 #define __maybe_unused
 #define container_of(p, t, m) ((t *)((char *)(p) - offsetof(t, m)))
 #define CLK_SET_RATE_PARENT BIT(2)
@@ -57,11 +58,23 @@ struct cam_cc_clock {
 /* Independent pinned OEM declarations generate these objects. */
 #include "passive-catalog.h"
 static struct cam_cc_clock states[30];
-static struct { void *map; bool publication_started, fault; } cam_cc_power;
+static struct device { int refs; } device;
+static struct { void *map; struct device *dev; bool publication_started, fault; } cam_cc_power;
 static bool cam_cc_clocks_ready, powered;
+static bool last_owner_drops;
 static unsigned reads, fail_read, attaches;
 static int ccf_error;
 static u32 words[0x16000 / 4];
+static int pm_runtime_get_if_in_use(struct device *dev)
+{
+	assert(dev == &device);
+	if (!powered || !dev->refs) return 0;
+	dev->refs++;
+	if (last_owner_drops) { dev->refs--; last_owner_drops = false; }
+	return 1;
+}
+static void pm_runtime_put_noidle(struct device *dev)
+{ assert(dev == &device && dev->refs > 0); dev->refs--; }
 static struct cam_cc_clock *cam_cc_clock_find(struct clk_hw *hw)
 {
 	for (unsigned i = 0; i < ARRAY_SIZE(states); i++)
@@ -75,7 +88,7 @@ static int cam_cc_power_access(void *context, unsigned offset)
 }
 static int regmap_read(void *map, u32 offset, u32 *value)
 {
-	assert(map == words && powered && !(offset & 3) && offset < sizeof(words));
+	assert(map == words && powered && device.refs > 0 && !(offset & 3) && offset < sizeof(words));
 	reads++;
 	if (fail_read && reads == fail_read) return -EIO;
 	*value = words[offset / 4];
@@ -106,6 +119,8 @@ static void reset(void)
 	memset(words, 0, sizeof(words));
 	memset(cam_cc_crm_passive_cache, 0, sizeof(cam_cc_crm_passive_cache));
 	cam_cc_power.map = words;
+	cam_cc_power.dev = &device;
+	device.refs = 1; last_owner_drops = false;
 	cam_cc_power.publication_started = cam_cc_power.fault = false;
 	cam_cc_clocks_ready = powered = true;
 	cam_cc_crm_passive_attached = false;
@@ -190,7 +205,14 @@ int main(void)
 	}
 	assert(cam_cc_crm_managed_attach(clients) == -EINVAL);
 	reset(); assert(!cam_cc_crm_managed_attach(clients)); fail_read = reads + 1;
-	assert(!states[0].ops.recalc_rate(&states[0].clock->hw, 19200000) && cam_cc_power.fault);
-	puts("Actual CRM passive attachment: all30 OEM objects,40 read faults, atomic refusal, no native writes, asleep no-MMIO and rate propagation passed");
+	assert(!states[0].ops.recalc_rate(&states[0].clock->hw, 19200000) && cam_cc_power.fault && device.refs == 2);
+	unsigned old_reads = reads;
+	assert(!states[0].ops.recalc_rate(&states[0].clock->hw, 19200000) && device.refs == 2 && reads == old_reads);
+	reset(); assert(!cam_cc_crm_managed_attach(clients)); last_owner_drops = true;
+	assert(states[0].ops.recalc_rate(&states[0].clock->hw, 19200000) == 652000000);
+	assert(!device.refs && !cam_cc_power.fault);
+	old_reads = reads;
+	assert(states[0].ops.recalc_rate(&states[0].clock->hw, 19200000) == 652000000 && reads == old_reads);
+	puts("Actual CRM passive attachment: all30 OEM objects,40 read faults, atomic refusal, no native writes, asleep no-MMIO, last-owner PM pin and rate propagation passed");
 	return 0;
 }

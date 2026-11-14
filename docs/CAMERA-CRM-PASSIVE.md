@@ -54,3 +54,19 @@ The existing CESTA SM8750 display proposal is likewise architectural evidence.
 No applicable ready-made SM7675 firmware CRM replacement was established by
 this search. Exact inputs are recorded in the source manifest and the retained
 `camera-crm-source-review-20261105.json`.
+
+The first qualifier,11327237/native111, failed during the retained source
+preparation after257s. Its extracted source phase omitted the earlier prepared
+dual-light fixture dependency; passive tests and AArch64 objects were not
+reached. Native112 retains the complete55-line original full26 build-source
+prefix, including config closure, the prepared fixture and original source
+phase ordering. No production feature or required parent check is removed.
+
+An additional review correction pins observational register reads with
+`pm_runtime_get_if_in_use()`. A plain active-state check could race the last
+owner's put and runtime suspend. The callback now acquires an existing-use
+reference without waking idle hardware, releases it with `put_noidle()` after
+a successful snapshot, and retains it on a powered read fault in quarantine.
+The actual fixture covers last-owner withdrawal and refusal of a fourth
+semantic mutant that drops the observation's pin before its read. Neither
+source revision activates CRM on the target.

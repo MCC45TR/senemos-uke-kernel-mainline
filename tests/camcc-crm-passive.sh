@@ -22,14 +22,15 @@ for compiler in gcc clang;do
  done
 done
 ulimit -c 0
-for mutation in pll-rounding branch-rate-propagation native-write-ops;do
+for mutation in pll-rounding branch-rate-propagation native-write-ops early-pm-put;do
  cp "$project/src/camera/provider/camcc-sm7675-crm-passive.h" "$work/passive.h"
  node - "$work/passive.h" "$mutation" <<'JS'
 const fs=require('fs'),[p,m]=process.argv.slice(2),s=fs.readFileSync(p,'utf8');
 const edits={
  'pll-rounding':['((value + 999) / 1000) * 1000','(value / 1000) * 1000'],
  'branch-rate-propagation':['if (cam_cc_crm_passive[i].kind != CAM_CC_CRM_BRANCH)','if (true)'],
- 'native-write-ops':['clock->ops = (struct clk_ops) { .recalc_rate = cam_cc_crm_passive_recalc };','clock->ops.recalc_rate = cam_cc_crm_passive_recalc;']
+ 'native-write-ops':['clock->ops = (struct clk_ops) { .recalc_rate = cam_cc_crm_passive_recalc };','clock->ops.recalc_rate = cam_cc_crm_passive_recalc;'],
+ 'early-pm-put':['ret = cam_cc_crm_passive_snapshot(i);\n\tif (ret)\n\t\t/* An uncertain powered read retains this reference in quarantine. */\n\t\treturn cam_cc_clock_fail(ret, 0);\n\tpm_runtime_put_noidle(cam_cc_power.dev);','pm_runtime_put_noidle(cam_cc_power.dev);\n\tret = cam_cc_crm_passive_snapshot(i);\n\tif (ret)\n\t\treturn cam_cc_clock_fail(ret, 0);']
 };
 const [a,b]=edits[m];if(s.split(a).length!==2)throw Error('Passive mutation anchor');fs.writeFileSync(p,s.replace(a,b));
 JS

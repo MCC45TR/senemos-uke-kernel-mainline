@@ -34,7 +34,7 @@ spec=$output/uke-kernel-migration-check.spec
 awk '
  /^%description/{exit}
  /^Name:/{$0="Name: uke-kernel-migration-check"}
- /^Release:/{$0="Release: 111%{?dist}"}
+ /^Release:/{$0="Release: 112%{?dist}"}
  /^Summary:/{$0="Summary: Exact Uke CRM passive clock qualification"}
  /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next}
  {print}
@@ -51,10 +51,10 @@ SPEC
 awk '/^%prep$/{emit=1}/^%build$/{exit}emit{print}' "$parent" >> "$spec"
 node - "$parent" "$spec" <<'JS'
 const fs=require('fs'),[i,o]=process.argv.slice(2),s=fs.readFileSync(i,'utf8');
-const begin='bash native-profile/src/sensors/apply-dual-light733.sh "$PWD"\n';
+const begin='\n%build\n';
 const end='bash ssc-time-reference-full/packaging/native/prepare-ssc-time-reference-full733.sh "$PWD" %{_uke_out} source\n';
 if(s.split(begin).length!==2||s.split(end).length!==2)throw Error('Full26 source-phase anchors');
-const phase=s.slice(s.indexOf(begin),s.indexOf(end)+end.length);
+const phase=s.slice(s.indexOf(begin)+begin.length,s.indexOf(end)+end.length);
 if(/^(make |.*\b(linked|install|sealed)\s*$)/m.test(phase))throw Error('Non-source phase');
 fs.appendFileSync(o,phase);
 JS
@@ -93,7 +93,7 @@ test -s %{buildroot}%{_datadir}/%{name}/crm-passive-checks.txt
 %{_datadir}/%{name}/*
 
 %changelog
-* Sat Nov 14 2026 Uke contributors - 7.3.3-111
+* Sat Nov 14 2026 Uke contributors - 7.3.3-112
 - Qualify exact CRM passive clock ownership over cumulative full26 sources.
 - Preserve firmware admission, permanent resources and native system sleep.
 SPEC

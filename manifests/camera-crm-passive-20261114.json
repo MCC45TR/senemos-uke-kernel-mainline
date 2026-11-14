@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-11-14",
   "scope": "Complete full26 source preparation and actual all38 CRM attachment; no firmware activation",
-  "native_check_release": 111,
+  "native_check_release": 112,
   "parent_full_build": 11322009,
   "parent_source": "c7adc996350e3692b4492ab007cad63070dde6c2",
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11322009/senemos-uke-linux-kernel-mainline-unstable-7.3.3-26.src.rpm",
@@ -62,7 +62,7 @@
       "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-passive.h",
       "source_path": "src/camera/provider/camcc-sm7675-crm-passive.h",
       "before_sha256": "absent",
-      "after_sha256": "845332d3e1ef0c9c9cbd1941c8905d0f4c955a094f5484af6e7bffb53e0e45b6"
+      "after_sha256": "b1789597c9a7ee4e1e77f4dd92cf7b7cc091cbf29b99449b195a2078e196487c"
     }
   ],
   "archive_assets": [
@@ -80,11 +80,11 @@
   "source_assets": [
     {
       "path": "docs/CAMERA-CRM-PASSIVE.md",
-      "sha256": "4eaf6a8151a8fcb420e872da5f086e60fa2c9ef2a698c4385d94dde534f3a87a"
+      "sha256": "bea3650796e0780d02b66a9113ae2f4f812df2286cf3016e6c4e39d654f9a6a2"
     },
     {
       "path": "packaging/native/copr-crm-passive733-check.sh",
-      "sha256": "5f5b26e42e04db717d38f52d2f374ce187a35300d5e291687134682f798628ac"
+      "sha256": "9893432033fef9a10a6d1a032c0f5cf8b17778682bdde04918ac9aa54167957c"
     },
     {
       "path": "src/camera/camcc-sm7675-data.h",
@@ -272,7 +272,7 @@
     },
     {
       "path": "src/camera/provider/camcc-sm7675-crm-passive.h",
-      "sha256": "845332d3e1ef0c9c9cbd1941c8905d0f4c955a094f5484af6e7bffb53e0e45b6"
+      "sha256": "b1789597c9a7ee4e1e77f4dd92cf7b7cc091cbf29b99449b195a2078e196487c"
     },
     {
       "path": "src/camera/provider/camcc-sm7675-crm-pm.h",
@@ -352,7 +352,7 @@
     },
     {
       "path": "tests/camcc-crm-passive.sh",
-      "sha256": "c6ac243c3d68f5d3b8723c4fb485830e0a45ac07f8adbe8e705ba2b3c1b6888b"
+      "sha256": "1130f029063c890d5396b5fffcfdc06fcea4ba4bb9654b251a5616c8a1703b3f"
     },
     {
       "path": "tests/camcc-native731-contract.sh",
@@ -364,7 +364,7 @@
     },
     {
       "path": "tests/fixtures/camcc-crm-passive-check.c",
-      "sha256": "8d81394cbac439a58f1046d46be0a460e832521fe116fd8bda525c601788e8b4"
+      "sha256": "f4760de3271ca023ca5d8ab1164c62d6a36b3867ce0baa4d4cea7d5be61f53d0"
     },
     {
       "path": "tests/fixtures/camcc-native-check.c",
@@ -383,5 +383,21 @@
     "Native front bus/sensor/CAMSS graph",
     "Real front RAW frame completion",
     "Full dual-camera calibration and rear AF/parking"
-  ]
+  ],
+  "previous_failed": {
+    "build": 11327237,
+    "release": 111,
+    "state": "failed",
+    "native_seconds": 257,
+    "scope": "Unchanged parent preparation passed until missing dual-light-delivery-fixture dependency; passive tests/objects not reached",
+    "correction": "Preserve complete original full26 build source prefix, including reference configs and dual-light prepared fixture"
+  },
+  "runtime_pm_reference": {
+    "repository": "gregkh/linux",
+    "revision": "v7.3.3",
+    "path": "include/linux/pm_runtime.h",
+    "sha256": "1c1383101d72ce3028df6d9ad3640c2020a041f5c1820b1698d1657b648b04f6",
+    "contract": "get_if_in_use pins existing owner without waking idle; powered read fault retains pin; successful observation uses put_noidle"
+  },
+  "semantic_mutants": 4
 }

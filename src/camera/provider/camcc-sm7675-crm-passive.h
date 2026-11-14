@@ -122,8 +122,8 @@ static int cam_cc_crm_passive_snapshot(u32 i)
 		ret = regmap_read(cam_cc_power.map, pll->offset, &value);
 		if (ret)
 			return ret;
-		cam_cc_crm_passive_cache[i].rate = rate;
-		cam_cc_crm_passive_cache[i].enabled = !!(value & BIT(0));
+		WRITE_ONCE(cam_cc_crm_passive_cache[i].rate, rate);
+		WRITE_ONCE(cam_cc_crm_passive_cache[i].enabled, !!(value & BIT(0)));
 		return 0;
 	case CAM_CC_CRM_DIVIDER:
 		divider = container_of(cam_cc_crm_passive[i].clock, struct clk_alpha_pll_postdiv, clkr);
@@ -136,7 +136,7 @@ static int cam_cc_crm_passive_snapshot(u32 i)
 		for (d = 0; d < divider->num_post_div; d++) {
 			n = divider->post_div_table[d].div;
 			if (n && divider->post_div_table[d].val == value) {
-				cam_cc_crm_passive_cache[i].divider = n;
+				WRITE_ONCE(cam_cc_crm_passive_cache[i].divider, n);
 				return 0;
 			}
 		}
@@ -146,11 +146,31 @@ static int cam_cc_crm_passive_snapshot(u32 i)
 		ret = regmap_read(cam_cc_power.map, branch->clkr.enable_reg, &value);
 		if (ret)
 			return ret;
-		cam_cc_crm_passive_cache[i].enabled = branch->clkr.enable_is_inverted ?
-			!(value & branch->clkr.enable_mask) : !!(value & branch->clkr.enable_mask);
+		WRITE_ONCE(cam_cc_crm_passive_cache[i].enabled, branch->clkr.enable_is_inverted ?
+			!(value & branch->clkr.enable_mask) : !!(value & branch->clkr.enable_mask));
 		return 0;
 	}
 	return -EINVAL;
+}
+
+static int cam_cc_crm_passive_refresh(u32 i)
+{
+	int ret;
+
+	/* An access flag alone can race a last-owner put and runtime suspend.
+	 * Pin an existing user atomically; never resume an idle controller here.
+	 */
+	ret = pm_runtime_get_if_in_use(cam_cc_power.dev);
+	if (ret < 0)
+		return cam_cc_clock_fail(ret, 0);
+	if (!ret)
+		return 0;
+	ret = cam_cc_crm_passive_snapshot(i);
+	if (ret)
+		/* An uncertain powered read retains this reference in quarantine. */
+		return cam_cc_clock_fail(ret, 0);
+	pm_runtime_put_noidle(cam_cc_power.dev);
+	return 0;
 }
 
 static unsigned long cam_cc_crm_passive_recalc(struct clk_hw *hw, unsigned long parent)
@@ -162,20 +182,15 @@ static unsigned long cam_cc_crm_passive_recalc(struct clk_hw *hw, unsigned long 
 	/* While suspended, CCF retains the last checked observation. Never wake the
 	 * controller from an observational callback or read its powered-off MMIO.
 	 */
-	ret = cam_cc_power_access(&cam_cc_power, 0);
-	if (!ret) {
-		ret = cam_cc_crm_passive_snapshot(i);
-		if (ret) {
-			cam_cc_clock_fail(ret, 0);
-			return 0;
-		}
-	}
 	if (READ_ONCE(cam_cc_power.fault))
 		return 0;
+	ret = cam_cc_crm_passive_refresh(i);
+	if (ret)
+		return 0;
 	if (cam_cc_crm_passive[i].kind == CAM_CC_CRM_PLL)
-		return cam_cc_crm_passive_cache[i].rate;
+		return READ_ONCE(cam_cc_crm_passive_cache[i].rate);
 	if (cam_cc_crm_passive[i].kind == CAM_CC_CRM_DIVIDER)
-		return parent / cam_cc_crm_passive_cache[i].divider;
+		return parent / READ_ONCE(cam_cc_crm_passive_cache[i].divider);
 	return parent;
 }
 
@@ -185,15 +200,10 @@ static int cam_cc_crm_passive_enabled(struct clk_hw *hw)
 
 	if (i < 0 || !cam_cc_crm_passive_attached)
 		return -ENODEV;
-	ret = cam_cc_power_access(&cam_cc_power, 0);
-	if (!ret) {
-		ret = cam_cc_crm_passive_snapshot(i);
-		if (ret)
-			return cam_cc_clock_fail(ret, 0);
-	}
 	if (READ_ONCE(cam_cc_power.fault))
 		return -EIO;
-	return cam_cc_crm_passive_cache[i].enabled;
+	ret = cam_cc_crm_passive_refresh(i);
+	return ret ? ret : READ_ONCE(cam_cc_crm_passive_cache[i].enabled);
 }
 
 static int cam_cc_crm_passive_preflight(void)
