@@ -1,0 +1,2145 @@
+diff --git a/Makefile b/Makefile
+index dc1651c9..17fe6496 100644
+--- a/Makefile
++++ b/Makefile
+@@ -20,6 +20,9 @@ validate: test-touch-protocol test-touch-transport
+ 	bash -n tests/msm-retirement-contract.sh tests/msm-writeback-contract.sh tests/msm-retirement-proof-contract.sh
+ 	bash -n tests/o82-avr-contract.sh tests/dpu-video-timing-contract.sh
+ 	bash -n tests/o82-abm-contract.sh packaging/native/copr-o82-abm731.sh
++	bash tests/o82-selector-contract.sh
++	bash tests/o82-on-batch-contract.sh
++	bash -n tests/o82-variants-contract.sh tests/o82-variants-dt-contract.sh src/display/generate-native-panels.sh
+ 	bash -n tests/msm-kms-lifecycle-contract.sh tests/msm-kms-unwind-contract.sh tests/msm-kms-alternate-build.sh
+ 	bash tests/msm-kms-release-contract.sh
+ 	bash -n tests/gunyah-boot-watchdog-contract.sh packaging/native/copr-boot-watchdog61.sh
+@@ -74,6 +77,7 @@ validate: test-touch-protocol test-touch-transport
+ 	bash tests/prebuilt-helpers-contract.sh
+ 	bash tests/identity-contract.sh
+ 	bash tests/fm19511-contract.sh
++	bash tests/fm19511-pm-contract.sh
+ 	bash tests/hardware-dt.sh
+ 	bash tests/ufs-ice-contract.sh
+ 	bash -n tests/ufs-ice-dt-contract.sh
+@@ -163,7 +167,7 @@ srpm: validate
+ 	cp "$$cache/linux-$(version).tar."{xz,sign} configs/keys/linux-stable.asc "$$top/SOURCES/"
+ 	assets="$$(mktemp -d "$$top/profile.XXXXXX")/native-profile"
+ 	mkdir -p "$$assets"
+-	git archive HEAD src/performance src/nfc src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(patch_series) patches/display patches/boot patches/input patches/usb tests | tar -xf - -C "$$assets"
++	git archive HEAD src/performance src/nfc src/infrared src/leds src/video patches/video manifests/video-linux73-candidate-20261025.json src/display src/boot src/usb src/audio src/power src/input patches/$(patch_series) patches/display patches/boot patches/input patches/usb tests | tar -xf - -C "$$assets"
+ 	install -m644 packaging/native/native.config packaging/native/README.md packaging/native/usb-profile packaging/native/audio-profile packaging/native/llcc-profile "$$assets/"
+ 	install -m755 packaging/native/prepare.sh "$$assets/"
+ 	git rev-parse HEAD > "$$assets/source-commit"
+diff --git a/configs/uke.config b/configs/uke.config
+index 8cc3b623..5228efd6 100644
+--- a/configs/uke.config
++++ b/configs/uke.config
+@@ -75,3 +75,11 @@ CONFIG_RC_CORE=m
+ CONFIG_RC_DEVICES=y
+ CONFIG_LIRC=y
+ CONFIG_IR_SPI=m
++CONFIG_IR_JVC_DECODER=m
++CONFIG_IR_NEC_DECODER=m
++CONFIG_IR_RC5_DECODER=m
++CONFIG_IR_RC6_DECODER=m
++CONFIG_IR_RCMM_DECODER=m
++CONFIG_IR_SANYO_DECODER=m
++CONFIG_IR_SHARP_DECODER=m
++CONFIG_IR_SONY_DECODER=m
+diff --git a/docs/NT36532-PROTOCOL.md b/docs/NT36532-PROTOCOL.md
+index fb1566fb..3c866479 100644
+--- a/docs/NT36532-PROTOCOL.md
++++ b/docs/NT36532-PROTOCOL.md
+@@ -1,5 +1,12 @@
+ # NT36532 Uke protocol and transport candidate
+ 
++2 November 2026: source profiles now retain separate CSOT and Tianma normal
++firmware hashes, CRCs and DT electrode maps. A mismatched supplier image is
++rejected before RAM writes; all banks are still read back. See
++[variant selection and test limits](O82-PANEL-VARIANTS.md). The O82-36/Tianma
++association and physical input remain unverified; adjacent-device GPIO polarity
++is not substituted. Earlier CSOT-only records below retain their original scope.
++
+ 23 October 2026. Host C fixtures and AArch64 Linux 7.2.12/7.3 objects.
+ The tablet continues to use the packaged userspace touchscreen implementation.
+ 
+diff --git a/docs/PM8010-POPULATION.md b/docs/PM8010-POPULATION.md
+index aa20557f..c734d3f7 100644
+--- a/docs/PM8010-POPULATION.md
++++ b/docs/PM8010-POPULATION.md
+@@ -1,5 +1,11 @@
+ # Optional PM8010 population on Uke
+ 
++2 November 2026 source follow-up: populated firmware inventories and all seven
++N-regulator resource alternatives retain ordinary probing. The complete PMIC
++array is now validated before a positive result, so an early PM8010 entry
++cannot hide a malformed later record. Absent, populated, malformed and deferred
++fixtures pass without bus or power access. No new hardware result is claimed.
++
+ 31 October 2026, POCO Pad X1, Fedora Rawhide AArch64. Normal DNF installation
+ and reboot to Linux 7.3.1-4 in slot B passed. The inherited PM8010 N probe
+ is skipped with an explicit firmware-population message, and its earlier
+diff --git a/manifests/boot-payload.json b/manifests/boot-payload.json
+index 581d430a..de9279e9 100644
+--- a/manifests/boot-payload.json
++++ b/manifests/boot-payload.json
+@@ -29,11 +29,11 @@
+     },
+     {
+       "path": "packaging/native/native.config",
+-      "sha256": "831ede0562eba19ad8713dfbbad39442d0a4aac65332ddfbc68e74402ced1343"
++      "sha256": "9177a9b9c8e5b996af4c831a8241ba27963eb1bac0627e2c5d7f253f6570a89c"
+     },
+     {
+       "path": "packaging/native/prepare.sh",
+-      "sha256": "ccd54f9d70701d105e56c86dbcba2b2d8cdab280f5eacd29bdf60c636fb366fb"
++      "sha256": "86537a35c1ea416685c26b0e17e0d85f4c55f1b161441f5644c04664985bdce0"
+     },
+     {
+       "path": "patches/boot/0005-uke-root-selector.patch",
+@@ -553,15 +553,15 @@
+     },
+     {
+       "path": "src/display/panel-xiaomi-o82.c",
+-      "sha256": "6bd43e6ca73e7d795902c405bd60c93441bb466f80c6c25cc21afa0bab2e424c"
++      "sha256": "a74433c2fc70b680e08a20ec701b02a3a6fb674e1fb0b9c77acbb6165812fe2d"
+     },
+     {
+       "path": "src/display/sm7675-uke-native-display-oem-modes.dtso",
+-      "sha256": "64e7fa9fe66534f04df807c7ef80a24400760b7040a9ad48dfc5920b14681cf3"
++      "sha256": "a9e7e1c226346ecb3c14c4bf3883fb4ca2de7427f0a474710d0e488e2b323005"
+     },
+     {
+       "path": "src/display/uke-abl-native.h",
+-      "sha256": "a4858b8928b6f4880d9ad4b05cd81b6229e7fd65c85cec599f7f4e9338285a79"
++      "sha256": "65970f0702b421c0e4409efd7020b8ba758664cc58f21f746af2b3786556dd8c"
+     },
+     {
+       "path": "src/display/uke-o82-hdr-format.h",
+@@ -577,7 +577,7 @@
+     },
+     {
+       "path": "src/input/nt36532-uke-matrix.c",
+-      "sha256": "50392408bd5b9eb41884ee791ebe9c9dc1186068b6ab73389635fc365760eb57"
++      "sha256": "7af80173cfa13bb2bdf9f7bc57279f3576b5c19996518f92cb9fe7da1431f75b"
+     },
+     {
+       "path": "src/input/nt36532-uke-matrix.h",
+@@ -585,15 +585,15 @@
+     },
+     {
+       "path": "src/input/nt36532-uke-protocol.c",
+-      "sha256": "cf33bab95023c620fda609ae1493660c3ba57d22aef6cb21929217abad2e5edd"
++      "sha256": "a6b7f99b8a226c54f36dea8c58ab0176bf44012086c6908e005e97ab1703e6e3"
+     },
+     {
+       "path": "src/input/nt36532-uke-protocol.h",
+-      "sha256": "04843dd877fa78925cee93e9c9eb08d29930a96c32bda006edaeaed9a465b5f4"
++      "sha256": "8c0aeddb7feaa9191b0e2409e43a05772ec320140ecd7c5ff95400281e982de5"
+     },
+     {
+       "path": "src/input/nt36532-uke-spi.c",
+-      "sha256": "ec80a9f5e7c72b04e2bb475d96ad3b37e8920ac1905b4ef6f63574892f446aab"
++      "sha256": "c68ae90d832e9b880fbf28840bedea56648df57afea262eea059e402c18af851"
+     },
+     {
+       "path": "src/input/prepare-source.sh",
+@@ -601,7 +601,7 @@
+     },
+     {
+       "path": "src/input/sm7675-uke-thp.dtsi",
+-      "sha256": "782109bd2357fb796a8e30ef7699735b6371c3692d0101fbf2d23c2cf0f07625"
++      "sha256": "7d0bc48e73f732d924712949f36e4ff945bf7a55f6a9c37b2e0bbf43a85af7b1"
+     },
+     {
+       "path": "src/performance/prepare-source.sh",
+@@ -629,7 +629,7 @@
+     },
+     {
+       "path": "src/power/uke-pm8010.h",
+-      "sha256": "70548e41cd0b3d610c3298f3e8b88d3212d8195eaa0916873c861408af445cf4"
++      "sha256": "71c187985b08947607016f071da15f11e312e6438484273b62390a4212cec68f"
+     },
+     {
+       "path": "tests/audio-eld-contract.sh",
+@@ -865,7 +865,7 @@
+     },
+     {
+       "path": "tests/o82-panel-contract.sh",
+-      "sha256": "2e524b0d316d9040fb5e7c68b60be1b3112487d73f1821aaa69694a826e00d1b"
++      "sha256": "bff7c858cfe63d96480130d378e9b0ee3121e92ae936eeb96bfa6dfbfde92b07"
+     },
+     {
+       "path": "tests/o82-profile-loader-contract.c",
+@@ -909,7 +909,7 @@
+     },
+     {
+       "path": "tests/pm8010-population-contract.sh",
+-      "sha256": "d1c85a96b167b6820373da95bebd3a37b8c1eefa10cb2da319a9f958c8b7c511"
++      "sha256": "514b6340db247b32c3732bd8106b131527d55ed4e8a63fd07d4815aad73eef20"
+     },
+     {
+       "path": "tests/qup-interconnect-contract.sh",
+@@ -965,7 +965,7 @@
+     },
+     {
+       "path": "tests/touch-dt-contract.sh",
+-      "sha256": "9f7168db1774676084f33f233d984975b52436a28fabd9b998def938c1b45478"
++      "sha256": "8173cce009fafb9868bd6124df6e3f6e9dcba52523f256ac9a5619a05aa2d5af"
+     },
+     {
+       "path": "tests/touch-matrix.c",
+@@ -973,7 +973,7 @@
+     },
+     {
+       "path": "tests/touch-protocol-contract.sh",
+-      "sha256": "0ef57c8df5328b3585936bc0bf905de39e1a704ec3ff5230d236c9d4c22a38a1"
++      "sha256": "3e62e261353e52f819168e43a1706dc10fa252d95787657e3003379b994e2d84"
+     },
+     {
+       "path": "tests/touch-publish.c",
+@@ -1050,6 +1050,46 @@
+     {
+       "path": "tests/wpss-proxy-contract.sh",
+       "sha256": "08886938fb787dd9a7e30cc0c20ac1c3873eac5ee5e9411e33027ef35a097061"
++    },
++    {
++      "path": "src/display/generate-native-panels.sh",
++      "sha256": "d7cea1079a2ddbbc36a2a220a7fb412351d5283c2c6d3bc3c9d5e1b140378b60"
++    },
++    {
++      "path": "patches/display/0071-o82-panel-variants.patch",
++      "sha256": "40e21c06f71845244d160710ebbf54e22a554bb267834468d827c7b38596c162"
++    },
++    {
++      "path": "tests/o82-selector-contract.sh",
++      "sha256": "e4561e99d11ed9548377c3ac4c7336a15f83fb7aa69c9ad32d14fa45645dd7ff"
++    },
++    {
++      "path": "tests/o82-on-batch-contract.sh",
++      "sha256": "a28f49cdbaeffc98cee5faaf8d29809dd539ef9471a2dbc4a2bc3664ca0c1e57"
++    },
++    {
++      "path": "tests/o82-variants-contract.sh",
++      "sha256": "e494ce2d29e65b099f0f660d3186cdc0ea91ad0ffcc6d51746e80d1246a26cf0"
++    },
++    {
++      "path": "tests/o82-variants-dt-contract.sh",
++      "sha256": "86a1a68e68b05578d43917e9938c325ff5e3b37cc20cfcaf6380457fdb7c47a0"
++    },
++    {
++      "path": "src/display/prepare-native-abl-source.sh",
++      "sha256": "714d3a5586dc073aa898aec4019333a5f066cda860c87ce6a5725d564eac0caa"
++    },
++    {
++      "path": "patches/display/0002-arm64-uke-native-abl-entry.patch",
++      "sha256": "a10d7eaef0bd425d277048324f49394cd4b5b6c6800d6475004cd7a0484db74d"
++    },
++    {
++      "path": "tests/touch-config-map.cpp",
++      "sha256": "78f1afc692bc84ecdbf9cc5a6aa916db8acfa7862aa99ba32e76bb6d7dfab8c7"
++    },
++    {
++      "path": "tests/touch-variant-assets.sh",
++      "sha256": "8d032f535ba86c6161720be53ac74c741144b23a51d0a34a98594e798e1cfd65"
+     }
+   ],
+   "root_selector_capability": {
+diff --git a/manifests/linux-7.3.1.json b/manifests/linux-7.3.1.json
+index 23921654..ef4e34c1 100644
+--- a/manifests/linux-7.3.1.json
++++ b/manifests/linux-7.3.1.json
+@@ -527,7 +527,7 @@
+     },
+     {
+       "path": "configs/uke.config",
+-      "sha256": "e095d38fe7e53fbc7208005f89596dad35f7f8e5e539f2bc4cfef778c621b601"
++      "sha256": "fab1e744ec300b26f832cb6ad0c571f2980411cd68cb146bd816ec21e3d6123f"
+     },
+     {
+       "path": "configs/fedora.config",
+diff --git a/manifests/native-linux-7.3.1.json b/manifests/native-linux-7.3.1.json
+index 4c3ddf3b..389d7c84 100644
+--- a/manifests/native-linux-7.3.1.json
++++ b/manifests/native-linux-7.3.1.json
+@@ -507,7 +507,7 @@
+     },
+     {
+       "path": "configs/uke.config",
+-      "sha256": "e095d38fe7e53fbc7208005f89596dad35f7f8e5e539f2bc4cfef778c621b601"
++      "sha256": "fab1e744ec300b26f832cb6ad0c571f2980411cd68cb146bd816ec21e3d6123f"
+     },
+     {
+       "path": "configs/fedora.config",
+diff --git a/packaging/native/native.config b/packaging/native/native.config
+index b49181a3..20183d70 100644
+--- a/packaging/native/native.config
++++ b/packaging/native/native.config
+@@ -4256,15 +4256,15 @@ CONFIG_LIRC=y
+ CONFIG_RC_MAP=m
+ CONFIG_RC_DECODERS=y
+ # CONFIG_IR_IMON_DECODER is not set
+-# CONFIG_IR_JVC_DECODER is not set
++CONFIG_IR_JVC_DECODER=m
+ # CONFIG_IR_MCE_KBD_DECODER is not set
+-# CONFIG_IR_NEC_DECODER is not set
+-# CONFIG_IR_RC5_DECODER is not set
+-# CONFIG_IR_RC6_DECODER is not set
+-# CONFIG_IR_RCMM_DECODER is not set
+-# CONFIG_IR_SANYO_DECODER is not set
+-# CONFIG_IR_SHARP_DECODER is not set
+-# CONFIG_IR_SONY_DECODER is not set
++CONFIG_IR_NEC_DECODER=m
++CONFIG_IR_RC5_DECODER=m
++CONFIG_IR_RC6_DECODER=m
++CONFIG_IR_RCMM_DECODER=m
++CONFIG_IR_SANYO_DECODER=m
++CONFIG_IR_SHARP_DECODER=m
++CONFIG_IR_SONY_DECODER=m
+ # CONFIG_IR_XMP_DECODER is not set
+ CONFIG_RC_DEVICES=y
+ # CONFIG_IR_ENE is not set
+diff --git a/packaging/native/prepare.sh b/packaging/native/prepare.sh
+index 94f30ae9..fc3cb3c7 100755
+--- a/packaging/native/prepare.sh
++++ b/packaging/native/prepare.sh
+@@ -133,7 +133,7 @@ bash "$profile/tests/dp-mst-payload-contract.sh" "$kernel/drivers/gpu/drm/msm/dp
+ bash "$profile/tests/dp-mst-control-contract.sh" "$kernel/drivers/gpu/drm/msm/dp/dp_ctrl.c"
+ bash "$profile/tests/dp-lane-limit-contract.sh" "$kernel"
+ bash "$profile/src/input/prepare-source.sh" "$kernel"
+-bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" 42
++bash "$profile/src/display/prepare-native-abl-source.sh" "$kernel" "$output" auto
+ if [[ $(cat "$profile/audio-profile") =~ ^(hdmi-only|speakers|microphones)$ ]]; then
+     git -C "$kernel" apply --check "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
+     git -C "$kernel" apply "$profile/patches/boot/0009-uke-displayport-dma-scope.patch"
+@@ -166,22 +166,13 @@ SANITIZE=1 bash "$profile/tests/wpss-proxy-contract.sh" "$kernel/drivers/remotep
+ bash "$profile/tests/pas-stop-ownership-contract.sh" "$kernel/drivers/remoteproc/qcom_q6v5_pas.c"
+ bash "$profile/tests/rproc-early-stop-contract.sh" "$kernel/drivers/remoteproc/remoteproc_core.c"
+ bash "$profile/tests/sysmon-stop-preparation-contract.sh" "$kernel/drivers/remoteproc/qcom_sysmon.c"
+-# Replace only the generated graph with the explicit exact seven-mode profile.
+-cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT=42 -x assembler-with-cpp \
+-    "${usb_cpp[@]}" \
+-    -I "$kernel/include" "$profile/src/display/sm7675-uke-native-display-oem-modes.dtso" > "$output/display.dts"
+-cpp -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" \
+-    "$profile/src/video/sm7675-uke-native-video.dtso" > "$output/video.dts"
+-# One overlay application keeps the existing display/USB adaptation transaction.
+-sed '/^\/dts-v1\/;/d; /^\/plugin\/;/d' "$output/video.dts" >> "$output/display.dts"
+-dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
+-{
+-    printf '#define UKE_NATIVE_PANEL_SELECTOR "msm_drm.dsi_display0=qcom,mdss_dsi_o82_42_02_0b_dualdsi_dsc_vid:"\n'
+-    printf 'static unsigned char uke_native_overlay[] __initdata __aligned(8) = {\n'
+-    od -An -v -tx1 "$output/display.dtbo" | sed -E 's/[a-f0-9]{2}/0x&,/g'
+-    printf '};\n'
+-} > "$kernel/arch/arm64/kernel/uke-native-display.h"
+-fdtdump "$output/display.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
++# Each supplier gets the same video/audio/USB graph and its own panel compatible.
++UKE_NATIVE_VIDEO_SOURCE="$profile/src/video/sm7675-uke-native-video.dtso" \
++    bash "$profile/src/display/generate-native-panels.sh" "$kernel" "$output" \
++    "$profile/src/display/sm7675-uke-native-display-oem-modes.dtso" auto "${usb_cpp[@]}"
++for variant in 36 42; do
++    fdtdump "$output/display-$variant.dtbo" 2>/dev/null | grep -E '^[[:space:]]+xiaomi,oem-refresh-modes;' >/dev/null
++done
+ if [[ $(cat "$profile/audio-profile") == hdmi-only ]]; then
+     bash "$profile/tests/dp-audio-fdt-contract.sh" "$kernel"
+     bash "$profile/tests/dp-audio-topology-contract.sh"
+@@ -207,7 +198,13 @@ CC=clang bash "$profile/tests/o82-panel-contract.sh" "$profile/src/display/panel
+ bash "$profile/tests/o82-abm-contract.sh" "$kernel" "$profile/src/display/panel-xiaomi-o82.c"
+ CC=clang SANITIZE=1 bash "$profile/tests/o82-abm-contract.sh" "$kernel" "$profile/src/display/panel-xiaomi-o82.c"
+ sha256sum "$profile/patches/display/0070-o82-adaptive-backlight.patch" >> "$output/abl-source-SHA256SUMS"
+-printf 'Exact seven-mode O82-42 native source prepared; no private boot input\n'
++# Extend the scoped host/manager policy only after the historical source receipts.
++git -C "$kernel" apply --check "$profile/patches/display/0071-o82-panel-variants.patch"
++git -C "$kernel" apply "$profile/patches/display/0071-o82-panel-variants.patch"
++bash "$profile/tests/o82-variants-contract.sh" "$kernel"
++bash "$profile/tests/o82-variants-dt-contract.sh" "$kernel" "${usb_cpp[@]}"
++sha256sum "$profile/patches/display/0071-o82-panel-variants.patch" >> "$output/abl-source-SHA256SUMS"
++printf 'Exact seven-mode O82-36/O82-42 native source prepared; hardware validation remains variant-specific\n'
+ # Retain the independently verified USB role/PM correction from release1020.
+ cp "$kernel/drivers/usb/dwc3/dwc3-qcom.c" "$output/dwc3-qcom-before-role-pm.c"
+ git -C "$kernel" apply --check "$profile/patches/usb/0001-qcom-system-role-pm.patch"
+diff --git a/patches/display/0002-arm64-uke-native-abl-entry.patch b/patches/display/0002-arm64-uke-native-abl-entry.patch
+index 7d18cf91..262ce004 100644
+--- a/patches/display/0002-arm64-uke-native-abl-entry.patch
++++ b/patches/display/0002-arm64-uke-native-abl-entry.patch
+@@ -19,23 +19,22 @@ evidence and must not be added to the normal release series.
+  #include "uke-lights.h"
+  
+  void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
+-@@ -1080,6 +1082,15 @@
++@@ -1080,6 +1082,14 @@
+  	ret = uke_abl_transform(uke_fdt, sizeof(uke_fdt), input, size,
+  			      uke_ufs_overlay, sizeof(uke_ufs_overlay),
+  			      uke_usb_overlay, sizeof(uke_usb_overlay));
+ +	if (ret > 0) {
+ +		ret = fdt_open_into(uke_fdt, uke_fdt, sizeof(uke_fdt));
+ +		if (!ret)
+-+			ret = uke_abl_native(uke_fdt, uke_native_overlay,
+-+					     sizeof(uke_native_overlay),
+-+					     UKE_NATIVE_PANEL_SELECTOR);
+++			ret = uke_abl_native_select(uke_fdt, uke_native_panels,
+++						    ARRAY_SIZE(uke_native_panels));
+ +		if (!ret)
+ +			ret = 1;
+ +	}
+  	if (ret < 0) {
+  		pr_crit("Uke ABL DT adaptation rejected (%d); refusing incomplete board graph\n", ret);
+  		while (true)
+-@@ -1102,7 +1113,7 @@
++@@ -1102,7 +1112,7 @@
+  		pr_warn("Uke lights: OEM graph not admitted; light controls unavailable\n");
+  	}
+  	*physical = __pa_symbol(uke_fdt);
+diff --git a/src/boot/sm7675-uke-usb2.dtso b/src/boot/sm7675-uke-usb2.dtso
+index 6a21dd6c..c0b8a1c1 100644
+--- a/src/boot/sm7675-uke-usb2.dtso
++++ b/src/boot/sm7675-uke-usb2.dtso
+@@ -118,6 +118,8 @@
+ 	ir-spi@0 {
+ 		compatible = "ir-spi-led";
+ 		label = "Uke infrared transmitter";
++		spi-max-frequency = <19200000>;
++		duty-cycle = /bits/ 8 <50>;
+ 	};
+ };
+ 
+@@ -144,6 +146,7 @@
+ 		model = "FM19511 NFC tag";
+ 		interrupt-parent = <&tlmm>;
+ 		interrupts = <170 IRQ_TYPE_EDGE_FALLING>;
++		wakeup-source;
+ 		/* The admitted POCO SKU enables this before I2C population. */
+ 		status = "disabled";
+ 	};
+diff --git a/src/display/README.md b/src/display/README.md
+index 67dfd710..fda4ca54 100644
+--- a/src/display/README.md
++++ b/src/display/README.md
+@@ -1,5 +1,9 @@
+ # SM7675 native display candidate
+ 
++2 November 2026: [O82 supplier selection](../../docs/O82-PANEL-VARIANTS.md)
++embeds separate O82-36/O82-42 DT overlays and preserves each supplier's ON
++commands. Targeted source fixtures pass; O82-36 hardware validation is pending.
++
+ The O82 panel registration is retained until reboot. Ordinary module removal
+ and manual sysfs bind/unbind are disabled because live removal on kernel
+ `7.2.12-22` produced late GEM and repeated KMS teardown faults. Shutdown and
+diff --git a/src/display/panel-xiaomi-o82.c b/src/display/panel-xiaomi-o82.c
+index 66aef764..61227f3b 100644
+--- a/src/display/panel-xiaomi-o82.c
++++ b/src/display/panel-xiaomi-o82.c
+@@ -206,6 +206,8 @@ static int o82_on_batch(struct o82_panel *ctx)
+ {
+ 	struct mipi_dsi_msg msgs[31] = { };
+ 	const struct o82_profile *profile = ctx->active;
++	bool pa = ctx->profiles == o82_36_02_0a_profiles;
++	unsigned int commands = pa ? 171 : 108;
+ 	unsigned int i, count = 0, bytes = 0, chunks = 0, total = 0;
+ 	int ret;
+ 
+@@ -213,17 +215,18 @@ static int o82_on_batch(struct o82_panel *ctx)
+ 	    (profile != &ctx->profiles[0] &&
+ 	     !(ctx->oem_refresh_modes && (profile == &ctx->profiles[1] ||
+ 					profile == &ctx->profiles[2]))) ||
+-	    profile->on_count != 108)
++	    profile->on_count != commands)
+ 		return -EINVAL;
+ 	/* Reject changed metadata before the first ON chunk can reach the panel. */
+ 	for (i = 0; i < profile->on_count; i++) {
+ 		const struct o82_command *cmd = &profile->on[i];
+-		bool terminal = i == 6 || i == 12 || i == 74 || i >= 105;
++		bool terminal = i == 6 || i == 12 || i == 74 ||
++			(pa ? i == 157 || i >= 168 : i >= 105);
+ 
+ 		if (cmd->type != MIPI_DSI_DCS_LONG_WRITE || cmd->channel ||
+ 		    !cmd->data || !cmd->len || cmd->len > 17 ||
+ 		    cmd->downstream_flags != (terminal ? 0 : BIT(6)) ||
+-		    cmd->delay_ms != (i == 106 ? 120 : 0))
++		    cmd->delay_ms != (i == commands - 2 ? 120 : 0))
+ 			return -EINVAL;
+ 		count++;
+ 		bytes += ALIGN(cmd->len + 4, 4);
+@@ -235,7 +238,7 @@ static int o82_on_batch(struct o82_panel *ctx)
+ 			count = bytes = 0;
+ 		}
+ 	}
+-	if (count || chunks != 8 || total != 884)
++	if (count || chunks != (pa ? 10 : 8) || total != (pa ? 1448 : 884))
+ 		return -EINVAL;
+ 	chunks = total = 0;
+ 	for (i = 0; i < profile->on_count; i++) {
+@@ -267,8 +270,8 @@ static int o82_on_batch(struct o82_panel *ctx)
+ 		}
+ 	}
+ 	dev_info(&ctx->dsi[0]->dev,
+-		 "Uke O82 LP ON batching complete: commands=108 chunks=%u bytes=%u\n",
+-		 chunks, total);
++		 "Uke O82 LP ON batching complete: commands=%u chunks=%u bytes=%u\n",
++		 commands, chunks, total);
+ 	return 0;
+ }
+ 
+@@ -347,8 +350,11 @@ static int o82_read_initial_mode(struct o82_panel *ctx, struct device_node *node
+ 	ctx->oem_refresh_modes = of_property_read_bool(node, "xiaomi,oem-refresh-modes");
+ 	if ((ctx->initial_60hz_only && ctx->initial_120hz_only) ||
+ 	    (ctx->oem_refresh_modes && (ctx->initial_60hz_only || ctx->initial_120hz_only)) ||
+-	    ((ctx->initial_120hz_only || ctx->oem_refresh_modes) &&
+-	     !of_device_is_compatible(node, "xiaomi,o82-42-02-0b")))
++	    (ctx->initial_120hz_only &&
++	     !of_device_is_compatible(node, "xiaomi,o82-42-02-0b")) ||
++	    (ctx->oem_refresh_modes &&
++	     !of_device_is_compatible(node, "xiaomi,o82-42-02-0b") &&
++	     !of_device_is_compatible(node, "xiaomi,o82-36-02-0a")))
+ 		return -EINVAL;
+ 	return 0;
+ }
+@@ -732,7 +738,9 @@ static bool o82_dfps_check_locked(struct o82_panel *ctx,
+ 	int old_group = qcom_uke_o82_mode_group(old);
+ 
+ 	return qcom_uke_o82_live_change(old, new_mode) &&
+-		ctx->oem_refresh_modes && ctx->profiles == o82_42_02_0b_profiles &&
++		ctx->oem_refresh_modes &&
++		(ctx->profiles == o82_42_02_0b_profiles ||
++		 ctx->profiles == o82_36_02_0a_profiles) &&
+ 		ctx->active == &ctx->profiles[old_group] && ctx->prepared &&
+ 		!ctx->removing && (atomic64_read(&ctx->touch_state) & 1);
+ }
+diff --git a/src/display/prepare-native-abl-source.sh b/src/display/prepare-native-abl-source.sh
+index cf8b19bf..c7fb8882 100644
+--- a/src/display/prepare-native-abl-source.sh
++++ b/src/display/prepare-native-abl-source.sh
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env bash
+ # Host-only candidate entry; leaves the normal ABL source and build untouched.
+ set -Eeuo pipefail
+-[[ $# == 3 && -d $1 && -d $2 && $3 =~ ^(36|42)$ ]] || exit 2
++[[ $# == 3 && -d $1 && -d $2 && $3 =~ ^(36|42|auto)$ ]] || exit 2
+ kernel=$(realpath "$1") output=$(realpath "$2") variant=$3
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ [[ -s $kernel/drivers/gpu/drm/panel/panel-xiaomi-o82.c ]]
+@@ -12,21 +12,11 @@ timing_patch=$here/../../patches/display/0005-native-dpu-dsc-active-width.patch
+ git -C "$kernel" apply --check "$timing_patch"
+ usb_cpp=()
+ [[ ${UKE_USB_PROFILE:-peripheral} != typec-v1 ]] || usb_cpp=(-DUKE_USB_TYPEC=1)
+-cpp -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT="$variant" -x assembler-with-cpp \
+-    "${usb_cpp[@]}" \
+-    -I "$kernel/include" "$here/sm7675-uke-native-display.dtso" > "$output/display.dts"
+-dtc -q -@ -I dts -O dtb -o "$output/display.dtbo" "$output/display.dts"
+-if [[ $variant == 36 ]]; then suffix=36_02_0a; else suffix=42_02_0b; fi
+-{
+-    printf '#define UKE_NATIVE_PANEL_SELECTOR "msm_drm.dsi_display0=qcom,mdss_dsi_o82_%s_dualdsi_dsc_vid:"\n' "$suffix"
+-    printf 'static unsigned char uke_native_overlay[] __initdata __aligned(8) = {\n'
+-    od -An -v -tx1 "$output/display.dtbo" | sed -E 's/[a-f0-9]{2}/0x&,/g'
+-    printf '};\n'
+-} > "$output/uke-native-display.h"
+-install -m644 "$output/uke-native-display.h" "$kernel/arch/arm64/kernel/uke-native-display.h"
++bash "$here/generate-native-panels.sh" "$kernel" "$output" \
++    "$here/sm7675-uke-native-display.dtso" "$variant" "${usb_cpp[@]}"
+ install -m644 "$here/uke-abl-native.h" "$kernel/arch/arm64/kernel/uke-abl-native.h"
+ git -C "$kernel" apply "$patch"
+ git -C "$kernel" apply "$timing_patch"
+ sha256sum "$here/uke-abl-native.h" "$patch" "$output/display.dtbo" \
+     "$timing_patch" "$kernel/arch/arm64/kernel/uke-abl.c" > "$output/native-entry-SHA256SUMS"
+-printf 'Isolated native entry prepared for O82 %s; only the initial 60 Hz mode is exposed\n' "$suffix"
++printf 'Isolated native entry prepared for O82 selection %s; only the initial 60 Hz mode is exposed\n' "$variant"
+diff --git a/src/display/sm7675-uke-native-display-oem-modes.dtso b/src/display/sm7675-uke-native-display-oem-modes.dtso
+index 88483be9..529f180d 100644
+--- a/src/display/sm7675-uke-native-display-oem-modes.dtso
++++ b/src/display/sm7675-uke-native-display-oem-modes.dtso
+@@ -1,8 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Exact O82-42 OEM timing groups; retain 120 Hz as the preferred mode. */
+-#if O82_PANEL_VARIANT != 42
+-#error OEM refresh modes require the observed O82-42 panel
+-#endif
++/* Both O82 suppliers share these OEM timings; ON packets remain supplier-specific. */
+ #include "sm7675-uke-native-display.dtso"
+ #include "../input/sm7675-uke-thp.dtsi"
+ 
+diff --git a/src/display/uke-abl-native.h b/src/display/uke-abl-native.h
+index 1ef4fb00..66287cef 100644
+--- a/src/display/uke-abl-native.h
++++ b/src/display/uke-abl-native.h
+@@ -11,6 +11,53 @@
+ #include "../boot/uke-bwmon.h"
+ #include "../boot/uke-cpu-bwmon.h"
+ #endif
++struct uke_native_panel {
++	const char *selector;
++	void *overlay;
++	size_t bytes;
++};
++
++/* ABL may omit the trailing colon. Match one complete parameter, not a substring. */
++static int UKE_INIT uke_native_panel_selected(const void *fdt, const char *selector)
++{
++	static const char key[] = "msm_drm.dsi_display0=";
++	const char *args, *cursor, *selected = NULL;
++	size_t length, selected_length = 0;
++	int chosen, bytes;
++
++	if (!selector || strncmp(selector, key, sizeof(key) - 1))
++		return -FDT_ERR_BADVALUE;
++	length = strlen(selector);
++	if (length && selector[length - 1] == ':')
++		length--;
++	chosen = fdt_path_offset(fdt, "/chosen");
++	args = (const char *)fdt_getprop(fdt, chosen, "bootargs", &bytes);
++	if (!args || bytes <= 0 || args[bytes - 1] ||
++	    strlen(args) != (size_t)bytes - 1)
++		return -FDT_ERR_BADVALUE;
++	for (cursor = args; *cursor;) {
++		const char *start;
++		size_t token;
++
++		while (*cursor == ' ' || *cursor == '\t')
++			cursor++;
++		start = cursor;
++		while (*cursor && *cursor != ' ' && *cursor != '\t')
++			cursor++;
++		token = cursor - start;
++		if (token < sizeof(key) - 1 || strncmp(start, key, sizeof(key) - 1))
++			continue;
++		if (selected)
++			return -FDT_ERR_BADVALUE;
++		selected = start;
++		selected_length = token;
++	}
++	if (!selected)
++		return -FDT_ERR_BADVALUE;
++	return selected_length >= length && !strncmp(selected, selector, length) &&
++		(selected_length == length || selected[length] == ':');
++}
++
+ /*
+  * Give an unlabeled OEM node a phandle and a symbol so overlays can reference it.
+  * Adding the phandle shifts later nodes, so /__symbols__ is resolved afterwards.
+@@ -59,8 +106,7 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
+ 	    fdt_node_check_compatible(fdt, 0, "xiaomi,uke"))
+ 		return -FDT_ERR_BADVALUE;
+ 	chosen = fdt_path_offset(fdt, "/chosen");
+-	text = (const char *)fdt_getprop(fdt, chosen, "bootargs", &size);
+-	if (!text || size <= 0 || text[size - 1] || !strstr(text, panel_selector))
++	if (uke_native_panel_selected(fdt, panel_selector) != 1)
+ 		return -FDT_ERR_BADVALUE;
+ 	text = (const char *)fdt_getprop(fdt, chosen, "stdout-path", &size);
+ 	if (!text || size <= 0 || size > (int)sizeof(framebuffer) || text[size - 1] ||
+@@ -140,3 +186,23 @@ static int UKE_INIT uke_abl_native(void *fdt, void *overlay, size_t bytes,
+ 	ret = fdt_delprop(fdt, node, "backlight");
+ 	return ret && ret != -FDT_ERR_NOTFOUND ? ret : fdt_pack(fdt);
+ }
++
++/* Select before either overlay or the inherited board graph is modified. */
++static inline int UKE_INIT uke_abl_native_select(void *fdt,
++		const struct uke_native_panel *panels, unsigned int count)
++{
++	unsigned int i;
++	int selected;
++
++	if (!fdt || !panels || !count || fdt_check_header(fdt))
++		return -FDT_ERR_BADVALUE;
++	for (i = 0; i < count; i++) {
++		selected = uke_native_panel_selected(fdt, panels[i].selector);
++		if (selected < 0)
++			return selected;
++		if (selected)
++			return uke_abl_native(fdt, panels[i].overlay, panels[i].bytes,
++					      panels[i].selector);
++	}
++	return -FDT_ERR_BADVALUE;
++}
+diff --git a/src/input/Kconfig b/src/input/Kconfig
+index d0d59612..0dc907f6 100644
+--- a/src/input/Kconfig
++++ b/src/input/Kconfig
+@@ -5,6 +5,6 @@ config TOUCHSCREEN_NT36532_UKE
+ 	select VIDEOBUF2_VMALLOC
+ 	select CRYPTO_LIB_SHA256
+ 	help
+-	  Load qualified shared CSOT firmware and report multitouch directly
++	  Load the selected CSOT or Tianma OEM firmware and report multitouch directly
+ 	  through Linux input. No userspace contact processor or private baseline
+ 	  is required. Firmware gestures report KEY_WAKEUP.
+diff --git a/src/input/nt36532-uke-matrix.c b/src/input/nt36532-uke-matrix.c
+index 01919b46..2a0c21b4 100644
+--- a/src/input/nt36532-uke-matrix.c
++++ b/src/input/nt36532-uke-matrix.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+-/* Integer matrix processing for the measured Uke CSOT THP format.
++/* Integer matrix processing for Uke THP frames with supplier-selected DT maps.
+  * Uses a live startup baseline, local ascent and weighted electrode positions.
+  * No userspace contact-core source or device-private reference is embedded.
+  */
+diff --git a/src/input/nt36532-uke-protocol.c b/src/input/nt36532-uke-protocol.c
+index 4b922203..1a3164ee 100644
+--- a/src/input/nt36532-uke-protocol.c
++++ b/src/input/nt36532-uke-protocol.c
+@@ -66,26 +66,68 @@ int nvt_uke_watchdog(const u8 *data, size_t size, unsigned int *consecutive)
+ 	return data[0];
+ }
+ 
++const char *nvt_uke_firmware(enum nvt_uke_variant variant)
++{
++	switch (variant) {
++	case NVT_UKE_CSOT:
++		return "qcom/uke/touch/csot/normal.bin";
++	case NVT_UKE_TIANMA:
++		return "qcom/uke/touch/tm/normal.bin";
++	default:
++		return NULL;
++	}
++}
++
++int nvt_uke_variant_from_name(const char *name)
++{
++	if (name && !strcmp(name, "csot"))
++		return NVT_UKE_CSOT;
++	if (name && !strcmp(name, "tianma"))
++		return NVT_UKE_TIANMA;
++	return -EINVAL;
++}
++
++int nvt_uke_panel_id(enum nvt_uke_variant variant, int direction, int level)
++{
++	if (!nvt_uke_firmware(variant))
++		return -EINVAL;
++	if (direction < 0)
++		return direction;
++	if (level < 0)
++		return level;
++	/* Retain the observed CSOT high input; Tianma polarity is not assumed. */
++	return direction == 1 && (level == 0 || level == 1) &&
++		(variant == NVT_UKE_TIANMA || level == 1) ? 0 : -ENODEV;
++}
++
+ int nvt_uke_validate_image(const struct nvt_uke_io *io, const u8 *data, size_t size)
+ {
+-	static const u8 expected[32] = {
++	static const u8 expected[2][32] = { {
+ 		0xa4, 0xf9, 0x49, 0xfb, 0x89, 0xc7, 0xea, 0xad,
+ 		0x9d, 0xa8, 0x5a, 0x58, 0x85, 0xcd, 0x2d, 0xcc,
+ 		0x1f, 0xff, 0xbf, 0x08, 0xbc, 0x1e, 0x7f, 0xfe,
+ 		0x9f, 0x0b, 0xb9, 0x7c, 0x17, 0x69, 0xb3, 0x10,
+-	};
++	}, {
++		0x12, 0xce, 0x26, 0x93, 0xb9, 0x65, 0xa3, 0x5e,
++		0x34, 0x69, 0x98, 0x4f, 0xd9, 0x5a, 0xfe, 0xbb,
++		0x4c, 0x0a, 0x74, 0x0c, 0xa9, 0x08, 0x15, 0x9b,
++		0x0a, 0x5e, 0x6b, 0xda, 0xd5, 0x96, 0x86, 0x19,
++	} };
+ 	u8 digest[32];
+ 	int ret;
+ 
+-	if (!io || !io->sha256 || !data || size != NVT_UKE_IMAGE_SIZE)
++	if (!io || !io->sha256 || !data || size != NVT_UKE_IMAGE_SIZE ||
++	    !nvt_uke_firmware(io->variant))
+ 		return -EINVAL;
+ 	if (get_unaligned_le32(data) != 0x200 || get_unaligned_le32(data + 4) ||
+ 	    get_unaligned_le32(data + 8) != 0x174d7 ||
+ 	    get_unaligned_le32(data + 12) != 0x22000 ||
+ 	    get_unaligned_le32(data + 16) != 0x100000 ||
+ 	    get_unaligned_le32(data + 20) != 0x1409f ||
+-	    get_unaligned_le32(data + 24) != 0xe4bdd7f0 ||
+-	    get_unaligned_le32(data + 28) != 0x89495247 ||
++	    get_unaligned_le32(data + 24) !=
++		(io->variant == NVT_UKE_CSOT ? 0xe4bdd7f0U : 0x9441f4bbU) ||
++	    get_unaligned_le32(data + 28) !=
++		(io->variant == NVT_UKE_CSOT ? 0x89495247U : 0x9c1002baU) ||
+ 	    data[0x20] != 3 || data[0x28] || data[0x29] ||
+ 	    get_unaligned_le32(data + 0xf0) != 0x1140a0 ||
+ 	    get_unaligned_le32(data + 0xf4) != 0xff || get_unaligned_le32(data + 0xf8) ||
+@@ -96,7 +138,7 @@ int nvt_uke_validate_image(const struct nvt_uke_io *io, const u8 *data, size_t s
+ 	ret = io->sha256(io->context, data, size, digest);
+ 	if (ret)
+ 		return ret < 0 ? ret : -EIO;
+-	return memcmp(digest, expected, sizeof(expected)) ? -EBADMSG : 0;
++	return memcmp(digest, expected[io->variant], sizeof(digest)) ? -EBADMSG : 0;
+ }
+ 
+ static bool nvt_uke_ram(u32 address, size_t size)
+@@ -242,7 +284,14 @@ int nvt_uke_boot(const struct nvt_uke_io *io, const u8 *data, size_t size, bool
+ 		return ret;
+ 	io->delay_ms(io->context, 5);
+ 	for (i = 0; i < sizeof(setup) / sizeof(setup[0]); i++) {
+-		ret = nvt_uke_write(io, setup[i].address, setup[i].bytes, setup[i].count, false);
++		const u8 *bytes = setup[i].bytes;
++
++		/* Supplier CRCs come only from the fully hash-admitted OEM image. */
++		if (setup[i].address == 0x1fb500)
++			bytes = data + 24;
++		else if (setup[i].address == 0x1fb504)
++			bytes = data + 28;
++		ret = nvt_uke_write(io, setup[i].address, bytes, setup[i].count, false);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/src/input/nt36532-uke-protocol.h b/src/input/nt36532-uke-protocol.h
+index c4100dea..bdbf200a 100644
+--- a/src/input/nt36532-uke-protocol.h
++++ b/src/input/nt36532-uke-protocol.h
+@@ -11,6 +11,11 @@
+ #define NVT_UKE_GESTURE_SIZE 65
+ #define NVT_UKE_CONTACTS 10
+ 
++enum nvt_uke_variant {
++	NVT_UKE_CSOT,
++	NVT_UKE_TIANMA,
++};
++
+ struct nvt_uke_contacts {
+ 	u16 active;
+ 	u16 x[NVT_UKE_CONTACTS], y[NVT_UKE_CONTACTS];
+@@ -31,8 +36,13 @@ struct nvt_uke_io {
+ 	int (*check_ready)(void *context);
+ 	void (*delay_ms)(void *context, unsigned int milliseconds);
+ 	int (*sha256)(void *context, const u8 *data, size_t size, u8 digest[32]);
++	enum nvt_uke_variant variant;
+ };
+ 
++const char *nvt_uke_firmware(enum nvt_uke_variant variant);
++int nvt_uke_variant_from_name(const char *name);
++int nvt_uke_panel_id(enum nvt_uke_variant variant, int direction, int level);
++
+ int nvt_uke_decode(const u8 *data, size_t size, struct nvt_uke_frame *frame);
+ int nvt_uke_watchdog(const u8 *data, size_t size, unsigned int *consecutive);
+ int nvt_uke_validate_image(const struct nvt_uke_io *io, const u8 *data, size_t size);
+diff --git a/src/input/nt36532-uke-spi.c b/src/input/nt36532-uke-spi.c
+index 03d8be60..a850177d 100644
+--- a/src/input/nt36532-uke-spi.c
++++ b/src/input/nt36532-uke-spi.c
+@@ -27,7 +27,6 @@
+ #include "nt36532-uke-protocol.h"
+ #include "nt36532-uke-matrix.h"
+ 
+-#define NVT_UKE_FIRMWARE "qcom/uke/touch/csot/normal.bin"
+ #define NVT_UKE_WIRE_SIZE (NVT_UKE_FRAME_SIZE + 2)
+ 
+ struct nvt_uke_touch {
+@@ -645,8 +644,9 @@ static int nvt_probe(struct spi_device *spi)
+ 	struct nvt_uke_touch *t;
+ 	u32 size_x, size_y;
+ 	u32 mm_x, mm_y;
+-	const char *label;
+-	int ret;
++	const char *label, *supplier;
++	enum nvt_uke_variant variant;
++	int ret, panel_level;
+ 
+ 	if (!of_machine_is_compatible("xiaomi,uke") || spi->max_speed_hz != 19200000 ||
+ 	    spi->mode != SPI_MODE_0 || spi->irq <= 0 ||
+@@ -655,11 +655,24 @@ static int nvt_probe(struct spi_device *spi)
+ 	if (spi_max_transfer_size(spi) < NVT_UKE_WIRE_SIZE ||
+ 	    spi_max_message_size(spi) < NVT_UKE_WIRE_SIZE)
+ 		return dev_err_probe(dev, -EMSGSIZE, "Complete touch packet transfer required\n");
++	if (device_property_read_string(dev, "novatek,firmware-variant", &supplier))
++		return dev_err_probe(dev, -EINVAL, "Touch supplier identity required\n");
++	ret = nvt_uke_variant_from_name(supplier);
++	if (ret < 0)
++		return dev_err_probe(dev, ret, "Unsupported touch supplier\n");
++	variant = (enum nvt_uke_variant)ret;
+ 	panel_id = devm_gpiod_get(dev, "panel-id", GPIOD_ASIS);
+ 	if (IS_ERR(panel_id))
+ 		return dev_err_probe(dev, PTR_ERR(panel_id), "Panel ID unavailable\n");
+-	if (gpiod_get_direction(panel_id) != 1 || gpiod_get_value_cansleep(panel_id) != 1)
+-		return dev_err_probe(dev, -ENODEV, "Expected existing high panel-ID input\n");
++	ret = gpiod_get_direction(panel_id);
++	if (ret < 0)
++		return dev_err_probe(dev, ret, "Panel ID direction unavailable\n");
++	panel_level = gpiod_get_value_cansleep(panel_id);
++	if (panel_level < 0)
++		return dev_err_probe(dev, panel_level, "Panel ID value unavailable\n");
++	ret = nvt_uke_panel_id(variant, ret, panel_level);
++	if (ret)
++		return dev_err_probe(dev, ret, "Invalid panel-ID input for touch supplier\n");
+ 	if (device_property_read_u32(dev, "touchscreen-size-x", &size_x) ||
+ 	    device_property_read_u32(dev, "touchscreen-size-y", &size_y) ||
+ 	    size_x != 32000 || size_y != 21360 ||
+@@ -681,17 +694,18 @@ static int nvt_probe(struct spi_device *spi)
+ 	INIT_DELAYED_WORK(&t->poll_work, nvt_poll_worker);
+ 	if (device_property_read_u32_array(dev, "novatek,column-map", t->matrix.columns, NVT_UKE_COLUMNS) ||
+ 	    device_property_read_u32_array(dev, "novatek,row-map", t->matrix.rows, NVT_UKE_ROWS))
+-		return dev_err_probe(dev, -EINVAL, "CSOT electrode mapping required\n");
++		return dev_err_probe(dev, -EINVAL, "Supplier electrode mapping required\n");
+ 	t->io = (struct nvt_uke_io) {
+ 		.context = t, .read = nvt_read, .write = nvt_write,
+ 		.check_ready = nvt_ready, .delay_ms = nvt_delay, .sha256 = nvt_sha256,
++		.variant = variant,
+ 	};
+ 	t->tx = devm_kmalloc(dev, NVT_UKE_WIRE_SIZE, GFP_KERNEL);
+ 	t->rx = devm_kmalloc(dev, NVT_UKE_WIRE_SIZE, GFP_KERNEL);
+ 	t->frame = devm_kmalloc(dev, NVT_UKE_FRAME_SIZE, GFP_KERNEL);
+ 	if (!t->tx || !t->rx || !t->frame)
+ 		return -ENOMEM;
+-	ret = request_firmware(&t->firmware, NVT_UKE_FIRMWARE, dev);
++	ret = request_firmware(&t->firmware, nvt_uke_firmware(variant), dev);
+ 	if (ret)
+ 		return ret;
+ 	ret = devm_add_action_or_reset(dev, nvt_firmware_cleanup, (void *)t->firmware);
+@@ -883,6 +897,7 @@ static struct spi_driver nvt_driver = {
+ 	.id_table = nvt_spi_ids,
+ };
+ module_spi_driver(nvt_driver);
+-MODULE_FIRMWARE(NVT_UKE_FIRMWARE);
++MODULE_FIRMWARE("qcom/uke/touch/csot/normal.bin");
++MODULE_FIRMWARE("qcom/uke/touch/tm/normal.bin");
+ MODULE_DESCRIPTION("Uke NT36532 signed raw THP packet transport");
+ MODULE_LICENSE("GPL");
+diff --git a/src/input/sm7675-uke-thp.dtsi b/src/input/sm7675-uke-thp.dtsi
+index 1408e0f0..959f9a16 100644
+--- a/src/input/sm7675-uke-thp.dtsi
++++ b/src/input/sm7675-uke-thp.dtsi
+@@ -2,7 +2,7 @@
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+-/* Explicit candidate: existing Uke IRQ54, high panel-ID26 and native O82 panel. */
++/* Uke IRQ54 and panel-ID26; supplier firmware and geometry stay paired. */
+ / {
+ 	fragment@240 {
+ 		target-path = "/soc/qcom,qupv3_0_geni_se@ac0000/spi@a90000/novatek@0";
+@@ -13,12 +13,28 @@
+ 			panel-id-gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+ 			panel = <&uke_panel>;
+ 			label = "Xiaomi Pad 7 Touchscreen";
+-			/* Shared CSOT config c02d1956: separable electrode maps, tenfold units. */
++			/* OEM configuration maps use tenfold display units. */
+ 			touchscreen-size-x = <32000>;
+ 			touchscreen-size-y = <21360>;
+ 			touchscreen-x-mm = <237>;
+ 			touchscreen-y-mm = <158>;
+ 			touchscreen-inverted-y;
++#if O82_PANEL_VARIANT == 36
++			novatek,firmware-variant = "tianma";
++			/* Tianma config 4de42f9c, independently verified separable maps. */
++			novatek,row-map = <270 810 1350 1890 2430 2970 3510 4050
++				4590 5130 5670 6210 6750 7290 7830 8370 8910 9450 9990 10530
++				11070 11610 12150 12690 13230 13770 14310 14850 15370 15890
++				16410 16930 17450 17970 18490 19010 19530 20050 20570 21090>;
++			novatek,column-map = <260 780 1300 1820 2340 2880 3420 3960
++				4500 5040 5580 6120 6660 7200 7740 8280 8820 9360 9900 10440
++				10980 11520 12060 12600 13140 13660 14180 14700 15220 15740
++				16260 16780 17300 17820 18340 18880 19420 19960 20500 21040
++				21580 22120 22660 23200 23740 24280 24820 25360 25900 26440
++				26980 27520 28060 28600 29140 29660 30180 30700 31220 31740>;
++#elif !defined(O82_PANEL_VARIANT) || O82_PANEL_VARIANT == 42
++			novatek,firmware-variant = "csot";
++			/* CSOT config c02d1956. */
+ 			novatek,row-map = <270 810 1350 1890 2430 2970 3510 4050
+ 				4580 5110 5640 6170 6700 7230 7760 8290 8820 9350 9880 10410
+ 				10940 11470 12000 12530 13060 13590 14120 14650 15180 15710
+@@ -29,6 +45,9 @@
+ 				16260 16790 17320 17850 18380 18910 19440 19970 20500 21030
+ 				21560 22090 22620 23150 23680 24210 24740 25270 25800 26330
+ 				26870 27410 27950 28490 29030 29570 30110 30650 31190 31730>;
++#else
++#error Select an exact O82 touch supplier
++#endif
+ 			wakeup-source;
+ 		};
+ 	};
+diff --git a/src/nfc/README.md b/src/nfc/README.md
+index 48ef9c5a..ed77184d 100644
+--- a/src/nfc/README.md
++++ b/src/nfc/README.md
+@@ -1,7 +1,13 @@
+ # Uke NFC tag and infrared integration
+ 
+-27 October 2026. Source: Linux 7.3 Uke native profile. Host fixtures and ARM64
+-object checks are separate from tablet acceptance.
++3 November 2026. Linux 7.3.1 source candidate. Compilation runs only in COPR;
++source checks, linked packages and physical acceptance are separate results.
++
++[COPR11251492](https://copr.fedorainfracloud.org/coprs/build/11251492/) passes
++the complete 7.3.1-1401 kernel, modules, boot payload and RPM checks on AArch64.
++Its source is `118ba4b`; GCC/Clang and ASan/UBSan actual-code fixtures also pass.
++The candidate is not installed on the tablet. RF, optical and physical wake
++acceptance remain open.
+ 
+ FM19511 is an I2C NFC tag. It does not provide an NCI reader or card-emulation
+ controller. The native overlay leaves it disabled; the existing exact `ukepgl`
+@@ -10,27 +16,61 @@ checks Uke/SM7675 and the POCO model before obtaining its supply or using I2C.
+ The shared backlight I2C bus, OEM tag address, 3.3 V supply and GPIO170 falling
+ IRQ are retained from the exact Uke source.
+ 
+-The driver publishes root-only `/dev/fm-ntag`. Read/write transactions are
+-bounded to 256 bytes; one file may be open at a time. `poll()` reports RF events
++The driver publishes `/dev/fm-ntag` with mode 0600 before distribution session
++access rules. Reads are bounded to 256 bytes; one file may be open at a time. `poll()` reports RF events
+ and faults. Unbinding preserves open-file state until release and returns
+ `ENODEV` for further transfers. Probe checks/updates volatile configuration,
+ checks readback and attempts restoration on error. It does not automatically
+ write EEPROM/NDEF, reset the chip, log payloads or expose private tag data.
+-Explicit root writes through the transport can change tag data and are not
+-part of the passive acceptance check.
++The raw write path now accepts only a two-byte address selector. Payload writes
++return `EROFS`, preserving read-only EEPROM access. This deliberately removes
++the older unrestricted raw writer. It does not change RF-side memory locks.
++
++The fixed-size UAPI in `fm19511-uapi.h` adds `FM19511_IOC_INFO`,
++`FM19511_IOC_EVENTS` and `FM19511_IOC_READ_MEMORY`. The latter performs one
++serialized address/read operation, checks 16-bit address wrap and transfer size,
++and zeros unused output. Events contain an IRQ sequence, the sequence at the
++last completed status read, the last status-read error and three raw OEM IRQ bytes.
++Reading events consumes the prior notification while retaining concurrent IRQs;
++status completion produces a second notification. Undocumented bits are not
++interpreted as decoded NFC messages. 32-bit compatibility uses identical UAPI
++layouts. Wake IRQ ownership follows `wakeup-source` and standard `power/wakeup`;
++system sleep blocks user I2C and cancels work while retaining tag power.
+ 
+ The IR emitter uses the OEM QUP0 SE1 engine and pinctrl data with the upstream
+ `ir-spi-led` encoder and LIRC interface. The supply is optional because the OEM
+ emitter has no driver-controlled regulator. A supplied `power-supply` is still
+ enabled/disabled around transmission; deferred or failed providers are not
+-ignored. Carrier, pulse encoding and error handling remain upstream behavior.
++ignored. `src/infrared/ir-spi-uke.c` retains upstream rc-core/LIRC and attribution.
++It explicitly requests 16-bit SPI words, validates the default carrier and duty
++cycle, quantizes cumulative edges without changing the input, appends an inactive
++word, checks controller transfer/message limits and propagates power errors.
++One complete frame is limited to one second and one SPI transfer; splitting it
++could insert unbounded gaps. This is a transport bound, not an LED power rating.
++Carrier is constrained by the SPI controller; electrical/optical limits remain
++unmeasured. The exact OEM DT retains its 19.2 MHz SPI ceiling and SE1 routing.
++
++The FM19511(A) NFC Forum certificate 60249 identifies Type 2 Tag, not a reader.
++The public Fudan catalog describes FM19510, a different part; its 408-byte
++capacity must not be assigned to FM19511. No complete public FM19511 register
++datasheet or exact Uke IR LED part datasheet was located. NDEF/EEPROM capacity,
++UID programmability, RF boost control and power-off behavior remain unknown.
++The driver therefore adds no guessed reader, HCE, P2P, SRAM mailbox or memory
++writer. A typical NFC headphone exposes a passive pairing tag and needs a
++reader; the tablet cannot read that tag. Bluetooth audio uses Bluetooth.
++The Uke IR evidence describes an emitter, without a receiver/learning path.
++The configuration enables upstream JVC, NEC, RC5, RC6, RCMM, Sanyo, Sharp and
++Sony modules, which provide kernel encoders despite their `DECODER` Kconfig
++names. XMP has no upstream encoder and is not advertised as a scancode sender;
++applications can still supply appropriate raw pulse trains. Device-specific
++remote button databases and Bluetooth pairing policy remain userspace data.
+ 
+ Attribution: [MiCode Uke kernel](https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/5712080a4b0c0b1a879e6d145c601c649ddaddfd),
+ `drivers/ntag/fm19511/` and `drivers/media/rc/ir-spi.c`; [MiCode Uke DT](https://github.com/MiCode/kernel_devicetree/blob/94c84aeb9e517dbde546fc732033c184094c8e57/qcom/uke-sm8635.dtsi).
+-The current upstream IR source retains Samsung/Andi Shyti attribution. The
++The upstream IR source retains Samsung/Andi Shyti attribution. The
+ new tag implementation credits the reviewed Linux Foundation/MiCode protocol.
+ 
+-Host checks:
++COPR checks (never compile these fixtures on the tablet):
+ 
+ ```sh
+ bash tests/identity-contract.sh
+@@ -43,7 +83,7 @@ bash tests/nfc-syntax.sh PREPARED_KERNEL PREPARED_ARM64_OUTPUT
+ Physical acceptance requires the matched kernel/modules and rollback route,
+ the actual POCO SKU, a bound tag with the expected root-only device, an external
+ phone/tag-reader RF interaction, observed IRQ/poll events and bounded transport
+-results without dumping payloads. NDEF writes are a separate explicit action.
++results without dumping payloads. EEPROM writes remain prohibited.
+ IR requires an observed optical signal and receiver response; a LIRC node or
+ successful host encoder test is not an optical result. Neither physical result
+ has been established by this source change.
+diff --git a/src/nfc/fm,fm19511.yaml b/src/nfc/fm,fm19511.yaml
+index 192fe8bb..5386fbd5 100644
+--- a/src/nfc/fm,fm19511.yaml
++++ b/src/nfc/fm,fm19511.yaml
+@@ -23,6 +23,7 @@ properties:
+   interrupts:
+     maxItems: 1
+   vdd-supply: true
++  wakeup-source: true
+   qcom,ntag-vdd-supply:
+     deprecated: true
+   qcom,ntag-vdd-voltage:
+diff --git a/src/nfc/fm19511-uke.c b/src/nfc/fm19511-uke.c
+index d25f6e3a..13752057 100644
+--- a/src/nfc/fm19511-uke.c
++++ b/src/nfc/fm19511-uke.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /* FM19511 transport/configuration from MiCode Uke 5712080a (Linux Foundation). */
+ #include <linux/delay.h>
++#include <linux/compat.h>
+ #include <linux/i2c.h>
+ #include <linux/interrupt.h>
+ #include <linux/kref.h>
+@@ -9,11 +10,16 @@
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/poll.h>
++#include <linux/pm.h>
++#include <linux/pm_wakeirq.h>
++#include <linux/pm_wakeup.h>
++#include <linux/property.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/uaccess.h>
+ #include <linux/workqueue.h>
++#include "fm19511-uapi.h"
+ 
+ #define FM19511_LIMIT 256
+ 
+@@ -25,7 +31,11 @@ struct fm19511 {
+ 	struct delayed_work clear_irq;
+ 	wait_queue_head_t wait;
+ 	atomic_t event;
++	atomic64_t irq_sequence;
++	u64 status_sequence;
++	u8 irq_status[3];
+ 	bool opened;
++	bool suspended;
+ 	int fault;
+ };
+ 
+@@ -137,8 +147,9 @@ static ssize_t fm19511_read(struct file *file, char __user *data,
+ 		return -EMSGSIZE;
+ 	mutex_lock(&tag->lock);
+ 	event = atomic_xchg(&tag->event, 0);
+-	ret = tag->client ? i2c_master_recv(tag->client, buffer, count) : -ENODEV;
+-	if (ret > 0 && (size_t)ret > count)
++	ret = !tag->client ? -ENODEV : tag->suspended ? -EHOSTDOWN :
++		i2c_master_recv(tag->client, buffer, count);
++	if (ret >= 0 && ret != count)
+ 		ret = -EIO;
+ 	if (ret > 0) {
+ 		if (copy_to_user(data, buffer, ret))
+@@ -161,10 +172,14 @@ static ssize_t fm19511_write(struct file *file, const char __user *data,
+ 		return 0;
+ 	if (count > sizeof(buffer))
+ 		return -EMSGSIZE;
++	/* Address selection is not an EEPROM write. Never accept payload bytes. */
++	if (count != 2)
++		return -EROFS;
+ 	if (copy_from_user(buffer, data, count))
+ 		return -EFAULT;
+ 	mutex_lock(&tag->lock);
+-	ret = tag->client ? i2c_master_send(tag->client, buffer, count) : -ENODEV;
++	ret = !tag->client ? -ENODEV : tag->suspended ? -EHOSTDOWN :
++		i2c_master_send(tag->client, buffer, count);
+ 	if (ret >= 0 && ret != count)
+ 		ret = -EIO;
+ 	mutex_unlock(&tag->lock);
+@@ -188,39 +203,135 @@ static __poll_t fm19511_poll(struct file *file, poll_table *table)
+ 	return result;
+ }
+ 
++static long fm19511_ioctl(struct file *file, unsigned int command,
++			  unsigned long argument)
++{
++	struct fm19511 *tag = file->private_data;
++	void __user *user = (void __user *)argument;
++	struct fm19511_memory memory = {};
++	struct fm19511_events events = {};
++	struct fm19511_info info = {
++		.abi_version = FM19511_ABI_VERSION,
++		.capabilities = FM19511_CAP_TYPE2_TAG | FM19511_CAP_MEMORY_READ |
++				FM19511_CAP_RF_EVENTS,
++		.max_transfer = FM19511_MAX_TRANSFER,
++	};
++	char address[2];
++	int ret = 0, event;
++
++	if (command != FM19511_IOC_INFO && command != FM19511_IOC_EVENTS &&
++	    command != FM19511_IOC_READ_MEMORY)
++		return -ENOTTY;
++	if (command == FM19511_IOC_READ_MEMORY) {
++		if (copy_from_user(&memory, user, sizeof(memory)))
++			return -EFAULT;
++		if (memory.reserved || !memory.length ||
++		    memory.length > sizeof(memory.data) ||
++		    (u32)memory.address + memory.length > 0x10000)
++			return -EINVAL;
++		memset(memory.data, 0, sizeof(memory.data));
++	}
++	mutex_lock(&tag->lock);
++	if (!tag->client) {
++		ret = -ENODEV;
++		goto unlock;
++	}
++	switch (command) {
++	case FM19511_IOC_INFO:
++		if (device_can_wakeup(&tag->client->dev))
++			info.capabilities |= FM19511_CAP_WAKEUP;
++		if (copy_to_user(user, &info, sizeof(info)))
++			ret = -EFAULT;
++		break;
++	case FM19511_IOC_EVENTS:
++		/* Consume only the event observed before copying; retain new IRQs. */
++		event = atomic_xchg(&tag->event, 0);
++		events.irq_sequence = atomic64_read(&tag->irq_sequence);
++		events.status_sequence = tag->status_sequence;
++		events.error = tag->fault;
++		events.main_irq = tag->irq_status[0];
++		events.fifo_irq = tag->irq_status[1];
++		events.aux_irq = tag->irq_status[2];
++		events.pending = !!event;
++		if (copy_to_user(user, &events, sizeof(events))) {
++			if (event)
++				atomic_set(&tag->event, 1);
++			ret = -EFAULT;
++		}
++		break;
++	case FM19511_IOC_READ_MEMORY:
++		if (tag->suspended) {
++			ret = -EHOSTDOWN;
++			break;
++		}
++		address[0] = memory.address >> 8;
++		address[1] = memory.address & 0xff;
++		ret = i2c_master_send(tag->client, address, sizeof(address));
++		if (ret != sizeof(address)) {
++			ret = ret < 0 ? ret : -EIO;
++			break;
++		}
++		ret = i2c_master_recv(tag->client, (char *)memory.data, memory.length);
++		if (ret != memory.length) {
++			ret = ret < 0 ? ret : -EIO;
++			break;
++		}
++		ret = copy_to_user(user, &memory, sizeof(memory)) ? -EFAULT : 0;
++		break;
++	}
++unlock:
++	mutex_unlock(&tag->lock);
++	return ret;
++}
++
+ static const struct file_operations fm19511_fops = {
+ 	.owner = THIS_MODULE, .open = fm19511_open, .release = fm19511_release,
+ 	.read = fm19511_read, .write = fm19511_write, .poll = fm19511_poll,
++	.unlocked_ioctl = fm19511_ioctl,
++#ifdef CONFIG_COMPAT
++	.compat_ioctl = compat_ptr_ioctl,
++#endif
+ };
+ 
+ static void fm19511_clear_irq(struct work_struct *work)
+ {
+ 	struct fm19511 *tag = container_of(to_delayed_work(work), struct fm19511, clear_irq);
+-	u8 value;
++	u8 status[3];
+ 	int ret = 0;
+-	u16 reg;
++	u64 sequence;
++	unsigned int i;
+ 
+ 	mutex_lock(&tag->lock);
+-	if (tag->client)
+-		for (reg = 0xfff7; reg <= 0xfff9; reg++) {
+-			ret = fm19511_read_reg(tag, reg, &value);
++	sequence = atomic64_read(&tag->irq_sequence);
++	if (tag->client && !tag->suspended) {
++		for (i = 0; i < ARRAY_SIZE(status); i++) {
++			ret = fm19511_read_reg(tag, 0xfff7 + i, &status[i]);
+ 			if (ret)
+ 				break;
+ 		}
+-	tag->fault = ret;
++		if (!ret) {
++			memcpy(tag->irq_status, status, sizeof(status));
++			tag->status_sequence = sequence;
++		}
++		tag->fault = ret;
++		/* Status completion is independently readable after the IRQ edge. */
++		atomic_set(&tag->event, 1);
++	}
+ 	mutex_unlock(&tag->lock);
+-	if (ret)
+-		wake_up_interruptible(&tag->wait);
++	wake_up_interruptible(&tag->wait);
+ }
+ 
+ static irqreturn_t fm19511_irq(int irq, void *data)
+ {
+ 	struct fm19511 *tag = data;
+ 
++	atomic64_inc(&tag->irq_sequence);
+ 	atomic_set(&tag->event, 1);
++	pm_wakeup_event(&tag->client->dev, 2000);
+ 	wake_up_interruptible(&tag->wait);
+ 	/* Retain the OEM RF transaction settling interval before IRQ clear. */
+-	mod_delayed_work(system_wq, &tag->clear_irq, msecs_to_jiffies(150));
++	if (!READ_ONCE(tag->suspended))
++		mod_delayed_work(system_wq, &tag->clear_irq, msecs_to_jiffies(150));
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -262,6 +373,7 @@ static int fm19511_probe(struct i2c_client *client)
+ 	kref_init(&tag->refs);
+ 	init_waitqueue_head(&tag->wait);
+ 	atomic_set(&tag->event, 0);
++	atomic64_set(&tag->irq_sequence, 0);
+ 	INIT_DELAYED_WORK(&tag->clear_irq, fm19511_clear_irq);
+ 	usleep_range(5000, 5100);
+ 	ret = fm19511_configure(tag);
+@@ -275,14 +387,28 @@ static int fm19511_probe(struct i2c_client *client)
+ 		.minor = MISC_DYNAMIC_MINOR, .name = "fm-ntag",
+ 		.fops = &fm19511_fops, .parent = &client->dev, .mode = 0600,
+ 	};
++	i2c_set_clientdata(client, tag);
++	ret = device_init_wakeup(&client->dev,
++				 device_property_read_bool(&client->dev, "wakeup-source"));
++	if (ret)
++		goto free_irq;
++	if (device_can_wakeup(&client->dev)) {
++		ret = dev_pm_set_wake_irq(&client->dev, client->irq);
++		if (ret) {
++			device_init_wakeup(&client->dev, false);
++			goto free_irq;
++		}
++	}
+ 	ret = misc_register(&tag->misc);
+ 	if (ret) {
+-		free_irq(client->irq, tag);
+-		cancel_delayed_work_sync(&tag->clear_irq);
+-		goto free;
++		dev_pm_clear_wake_irq(&client->dev);
++		device_init_wakeup(&client->dev, false);
++		goto free_irq;
+ 	}
+-	i2c_set_clientdata(client, tag);
+ 	return 0;
++free_irq:
++	free_irq(client->irq, tag);
++	cancel_delayed_work_sync(&tag->clear_irq);
+ free:
+ 	kref_put(&tag->refs, fm19511_free);
+ 	return ret;
+@@ -293,6 +419,8 @@ static void fm19511_remove(struct i2c_client *client)
+ 	struct fm19511 *tag = i2c_get_clientdata(client);
+ 
+ 	misc_deregister(&tag->misc);
++	dev_pm_clear_wake_irq(&client->dev);
++	device_init_wakeup(&client->dev, false);
+ 	free_irq(client->irq, tag);
+ 	cancel_delayed_work_sync(&tag->clear_irq);
+ 	mutex_lock(&tag->lock);
+@@ -302,13 +430,39 @@ static void fm19511_remove(struct i2c_client *client)
+ 	kref_put(&tag->refs, fm19511_free);
+ }
+ 
++static int fm19511_suspend(struct device *dev)
++{
++	struct fm19511 *tag = i2c_get_clientdata(to_i2c_client(dev));
++
++	mutex_lock(&tag->lock);
++	tag->suspended = true;
++	mutex_unlock(&tag->lock);
++	cancel_delayed_work_sync(&tag->clear_irq);
++	return 0;
++}
++
++static int fm19511_resume(struct device *dev)
++{
++	struct fm19511 *tag = i2c_get_clientdata(to_i2c_client(dev));
++
++	mutex_lock(&tag->lock);
++	tag->suspended = false;
++	mutex_unlock(&tag->lock);
++	/* Drain a latched status after sleep; retain the rail and EEPROM contents. */
++	mod_delayed_work(system_wq, &tag->clear_irq, msecs_to_jiffies(150));
++	return 0;
++}
++
++static DEFINE_SIMPLE_DEV_PM_OPS(fm19511_pm_ops, fm19511_suspend, fm19511_resume);
++
+ static const struct of_device_id fm19511_match[] = {
+ 	{ .compatible = "fm,fm19511" }, {}
+ };
+ MODULE_DEVICE_TABLE(of, fm19511_match);
+ 
+ static struct i2c_driver fm19511_driver = {
+-	.driver = { .name = "fm19511-uke", .of_match_table = fm19511_match },
++	.driver = { .name = "fm19511-uke", .of_match_table = fm19511_match,
++		    .pm = pm_sleep_ptr(&fm19511_pm_ops) },
+ 	.probe = fm19511_probe, .remove = fm19511_remove,
+ };
+ module_i2c_driver(fm19511_driver);
+diff --git a/src/nfc/prepare-source.sh b/src/nfc/prepare-source.sh
+index 718ef5a7..b46c231a 100755
+--- a/src/nfc/prepare-source.sh
++++ b/src/nfc/prepare-source.sh
+@@ -5,6 +5,8 @@ set -Eeuo pipefail
+ kernel=$(realpath "$1")
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ install -m644 "$here/fm19511-uke.c" "$kernel/drivers/misc/fm19511-uke.c"
++install -m644 "$here/fm19511-uapi.h" "$kernel/drivers/misc/fm19511-uapi.h"
++install -Dm644 "$here/fm19511-uapi.h" "$kernel/include/uapi/linux/fm19511.h"
+ install -Dm644 "$here/fm,fm19511.yaml" "$kernel/Documentation/devicetree/bindings/nfc/fm,fm19511.yaml"
+ cat >> "$kernel/drivers/misc/Kconfig" <<'KCONFIG'
+ 
+@@ -12,10 +14,11 @@ config FM19511_UKE
+ 	tristate "POCO Pad X1 FM19511 NFC tag transport"
+ 	depends on I2C && OF && REGULATOR && ARCH_QCOM
+ 	help
+-	  Root-only transport for the FM19511 tag on the admitted POCO SKU.
++	  Bounded read-only memory, RF events and wake for the admitted POCO SKU.
+ 	  This is a tag interface, not an NFC reader or card-emulation controller.
+ KCONFIG
+ printf '\nobj-$(CONFIG_FM19511_UKE) += fm19511-uke.o\n' >> "$kernel/drivers/misc/Makefile"
+ git -C "$kernel" apply --check "$here/../../patches/boot/0012-ir-spi-optional-power.patch"
+ git -C "$kernel" apply "$here/../../patches/boot/0012-ir-spi-optional-power.patch"
++install -m644 "$here/../infrared/ir-spi-uke.c" "$kernel/drivers/media/rc/ir-spi.c"
+ bash "$here/../../tests/ir-spi-contract.sh" "$kernel/drivers/media/rc/ir-spi.c"
+diff --git a/src/power/uke-pm8010.h b/src/power/uke-pm8010.h
+index a461c291..69c44c59 100644
+--- a/src/power/uke-pm8010.h
++++ b/src/power/uke-pm8010.h
+@@ -11,6 +11,7 @@ static int uke_pm8010_inventory(const void *data, size_t size)
+ {
+ 	size_t header = offsetof(struct socinfo, pmic_array_offset) + sizeof(__le32);
+ 	u32 count, offset, format, i;
++	bool present = false;
+ 
+ 	if (!data || size < header)
+ 		return -EINVAL;
+@@ -29,9 +30,9 @@ static int uke_pm8010_inventory(const void *data, size_t size)
+ 		if (!model)
+ 			return -ENODATA;
+ 		if (model == 65) /* PM8010, as defined by Qualcomm socinfo. */
+-			return 1;
++			present = true;
+ 	}
+-	return 0;
++	return present;
+ }
+ 
+ static int uke_pm8010_should_probe(struct spmi_device *sdev)
+diff --git a/tests/fm19511-contract.sh b/tests/fm19511-contract.sh
+index f7fb7ad6..98289ddb 100755
+--- a/tests/fm19511-contract.sh
++++ b/tests/fm19511-contract.sh
+@@ -6,7 +6,7 @@ work=$(mktemp -d)
+ trap 'rm -rf -- "$work"' EXIT
+ awk '/^struct fm19511 \{/ {copy=1} copy {print} copy && /^};/ {exit}' \
+     "$root/src/nfc/fm19511-uke.c" > "$work/struct.inc"
+-awk '/^static (int|void|ssize_t|__poll_t) fm19511_(read_reg|write_reg|configure|free|open|release|read|write|poll)\(/ {copy=1} copy {print} copy && /^}/ {copy=0}' \
++awk '/^static (int|void|long|ssize_t|__poll_t) fm19511_(read_reg|write_reg|configure|free|open|release|read|write|poll|ioctl)\(/ {copy=1} copy {print} copy && /^}/ {copy=0}' \
+     "$root/src/nfc/fm19511-uke.c" > "$work/functions.inc"
+ cat > "$work/test.c" <<'C'
+ #include <assert.h>
+@@ -18,11 +18,15 @@ cat > "$work/test.c" <<'C'
+ #include <string.h>
+ #include <sys/epoll.h>
+ #include <sys/types.h>
++#include "fm19511-uapi.h"
+ typedef uint8_t u8;
+ typedef uint16_t u16;
++typedef uint32_t u32;
++typedef uint64_t u64;
+ typedef unsigned int __poll_t;
+ typedef int wait_queue_head_t;
+ typedef struct { int value; } atomic_t;
++typedef struct { uint64_t value; } atomic64_t;
+ typedef struct { int unused; } poll_table;
+ #define __user
+ #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+@@ -39,7 +43,7 @@ struct file { void *private_data; };
+ #include "struct.inc"
+ static u8 memory[65536];
+ static unsigned int calls, fail_call, corrupt_call, persistent_writes, freed;
+-static bool short_io, copy_fault, irq_during_read, oversized_read;
++static bool short_io, copy_fault, irq_during_read, oversized_read, irq_during_copy;
+ static u16 pointer;
+ static struct fm19511 *active;
+ static void mutex_lock(struct mutex *m){assert(!m->locked);m->locked=1;}
+@@ -50,8 +54,15 @@ static void kfree(void *p){assert(p==active);freed++;}
+ static int atomic_xchg(atomic_t *a,int v){int old=a->value;a->value=v;return old;}
+ static void atomic_set(atomic_t *a,int v){a->value=v;}
+ static int atomic_read(atomic_t *a){return a->value;}
++static uint64_t atomic64_read(atomic64_t *a){return a->value;}
++static bool device_can_wakeup(int *dev){return !!*dev;}
+ static int nonseekable_open(struct inode *i,struct file *f){(void)i;(void)f;return 0;}
+-static int copy_to_user(void *dst,const void *src,size_t n){if(copy_fault)return 1;memcpy(dst,src,n);return 0;}
++static int copy_to_user(void *dst,const void *src,size_t n){
++ if(copy_fault)return 1;
++ memcpy(dst,src,n);
++ if(irq_during_copy){active->irq_sequence.value++;atomic_set(&active->event,1);}
++ return 0;
++}
+ static int copy_from_user(void *dst,const void *src,size_t n){return copy_to_user(dst,src,n);}
+ static void poll_wait(struct file *f,wait_queue_head_t *w,poll_table *p){(void)f;(void)w;(void)p;}
+ static int i2c_master_send(struct i2c_client *client,const char *data,int size){
+@@ -104,16 +115,63 @@ int main(void){
+  oversized_read=true;assert(fm19511_read(&file,data,2,&offset)==-EIO);oversized_read=false;
+  short_io=true;fail_call=calls+1;assert(fm19511_write(&file,data,2,&offset)==-EIO);
+  short_io=false;fail_call=0;assert(fm19511_write(&file,data,2,&offset)==2);
++ unsigned int saved_calls=calls;
++ for(size_t n=1;n<=256;n++)if(n!=2)
++  assert(fm19511_write(&file,data,n,&offset)==-EROFS&&calls==saved_calls);
++ struct fm19511_info info;
++ memset(&info,0xa5,sizeof info);
++ assert(!fm19511_ioctl(&file,FM19511_IOC_INFO,(unsigned long)&info));
++ assert(sizeof(info)==32&&sizeof(struct fm19511_events)==32&&sizeof(struct fm19511_memory)==264);
++ assert(info.abi_version==1&&info.max_transfer==256&&info.capabilities==7);
++ for(size_t i=0;i<ARRAY_SIZE(info.reserved);i++)assert(!info.reserved[i]);
++ client.dev=1;assert(!fm19511_ioctl(&file,FM19511_IOC_INFO,(unsigned long)&info));
++ assert(info.capabilities==15);client.dev=0;
++ assert(fm19511_ioctl(&file,0,0)==-ENOTTY);
++ struct fm19511_memory request={.address=0x1c8,.length=1};
++ assert(!fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request));
++ assert(request.data[0]==0xa5&&!persistent_writes);
++ for(size_t i=1;i<sizeof request.data;i++)assert(!request.data[i]);
++ request.address=0;request.length=256;
++ assert(!fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request));
++ request.length=257;assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EINVAL);
++ request.length=0;assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EINVAL);
++ request.length=2;request.address=0xffff;
++ assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EINVAL);
++ request.address=0;request.reserved=1;
++ assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EINVAL);
++ request.reserved=0;
++ for(unsigned int phase=1;phase<=2;phase++)for(unsigned int short_result=0;short_result<2;short_result++){
++  short_io=short_result;fail_call=calls+phase;
++  assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==(short_result?-EIO:-EREMOTEIO));
++ }
++ short_io=false;fail_call=0;
++ struct fm19511_events events;
++ atomic_set(&tag.event,1);tag.irq_sequence.value=5;tag.status_sequence=4;
++ tag.irq_status[0]=0x12;tag.irq_status[1]=0x34;tag.irq_status[2]=0x56;
++ assert(!fm19511_ioctl(&file,FM19511_IOC_EVENTS,(unsigned long)&events));
++ assert(events.pending&&events.irq_sequence==5&&events.status_sequence==4);
++ assert(events.main_irq==0x12&&events.fifo_irq==0x34&&events.aux_irq==0x56&&!atomic_read(&tag.event));
++ atomic_set(&tag.event,1);copy_fault=true;
++ assert(fm19511_ioctl(&file,FM19511_IOC_EVENTS,(unsigned long)&events)==-EFAULT&&atomic_read(&tag.event));
++ assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EFAULT);
++ copy_fault=false;irq_during_copy=true;
++ assert(!fm19511_ioctl(&file,FM19511_IOC_EVENTS,(unsigned long)&events)&&atomic_read(&tag.event));
++ irq_during_copy=false;tag.suspended=true;saved_calls=calls;
++ assert(fm19511_read(&file,data,2,&offset)==-EHOSTDOWN);
++ assert(fm19511_write(&file,data,2,&offset)==-EHOSTDOWN);
++ assert(fm19511_ioctl(&file,FM19511_IOC_READ_MEMORY,(unsigned long)&request)==-EHOSTDOWN&&calls==saved_calls);
++ tag.suspended=false;
+  atomic_set(&tag.event,1);assert(fm19511_poll(&file,NULL)==(EPOLLIN|EPOLLRDNORM));
+  tag.fault=-EIO;assert(fm19511_poll(&file,NULL)==EPOLLERR);tag.fault=0;
+  tag.client=NULL;kref_put(&tag.refs,fm19511_free);assert(tag.refs.count==1&&!freed);
+  assert(fm19511_read(&file,data,2,&offset)==-ENODEV);
+  assert(fm19511_write(&file,data,2,&offset)==-ENODEV);
++ assert(fm19511_ioctl(&file,FM19511_IOC_INFO,(unsigned long)&info)==-ENODEV);
+  assert(fm19511_poll(&file,NULL)==(EPOLLERR|EPOLLHUP));
+  assert(!fm19511_release(&inode,&file)&&freed==1&&!tag.refs.count);
+  puts("FM19511 actual functions: 44 transport faults, 4 readback faults, volatile rollback, bounds, IRQ race and open-file removal lifetime passed; host only.");
+ }
+ C
+ ${CC:-cc} ${CFLAGS:-} -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare \
+-    -I "$work" "$work/test.c" -o "$work/test"
++    -I "$work" -I "$root/src/nfc" "$work/test.c" -o "$work/test"
+ "$work/test"
+diff --git a/tests/ir-spi-contract.sh b/tests/ir-spi-contract.sh
+index 7d85a71c..bcef5a39 100644
+--- a/tests/ir-spi-contract.sh
++++ b/tests/ir-spi-contract.sh
+@@ -10,6 +10,7 @@ awk '/^static int ir_spi_(tx|set_tx_carrier|set_duty_cycle|probe)\(/ {copy=1} co
+ cat > "$work/test.c" <<'C'
+ #include <assert.h>
+ #include <errno.h>
++#include <limits.h>
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+@@ -25,13 +26,19 @@ typedef uint8_t u8;typedef uint16_t u16;typedef uint32_t u32;typedef uint64_t u6
+ #define EPROBE_DEFER 517
+ #define GENMASK(h,l) (((1UL<<((h)+1))-1)&~((1UL<<(l))-1))
+ #define DIV_ROUND_CLOSEST_ULL(n,d) (((n)+(d)/2)/(d))
++#define DIV_ROUND_CLOSEST(n,d) DIV_ROUND_CLOSEST_ULL(n,d)
++#define DIV_ROUND_UP(n,d) (((n)+(d)-1)/(d))
++#define min(a,b) ((a)<(b)?(a):(b))
++#define min_t(t,a,b) min((t)(a),(t)(b))
++#define clamp_val(v,lo,hi) ((v)<(lo)?(lo):(v)>(hi)?(hi):(v))
+ #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
+ #define PTR_ERR(p) ((intptr_t)(p))
+ #define dev_err(...) ((void)0)
+-struct device { bool low;const char *label; };
+-struct spi_device { struct device dev;u32 max_speed_hz; };
++struct device { bool low;const char *label;int duty; };
++struct spi_controller { u32 min_speed_hz; };
++struct spi_device { struct device dev;u32 max_speed_hz;unsigned int bits_per_word;struct spi_controller *controller; };
+ struct regulator { int unused; };
+-struct spi_transfer { u32 speed_hz;unsigned int len;const void *tx_buf; };
++struct spi_transfer { u32 speed_hz;unsigned int len,bits_per_word;const void *tx_buf; };
+ struct rc_dev {
+  int (*tx_ir)(struct rc_dev*,unsigned int*,unsigned int);
+  int (*s_tx_carrier)(struct rc_dev*,u32);
+@@ -42,16 +49,17 @@ struct rc_dev {
+ static struct regulator supply;
+ static struct rc_dev *registered;
+ static void *allocations[16];static unsigned int allocated;
+-static int supply_error,enable_error,spi_error,register_error;
++static int supply_error,enable_error,spi_error,register_error,setup_error,disable_error;
++static size_t transfer_limit=4096,message_limit=4096;
+ static unsigned int enable_calls,disable_calls,spi_calls;
+-static bool allocation_error,rc_error;
++static bool allocation_error,rc_error,tx_allocation_error;
+ static void *allocate(size_t bytes){
+  if(allocation_error)return NULL;
+  assert(allocated<16);
+  void *p=calloc(1,bytes);assert(p);allocations[allocated++]=p;return p;
+ }
+ static void *devm_kzalloc(struct device *d,size_t n,int flags){(void)d;(void)flags;return allocate(n);}
+-static void *kmalloc_array(size_t n,size_t size,int flags){(void)flags;return calloc(n,size);}
++static void *kmalloc_array(size_t n,size_t size,int flags){(void)flags;return tx_allocation_error?NULL:calloc(n,size);}
+ static void kfree(void *p){free(p);}
+ static struct regulator *devm_regulator_get_optional(struct device *d,const char *name){
+  (void)d;assert(!strcmp(name,"power"));return supply_error?(void*)(intptr_t)supply_error:&supply;
+@@ -62,42 +70,81 @@ static struct rc_dev *devm_rc_allocate_device(struct device *d,int type){
+ }
+ static int devm_rc_register_device(struct device *d,struct rc_dev *rc){(void)d;registered=rc;return register_error;}
+ static bool device_property_read_bool(struct device *d,const char *name){assert(!strcmp(name,"led-active-low"));return d->low;}
+-static int device_property_read_u8(struct device *d,const char *name,u8 *v){(void)d;(void)v;assert(!strcmp(name,"duty-cycle"));return -EINVAL;}
++static bool device_property_present(struct device *d,const char *name){assert(!strcmp(name,"duty-cycle"));return d->duty!=-1;}
++static int device_property_read_u8(struct device *d,const char *name,u8 *v){assert(!strcmp(name,"duty-cycle"));if(d->duty<0)return -EINVAL;*v=d->duty;return 0;}
+ static int device_property_read_string(struct device *d,const char *name,const char **v){assert(!strcmp(name,"label"));*v=d->label;return *v?0:-EINVAL;}
+ static int regulator_enable(struct regulator *r){assert(r==&supply);enable_calls++;return enable_error;}
+-static int regulator_disable(struct regulator *r){assert(r==&supply);disable_calls++;return 0;}
++static int regulator_disable(struct regulator *r){assert(r==&supply);disable_calls++;return disable_error;}
++static int spi_setup(struct spi_device *s){assert(s->bits_per_word==16);return setup_error;}
++static size_t spi_max_transfer_size(struct spi_device *s){assert(s);return transfer_limit;}
++static size_t spi_max_message_size(struct spi_device *s){assert(s);return message_limit;}
+ static int spi_sync_transfer(struct spi_device *s,struct spi_transfer *x,unsigned int n){
+- assert(s&&n==1&&x->tx_buf&&x->speed_hz==38000*16&&x->len==24);spi_calls++;return spi_error;
++ const u16 expected[]={255,255,255,255,0,0,0,0,255,255,255,0};
++ assert(s&&n==1&&x->tx_buf&&x->speed_hz==38000*16&&x->len==24&&x->bits_per_word==16);
++ assert(x->len<=transfer_limit&&x->len<=message_limit);
++ const u16 *words=x->tx_buf;
++ for(unsigned int i=0;i<12;i++)assert(words[i]==(s->dev.low?(u16)~expected[i]:expected[i]));
++ spi_calls++;return spi_error;
+ }
+ #include "functions.inc"
+ static void reset(void){
+  for(unsigned int i=0;i<allocated;i++)free(allocations[i]);
+  allocated=0;
+  supply_error=enable_error=spi_error=register_error=0;
+- enable_calls=disable_calls=spi_calls=0;allocation_error=rc_error=false;registered=NULL;
++ setup_error=disable_error=0;transfer_limit=message_limit=4096;
++ enable_calls=disable_calls=spi_calls=0;allocation_error=rc_error=tx_allocation_error=false;registered=NULL;
+ }
+ int main(void){
+- struct spi_device spi={.dev={.label="Uke infrared transmitter"},.max_speed_hz=19200000};
++ struct spi_controller controller={0};
++ struct spi_device spi={.dev={.label="Uke infrared transmitter",.duty=-1},.max_speed_hz=19200000,.controller=&controller};
+  reset();supply_error=-ENODEV;assert(!ir_spi_probe(&spi));assert(registered&&!spi_calls);
+  assert(!strcmp(registered->device_name,"Uke infrared transmitter"));
+  unsigned int pulses[]={100,100,100};assert(ir_spi_tx(registered,pulses,3)==3);
++ assert(pulses[0]==100&&pulses[1]==100&&pulses[2]==100);
+  assert(spi_calls==1&&!enable_calls&&!disable_calls);
+  assert(ir_spi_set_tx_carrier(registered,0)==-EINVAL);
+  assert(ir_spi_set_tx_carrier(registered,1200001)==-EINVAL);
+  assert(!ir_spi_set_tx_carrier(registered,38000));
++ for(unsigned int duty=0;duty<=255;duty++)
++  assert(ir_spi_set_duty_cycle(registered,duty)==((!duty||duty>=100)?-EINVAL:0));
++ assert(!ir_spi_set_duty_cycle(registered,50));
++ unsigned int zero[]={0},huge[]={UINT_MAX},long_frame[]={500001,500001},tiny[]={1};
++ assert(ir_spi_tx(registered,pulses,0)==-EINVAL);
++ assert(ir_spi_tx(registered,zero,1)==-EINVAL);
++ assert(ir_spi_tx(registered,huge,1)==-EMSGSIZE);
++ assert(ir_spi_tx(registered,long_frame,2)==-EMSGSIZE);
++ assert(ir_spi_tx(registered,tiny,1)==-EMSGSIZE);
++ transfer_limit=23;assert(ir_spi_tx(registered,pulses,3)==-EMSGSIZE);
++ transfer_limit=4096;message_limit=23;assert(ir_spi_tx(registered,pulses,3)==-EMSGSIZE);
++ message_limit=24;assert(ir_spi_tx(registered,pulses,3)==3);
++ tx_allocation_error=true;assert(ir_spi_tx(registered,pulses,3)==-ENOMEM);
++ reset();spi.dev.low=true;supply_error=-ENODEV;
++ assert(!ir_spi_probe(&spi)&&ir_spi_tx(registered,pulses,3)==3);spi.dev.low=false;
+  reset();assert(!ir_spi_probe(&spi));unsigned int powered[]={100,100,100};
+  assert(ir_spi_tx(registered,powered,3)==3&&enable_calls==1&&disable_calls==1&&spi_calls==1);
+  spi_error=-EIO;unsigned int broken[]={100,100,100};
+  assert(ir_spi_tx(registered,broken,3)==-EIO&&enable_calls==2&&disable_calls==2);
+  enable_error=-EREMOTEIO;unsigned int unpowered[]={100,100,100};
+  assert(ir_spi_tx(registered,unpowered,3)==-EREMOTEIO&&spi_calls==2&&disable_calls==2);
++ enable_error=0;spi_error=0;disable_error=-EACCES;
++ assert(ir_spi_tx(registered,pulses,3)==-EACCES);
+  reset();supply_error=-EPROBE_DEFER;assert(ir_spi_probe(&spi)==-EPROBE_DEFER&&!registered&&!spi_calls);
+  reset();supply_error=-EINVAL;assert(ir_spi_probe(&spi)==-EINVAL&&!registered);
+  reset();allocation_error=true;assert(ir_spi_probe(&spi)==-ENOMEM);
+  reset();rc_error=true;assert(ir_spi_probe(&spi)==-ENOMEM);
+  reset();register_error=-EIO;assert(ir_spi_probe(&spi)==-EIO);
++ reset();setup_error=-EINVAL;assert(ir_spi_probe(&spi)==-EINVAL&&!registered);
++ reset();spi.max_speed_hz=607999;assert(ir_spi_probe(&spi)==-EINVAL&&!registered);
++ spi.max_speed_hz=19200000;
++ reset();controller.min_speed_hz=608001;assert(ir_spi_probe(&spi)==-EINVAL);
++ controller.min_speed_hz=0;
++ for(unsigned int dc=0;dc<=255;dc++){
++  reset();spi.dev.duty=dc;assert(ir_spi_probe(&spi)==((!dc||dc>=100)?-EINVAL:0));
++ }
++ spi.dev.duty=-1;
++ reset();spi.dev.duty=-2;assert(ir_spi_probe(&spi)==-EINVAL&&!registered);spi.dev.duty=-1;
+  reset();spi.dev.label=NULL;assert(!ir_spi_probe(&spi));assert(!strcmp(registered->device_name,"IR SPI"));
+- reset();puts("Actual IR SPI: optional/failed supply, 38 kHz encoding, bounded carrier, cleanup, labels and allocation errors passed; no optical test.");
++ reset();puts("Actual IR SPI: known 16-bit waveform, cumulative edges, idle tail, immutable input, polarity, all duty defaults, carrier/size bounds and failures passed; no optical test.");
+ }
+ C
+ ${CC:-cc} ${CFLAGS:-} -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare -I "$work" "$work/test.c" -o "$work/test"
+diff --git a/tests/o82-dfps-panel-contract.sh b/tests/o82-dfps-panel-contract.sh
+index f7e90426..1262ccc4 100644
+--- a/tests/o82-dfps-panel-contract.sh
++++ b/tests/o82-dfps-panel-contract.sh
+@@ -87,6 +87,8 @@ int main(void) {
+     current=&ctx;
+     assert(!o82_dfps_ops.check(NULL,NULL,NULL));
+     assert(o82_dfps_ops.apply(NULL,NULL,NULL,false)==-EINVAL);
++    for(unsigned int supplier=0;supplier<2;supplier++) {
++    ctx.profiles=supplier ? o82_36_02_0a_profiles:o82_42_02_0b_profiles;
+     for(size_t i=0;i<ARRAY_SIZE(o82_modes);i++)for(size_t j=0;j<ARRAY_SIZE(o82_modes);j++) {
+         const struct drm_display_mode *old=&o82_modes[i].mode,*target=&o82_modes[j].mode;
+         const struct o82_profile *original=&ctx.profiles[o82_modes[i].group];
+@@ -110,6 +112,7 @@ int main(void) {
+             assert(o82_dfps_ops.apply(&ctx.panel,old,target,true)==-ETIMEDOUT && ctx.active==original);
+         }
+     }
++    }
+     const struct drm_display_mode *old=&o82_modes[5].mode,*target=&o82_modes[6].mode;
+     for(unsigned int bad=0;bad<8;bad++) {
+         struct drm_display_mode altered=*target;
+@@ -122,7 +125,7 @@ int main(void) {
+         case 2:ctx.removing=true;break;
+         case 3:ctx.touch_state.value=4;break;
+         case 4:ctx.active=&ctx.profiles[1];break;
+-        case 5:ctx.profiles=o82_36_02_0a_profiles;break;
++        case 5:ctx.profiles=NULL;break;
+         case 6:altered.clock++;break;
+         case 7:old=NULL;break;
+         }
+@@ -136,4 +139,4 @@ C
+ "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -Wno-sign-compare \
+     -fsanitize=undefined -fsanitize-undefined-trap-on-error -I"$work" "$work/check.c" -o "$work/check"
+ "$work/check"
+-printf 'Actual O82 DFPS callbacks: 42 transitions, exact OEM pen/TP batches, scope/readiness rejection and failure-state preservation passed\n'
++printf 'Actual O82 DFPS callbacks: 42 transitions per supplier, exact OEM pen/TP batches, scope/readiness rejection and failure-state preservation passed\n'
+diff --git a/tests/o82-mode-valid-contract.sh b/tests/o82-mode-valid-contract.sh
+index f0ee4259..451b72ec 100755
+--- a/tests/o82-mode-valid-contract.sh
++++ b/tests/o82-mode-valid-contract.sh
+@@ -25,7 +25,7 @@ cat > "$work/check.cpp" <<'CPP'
+ enum drm_mode_status {MODE_OK,MODE_BAD,MODE_CLOCK_RANGE,MODE_ERROR,MODE_H_ILLEGAL};
+ struct drm_display_info {};
+ struct drm_bridge {int id=0;};
+-struct device_node {bool pb=true,refresh=true;};
++struct device_node {bool pb=true,refresh=true,pa=false;};
+ struct device {device_node *of_node;};
+ struct platform_device {device dev;};
+ struct mipi_dsi_host {};
+@@ -53,6 +53,7 @@ static bool of_machine_is_compatible(const char *name) {
+     assert(!std::strcmp(name,"qcom,sm7675"));return sm7675;
+ }
+ static bool of_device_is_compatible(device_node *node,const char *name) {
++    if(!std::strcmp(name,"xiaomi,o82-36-02-0a"))return node&&node->pa;
+     assert(!std::strcmp(name,"xiaomi,o82-42-02-0b"));return node&&node->pb;
+ }
+ static bool of_property_read_bool(device_node *node,const char *name) {
+@@ -90,6 +91,7 @@ int main() {
+         assert(node_gets==node_puts);
+         node_gets=node_puts=clock_calls=opp_calls=opp_puts=dsc_calls=0;
+         uke=sm7675=bonded=true;panel_node={};remote=&panel_node;
++        panel_node.pb=O82_PANEL_VARIANT==42;panel_node.pa=O82_PANEL_VARIANT==36;
+         opp_error=0;opp_count=1;dsc_result=MODE_OK;
+     };
+     for(int link=0;link<2;link++)for(const auto &entry:o82_modes) {
+@@ -112,7 +114,7 @@ int main() {
+         switch(outside) {
+         case 0:uke=false;break;
+         case 1:sm7675=false;break;
+-        case 2:panel_node.pb=false;break;
++        case 2:panel_node.pb=panel_node.pa=false;break;
+         case 3:panel_node.refresh=false;break;
+         case 4:remote=nullptr;break;
+         }
+@@ -134,7 +136,7 @@ int main() {
+ }
+ CPP
+ } >> "$work/check.cpp"
+-"${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
++"${CXX:-g++}" -DO82_PANEL_VARIANT="${O82_PANEL_VARIANT:-42}" -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
+     -fsanitize=undefined -fsanitize-undefined-trap-on-error -I"$work" "$work/check.cpp" -o "$work/check"
+ "$work/check"
+ printf 'Actual O82 bridge mode_valid: seven modes/both links, pre-clock malformed-mode refusal, legacy and OPP/DSC behavior passed\n'
+diff --git a/tests/o82-panel-contract.sh b/tests/o82-panel-contract.sh
+index d7327901..c3835170 100644
+--- a/tests/o82-panel-contract.sh
++++ b/tests/o82-panel-contract.sh
+@@ -75,9 +75,11 @@ cat > "$work/check.c" <<'C'
+ static char last_error[512];
+ static int on_complete;
+ static void info(const char *format,...) {
+-    if(!strcmp(format,"Uke O82 LP ON batching complete: commands=108 chunks=%u bytes=%u\n")) {
+-        va_list args;va_start(args,format);assert(va_arg(args,unsigned int)==8);
+-        assert(va_arg(args,unsigned int)==884);va_end(args);++on_complete;
++    if(!strcmp(format,"Uke O82 LP ON batching complete: commands=%u chunks=%u bytes=%u\n")) {
++        va_list args;va_start(args,format);unsigned int commands=va_arg(args,unsigned int);
++        assert(commands==108 || commands==171);
++        assert(va_arg(args,unsigned int)==(commands==171 ? 10U:8U));
++        assert(va_arg(args,unsigned int)==(commands==171 ? 1448U:884U));va_end(args);++on_complete;
+     }
+ }
+ typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64; typedef uint16_t __be16; typedef long ssize_t;
+@@ -173,7 +175,8 @@ struct drm_panel_follower {const struct follower_ops *funcs;};
+ static int backlight_calls,backlight_disable_calls,normal_transfers,hs_transfers,dimming_transfers;
+ static int batch_api_calls,batch_api_error;
+ static int lp_api_calls,lp_api_error,lp_api_fail_call=-1;
+-static int on_batch_calls,on_batch_error=-1,on_batch_counts[8],on_batch_sizes[8],on_batch_total;
++static int on_batch_calls,on_batch_error=-1,on_batch_counts[10],on_batch_sizes[10],on_batch_total;
++static bool pa_on;
+ static int backlight_enable_error,backlight_disable_error,positive_brightness=1;
+ static bool boundary_seen;
+ static bool video_started;
+@@ -366,8 +369,10 @@ static int qcom_uke_dsi_lp_batch(struct mipi_dsi_device *dsi,const struct mipi_d
+     return 0;
+ }
+ static int qcom_uke_dsi_on_batch(struct mipi_dsi_device *dsi,const struct mipi_dsi_msg *msgs,unsigned int count) {
+-    static const int counts[8]={7,6,31,31,28,3,1,1},sizes[8]={56,48,248,248,244,24,8,8};
+-    assert(!video_started&&!boundary_seen&&dsi->id==0&&count<=31&&on_batch_calls<8);
++    static const int pb_counts[8]={7,6,31,31,28,3,1,1},pb_sizes[8]={56,48,248,248,244,24,8,8};
++    static const int pa_counts[10]={7,6,31,31,27,28,28,11,1,1},pa_sizes[10]={56,48,248,248,248,248,228,108,8,8};
++    const int *counts=pa_on ? pa_counts:pb_counts,*sizes=pa_on ? pa_sizes:pb_sizes;
++    assert(!video_started&&!boundary_seen&&dsi->id==0&&count<=31&&on_batch_calls<(pa_on ? 10:8));
+     unsigned int bytes=0;
+     for(unsigned int i=0;i<count;i++) {
+         assert(msgs[i].type==0x39&&msgs[i].channel==0&&msgs[i].flags==MIPI_DSI_MSG_USE_LPM);
+@@ -508,13 +513,14 @@ static struct o82_panel context(int variant,int mode) {
+     last_error[0]=0;
+     failure=transfer_failure=disable_failure=transfer_short=-1;
+     cs.adjusted_mode=o82_modes[mode].mode;
+-    const struct o82_profile *p=variant ? o82_42_02_0b_profiles : o82_36_02_0a_profiles;
++    pa_on=variant==0 || variant==3;
++    const struct o82_profile *p=pa_on ? o82_36_02_0a_profiles:o82_42_02_0b_profiles;
+     struct o82_panel ctx={.panel={.funcs=&funcs},.dsi={&dsis[0],&dsis[1]},.supplies={&supplies[0],&supplies[1],&supplies[2]},
+         .connector=&connector,.backlight=&backlight,.profiles=p,.active=p,
+-        .initial_120hz_only=variant==1 && mode==5,.oem_refresh_modes=variant==2};
++        .initial_120hz_only=variant==1 && mode==5,.oem_refresh_modes=variant>=2};
+     mutex_init(&ctx.lock);
+     pps_start=2*p[o82_modes[mode].group].on_count;
+-    struct device_node node={variant ? "xiaomi,o82-42-02-0b" : "xiaomi,o82-36-02-0a"};
++    struct device_node node={pa_on ? "xiaomi,o82-36-02-0a":"xiaomi,o82-42-02-0b"};
+     struct platform_device platform={.dev={.of_node=&node}};
+     struct msm_dsi_host h={&platform};
+     ctx.dsc=(struct drm_dsc_config){.dsc_version_major=1,.dsc_version_minor=1,
+@@ -565,7 +571,7 @@ int main(void) {
+         requested_initial60=flags&1; requested_initial120=flags&2; requested_oem_modes=flags&4;
+         const bool invalid=(requested_initial60 && requested_initial120) ||
+             (requested_oem_modes && (requested_initial60 || requested_initial120)) ||
+-            ((requested_initial120 || requested_oem_modes) && !variant);
++            (requested_initial120 && !variant);
+         assert(o82_probe_initial_mode(&ctx,&node)==(invalid ? -EINVAL:0));
+         assert(!enables && !transfers && !operation && !ctx.prepared);
+         assert(ctx.initial_60hz_only==requested_initial60 && ctx.initial_120hz_only==requested_initial120 &&
+@@ -579,7 +585,7 @@ int main(void) {
+         assert(!enables && !transfers && !operation && !ctx.prepared);
+         requested_oem_modes=false;
+     }
+-    for(int variant=0;variant<3;variant++) for(int fail=-1;fail<2;fail++) {
++    for(int variant=0;variant<4;variant++) for(int fail=-1;fail<2;fail++) {
+         struct o82_panel ctx=context(variant,3); attach_ctx=&ctx;
+         dfps_register_calls=dfps_unregister_calls=dfps_register_error=0;
+         attach_failure=fail; attached=detached=panel_removed=secondary_removed=0;
+@@ -587,7 +593,7 @@ int main(void) {
+         assert(attached==(fail==0 ? 1:2));
+         assert(detached==(fail==1 ? 1:0));
+         assert(panel_removed==(fail>=0) && secondary_removed==(fail>=0));
+-        assert(dfps_register_calls==(variant==2 && fail<0) && !dfps_unregister_calls);
++        assert(dfps_register_calls==(variant>=2 && fail<0) && !dfps_unregister_calls);
+     }
+     {
+         struct o82_panel ctx=context(2,3); attach_ctx=&ctx;
+@@ -629,7 +635,7 @@ int main(void) {
+     }
+     selection=context(1,5); selection.connector->state->crtc->state->adjusted_mode.clock++;
+     assert(o82_prepare(&selection.panel)==-EINVAL && !enables && !transfers && !operation);
+-    for(unsigned int v=0;v<3;v++) for(unsigned int m=0;m<7;m++) {
++    for(unsigned int v=0;v<4;v++) for(unsigned int m=0;m<7;m++) {
+         const struct drm_display_mode *mode=&o82_modes[m].mode;
+         const uint64_t divisor=(uint64_t)mode->htotal*mode->vtotal;
+         assert(((uint64_t)mode->clock*1000+divisor/2)/divisor==rates[m]);
+@@ -646,7 +652,7 @@ int main(void) {
+         assert(pre_video_reads==(batched ? 0:2));
+         const int full=transfers;
+         assert(full==2*(int)(c.active->on_count+1));
+-        if(batched)assert(on_batch_calls==8&&on_batch_total==884&&on_complete==1);
++        if(batched)assert(on_batch_calls==(v==3 ? 10:8)&&on_batch_total==(v==3 ? 1448:884)&&on_complete==1);
+         else assert(!on_batch_calls&&!on_complete);
+         assert(lpm_transfers==2*(int)(c.active->on_count+1));
+         assert(!hs_transfers && !c.panel.enabled && !backlight_calls);
+@@ -774,7 +780,7 @@ int main(void) {
+         assert(o82_prepare(&c.panel)==-EINVAL && enables==0);
+     }
+     struct o82_panel c=context(0,3);
+-    for(int variant=0;variant<3;variant++) {
++    for(int variant=0;variant<4;variant++) {
+         for(int refusal=0;refusal<3;refusal++) {
+             c=context(variant,3); assert(o82_prepare(&c.panel)==0);
+             const int before=transfers;
+@@ -846,7 +852,7 @@ int main(void) {
+             video_started=false;
+             if(callback) o82_shutdown(c.dsi[0]); else o82_remove(c.dsi[0]);
+             assert(c.removing && !c.prepared && !c.first_frame_initialized && cancelled==1);
+-            assert(dfps_unregister_calls==(variant==2));
++            assert(dfps_unregister_calls==(variant>=2));
+             assert(!c.backlight->on && !backlight_calls && !normal_transfers);
+             assert(detached==(callback ? 0:2) && panel_removed==!callback && secondary_removed==!callback);
+             const int after_remove=transfers;
+diff --git a/tests/o82-refresh-host-contract.sh b/tests/o82-refresh-host-contract.sh
+index 5435576f..1317d3ef 100755
+--- a/tests/o82-refresh-host-contract.sh
++++ b/tests/o82-refresh-host-contract.sh
+@@ -49,7 +49,7 @@ using u8=uint8_t;using u32=uint32_t;
+ #define DSI_TOTAL_V_TOTAL(v) ((v)<<16)
+ #define pr_err(...) ((void)0)
+ #define DBG(...) ((void)0)
+-struct device_node {bool pb=true,refresh=true,initial=false;};
++struct device_node {bool pb=true,refresh=true,initial=false,pa=false;};
+ struct device {device_node *of_node;};
+ struct platform_device {device dev;};
+ struct msm_dsi_cfg {unsigned int io_offset=DSI_6G_REG_SHIFT;};
+@@ -87,6 +87,7 @@ static device_node *of_graph_get_remote_node(device_node *node,int port,int endp
+ }
+ static void of_node_put(device_node *node) {assert(node==remote);++node_puts;}
+ static bool of_device_is_compatible(device_node *node,const char *name) {
++    if(!std::strcmp(name,"xiaomi,o82-36-02-0a"))return node&&node->pa;
+     assert(!std::strcmp(name,"xiaomi,o82-42-02-0b"));return node&&node->pb;
+ }
+ static bool of_property_read_bool(device_node *node,const char *name) {
+@@ -124,6 +125,7 @@ int main() {
+     msm_dsi_host h{};
+     auto reset=[&] {
+         uke=sm7675=true;panel_node={};remote=&panel_node;
++        panel_node.pb=O82_PANEL_VARIANT==42;panel_node.pa=O82_PANEL_VARIANT==36;
+         cfg={};handler={&cfg};dsc={};mode=o82_modes[6].mode;
+         h={};h.base.owner=&h;h.pdev=&p;h.mode=&mode;h.cfg_hnd=&handler;h.dsc=&dsc;
+         assert(node_gets==node_puts);node_gets=node_puts=0;
+@@ -177,7 +179,7 @@ int main() {
+         case 17:dsc.slice_width=400;break;
+         case 18:dsc.slice_height=12;break;
+         case 19:remote=nullptr;break;
+-        case 20:panel_node.pb=false;break;
++        case 20:panel_node.pb=panel_node.pa=false;break;
+         case 21:panel_node.refresh=false;break;
+         case 22:mode.clock++;break;
+         case 23:mode.flags=2;break;
+@@ -195,6 +197,7 @@ int main() {
+     h.mode=nullptr;assert(!dsi_uke_o82_powered_profile(&h));
+     /* The original initial120 profile remains independent of the new flag. */
+     reset();mode=o82_modes[5].mode;panel_node.refresh=false;panel_node.initial=true;
++    panel_node.pb=true;panel_node.pa=false;
+     assert(!dsi_uke_o82_refresh_modes(&h,&mode));
+     assert(dsi_uke_o82_powered_profile(&h));
+     dsi_calc_pclk(&h,true);
+@@ -202,7 +205,7 @@ int main() {
+     assert(node_gets==node_puts);
+ }
+ CPP
+-"${CXX:-g++}" -std=c++20 -O2 -Wall -Wextra -Werror -fsanitize=undefined \
++"${CXX:-g++}" -DO82_PANEL_VARIANT="${O82_PANEL_VARIANT:-42}" -std=c++20 -O2 -Wall -Wextra -Werror -fsanitize=undefined \
+     -fsanitize-undefined-trap-on-error -I"$work" "$work/check.cpp" -o "$work/check"
+ "$work/check"
+ printf 'Actual O82 refresh host helpers: seven modes/both links preserve accepted120 clocks; total, scope/DSC/profile refusals, power/quarantine admission, generic clocks and DT references passed\n'
+diff --git a/tests/pm8010-population-contract.sh b/tests/pm8010-population-contract.sh
+index aae40bd2..4710c159 100644
+--- a/tests/pm8010-population-contract.sh
++++ b/tests/pm8010-population-contract.sh
+@@ -102,6 +102,9 @@ int main(void) {
+     reset();smem_error=-EPROBE_DEFER;assert(uke_pm8010_should_probe(&dev)==-EPROBE_DEFER && !queries);
+     reset();db_error=-EPROBE_DEFER;assert(uke_pm8010_should_probe(&dev)==-EPROBE_DEFER && !queries);
+     reset();table_size--;assert(uke_pm8010_should_probe(&dev)==-EINVAL && !queries && !messages);
++    /* A positive entry cannot hide an incomplete later inventory entry. */
++    reset();set32(sizeof(struct socinfo),65);set32(sizeof(struct socinfo)+6*8,0);
++    assert(uke_pm8010_should_probe(&dev)==-ENODATA && !queries && !messages);
+     reset();table_size=offsetof(struct socinfo,pmic_array_offset)+3;assert(uke_pm8010_should_probe(&dev)==-EINVAL);
+     const u32 invalid_counts[]={0,65,UINT32_MAX};
+     for(unsigned i=0;i<3;++i){reset();set32(offsetof(struct socinfo,num_pmics),invalid_counts[i]);assert(uke_pm8010_should_probe(&dev)==-EINVAL);}
+diff --git a/tests/touch-dt-contract.sh b/tests/touch-dt-contract.sh
+index 368ceab0..863d1f09 100644
+--- a/tests/touch-dt-contract.sh
++++ b/tests/touch-dt-contract.sh
+@@ -14,7 +14,11 @@ case $(fdtget -t s "$input" "$leaf" compatible) in
+     novatek,NVT-ts-spi|novatek,nt36532-uke-thp|novatek,nt36532-uke-touch) ;;
+     *) echo 'Unreviewed touch input binding' >&2; exit 1;;
+ esac
+-[[ $(fdtget -t s "$input" "$panel" compatible) == xiaomi,o82-42-02-0b ]]
++case $(fdtget -t s "$input" "$panel" compatible) in
++    xiaomi,o82-42-02-0b) variant=42; supplier=csot;;
++    xiaomi,o82-36-02-0a) variant=36; supplier=tianma;;
++    *) exit 1;;
++esac
+ [[ $(fdtget -t x "$input" "$leaf" novatek,irq-gpio) == "$tlmm_handle 36 2001" ]]
+ [[ $(fdtget -t x "$input" "$leaf" novatek,lcd_id-gpio) == "$tlmm_handle 1a 0" ]]
+ if fdtget "$input" "$leaf" interrupts-extended >/dev/null 2>&1; then
+@@ -26,7 +30,7 @@ cat > "$output/candidate.dts" <<'DTS'
+ /plugin/;
+ #include "sm7675-uke-thp.dtsi"
+ DTS
+-cpp -P -nostdinc -undef -D__DTS__ -x assembler-with-cpp -I "$kernel/include" -I "$root/src/input" \
++cpp -P -nostdinc -undef -D__DTS__ -DO82_PANEL_VARIANT="$variant" -x assembler-with-cpp -I "$kernel/include" -I "$root/src/input" \
+     "$output/candidate.dts" > "$output/overlay.dts"
+ dtc -q -@ -I dts -O dtb -o "$output/overlay.dtbo" "$output/overlay.dts"
+ fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/overlay.dtbo"
+@@ -34,6 +38,7 @@ fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/overlay.dtbo"
+ [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" interrupt-parent) == "$tlmm_handle" ]]
+ [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" interrupts) == '36 1' ]]
+ [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" panel-id-gpios) == "$tlmm_handle 1a 0" ]]
++[[ $(fdtget -t s "$output/candidate.dtb" "$leaf" novatek,firmware-variant) == "$supplier" ]]
+ [[ $(fdtget -t x "$output/candidate.dtb" "$leaf" panel) == "$(fdtget -t x "$input" "$panel" phandle)" ]]
+ [[ $(fdtget -t s "$output/candidate.dtb" "$leaf" label) == 'Xiaomi Pad 7 Touchscreen' ]]
+ [[ $(fdtget -t u "$output/candidate.dtb" "$leaf" touchscreen-size-x) == 32000 ]]
+@@ -42,7 +47,7 @@ fdtoverlay -i "$input" -o "$output/candidate.dtb" "$output/overlay.dtbo"
+ [[ $(fdtget -t u "$output/candidate.dtb" "$leaf" novatek,row-map | wc -w) == 40 ]]
+ fdtget "$output/candidate.dtb" "$leaf" touchscreen-inverted-y
+ while IFS= read -r property; do
+-    case $property in compatible|interrupt-parent|interrupts|panel-id-gpios|panel|label|touchscreen-*|novatek,column-map|novatek,row-map) continue;; esac
++    case $property in compatible|interrupt-parent|interrupts|panel-id-gpios|panel|label|touchscreen-*|novatek,firmware-variant|novatek,column-map|novatek,row-map) continue;; esac
+     cmp <(fdtget -t bx "$input" "$leaf" "$property") <(fdtget -t bx "$output/candidate.dtb" "$leaf" "$property")
+ done < <(fdtget -p "$input" "$leaf")
+ sha256sum -c "$output/input-before.sha256"
+diff --git a/tests/touch-gesture.c b/tests/touch-gesture.c
+index e1118588..2adbc460 100644
+--- a/tests/touch-gesture.c
++++ b/tests/touch-gesture.c
+@@ -67,7 +67,7 @@ static int read_data(void *context, u32 address, void *data, size_t size, bool f
+ 		put_unaligned_le16(values[command] ^ wrong, bytes + 3);
+ 	return 0;
+ }
+-static const struct nvt_uke_io io = { values, read_data, write_data, ready, delay, NULL };
++static const struct nvt_uke_io io = { values, read_data, write_data, ready, delay, NULL, NVT_UKE_CSOT };
+ static void reset(void)
+ {
+ 	calls = guards = setting_writes = event_count = command = 0;
+diff --git a/tests/touch-protocol-contract.sh b/tests/touch-protocol-contract.sh
+index 3ef9278f..0a203947 100644
+--- a/tests/touch-protocol-contract.sh
++++ b/tests/touch-protocol-contract.sh
+@@ -44,6 +44,10 @@ printf '#include_next <linux/errno.h>\n' > "$stage/linux/errno.h"
+     -I "$stage" "$root/tests/touch-protocol.c" "$root/src/input/nt36532-uke-protocol.c" \
+     "${sanitize[@]}" -o "$stage/check"
+ "$stage/check"
++"${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
++    -DNVT_TEST_VARIANT=NVT_UKE_TIANMA -I "$stage" "$root/tests/touch-protocol.c" \
++    "$root/src/input/nt36532-uke-protocol.c" "${sanitize[@]}" -o "$stage/check-tianma"
++"$stage/check-tianma"
+ "${CC:-cc}" -std=gnu11 -O2 -g -Wall -Wextra -Werror -Wconversion \
+     -I "$stage" "$root/tests/touch-gesture.c" "$root/src/input/nt36532-uke-protocol.c" \
+     "${sanitize[@]}" -o "$stage/gesture"
+@@ -79,5 +83,5 @@ if [[ -n ${UKE_TOUCH_NORMAL_IMAGE:-} ]]; then
+     "${CC:-cc}" -std=gnu11 -O2 -Wall -Wextra -Werror -I "$stage" \
+         "$root/tests/touch-protocol-firmware.c" "$root/src/input/nt36532-uke-protocol.c" \
+         "${sanitize[@]}" -lcrypto -o "$stage/firmware"
+-    "$stage/firmware" "$UKE_TOUCH_NORMAL_IMAGE"
++    "$stage/firmware" "$UKE_TOUCH_NORMAL_IMAGE" "${UKE_TOUCH_NORMAL_VARIANT:-csot}"
+ fi
+diff --git a/tests/touch-protocol-firmware.c b/tests/touch-protocol-firmware.c
+index 0b0926e1..b0429f93 100644
+--- a/tests/touch-protocol-firmware.c
++++ b/tests/touch-protocol-firmware.c
+@@ -12,16 +12,24 @@ static int sha(void *context, const u8 *data, size_t size, u8 digest[32])
+ int main(int argc, char **argv)
+ {
+ 	static u8 data[NVT_UKE_IMAGE_SIZE];
+-	const struct nvt_uke_io io = { .sha256 = sha };
++	struct nvt_uke_io io = { .sha256 = sha };
+ 	FILE *file;
+ 	size_t offset;
+ 
+-	assert(argc == 2);
++	assert(argc == 2 || argc == 3);
++	if (argc == 3) {
++		int variant = nvt_uke_variant_from_name(argv[2]);
++		assert(variant >= 0);
++		io.variant = (enum nvt_uke_variant)variant;
++	}
+ 	file = fopen(argv[1], "rb");
+ 	assert(file && fread(data, 1, sizeof(data), file) == sizeof(data));
+ 	assert(fgetc(file) == EOF && !ferror(file));
+ 	fclose(file);
+ 	assert(!nvt_uke_validate_image(&io, data, sizeof(data)));
++	struct nvt_uke_io other = io;
++	other.variant = io.variant == NVT_UKE_CSOT ? NVT_UKE_TIANMA : NVT_UKE_CSOT;
++	assert(nvt_uke_validate_image(&other, data, sizeof(data)) < 0);
+ 	for (offset = 0; offset < sizeof(data); offset += 1024) {
+ 		data[offset] ^= 1;
+ 		assert(nvt_uke_validate_image(&io, data, sizeof(data)) < 0);
+diff --git a/tests/touch-protocol.c b/tests/touch-protocol.c
+index e76ee61f..7fb76915 100644
+--- a/tests/touch-protocol.c
++++ b/tests/touch-protocol.c
+@@ -8,6 +8,10 @@
+ #include <linux/unaligned.h>
+ #include "../src/input/nt36532-uke-protocol.h"
+ 
++#ifndef NVT_TEST_VARIANT
++#define NVT_TEST_VARIANT NVT_UKE_CSOT
++#endif
++
+ static u8 image[NVT_UKE_IMAGE_SIZE], ram[0x1142a0], packet[NVT_UKE_FRAME_SIZE];
+ static unsigned int step, fail_step, guard_step, stop_guard, reads, writes, hashes;
+ static unsigned int ready_writes, bank_writes, bank_reads, busy, scans, last_command;
+@@ -31,13 +35,16 @@ static void delay(void *ctx, unsigned int ms)
+ }
+ static int hash(void *ctx, const u8 *data, size_t size, u8 digest[32])
+ {
+-	static const u8 expected[] = {
++	static const u8 expected[2][32] = { {
+ 		0xa4,0xf9,0x49,0xfb,0x89,0xc7,0xea,0xad,0x9d,0xa8,0x5a,0x58,0x85,0xcd,0x2d,0xcc,
+ 		0x1f,0xff,0xbf,0x08,0xbc,0x1e,0x7f,0xfe,0x9f,0x0b,0xb9,0x7c,0x17,0x69,0xb3,0x10
+-	};
++	}, {
++		0x12,0xce,0x26,0x93,0xb9,0x65,0xa3,0x5e,0x34,0x69,0x98,0x4f,0xd9,0x5a,0xfe,0xbb,
++		0x4c,0x0a,0x74,0x0c,0xa9,0x08,0x15,0x9b,0x0a,0x5e,0x6b,0xda,0xd5,0x96,0x86,0x19
++	} };
+ 	assert(ctx == image && data == image && size == sizeof(image));
+ 	hashes++;
+-	memcpy(digest, expected, 32);
++	memcpy(digest, expected[NVT_TEST_VARIANT], 32);
+ 	digest[0] ^= hash_bad;
+ 	return hash_error;
+ }
+@@ -117,10 +124,12 @@ static int write_data(void *ctx, u32 address, const void *data, size_t size, boo
+ 		       (address == 0x1fb500 && size == 4) || (address == 0x1fb52c && size == 3) ||
+ 		       (address == 0x1fb530 && size == 3) || (address == 0x1fb504 && size == 4) ||
+ 		       (address == 0x1fc925 && size == 1 && bytes[0] == 0x56));
++		if (address == 0x1fb500) assert(size == 4 && !memcmp(bytes, image + 24, 4));
++		if (address == 0x1fb504) assert(size == 4 && !memcmp(bytes, image + 28, 4));
+ 	}
+ 	return 0;
+ }
+-static const struct nvt_uke_io io = { image, read_data, write_data, guard, delay, hash };
++static const struct nvt_uke_io io = { image, read_data, write_data, guard, delay, hash, NVT_TEST_VARIANT };
+ static void reset(void)
+ {
+ 	step = guard_step = reads = writes = hashes = ready_writes = 0;
+@@ -140,8 +149,8 @@ static void layout(void)
+ 	put_unaligned_le32(0x22000, image + 12);
+ 	put_unaligned_le32(0x100000, image + 16);
+ 	put_unaligned_le32(0x1409f, image + 20);
+-	put_unaligned_le32(0xe4bdd7f0, image + 24);
+-	put_unaligned_le32(0x89495247, image + 28);
++	put_unaligned_le32(NVT_TEST_VARIANT == NVT_UKE_CSOT ? 0xe4bdd7f0U : 0x9441f4bbU, image + 24);
++	put_unaligned_le32(NVT_TEST_VARIANT == NVT_UKE_CSOT ? 0x89495247U : 0x9c1002baU, image + 28);
+ 	image[0x20] = 3;
+ 	put_unaligned_le32(0x1140a0, image + 0xf0);
+ 	put_unaligned_le32(0xff, image + 0xf4);
+@@ -199,6 +208,19 @@ int main(void)
+ {
+ 	unsigned int operations, guards, i;
+ 	struct nvt_uke_io invalid = io;
++	assert(nvt_uke_variant_from_name("csot") == NVT_UKE_CSOT);
++	assert(nvt_uke_variant_from_name("tianma") == NVT_UKE_TIANMA);
++	assert(nvt_uke_variant_from_name(NULL) < 0 && nvt_uke_variant_from_name("unknown") < 0);
++	for (enum nvt_uke_variant v = NVT_UKE_CSOT; v <= NVT_UKE_TIANMA; v++) {
++		assert(nvt_uke_firmware(v));
++		assert(!nvt_uke_panel_id(v, 1, v == NVT_UKE_CSOT));
++		assert(nvt_uke_panel_id(v, 1, v != NVT_UKE_CSOT) == (v == NVT_UKE_CSOT ? -ENODEV : 0));
++		assert(nvt_uke_panel_id(v, 1, 2) == -ENODEV);
++		assert(nvt_uke_panel_id(v, 0, v == NVT_UKE_CSOT) == -ENODEV);
++		assert(nvt_uke_panel_id(v, -EIO, 0) == -EIO);
++		assert(nvt_uke_panel_id(v, 1, -EAGAIN) == -EAGAIN);
++	}
++	assert(!nvt_uke_firmware(2) && nvt_uke_panel_id(2, 1, 0) == -EINVAL);
+ 
+ 	frame_checks(); layout(); reset();
+ 	/* The synthetic digest callback tests admission; it is not a real firmware hash. */
+@@ -206,6 +228,12 @@ int main(void)
+ 	assert(hashes == 1 && ready_writes == 1 && bank_reads == bank_writes && bank_reads > 100);
+ 	assert(command_writes == 3 && command_reads == 3);
+ 	operations = step; guards = guard_step;
++	reset(); invalid.variant = 2;
++	assert(nvt_uke_boot(&invalid, image, sizeof(image), false) == -EINVAL && !step);
++	invalid = io;
++	invalid.variant = NVT_TEST_VARIANT == NVT_UKE_CSOT ? NVT_UKE_TIANMA : NVT_UKE_CSOT;
++	reset(); assert(nvt_uke_boot(&invalid, image, sizeof(image), false) < 0 && !step);
++	invalid = io;
+ 	for (i = 1; i <= operations; i++) {
+ 		reset(); fail_step = i;
+ 		assert(nvt_uke_boot(&io, image, sizeof(image), false) == -EREMOTEIO && step == i);

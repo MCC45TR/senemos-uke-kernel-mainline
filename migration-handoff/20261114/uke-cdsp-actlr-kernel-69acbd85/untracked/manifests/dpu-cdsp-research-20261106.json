@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-06",
+  "feature": "Display DPU pixel preprocessing on CDSP",
+  "status": "Research and design; no implemented offload driver",
+  "proposal": "docs/DPU-CDSP-OFFLOAD.md",
+  "device_evidence": {
+    "kernel": "7.3.1-12211-unstable",
+    "source": "dba56903ddba878aba8db22d87a9ab130ef1e1db",
+    "copr": 11269695,
+    "private_record_sha256": "9fe93f32803f8f6591bf39922b0acdd2f757f38e8cdf3fc93dadd1895a09df32",
+    "observed": [
+      "CDSP running",
+      "Internal DSI and external DP connected, enabled, DPMS On",
+      "cvp-glink-apps-dsp advertised and unbound",
+      "KWin reports active OpenGL ES, Mesa 26.2.6 / freedreno FD732",
+      "KWin reports internal 144000 mHz and external 74997 mHz"
+    ],
+    "private_kwin_record_sha256": "9585bb36a8f9a377adb6290953a5c0f8939867abb181c60051a783c7e3d4f819",
+    "limits": [
+      "No pixel operation or timing benchmark performed",
+      "No service bind, RPC send, modeset, install or boot change"
+    ]
+  },
+  "oem_sources": [
+    {
+      "repository": "MiCode/vendor_opensource_display-drivers",
+      "commit": "44275c404a677d9d9e5230fedd1af2ef02fc7b9a",
+      "paths": [
+        "msm/sde/sde_plane.c",
+        "msm/Kbuild"
+      ],
+      "license": "Inspected C: GPL v2; retain file-level Linux Foundation, Qualcomm Innovation Center and upstream attribution; no code copied"
+    },
+    {
+      "repository": "MiCode/vendor_qcom_proprietary_display-devicetree",
+      "commit": "4a3e1c391130237c5e8c2b250d1c94f3e25b9b11",
+      "paths": [
+        "display/cliffs-sde-common.dtsi"
+      ],
+      "license": "No per-file license header in inspected DTS; no material copied"
+    },
+    {
+      "repository": "MiCode/kernel_devicetree",
+      "commit": "94c84aeb9e517dbde546fc732033c184094c8e57",
+      "paths": [
+        "qcom/cliffs.dtsi"
+      ],
+      "scope": "Existing CDSP resources only; no transplant"
+    }
+  ],
+  "retained_sources": [
+    {
+      "repository": "torvalds/linux",
+      "commit": "f66469d9905b39d2c260a15d7d6db450f4db67c1",
+      "path": "drivers/misc/fastrpc.c",
+      "git_blob": "af18ff1992eedb6f44ff57ded4f0c577e040e885",
+      "retained_reference": "referances/dpu-cdsp-20261106/upstream-fastrpc.c",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "f66469d9905b39d2c260a15d7d6db450f4db67c1",
+      "path": "drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c",
+      "git_blob": "da3556eb6ecc25a53440787dd35ab79f7e887545",
+      "retained_reference": "referances/dpu-cdsp-20261106/upstream-dpu-kms.c",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "f66469d9905b39d2c260a15d7d6db450f4db67c1",
+      "path": "drivers/gpu/drm/msm/disp/dpu1/dpu_plane.c",
+      "git_blob": "1a471cdf767b1c431c75bd7a70fb3c8fddf5d3ff",
+      "retained_reference": "referances/dpu-cdsp-20261106/upstream-dpu-plane.c",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/display-drivers/msm/Kbuild",
+      "git_blob": "5bc42e9585e69a08c80bfd31f7ffbaf457443e64",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-display-Kbuild",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/eva-kernel/eva_modules.bzl",
+      "git_blob": "75a0cf20c687ecb575a541cd49bf8de95e33a24d",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-eva-modules.bzl",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/eva-kernel/pineapple.bzl",
+      "git_blob": "e6ad2cf2044cffdc51c4c4e22ef736cf3a17a716",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-eva-pineapple.bzl",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/eva-kernel/msm/eva/msm_cvp_dsp.c",
+      "git_blob": "7bba63cd9d85e47d52158d2d9089d5b3baeff62d",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-msm-cvp-dsp.c",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/eva-kernel/msm/eva/msm_cvp_dsp.h",
+      "git_blob": "c49e0be556ce732f184a01950b2eac3ef424050f",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-msm-cvp-dsp.h",
+      "scope": "Source comparison only; not executed or imported"
+    },
+    {
+      "repository": "OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm7675",
+      "commit": "1138e00fee63582a0cc6a53af3286621786827b7",
+      "path": "vendor/qcom/opensource/eva-kernel/msm/eva/msm_cvp_platform.c",
+      "git_blob": "55d08239adec4cdf0d759b2b4c00efd62d692297",
+      "retained_reference": "referances/dpu-cdsp-20261106/oneplus-msm-cvp-platform.c",
+      "scope": "Source comparison only; not executed or imported"
+    }
+  ],
+  "attribution": {
+    "oneplus_c_headers": "SPDX GPL-2.0-only; Copyright 2018-2021 The Linux Foundation; 2023 and 2023-2024 Qualcomm Innovation Center as applicable to each original file",
+    "oneplus_build_files": "No code imported; resolve file/repository licensing before copying",
+    "upstream": "Retain each original SPDX/copyright; Linux Foundation, Qualcomm Innovation Center, Linaro and Red Hat as applicable"
+  },
+  "active_queue": {
+    "url": "https://lkml.iu.edu/2611.0/00862.html",
+    "title": "QDA v4 00/25",
+    "date": "2026-11-01",
+    "imported": false,
+    "limits": "Proposed accelerator transport/GEM/PRIME, not an installed display offload feature"
+  },
+  "blocked_on": [
+    "Measured target operation and frame-delay cause",
+    "Firmware-matched, output-checked DSP pixel operation and execution ABI",
+    "Translated shared-buffer, format/modifier, fence and lifetime contract",
+    "Kernel submission integration and explicit caller selection",
+    "Cumulative COPR qualification and later physical correctness/performance admission",
+    "Output-checked motion estimation/compensation program, cadence/history/caller contract and combined MEMC plus DSC acceptance"
+  ],
+  "changes": {
+    "kernel_code": false,
+    "device_tree": false,
+    "userspace_package": false,
+    "installed": false,
+    "boot_state": false
+  },
+  "related_qualified_transport": "manifests/cdsp-dma-admission-20261106.json",
+  "displayport_requirement": {
+    "status": "Required; existing kernel DSC/FEC path, physical compressed-image acceptance open",
+    "implementation": "DPU DSC encoder and DisplayPort packet/FEC engines; CDSP preprocessing must preserve their buffer and timing contract",
+    "standard": "https://vesa.org/vesa-display-compression-codecs/dsc/",
+    "fec_role": "Forward error correction, not image compression",
+    "current_observation": {
+      "kernel": "7.3.1-12212-unstable",
+      "private_record_sha256": "ca0b0d9ac0bf6eb2188da4a2680fad0e4ec2bb1cd4db9523871ed8d73281c111",
+      "dsc_policy": "auto",
+      "dsc_requested": true,
+      "dsc_active": false,
+      "lanes": 2,
+      "rate_khz": 540000,
+      "bpp": 24,
+      "dsc_failed": false,
+      "dsc_fallbacks": 0,
+      "dsc_counter_valid": false,
+      "cdsp_state": "offline after coordinator reboot; manual-start policy unchanged"
+    },
+    "implementation_inputs": [
+      {
+        "path": "src/display/dp_dsc.c",
+        "git_blob": "d2016edd93b9ff162a328c96a8a68f0e1f35572f"
+      },
+      {
+        "path": "src/display/dp_dsc.h",
+        "git_blob": "ec67b50753f7eda58643512d1c7bfc490bf9d39c"
+      },
+      {
+        "path": "src/display/prepare-source.sh",
+        "git_blob": "45ebb5c10332d526525dbb1a438d18729dc58934"
+      },
+      {
+        "path": "src/display/sm7675-uke-displayport.dtsi",
+        "git_blob": "c317c35c255d3e35ce85d2117c73cf6f2472ad67"
+      },
+      {
+        "path": "patches/display/0059-uke-displayport-rgb-dsc-fec.patch",
+        "git_blob": "f631de686f714d7f4a1538ddb587bc6033fe74fc"
+      },
+      {
+        "path": "patches/display/0060-uke-dp-clear-fec-detected-status.patch",
+        "git_blob": "d809a90aa9e64adf4ffb1c36222908ee86aea9fe"
+      },
+      {
+        "path": "patches/display/0064-uke-dp-dsc-live-policy-and-recovery.patch",
+        "git_blob": "5a865df72ced3e31be7f114ba90a8c5384508dc2"
+      }
+    ],
+    "existing_scope": "RGB8/10-bpc input, fixed8 compressed bpp, at most two slices; no universal format/topology claim",
+    "physical_gate": "Visible static/moving compressed image, valid receiver DSC/FEC/counters, presentation and USB continuity, safe plain-output recovery; DP alone then dual display",
+    "history": "Earlier recorded compressed-image/FEC failures remain open; inactive zero counters do not establish enabled-link health"
+  },
+  "memc_requirement": {
+    "user_confirmed": true,
+    "status": "Required; not implemented or physically qualified",
+    "operation": "Motion estimation and motion-compensated intermediate-frame synthesis, not duplication or blending",
+    "candidate_backend": "CDSP; firmware-matched operation, ABI and sustained performance unqualified",
+    "first_workload": "Bounded off-screen30-to60fps sequence; no display-mode change or high-resolution/120/144fps promise",
+    "required_contracts": [
+      "History/look-ahead delay and presentation timestamps",
+      "Independent intermediate-frame references and scene-cut/occlusion handling",
+      "Declared color, precision and audio/video timing",
+      "Translated buffers, fences and restart-safe lifetime",
+      "Deadline, memory, sustained thermal/power and input-latency measurements",
+      "Explicit caller selection and original-frame path",
+      "Separate and combined DSC/MEMC acceptance with single/dual display"
+    ],
+    "new_userspace_runtime": false,
+    "new_kernel_dt_code": false
+  },
+  "hdmi_compression_requirement": {
+    "user_requested": true,
+    "status": "Required where the physical route supports it; current HDMI FRL/DSC not advertised",
+    "algorithm": "Negotiated standard DSC; distinguish DP compression before converter decode from DSC on the HDMI link",
+    "standard": "https://hdmi.org/spec/hdmi2_1",
+    "transport_requirement": "Compressed HDMI requires FRL and compatible converter/transmitter and display; a protocol version label alone is insufficient",
+    "current_cached_edid": {
+      "kernel": "7.3.1-12212-unstable",
+      "decode_sha256": "890e8413d5a0dae9f458585646fff6e93c642ff4d4abd53cfa8eec6f69e8f9dc",
+      "maximum_tmds_clock_mhz": 320,
+      "frl_dsc_advertisement_found": false,
+      "scope": "Read-only decode of DRM-cached EDID; no AUX transaction or control command"
+    },
+    "prior_route_evidence": {
+      "lesson": "2026-10-28-UKE-JUO-COMPRESSION-LANES.md",
+      "converter": "Advertised LT8712SX family, exact installed revision/firmware unidentified",
+      "hdmi_path": "HDMI2.0 TMDS after DP DSC decode",
+      "pcon_dsc_encoder_advertised": false,
+      "manufacturer_pdf_sha256": "288dc432ff7c1c77ce91592de7512030c66bf3e69cc42e577e08c697cdb63a29",
+      "pdf_refresh": "Timed out; prior retained review remains the bounded manufacturer evidence"
+    },
+    "upstream_reference": {
+      "repository": "torvalds/linux",
+      "commit": "f66469d9905b39d2c260a15d7d6db450f4db67c1",
+      "path": "drivers/gpu/drm/display/drm_dp_helper.c",
+      "git_blob": "488fd123a01adb7c063d14e3952370726a3b65d6",
+      "interfaces": [
+        "drm_dp_pcon_frl_*",
+        "drm_dp_pcon_dsc_*"
+      ],
+      "imported": false
+    },
+    "required_admission": [
+      "DP receiver and converter capabilities",
+      "Independent downstream HDMI TMDS/FRL budget",
+      "HDMI display DSC and FRL capabilities",
+      "Converter encoder/transport parameters and FRL training where applicable",
+      "Receiver health, visible output, reconnect and safe recovery",
+      "Combined MEMC and compression tests on each supported route"
+    ],
+    "new_kernel_dt_code": false,
+    "hardware_feature_override": false,
+    "physically_qualified": false
+  }
+}

@@ -1,0 +1,82 @@
+diff --git a/docs/camera-crm-ccf.md b/docs/camera-crm-ccf.md
+index b08125f1..a1c02b2b 100644
+--- a/docs/camera-crm-ccf.md
++++ b/docs/camera-crm-ccf.md
+@@ -43,3 +43,17 @@ calibration-consumption results, rear AF/parking results or camera acceptance.
+ Protocol and layout attribution remains in the core, LUT and transport headers.
+ Pinned OEM, same-SoC and upstream/CCF sources are recorded in
+ `manifests/camera-crm-source-review-20261105.json`.
++
++COPR11264720/source7a7aa63b41215a395ea64a7ee50ece4ff17a0b9d succeeded in266s.
++All four ordinary/sanitized GCC/Clang callback and eight-client adapter modes,
++both sets of five assertion mutants, retained contracts and complete native
++provider/adapter objects pass. The trusted2204 signed text receipt, exact
++source/manifests, unchanged complete124 composition, empty scripts and
++rpmlib-only dependencies were independently verified. The receipt remains
++uninstalled. Exact RPM/log/object hashes are recorded in the source manifest.
++
++Initial11264703/release6 passed the older core/IRQ/LUT cases, then stopped before
++the new callbacks because the archive omitted the old post-drain manifest.
++Release7 adds that immutable manifest; executable and test sources are unchanged
++frome1346f6143ec650c28397f5028cb81fd11e263a4. The failed check is not qualification.
++No physical result or runtime activation follows from the successful check.
+diff --git a/manifests/camera-crm-ccf731-20261105.json b/manifests/camera-crm-ccf731-20261105.json
+index 0feba817..fd99d7d3 100644
+--- a/manifests/camera-crm-ccf731-20261105.json
++++ b/manifests/camera-crm-ccf731-20261105.json
+@@ -2,7 +2,7 @@
+   "schema_version": 1,
+   "date": "2026-11-05",
+   "scope": "Qualify checked CCF vote callbacks, runtime-PM transport hooks and complete provider objects on124",
+-  "status": "Archive completeness corrected; unchanged CCF/PM sources await fresh COPR qualification",
++  "status": "CCF/PM callbacks and complete native provider objects qualified; all38/DT/inherited-vote admission still pending",
+   "parent": {
+     "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+     "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+@@ -25,7 +25,7 @@
+     },
+     {
+       "path": "docs/camera-crm-ccf.md",
+-      "sha256": "98f129cfb53ef18ac2b360c71a0e91164cbbcfa8d9813e75ed3ff4805788d3ee"
++      "sha256": "d6be8d0d77b7668a99547b03632cf23f4037f0d828f464c5fed0cc622d0ae759"
+     },
+     {
+       "path": "docs/camera-crm-core.md",
+@@ -236,18 +236,34 @@
+   "qualification": {
+     "package": "uke-camera-crm-core-check",
+     "version_release": "7.3.1-7",
+-    "state": "pending",
++    "state": "succeeded",
+     "requires_complete_provider_aarch64_object": true,
+     "requires_checked_pre_abort_and_voltage_order": true,
+     "requires_retained_original_preparation": true,
+     "compiler_modes": 4,
+     "destructive_mutants": 5,
+-    "receipt_installed": false
++    "receipt_installed": false,
++    "copr_build": 11264720,
++    "duration_seconds": 266,
++    "source_commit": "7a7aa63b41215a395ea64a7ee50ece4ff17a0b9d",
++    "executable_source_commit": "e1346f6143ec650c28397f5028cb81fd11e263a4",
++    "all4_callback_and_adapter_modes_passed": true,
++    "both_sets_of5_mutants_failed_assertion134": true,
++    "all_prior_contracts_retained": true,
++    "complete_provider_aarch64_object_passed": true,
++    "builtin_object_sha256": "f329710a22a480b397c8e406f92f74bb929a3924f9e1140d580105d812e1d54d",
++    "adapter_object_sha256": "806781e63258f3204c3bc1e3d675797c01312eec41780d18eeb68c4329535bdf",
++    "transport_object_sha256": "1d6323e14ced3d5d253999007ab792ff306cc512b06432eca90d40311e5959fc",
++    "signed_text_rpm_sha256": "5eacd1cd87114dc6c61e2bb0aff4fecada0371a9a04ec98652f97b5388659ec1",
++    "native_log_download_sha256": "901c1cc39a4f40b437b3962c401794c1f3ff030d3ff554cf46aa3dccd6f0e5c5",
++    "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
++    "parent_composition_identical_to_qualified_post_drain5": true,
++    "empty_scripts_and_rpmlib_only_dependencies": true
+   },
+   "activation": {
+     "provider_integration": false,
+     "ccf_callbacks_implemented": true,
+-    "ccf_full_provider_compilation_pending": true,
++    "ccf_full_provider_compilation_pending": false,
+     "runtime_pm_hooks_implemented": true,
+     "hooks_installed_on_target": false,
+     "guard_changed": false,

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "channel": "uke-linux-unstable",
+  "package": "senemos-uke-linux-kernel-mainline-unstable",
+  "source_branch": "feat/hardware-kernel-migration",
+  "factory": "packaging/native/copr-migration-stable733.sh",
+  "candidate_manifest": "manifests/stable733-cumulative-20261107.json",
+  "automatic_latest_upstream_stable": true,
+  "rc_or_eol": false,
+  "stable_family_promotion": false,
+  "manual_queue_hold": true,
+  "hold_reason": "Cumulative7.3.3-1 bootstrap source/native qualification and coordinated first delivery in progress.",
+  "current": {
+    "version": "7.3.3",
+    "next_full_release": 1,
+    "full_revision_reserved": false,
+    "source_commit": "1facf41a62bd6e39c7c62c6db7f44d7216c89468",
+    "source_check": 11283045,
+    "source_check_state": "running"
+  },
+  "history": [
+    {
+      "version": "7.3.1",
+      "release": 12217,
+      "source_commit": "a6238e4593b67e3dce5a8fa9ccbc74ea4f221dc9",
+      "copr_build": 11282652,
+      "state": "succeeded",
+      "physical_acceptance": false
+    }
+  ],
+  "revision_policy": {
+    "new_upstream_release": 1,
+    "same_upstream_increment": 1,
+    "source_checks_allocate_full_release": false,
+    "unique_full_revisions": true
+  },
+  "automatic_inactive_slot_staging": true,
+  "preserve_local_rollback_preference": true
+}

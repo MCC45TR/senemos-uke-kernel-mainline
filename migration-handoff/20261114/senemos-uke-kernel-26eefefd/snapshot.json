@@ -1,0 +1,86 @@
+{
+  "label": "senemos-uke-kernel-26eefefd",
+  "base": "7c5404f6b0db820ff88d03f95427010a17ab5f3a",
+  "branch": "fix/device-repair-1011-20261102",
+  "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "unstaged_sha256": "cc78f63d571e15c5f24bbdae467aa6abb207c9af48a42de6fb36f58598997cf5",
+  "untracked": [
+    {
+      "path": "configs/nfc-ir.config",
+      "sha256": "22dfefe8102ce1a1dbde43bc1e87877b60e9fac9e4c643ceacda0ed5ff35c6ff",
+      "mode": 420
+    },
+    {
+      "path": "docs/O82-PANEL-VARIANTS.md",
+      "sha256": "a957ab1e667cc8bdb0ab6221c2a7f1e093aca9b11e0e48f87f9f7b4a77532e9b",
+      "mode": 420
+    },
+    {
+      "path": "packaging/native/copr-nfc-ir-check.sh",
+      "sha256": "f3a6e75bf4a3c6eb8eb0374830f245a1b08b3a4dc79ade32fe43e677476b9be5",
+      "mode": 420
+    },
+    {
+      "path": "packaging/native/copr-nfc-ir1401.sh",
+      "sha256": "7ab447116fdacd5a67b0f4005aeab46884919fc71f3d2193c252e321b069e78b",
+      "mode": 420
+    },
+    {
+      "path": "patches/display/0071-o82-panel-variants.patch",
+      "sha256": "40e21c06f71845244d160710ebbf54e22a554bb267834468d827c7b38596c162",
+      "mode": 420
+    },
+    {
+      "path": "src/display/generate-native-panels.sh",
+      "sha256": "d7cea1079a2ddbbc36a2a220a7fb412351d5283c2c6d3bc3c9d5e1b140378b60",
+      "mode": 420
+    },
+    {
+      "path": "src/infrared/ir-spi-uke.c",
+      "sha256": "99f0022b5b2741610b45044070bb237fe4658c732e2bf9425bead71eb2bb10e3",
+      "mode": 420
+    },
+    {
+      "path": "src/nfc/fm19511-uapi.h",
+      "sha256": "4502665344c02c5e56daab8c11f174b3478f09312c3314ba93394022a846497e",
+      "mode": 420
+    },
+    {
+      "path": "tests/fm19511-pm-contract.sh",
+      "sha256": "56fd044170b0f237429c575afa5a5de426729b06beaced2b646d764217a280ea",
+      "mode": 420
+    },
+    {
+      "path": "tests/o82-on-batch-contract.sh",
+      "sha256": "a28f49cdbaeffc98cee5faaf8d29809dd539ef9471a2dbc4a2bc3664ca0c1e57",
+      "mode": 420
+    },
+    {
+      "path": "tests/o82-selector-contract.sh",
+      "sha256": "e4561e99d11ed9548377c3ac4c7336a15f83fb7aa69c9ad32d14fa45645dd7ff",
+      "mode": 420
+    },
+    {
+      "path": "tests/o82-variants-contract.sh",
+      "sha256": "e494ce2d29e65b099f0f660d3186cdc0ea91ad0ffcc6d51746e80d1246a26cf0",
+      "mode": 420
+    },
+    {
+      "path": "tests/o82-variants-dt-contract.sh",
+      "sha256": "86a1a68e68b05578d43917e9938c325ff5e3b37cc20cfcaf6380457fdb7c47a0",
+      "mode": 420
+    },
+    {
+      "path": "tests/touch-config-map.cpp",
+      "sha256": "78f1afc692bc84ecdbf9cc5a6aa916db8acfa7862aa99ba32e76bb6d7dfab8c7",
+      "mode": 420
+    },
+    {
+      "path": "tests/touch-variant-assets.sh",
+      "sha256": "8d032f535ba86c6161720be53ac74c741144b23a51d0a34a98594e798e1cfd65",
+      "mode": 420
+    }
+  ],
+  "private_only": [],
+  "omitted": []
+}

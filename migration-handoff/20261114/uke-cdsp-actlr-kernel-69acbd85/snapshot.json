@@ -1,0 +1,36 @@
+{
+  "label": "uke-cdsp-actlr-kernel-69acbd85",
+  "base": "9ebd4d67c61eca0ad4b7b5880faee468a90b8abc",
+  "branch": "fix/cdsp-actlr-20261105",
+  "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "untracked": [
+    {
+      "path": "docs/DPU-CDSP-OFFLOAD.md",
+      "sha256": "3b47a9167971224c54cb893715c34ec382d74288e7bb86b1c88d74a83903c405",
+      "mode": 384
+    },
+    {
+      "path": "manifests/dpu-cdsp-research-20261106.json",
+      "sha256": "204df3db82652f363574f00908abb31c4501e16869cb7fa979ad5aa68b9142ad",
+      "mode": 384
+    },
+    {
+      "path": "tests/fixtures/iris-ball-320x240-12.json",
+      "sha256": "588bcc609b46b874a422095ed987da02739d1f54b168044184e7322f0663caa2",
+      "mode": 384
+    },
+    {
+      "path": "tests/runtime/iris-dmabuf-observe.sh",
+      "sha256": "dabe4c6c35a0f053c320e97d8d255f8dc34eb07334ab86754f676693e32c01f2",
+      "mode": 384
+    }
+  ],
+  "private_only": [
+    {
+      "path": "tests/fixtures/iris-ball-320x240-12.h264",
+      "reason": "Private/reference/binary/unreviewed-large content retained only in ZIP"
+    }
+  ],
+  "omitted": []
+}

@@ -1,0 +1,36 @@
+{
+  "label": "autobuild-main-774f06de",
+  "base": "fd33b9174872395fc215bfad5127e525eb423467",
+  "branch": null,
+  "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "untracked": [
+    {
+      "path": "manifests/unstable-release-queue.json",
+      "sha256": "22cdf1027b303cb62c4244193138f1161adb0d993348f42a723a60bdd49dd2db",
+      "mode": 384
+    },
+    {
+      "path": "scripts/admit-cumulative-check.mjs",
+      "sha256": "6a8708ba823230611f1204ac010554061ace0ebb6e1cf56f3157c61165022c34",
+      "mode": 420
+    },
+    {
+      "path": "scripts/copr-build-history.sh",
+      "sha256": "7db8aa9d63e3f3bdcd228baca0e5a2326b4c5e3b8731ceb513ede737595951ed",
+      "mode": 420
+    },
+    {
+      "path": "scripts/cumulative-copr.sh",
+      "sha256": "62d7d87e9143f36859299a2a82e558edc06f6ff12bc1840685a6bc2fbeeea7aa",
+      "mode": 420
+    },
+    {
+      "path": "scripts/prepare-cumulative-release.sh",
+      "sha256": "e2d57ff2927c3657a74ec04d4dab84878bbe799e25c6da10ce97ac1171762c0c",
+      "mode": 420
+    }
+  ],
+  "private_only": [],
+  "omitted": []
+}

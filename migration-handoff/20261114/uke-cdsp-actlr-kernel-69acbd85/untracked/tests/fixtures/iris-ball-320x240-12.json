@@ -1,0 +1,11 @@
+{
+  "fixture": "iris-ball-320x240-12.h264",
+  "source": "Native GStreamer videotestsrc pattern=ball, twelve NV12 320x240/30fps frames, Iris H264 encoder on12211; no captured camera/user image",
+  "input_sha256": "b1a12f7472263e61d254e9ce98ae962e15d9b5ac014db92d0268171e14578da0",
+  "input_bytes": 1704,
+  "independent_decoder": "Original FFmpeg libopenh264; I420 output",
+  "decoded_sha256": "ba190fee469e02229c522ae5065213c7b8f144d52966177b9ac1a86a033e3777",
+  "decoded_bytes": 1382400,
+  "runtime_fixture": "tests/runtime/iris-dmabuf-observe.sh",
+  "limits": "Synthetic bounded test input; does not qualify every H264 profile, other codecs, optical output, sustained throughput or all buffer layouts"
+}

@@ -1,0 +1,10 @@
+{
+  "label": "unstable-source-68337499",
+  "base": "7a7aa63b41215a395ea64a7ee50ece4ff17a0b9d",
+  "branch": "feat/camcc-oem-bootstrap-20261105",
+  "staged_sha256": "6a7b6f2699cae85d2af8ed62765dbb8db7505c4235e37ee2945c7f75459bbb1b",
+  "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "untracked": [],
+  "private_only": [],
+  "omitted": []
+}
