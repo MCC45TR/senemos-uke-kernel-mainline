@@ -1,0 +1,31 @@
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -16,6 +16,7 @@
+ #include "uke-fs19xx-protocol.h"
+ #include "uke-fs19xx-runtime.h"
+ #include "uke-fs19xx-safety.h"
++#include "uke-fs19xx-oob-backend.h"
+ 
+ struct q6apm_fs19xx {
+ 	struct mutex lock;
+@@ -150,6 +151,11 @@
+ #ifndef UKE_FS19XX_CONTROLS_ONLY
+ 	admitted = of_property_read_bool(apm->dev->of_node, "xiaomi,fs19xx-protected");
+ #endif
++	if (admitted) {
++		ret = q6apm_fs19xx_oob_ready();
++		if (ret)
++			return ret;
++	}
+ 	fs = devm_kzalloc(apm->dev, sizeof(*fs), GFP_KERNEL);
+ 	if (!fs)
+ 		return admitted ? -ENOMEM : 0;
+@@ -370,6 +376,8 @@
+ 
+ 	if (!bytes || bytes > 5360)
+ 		return -EINVAL;
++	if (bytes == 5360)
++		return q6apm_fs19xx_oob_send(graph->apm, instance, parameter, data, bytes);
+ 	pkt = audioreach_alloc_apm_cmd_pkt(ALIGN(sizeof(*header) + bytes, 8), APM_CMD_SET_CFG, 0);
+ 	if (IS_ERR(pkt))
+ 		return PTR_ERR(pkt);

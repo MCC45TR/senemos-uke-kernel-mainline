@@ -1,0 +1,17 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] tests: supply timer symbols to legacy unprotected codec peers
+
+Retain all callback assertions and disabled-protection behavior. The separate
+100-case fixture drives deadline expiry, wrap and fault interleavings.
+
+--- a/tests/fixtures/audio-protection-mock.h
++++ b/tests/fixtures/audio-protection-mock.h
+@@ -10,6 +10,8 @@
+ struct snd_soc_component;
+ struct notifier_block { int (*notifier_call)(struct notifier_block *, unsigned long, void *); };
+ #define UKE_FIXTURE_UNUSED __attribute__((unused))
++static volatile unsigned long UKE_FIXTURE_UNUSED jiffies;
++#define time_before(a, b) ((long)((a) - (b)) < 0)
+ static int UKE_FIXTURE_UNUSED legacy_claim_error;
+ static int UKE_FIXTURE_UNUSED q6apm_fs19xx_claim(struct audioreach_graph *p) { (void)p; return legacy_claim_error; }
+ static void UKE_FIXTURE_UNUSED q6apm_fs19xx_release(struct audioreach_graph *p) { (void)p; }

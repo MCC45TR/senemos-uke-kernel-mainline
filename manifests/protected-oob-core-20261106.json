@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-06",
+  "parent_build": 11269695,
+  "parent_source": "dba56903ddba878aba8db22d87a9ab130ef1e1db",
+  "parent_srpm_sha256": "b3ba36a2655300a3811f1a3b5071257dd92548a2a7403a104c749ccb7ffd8cdf",
+  "planned_revision": 12212,
+  "full_revision_reserved": false,
+  "planned_source_check_release": 20,
+  "prior_packaging_check": {
+    "release": 19,
+    "copr_build": 11270202,
+    "source_commit": "8c9c2f1d4205b71dfbdebbd1be0056e544c14479",
+    "state": "failed46s before SRPM or native build",
+    "cause": "Inherited spec has two exact configuration-check calls; transform required one match",
+    "correction": "Require both build/install calls and retain both original checks"
+  },
+  "prior_source_check": {
+    "release": 18,
+    "copr_build": 11270018,
+    "source_commit": "5c9006eb4bdd00ab41af0b4f51a759ba6371d839",
+    "state": "failed284s after all4 OOB compiler/sanitizer modes and8 mutants; native kernel bridge not reached",
+    "cause": "Clang/LLVM moved23.1.4 to23.1.5; inherited whole historical configuration hash refused during olddefconfig comparison"
+  },
+  "native_llvm_rpm_evr": "23.1.5-1.fc46",
+  "historical_config_identity_model": "23.1.4-1.fc46",
+  "oob_core_unchanged_sha256": "7bae511c90632a320540c300361bac87a149678771bb73930f275e4de45a446d",
+  "scope": "Complete12211 plus prospective protected OOB wire/lifetime core and actual AArch64 header bridge; no DMA/response-port backend or activation",
+  "tuning_bytes": 5360,
+  "whole_tlv_bytes": 5376,
+  "dedicated_mapping_bytes": 8192,
+  "source_references": [
+    {"repository":"AudioReach/audioreach-graphservices","commit":"558ddfc2c87019496957855c209dd5ece4f6aceb","files":["gsl/src/gsl_graph.c","spf/api/apm/apm_api.h","spf/api/apm/apm_memmap_api.h"],"license":"BSD-3-Clause","role":"Published APM OOB contract,256-byte custom-config threshold; no donor code copied"},
+    {"repository":"MiCode/vendor_qcom_opensource_audio-kernel","commit":"8eb0eccbc4027ae4a4987e4bced03a4381039714","files":["asoc/codecs/fs19xx/fsm_q6afe.c","asoc/codecs/fs19xx/fsm_q6afe.h","asoc/codecs/fs19xx/fsm-dev.h","asoc/codecs/fs19xx/Kbuild"],"license":"Fourier copyright notice, no SPDX in the inspected AFE files; comparison only, no code copied","role":"Dormant older AFE comparison; Q6AFE disabled, fixed4K allocation not portable to5360 bytes"},
+    {"repository":"gregkh/linux","ref":"v7.3.1","files":["sound/soc/qcom/qdsp6/audioreach.c","sound/soc/qcom/qdsp6/q6apm.c","sound/soc/qcom/qdsp6/q6apm-dai.c"],"license":"GPL-2.0","role":"Native packets, map callbacks, fitted SID interpretation and lifetime constraints"}
+  ],
+  "native_backend_admitted": false,
+  "physical_activation": false,
+  "parameter_records_unchanged": true,
+  "gain_ceiling": 223,
+  "physical_acceptance": false
+}

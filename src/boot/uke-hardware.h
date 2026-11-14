@@ -276,6 +276,15 @@ static int UKE_INIT uke_hardware_names(void *fdt)
 				 sensors[i].candidates, sensors[i].bytes);
 		if (ret)
 			return ret;
+		if (!strcmp(sensors[i].type, "accel")) {
+			/* Existing Uke SSC portrait-to-panel transform, applied by IIO clients. */
+			static const char matrix[] = "0\0" "1\0" "0\0" "-1\0" "0\0" "0\0" "0\0" "0\0" "1";
+
+			node = fdt_path_offset(fdt, path);
+			ret = fdt_setprop(fdt, node, "mount-matrix", matrix, sizeof(matrix));
+			if (ret)
+				return ret;
+		}
 	}
 	return 0;
 }

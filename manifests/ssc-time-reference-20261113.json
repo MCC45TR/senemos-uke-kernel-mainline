@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Root-only on-demand native SSC counter reference; no acquisition-time or gravity-frame admission",
+  "native_check_release": 110,
+  "parent_full_kernel": {
+    "release": 25,
+    "build": 11318688,
+    "source_commit": "e2cd9c24f814f3a900bb26dbdb340e509ec0ae08",
+    "ssc_driver_sha256": "f86be00568afe4fa28acb570742f374f0b0283e2f4fe2b73d97b2de777c892d8"
+  },
+  "parent_native_build": 11318588,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11318588/uke-kernel-migration-check-7.3.3-108.src.rpm",
+  "parent_srpm_sha256": "8273bfc66d981d5ba2ca8f9cf6936728ba91be973048da1f978cbadb898656e2",
+  "parent_spec_sha256": "c8937b8790e5dc62081174aff49bf0721c843d66dbe8474deed53f8957ab004f",
+  "driver_before_sha256": "f86be00568afe4fa28acb570742f374f0b0283e2f4fe2b73d97b2de777c892d8",
+  "driver_after_sha256": "0d40d715fc9e9fb0988a46c31603e4cb6af8aef3f68f1b3cd30204001cdd0b1d",
+  "research_manifest": "manifests/ssc-frame-time-review-20261113.json",
+  "native_gates": [
+    "Retain all native108 inputs, original preparation, old SSC/DT/CAMCC tests and real object checks",
+    "Whole-file driver patch inverse preserves every operational callback",
+    "Actual diagnostic callback: GCC and Clang, counter enabled/disabled, ordinary and ASan/UBSan modes",
+    "Stale-generation, root permission and false admission semantic mutants refused by both compilers",
+    "Actual final AArch64 SSC object with -Werror and exported counter dependency; no unexported get_rate",
+    "Text-only receipt with manifest, source commit and ABI; no Image, module or runtime provider"
+  ],
+  "idle_work_added": false,
+  "firmware_requests_added": 0,
+  "per_report_work_added": false,
+  "new_runtime_packages": 0,
+  "clock_mapping_admitted": false,
+  "gravity_frame_admitted": false,
+  "production_motion_admission": false,
+  "source_qualified": false,
+  "installed": false,
+  "physical_acceptance": false,
+  "source_assets": [
+    {
+      "path": "LICENSES/GPL-2.0-only.txt",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79"
+    },
+    {
+      "path": "src/sensors/0020-ssc-time-reference.patch",
+      "sha256": "7c35d9928eb079863f93796fdd03b48fba782587e75bf3b9d201e4ceffb90c46"
+    },
+    {
+      "path": "src/sensors/apply-time-reference733.sh",
+      "sha256": "cd5af3c26f56c5c1846cb6b1946cbf241262b2adc5331e5f17739df277a2b340"
+    },
+    {
+      "path": "src/sensors/sysfs-driver-uke-ssc-time-reference",
+      "sha256": "8993769ede2e8dfefecf099de3f2e28df99c4dd6277562d4a648eb0bd95fc97b"
+    },
+    {
+      "path": "tests/ssc-time-reference.c",
+      "sha256": "f303ed4e3dd21876e43e9db22d38459c8081d951ec94f0dd5debf0b71a339fd0"
+    },
+    {
+      "path": "tests/ssc-time-reference.sh",
+      "sha256": "57ede82979e5769614adf9fc61c6f94e3b0185fcba87e68f01b19658d8636483"
+    },
+    {
+      "path": "docs/SSC-TIME-REFERENCE.md",
+      "sha256": "54cbda567314c4f47ac5f4477d5d5dcbd00eab5020f512aa53b119b2c2d8fd2b"
+    },
+    {
+      "path": "docs/SSC-HARDWARE-TIME-REVIEW.md",
+      "sha256": "32c52170409113016f036da012a0652b9bfe572f2e24df37a41ac3a253225812"
+    },
+    {
+      "path": "manifests/ssc-frame-time-review-20261113.json",
+      "sha256": "e9b49df6d4bb6672ab0112dfaa00216ec70e641287acf7bb3104fb3ec4ddbf7c"
+    },
+    {
+      "path": "packaging/native/copr-ssc-time-reference733-check.sh",
+      "sha256": "df1145e9096987c3d7aea4f321a3e9c86e500706fc0f048b3f3fe20f669fdedb"
+    }
+  ],
+  "prior_failed_native": {
+    "release": 109,
+    "build": 11321858,
+    "scope": "Clang disabled-clock fixture set-only globals; six callback modes passed, no final AArch64 object or full/runtime admission"
+  }
+}

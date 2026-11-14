@@ -1,0 +1,23 @@
+--- a/drivers/remoteproc/remoteproc_core.c
++++ b/drivers/remoteproc/remoteproc_core.c
+@@ -1883,6 +1883,7 @@
+ {
+ 	struct rproc *rproc = container_of(work, struct rproc, crash_handler);
+ 	struct device *dev = &rproc->dev;
++	char *crash_env[] = { "RPROC_EVENT=crash", NULL };
+ 
+ 	dev_dbg(dev, "enter %s\n", __func__);
+ 
+@@ -1911,6 +1912,12 @@
+ 
+ 	mutex_unlock(&rproc->lock);
+ 
++	/* Process context: publish the final crash state before recovery. This
++	 * also reaches event consumers when automatic recovery is disabled. */
++	sysfs_notify(&dev->kobj, NULL, "state");
++	if (kobject_uevent_env(&dev->kobj, KOBJ_CHANGE, crash_env))
++		dev_warn(dev, "Failed to publish remote processor crash event\n");
++
+ 	if (!rproc->recovery_disabled)
+ 		rproc_trigger_recovery(rproc);
+ 

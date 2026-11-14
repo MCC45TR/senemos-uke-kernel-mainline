@@ -2,6 +2,12 @@
 set -Eeuo pipefail
 [[ $# == 1 && -x $1 ]]
 codec=$(realpath "$1")
+zero_version() {
+    "$codec" inspect "$1" | jq -e '.os_version_encoded==0' >/dev/null || {
+        printf 'boot-os-version-zero:%s\n' "$1" >&2
+        exit 1
+    }
+}
 fixture=$(mktemp -d); trap 'rm -rf "$fixture"' EXIT
 cd "$fixture"
 truncate -s 65536 stock
@@ -12,14 +18,27 @@ truncate -s 64 Image
 printf '\100\000\000\000\000\000\000\000' | dd of=Image bs=1 seek=16 conv=notrunc status=none
 printf '\101\122\115\144' | dd of=Image bs=1 seek=56 conv=notrunc status=none
 "$codec" pack stock Image boot 65536
+zero_version boot
 "$codec" inspect boot | jq -e '.kernel_bytes==64 and .ramdisk_bytes==0 and .signature_bytes==0 and .avb_footer_present==false' >/dev/null
 "$codec" extract boot unpacked
 cmp Image unpacked
+# Historical images remain inspectable, but their Android metadata is not
+# inherited by newly packed GKI v4 containers.
+cp stock historical
+printf '\250\001\000\042' | dd of=historical bs=1 seek=16 conv=notrunc status=none
+"$codec" inspect historical | jq -e '.os_version_encoded==570425768' >/dev/null
+"$codec" pack historical Image normalized 65536
+zero_version normalized
+cmp boot normalized
 "$codec" create Image canonical
-"$codec" inspect canonical | jq -e '.image_bytes==100663296 and .os_version_encoded==570425768 and .kernel_bytes==64 and .ramdisk_bytes==0 and .signature_bytes==0 and .avb_footer_present==false' >/dev/null
+zero_version canonical
+"$codec" inspect canonical | jq -e '.image_bytes==100663296 and .kernel_bytes==64 and .ramdisk_bytes==0 and .signature_bytes==0 and .avb_footer_present==false' >/dev/null
 "$codec" extract canonical canonical-Image
 cmp Image canonical-Image
 "$codec" create Image userdata userdata
+zero_version userdata
+"$codec" create Image linux-profile linux
+zero_version linux-profile
 "$codec" extract userdata userdata-Image
 cmp canonical-Image userdata-Image
 [[ $(dd if=userdata bs=1 skip=44 count=21 status=none | tr -d '\000') == senemos.root=userdata ]]
@@ -70,4 +89,4 @@ cp stock footer
 printf AVBf | dd of=footer bs=1 seek=65472 conv=notrunc status=none
 "$codec" pack footer Image without-footer 65536
 "$codec" inspect without-footer | jq -e '.avb_footer_present==false' >/dev/null
-echo 'Native boot v4 roundtrip, size, signature, malformed input and symlink/device rejection passed'
+echo 'Native boot v4 zero OS version, historical normalization, roundtrip, size, signature, malformed input and symlink/device rejection passed'

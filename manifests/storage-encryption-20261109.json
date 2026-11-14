@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "Kernel capability source qualification; no encrypted volume or boot activation",
+  "parent_commit": "a11d94fff7254fd9c94ec52f5904ac3c638ef653",
+  "parent_source_check": 11291638,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11291638/uke-kernel-migration-check-7.3.3-53.src.rpm",
+  "parent_srpm_sha256": "785c1adafcf16b7e95be9e19703bda0865a89907aafb46e8ae88996f242bf6d6",
+  "parent_spec_sha256": "8de6698e4c8aaca6a96bc9d0d728cf32b16d95431b6c969434bcc045f7269825",
+  "source_check_release": 56,
+  "full_delivery_ready": false,
+  "native_qualified": false,
+  "encrypted_io_accepted": false,
+  "tee_key_accepted": false,
+  "encrypted_boot_ready": false,
+  "payload_assets": [
+    "configs/storage-encryption733.config",
+    "tests/storage-encryption-config733.mjs",
+    "packaging/native/check-storage-encryption733.sh",
+    "docs/STORAGE-ENCRYPTION-733.md"
+  ],
+  "source_assets": [
+    {
+      "path": "configs/storage-encryption733.config",
+      "sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086"
+    },
+    {
+      "path": "tests/storage-encryption-config733.mjs",
+      "sha256": "8bf47ecfdadad7152166371d7d2d3f3874240705098f28d826b77eb31307f495"
+    },
+    {
+      "path": "packaging/native/check-storage-encryption733.sh",
+      "sha256": "d934b1a7b5059a42638da85ec23d58d1eb1695e84e8995b81547f40e77b76bfa"
+    },
+    {
+      "path": "packaging/native/copr-storage-encryption733.sh",
+      "sha256": "7a38e39b906f2ddd40c32f8a2fa70917a1ac85d0d69202dfd8f0ac4fed482f16"
+    },
+    {
+      "path": "docs/STORAGE-ENCRYPTION-733.md",
+      "sha256": "c63f357453de40b7248f8b436f4d489be8c299a091a807e227ccafa671bbee35"
+    }
+  ]
+}

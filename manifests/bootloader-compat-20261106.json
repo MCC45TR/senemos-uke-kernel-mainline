@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-06",
+  "parent_build": 11268117,
+  "parent_source_rpm_sha256": "2d8a02cfdb2ea8e5ea554a9d4f62dac21536a6ea4e4859004cd5106bed4dfdee",
+  "generic_abl_repository": "https://github.com/CodeLinaro-mirror/la_abl_tianocore_edk2",
+  "generic_abl_revision": "aef4e86045bd151a54d33bab8ae5e8e62462a8f4",
+  "generic_abl_sources": [
+    {
+      "path": "QcomModulePkg/Library/avb/VerifiedBoot.c",
+      "git_blob": "012a75d67c4871957059add31f04c9648090edbf",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "QcomModulePkg/Library/avb/libavb/avb_slot_verify.c",
+      "git_blob": "0aef4698c98fceb616b32acf098cb71017e4f3d8",
+      "license": "MIT"
+    }
+  ],
+  "canonical_zero_header_retained": true,
+  "shipping_mode": "create-bootloader-compat",
+  "shipping_os_version_encoded": 570425768,
+  "primary_vbmeta_or_firmware_write": false,
+  "physical_acceptance": false,
+  "inputs": [
+    {
+      "path": "src/boot/boot-image.cpp",
+      "sha256": "deab992b29201d6973f6f8f1a694c356e7c7ba5f2d6b5f4d31ddca35f085358b"
+    },
+    {
+      "path": "tests/migration-boot-header.sh",
+      "sha256": "4ac47eee0566d3e05869bc364f4c7b113103b6dcb61ece399d68a1d78cea62c8"
+    },
+    {
+      "path": "tests/bootloader-compat-contract.sh",
+      "sha256": "81dcec546b0352e1231209ae0ce94452875f1891e2f792dcb3e323e2c711897b"
+    },
+    {
+      "path": "docs/BOOTLOADER-COMPATIBILITY.md",
+      "sha256": "675657d2e96becc5a5aa1adfb4726ea499a7368339e4123d154a0203b8c36325"
+    }
+  ],
+  "production_recipe_update": "Narrow transform of authenticated complete12207 recipe; preserve all other bytes and archive exact preimage"
+}

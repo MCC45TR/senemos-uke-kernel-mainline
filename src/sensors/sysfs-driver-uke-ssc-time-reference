@@ -1,0 +1,35 @@
+What:           /sys/devices/.../ssc_time_reference
+Date:           November 2026
+Contact:        Uke Linux maintainers
+Description:
+                Root-readable diagnostic (0400) on the native Uke SSC
+                controller. One demand read snapshots the current generation
+                and existing admitted sensor-cache tick/sequence metadata
+                under the controller state lock. On ARM64 it brackets the
+                Linux architectural counter read with CLOCK_BOOTTIME reads
+                and reports CNTFRQ. It does not request firmware data, start
+                a sensor, alter a buffer/rate, poll in the background or
+                publish a sample.
+
+                The first line has schema=1 and admitted=0, generation,
+                connected, reference_available, cntfrq_hz,
+                linux_arch_counter, boottime_before_ns, boottime_after_ns
+                and sensor_count. A reference is available only for a current
+                controller with a nonzero counter/frequency and ordered host
+                bounds. The counter is the kernel's architectural counter;
+                this does not assert a virtual/physical counter selection,
+                a fitted SSC counter domain, or a shared epoch/rate.
+
+                One line per declared driver index reports sensor,
+                cached_valid, stream_active, sequence and sensor_ticks.
+                Invalid/non-current cache fields are zeroed. A valid cache
+                may be old or inactive, including an on-change state; neither
+                reading nor the current host bracket makes it fresh. No
+                physical sample value, SUID, client ID or calibration data
+                is exposed. The index follows this driver's existing
+                descriptor array, rather than establishing a fitted sensor.
+
+                This is evidence for separate clock-domain qualification.
+                admitted remains zero. Consumers must not infer acquisition
+                time, a mount transform, frame validity or production Motion1
+                admission from this diagnostic or a kernel version.

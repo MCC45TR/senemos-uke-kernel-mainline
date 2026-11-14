@@ -1,0 +1,192 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: expose firmware unit quaternions atomically
+
+Publish rotv, game_rv and geomag_rv as standard IIO_ROT/QUATERNION XYZW
+repeat-four channels. Reuse one shared demand and one locked snapshot for
+direct reads; preserve scalar/XYZ/gravity values and the existing stop/error
+lifecycle. Firmware performs fusion; no AP conversion or normalization is added.
+Exact API/metadata gates remain; game_rv does not establish magnetic north.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -31,7 +31,7 @@
+ #define SSC_QMI_REPORT_LARGE 0x22
+ #define SSC_REPORT_TYPE_LARGE 1
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
+-#define SSC_SENSOR_COUNT 9
++#define SSC_SENSOR_COUNT 12
+ #define SSC_SAMPLE_MAX 6
+ #define SSC_FRONT_LIGHT 3
+ #define SSC_REAR_LIGHT 4
+@@ -47,7 +47,7 @@
+ 	SSC_STREAM_INPUT = SSC_STREAM_DUAL,
+ };
+ 
+-enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE, SSC_GRAVITY };
++enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE, SSC_GRAVITY, SSC_QUATERNION };
+ struct ssc_description {
+ 	const char *datatype, *api, *name;
+ 	enum ssc_kind kind;
+@@ -68,11 +68,16 @@
+ 	{ "sensor_temperature", "sns_sensor_temperature.proto", "uke-ssc-sensor-temperature", SSC_TEMPERATURE, IIO_TEMP, 1, 1000 },
+ 	/* One firmware stream supplies gravity XYZ, then linear acceleration XYZ. */
+ 	{ "gravity", "sns_gravity.proto", "uke-ssc-gravity", SSC_GRAVITY, IIO_GRAVITY, 6, 1000000 },
++	/* Firmware unit quaternions, XYZW; game_rv has no magnetic-north frame. */
++	{ "rotv", "sns_rotv.proto", "uke-ssc-rotv", SSC_QUATERNION, IIO_ROT, 4, 1000000 },
++	{ "game_rv", "sns_game_rv.proto", "uke-ssc-game-rv", SSC_QUATERNION, IIO_ROT, 4, 1000000 },
++	{ "geomag_rv", "sns_geomag_rv.proto", "uke-ssc-geomag-rv", SSC_QUATERNION, IIO_ROT, 4, 1000000 },
+ };
+ 
+ static unsigned int ssc_sample_channels(const struct ssc_description *d)
+ {
+-	return d->kind == SSC_GRAVITY ? 6 : d->dimensions == 3 ? 3 : 1;
++	return d->kind == SSC_QUATERNION ? 4 :
++	       d->kind == SSC_GRAVITY ? 6 : d->dimensions == 3 ? 3 : 1;
+ }
+ 
+ struct ssc_controller;
+@@ -611,6 +616,10 @@
+ 		ret = uke_ssc_fixed(sample.value[i], d->multiplier, &value[i]);
+ 		if (ret || (d->kind == SSC_LIGHT && value[i] < 0))
+ 			return ret ? ret : -ERANGE;
++		/* Unit-quaternion components are bounded; do not normalize or fuse. */
++		if (d->kind == SSC_QUATERNION &&
++		    (value[i] < -1000000 || value[i] > 1000000))
++			return -ERANGE;
+ 	}
+ 	return 0;
+ }
+@@ -625,7 +634,8 @@
+ 
+ 	/* The available OEM rear ALS explicitly advertises physical=false. */
+ 	return attributes->available &&
+-	       (attributes->physical || logical_rear || description->kind == SSC_GRAVITY) &&
++	       (attributes->physical || logical_rear || description->kind == SSC_GRAVITY ||
++		description->kind == SSC_QUATERNION) &&
+ 	       !attributes->hlos_incompatible &&
+ 	       attributes->stream_type <= 1 && (attributes->stream_type || ssc_rate(attributes)) &&
+ 	       (!streaming || !attributes->stream_type);
+@@ -970,20 +980,14 @@
+ 
+ #include "uke-ssc-proximity-input.h"
+ 
+-static int ssc_read_raw(struct iio_dev *iio, const struct iio_chan_spec *channel,
+-			int *val, int *val2, long mask)
++static int ssc_read_sample(struct iio_dev *iio, s64 value[SSC_SAMPLE_MAX])
+ {
+ 	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+ 	struct ssc_controller *c = s->controller;
+ 	unsigned long flags;
+-	s64 value = 0;
+ 	bool cached;
+ 	int ret, stop_ret;
+ 
+-	if (mask == IIO_CHAN_INFO_SCALE)
+-		return ssc_read_scale(s->description, val, val2);
+-	if (mask != IIO_CHAN_INFO_RAW)
+-		return -EINVAL;
+ 	if (!iio_device_claim_direct(iio))
+ 		return -EBUSY;
+ 	mutex_lock(&c->control);
+@@ -1004,7 +1008,7 @@
+ 			if (!ssc_current(c) || !s->ready || !s->stream_active || s->error || !s->ticks)
+ 				ret = s->error ? s->error : -ENODATA;
+ 			else
+-				value = s->sample[channel->address];
++				memcpy(value, s->sample, sizeof(s->sample));
+ 		}
+ 		spin_unlock_irqrestore(&c->state, flags);
+ 		stop_ret = ssc_stream_put(s, SSC_STREAM_DIRECT);
+@@ -1017,12 +1021,59 @@
+ 	spin_unlock_irqrestore(&c->state, flags);
+ 	mutex_unlock(&c->control);
+ 	iio_device_release_direct(iio);
++	return ret;
++}
++
++static int ssc_read_raw(struct iio_dev *iio, const struct iio_chan_spec *channel,
++			int *val, int *val2, long mask)
++{
++	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
++	s64 sample[SSC_SAMPLE_MAX];
++	int ret;
++
++	if (mask == IIO_CHAN_INFO_SCALE)
++		return ssc_read_scale(s->description, val, val2);
++	if (mask != IIO_CHAN_INFO_RAW || s->description->kind == SSC_QUATERNION ||
++	    channel->address >= ssc_sample_channels(s->description))
++		return -EINVAL;
++	ret = ssc_read_sample(iio, sample);
+ 	if (ret)
+ 		return ret;
+-	iio_val_s64_decompose(value, val, val2);
++	iio_val_s64_decompose(sample[channel->address], val, val2);
+ 	return IIO_VAL_INT_64;
+ }
+ 
++static int ssc_read_raw_multi(struct iio_dev *iio,
++			      const struct iio_chan_spec *channel, int max_len,
++			      int *vals, int *val_len, long mask)
++{
++	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
++	s64 sample[SSC_SAMPLE_MAX];
++	unsigned int i;
++	int ret;
++
++	if (max_len < 2)
++		return -EINVAL;
++	if (s->description->kind != SSC_QUATERNION || mask != IIO_CHAN_INFO_RAW) {
++		*val_len = 2;
++		return ssc_read_raw(iio, channel, &vals[0], &vals[1], mask);
++	}
++	if (max_len < 4 || !channel->modified ||
++	    channel->channel2 != IIO_MOD_QUATERNION || channel->address)
++		return -EINVAL;
++	/* All four values come from one locked sample and one shared owner. */
++	ret = ssc_read_sample(iio, sample);
++	if (ret)
++		return ret;
++	for (i = 0; i < 4; i++)
++		if (sample[i] < -1000000 || sample[i] > 1000000)
++			return -ERANGE;
++	for (i = 0; i < 4; i++)
++		vals[i] = sample[i];
++	*val_len = 4;
++	return IIO_VAL_INT_MULTIPLE;
++}
++
+ static int ssc_buffer_enable(struct iio_dev *iio)
+ {
+ 	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+@@ -1080,7 +1131,7 @@
+ 	return 0;
+ }
+ 
+-static const struct iio_info ssc_iio_info = { .read_raw = ssc_read_raw };
++static const struct iio_info ssc_iio_info = { .read_raw_multi = ssc_read_raw_multi };
+ static const struct iio_buffer_setup_ops ssc_buffer_ops = {
+ 	.postenable = ssc_buffer_enable, .predisable = ssc_buffer_disable,
+ };
+@@ -1276,7 +1327,8 @@
+ static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
+ {
+ 	struct iio_dev *iio;
+-	unsigned int count = ssc_sample_channels(s->description), i;
++	unsigned int count = s->description->kind == SSC_QUATERNION ? 1 :
++		ssc_sample_channels(s->description), i;
+ 	const enum iio_modifier axis[] = { IIO_MOD_X, IIO_MOD_Y, IIO_MOD_Z };
+ 	const enum iio_modifier linear_axis[] = {
+ 		IIO_MOD_LINEAR_X, IIO_MOD_LINEAR_Y, IIO_MOD_LINEAR_Z,
+@@ -1293,7 +1345,11 @@
+ 			.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),
+ 			.scan_type = { .sign = 's', .realbits = 64, .storagebits = 64, .endianness = IIO_CPU },
+ 		};
+-		if (count >= 3) {
++		if (s->description->kind == SSC_QUATERNION) {
++			s->channel[i].modified = 1;
++			s->channel[i].channel2 = IIO_MOD_QUATERNION;
++			s->channel[i].scan_type.repeat = 4;
++		} else if (count >= 3) {
+ 			s->channel[i].modified = 1;
+ 			s->channel[i].channel2 = axis[i % 3];
+ 			if (s->description->kind == SSC_GRAVITY && i >= 3) {

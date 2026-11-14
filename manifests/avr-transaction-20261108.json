@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Dual-INTF AVR period snapshot/readback/rollback; existing atomic quarantine retained",
+  "parent_source_commit": "59966c3d88efbeaaa4cf133b9ef09a24ba1667d9",
+  "parent_full_build": 11287055,
+  "physical_acceptance": false,
+  "full_modeset_rollback": false,
+  "new_runtime_rpms": 0,
+  "new_timers": 0,
+  "payload_assets": [
+    "src/display/0075-o82-avr-retime-rollback.patch",
+    "src/display/apply-avr-transaction733.sh",
+    "tests/o82-avr-transaction.c",
+    "tests/o82-avr-transaction.sh",
+    "packaging/native/check-avr-transaction733.sh",
+    "packaging/native/stage-avr-transaction733.sh",
+    "docs/O82-AVR-TRANSACTION.md",
+    "scripts/kernel-release.sh",
+    "scripts/advance-kernel-release.sh",
+    "tests/kernel-release-advance.sh",
+    "tests/o82-avr-early733.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/display/0075-o82-avr-retime-rollback.patch",
+      "sha256": "6a39a30a29d15c028a8f0b489ec0b91ac816f19e956a67ed6eb28620360ee874"
+    },
+    {
+      "path": "src/display/apply-avr-transaction733.sh",
+      "sha256": "7b8f175bedcfdf7b5dbdb8bf04ae4d9e651bca07ac8dc5df87b2dcfec0fb04c6"
+    },
+    {
+      "path": "tests/o82-avr-transaction.c",
+      "sha256": "9280fbe69bdf9834edc237c9e0b46610e07bc7a5a648429f610f117e95b7a614"
+    },
+    {
+      "path": "tests/o82-avr-transaction.sh",
+      "sha256": "9f6fc1a7c3d7f34fb9ac97d0115d734b6ecb2f00c5779c07cd9df9022387abee"
+    },
+    {
+      "path": "packaging/native/check-avr-transaction733.sh",
+      "sha256": "f758999e8378bc1db25ea0bba6c5f80b45690252dc652df55ebcd1f76d470003"
+    },
+    {
+      "path": "packaging/native/stage-avr-transaction733.sh",
+      "sha256": "76e316273a9044db70ce0946a443bcfcb9bdac26c1861ae8daca8febecbeaac8"
+    },
+    {
+      "path": "docs/O82-AVR-TRANSACTION.md",
+      "sha256": "dd8863aad20755ef9ae2dfe8fcc38841f92dfa18b34c66b65107587688e6a9ee"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "scripts/advance-kernel-release.sh",
+      "sha256": "d5b5a946f68ffc13b493fdf2f792e9c1735a54e5b12bc4a3b034ca362dda8904"
+    },
+    {
+      "path": "tests/kernel-release-advance.sh",
+      "sha256": "1987a128cf10e7bd365c5a7d311755bd2d8994f3faa7169761f9ca1a4e5b40fa"
+    },
+    {
+      "path": "tests/o82-avr-early733.sh",
+      "sha256": "e4177584ab5baa5123271a634b803796396b97dd434c9fce780f30aaf10e79b8"
+    }
+  ],
+  "donors": [
+    {
+      "repository": "MiCode/vendor_opensource_display-drivers",
+      "commit": "44275c404a677d9d9e5230fedd1af2ef02fc7b9a",
+      "path": "msm/sde/sde_hw_intf.c",
+      "scope": "Existing AVR period/control register semantics; downstream API differs"
+    },
+    {
+      "repository": "stable/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "scope": "Existing Linux7.3.3 MMIO and encoder locking interfaces; no donor execution"
+    }
+  ],
+  "version_plan_automatic_nested_seals": true,
+  "early_tests_do_not_modify_inherited_sources": true,
+  "final_native_files_match_early_tested_view": true,
+  "direct_fault_scenarios_required": true,
+  "test_mutation_generator_removed": true
+}

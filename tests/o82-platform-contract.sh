@@ -5,7 +5,8 @@ test ! -e /etc/senemos/kernel-update.conf
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
-sed -n '/^int dpu_o82_platform_init/,$p' "$root/src/display/dpu_o82_platform.c" > "$work/functions.h"
+sed -n '/^int dpu_o82_platform_init(/,/^}/p; /^int dpu_o82_platform_suspend(/,/^}/p' \
+    "$root/src/display/dpu_o82_platform.c" > "$work/functions.h"
 cat > "$work/test.c" <<'C'
 #include <assert.h>
 #include <errno.h>
@@ -19,14 +20,15 @@ cat > "$work/test.c" <<'C'
 #define IORESOURCE_MEM 0x200
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define PTR_ERR(p) ((intptr_t)(p))
+#define READ_ONCE(x) (x)
 struct device { void *of_node; };
 struct platform_device { struct device dev; };
 struct resource { uint64_t start,end; };
-struct dpu_o82_regdma { void *regs; bool busy; };
+struct dpu_o82_regdma { void *regs; bool busy,power_held; struct dpu_kms *kms_owner; };
 struct dpu_kms { struct platform_device *pdev; struct dpu_o82_regdma *o82_regdma; };
 static struct {
  bool board,soc,node,no_mdp,no_dma,no_memory;
- int map_error;
+ int map_error,color_error;
  unsigned int lookups,allocations,maps,inits;
  struct resource mdp,dma;
  struct dpu_o82_regdma allocation;
@@ -48,6 +50,10 @@ static void *devm_ioremap_resource(struct device *dev,struct resource *r)
 static void dpu_o82_regdma_init(struct dpu_o82_regdma *dma,void *regs)
 { assert(dma==&fixture.allocation&&regs==(void*)0x12340000);dma->regs=regs;fixture.inits++; }
 static bool dpu_o82_regdma_can_unmap(struct dpu_o82_regdma *dma) { return !dma->busy; }
+static int dpu_o82_upload_release(struct dpu_o82_regdma *dma)
+{ assert(dma->kms_owner);return dma->busy?-EBUSY:0; }
+static int dpu_o82_color_init(struct dpu_kms *kms)
+{ assert(kms->o82_regdma&&kms->o82_regdma->kms_owner==kms);return fixture.color_error; }
 #include "functions.h"
 static void reset(struct dpu_kms *kms)
 {
@@ -79,11 +85,15 @@ int main(void)
  reset(&kms);fixture.no_dma=true;assert(dpu_o82_platform_init(&kms)==-ENODEV&&!fixture.maps);
  reset(&kms);fixture.no_memory=true;assert(dpu_o82_platform_init(&kms)==-ENOMEM&&!kms.o82_regdma&&!fixture.maps);
  reset(&kms);fixture.map_error=-EBUSY;assert(dpu_o82_platform_init(&kms)==-EBUSY&&!kms.o82_regdma&&!fixture.inits);
+ reset(&kms);fixture.color_error=-EBADMSG;assert(dpu_o82_platform_init(&kms)==-EBADMSG&&kms.o82_regdma&&fixture.inits==1);
  reset(&kms);assert(!dpu_o82_platform_init(&kms)&&kms.o82_regdma==&fixture.allocation&&fixture.inits==1);
+ assert(fixture.allocation.kms_owner==&kms);
  assert(dpu_o82_platform_init(&kms)==-EALREADY&&fixture.inits==1&&fixture.maps==1);
  assert(!dpu_o82_platform_suspend(&kms));
  fixture.allocation.busy=true;assert(dpu_o82_platform_suspend(&kms)==-EBUSY);
  fixture.allocation.busy=false;assert(!dpu_o82_platform_suspend(&kms));
+ fixture.allocation.power_held=true;assert(dpu_o82_platform_suspend(&kms)==-EBUSY);
+ fixture.allocation.power_held=false;
  kms.o82_regdma=NULL;assert(!dpu_o82_platform_suspend(&kms));
  puts("Actual O82 platform: exact separate resources, pre-map foreign/range rejection, allocation/map failures, publish-on-success and suspend ownership refusal passed; fake providers only");
 }

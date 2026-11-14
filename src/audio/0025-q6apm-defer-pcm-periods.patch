@@ -1,0 +1,119 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qcom: defer PCM periods outside the ordered GPR receiver
+
+Keep the receive worker available for APM completion while nonatomic PCM STOP
+holds the stream lock. Queue coalescible period reports on an independent
+workqueue; close the enqueue gate and drain reports before graph/private-data
+release. Retain capture resubmission, EOS and compressed event behavior.
+
+--- a/sound/soc/qcom/qdsp6/q6apm-dai.c
++++ b/sound/soc/qcom/qdsp6/q6apm-dai.c
+@@ -7,6 +7,8 @@
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
+ #include <sound/soc.h>
+ #include <sound/soc-dapm.h>
+ #include <linux/mutex.h>
+@@ -82,6 +84,9 @@ struct q6apm_dai_rtd {
+ 	struct q6apm_graph *graph;
+ 	struct mutex lock;
+ 	bool notify_on_drain;
++	spinlock_t pcm_period_lock;
++	struct work_struct pcm_period_work;
++	bool pcm_period_closed;
+ };
+ 
+ struct q6apm_dai_data {
+@@ -129,24 +134,57 @@ static const struct snd_pcm_hardware q6apm_dai_hardware_playback = {
+ 	.fifo_size =            0,
+ };
+ 
++/* The ordered GPR receive worker must remain free to deliver APM replies.
++ * snd_pcm_period_elapsed() may sleep on the PCM stream mutex held by STOP.
++ */
++static void q6apm_pcm_period_work(struct work_struct *work)
++{
++	struct q6apm_dai_rtd *prtd = container_of(work, struct q6apm_dai_rtd,
++					       pcm_period_work);
++
++	snd_pcm_period_elapsed(prtd->substream);
++}
++
++static void q6apm_pcm_period_elapsed(struct q6apm_dai_rtd *prtd)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&prtd->pcm_period_lock, flags);
++	if (!prtd->pcm_period_closed)
++		queue_work(system_unbound_wq, &prtd->pcm_period_work);
++	spin_unlock_irqrestore(&prtd->pcm_period_lock, flags);
++}
++
++/* PCM close/error paths run after core stream operations release their lock.
++ * Serialize the last enqueue before waiting; never wait under the queue gate.
++ */
++static void q6apm_pcm_period_quiesce(struct q6apm_dai_rtd *prtd)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&prtd->pcm_period_lock, flags);
++	prtd->pcm_period_closed = true;
++	spin_unlock_irqrestore(&prtd->pcm_period_lock, flags);
++	cancel_work_sync(&prtd->pcm_period_work);
++}
++
+ static void event_handler(uint32_t opcode, uint32_t token, void *payload, void *priv)
+ {
+ 	struct q6apm_dai_rtd *prtd = priv;
+-	struct snd_pcm_substream *substream = prtd->substream;
+ 
+ 	switch (opcode) {
+ 	case APM_CLIENT_EVENT_WATERMARK_EVENT:
+-		snd_pcm_period_elapsed(substream);
++		q6apm_pcm_period_elapsed(prtd);
+ 		break;
+ 	case APM_CLIENT_EVENT_CMD_EOS_DONE:
+ 		prtd->state = Q6APM_STREAM_STOPPED;
+ 		break;
+ 	case APM_CLIENT_EVENT_DATA_WRITE_DONE:
+-		snd_pcm_period_elapsed(substream);
++		q6apm_pcm_period_elapsed(prtd);
+ 
+ 		break;
+ 	case APM_CLIENT_EVENT_DATA_READ_DONE:
+-		snd_pcm_period_elapsed(substream);
++		q6apm_pcm_period_elapsed(prtd);
+ 		if (prtd->state == Q6APM_STREAM_RUNNING)
+ 			q6apm_read(prtd->graph);
+ 
+@@ -411,6 +449,8 @@ static int q6apm_dai_open(struct snd_soc_component *component,
+ 		return -ENOMEM;
+ 
+ 	mutex_init(&prtd->lock);
++	spin_lock_init(&prtd->pcm_period_lock);
++	INIT_WORK(&prtd->pcm_period_work, q6apm_pcm_period_work);
+ 	prtd->substream = substream;
+ 	prtd->graph = q6apm_graph_open(dev, event_handler, prtd, graph_id, substream->stream);
+ 	if (IS_ERR(prtd->graph)) {
+@@ -476,6 +516,9 @@ static int q6apm_dai_open(struct snd_soc_component *component,
+ 
+ 	return 0;
+ err:
++	q6apm_pcm_period_quiesce(prtd);
++	if (!IS_ERR_OR_NULL(prtd->graph))
++		q6apm_graph_close(prtd->graph);
+ 	kfree(prtd);
+ 
+ 	return ret;
+@@ -487,6 +530,8 @@ static int q6apm_dai_close(struct snd_soc_component *component,
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+ 	struct q6apm_dai_rtd *prtd = runtime->private_data;
+ 
++	q6apm_pcm_period_quiesce(prtd);
++
+ 	if (prtd->state) {
+ 		/* only stop graph that is started */
+ 		q6apm_graph_stop(prtd->graph);

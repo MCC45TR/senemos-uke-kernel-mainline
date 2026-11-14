@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-// Build a private ICC transform from the exact O82 OEM P3 profile; no hardware I/O.
+// Compile private O82 color data, with optional read-only stock preparation.
 #include <json-c/json.h>
 #include <lcms2.h>
 #include <openssl/evp.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cassert>
 #include <charconv>
 #include <cmath>
@@ -22,6 +23,10 @@
 #include "uke-o82-hdr-format.h"
 #include "o82-regdma.h"
 #include "o82-color-firmware.h"
+#include "o82-sixzone.h"
+#include "o82-hsic.h"
+#include "o82-memory-color.h"
+#include "o82-stock-profile.hpp"
 
 namespace {
 using Vec = std::array<double, 3>;
@@ -35,14 +40,15 @@ json_object *field(json_object *object, const char *name) {
             json_object_object_get_ex(object, name, &value), "missing profile field");
     return value;
 }
-bool enabled(json_object *object) {
-    auto value = field(object, "enable");
+bool boolean_field(json_object *object, const char *key) {
+    auto value = field(object, key);
     require(json_object_is_type(value, json_type_boolean) ||
             (json_object_is_type(value, json_type_int) &&
              (json_object_get_int64(value) == 0 || json_object_get_int64(value) == 1)),
-            "invalid enable field");
+            "invalid boolean field");
     return json_object_get_boolean(value);
 }
+bool enabled(json_object *object) { return boolean_field(object, "enable"); }
 std::string_view text_field(json_object *object, const char *name) {
     auto value = field(object, name);
     require(json_object_is_type(value, json_type_string), "non-string profile metadata");
@@ -146,9 +152,11 @@ struct Profile {
         std::array<unsigned, 3> lower{};
         Vec fraction{}, result{};
         for (size_t channel = 0; channel < 3; ++channel) {
-            const double at = std::clamp(rgb[channel], 0.0, 1.0) * 16;
-            lower[channel] = std::min(static_cast<unsigned>(at), 15u);
-            fraction[channel] = at - lower[channel];
+            // OEM FillRgbInEntries uses 0,256,...,3840,4095, with R fastest.
+            const double code = std::clamp(rgb[channel], 0.0, 1.0) * 4095;
+            lower[channel] = std::min(static_cast<unsigned>(code) / 256, 15u);
+            fraction[channel] = (code - lower[channel] * 256) /
+                                (lower[channel] == 15 ? 255.0 : 256.0);
         }
         for (unsigned corner = 0; corner < 8; ++corner) {
             unsigned index = 0, stride = 1;
@@ -170,6 +178,10 @@ struct Profile {
         return result;
     }
 };
+double gamut_knot(unsigned at) {
+    require(at <= 16, "invalid gamut knot");
+    return std::min(at * 256, 4095u) / 4095.0;
+}
 Profile load_pipeline(json_object *igc, json_object *gc, json_object *gamut) {
     require(enabled(igc) && enabled(gc), "inactive IGC or output gamma");
     require(number(field(gc, "bitsRounding")) == 10, "unsupported output precision");
@@ -185,7 +197,7 @@ Profile load_pipeline(json_object *igc, json_object *gc, json_object *gamut) {
         for (unsigned blue = 0; blue < 17; ++blue)
             for (unsigned green = 0; green < 17; ++green)
                 for (unsigned red = 0; red < 17; ++red)
-                    result.gamut.push_back({red / 16.0, green / 16.0, blue / 16.0});
+                    result.gamut.push_back({gamut_knot(red), gamut_knot(green), gamut_knot(blue)});
     return result;
 }
 Profile load(json_object *document, const char *panel) {
@@ -401,7 +413,7 @@ std::vector<unsigned char> native_hdr(const Profile &factory, unsigned panel, st
     for (unsigned blue = 0; blue < 17; blue++)
         for (unsigned green = 0; green < 17; green++)
             for (unsigned red = 0; red < 17; red++) {
-                const Vec input{red / 16.0, green / 16.0, blue / 16.0};
+                const Vec input{gamut_knot(red), gamut_knot(green), gamut_knot(blue)};
                 Vec result{};
                 cmsDoTransform(transform.get(), input.data(), result.data(), 1);
                 for (size_t channel = 0; channel < 3; channel++) {
@@ -454,7 +466,7 @@ std::vector<unsigned char> native_tables(const Profile &factory, unsigned primar
         for (unsigned blue = 0; blue < 17; blue++)
             for (unsigned green = 0; green < 17; green++)
                 for (unsigned red = 0; red < 17; red++) {
-                    const Vec input{red / 16.0, green / 16.0, blue / 16.0};
+                    const Vec input{gamut_knot(red), gamut_knot(green), gamut_knot(blue)};
                     Vec result = input;
                     if (wide) cmsDoTransform(transform.get(), input.data(), result.data(), 1);
                     for (size_t channel = 0; channel < 3; channel++) {
@@ -483,6 +495,174 @@ void put_hash(std::vector<unsigned char> &data, size_t at, std::string_view hash
         data.at(at + i) = byte;
     }
 }
+std::vector<unsigned char> native_hsic(json_object *picture) {
+    const double hue = number(field(picture, "hue"));
+    require(hue == std::floor(hue) && hue >= std::numeric_limits<std::int32_t>::min() &&
+            hue <= std::numeric_limits<std::int32_t>::max(), "invalid HSIC hue");
+    const auto scalar = [&](const char *key) {
+        const double value = number(field(picture, key));
+        require(std::abs(value) <= std::numeric_limits<float>::max(), "invalid HSIC scalar");
+        return static_cast<float>(value);
+    };
+    const o82::HsicInput input{static_cast<std::int32_t>(hue), scalar("sat"), scalar("val"),
+                               scalar("cont"), scalar("satThresh")};
+    o82::HsicData output;
+    require(o82::compile_hsic(input, output) == o82::HsicError::none, "HSIC conversion refused");
+    std::vector<unsigned char> data(O82_HSIC_BYTES);
+    put_word(data, 0, output.enabled ? O82_HSIC_FLAGS : 0);
+    put_word(data, 4, output.hue); put_word(data, 8, output.saturation);
+    put_word(data, 12, output.value); put_word(data, 16, output.contrast);
+    require(o82_hsic_valid(data.data(), data.size()), "invalid native HSIC payload");
+    return data;
+}
+std::vector<unsigned char> native_memory(json_object *picture) {
+    // Primary O82 parser and arithmetic provenance, including its skin edge
+    // behavior: manifests/o82-memory-json-source-20261105.json.
+    const auto signed_field = [](json_object *object, const char *key) {
+        const double value = number(field(object, key));
+        require(value == std::floor(value) && value >= std::numeric_limits<std::int32_t>::min() &&
+                value <= std::numeric_limits<std::int32_t>::max(), "invalid memory signed field");
+        return static_cast<std::int32_t>(value);
+    };
+    const auto unsigned_field = [](json_object *object, const char *key) {
+        const double value = number(field(object, key));
+        require(value == std::floor(value) && value >= 0 &&
+                value <= std::numeric_limits<std::uint32_t>::max(), "invalid memory unsigned field");
+        return static_cast<std::uint32_t>(value);
+    };
+    const auto scalar = [](json_object *object, const char *key) {
+        const double value = number(field(object, key));
+        require(std::abs(value) <= std::numeric_limits<float>::max(), "invalid memory scalar");
+        return static_cast<float>(value);
+    };
+    const auto edge_control = [](json_object *object, bool skin_saturation) {
+        const auto left = text_field(object, "trapezoidEdgeLeft");
+        const auto right = text_field(object, "trapezoidEdgeRight");
+        require((left == "SLOPE" || left == "STEP") &&
+                (right == "SLOPE" || right == "STEP"), "invalid memory edge");
+        // Exact O82 SetConfig checks the right key, then reads the left key
+        // again for skin saturation only. Preserve this observed conversion.
+        return unsigned(left == "SLOPE") | (unsigned((skin_saturation ? left : right) == "SLOPE") << 1);
+    };
+    std::vector<unsigned char> data(O82_MEMORY_BYTES);
+    put_word(data, 8, O82_MEMORY_VERSION);
+    unsigned enabled_mask = 0, protection = 0;
+    constexpr const char *regions[]{"MemColSkin", "MemColSky", "MemColFol"};
+    for (unsigned i = 0; i < 3; ++i) {
+        auto region = field(picture, regions[i]);
+        auto hue = field(region, "hue"), sat = field(region, "sat"), val = field(region, "val");
+        // Protection is global and is also collected from disabled regions.
+        protection |= unsigned(boolean_field(hue, "protect"));
+        protection |= unsigned(boolean_field(sat, "protect")) << 1;
+        protection |= unsigned(boolean_field(val, "protect")) << 2;
+        protection |= unsigned(boolean_field(region, "protectContrast")) << 3;
+        protection |= unsigned(boolean_field(region, "protectVsSixZone")) << 4;
+        protection |= unsigned(!boolean_field(region, "blendingEnable")) << 5;
+        o82::MemoryColorInput input;
+        input.hue_adjustment = signed_field(hue, "adj");
+        input.hue_extent = std::bit_cast<std::int32_t>(unsigned_field(hue, "mid"));
+        input.hue_minimum = signed_field(hue, "min"); input.hue_maximum = signed_field(hue, "max");
+        input.saturation_adjustment = scalar(sat, "adj"); input.value_adjustment = scalar(val, "adj");
+        input.saturation_extent = unsigned_field(sat, "mid"); input.value_extent = unsigned_field(val, "mid");
+        input.saturation_minimum = scalar(sat, "min"); input.saturation_maximum = scalar(sat, "max");
+        input.value_minimum = scalar(val, "min"); input.value_maximum = scalar(val, "max");
+        input.saturation_hold_control = edge_control(sat, i == 0);
+        input.value_hold_control = edge_control(val, false);
+        if (!enabled(region)) continue;
+        enabled_mask |= 1U << i;
+        o82::MemoryColorData output;
+        require(o82::compile_memory_color(input, output) == o82::MemoryColorError::none,
+                "memory-color conversion refused");
+        const std::array<unsigned, 8> words{output.adjust_p0, output.adjust_p1, output.adjust_p2,
+            output.blend_gain, unsigned(output.saturation_hold) | (unsigned(output.value_hold) << 2),
+            output.hue_region, output.saturation_region, output.value_region};
+        for (unsigned j = 0; j < words.size(); ++j)
+            put_word(data, O82_MEMORY_HEADER + i * O82_MEMORY_REGION_BYTES + j * 4, words[j]);
+    }
+    put_word(data, 0, enabled_mask); put_word(data, 4, protection);
+    require(o82_memory_valid(data.data(), data.size()), "invalid native memory payload");
+    return data;
+}
+std::vector<unsigned char> native_sixzone(json_object *picture) {
+    auto six = field(picture, "SixZone");
+    if (!enabled(six)) return {};
+    std::array<std::vector<std::uint16_t>, 5> curves;
+    constexpr const char *names[]{"hueCurve", "satCurve", "valCurve", "satCurveMid", "satCurveHigh"};
+    for (unsigned c = 0; c < curves.size(); ++c) {
+        json_object *samples = nullptr;
+        if ((!json_object_object_get_ex(six, names[c], &samples) || !samples) && c >= 3) continue;
+        require(samples && json_object_is_type(samples, json_type_array) &&
+                json_object_array_length(samples) == o82::sixzone_samples, "invalid SixZone curve length");
+        for (size_t i = 0; i < o82::sixzone_samples; ++i) {
+            const double value = number(json_object_array_get_idx(samples, i));
+            require(value >= 0 && value <= 4095 && value == std::floor(value), "invalid SixZone sample");
+            curves[c].push_back(static_cast<std::uint16_t>(value));
+        }
+    }
+    const auto percent = [](json_object *object, const char *name) {
+        const double value = number(field(object, name));
+        require(value >= 0 && value <= 100 && value == std::floor(value), "invalid SixZone threshold");
+        return static_cast<int>(value);
+    };
+    const auto range = [&](json_object *object) -> o82::Range {
+        return {percent(object, "min"), percent(object, "max")};
+    };
+    const auto edges = [](json_object *object) {
+        std::array<o82::Edge, 2> result;
+        constexpr const char *keys[]{"trapezoidEdgeLeft", "trapezoidEdgeRight"};
+        for (unsigned i = 0; i < 2; ++i) {
+            const auto edge = text_field(object, keys[i]);
+            require(edge == "SLOPE" || edge == "STEP", "invalid SixZone edge");
+            result[i] = edge == "STEP" ? o82::Edge::step : o82::Edge::slope;
+        }
+        return result;
+    };
+    auto thresholds = field(picture, "SixZoneThresholds");
+    auto sat = field(thresholds, "sat"), val = field(thresholds, "val");
+    o82::SixZoneInput input;
+    input.hue = curves[0]; input.saturation = curves[1]; input.value = curves[2];
+    input.saturation_middle = curves[3]; input.saturation_high = curves[4];
+    input.thresholds.saturation = range(sat); input.thresholds.value = range(val);
+    input.thresholds.saturation_offset = percent(sat, "offset");
+    input.thresholds.value_offset = percent(val, "offset");
+    input.thresholds.saturation_edges = edges(sat); input.thresholds.value_edges = edges(val);
+    unsigned present = 0;
+    std::array<o82::Range, 3> bands{};
+    constexpr const char *band_names[]{"satLow", "satMid", "satHigh"};
+    for (unsigned i = 0; i < 3; ++i) {
+        json_object *band = nullptr;
+        if (!json_object_object_get_ex(sat, band_names[i], &band) || !band) continue;
+        bands[i] = range(band); ++present;
+    }
+    require(!present || present == 3, "incomplete SixZone saturation bands");
+    if (present) input.thresholds.saturation_bands = bands;
+    json_object *sv = nullptr;
+    if (json_object_object_get_ex(sat, "svEnable", &sv) && sv) {
+        require(json_object_is_type(sv, json_type_boolean), "invalid SixZone SV flag");
+        input.thresholds.sv_enable = json_object_get_boolean(sv);
+    }
+    o82::SixZoneData converted;
+    require(o82::compile_sixzone(input, converted) == o82::SixZoneError::none,
+            "invalid SixZone conversion input");
+    std::vector<unsigned char> result(O82_SIXZONE_BYTES);
+    put_word(result, 0, converted.flags); put_word(result, 4, converted.threshold);
+    put_word(result, 8, converted.adjust_p0); put_word(result, 12, converted.adjust_p1);
+    put_word(result, 16, converted.saturation_adjust_p0); put_word(result, 20, converted.saturation_adjust_p1);
+    result[24] = converted.saturation_hold; result[25] = converted.value_hold;
+    put_word(result, 28, O82_SIXZONE_SAMPLES);
+    size_t at = O82_SIXZONE_HEADER;
+    const auto sample = [&](unsigned value) {
+        result[at++] = value; result[at++] = value >> 8;
+    };
+    for (unsigned i = 0; i < O82_SIXZONE_SAMPLES; ++i) {
+        sample(converted.curve_p0[i]); sample(converted.curve_p1[i] >> 16);
+        sample(converted.curve_p2[i] & 0xffff); sample(converted.curve_p2[i] >> 16);
+        sample(converted.curve_p1[i] & 0xffff);
+    }
+    require(at == result.size() && o82_sixzone_valid(result.data(), result.size()),
+            "invalid native SixZone payload");
+    return result;
+}
 std::vector<unsigned char> native_presets(json_object *document, const char *panel,
         unsigned panel_id, std::string_view source_hash) {
     auto modes = field(document, panel);
@@ -494,8 +674,8 @@ std::vector<unsigned char> native_presets(json_object *document, const char *pan
     require(!names.empty() && names.size() <= O82_COLOR_FW_MAX_PRESETS, "invalid preset count");
     std::sort(names.begin(), names.end());
     std::vector<unsigned char> data(O82_COLOR_FW_HEADER + names.size() * O82_COLOR_FW_RECORD);
-    std::copy_n(O82_COLOR_FW_MAGIC, 8, data.begin());
-    put_word(data, 8, O82_COLOR_FW_VERSION); put_word(data, 12, panel_id);
+    std::copy_n(O82_COLOR_FW_MEMORY_MAGIC, 8, data.begin());
+    put_word(data, 8, O82_COLOR_FW_MEMORY_VERSION); put_word(data, 12, panel_id);
     put_word(data, 24, names.size()); put_word(data, 28, O82_COLOR_FW_RECORD);
     put_hash(data, 32, source_hash);
     put_word(data, 64, O82_HDR_NOMINAL_PEAK_NITS); put_word(data, 68, O82_HDR_NOMINAL_BLACK_10000);
@@ -549,33 +729,12 @@ std::vector<unsigned char> native_presets(json_object *document, const char *pan
                 require(!enabled(decoded.get()), "unsupported active preset operation");
             }
         }
-        for (const char *scalar : {"hue", "sat", "satThresh", "cont", "val"})
-            if (number(field(picture.get(), scalar)) != 0) {
-                flags |= O82_COLOR_OP_HSIC; blocked |= O82_COLOR_BLOCK_HSIC;
-            }
-        for (const char *memory : {"MemColFol", "MemColSkin", "MemColSky"})
-            if (enabled(field(picture.get(), memory))) {
-                flags |= O82_COLOR_OP_MEMORY; blocked |= O82_COLOR_BLOCK_MEMORY;
-            }
-        auto six = field(picture.get(), "SixZone");
-        if (enabled(six)) {
-            flags |= O82_COLOR_OP_SIXZONE;
-            for (const char *channel : {"hueCurve", "satCurve", "valCurve", "satCurveMid", "satCurveHigh"}) {
-                json_object *samples;
-                if (!json_object_object_get_ex(six, channel, &samples)) {
-                    require(std::string_view(channel) == "satCurveMid" || std::string_view(channel) == "satCurveHigh",
-                            "missing SixZone curve");
-                    continue;
-                }
-                require(json_object_is_type(samples, json_type_array) && json_object_array_length(samples) == 384,
-                        "invalid SixZone curve length");
-                for (size_t at = 0; at < 384; at++) {
-                    const double value = number(json_object_array_get_idx(samples, at));
-                    require(value >= 0 && value <= 4095 && value == std::floor(value), "invalid SixZone sample");
-                    if (value) blocked |= O82_COLOR_BLOCK_SIXZONE;
-                }
-            }
-        }
+        const auto hsic = native_hsic(picture.get());
+        if (o82_hdr_u32(hsic.data())) flags |= O82_COLOR_OP_HSIC;
+        const auto memory = native_memory(picture.get());
+        if (o82_hdr_u32(memory.data()) || o82_hdr_u32(memory.data() + 4)) flags |= O82_COLOR_OP_MEMORY;
+        const auto sixzone = native_sixzone(picture.get());
+        if (!sixzone.empty()) flags |= O82_COLOR_OP_SIXZONE;
         Json opaque(json_object_new_object(), json_object_put);
         require(bool(opaque) && !json_object_object_add(opaque.get(), "PostBlendPa", json_object_get(picture.get())),
                 "preset metadata allocation failed");
@@ -593,6 +752,14 @@ std::vector<unsigned char> native_presets(json_object *document, const char *pan
             auto tables = native_tables(factory, gamut_id);
             put_word(data, record + 80, data.size()); put_word(data, record + 84, tables.size());
             append(tables);
+            if (!sixzone.empty()) {
+                put_word(data, record + 136, data.size()); put_word(data, record + 140, sixzone.size());
+                append(sixzone);
+            }
+            put_word(data, record + 144, data.size()); put_word(data, record + 148, hsic.size());
+            append(hsic);
+            put_word(data, record + 152, data.size()); put_word(data, record + 156, memory.size());
+            append(memory);
         }
         const std::string bytes = json_object_to_json_string_ext(opaque.get(), JSON_C_TO_STRING_PLAIN);
         require(!bytes.empty() && bytes.size() <= 2 * 1024 * 1024, "invalid preserved preset data length");
@@ -629,6 +796,10 @@ void preset_self_test(const Profile &identity) {
     auto gamut = parse(R"({"enable":false})");
     assert(!json_object_object_add(mode.get(), "PostBlendGamut", encode(gamut.get())));
     auto picture = parse(R"({"hue":0,"sat":0,"satThresh":0,"cont":0,"val":0,"MemColFol":{"enable":false},"MemColSkin":{"enable":false},"MemColSky":{"enable":false},"SixZone":{"enable":false,"hueCurve":[],"satCurve":[],"valCurve":[]}})");
+    for (const char *name : {"MemColSkin", "MemColSky", "MemColFol"}) {
+        auto memory = parse(R"({"enable":false,"blendingEnable":true,"protectContrast":false,"protectVsSixZone":false,"hue":{"adj":0,"min":0,"max":0,"mid":0,"protect":false},"sat":{"adj":0,"min":0,"max":0,"mid":0,"protect":false,"trapezoidEdgeLeft":"SLOPE","trapezoidEdgeRight":"SLOPE"},"val":{"adj":0,"min":0,"max":0,"mid":0,"protect":false,"trapezoidEdgeLeft":"SLOPE","trapezoidEdgeRight":"SLOPE"}})");
+        assert(!json_object_object_add(picture.get(), name, memory.release()));
+    }
     assert(!json_object_object_add(mode.get(), "PostBlendPa", encode(picture.get())));
     Json modes(json_object_new_object(), json_object_put), document(json_object_new_object(), json_object_put);
     auto add_mode = [&](const char *name) {
@@ -640,6 +811,8 @@ void preset_self_test(const Profile &identity) {
     add_mode("B_sRGB");
     auto clean_mode = parse(json_object_to_json_string_ext(mode.get(), JSON_C_TO_STRING_PLAIN));
     auto six = field(picture.get(), "SixZone");
+    auto thresholds = parse(R"({"sat":{"min":0,"max":100,"offset":10,"trapezoidEdgeLeft":"SLOPE","trapezoidEdgeRight":"SLOPE"},"val":{"min":0,"max":100,"offset":10,"trapezoidEdgeLeft":"SLOPE","trapezoidEdgeRight":"SLOPE"}})");
+    assert(!json_object_object_add(picture.get(), "SixZoneThresholds", thresholds.release()));
     assert(!json_object_object_add(six, "enable", json_object_new_boolean(true)));
     for (const char *channel : {"hueCurve", "satCurve", "valCurve"}) {
         auto samples = json_object_new_array();
@@ -671,6 +844,8 @@ void preset_self_test(const Profile &identity) {
     assert(!json_object_object_add(document.get(), "test_panel", modes.release()));
     constexpr const char *hash = "2b6442ce0e8fef6d1b008cdeca3838450282868d385f6e3056c0a4ce2b8949d8";
     auto bundle = native_presets(document.get(), "test_panel", 0x42, hash);
+    assert(o82_hdr_u32(bundle.data() + 8) == O82_COLOR_FW_MEMORY_VERSION &&
+           !std::memcmp(bundle.data(), O82_COLOR_FW_MEMORY_MAGIC, 8));
     assert(o82_color_fw_valid(bundle.data(), bundle.size(), 0x42));
     assert(!o82_color_fw_valid(nullptr, bundle.size(), 0x42));
     assert(!o82_color_fw_valid(bundle.data(), bundle.size() - 1, 0x42));
@@ -691,8 +866,22 @@ void preset_self_test(const Profile &identity) {
     const auto *srgb_wide = o82_color_fw_data(bundle.data(), 1, 1, 0, &igc, &gc);
     assert(srgb && srgb_wide && std::memcmp(srgb_wide, wide, O82_COLOR_FW_CUBE_BYTES));
     assert(o82_color_fw_data(bundle.data(), 2, 0, 0, &igc, &gc));
+    assert(o82_color_fw_data(bundle.data(), 3, 0, 0, &igc, &gc));
+    const auto *six_record = o82_color_fw_record(bundle.data(), 3);
+    const size_t six_at = o82_hdr_u32(six_record + 136);
+    assert(o82_hdr_u32(six_record + 140) == O82_SIXZONE_BYTES);
+    assert(o82_sixzone_valid(bundle.data() + six_at, O82_SIXZONE_BYTES));
+    // Missing middle/high curves each use the ordinary saturation curve.
+    for (unsigned component : {1u, 2u, 3u})
+        assert(o82_hdr_u16(bundle.data() + six_at + O82_SIXZONE_HEADER + 7 * 10 + component * 2) == 4095);
+    assert(o82_color_fw_data(bundle.data(), 5, 0, 0, &igc, &gc));
+    assert(o82_color_fw_data(bundle.data(), 4, 0, 0, &igc, &gc));
+    const auto *memory_record = o82_color_fw_record(bundle.data(), 4);
+    assert((o82_hdr_u32(memory_record + 72) & O82_COLOR_OP_MEMORY) && !o82_hdr_u32(memory_record + 76));
+    assert(o82_hdr_u32(memory_record + 156) == O82_MEMORY_BYTES);
+    assert(o82_hdr_u32(bundle.data() + o82_hdr_u32(memory_record + 152)) == 1);
     const auto *retained_igc = igc, *retained_gc = gc;
-    for (unsigned index : {3u, 4u, 5u, 6u, 8u, ~0u}) {
+    for (unsigned index : {6u, 8u, ~0u}) {
         assert(!o82_color_fw_data(bundle.data(), index, 0, 0, &igc, &gc));
         assert(igc == retained_igc && gc == retained_gc);
     }
@@ -709,11 +898,19 @@ void preset_self_test(const Profile &identity) {
         assert(!o82_color_fw_valid(bundle.data(), bundle.size(), 0x42));
     };
     bad_word(24, 65); bad_word(28, 159); bad_word(64, 1000); bad_word(72, 0);
+    bad_word(8, 2);
+    bad_word(8, 3);
     bad_word(O82_COLOR_FW_HEADER + 64, 2); bad_word(O82_COLOR_FW_HEADER + 76, O82_COLOR_BLOCK_MEMORY);
     bad_word(O82_COLOR_FW_HEADER + 80, ~0U); bad_word(O82_COLOR_FW_HEADER + 84, 1);
     bad_word(O82_COLOR_FW_HEADER + 88, 0); bad_word(O82_COLOR_FW_HEADER + 92, ~0U);
     bad_word(O82_COLOR_FW_HEADER + 128, 1);
     bad_word(O82_COLOR_FW_HEADER + 7 * O82_COLOR_FW_RECORD + 132, 16);
+    bad_word(O82_COLOR_FW_HEADER + 136, six_at);
+    bad_word(O82_COLOR_FW_HEADER + 3 * O82_COLOR_FW_RECORD + 136, six_at + 4);
+    bad_word(O82_COLOR_FW_HEADER + 3 * O82_COLOR_FW_RECORD + 140, O82_SIXZONE_BYTES - 4);
+    bad_word(O82_COLOR_FW_HEADER + 144, 0); bad_word(O82_COLOR_FW_HEADER + 148, 0);
+    bad_word(O82_COLOR_FW_HEADER + 152, 1);
+    bad_word(six_at + 28, 383); bad_word(six_at + 12, 1); bad_word(six_at, 1);
     const size_t data_start = o82_hdr_u32(snapshot.data() + O82_COLOR_FW_HEADER + 80);
     bundle = snapshot; bundle[data_start] = 1; seal();
     assert(!o82_color_fw_valid(bundle.data(), bundle.size(), 0x42));
@@ -727,9 +924,9 @@ void preset_self_test(const Profile &identity) {
     seal(); assert(!o82_color_fw_valid(bundle.data(), bundle.size(), 0x42));
     auto p3_tables = native_tables(identity, O82_COLOR_P3);
     const unsigned node = (2 * 17 + 4) * 17 + 8;
-    const double expected = 1.055 * std::pow(0.5, 1 / 2.4) - 0.055;
+    const double expected = 1.055 * std::pow(gamut_knot(8), 1 / 2.4) - 0.055;
     assert(std::abs(o82_hdr_u16(p3_tables.data() + 2 * O82_COLOR_FW_CURVE_BYTES + node * 6) / 4095.0 - expected) < 0.0003);
-    std::cout << "Native preset bundle: distinct gamuts, all four wire inputs, neutral SixZone, explicit unsupported operations and parser bounds passed\n";
+    std::cout << "Native v5 preset bundle: distinct gamuts, four wire inputs, active/neutral SixZone and memory, explicit unsupported HDR and parser bounds passed\n";
 }
 void self_test() {
     Profile identity;
@@ -739,7 +936,8 @@ void self_test() {
     }
     for (unsigned blue = 0; blue < 17; ++blue)
         for (unsigned green = 0; green < 17; ++green)
-            for (unsigned red = 0; red < 17; ++red) identity.gamut.push_back({red / 16.0, green / 16.0, blue / 16.0});
+            for (unsigned red = 0; red < 17; ++red)
+                identity.gamut.push_back({gamut_knot(red), gamut_knot(green), gamut_knot(blue)});
     const std::array<Vec, 11> inputs{{{0,0,0}, {1,1,1}, {0.1,0.2,0.3}, {1,0,0}, {0,1,0}, {0,0,1},
         {0.01,0.01,0.01}, {0.05,0.05,0.05}, {0.18,0.18,0.18}, {0.5,0.5,0.5}, {0.75,0.75,0.75}}};
     for (const Vec input : inputs) {
@@ -843,9 +1041,30 @@ void self_test() {
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--self-test") { self_test(); return 0; }
+        if (argc == 3 && std::string_view(argv[1]) == "--prepare-kernel") {
+            const std::string release = argv[2];
+            utsname running{};
+            require(!uname(&running), "cannot identify running kernel");
+            o82_stock::release_name(release, running.release);
+            const unsigned panel = o82_stock::board_panel();
+            auto modules = directory(fs::path("/usr/lib/modules") / release);
+            const auto composition_bytes = file(fs::path("/usr/share/senemos/uke") / release / "source-composition.json");
+            auto composition = parse({reinterpret_cast<const char *>(composition_bytes.data()), composition_bytes.size()});
+            o82_stock::candidate(composition.get(), release, running.release);
+            const auto raw = o82_stock::acquire(panel);
+            auto document = parse({reinterpret_cast<const char *>(raw.data()), raw.size()});
+            const auto name = o82_stock::panel_name(panel);
+            const auto bundle = native_presets(document.get(), name.c_str(), panel, o82_stock::input_hash(panel));
+            o82_stock::publish(fs::path("/usr/lib/firmware") / release / "qcom/sm7675/uke" /
+                o82_stock::filename(panel), bundle, panel);
+            std::cout << "Prepared private fitted-panel v5 data for " << release <<
+                "; stock stayed read-only and initial selection is unchanged\n";
+            return 0;
+        }
         const bool native = argc == 4 && std::string_view(argv[1]) == "--native-hdr";
         const bool presets = argc == 4 && std::string_view(argv[1]) == "--native-presets";
-        require(native || presets || argc == 3, "usage: uke-o82-color-profile [--native-presets|--native-hdr] OEM_QDCM_JSON NEW_PRIVATE_OUTPUT");
+        require(native || presets || (argc == 3 && !std::string_view(argv[1]).starts_with("--")),
+            "usage: uke-o82-color-profile --prepare-kernel RELEASE | [--native-presets|--native-hdr] OEM_QDCM_JSON NEW_PRIVATE_OUTPUT");
         const auto data = read_file(argv[native || presets ? 2 : 1]);
         const auto hash = sha256(data);
         const char *panel = nullptr;

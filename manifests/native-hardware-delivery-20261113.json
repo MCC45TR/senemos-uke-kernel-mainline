@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "One cumulative unstable full candidate: complete native CAMCC resource/DT source and SSC streaming freshness",
+  "parent_full_build": 11309609,
+  "parent_full_release": 24,
+  "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11309609/senemos-uke-linux-kernel-mainline-unstable-7.3.3-24.src.rpm",
+  "parent_srpm_sha256": "1e706589d0e58ca0e71a778c244e307d8138f2844a48efbeb8c266865fc7beb3",
+  "parent_spec_sha256": "5a48a3e09469cad3de544e92323cdbfd52adeb323cb2f8485943f4773d351275",
+  "parent_profile_sha256": "3ccaaaa7d756fb9018555fe8df698fd83c8813a32e22c4576b879ee9c378a564",
+  "parent_boot_recipe_sha256": "3f2057bdfd8644f1cb868c5cb67bf50793121ecf11d6908cb61fa6104bf99726",
+  "parent_audio_card_sha256": "0b9fcd7cb16256b7ca2319ce8e1dd7a83779e7473c3a336cfa56231234509537",
+  "parent_raw_config_sha256": "431c839cba7c69f6c8128f67ab180ea3586b6dbc771e532adc13c91bde0e9c33",
+  "parent_composition_fields": 782,
+  "declared_changed_parent_fields": [
+    "source_commit",
+    "kernel_release",
+    "rpm_revision",
+    "diagnostic_audio_driver"
+  ],
+  "planned_full_release": 25,
+  "proof": {
+    "build": 11318588,
+    "source_check_release": 108,
+    "source": "0780ec6911247d82fd863d6b20ed48bf85b268cb",
+    "receipt_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/uke-kernel-migration-check-7.3.3-108.fc46.aarch64.rpm",
+    "receipt_sha256": "3fe8fa309fdef6e7a1f65abb4ad314e32ecffc7a784e344d58d1cc472c6295ea",
+    "qualification_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/native-hardware108-source-qualification.json",
+    "qualification_sha256": "d18fc19d469c2e32d203ae2d7b0e34af1491e179d20550796a51438e2f7f145e",
+    "incremental_source_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/native-hardware108-incremental-source.tar.xz",
+    "incremental_source_sha256": "dd17577706a3850afe47f17d2f6094c9ae40c34ba264cf75cc544613ef6645fa",
+    "public_key_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg",
+    "public_key_fingerprint": "2204A661EA630A5303500085538797E72A3E4ECA",
+    "actual_provider_and_forced_adapter": true,
+    "actual_ssc_objects": 2
+  },
+  "dt_before_sha256": "d2294f748f159e5db626c3ee44249db9e0dacc394cbc350dfc3879f326be1d71",
+  "dt_after_sha256": "7ce37bfa582cbc4c390339ff934f579e045e961add64a4b1ab7f23786e460f33",
+  "legacy_quaternion_runner_sha256": "122e5c576242b8387f2c656c1b8406a3b78f331e4d3e4b9c5ee2538171f0d270",
+  "legacy_quaternion_runner_fixture_references": 2,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "speaker_gain_ceiling": 223,
+  "crm_activation_allowed": false,
+  "gravity_frame_admitted": false,
+  "physical_camera_accepted": false,
+  "physical_sensor_accepted": false,
+  "full_kernel_built": false,
+  "source_assets": [
+    {
+      "path": "packaging/native/native-hardware-legacy-view733.sh",
+      "sha256": "02eb2ee7007442957e136702f47a769a78e086019cb4230c760a153a17f09b7b"
+    },
+    {
+      "path": "packaging/native/prepare-native-hardware-full733.sh",
+      "sha256": "46af177cefe5ca1e1a0fe4e3095f242fa42ccd323e6522c2dfa0dc8b5940f0dc"
+    },
+    {
+      "path": "packaging/native/rewrite-native-hardware-full733.sh",
+      "sha256": "5e8a209e3904ab2233b1a9599890ac5d56722b20711506c5bef82e55c75f230b"
+    },
+    {
+      "path": "packaging/native/copr-native-hardware-full733.sh",
+      "sha256": "69289a2bd490aef3e680de017ca3ccec133b2807aba744d47de0c5ffd8ef65d3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "docs/NATIVE-HARDWARE-DELIVERY.md",
+      "sha256": "68169d40707cc9ea5a3a50dad9564e9272296821c2df0011105dd97425645f55"
+    },
+    {
+      "path": "tests/native-hardware-source-view.sh",
+      "sha256": "b22ab56d715ab76e8ed47e65edb8ca53589623e2e87f252774c366338c6a6134"
+    }
+  ]
+}

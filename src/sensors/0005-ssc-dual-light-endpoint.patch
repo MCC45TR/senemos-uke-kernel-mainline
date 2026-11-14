@@ -1,0 +1,759 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: add a board-linked dual-light IIO endpoint
+
+Retain raw channels and existing QMI admission. Share native streams,
+select rear-only under a verified closed lid and use passive input events
+for lifecycle changes without a new polling task.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -8,6 +8,7 @@
+ #include <linux/iio/buffer.h>
+ #include <linux/iio/iio.h>
+ #include <linux/iio/kfifo_buf.h>
++#include <linux/input.h>
+ #include <linux/jiffies.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+@@ -21,6 +22,7 @@
+ #include <linux/sysfs.h>
+ #include <linux/workqueue.h>
+ #include "uke-ssc-protocol.h"
++#include "uke-ssc-dual-light.h"
+ 
+ #define SSC_SERVICE 400
+ #define SSC_TIMEOUT msecs_to_jiffies(5000)
+@@ -30,6 +32,8 @@
+ #define SSC_REPORT_TYPE_LARGE 1
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
+ #define SSC_SENSOR_COUNT 8
++#define SSC_FRONT_LIGHT 3
++#define SSC_REAR_LIGHT 4
+ 
+ /* Separate consumers of one SSC SUID, serialized by controller->control. */
+ enum ssc_stream_user {
+@@ -84,6 +88,23 @@
+ 	struct sockaddr_qrtr address;
+ };
+ 
++struct ssc_dual_light {
++	struct iio_dev *iio;
++	struct iio_chan_spec channel[2];
++	struct device_node *lid_node;
++	struct input_handler lid_handler;
++	struct uke_ssc_light_pair pair;
++	u64 epoch, lid_revision, front_floor_sequence;
++	struct completion sample_done;
++	u64 result_sequence;
++	s64 result;
++	int error;
++	bool registered, handler_registered, connected;
++	bool buffered, buffer_fault, reset_pending;
++	bool direct, result_valid;
++	bool lid_known, lid_closed, front_needs_fresh;
++};
++
+ enum ssc_failure_stage {
+ 	SSC_FAILURE_NONE, SSC_FAILURE_CLIENT, SSC_FAILURE_LOOKUP,
+ 	SSC_FAILURE_ATTRIBUTES, SSC_FAILURE_REGISTRATION,
+@@ -108,6 +129,7 @@
+ 	struct list_head endpoints;
+ 	struct sockaddr_qrtr peer;
+ 	struct ssc_sensor sensor[SSC_SENSOR_COUNT];
++	struct ssc_dual_light dual;
+ 	unsigned int endpoint_count;
+ 	u64 generation, client_generation;
+ 	u64 client_id;
+@@ -294,6 +316,18 @@
+ 		queue_work(c->workqueue, &c->reconcile);
+ }
+ 
++static void ssc_dual_reset_locked(struct ssc_controller *c, int error)
++{
++	struct ssc_dual_light *d = &c->dual;
++
++	uke_ssc_light_end(&d->pair);
++	d->reset_pending = true;
++	d->result_valid = false;
++	d->result = 0;
++	d->error = error;
++	complete_all(&d->sample_done);
++}
++
+ static void ssc_invalidate_locked(struct ssc_controller *c)
+ {
+ 	unsigned int i;
+@@ -302,6 +336,7 @@
+ 	c->last_discovery_error = 0;
+ 	c->last_discovery_stage = SSC_FAILURE_NONE;
+ 	c->pending_sample_valid = false;
++	ssc_dual_reset_locked(c, -ENOTCONN);
+ 	memset(c->pending_sample, 0, sizeof(c->pending_sample));
+ 	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
+ 		struct ssc_sensor *s = &c->sensor[i];
+@@ -375,6 +410,8 @@
+ 	spin_unlock_irqrestore(&c->state, flags);
+ }
+ 
++static void ssc_dual_feed_locked(struct ssc_sensor *s);
++
+ /* The caller holds c->state; values have passed the sensor's exact API decoder. */
+ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[3], u64 ticks)
+ {
+@@ -392,6 +429,15 @@
+ 		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
+ 	}
+ 	complete(&s->sample_done);
++	ssc_dual_feed_locked(s);
++	/* Coalesce acquisition events in the existing serialized worker. It
++	 * performs no new request when the demanded streams are unchanged.
++	 */
++	if ((s == &s->controller->sensor[SSC_FRONT_LIGHT] ||
++	     s == &s->controller->sensor[SSC_REAR_LIGHT]) &&
++	    (s->controller->dual.direct || s->controller->dual.buffered) &&
++	    s->controller->dual.reset_pending && !s->controller->dual.buffer_fault)
++		ssc_schedule_locked(s->controller);
+ }
+ 
+ static void ssc_response(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
+@@ -652,6 +698,8 @@
+ 				memset(c->pending_sample, 0, sizeof(c->pending_sample));
+ 			}
+ 			if (event->message == 128) {
++				if (i == SSC_FRONT_LIGHT || i == SSC_REAR_LIGHT)
++					ssc_dual_reset_locked(c, -EAGAIN);
+ 				ret = uke_ssc_decode_attributes(event->payload, s->description->datatype,
+ 							 s->description->api, &attributes);
+ 				s->ready = false;
+@@ -673,6 +721,13 @@
+ 				continue;
+ 			}
+ 			if (event->message == 130) {
++				if (i == SSC_FRONT_LIGHT || i == SSC_REAR_LIGHT) {
++					ssc_dual_reset_locked(c, -EREMOTEIO);
++					/* A failed front sensor does not own rear-only mode. */
++					if (i == SSC_REAR_LIGHT ||
++					    !c->dual.lid_known || !c->dual.lid_closed)
++						c->dual.buffer_fault |= c->dual.buffered;
++				}
+ 				s->ready = false;
+ 				s->buffer_fault |= s->buffered && s->stream_active;
+ 				s->need_stop |= s->stream_active;
+@@ -771,6 +826,11 @@
+ 	rate = on_change ? 0 : s->rate;
+ 	s->ticks = 0;
+ 	s->stream_active = false;
++	if (s == &c->sensor[SSC_FRONT_LIGHT] || s == &c->sensor[SSC_REAR_LIGHT]) {
++		ssc_dual_reset_locked(c, -EAGAIN);
++		if (c->dual.iio && (c->dual.direct || c->dual.buffered))
++			ssc_schedule_locked(c);
++	}
+ 	s->error = 0;
+ 	reinit_completion(&s->sample_done);
+ 	spin_unlock_irqrestore(&c->state, flags);
+@@ -801,6 +861,11 @@
+ 	s->stream_active = false;
+ 	s->need_stop = false;
+ 	s->ticks = 0;
++	if (s == &c->sensor[SSC_FRONT_LIGHT] || s == &c->sensor[SSC_REAR_LIGHT]) {
++		ssc_dual_reset_locked(c, -EAGAIN);
++		if (c->dual.iio && (c->dual.direct || c->dual.buffered))
++			ssc_schedule_locked(c);
++	}
+ 	spin_unlock_irqrestore(&c->state, flags);
+ 	if (active)
+ 		ret = ssc_request(c, s, UKE_SSC_DISABLE, uid, NULL, 0);
+@@ -1014,6 +1079,7 @@
+ 	c->client_open = c->client_known = false;
+ 	c->pending = false;
+ 	c->pending_sample_valid = false;
++	ssc_dual_reset_locked(c, -ENOTCONN);
+ 	memset(c->pending_sample, 0, sizeof(c->pending_sample));
+ 	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
+ 		struct ssc_sensor *s = &c->sensor[i];
+@@ -1030,6 +1096,8 @@
+ 		qmi_handle_release(&c->client);
+ }
+ 
++static int ssc_dual_reconcile(struct ssc_controller *c);
++
+ static void ssc_reconcile(struct work_struct *work)
+ {
+ 	struct ssc_controller *c = container_of(work, struct ssc_controller, reconcile);
+@@ -1113,6 +1181,11 @@
+ 		apply = s->need_apply;
+ 		s->need_apply = false;
+ 		buffered = ssc_stream_wanted(s) != 0;
++		/* Restore pair demand after its current Hall/metadata snapshot has
++		 * selected the required streams; retain all independent raw owners.
++		 */
++		if (c->dual.reset_pending && (i == SSC_FRONT_LIGHT || i == SSC_REAR_LIGHT))
++			buffered = (ssc_stream_wanted(s) & ~SSC_STREAM_DUAL) != 0;
+ 		spin_unlock_irqrestore(&c->state, flags);
+ 		if (ready && !s->registered) {
+ 			ret = iio_device_register(s->iio);
+@@ -1127,6 +1200,7 @@
+ 		if (ready && apply && buffered)
+ 			ssc_start(s);
+ 	}
++	ssc_dual_reconcile(c);
+ out:
+ 	mutex_unlock(&c->control);
+ }
+@@ -1211,6 +1285,443 @@
+ 	return devm_iio_kfifo_buffer_setup(c->dev, iio, &ssc_buffer_ops);
+ }
+ 
++/* All pair state and buffer publication use c->state, like the raw channels.
++ * No input callback or indication waits for QMI or takes c->control.
++ */
++static void ssc_dual_feed_locked(struct ssc_sensor *s)
++{
++	struct ssc_controller *c = s->controller;
++	struct ssc_dual_light *d = &c->dual;
++	unsigned int side;
++	s64 value, scan[2] = {};
++	int ret;
++
++	if (s == &c->sensor[SSC_FRONT_LIGHT])
++		side = UKE_SSC_LIGHT_FRONT;
++	else if (s == &c->sensor[SSC_REAR_LIGHT])
++		side = UKE_SSC_LIGHT_REAR;
++	else
++		return;
++	if (!ssc_current(c) || !d->pair.active || d->reset_pending ||
++	    (!d->direct && !d->buffered) || d->buffer_fault ||
++	    !s->ready || !s->stream_active || s->error || !s->ticks)
++		return;
++	if (side == UKE_SSC_LIGHT_FRONT && d->front_needs_fresh) {
++		if (s->sample_sequence <= d->front_floor_sequence)
++			return;
++		d->front_needs_fresh = false;
++	}
++	ret = uke_ssc_light_update(&d->pair, d->epoch, side, s->ticks,
++				   s->sample[0], &value);
++	if (ret != 1)
++		return;
++	d->result = value;
++	d->result_valid = true;
++	d->error = 0;
++	d->result_sequence++;
++	if (d->buffered && d->registered) {
++		scan[0] = value;
++		iio_push_to_buffers_with_ts(d->iio, scan, sizeof(scan), iio_get_time_ns(d->iio));
++	}
++	complete(&d->sample_done);
++}
++
++/* Called with control held. Each blocking request is surrounded by current
++ * metadata/Hall checks. A changed Hall snapshot queues another reconciliation;
++ * it never publishes a half-selected pair.
++ */
++static int ssc_dual_reconcile(struct ssc_controller *c)
++{
++	struct ssc_dual_light *d = &c->dual;
++	unsigned long flags;
++	unsigned int required, i;
++	u64 revision;
++	bool wanted, ready, active;
++	int ret = 0;
++
++	lockdep_assert_held(&c->control);
++	if (!d->iio)
++		return 0;
++	spin_lock_irqsave(&c->state, flags);
++	required = d->lid_known && d->lid_closed ? 2U : 3U;
++	ready = ssc_current(c);
++	for (i = 0; i < 2; i++)
++		if (required & BIT(i))
++			ready &= c->sensor[SSC_FRONT_LIGHT + i].ready &&
++				 c->sensor[SSC_FRONT_LIGHT + i].registered;
++	spin_unlock_irqrestore(&c->state, flags);
++	if (!d->registered && ready) {
++		ret = iio_device_register(d->iio);
++		if (ret)
++			return ret;
++		spin_lock_irqsave(&c->state, flags);
++		d->registered = true;
++		spin_unlock_irqrestore(&c->state, flags);
++	}
++	spin_lock_irqsave(&c->state, flags);
++	wanted = d->direct || (d->buffered && !d->buffer_fault);
++	required = d->lid_known && d->lid_closed ? 2U : 3U;
++	revision = d->lid_revision;
++	ready = ssc_current(c);
++	for (i = 0; i < 2; i++)
++		if (required & BIT(i))
++			ready &= c->sensor[SSC_FRONT_LIGHT + i].ready &&
++				 !c->sensor[SSC_FRONT_LIGHT + i].need_stop;
++	if (!wanted || !ready)
++		ssc_dual_reset_locked(c, ready ? -ENODATA : -ENOTCONN);
++	spin_unlock_irqrestore(&c->state, flags);
++	for (i = 0; i < 2; i++) {
++		struct ssc_sensor *s = &c->sensor[SSC_FRONT_LIGHT + i];
++		bool held;
++
++		spin_lock_irqsave(&c->state, flags);
++		held = s->stream_users & SSC_STREAM_DUAL;
++		spin_unlock_irqrestore(&c->state, flags);
++		if (held && (!wanted || !ready || !(required & BIT(i)))) {
++			ret = ssc_stream_put(s, SSC_STREAM_DUAL);
++			if (ret)
++				return ret;
++		}
++	}
++	if (!wanted || !ready)
++		return wanted ? -ENOTCONN : 0;
++	/* Rear first, so closed mode never starts an occluded front sensor. */
++	for (i = 0; i < 2; i++) {
++		unsigned int side = 1U - i;
++		struct ssc_sensor *s = &c->sensor[SSC_FRONT_LIGHT + side];
++		bool held;
++
++		if (!(required & BIT(side)))
++			continue;
++		spin_lock_irqsave(&c->state, flags);
++		ready = ssc_current(c) && s->ready && !s->need_stop &&
++			 revision == d->lid_revision;
++		held = s->stream_users & SSC_STREAM_DUAL;
++		active = s->stream_active;
++		spin_unlock_irqrestore(&c->state, flags);
++		if (!ready)
++			return -EAGAIN;
++		ret = held ? (active ? 0 : ssc_start(s)) :
++			ssc_stream_get(s, SSC_STREAM_DUAL);
++		if (ret)
++			return ret;
++	}
++	spin_lock_irqsave(&c->state, flags);
++	ready = ssc_current(c) && revision == d->lid_revision;
++	for (i = 0; i < 2; i++)
++		if (required & BIT(i)) {
++			struct ssc_sensor *s = &c->sensor[SSC_FRONT_LIGHT + i];
++
++			ready &= s->ready && s->stream_active && !s->error;
++		}
++	if (!ready) {
++		ssc_dual_reset_locked(c, -EAGAIN);
++		ret = -EAGAIN;
++	} else if (!d->pair.active || d->reset_pending) {
++		uke_ssc_light_end(&d->pair);
++		if (d->epoch == U64_MAX) {
++			d->buffer_fault = d->buffered;
++			ret = -EOVERFLOW;
++		} else {
++			d->epoch++;
++			ret = uke_ssc_light_begin(&d->pair, d->epoch,
++						 d->lid_known, d->lid_closed);
++		}
++		if (!ret) {
++			d->reset_pending = false;
++			d->result_valid = false;
++			d->error = -EAGAIN;
++			reinit_completion(&d->sample_done);
++			ssc_dual_feed_locked(&c->sensor[SSC_FRONT_LIGHT]);
++			ssc_dual_feed_locked(&c->sensor[SSC_REAR_LIGHT]);
++		} else {
++			d->error = ret;
++			complete_all(&d->sample_done);
++			ssc_schedule_locked(c);
++		}
++	}
++	spin_unlock_irqrestore(&c->state, flags);
++	return ret;
++}
++
++static int ssc_dual_read_raw(struct iio_dev *iio, const struct iio_chan_spec *channel,
++			     int *val, int *val2, long mask)
++{
++	struct ssc_controller *c = *(struct ssc_controller **)iio_priv(iio);
++	struct ssc_dual_light *d = &c->dual;
++	unsigned long flags;
++	s64 value = 0;
++	bool valid;
++	int ret, stop_ret;
++
++	if (mask == IIO_CHAN_INFO_SCALE) {
++		*val = 0;
++		*val2 = 1;
++		return IIO_VAL_INT_PLUS_MICRO;
++	}
++	if (mask != IIO_CHAN_INFO_RAW || channel->address)
++		return -EINVAL;
++	if (!iio_device_claim_direct(iio))
++		return -EBUSY;
++	mutex_lock(&c->control);
++	spin_lock_irqsave(&c->state, flags);
++	d->direct = true;
++	spin_unlock_irqrestore(&c->state, flags);
++	ret = ssc_dual_reconcile(c);
++	if (!ret) {
++		spin_lock_irqsave(&c->state, flags);
++		valid = ssc_current(c) && d->pair.active && !d->reset_pending &&
++			d->result_valid && !d->error;
++		spin_unlock_irqrestore(&c->state, flags);
++		if (!valid && !wait_for_completion_timeout(&d->sample_done, SSC_TIMEOUT))
++			ret = -ETIMEDOUT;
++		spin_lock_irqsave(&c->state, flags);
++		if (!ret) {
++			if (!ssc_current(c) || !d->pair.active || d->reset_pending ||
++			    !d->result_valid || d->error)
++				ret = d->error ? d->error : -ENODATA;
++			else
++				value = d->result;
++		}
++		spin_unlock_irqrestore(&c->state, flags);
++	}
++	spin_lock_irqsave(&c->state, flags);
++	d->direct = false;
++	spin_unlock_irqrestore(&c->state, flags);
++	stop_ret = ssc_dual_reconcile(c);
++	if (!ret)
++		ret = stop_ret;
++	spin_lock_irqsave(&c->state, flags);
++	if (!ret && !ssc_current(c))
++		ret = -ENOTCONN;
++	spin_unlock_irqrestore(&c->state, flags);
++	mutex_unlock(&c->control);
++	iio_device_release_direct(iio);
++	if (ret)
++		return ret;
++	iio_val_s64_decompose(value, val, val2);
++	return IIO_VAL_INT_64;
++}
++
++static int ssc_dual_buffer_enable(struct iio_dev *iio)
++{
++	struct ssc_controller *c = *(struct ssc_controller **)iio_priv(iio);
++	struct ssc_dual_light *d = &c->dual;
++	unsigned long flags;
++	int ret;
++
++	mutex_lock(&c->control);
++	spin_lock_irqsave(&c->state, flags);
++	if (d->buffered) {
++		spin_unlock_irqrestore(&c->state, flags);
++		mutex_unlock(&c->control);
++		return -EBUSY;
++	}
++	d->buffered = true;
++	d->buffer_fault = false;
++	spin_unlock_irqrestore(&c->state, flags);
++	ret = ssc_dual_reconcile(c);
++	if (ret) {
++		spin_lock_irqsave(&c->state, flags);
++		d->buffered = false;
++		spin_unlock_irqrestore(&c->state, flags);
++		ssc_dual_reconcile(c);
++	}
++	mutex_unlock(&c->control);
++	return ret;
++}
++
++static int ssc_dual_buffer_disable(struct iio_dev *iio)
++{
++	struct ssc_controller *c = *(struct ssc_controller **)iio_priv(iio);
++	unsigned long flags;
++	int ret;
++
++	mutex_lock(&c->control);
++	spin_lock_irqsave(&c->state, flags);
++	c->dual.buffered = false;
++	spin_unlock_irqrestore(&c->state, flags);
++	ret = ssc_dual_reconcile(c);
++	mutex_unlock(&c->control);
++	return ret;
++}
++
++static const struct iio_info ssc_dual_info = { .read_raw = ssc_dual_read_raw };
++static const struct iio_buffer_setup_ops ssc_dual_buffer_ops = {
++	.postenable = ssc_dual_buffer_enable, .predisable = ssc_dual_buffer_disable,
++};
++
++static void ssc_dual_lid_locked(struct ssc_controller *c, bool known, bool closed)
++{
++	struct ssc_dual_light *d = &c->dual;
++	bool was_closed = d->lid_known && d->lid_closed;
++
++	if (d->lid_known == known && d->lid_closed == closed)
++		return;
++	d->lid_known = known;
++	d->lid_closed = closed;
++	d->lid_revision++;
++	if (was_closed && !(known && closed)) {
++		d->front_needs_fresh = true;
++		d->front_floor_sequence = c->sensor[SSC_FRONT_LIGHT].sample_sequence;
++	}
++	ssc_dual_reset_locked(c, -EAGAIN);
++	ssc_schedule_locked(c);
++}
++
++static void ssc_dual_lid_event(struct input_handle *handle, unsigned int type,
++			       unsigned int code, int value)
++{
++	struct ssc_controller *c = handle->handler->private;
++	unsigned long flags;
++
++	if (type != EV_SW || code != SW_LID || (value != 0 && value != 1))
++		return;
++	spin_lock_irqsave(&c->state, flags);
++	if (!c->removed)
++		ssc_dual_lid_locked(c, true, value);
++	spin_unlock_irqrestore(&c->state, flags);
++}
++
++static void ssc_dual_lid_start(struct input_handle *handle)
++{
++	struct ssc_controller *c = handle->handler->private;
++	struct input_dev *input = handle->dev;
++	unsigned long flags;
++	bool closed;
++
++	/* The open default bit cannot distinguish an unreported switch. A
++	 * positive closed bit is valid; open/unknown both require two ALS.
++	 * A previously observed event also permits resync after input grab.
++	 */
++	spin_lock_irqsave(&input->event_lock, flags);
++	closed = test_bit(SW_LID, input->sw);
++	spin_lock(&c->state);
++	if (!c->removed)
++		ssc_dual_lid_locked(c, closed || c->dual.lid_known, closed);
++	spin_unlock(&c->state);
++	spin_unlock_irqrestore(&input->event_lock, flags);
++}
++
++static bool ssc_dual_lid_match(struct input_handler *handler, struct input_dev *input)
++{
++	struct ssc_controller *c = handler->private;
++
++	return input->dev.parent && input->dev.parent->of_node == c->dual.lid_node;
++}
++
++static int ssc_dual_lid_connect(struct input_handler *handler, struct input_dev *input,
++			      const struct input_device_id *id)
++{
++	struct ssc_controller *c = handler->private;
++	struct input_handle *handle;
++	int ret;
++
++	(void)id;
++	if (c->dual.connected)
++		return -EBUSY;
++	handle = kzalloc(sizeof(*handle), GFP_KERNEL);
++	if (!handle)
++		return -ENOMEM;
++	handle->dev = input;
++	handle->handler = handler;
++	handle->name = "uke-ssc-dual-light-lid";
++	ret = input_register_handle(handle);
++	if (ret)
++		goto free_handle;
++	ret = input_open_device(handle);
++	if (ret)
++		goto unregister;
++	c->dual.connected = true;
++	return 0;
++unregister:
++	input_unregister_handle(handle);
++free_handle:
++	kfree(handle);
++	return ret;
++}
++
++static void ssc_dual_lid_disconnect(struct input_handle *handle)
++{
++	struct ssc_controller *c = handle->handler->private;
++	unsigned long flags;
++
++	input_close_device(handle);
++	input_unregister_handle(handle);
++	spin_lock_irqsave(&c->state, flags);
++	c->dual.connected = false;
++	ssc_dual_lid_locked(c, false, false);
++	spin_unlock_irqrestore(&c->state, flags);
++	kfree(handle);
++}
++
++static const struct input_device_id ssc_dual_lid_ids[] = {
++	{
++		.flags = INPUT_DEVICE_ID_MATCH_EVBIT | INPUT_DEVICE_ID_MATCH_SWBIT,
++		.evbit = { BIT_MASK(EV_SW) },
++		.swbit = { BIT_MASK(SW_LID) },
++	},
++	{},
++};
++
++static void ssc_dual_put_lid(void *node)
++{
++	of_node_put(node);
++}
++
++static int ssc_dual_allocate(struct ssc_controller *c)
++{
++	struct ssc_dual_light *d = &c->dual;
++	struct iio_dev *iio;
++	struct device_node *node;
++	u32 code;
++	int ret;
++
++	/* Optional explicit board relationship, never select a switch by name. */
++	if (!of_find_property(c->dev->of_node, "lid-switch", NULL))
++		return 0;
++	if (of_property_count_u32_elems(c->dev->of_node, "lid-switch") != 1 ||
++	    !c->sensor[SSC_FRONT_LIGHT].declared || !c->sensor[SSC_REAR_LIGHT].declared)
++		return -EINVAL;
++	node = of_parse_phandle(c->dev->of_node, "lid-switch", 0);
++	if (!node || !of_device_is_available(node) ||
++	    !of_device_is_compatible(node, "qcom,smp2p-switch") ||
++	    of_property_read_u32(node, "linux,code", &code) || code != SW_LID) {
++		of_node_put(node);
++		return -EINVAL;
++	}
++	iio = devm_iio_device_alloc(c->dev, sizeof(struct ssc_controller *));
++	if (!iio) {
++		of_node_put(node);
++		return -ENOMEM;
++	}
++	d->lid_node = node;
++	ret = devm_add_action_or_reset(c->dev, ssc_dual_put_lid, node);
++	if (ret)
++		return ret;
++	d->iio = iio;
++	*(struct ssc_controller **)iio_priv(iio) = c;
++	d->channel[0] = (struct iio_chan_spec) {
++		.type = IIO_LIGHT, .scan_index = 0, .address = 0,
++		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) | BIT(IIO_CHAN_INFO_SCALE),
++		.scan_type = { .sign = 's', .realbits = 64, .storagebits = 64, .endianness = IIO_CPU },
++	};
++	d->channel[1] = IIO_CHAN_SOFT_TIMESTAMP(1);
++	iio->name = "uke-ssc-dual-light";
++	iio->info = &ssc_dual_info;
++	iio->modes = INDIO_DIRECT_MODE;
++	iio->channels = d->channel;
++	iio->num_channels = 2;
++	iio->available_scan_masks = ssc_scalar_masks;
++	d->lid_handler = (struct input_handler) {
++		.private = c, .name = "uke-ssc-dual-light-lid", .passive_observer = true,
++		.event = ssc_dual_lid_event, .start = ssc_dual_lid_start,
++		.match = ssc_dual_lid_match, .connect = ssc_dual_lid_connect,
++		.disconnect = ssc_dual_lid_disconnect, .id_table = ssc_dual_lid_ids,
++	};
++	return devm_iio_kfifo_buffer_setup(c->dev, iio, &ssc_dual_buffer_ops);
++}
++
+ static int ssc_suspend(struct device *dev)
+ {
+ 	struct ssc_controller *c = dev_get_drvdata(dev);
+@@ -1255,6 +1766,37 @@
+ 	return ret;
+ }
+ 
++/* Probe unwind and remove share one lifetime boundary. Invalidate before
++ * withdrawing input/QMI callbacks; unregister readers outside control and
++ * retain the queue until their buffer-disable callbacks have completed.
++ */
++static void ssc_shutdown(struct ssc_controller *c)
++{
++	unsigned long flags;
++	unsigned int i;
++
++	spin_lock_irqsave(&c->state, flags);
++	c->removed = true;
++	ssc_invalidate_locked(c);
++	spin_unlock_irqrestore(&c->state, flags);
++	if (c->dual.handler_registered) {
++		input_unregister_handler(&c->dual.lid_handler);
++		c->dual.handler_registered = false;
++	}
++	qmi_handle_release(&c->lookup);
++	cancel_work_sync(&c->reconcile);
++	mutex_lock(&c->control);
++	ssc_close_client(c);
++	mutex_unlock(&c->control);
++	/* Never unregister while holding control: a reader may be waiting for it. */
++	if (c->dual.registered)
++		iio_device_unregister(c->dual.iio);
++	for (i = 0; i < SSC_SENSOR_COUNT; i++)
++		if (c->sensor[i].registered)
++			iio_device_unregister(c->sensor[i].iio);
++	destroy_workqueue(c->workqueue);
++}
++
+ static int ssc_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1287,6 +1829,7 @@
+ 	c->dev = dev;
+ 	mutex_init(&c->control);
+ 	spin_lock_init(&c->state);
++	init_completion(&c->dual.sample_done);
+ 	INIT_LIST_HEAD(&c->endpoints);
+ 	INIT_WORK(&c->reconcile, ssc_reconcile);
+ 	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
+@@ -1324,6 +1867,9 @@
+ 		if (ret)
+ 			return ret;
+ 	}
++	ret = ssc_dual_allocate(c);
++	if (ret)
++		return ret;
+ 	c->workqueue = alloc_ordered_workqueue("uke-ssc", WQ_FREEZABLE | WQ_MEM_RECLAIM);
+ 	if (!c->workqueue)
+ 		return -ENOMEM;
+@@ -1331,23 +1877,19 @@
+ 	if (ret)
+ 		goto destroy_workqueue;
+ 	platform_set_drvdata(pdev, c);
++	if (c->dual.iio) {
++		ret = input_register_handler(&c->dual.lid_handler);
++		if (ret)
++			goto release_lookup;
++		c->dual.handler_registered = true;
++	}
+ 	ret = qmi_add_lookup(&c->lookup, SSC_SERVICE, 1, 0);
+ 	if (ret)
+ 		goto release_lookup;
+ 	return 0;
+ release_lookup:
+-	spin_lock_irq(&c->state);
+-	c->removed = true;
+-	ssc_invalidate_locked(c);
+-	spin_unlock_irq(&c->state);
+-	qmi_handle_release(&c->lookup);
+-	cancel_work_sync(&c->reconcile);
+-	mutex_lock(&c->control);
+-	ssc_close_client(c);
+-	mutex_unlock(&c->control);
+-	for (i = 0; i < SSC_SENSOR_COUNT; i++)
+-		if (c->sensor[i].registered)
+-			iio_device_unregister(c->sensor[i].iio);
++	ssc_shutdown(c);
++	return ret;
+ destroy_workqueue:
+ 	destroy_workqueue(c->workqueue);
+ 	return ret;
+@@ -1356,23 +1898,8 @@
+ static void ssc_remove(struct platform_device *pdev)
+ {
+ 	struct ssc_controller *c = platform_get_drvdata(pdev);
+-	unsigned long flags;
+-	unsigned int i;
+ 
+-	spin_lock_irqsave(&c->state, flags);
+-	c->removed = true;
+-	ssc_invalidate_locked(c);
+-	spin_unlock_irqrestore(&c->state, flags);
+-	qmi_handle_release(&c->lookup);
+-	cancel_work_sync(&c->reconcile);
+-	mutex_lock(&c->control);
+-	ssc_close_client(c);
+-	mutex_unlock(&c->control);
+-	/* Never unregister while holding control: a sysfs reader may be waiting for it. */
+-	for (i = 0; i < SSC_SENSOR_COUNT; i++)
+-		if (c->sensor[i].registered)
+-			iio_device_unregister(c->sensor[i].iio);
+-	destroy_workqueue(c->workqueue);
++	ssc_shutdown(c);
+ }
+ 
+ static DEFINE_SIMPLE_DEV_PM_OPS(ssc_pm_ops, ssc_suspend, ssc_resume);

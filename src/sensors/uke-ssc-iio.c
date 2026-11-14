@@ -60,6 +60,8 @@ struct ssc_sensor {
 	struct iio_chan_spec channel[4];
 	struct uke_ssc_suid suid;
 	struct uke_ssc_attributes attributes;
+	struct iio_mount_matrix mount_matrix;
+	bool has_mount_matrix;
 	struct completion metadata_done, sample_done;
 	u64 revision, sample_sequence, ticks;
 	s64 sample[3];
@@ -104,6 +106,10 @@ struct ssc_controller {
 	u16 pending_id;
 	enum uke_ssc_command pending_command;
 	struct ssc_sensor *pending_sensor;
+	/* An on-change indication may precede its enable acknowledgement. */
+	s64 pending_sample[3];
+	u64 pending_ticks, pending_revision;
+	bool pending_sample_valid;
 	bool removed, paused, client_open, client_known, pending, lookup_fault;
 	/* Last discovery failure in this namespace generation; no payload data. */
 	int last_discovery_error;
@@ -287,6 +293,8 @@ static void ssc_invalidate_locked(struct ssc_controller *c)
 	c->generation++;
 	c->last_discovery_error = 0;
 	c->last_discovery_stage = SSC_FAILURE_NONE;
+	c->pending_sample_valid = false;
+	memset(c->pending_sample, 0, sizeof(c->pending_sample));
 	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
 		struct ssc_sensor *s = &c->sensor[i];
 
@@ -359,6 +367,25 @@ static void ssc_client_reset(struct qmi_handle *qmi)
 	spin_unlock_irqrestore(&c->state, flags);
 }
 
+/* The caller holds c->state; values have passed the sensor's exact API decoder. */
+static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[3], u64 ticks)
+{
+	if (!ssc_current(s->controller) || !s->ready || !s->stream_active ||
+	    !ticks || (s->ticks && ticks <= s->ticks))
+		return;
+	s->ticks = ticks;
+	memcpy(s->sample, value, sizeof(s->sample));
+	s->sample_sequence++;
+	s->error = 0;
+	if (s->buffered && s->registered) {
+		s64 scan[4] = {};
+
+		memcpy(scan, value, sizeof(s->sample));
+		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
+	}
+	complete(&s->sample_done);
+}
+
 static void ssc_response(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
 			 struct qmi_txn *txn, const void *decoded)
 {
@@ -383,9 +410,17 @@ static void ssc_response(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
 		c->client_id = response->client;
 		c->client_known = true;
 		if (c->pending_sensor && (c->pending_command == UKE_SSC_STREAM ||
-					 c->pending_command == UKE_SSC_ON_CHANGE))
-			c->pending_sensor->stream_active = true;
+					 c->pending_command == UKE_SSC_ON_CHANGE)) {
+			struct ssc_sensor *s = c->pending_sensor;
+
+			s->stream_active = true;
+			if (c->pending_sample_valid && s->revision == c->pending_revision)
+				ssc_publish_locked(s, c->pending_sample, c->pending_ticks);
+		}
 	}
+	/* A refused acknowledgement must never publish a staged indication. */
+	c->pending_sample_valid = false;
+	memset(c->pending_sample, 0, sizeof(c->pending_sample));
 	spin_unlock_irqrestore(&c->state, flags);
 	/* The QMI helper owns txn->lock while invoking this response handler. */
 	txn->result = ret;
@@ -430,6 +465,7 @@ static int ssc_request(struct ssc_controller *c, struct ssc_sensor *sensor,
 	c->pending_id = txn.id;
 	c->pending_command = command;
 	c->pending_sensor = sensor;
+	c->pending_sample_valid = false;
 	spin_unlock_irqrestore(&c->state, flags);
 	ret = qmi_send_request(&c->client, &c->peer, &txn, SSC_QMI_REQUEST,
 			       UKE_SSC_REQUEST_MAX + 9, ssc_request_ei, &request);
@@ -440,6 +476,8 @@ static int ssc_request(struct ssc_controller *c, struct ssc_sensor *sensor,
 	spin_lock_irqsave(&c->state, flags);
 	c->pending = false;
 	c->pending_sensor = NULL;
+	c->pending_sample_valid = false;
+	memset(c->pending_sample, 0, sizeof(c->pending_sample));
 	if (!ssc_current(c))
 		ret = -ENOTCONN;
 	spin_unlock_irqrestore(&c->state, flags);
@@ -479,7 +517,20 @@ static int ssc_sample_values(struct ssc_sensor *s, const struct uke_ssc_event *e
 	}
 	if (event->message != 1025)
 		return -ENOMSG;
-	ret = uke_ssc_decode_sample(event->payload, d->dimensions, &sample);
+	/* These identified Uke ALS endpoints also report six fields.
+	 * Publish only the first lux field; other channels retain unknown units.
+	 */
+	if (d->kind == SSC_LIGHT &&
+	    ((!strcmp(d->datatype, "ambient_light") &&
+	      !strcmp(s->attributes.name, "stk_stk3bcx")) ||
+	     (!strcmp(d->datatype, "ambient_light_back") &&
+	      !strcmp(s->attributes.name, "sip1328 back ambient")))) {
+		ret = uke_ssc_decode_sample(event->payload, 0, &sample);
+		if (!ret && sample.count != 2 && sample.count != 6)
+			ret = -EBADMSG;
+	} else {
+		ret = uke_ssc_decode_sample(event->payload, d->dimensions, &sample);
+	}
 	if (ret || !sample.status)
 		return ret ? ret : -EAGAIN;
 	/* This API specifies HIGH for valid data and UNRELIABLE while stabilizing. */
@@ -497,8 +548,13 @@ static bool ssc_attributes_usable(const struct ssc_description *description,
 				 const struct uke_ssc_attributes *attributes)
 {
 	bool streaming = description->dimensions == 3 || description->kind == SSC_TEMPERATURE;
+	bool logical_rear = description->kind == SSC_LIGHT &&
+		!strcmp(description->datatype, "ambient_light_back") &&
+		!strcmp(attributes->name, "sip1328 back ambient");
 
-	return attributes->available && attributes->physical && !attributes->hlos_incompatible &&
+	/* The available OEM rear ALS explicitly advertises physical=false. */
+	return attributes->available && (attributes->physical || logical_rear) &&
+	       !attributes->hlos_incompatible &&
 	       attributes->stream_type <= 1 && (attributes->stream_type || ssc_rate(attributes)) &&
 	       (!streaming || !attributes->stream_type);
 }
@@ -580,6 +636,13 @@ static void ssc_report(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
 				}
 				continue;
 			}
+			/* Metadata replacement or a fault invalidates an earlier sample,
+			 * even when a later attributes event makes this sensor ready again.
+			 */
+			if ((event->message == 128 || event->message == 130) && c->pending_sensor == s) {
+				c->pending_sample_valid = false;
+				memset(c->pending_sample, 0, sizeof(c->pending_sample));
+			}
 			if (event->message == 128) {
 				ret = uke_ssc_decode_attributes(event->payload, s->description->datatype,
 							 s->description->api, &attributes);
@@ -611,16 +674,21 @@ static void ssc_report(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
 				ssc_schedule_locked(c);
 				continue;
 			}
-			if (!s->ready || !s->stream_active || !event->ticks ||
+			if (!s->ready || !event->ticks ||
 			    (s->ticks && event->ticks <= s->ticks) || ssc_sample_values(s, event, scan))
 				continue;
-			s->ticks = event->ticks;
-			memcpy(s->sample, scan, sizeof(s->sample));
-			s->sample_sequence++;
-			s->error = 0;
-			if (s->buffered && s->registered)
-				iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
-			complete(&s->sample_done);
+			if (!s->stream_active) {
+				if (c->pending && c->pending_sensor == s &&
+				    (c->pending_command == UKE_SSC_STREAM || c->pending_command == UKE_SSC_ON_CHANGE) &&
+				    (!c->pending_sample_valid || event->ticks > c->pending_ticks)) {
+					memcpy(c->pending_sample, scan, sizeof(c->pending_sample));
+					c->pending_ticks = event->ticks;
+					c->pending_revision = s->revision;
+					c->pending_sample_valid = true;
+				}
+				continue;
+			}
+			ssc_publish_locked(s, scan, event->ticks);
 		}
 	}
 out:
@@ -843,6 +911,8 @@ static void ssc_close_client(struct ssc_controller *c)
 	open = c->client_open;
 	c->client_open = c->client_known = false;
 	c->pending = false;
+	c->pending_sample_valid = false;
+	memset(c->pending_sample, 0, sizeof(c->pending_sample));
 	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
 		struct ssc_sensor *s = &c->sensor[i];
 
@@ -959,6 +1029,50 @@ out:
 	mutex_unlock(&c->control);
 }
 
+static const struct iio_mount_matrix *
+ssc_get_mount_matrix(const struct iio_dev *iio, const struct iio_chan_spec *channel)
+{
+	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+
+	return &s->mount_matrix;
+}
+
+static const struct iio_chan_spec_ext_info ssc_mount_matrix_info[] = {
+	IIO_MOUNT_MATRIX(IIO_SHARED_BY_TYPE, ssc_get_mount_matrix),
+	{},
+};
+
+static int ssc_read_mount_matrix(struct ssc_controller *c, struct ssc_sensor *s,
+				 struct device_node *node)
+{
+	struct iio_mount_matrix matrix;
+	const int elements = ARRAY_SIZE(matrix.rotation);
+	unsigned int i;
+	int ret;
+
+	/* Absence is unknown, rather than an invented identity rotation. */
+	if (!of_find_property(node, "mount-matrix", NULL))
+		return 0;
+	if (s->description->kind != SSC_ACCEL)
+		return -EINVAL;
+	ret = of_property_count_strings(node, "mount-matrix");
+	if (ret != elements)
+		return ret < 0 ? ret : -EINVAL;
+	ret = of_property_read_string_array(node, "mount-matrix", matrix.rotation,
+					  elements);
+	if (ret != elements)
+		return ret < 0 ? ret : -EINVAL;
+	/* Own the strings independently of a dynamically removed firmware node. */
+	for (i = 0; i < ARRAY_SIZE(matrix.rotation); i++) {
+		matrix.rotation[i] = devm_kstrdup(c->dev, matrix.rotation[i], GFP_KERNEL);
+		if (!matrix.rotation[i])
+			return -ENOMEM;
+	}
+	s->mount_matrix = matrix;
+	s->has_mount_matrix = true;
+	return 0;
+}
+
 static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
 {
 	struct iio_dev *iio;
@@ -979,6 +1093,8 @@ static int ssc_allocate_iio(struct ssc_controller *c, struct ssc_sensor *s)
 		if (count == 3) {
 			s->channel[i].modified = 1;
 			s->channel[i].channel2 = axis[i];
+			if (s->has_mount_matrix)
+				s->channel[i].ext_info = ssc_mount_matrix_info;
 		}
 		if (s->description->multiplier != 1)
 			s->channel[i].info_mask_shared_by_type = BIT(IIO_CHAN_INFO_SCALE);
@@ -1090,6 +1206,11 @@ static int ssc_probe(struct platform_device *pdev)
 			if (c->sensor[i].declared) {
 				of_node_put(child);
 				return -EINVAL;
+			}
+			ret = ssc_read_mount_matrix(c, &c->sensor[i], child);
+			if (ret) {
+				of_node_put(child);
+				return ret;
 			}
 			c->sensor[i].declared = true;
 		}

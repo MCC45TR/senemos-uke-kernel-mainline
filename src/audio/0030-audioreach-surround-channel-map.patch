@@ -1,0 +1,36 @@
+From: Uke contributors
+Subject: [PATCH] ASoC: qcom: audioreach: map six and eight PCM channels
+
+The PCM frontend accepts up to eight channels but the default mapping helper
+only populates one, two and four. Add the ALSA standard six/eight channel
+order using AudioReach identities. Keep existing layouts and unknown counts
+unchanged. This does not expand a board's topology or advertise speaker DSP
+virtualization. Four physical speaker outputs and protection remain separate.
+
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -318,6 +318,24 @@ void audioreach_set_default_channel_mapping(u8 *ch_map, int num_channels)
+ 		ch_map[1] =  PCM_CHANNEL_FR;
+ 		ch_map[2] =  PCM_CHANNEL_LS;
+ 		ch_map[3] =  PCM_CHANNEL_RS;
++	} else if (num_channels == 6) {
++		/* ALSA standard: FL, FR, rear pair, FC, LFE. */
++		ch_map[0] = PCM_CHANNEL_FL;
++		ch_map[1] = PCM_CHANNEL_FR;
++		ch_map[2] = PCM_CHANNEL_LS;
++		ch_map[3] = PCM_CHANNEL_RS;
++		ch_map[4] = PCM_CHANNEL_FC;
++		ch_map[5] = PCM_CHANNEL_LFE;
++	} else if (num_channels == 8) {
++		/* ALSA standard: FL, FR, rear pair, FC, LFE, side pair. */
++		ch_map[0] = PCM_CHANNEL_FL;
++		ch_map[1] = PCM_CHANNEL_FR;
++		ch_map[2] = PCM_CHANNEL_LB;
++		ch_map[3] = PCM_CHANNEL_RB;
++		ch_map[4] = PCM_CHANNEL_FC;
++		ch_map[5] = PCM_CHANNEL_LFE;
++		ch_map[6] = PCM_CHANNEL_LS;
++		ch_map[7] = PCM_CHANNEL_RS;
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(audioreach_set_default_channel_mapping);

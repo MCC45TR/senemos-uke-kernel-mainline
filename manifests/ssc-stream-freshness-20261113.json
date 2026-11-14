@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Streaming buffers wait for an actual report; on-change replay and all shared stream ownership retained",
+  "source_check_release": 108,
+  "parent_full_build": 11309609,
+  "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
+  "qualified_camcc_check": null,
+  "driver_before_sha256": "f7c689e893e8696dcf093cf859dbb07dfc6b31b5332ce4108a19be13252efca1",
+  "driver_after_sha256": "f86be00568afe4fa28acb570742f374f0b0283e2f4fe2b73d97b2de777c892d8",
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "device_changed": false,
+  "gravity_frame_admitted": false,
+  "physical_sensor_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "primary_protocol": {
+    "repository": "https://github.com/qualcomm/sensinghub",
+    "revision": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+    "path": "apis/proto/sns_std_sensor.proto",
+    "sha256": "e54b42b2a64fc2866d32904212937c37de350ee3d6d7a865451f4e226436afce"
+  },
+  "source_assets": [
+    {
+      "path": "src/sensors/0019-ssc-streaming-buffer-fresh-sample.patch",
+      "sha256": "a8b1b131408e790ff739f4426a01bce4d62b10d67774cb062ab529f46af6c5a6"
+    },
+    {
+      "path": "src/sensors/apply-stream-freshness733.sh",
+      "sha256": "d7b4faa2d4628cc21cd86c6a7ba24445b53dc3ada16ae2158954a29c30d255df"
+    },
+    {
+      "path": "tests/ssc-stream-freshness.sh",
+      "sha256": "d56da24677431ddce35ee326b88b14e80b2144640d599601f1c80029fc4727db"
+    },
+    {
+      "path": "tests/ssc-stream-freshness.c",
+      "sha256": "9cdd6ae902107adf8652afdcb785ca737de148cede01544b8abc1ca41704dd4a"
+    },
+    {
+      "path": "docs/SSC-STREAM-FRESHNESS.md",
+      "sha256": "9639aa9ad94fedfdb006634cf6499ccd7e1edc94caa2571fab2bfc3d4c2f5e9b"
+    },
+    {
+      "path": "packaging/native/copr-ssc-stream-freshness733-check.sh",
+      "sha256": "795a33125b32330166bdc2d3248c00c727a24042ef4ea0dcee07c45b1e2e817f"
+    },
+    {
+      "path": "packaging/native/prepare-ssc-postimage733.sh",
+      "sha256": "8eab58b373b131b9a3e621c6131b4624cd86629c689dcbfebcf17ea9e1b749b9"
+    },
+    {
+      "path": "tests/ssc-quaternion-buffer.c",
+      "sha256": "8612847532d94072cd19de0008f4c5d0f4a210dfcadbdcfe29cf6988c5cd0591"
+    }
+  ],
+  "previous_camcc_attempt": 11318457,
+  "complete_camcc_closure_in_same_check": true,
+  "late_source_assembly": {
+    "before": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd",
+    "after": "f7c689e893e8696dcf093cf859dbb07dfc6b31b5332ce4108a19be13252efca1",
+    "source_patches": 15,
+    "protocol_retained": true,
+    "makefile_retained": true,
+    "full_delivery_must_apply_after_proximity_abi": true
+  },
+  "source_generation_failure": 11318537,
+  "previous_native_attempt": {
+    "build": 11318571,
+    "release": 107,
+    "state": "failed",
+    "elapsed_seconds": 342,
+    "actual_provider_and_forced_adapter_aarch64_passed": true,
+    "all_new_ssc_callback_modes_passed": 4,
+    "old_cache_regressions_refused": 2,
+    "cause": "Retained pre-heading quaternion fixture lacked final heading fanout boundary",
+    "production_code_unchanged": true
+  },
+  "legacy_quaternion_fixture_before_sha256": "a594dc18e3a45981d4f0d29e462541c4ac7ccbbddac9980de145f6070611c72c",
+  "legacy_quaternion_fixture_after_sha256": "8612847532d94072cd19de0008f4c5d0f4a210dfcadbdcfe29cf6988c5cd0591"
+}

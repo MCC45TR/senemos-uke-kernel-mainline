@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Source-only actual native dual-light IIO and passive Hall lifecycle; no full image, on-device test, binding acceptance or provider retirement",
+  "parent_full_build": 11285130,
+  "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+  "parent_source_check": 11286027,
+  "parent_source_commit": "a09734eba4e391998a0b200779f1536ca066b862",
+  "source_check_release": 34,
+  "proposed_full_release": 6,
+  "full_release_reserved": false,
+  "full_build_refused_until_complete_qualification": true,
+  "driver_before_sha256": "eb85f8b56aac951d47208e9b0e7ace6c3a6a0da1ad93f61373b4a1d7e0abd0f6",
+  "driver_after_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
+  "native_header_before_sha256": "98ef66222134bd061b185ccc4b38a5c271621057f13049ba49a2e017cdbf08f5",
+  "native_header_after_sha256": "ef78116a822b38cc7a68226c44a3dac01c4ae0a6d88ebc2e7110b5e79da8d1fd",
+  "binding_before_sha256": "6ac44534fd8510a2d7e58d0b8652110212f5163ee3ca06f18b7f06b1509876bc",
+  "source_refs": [
+    "manifests/dual-light-events-20261108.json",
+    "manifests/ssc-stream-owners-20261108.json"
+  ],
+  "input_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "files": [
+      {
+        "path": "drivers/input/input.c",
+        "blob": "01c91fec9b7eba92835855b4531ddfafe78990c4"
+      },
+      {
+        "path": "include/linux/input.h",
+        "blob": "3381608127f72d30040915e19873fc91d7315687"
+      }
+    ],
+    "license": "GPL-2.0 / original upstream file notices",
+    "compatibility": "API and managed-parent comparison only; not board or physical acceptance"
+  },
+  "payload_assets": [
+    "src/boot/uke-dual-light.h",
+    "src/sensors/0005-ssc-dual-light-endpoint.patch",
+    "src/sensors/0006-ssc-dual-light-native-dt.patch",
+    "src/sensors/0007-ssc-dual-light-binding.patch",
+    "src/sensors/0008-ssc-dual-light-input-dependency.patch",
+    "tests/ssc-dual-light-dt.cpp",
+    "tests/ssc-dual-light-endpoint-host.h",
+    "tests/ssc-dual-light-endpoint.c",
+    "tests/ssc-dual-light-endpoint.sh",
+    "packaging/native/check-dual-light-endpoint733.sh",
+    "packaging/native/copr-dual-light-endpoint733.sh",
+    "docs/DUAL-LIGHT-ENDPOINT.md",
+    "tests/ssc-dual-light-schema.cpp",
+    "tests/ssc-dual-light-schema.sh",
+    "packaging/native/check-dual-light-binding733.sh",
+    "src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch"
+  ],
+  "source_assets": [
+    {
+      "path": "src/boot/uke-dual-light.h",
+      "sha256": "eba2a9ebf2fdbb0f2f375a77f1f2076fd6a5ee583f23bb511247e0d1a57d9cf7"
+    },
+    {
+      "path": "src/sensors/0005-ssc-dual-light-endpoint.patch",
+      "sha256": "ae611d4753f7179886e1c33ec04779fb4a5ebcd5d1a51096aea2c60f5463a494"
+    },
+    {
+      "path": "src/sensors/0006-ssc-dual-light-native-dt.patch",
+      "sha256": "4ffc32a0ad6bfa06dffa9f31f59fbcaae54a987e354b91f00ab921372acb915e"
+    },
+    {
+      "path": "src/sensors/0007-ssc-dual-light-binding.patch",
+      "sha256": "33941c7cdec500a42fc1d1c7d9ffb79281402b96340e31acc9f966b9243e5bcf"
+    },
+    {
+      "path": "src/sensors/0008-ssc-dual-light-input-dependency.patch",
+      "sha256": "8d8b47eaef0bdb1cbfb32b92d1609dd48e879ca439b45f1afaf2dc4c970a33aa"
+    },
+    {
+      "path": "tests/ssc-dual-light-dt.cpp",
+      "sha256": "0ebe7555ed8268758d7ce65e20d1f469d9c5a6aa8fa6a7fd3335a968a0f78ca1"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint-host.h",
+      "sha256": "a28cf4c50e9256d2d732978f6a0d9b64b6bd02fe422dc53c024e34f4237cbd1e"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint.c",
+      "sha256": "b8b02f08058a621411b43e953aad5b1653da05c8e7444de12018be820e85846c"
+    },
+    {
+      "path": "tests/ssc-dual-light-endpoint.sh",
+      "sha256": "2c4e5378a6017a93134d3b70622944838a76f8053626179967b749bfff18296b"
+    },
+    {
+      "path": "packaging/native/check-dual-light-endpoint733.sh",
+      "sha256": "de5c2b3055bc8b4ae2b35419d8ae17580a051096006eb9bf56181b8c78463061"
+    },
+    {
+      "path": "packaging/native/copr-dual-light-endpoint733.sh",
+      "sha256": "01dec8cb33f80981ee34cdf28fa48f035f402bdeee17071200638898d928e6c5"
+    },
+    {
+      "path": "docs/DUAL-LIGHT-ENDPOINT.md",
+      "sha256": "ba2f46e5ed60b43cd4436f7bb460d283a95c39ef98a4e117c7c747385ac38eb4"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
+    },
+    {
+      "path": "manifests/ssc-stream-owners-20261108.json",
+      "sha256": "81a200b25203a3b214bebe2ddaba2cd74f829bfe9c0fe86e7fd671f94db5831a"
+    },
+    {
+      "path": "tests/ssc-dual-light-schema.cpp",
+      "sha256": "04ef0fbdfba17422fd89254ec9ac6bf5cd43ba2d5e04e4ebcaaf3be6a2235837"
+    },
+    {
+      "path": "tests/ssc-dual-light-schema.sh",
+      "sha256": "7dea2b3f789e6c6e6e23c0300e62745040ac398d451784db1152e0daeb015e18"
+    },
+    {
+      "path": "packaging/native/check-dual-light-binding733.sh",
+      "sha256": "0323ad4f8d27dc1ddf51cdf85612f8e6f8c43728aab3772d5798d249ec0dde5b"
+    },
+    {
+      "path": "src/sensors/0009-ssc-mount-matrix-nonunique-binding.patch",
+      "sha256": "e4667113de6fe0ef51b45a091010a0b4cbc4d3f6fc57074887fe6eb26afb2450"
+    }
+  ],
+  "acceptance": {
+    "actual_endpoint_callbacks_four_modes_required": true,
+    "twelve_compiled_behavioral_mutants_required": true,
+    "four_libfdt_modes_required": true,
+    "original_qmi_assertions_unchanged": true,
+    "whole_driver_inverse_required": true,
+    "actual_aarch64_ssc_and_early_dt_required": true,
+    "canonical_config_release_uts_required": true,
+    "binding_qualified": false,
+    "installed_on_target": false,
+    "original_proxy_event_and_64bit_light_parity": false,
+    "physical_cover_light_power": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223,
+    "actual_callback_assertions_per_mode": 421,
+    "libfdt_checks_per_mode": 20
+  },
+  "previous_source29": {
+    "source": "d32556c38274587daab499b5c89bd7eee1cad86c",
+    "copr_build": 11286049,
+    "state": "failed",
+    "duration_seconds": 425,
+    "actual_gcc_normal_assertions": 421,
+    "compiled_mutant_refusals": 6,
+    "stage": "First C++ DT fixture rejects three implicit const-void pointer conversions",
+    "qualified_scope": "Only one callback mode and six mutants; no DT/four-mode/ARM64 endpoint admission",
+    "correction": "Explicit C/C++ compatible pointer casts, unchanged admission logic/warnings; redundant already-typed timestamp initializer cast removed after pinned IIO header review"
+  },
+  "previous_source30": {
+    "source": "f71cfb7f2c7461c281d2b4f864164ab6d01a6436",
+    "copr_build": 11286135,
+    "state": "failed",
+    "duration_seconds": 466,
+    "actual_callback_modes": 4,
+    "actual_assertions_per_mode": 421,
+    "compiled_mutant_refusals": 12,
+    "actual_dt_modes": 4,
+    "actual_dt_checks_per_mode": 20,
+    "stage": "Original QMI encoder replay: appended input_handler shim outside base include guard is redefined by repeated headers",
+    "qualified_scope": "Four callback/DT modes only; no postimage QMI replay, signed receipt or actual ARM64 endpoint qualification",
+    "correction": "Guard the appended host-only declarations; original QMI assertions, production driver and warning/sanitizer settings unchanged"
+  },
+  "binding_validation": {
+    "tool_package": "dt-schema",
+    "version_release": "2026.09-1.fc46",
+    "purpose": "Existing COPR-only upstream Python schema build tool; no target dependency or payload",
+    "real_board_metadata_and_link_producers": true,
+    "compiler_sanitizer_modes": 4,
+    "positive_synthetic_dtbs": 8,
+    "negative_schema_controls": 7,
+    "runtime_board_dtbs_check": false,
+    "physical_acceptance": false,
+    "original_unique_matrix_refusal_required": true,
+    "mount_matrix_coefficients_and_cardinality_unchanged": true,
+    "schema_type_reference": {
+      "repository": "devicetree-org/dt-schema",
+      "commit": "5687115902ba74c1cd80bdab4772cc2cdfa75778",
+      "path": "dtschema/schemas/types.yaml",
+      "blob": "eb5f2f879317ecabaa44846366c4d4540d539a98",
+      "license": "BSD-2-Clause",
+      "type": "non-unique-string-array"
+    }
+  },
+  "registration_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "path": "include/linux/iio/iio.h",
+    "blob": "711c00f67371356c913ef0dbf2325e3f4d35266d",
+    "source_macro": "iio_device_register",
+    "required_elf_symbol": "__iio_device_register"
+  },
+  "previous_source31": {
+    "source": "06262f6543721f203986d409d4f35f6d8716b137",
+    "copr_build": 11286171,
+    "state": "failed",
+    "duration_seconds": 578,
+    "callback_modes": 4,
+    "callback_assertions_per_mode": 421,
+    "compiled_mutant_refusals": 12,
+    "dt_modes": 4,
+    "dt_checks_per_mode": 20,
+    "original_postimage_qmi_assertions_passed": true,
+    "real_arm64_driver_composite_early_dt_compiled": true,
+    "config_release_uts_and_aarch64_elf_checks_passed": true,
+    "stage": "Final undefined-symbol check after successful compilation/ELF checks; criterion incorrectly uses IIO macro spelling",
+    "complete_native_admission": false,
+    "receipt_admitted": false,
+    "final_native_log_sha256": "8496ac7a5e74e4d1123c372d79a9bcf9037ff8536cb5c4fb5b5249930ada7286"
+  },
+  "previous_source32": {
+    "source": "d1ddc4b77858989cee6e32f9ca5d2cd38ce5799d",
+    "copr_build": 11286205,
+    "state": "failed",
+    "duration_seconds": 489,
+    "callback_modes": 4,
+    "callback_assertions_per_mode": 421,
+    "dt_modes": 4,
+    "dt_checks_per_mode": 20,
+    "original_postimage_qmi_assertions_passed": true,
+    "actual_schema_cxx_emitter_ran_once": true,
+    "schema_failure_diagnostics_not_preserved": true,
+    "schema_root_cause": "unknown; validation/diagnostic/permission step not yet isolated",
+    "complete_binding_qualified": false,
+    "actual_source32_arm64_gate_not_reached": true,
+    "final_native_log_sha256": "f18ec269202f2574c51310d90cafdba9162c99225309ac80630941dafa1a2ee8"
+  },
+  "previous_source33": {
+    "source": "05041259b6edc7e36265c1b9ef120f85e4602311",
+    "copr_build": 11286215,
+    "state": "failed",
+    "duration_seconds": 229,
+    "first_schema_emitter_compiled_and_ran": true,
+    "diagnostic": "accelerometer:mount-matrix has non-unique elements; valid positional zero/one repetitions rejected by old string-array type",
+    "complete_binding_qualified": false,
+    "all_later_cumulative_gates_not_reached": true,
+    "final_native_log_sha256": "2fa11accea9693b81a221e6ca4f8330648d551a5ea5b5bfe8a385e790379f72a"
+  }
+}

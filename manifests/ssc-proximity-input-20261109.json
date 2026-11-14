@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "Additive native SSC proximity and authenticated cumulative full delivery; physical acceptance separate",
+  "parent_source": "98b48c4cb6902411cc0077efac75c989ae9a46c0",
+  "parent_source_check": 11288316,
+  "parent_full_build": 11289655,
+  "source_check_release": 52,
+  "full_recipe_prepared": true,
+  "full_release_reserved": false,
+  "driver_before_sha256": "f421217011dc17bcea053cba618ec8269b3584538fbc67cd3771722017f93871",
+  "driver_after_sha256": "3ee32c5c3a0e704d0f9864546393855093e245940c8fd20d7371663962307e15",
+  "payload_assets": [
+    "src/sensors/0010-ssc-proximity-input.patch",
+    "src/sensors/uke-ssc-proximity-input.h",
+    "src/sensors/apply-proximity-input733.sh",
+    "tests/ssc-proximity-input-host.h",
+    "tests/ssc-proximity-input.c",
+    "tests/ssc-proximity-input.sh",
+    "packaging/native/check-proximity-input733.sh",
+    "docs/SSC-PROXIMITY-INPUT.md",
+    "packaging/native/proximity-legacy-view733.sh",
+    "packaging/native/rewrite-proximity-full-spec733.sh",
+    "packaging/native/stage-proximity-input733.sh",
+    "tests/proximity-delivery-spec.sh",
+    "tests/proximity-delivery-source.sh",
+    "packaging/native/dual-light-legacy-view733.sh",
+    "packaging/native/check-dual-light-delivery733.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0010-ssc-proximity-input.patch",
+      "sha256": "717336c8918e410d405ea31856dd82a58bc6a5e324d991fca8970bf4efda7550"
+    },
+    {
+      "path": "src/sensors/uke-ssc-proximity-input.h",
+      "sha256": "3829db9315e666a4997aa36b688d09fa0dfc638c719a6249bf71a708240d939d"
+    },
+    {
+      "path": "src/sensors/apply-proximity-input733.sh",
+      "sha256": "cbce0b337ad741e4580cf3deb13afccfa6b5fb40c1d9ff21e880d14f97699ef4"
+    },
+    {
+      "path": "tests/ssc-proximity-input-host.h",
+      "sha256": "ae8a7fef0b7eb4ab1df75208e8b88eff80185a62361012fedb2917a51bef3b52"
+    },
+    {
+      "path": "tests/ssc-proximity-input.c",
+      "sha256": "ae5e72b58dbb68785a318bdabc3a626e648f78ac296c7dcb724023547c0ca552"
+    },
+    {
+      "path": "tests/ssc-proximity-input.sh",
+      "sha256": "1045c86af7094b9d9f2a2a0dcf22991a87a6d403dffe995f3f52c186c76695f4"
+    },
+    {
+      "path": "packaging/native/check-proximity-input733.sh",
+      "sha256": "bc3a265ee4bff25158c0005777c872f9b766866ae1a137f0583e9d687eee724d"
+    },
+    {
+      "path": "docs/SSC-PROXIMITY-INPUT.md",
+      "sha256": "5704a54c63be82abd6c990435bcec2c17e6cfe2830dbc4cb55e5afa1db4be517"
+    },
+    {
+      "path": "packaging/native/copr-proximity-input733.sh",
+      "sha256": "37ae2c2e912e4c11b688a146cf77d63a17052357642864948eeb6e3cf9b71a90"
+    },
+    {
+      "path": "packaging/native/copr-speaker-quad733.sh",
+      "sha256": "34f5afdf398c394f8b3e73a62655d3c5cc46e38af26a83e800fa36afd8b42903"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
+    },
+    {
+      "path": "manifests/speaker-quad-20261108.json",
+      "sha256": "20f33737f9c58573f26262bd411b1658544bd0392e9799ccac70e4155b012425"
+    },
+    {
+      "path": "packaging/native/proximity-legacy-view733.sh",
+      "sha256": "256a6c9e4896ecd58053dd456023ac4c2066c5161e8c305c83a5023b2bea6097"
+    },
+    {
+      "path": "packaging/native/rewrite-proximity-full-spec733.sh",
+      "sha256": "05a85f59ee8b1f61b9186fcfe78fc5b8597a5cac4b705ab58a9ff6edabc4dc0b"
+    },
+    {
+      "path": "packaging/native/stage-proximity-input733.sh",
+      "sha256": "ca12fc1926d109ab073431784097252a7c970fa0efe274cf950c19d105f7f22e"
+    },
+    {
+      "path": "tests/proximity-delivery-spec.sh",
+      "sha256": "9618c5ae277a98e93685cd90178e4cf22a36a7c0679094c26ce68e8f84c72671"
+    },
+    {
+      "path": "tests/proximity-delivery-source.sh",
+      "sha256": "70a4dee28b231728c5ed6987b27b3cbc3834dfa8591745a30c064cd3f3c527ba"
+    },
+    {
+      "path": "packaging/native/dual-light-legacy-view733.sh",
+      "sha256": "1c0f382ded0608144007ff4fca8fa95dc2e9ddf3a0318f28a010db82834fec85"
+    },
+    {
+      "path": "packaging/native/check-dual-light-delivery733.sh",
+      "sha256": "2b09ffbf01debe5a5537a6884e880aebce7800699c1cb56f51c54acdcb3b5a8b"
+    }
+  ],
+  "acceptance": {
+    "actual_callbacks_required": true,
+    "compiler_modes": [
+      "gcc",
+      "gcc-asan-ubsan",
+      "clang",
+      "clang-asan-ubsan"
+    ],
+    "pinned_input_abi_required": true,
+    "whole_driver_inverse_required": true,
+    "actual_aarch64_composite_required": true,
+    "physical_initial_state": false,
+    "physical_restart_suspend": false,
+    "original_sensor_proxy_parity": false,
+    "provider_retirement": false,
+    "new_runtime_packages": 0,
+    "new_timers": 0,
+    "raw_iio_and_calibration_unchanged": true,
+    "gain_ceiling": 223,
+    "authenticated_legacy_inverse_required": true,
+    "full_spec_whole_text_inverse_required": true,
+    "actual_linked_ssc_module_required": true,
+    "full_recipe_native_qualified": false,
+    "outer_git_context_required": true
+  },
+  "consumer_reference": {
+    "fedora_nevra": "iio-sensor-proxy-3.9-3.fc45.aarch64",
+    "archive_sha256": "19a4ae99b1b8af603fc789841025f9747bf445418d69ec7389e75adb6c8186bf",
+    "path": "src/drv-input-proximity.c",
+    "license": "GPL-3.0-only in the input file; reviewed contract only, no implementation copied"
+  },
+  "protocol_reference": {
+    "repository": "https://android.googlesource.com/platform/system/chre",
+    "commit": "d020c8b148343e39140397e5a38e1431307fadd2",
+    "path": "platform/slpi/see/see_helper.cc",
+    "blob": "d2c83342a7c0c7b3de48fb117e9ba9047c5ffb81",
+    "license": "Apache-2.0; AOSP; comparison only"
+  }
+}

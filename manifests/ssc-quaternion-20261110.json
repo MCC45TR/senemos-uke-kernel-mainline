@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "source_check_release": 79,
+  "parent_full_build": 11297525,
+  "parent_source": "909b7eb39cb97fc164964b4cb92bc1dc1da7b48c",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11297525/senemos-uke-linux-kernel-mainline-unstable-7.3.3-14.src.rpm",
+  "parent_srpm_sha256": "b267d0e9e602a9704d771accba5c6a2a637e9c5618cd8f323d3ce2991b0c0f57",
+  "parent_spec_sha256": "da12f1a3ab320cff75c80e7476062b730d9b6c69af81e5a05a2ee81a71c984ba",
+  "source_units": [
+    {
+      "path": "drivers/iio/common/uke-ssc/uke-ssc-iio.c",
+      "before_sha256": "c5cc05ccc22656c913dd98c735e4bb52cb9ab9f8b0e84bd48ad2d43f25c47e63",
+      "after_sha256": "41c849c85df2ff2715b03206202746758b48a8c815c9e048d2ca844f10193469"
+    },
+    {
+      "path": "arch/arm64/kernel/uke-hardware.h",
+      "before_sha256": "e38adf8816c79f8692fcd05f792963b92f24f992049ce54d639045644d20e12c",
+      "after_sha256": "a11db689620964850205080dadcac1031a88a1c3bc9ebf4529d6739bff53507c"
+    },
+    {
+      "path": "Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml",
+      "before_sha256": "9af3674e55ab78ad52c03c735d4ebb48597c699aaed7708e625a8585b446cd33",
+      "after_sha256": "34f2f07448ea6e726382f08b28b147a047a9185fa269ea313589487c1eb080db"
+    },
+    {
+      "path": "Documentation/ABI/testing/sysfs-driver-uke-ssc",
+      "before_sha256": "5361e29aec7ce907e1552297e1bb0e508fd3f93ac998fb449d8c712eef1bd323",
+      "after_sha256": "9f1b0282f01302e443265b638b36634d5dc8fa904f14d4d27fa044250eead00e"
+    }
+  ],
+  "datatypes": [
+    "rotv",
+    "game_rv",
+    "geomag_rv"
+  ],
+  "components": [
+    "x",
+    "y",
+    "z",
+    "w"
+  ],
+  "unit": "dimensionless",
+  "scale": "0.000001",
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "heading_parity": false,
+  "protected_gain": 223,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "old_runtime_providers_retired": false,
+  "primary_protocol": {
+    "repository": "https://github.com/qualcomm/sensinghub",
+    "commit": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+    "license": "BSD-3-Clause-Clear",
+    "files": [
+      {
+        "path": "apis/proto/sns_rotv.proto",
+        "sha256": "68e3f73d218f3f2db4c594ff18451430a0fcda340e3d79ef9bb31a25fb604ae4"
+      },
+      {
+        "path": "apis/proto/sns_game_rv.proto",
+        "sha256": "db0f32abab396619187adc7bcd8608227c69b7652a3c8722f0ed1fddb9938608"
+      },
+      {
+        "path": "apis/proto/sns_geomag_rv.proto",
+        "sha256": "8d235ba445a7e21dcbcc244e7a3bcdb2b7dbeb229181e51e172ecd48684f8fba"
+      }
+    ]
+  },
+  "primary_iio": {
+    "repository": "https://github.com/torvalds/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "license": "GPL-2.0",
+    "files": [
+      {
+        "path": "include/linux/iio/iio.h",
+        "sha256": "67b733bb6ecb54a0241d75c8c58d10d06eb92369f9e4efb95163120e367754c5"
+      },
+      {
+        "path": "drivers/iio/industrialio-core.c",
+        "sha256": "ffd4c134d69436d4168927a2959cb10c5491d59f54bf57d34b85489ac7a171a5"
+      },
+      {
+        "path": "Documentation/ABI/testing/sysfs-bus-iio",
+        "sha256": "5cca29b4ff3aec9b328c04724ce6243b07bc161f2382e69cf89826faeeb2ae12"
+      },
+      {
+        "path": "drivers/iio/imu/bno055/bno055.c",
+        "sha256": "fcb96fc6d5e69fbfcc07c41401ace06478ced654fc1f1ea4831d28803ba9f970"
+      }
+    ]
+  },
+  "payload_assets": [
+    "src/sensors/0014-ssc-quaternion-input.patch",
+    "src/sensors/0015-ssc-quaternion-native-dt.patch",
+    "src/sensors/apply-quaternion733.sh",
+    "tests/ssc-quaternion.c",
+    "tests/ssc-quaternion.sh",
+    "packaging/native/check-quaternion733.sh",
+    "docs/SSC-QUATERNION.md",
+    "manifests/ssc-quaternion-20261110.json",
+    "packaging/native/preflight-quaternion733.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0014-ssc-quaternion-input.patch",
+      "sha256": "df9e2487f22474eaeb5565065acd9d46a2bfaa82223a11ea656ef561c74463b3"
+    },
+    {
+      "path": "src/sensors/0015-ssc-quaternion-native-dt.patch",
+      "sha256": "d2bc4f03490b49945093fec6e5b383c95a34d54785ba327d7762f698b42db4da"
+    },
+    {
+      "path": "src/sensors/apply-quaternion733.sh",
+      "sha256": "548709e2fbc6bc9b9f70135ca6525ff16ea4c2e07043bd725ca252dda3c60b44"
+    },
+    {
+      "path": "tests/ssc-quaternion.c",
+      "sha256": "8590acea8fa815db4fe13f5ebfaf1a338d7d666a68c609f0b87d134ff84d7bd6"
+    },
+    {
+      "path": "tests/ssc-quaternion.sh",
+      "sha256": "28af80210d32801dfe95b524cfffa7c353fa3b46570573c8034aff64f3aa263c"
+    },
+    {
+      "path": "packaging/native/check-quaternion733.sh",
+      "sha256": "d247f52cc6154a543c67fdb40a194991416937f096ed744a8d0bf865df28d23c"
+    },
+    {
+      "path": "docs/SSC-QUATERNION.md",
+      "sha256": "ba4064b672b133e3a8b242c0862f338e84a1ef8cd349350e62c4d1702ea6c471"
+    },
+    {
+      "path": "packaging/native/copr-quaternion733.sh",
+      "sha256": "4d920696eba0954261a34289332edd9854a72d9fa3e8fc33737cc27ea9026f20"
+    },
+    {
+      "path": "packaging/native/preflight-quaternion733.sh",
+      "sha256": "20b843d5f2a8c189f16c767c7ebed31b67cb4c2c363d128096f41e1bffe1e0c6"
+    }
+  ]
+}

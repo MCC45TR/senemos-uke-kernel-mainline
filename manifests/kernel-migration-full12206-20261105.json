@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "implementation_source": "424caffa1313639827d8a5c523a2b3dd7d01f37a",
+  "source_check": {
+    "copr_build": 11267282,
+    "state": "succeeded",
+    "duration_seconds": 457,
+    "rpm_sha256": "7d0e7388ac4cc6b4ff550dca348ce4605ad569601eabf7ff39d87d3b1fd7c19b",
+    "actual_boot_config_branch": true,
+    "historical_omission_and_unrelated_mutation_refused": true
+  },
+  "full_build": {
+    "copr_build": 11267328,
+    "state": "succeeded",
+    "duration_seconds": 1753,
+    "kernel_release": "7.3.1-12206-unstable",
+    "package_family": "senemos-uke-linux-kernel-mainline-unstable",
+    "verified_module_signatures": 827,
+    "tampered_unsigned_wrong_key_refused": true,
+    "source_rpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11267328/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12206.src.rpm",
+    "source_rpm_sha256": "c83d55bf40dbf34be441a5500027007ac5ed9e6389a64151b95b4db22c944ac2",
+    "final_log_sha256": "a08d5ef83ba09494e91a71283d75cb0b9e526587c2e5f4428ea1beb48dddd12a"
+  },
+  "signed_rpms": [
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "082b5c4be1ce5067c302dcebb3f021b33eceffff06d6589f04e5608e070612e7"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-core-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "b0c0b53c9f65efb7eba89c4b6f9292bedaf733445d5354f408e5c3a3052b41da"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-modules-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "ed1dd36be3c4b40fa8ca3430b9d75d8ff0aa893da546a4ed7979f0258ad288f3"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-dtbs-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "3799324d92064ce62cc39e721ede546e53269224313ab47a5b8f9f81c6acc44a"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-boot-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "374d948897bb1e2cd3ad4042bcc262dc01d462ab239fd6717c2a45df551395fe"
+    },
+    {
+      "file": "senemos-uke-linux-kernel-mainline-unstable-singleboot-7.3.1-12206.fc46.aarch64.rpm",
+      "sha256": "c9bc651f5cdaf9308229637e0ac0820cc13138bf37c112527835743f151b263f"
+    }
+  ],
+  "immutable_headers": {
+    "senemos-uke-linux-kernel-mainline-unstable": "7270ef5708fc0cb1fb0f98f9d1b20245d24c5dec05dc72254d8303cf4713d14a",
+    "senemos-uke-linux-kernel-mainline-unstable-core": "9bb1dafb808ff51bf9cb3fc7eb99a0a6a2aa6cc120cd24d6e2a5d2743a2e2e03",
+    "senemos-uke-linux-kernel-mainline-unstable-modules": "b49d6e651bb4759d2eccbc17a4f0e21e06c0585b9907762d0966798f0b268f22",
+    "senemos-uke-linux-kernel-mainline-unstable-dtbs": "4a6b5d84f7401e54ffcccdc10a06c785f346614f6a70bf21a7e9ff233fba7229",
+    "senemos-uke-linux-kernel-mainline-unstable-boot": "872c4249017acd1fb44d8db29346fe7df5f426bd65d95fa105900bb3a711a6ef",
+    "senemos-uke-linux-kernel-mainline-unstable-singleboot": "c1bb50903995611173eeeda14132becf3714ca7abd9fa9d9dfa91602360e16f4"
+  },
+  "signing_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "delivery": {
+    "channel": "uke-linux-unstable",
+    "native_dnf": true,
+    "exact_signed_headers_and_rpm_verify": true,
+    "full_candidate_a_verified": true,
+    "prior12204_bundle_retained": true,
+    "raw_b_and_three_persistent_policies_preserved": true,
+    "automatic_staging_enabled": true,
+    "local_rollback_preference_preserved": true,
+    "observed_running_before_reboot": "7.3.1-12204-unstable",
+    "matching_boot_pending": true,
+    "closed_cover_observer_enabled": true
+  },
+  "admission": {
+    "speaker_gain_ceiling": 223,
+    "speaker_physical_protection_qualified": false,
+    "camera_crm_runtime_guard_retained": true,
+    "both_complete_calibrated_cameras_and_rear_focus_qualified": false,
+    "hdr_dma_activation": false,
+    "stable_promotion": false,
+    "userspace_package_retirement": false,
+    "physical_acceptance": false
+  },
+  "next_full_baseline": "Use this complete12206 SRPM plus every later qualified handoff; historical12204 constructor is restricted to full12206."
+}

@@ -14,9 +14,11 @@
 #include "provider/camcc-sm7675-owner.h"
 #include "provider/camcc-sm7675-crm-pm.h"
 #include "provider/camcc-sm7675-crm-guard.h"
+#include "provider/camcc-sm7675-crmc-resource.h"
 #include "provider/camcc-sm7675-clocks.h"
 #include "provider/camcc-sm7675-handoff.h"
 #include "provider/camcc-sm7675-crm-ccf.h"
+#include "provider/camcc-sm7675-crm-passive.h"
 #include "provider/camcc-sm7675-registration.h"
 
 static ssize_t controller_state_show(struct device *dev,

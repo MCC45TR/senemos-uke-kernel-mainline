@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11304282,
+  "parent_config_sha256": "431c839cba7c69f6c8128f67ab180ea3586b6dbc771e532adc13c91bde0e9c33",
+  "fragment": "configs/storage-encryption733.config",
+  "fragment_sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086",
+  "native_proof": {
+    "build": 11303293,
+    "source_commit": "7abb0f794df5538759c6bee2608aa1aa5e6a19d7",
+    "receipt_sha256": "6ac564ec1795665ad1a839a8d531543a3f9e6e3faef176ba106853bc82d334ac"
+  },
+  "changes": [
+    [
+      "CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_CRYPTO_ESSIV",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_CRYPTO_XTS",
+      "m",
+      "y"
+    ],
+    [
+      "CONFIG_DM_CRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_DM_INLINECRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_ALGS",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_INLINE_CRYPT",
+      "n",
+      "y"
+    ]
+  ],
+  "full_kernel_reserved": false,
+  "resolved_reference_profiles_qualified": false,
+  "encrypted_io_accepted": false,
+  "volume_or_key_operations": false,
+  "seed_config_sha256": "3c106bfa71c99f350aa9e30b8b16d7b8271dfbd75f75146afa4a20a5e264c2ab",
+  "source_assets": [
+    {
+      "path": "packaging/native/prepare-storage-config733.mjs",
+      "sha256": "b6bd863312090259205ef526b8f44536e8378828d3e65f89309e5c7473cc549e"
+    },
+    {
+      "path": "configs/storage-encryption733.config",
+      "sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086"
+    },
+    {
+      "path": "docs/STORAGE-CONFIG-INTEGRATION.md",
+      "sha256": "6b7b56a3c142fe6c3eb5f079955530309df7ee12da5b973916128665f703eeab"
+    }
+  ]
+}
