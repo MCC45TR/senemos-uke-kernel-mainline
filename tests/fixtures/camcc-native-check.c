@@ -698,6 +698,21 @@ static void bootstrap_order_control(void)
 #endif
 }
 
+static void crm_passive_handoff(void)
+{
+	defaults(false);
+	assert(!cam_cc_clocks_init());
+	for (unsigned i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++)
+		cam_cc_clock_state[i].crm_passive = true;
+	int old_steps = steps;
+	assert(!cam_cc_native_plls_configure());
+	assert(!configured_plls && steps == old_steps);
+	assert(!cam_cc_native_handoff_init() && steps == old_steps);
+	for (unsigned i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++)
+		assert(!cam_cc_clock_state[i].disable_check && !cam_cc_native.boot_rcg_on[i]);
+	puts("Actual CRM passive handoff: both PLL programming passes and native boot-hold/disable paths excluded without MMIO");
+}
+
 int main(void)
 {
 #ifdef CAMCC_GATE_ORDER_BEFORE
@@ -705,6 +720,7 @@ int main(void)
 #else
 	normal_lifecycle(); probe_failures(); probe_observations(); reset_and_lookup(); disable_postconditions(); handoff_failures();
 	bootstrap_order_control();
+	crm_passive_handoff();
 #endif
 	return 0;
 }
