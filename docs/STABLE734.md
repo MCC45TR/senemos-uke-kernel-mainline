@@ -44,6 +44,15 @@ All122 adaptation patches apply to the signed7.3.4 source in a small PC text
 rehearsal, without compiling. Complete preparation and native object results
 remain separate COPR gates.
 
+Check3/11331386 passes all122 adaptations and the retained early behavioral
+controls, then refuses the old DSI whole-file seal. The stable release adds
+`drm_gpuvm_put()` and clears its pointer on TX allocation failure. A small
+source rehearsal applies the exact retained DSI display stack, reverses only
+those two signed upstream statements and recovers the complete original
+retirement60 SHA256. The updated734 seal is868b5639; every other sealed source
+and the whole-file check remain. This preserves the upstream lifetime fix
+instead of reverting it to satisfy an old checksum.
+
 The fresh KDE image currently boots full28 with original Fedora audio providers.
 Supplying the missing exact generic DSP data restores the normal HiFi profile;
 a notification succeeds and audible speaker output is confirmed. Permanent

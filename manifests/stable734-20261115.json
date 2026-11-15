@@ -8,7 +8,13 @@
   "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
   "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
   "full_release": 1,
-  "source_check_release": 3,
+  "source_check_release": 4,
+  "retirement60_dsi_seal": {
+    "before_sha256": "3e708bfa9ebf15b52a4ecdc2f819da202643b0f9cdf7580de51c62a8b96eadfa",
+    "after_sha256": "868b563940765a3692500fbcbdaa76f8387437ed5f3c5d52a11d873a918c77de",
+    "only_upstream_gpuvm_put_and_null_added": true,
+    "complete_old_postimage_recovered_by_upstream_inverse": true
+  },
   "compatibility_patches": [
     {"number":"0085","name":"0085-q6apm-preserve-unmap-result-and-buffer-type.patch","before_sha256":"d16c1823ea21bc4b0f78c11d6594c4aad7b7c9953ae3bfcc1432bcaa6adca520","after_sha256":"1a888cb474b500e0e05198179c81abd957db58597f4bc7503cb7fc4fc8cdf25c"},
     {"number":"0091","name":"0091-q6apm-bound-and-serialize-buffer-submissions.patch","before_sha256":"0b11401e75101b3bac81117ae8fcce41dc3a8c6384d54e3ba0bface787b21bea","after_sha256":"47753d0fe9e567baf47be472b3c59928b112cb5c3603ff871bba70a1c9c8caa8"}

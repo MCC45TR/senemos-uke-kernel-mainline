@@ -53,6 +53,19 @@ for pair in "$profile:native_profile" "$boot:boot_recipe"; do
   install -m644 "$work/helper-next" "$tree/$path"
  done < <(jq -er --arg kind "$kind" '.version_helper_hashes[$kind]|keys[]' "$tree/manifests/stable733-cumulative-20261107.json")
  install -m644 "$work/plan.json" "$tree/manifests/cumulative-release.json"
+ # The signed stable release fixes two missing GPUVM cleanup statements.
+ # Reversing precisely that upstream delta recovers the complete old sealed
+ # DSI file. Retain the whole-file gate with its reviewed734 preimage.
+ seal=$tree/retirement60-parent-files.sha256
+ if [[ -f $seal ]]; then
+  awk '
+   $0=="3e708bfa9ebf15b52a4ecdc2f819da202643b0f9cdf7580de51c62a8b96eadfa  drivers/gpu/drm/msm/dsi/dsi_host.c" {
+    $0="868b563940765a3692500fbcbdaa76f8387437ed5f3c5d52a11d873a918c77de  drivers/gpu/drm/msm/dsi/dsi_host.c";n++
+   } {print} END{if(n!=1)exit 1}
+  ' "$seal" > "$work/seal-next"
+  sed 's/^868b563940765a3692500fbcbdaa76f8387437ed5f3c5d52a11d873a918c77de  drivers\/gpu\/drm\/msm\/dsi\/dsi_host.c$/3e708bfa9ebf15b52a4ecdc2f819da202643b0f9cdf7580de51c62a8b96eadfa  drivers\/gpu\/drm\/msm\/dsi\/dsi_host.c/' "$work/seal-next" | cmp - "$seal"
+  install -m644 "$work/seal-next" "$seal"
+ fi
  for name in audio-unmap-response-contract.sh audio-buffer-submit-contract.sh; do
   case $name in
    audio-unmap-response-contract.sh) expected=8985d8a85c4fe6cdae832d54e00c2d035e1c7c22db540f1bcf563cf1093c40c5;;
@@ -127,7 +140,7 @@ test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
 %{_datadir}/%{name}/*
 
 %changelog
-* Sun Nov 15 2026 Uke contributors - 7.3.4-3
+* Sun Nov 15 2026 Uke contributors - 7.3.4-4
 - Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
 SPEC
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
