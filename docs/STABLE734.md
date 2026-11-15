@@ -184,3 +184,11 @@ change. Only metadata identity/qualification fields change in the qualified
 native archive; raw configs, hardware C/DT, firmware paths and boot input archive
 remain. No full build, staging, reboot or physical result follows merely from
 rendering this recipe.
+# Full source extraction correction
+
+Full attempt 11331697 stopped before SRPM generation: the frozen parent cpio
+member is `./senemos-uke-linux-kernel-mainline-unstable.spec`, while extraction
+requested the unprefixed name. Cpio returned success with empty stdout and
+the retained parent checksum rejected it. Match the actual frozen member and
+require nonempty output. PC data-only extraction now reproduces the exact
+parent recipe hash; no kernel compiler ran and full release2 remains reserved.

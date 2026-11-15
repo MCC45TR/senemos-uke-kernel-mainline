@@ -48,7 +48,8 @@ install -m644 "$qualification" "$result/stable734-full-qualification.json"
 # archive remain the exact qualified source-check inputs.
 curl -qfsSL --max-time 600 --max-filesize 314572800 "$(jq -er .parent_srpm_url "$plan")" -o "$work/full28.src.rpm"
 printf '%s  %s\n' "$(jq -er .parent_srpm_sha256 "$plan")" "$work/full28.src.rpm" | sha256sum -c --strict --quiet -
-rpm2cpio "$work/full28.src.rpm" | cpio -i --to-stdout --quiet senemos-uke-linux-kernel-mainline-unstable.spec > "$work/full28.spec"
+rpm2cpio "$work/full28.src.rpm" | cpio -i --to-stdout --quiet ./senemos-uke-linux-kernel-mainline-unstable.spec > "$work/full28.spec"
+[[ -s $work/full28.spec ]]
 bash "$owner/packaging/native/fold-stable734-full.sh" "$work/full28.spec" "$result/senemos-uke-linux-kernel-mainline-unstable.spec" "$plan"
 unlink "$result/uke-kernel-migration-check.spec"
 tar -xJf "$result/senemos-native-profile-7.3.4.tar.xz" -C "$work"
