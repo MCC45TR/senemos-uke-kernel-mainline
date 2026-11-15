@@ -8,6 +8,19 @@ phase=${3:-objects}
 profile=$kernel/native-profile
 work=$(mktemp -d);trap 'find "$work" -depth -delete' EXIT
 file=$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+contract=$profile/manifests/native-vrr734-20261115.json
+if [[ -f $kernel/native-generated/native-vrr734-applied ]]; then
+ # The original API block remains a separately checked parent layer. Recover
+ # its complete source from the admitted native-default patch, never by
+ # discarding arbitrary changed lines or relaxing the original checksum.
+ path=drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+ printf '%s  %s\n' "$(jq -er .after_encoder_sha256 "$contract")" "$file" | sha256sum -c --strict --quiet -
+ install -Dm644 "$file" "$work/$path"
+ git -C "$work" init -q
+ git -C "$work" apply --reverse --whitespace=error "$profile/src/display/0076-uke-native-vrr734.patch"
+ file=$work/$path
+ printf '%s  %s\n' "$(jq -er .before_encoder_sha256 "$contract")" "$file" | sha256sum -c --strict --quiet -
+fi
 awk '/^static unsigned int o82_vrr_test_min_hz;/ {copy=1} copy{print}
  /^MODULE_PARM_DESC\(o82_vrr_floor_api,/ {description=1}
  description&&/\);$/ {found++;exit} END{if(found!=1)exit 1}' "$file" > "$work/block.c"

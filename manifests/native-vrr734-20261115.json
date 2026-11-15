@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "scope": "Native Uke encoder initialization; existing exact DT, receiver, DSC and mode admission retained",
+  "patch_path": "src/display/0076-uke-native-vrr734.patch",
+  "patch_sha256": "e273b357ff6755a6af550ace627d604fad4908b3a703e271f3d6f3677f635b88",
+  "before_encoder_sha256": "b26be1d94de3e40da5106d9000569619bda4e93773f9919dd67fb94b61d306cd",
+  "after_encoder_sha256": "223062c134b672747ec33d064f7e4cedafe1e9e41f9eca2a35c2936dfb628128",
+  "default_floor_hz": 30,
+  "explicit_zero_disables": true,
+  "saved_floor_preserved": true,
+  "standard_drm_interface": true,
+  "extra_runtime_packages": 0,
+  "backlight_and_light_sensor_changes": false,
+  "native_objects_qualified": false,
+  "kde_visibility_qualified": false,
+  "physical_vrr_cadence_qualified": false
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "kernel_release": "7.3.4-2-unstable",
+  "enabled_by_user_request": true,
+  "certificate_path": "src/livepatch/uke-livepatch-20261115.pem",
+  "kernel_trusted_keys_path": "native-profile/src/livepatch/uke-livepatch-20261115.pem",
+  "certificate_pem_sha256": "5313b90a81da2428d4e362c0fa0dc2abf242f939559d0c98ded5f80294e7dc36",
+  "certificate_der_sha256": "f1cbc20839f672145fb1c5d564b5e09e67d2272d7164d01e4123750442a7f1f8",
+  "private_key_in_source_or_build_worker": false,
+  "module_sig_force_retained": true,
+  "existing_kernel_module_signer_retained": true,
+  "kernel_config_delta": [
+    "CONFIG_LIVEPATCH=y",
+    "CONFIG_SYSTEM_TRUSTED_KEYS=\"native-profile/src/livepatch/uke-livepatch-20261115.pem\""
+  ],
+  "native_objects_qualified": false,
+  "trusted_certificate_embedded_qualified": false,
+  "signed_patch_load_qualified": false,
+  "camera_functionality_qualified": false,
+  "oem_verified_boot_qualified": false
+}

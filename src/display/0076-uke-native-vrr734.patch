@@ -1,0 +1,58 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] drm/msm: default the admitted Uke O82 path to native VRR
+
+Select the existing 30 Hz software floor at encoder initialization only on
+the exact Uke/SM7675 catalog and bonded video topology. Keep explicit zero
+and saved requests authoritative. Actual O82-42 DT/DSI/DSC/mode admission,
+paired programming, rollback and backlight interfaces are unchanged.
+This source change does not qualify physical cadence or receiver tolerance.
+
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -227,6 +227,7 @@
+ #define to_dpu_encoder_virt(x) container_of(x, struct dpu_encoder_virt, base)
+ 
+ static unsigned int o82_vrr_test_min_hz;
++static unsigned int o82_vrr_floor_requested;
+ static int o82_set_vrr_floor(const char *value, const struct kernel_param *kp)
+ {
+ 	unsigned int floor;
+@@ -240,6 +241,7 @@
+ 	if (floor && (floor < 30 || floor >= 144))
+ 		return -ERANGE;
+ 	*(unsigned int *)kp->arg = floor;
++	o82_vrr_floor_requested = 1;
+ 	return 0;
+ }
+ 
+@@ -266,6 +268,22 @@
+ MODULE_PARM_DESC(o82_vrr_floor_api,
+ 	"Read-only O82 exact requested-floor interface version");
+ 
++/* Native Uke policy only; actual receiver/mode/DSI admission remains below.
++ * An explicit zero or saved positive request always wins over this default.
++ */
++static void dpu_encoder_uke_vrr_default(struct dpu_kms *kms,
++		const struct msm_display_info *info)
++{
++	if (!o82_vrr_floor_requested &&
++	    of_machine_is_compatible("xiaomi,uke") &&
++	    of_machine_is_compatible("qcom,sm7675") &&
++	    kms->catalog == &dpu_sm7675_cfg && info &&
++	    info->intf_type == INTF_DSI && !info->is_cmd_mode &&
++	    info->num_of_h_tiles == 2 &&
++	    info->h_tile_instance[0] == 0 && info->h_tile_instance[1] == 1)
++		o82_vrr_test_min_hz = 30;
++}
++
+ static u32 dither_matrix[DITHER_MATRIX_SZ] = {
+ 	15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10
+ };
+@@ -1750,6 +1768,7 @@
+ 		return;
+ 	dpu_enc->dsc = dpu_encoder_get_dsc_config(drm_enc);
+ 
++	dpu_encoder_uke_vrr_default(dpu_kms, disp_info);
+ 	atomic_set(&dpu_enc->frame_done_timeout_cnt, 0);
+ 
+ 	mutex_lock(&dpu_enc->enc_lock);

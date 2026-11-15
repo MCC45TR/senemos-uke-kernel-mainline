@@ -107,3 +107,31 @@ RPM/module signatures do not establish an OEM-to-Linux verified boot chain.
 No OEM bootloader write, relock or speculative enrollment is part of this
 preparation. Rescue, DTBO/vendor_boot, commissioning USB, hardware-bound storage
 keys, encryption and hibernate retain their separate open acceptance gates.
+
+Check6/11331550 passes the new RGB policy and actual battery-worker fixtures,
+including exact red fades, finite blue pulses, two-point rearm, telemetry
+faults, event ownership and unchanged PWM/camera limits. It then stops at the
+old PCM worker whole-file seal. Stable734 fixes the ring pointer to report the
+true start of a completed lap. Reversing that exact signed upstream delta
+recovers the full oldacb1773a preimage; the original worker patch applies with
+the fix retained. Before/after seals become d3c99fd9/54c1b3fc with complete
+helper inverses, retaining every worker assertion and refusal check.
+
+The next candidate also carries native VRR initialization on the exact
+Uke/SM7675 catalog and bonded video topology. Explicit zero and saved positive
+floors remain authoritative; unsupported parameters do not change that state.
+The existing O82-42 DT, DSI/DSC, mode and atomic checks still decide capability;
+all programming, paired rollback, backlight modulation and ALS paths remain.
+The original API block is checked through a whole-file reverse of this one
+admitted late layer, alongside actual new initialization/parameter fixtures.
+The historical parent default field describes the retained earlier layer;
+the new native-default layer records the requested boot behavior separately.
+Original KDE sees the standard DRM properties; no compositor fork is added.
+Physical capability visibility, cadence, flicker and touch still need Uke tests.
+
+The user additionally requests livepatch in this same pending full release.
+[Signed livepatch preparation](../src/livepatch/README.md) adds only the final
+LIVEPATCH setting and a pinned public certificate, preserving mandatory module
+signatures and all other protections. Source6 predates these changes. The next
+COPR check must compile their actual native objects; no signed patch load,
+camera image, new kernel installation or physical acceptance is yet claimed.
