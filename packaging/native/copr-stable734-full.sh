@@ -44,8 +44,8 @@ rpmkeys --define "_dbpath $work" --define '_keyring fs' --define "_keyringpath $
 install -m644 "$work/proof.rpm" "$result/stable734-native-proof.rpm"
 install -m644 "$qualification" "$result/stable734-full-qualification.json"
 # Retain every qualified source byte except the full recipe and three native
-# profile metadata files. Runtime C, DT, firmware paths, configs and boot input
-# archive remain the exact qualified source-check inputs.
+# profile metadata files and the explicit full-build config ordering overlay.
+# Runtime C, DT, firmware paths and raw configs remain qualified inputs.
 curl -qfsSL --max-time 600 --max-filesize 314572800 "$(jq -er .parent_srpm_url "$plan")" -o "$work/full28.src.rpm"
 printf '%s  %s\n' "$(jq -er .parent_srpm_sha256 "$plan")" "$work/full28.src.rpm" | sha256sum -c --strict --quiet -
 rpm2cpio "$work/full28.src.rpm" | cpio -i --to-stdout --quiet ./senemos-uke-linux-kernel-mainline-unstable.spec > "$work/full28.spec"
@@ -53,10 +53,21 @@ rpm2cpio "$work/full28.src.rpm" | cpio -i --to-stdout --quiet ./senemos-uke-linu
 bash "$owner/packaging/native/fold-stable734-full.sh" "$work/full28.spec" "$result/senemos-uke-linux-kernel-mainline-unstable.spec" "$plan"
 unlink "$result/uke-kernel-migration-check.spec"
 tar -xJf "$result/senemos-native-profile-7.3.4.tar.xz" -C "$work"
+tar -xJf "$result/senemos-uke-boot-recipe.tar.xz" -C "$work"
 profile=$work/native-profile
+boot=$work/boot-recipe
 (cd "$profile";sha256sum -c --strict --quiet SHA256SUMS)
 [[ $(cat "$profile/source-commit") == "$(jq -er .source_check.source_commit "$qualification")" ]]
-(cd "$profile";find . -type f ! -name SHA256SUMS ! -name source-commit ! -name source-composition.json -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-profile.sha256"
+(cd "$profile";find . -type f ! -name SHA256SUMS ! -name source-commit ! -name source-composition.json ! -path ./packaging/native/prepare-storage-config-full733.sh -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-profile.sha256"
+(cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
+(cd "$boot";find . -type f ! -name lock.json ! -path ./src/boot/build-payload.sh -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-boot.sha256"
+bash "$owner/packaging/native/fold-livepatch-full734.sh" "$profile" "$boot"
+(cd "$boot";sha256sum -c --strict --quiet "$work/retained-boot.sha256";
+ find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$work/boot-assets.sha256"
+jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$work/boot-assets.sha256" > "$work/boot-assets.json"
+jq --slurpfile assets "$work/boot-assets.json" '.source_assets=$assets[0]' "$boot/lock.json" > "$work/boot-lock.json"
+cp "$work/boot-lock.json" "$boot/lock.json"
+cp "$work/boot-lock.json" "$result/boot-payload.json"
 cp "$profile/source-composition.json" "$work/parent-composition.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
@@ -74,5 +85,6 @@ jq --slurpfile old "$work/parent-composition.json" -e '. as $next | all($old[0]|
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$result/senemos-native-profile-7.3.4.tar.xz" -C "$work" native-profile
+tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$result/senemos-uke-boot-recipe.tar.xz" -C "$work" boot-recipe
 [[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/senemos-uke-linux-kernel-mainline-unstable.spec") == senemos-uke-linux-kernel-mainline-unstable-7.3.4-2.fc46 ]]
 printf 'Full7.3.4-2 source assembled from successful signed native qualification and exact full28 recipe; only source preparation, no submission or hardware acceptance.\n'

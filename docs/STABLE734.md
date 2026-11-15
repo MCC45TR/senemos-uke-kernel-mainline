@@ -192,3 +192,15 @@ requested the unprefixed name. Cpio returned success with empty stdout and
 the retained parent checksum rejected it. Match the actual frozen member and
 require nonempty output. PC data-only extraction now reproduces the exact
 parent recipe hash; no kernel compiler ran and full release2 remains reserved.
+
+Full attempt11331713 then passed the native preparation and signed proof-source
+comparison, but stopped at the retained storage seed checksum: livepatch was
+applied before that immutable raw-config comparison. For the full recipe only,
+run all original storage seed checks first. Then independently resolve the
+same two livepatch settings in the actual config and six generated manager
+references, with seven complete effective-setting inverses. Keep raw configs,
+historical references and existing manager/NFC checks unchanged. The storage
+linked comparison independently adds livepatch to its base reference, leaving
+its exact eight-option storage delta intact. Payload and storage helper edits
+have complete inverses; all other qualified archive bytes remain checked.
+No Image was produced and failed full attempts retain release2.
