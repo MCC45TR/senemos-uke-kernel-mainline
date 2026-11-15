@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "date": "2026-11-15",
+  "package": "senemos-uke-linux-kernel-mainline-unstable",
+  "channel": "uke-linux-unstable",
   "scope": "Full28-preserving Linux7.3.4 source and native-object qualification; no full release reservation",
   "parent_full_build": 11330530,
   "parent_source_commit": "8eb8316d3af498f4bbd25e89896d648d0ba37202",
@@ -11,6 +13,7 @@
   "source_check_release": 5,
   "full_release_policy": "increment-after-success",
   "explicit_user_next_release": 2,
+  "first_full_release": 2,
   "full_release_reserved": false,
   "rgb_request": {
     "owner": "kernel",

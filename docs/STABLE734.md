@@ -4,6 +4,11 @@
 `7.3.4-2-unstable`. Failed full attempts retain that tuple; only successful
 full releases advance it. Native source-check counters are independent and
 do not establish that a corresponding runtime kernel was built or installed.
+Fresh COPR history contains no full7.3.4 release. The user explicitly selected
+release2 as this series' initial full version; no full1 success is claimed.
+`next-planned-full` reads that initial value from the reviewed release plan,
+retains it after failed attempts and advances only after success. Existing
+series keep their initial1 and all gap/active-build/downgrade checks.
 This source preparation does not reserve or build a full kernel. It preserves
 the actual complete full28 source RPM from COPR11330530, rather than rebuilding
 an older generic recipe with a new version number.

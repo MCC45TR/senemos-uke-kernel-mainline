@@ -25,9 +25,10 @@ kernel_release_json() {
   else error("Invalid cumulative release plan") end' "${1:?Release plan}"
 }
 kernel_next_release() {
- local history=${1:?Complete package build history} version=${2:?Upstream version} package=${3:?Package}
+ local history=${1:?Complete package build history} version=${2:?Upstream version} package=${3:?Package} first=${4:-1}
  [[ $version =~ ^[1-9][0-9]*\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
- jq -er --arg version "$version" --arg package "$package" '
+ [[ $first =~ ^[1-9][0-9]{0,9}$ && $first -le 2147483647 ]]
+ jq -er --arg version "$version" --arg package "$package" --argjson first "$first" '
   if (.items|type)!="array" then error("Incomplete build history") else
    if $package=="senemos-uke-linux-kernel-mainline-unstable" and
       any(.items[]; .state!="succeeded" and .state!="failed" and .state!="canceled" and .state!="skipped" and .state!="forked") then
@@ -46,8 +47,8 @@ kernel_next_release() {
    if any($rows[];(.version|split(".")|map(tonumber))>($version|split(".")|map(tonumber))) then
     error("Refusing an upstream downgrade")
    else [$rows[]|select(.version==$version)|.release]|unique|sort as $r |
-    if ($r|length)==0 then 1
-    elif $r==[range(1;($r[-1]+1))] then $r[-1]+1
+    if ($r|length)==0 then $first
+    elif $r==[range($first;($r[-1]+1))] then $r[-1]+1
     else error("Published release gap requires ledger reconciliation") end
    end
   end' "$history"
@@ -56,6 +57,13 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]];then
  case ${1:-} in
   json) [[ $# == 2 ]];kernel_release_json "$2";;
   next) [[ $# == 4 ]];kernel_next_release "$2" "$3" "$4";;
-  *) printf 'Usage: kernel-release.sh json PLAN | next COMPLETE_HISTORY VERSION PACKAGE\n' >&2;exit 2;;
+  next-planned-full)
+   [[ $# == 3 ]]
+   tuple=$(kernel_release_json "$3")
+   first=$(jq -er '(.first_full_release//1) as $first |
+    if ($first|type)=="number" and $first==($first|floor) and $first>=1 and
+       $first<=.full_release then $first else error("Invalid first full release") end' "$3")
+   kernel_next_release "$2" "$(jq -er .version <<< "$tuple")" "$(jq -er .package <<< "$tuple")" "$first";;
+  *) printf 'Usage: kernel-release.sh json PLAN | next COMPLETE_HISTORY VERSION PACKAGE | next-planned-full COMPLETE_HISTORY PLAN\n' >&2;exit 2;;
  esac
 fi

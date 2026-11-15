@@ -35,7 +35,7 @@ install -m644 "$manifest" "$work/stable734/manifest.json"
 install -m644 "$owner/packaging/native/check-stable734.sh" "$work/stable734/check-stable734.sh"
 cp "$profile/source-composition.json" "$work/stable734/parent-composition.json"
 sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$work/configs.sha256"
-jq --slurpfile m "$manifest" '.full_release=$m[0].full_release | .source_check_release=$m[0].source_check_release | .upstream=$m[0].upstream' \
+jq --slurpfile m "$manifest" '.full_release=$m[0].full_release | .first_full_release=$m[0].first_full_release | .source_check_release=$m[0].source_check_release | .upstream=$m[0].upstream' \
  "$profile/manifests/cumulative-release.json" > "$work/plan.json"
 tuple=$(bash "$owner/scripts/kernel-release.sh" json "$work/plan.json")
 before_audio=$(awk '$2=="./src/audio/uke-audio-card.c" || $2=="src/audio/uke-audio-card.c"{print $1}' "$profile/SHA256SUMS")
