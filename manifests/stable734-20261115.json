@@ -8,7 +8,11 @@
   "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
   "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
   "full_release": 1,
-  "source_check_release": 1,
+  "source_check_release": 2,
+  "pan_patch_before_sha256": "a56b1b532137ec081e1bb46e6ee25cbcb40341599f62ca8570e9e931832c1c2d",
+  "pan_patch_after_sha256": "0b3f7f46f612604ed01eb43f9ec6663eaa14e8c8efcf6f82ccdb8daa56053337",
+  "preserve_upstream_freezable_pan_work": true,
+  "prior_check": {"build": 11331348, "source_check_release": 1, "result": "Original PAN patch context conflicts with stable freezable worker fix; no object or Image compiled"},
   "upstream": {
     "version": "7.3.4",
     "commit": "7595a62d45ee1a2297eafa5f2ef5d0a45142d84d",

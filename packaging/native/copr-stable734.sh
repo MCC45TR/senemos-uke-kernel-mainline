@@ -64,9 +64,13 @@ jq --slurpfile parent "$work/stable734/parent-composition.json" -e '
  . as $next | all($parent[0]|to_entries[]; .key as $key |
  (["source_commit","kernel_release","rpm_revision","diagnostic_audio_driver","upstream_version","upstream_commit","upstream_sha256"]|index($key))!=null or $next[$key]==.value)
 ' "$profile/source-composition.json" >/dev/null
+pan=$adaptation/patches/0056-soc-qcom-pmic-altmode-events.patch
+bash "$owner/packaging/native/retarget-pmic-altmode734.sh" "$pan" "$work/pan734.patch"
+cp "$work/pan734.patch" "$pan"
 jq --slurpfile m "$manifest" '.version=$m[0].upstream.version | .upstream_commit=$m[0].upstream.commit |
  .source_sha256=$m[0].upstream.source_sha256 | .source_url=$m[0].upstream.source_url |
- .signature_url=$m[0].upstream.signature_url | .source_date_epoch=$m[0].upstream.released_epoch' \
+ .signature_url=$m[0].upstream.signature_url | .source_date_epoch=$m[0].upstream.released_epoch |
+ (.patches[]|select(.path|endswith("/0056-soc-qcom-pmic-altmode-events.patch"))).sha256=$m[0].pan_patch_after_sha256' \
  < "$adaptation/source-lock.json" > "$work/source-lock.json"
 cp "$work/source-lock.json" "$adaptation/source-lock.json"
 sha256sum -c --strict --quiet "$work/configs.sha256"
@@ -78,7 +82,7 @@ cp "$work/lock.json" "$boot/lock.json"; cp "$work/lock.json" "$output/boot-paylo
 # Keep historical changelog entries exact. This is source qualification only.
 awk '/^%changelog$/{exit}{gsub(/7[.]3[.]3/,"7.3.4");if($0=="%global senemos_build_release 28")$0="%global senemos_build_release 1";print}' "$parent" > "$work/candidate.spec"
 spec=$output/uke-kernel-migration-check.spec
-awk '/^%description/{exit} /^Name:/{$0="Name: uke-kernel-migration-check"} /^Summary:/{$0="Summary: Full28-preserving Linux7.3.4 source and native object qualification"} /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next} /^ExclusiveArch:/{print "Source201: uke-stable734.tar.xz"} {print}' "$work/candidate.spec" > "$spec"
+awk '/^%description/{exit} /^Name:/{$0="Name: uke-kernel-migration-check"} /^Release:/{$0="Release: 2%{?dist}"} /^Summary:/{$0="Summary: Full28-preserving Linux7.3.4 source and native object qualification"} /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next} /^ExclusiveArch:/{print "Source201: uke-stable734.tar.xz"} {print}' "$work/candidate.spec" > "$spec"
 printf '\n%%description\nQualify signed Linux7.3.4 against the complete cumulative full28 source and native objects. No full Image, firmware activation or physical acceptance.\n\n' >> "$spec"
 awk '/^%prep$/{emit=1}/^%build$/{exit}emit{print}' "$work/candidate.spec" >> "$spec"
 printf '\ntar -xJf %%{SOURCE201}\n' >> "$spec"
@@ -104,7 +108,7 @@ test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
 %{_datadir}/%{name}/*
 
 %changelog
-* Sun Nov 15 2026 Uke contributors - 7.3.4-1
+* Sun Nov 15 2026 Uke contributors - 7.3.4-2
 - Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
 SPEC
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
@@ -118,4 +122,4 @@ curl -qfsSL --retry 2 --max-time 600 --max-filesize 209715200 "$(jq -er .upstrea
 curl -qfsSL --retry 2 --max-time 60 --max-filesize 16384 "$(jq -er .upstream.signature_url "$manifest")" -o "$output/linux-7.3.4.tar.sign"
 printf '%s  %s\n' "$(jq -er .upstream.source_sha256 "$manifest")" "$output/linux-7.3.4.tar.xz" | sha256sum -c --strict --quiet -
 sha256sum -c --strict --quiet "$work/retained.sha256"
-printf 'Exact full28 retained; source7.3.4-1 qualification prepared without full revision reservation or hardware operation\n'
+printf 'Exact full28 retained; source7.3.4-2 qualification prepared without full revision reservation or hardware operation\n'

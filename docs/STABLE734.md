@@ -19,8 +19,17 @@ retargets the compact ALSA identity, and changes only16 admitted version helper
 copies with whole-file inverse comparison. The recipe keeps all existing
 preparation and behavioral checks. Unknown patch or source-seal differences
 must fail and be reviewed; this version update does not remove those checks.
-COPR then compiles eight affected native units without an Image or firmware
+COPR then compiles nine affected native units without an Image or firmware
 operation. Source and native qualification remain pending.
+
+The first check11331348 stops in source preparation at adaptation0056:
+Linux7.3.4 changed both PMIC altmode notification dispatches to the freezable
+queue. The retained Uke patch replaced those dispatch sites with its bounded,
+generation-tagged queue. The revised adaptation carries the upstream freezer
+policy into both normal event and service-loss queueing, preserving the Uke
+consumer ACK ordering, lifetime, quarantine and teardown. A four-line whole
+patch inverse and actual source application pass; the real PMIC object must
+reference `system_freezable_wq`. No event or power guard is removed.
 
 The fresh KDE image currently boots full28 with original Fedora audio providers.
 Supplying the missing exact generic DSP data restores the normal HiFi profile;
