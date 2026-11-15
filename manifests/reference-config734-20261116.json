@@ -5,19 +5,38 @@
   "diagnostic_signed_rpm_sha256": "9cdd918ca79c9fb9c53ccd63846d443cb3f0acc8b19c34a35b404da0aecc178f",
   "parent_full_build": 11330530,
   "candidate_full_attempt": 11331776,
-  "independent_config_roles": ["cdsp", "waydroid", "cdsp-before"],
+  "independent_config_roles": [
+    "cdsp",
+    "waydroid",
+    "cdsp-before"
+  ],
   "parent_toolchain_and_governor_passed": true,
   "candidate_original_toolchain_refused": true,
   "candidate_governor_passed": true,
   "differences_in_each_role": [
-    {"key":"CONFIG_HAVE_EXIT_THREAD","before":null,"after":"y","upstream_file":"arch/arm64/Kconfig","reason":"Retain upstream ARM64 GCS failed-fork cleanup; upstream commit078e122f3bf000dd45965997b66deac10ee580fa"},
-    {"key":"CONFIG_INTEL_SSEI","before":"n","after":null,"upstream_file":"drivers/misc/issei/Kconfig","reason":"Intel interface now depends on X86; remains unavailable on ARM64"}
+    {
+      "key": "CONFIG_HAVE_EXIT_THREAD",
+      "before": null,
+      "after": "y",
+      "upstream_file": "arch/arm64/Kconfig",
+      "reason": "Retain upstream ARM64 GCS failed-fork cleanup; upstream commit078e122f3bf000dd45965997b66deac10ee580fa"
+    },
+    {
+      "key": "CONFIG_INTEL_SSEI",
+      "before": "n",
+      "after": null,
+      "upstream_file": "drivers/misc/issei/Kconfig",
+      "reason": "Intel interface now depends on X86; remains unavailable on ARM64"
+    }
   ],
   "compatibility_projection_scope": "Read-only temporary input to historical whole-config guard only",
   "actual_kernel_configuration_changed": false,
   "original_7200_digest_unchanged": true,
   "golden_parent_config_sha256": "1385a82ce024620768768eba9511d8fb755bd72904015d8a4043559308f559f1",
   "paired_pc_data_projection_and_ten_refusals_passed": true,
-  "new_native_production_qualification_pending": true,
-  "physical_acceptance": false
+  "new_native_production_qualification_pending": false,
+  "physical_acceptance": false,
+  "production_qualification_build": 11332029,
+  "production_qualification_source": "38f6a081737717cb989d577855ad44c3879b3897",
+  "production_qualification_signed_rpm_sha256": "5efb712f03fa36ca0704f809baad532eff81ae646251a8f9fdd0e6e5366601f1"
 }
