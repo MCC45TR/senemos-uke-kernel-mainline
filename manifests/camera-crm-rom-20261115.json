@@ -8,7 +8,7 @@
   "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11330530/senemos-uke-linux-kernel-mainline-unstable-7.3.3-28.src.rpm",
   "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
   "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
-  "source_check_release": 115,
+  "source_check_release": 116,
   "native_qualified": false,
   "crm_activation_allowed": false,
   "full_kernel_built": false,
@@ -21,11 +21,11 @@
     },
     {
       "path": "docs/CAMCC-CRM-ROM.md",
-      "sha256": "7030f0e5336eae31503b56634962ac291fbe594c2945edf5d77216a85765c228"
+      "sha256": "ddd64a892e68c0e97a0fd3b0688d11ee48ddcefd3c277565615ef574d0892771"
     },
     {
       "path": "packaging/native/copr-crm-rom733.sh",
-      "sha256": "6fbed8504966df48d8b88b63fda6c02f2aca0867a04933e47627f403195265f0"
+      "sha256": "c75e467b9deadfb289ed0d6f4f58171a716428327de5e9860f8048f9ef63b13c"
     },
     {
       "path": "src/camera/camcc-sm7675.c",
@@ -109,5 +109,12 @@
       "sha256": "3910a9e959a4f37f268b045f8ae78295e991faf22d0c4e2e307765f20a1c8fda",
       "scope": "Shared-IP direct RCG comparison; does not admit active firmware CRM"
     }
-  ]
+  ],
+  "parent_source_phase_sha256": "75e9eba0be9ac2683165d1a77825857699c1a98e07a71c896a88a8c0c85b8c2e",
+  "previous_failed": {
+    "release": 115,
+    "build": 11331331,
+    "stage": "source-before-srpm",
+    "reason": "Classifier rejected inherited configuration-only make olddefconfig; no native build"
+  }
 }

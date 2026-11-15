@@ -43,3 +43,9 @@ Permanent transport/IRQ ownership, inherited AP0 votes and synchronized withdraw
 still precede active provider admission. Native front CCI/sensor/CSIPHY4/CAMSS,
 completed RAW buffers, controls, supported modes and physical recovery remain
 required. Both-camera and private read-only calibration goals stay open.
+
+Native115/source11331331 stopped before SRPM creation: its phase classifier
+rejected cumulative28's inherited `make olddefconfig` preparation. Native116
+pins the entire 58-line source phase by SHA-256 and permits only that exact
+configuration-preparation command. Production Image/module commands remain
+outside the source phase. No native test or hardware success came from115.
