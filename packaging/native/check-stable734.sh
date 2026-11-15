@@ -4,6 +4,11 @@ set -Eeuo pipefail
 [[ $# == 2 && $(uname -m) == aarch64 && ! -e /etc/senemos/kernel-update.conf ]]
 kernel=$(realpath "$1"); out=$(realpath -m "$2")
 [[ ! -e $out ]]
+bash "$kernel/native-profile/tests/reference-config734.sh" \
+ "$kernel/native-generated/nfc-cdsp-before-reference/.config"
+bash "$kernel/native-profile/tests/governor-config-contract.sh" \
+ "$kernel/native-generated/nfc-cdsp-before-reference/.config" \
+ "$kernel/native-generated/nfc-cdsp-reference/.config"
 bash "$kernel/native-profile/src/display/apply-native-vrr734.sh" "$kernel"
 mkdir "$out"
 bash "$kernel/native-profile/tests/livepatch-config734.sh" "$kernel/scripts/config" "$kernel/native-profile/native.config"

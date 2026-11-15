@@ -85,6 +85,7 @@ bash "$owner/packaging/native/prepare-livepatch734.sh" "$profile" "$boot"
 bash "$owner/packaging/native/prepare-native-vrr734.sh" "$profile" "$boot"
 bash "$owner/packaging/native/retarget-pcm-seals734.sh" "$profile" "$boot"
 bash "$owner/packaging/native/retarget-battery-seals734.sh" "$profile" "$boot"
+bash "$owner/packaging/native/prepare-reference-config734.sh" "$profile" "$boot"
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --argjson tuple "$tuple" '. + {
  source_commit:$commit,kernel_release:$tuple.kernel_release,rpm_revision:($tuple.release|tostring),
@@ -177,7 +178,7 @@ test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
 %{_datadir}/%{name}/*
 
 %changelog
-* Sun Nov 15 2026 Uke contributors - 7.3.4-10
+* Mon Nov 16 2026 Uke contributors - 7.3.4-12
 - Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
 SPEC
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)

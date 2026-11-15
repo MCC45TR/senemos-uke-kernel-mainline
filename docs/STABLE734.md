@@ -217,3 +217,19 @@ configs. It captures whole effective-setting differences and original guard
 outcomes without producing an Image. Its successful data-RPM build, if any,
 means only that observations were captured; it does not qualify those guard
 outcomes, a full kernel or hardware. The original guard digest stays unchanged.
+
+Diagnostic11/11332004 succeeds as an observation build. Its signed report
+9cdd918c shows the same two effective changes in all three independently
+resolved roles: HAVE_EXIT_THREAD is newly selected by the upstream ARM64 GCS
+failed-fork fix, and disabled INTEL_SSEI disappears after its new X86 dependency.
+The733 toolchain/governor guards pass;734 governor passes and its original
+whole-config guard refuses. The signed incremental patch confirms both changes.
+
+The compatibility helper projects only those two fields in a temporary guard
+input. The actual734 config retains the GCS fix. The original7200 digest, four
+compiler identity checks, all original refusals and actual source/config remain
+unchanged. Complete inverse checks preserve both guard programs. PC data tests
+on the signed config observations recover the entire independent733 effective
+configuration and reject five additional missing/disabled/duplicate/unexpected
+or unrelated changes. Native source12 will run these final historical checks
+before its existing real-object qualification, without making an Image.
