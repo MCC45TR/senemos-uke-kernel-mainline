@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "failed_full_build": 11332055,
+  "failed_stage": "final MST linked five-file source ledger after Image generation",
+  "runtime_release_retained": "7.3.4-2-unstable",
+  "source_check_release": 13,
+  "original_prepared_mst_checker_sha256": "b6b539a1db00c15ecba5f89760b041d70a44a72596979eefbb680c794e9cdbd9",
+  "production_vrr_source_manifest": "native-vrr734-20261115.json",
+  "production_code_changed": false,
+  "historical_ledger_changed": false,
+  "original_checker_whole_text_inverse_passed": true,
+  "pc_fixture_scope": "Actual qualified DPU postimage and four synthetic ledger files, not native ARM64 compilation",
+  "pc_positive_and_nine_refusals_passed": true,
+  "native_actual_five_file_preflight_pending": true,
+  "full_build_pending": true,
+  "physical_acceptance": false
+}

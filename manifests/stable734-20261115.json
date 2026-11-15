@@ -10,7 +10,7 @@
   "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
   "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
   "full_release": 2,
-  "source_check_release": 12,
+  "source_check_release": 13,
   "full_release_policy": "increment-after-success",
   "explicit_user_next_release": 2,
   "first_full_release": 2,
@@ -22,9 +22,24 @@
     "owner": "kernel",
     "low_soc_inclusive": 15,
     "critical_soc_inclusive": 5,
-    "low_ms": {"rise":1000,"hold":1000,"fall":1000,"off":10000},
-    "critical_ms": {"rise":1000,"hold":500,"fall":1000,"off":3000},
-    "charge_blue_ms": {"off":1000,"on":500,"repeats":3,"rearm_drop_percentage_points":2},
+    "low_ms": {
+      "rise": 1000,
+      "hold": 1000,
+      "fall": 1000,
+      "off": 10000
+    },
+    "critical_ms": {
+      "rise": 1000,
+      "hold": 500,
+      "fall": 1000,
+      "off": 3000
+    },
+    "charge_blue_ms": {
+      "off": 1000,
+      "on": 500,
+      "repeats": 3,
+      "rearm_drop_percentage_points": 2
+    },
     "preserve_camera_priority": true,
     "hardware_pwm_limit": 8,
     "extra_runtime_packages": 0,
@@ -38,13 +53,27 @@
     "complete_old_postimage_recovered_by_upstream_inverse": true
   },
   "compatibility_patches": [
-    {"number":"0085","name":"0085-q6apm-preserve-unmap-result-and-buffer-type.patch","before_sha256":"d16c1823ea21bc4b0f78c11d6594c4aad7b7c9953ae3bfcc1432bcaa6adca520","after_sha256":"1a888cb474b500e0e05198179c81abd957db58597f4bc7503cb7fc4fc8cdf25c"},
-    {"number":"0091","name":"0091-q6apm-bound-and-serialize-buffer-submissions.patch","before_sha256":"0b11401e75101b3bac81117ae8fcce41dc3a8c6384d54e3ba0bface787b21bea","after_sha256":"47753d0fe9e567baf47be472b3c59928b112cb5c3603ff871bba70a1c9c8caa8"}
+    {
+      "number": "0085",
+      "name": "0085-q6apm-preserve-unmap-result-and-buffer-type.patch",
+      "before_sha256": "d16c1823ea21bc4b0f78c11d6594c4aad7b7c9953ae3bfcc1432bcaa6adca520",
+      "after_sha256": "1a888cb474b500e0e05198179c81abd957db58597f4bc7503cb7fc4fc8cdf25c"
+    },
+    {
+      "number": "0091",
+      "name": "0091-q6apm-bound-and-serialize-buffer-submissions.patch",
+      "before_sha256": "0b11401e75101b3bac81117ae8fcce41dc3a8c6384d54e3ba0bface787b21bea",
+      "after_sha256": "47753d0fe9e567baf47be472b3c59928b112cb5c3603ff871bba70a1c9c8caa8"
+    }
   ],
   "pan_patch_before_sha256": "a56b1b532137ec081e1bb46e6ee25cbcb40341599f62ca8570e9e931832c1c2d",
   "pan_patch_after_sha256": "0b3f7f46f612604ed01eb43f9ec6663eaa14e8c8efcf6f82ccdb8daa56053337",
   "preserve_upstream_freezable_pan_work": true,
-  "prior_check": {"build": 11331348, "source_check_release": 1, "result": "Original PAN patch context conflicts with stable freezable worker fix; no object or Image compiled"},
+  "prior_check": {
+    "build": 11331348,
+    "source_check_release": 1,
+    "result": "Original PAN patch context conflicts with stable freezable worker fix; no object or Image compiled"
+  },
   "upstream": {
     "version": "7.3.4",
     "commit": "7595a62d45ee1a2297eafa5f2ef5d0a45142d84d",

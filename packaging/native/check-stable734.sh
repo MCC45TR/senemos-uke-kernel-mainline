@@ -10,6 +10,7 @@ bash "$kernel/native-profile/tests/governor-config-contract.sh" \
  "$kernel/native-generated/nfc-cdsp-before-reference/.config" \
  "$kernel/native-generated/nfc-cdsp-reference/.config"
 bash "$kernel/native-profile/src/display/apply-native-vrr734.sh" "$kernel"
+bash "$kernel/native-profile/tests/vrr734-historical-source.sh" "$kernel"
 mkdir "$out"
 bash "$kernel/native-profile/tests/livepatch-config734.sh" "$kernel/scripts/config" "$kernel/native-profile/native.config"
 tuple=$(bash "$kernel/native-profile/scripts/kernel-release.sh" json "$kernel/native-profile/manifests/cumulative-release.json")
