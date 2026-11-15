@@ -43,7 +43,7 @@
     },
     {
       "path": "packaging/native/copr-hwkm-early733.sh",
-      "sha256": "a06ee4cbce4a723490c08ce804351f9ed0de70deb1cd32407d95b1d697b17cc3"
+      "sha256": "d01f0b848f071ff3edc72956b177fb2160f48490387fab9c3edb19633580bbd8"
     },
     {
       "path": "packaging/native/prepare-hwkm-early733.sh",

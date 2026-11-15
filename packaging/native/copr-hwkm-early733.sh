@@ -26,7 +26,7 @@ find "$output" -maxdepth 1 -type f ! -name "${parent##*/}" \
 mkdir -m700 "$work/gpg" "$work/rpmdb"
 curl -qfsSL --max-time 60 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg -o "$work/key.gpg"
 gpg --homedir "$work/gpg" --batch --with-colons --show-keys "$work/key.gpg" | awk -F: '$1=="fpr"{print $10}' | grep -Fx 2204A661EA630A5303500085538797E72A3E4ECA
-curl -qfsSL --max-time 120 "$(jq -er .camera_proof.receipt_url "$manifest")" -o "$work/native112.rpm"
+curl -qfsSL --retry 2 --retry-delay 3 --retry-max-time 180 --max-time 120 "$(jq -er .camera_proof.receipt_url "$manifest")" -o "$work/native112.rpm"
 printf '%s  %s\n' "$(jq -er .camera_proof.receipt_sha256 "$manifest")" "$work/native112.rpm" | sha256sum -c --strict --quiet -
 rpmkeys --dbpath "$work/rpmdb" --import "$work/key.gpg"
 rpmkeys --dbpath "$work/rpmdb" --checksig --verbose "$work/native112.rpm" > "$work/native112-signature.txt"
