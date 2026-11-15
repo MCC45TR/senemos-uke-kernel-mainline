@@ -1,5 +1,9 @@
 # Kernel QTEE information native qualification
 
+Subsequent signed full28 delivery and the fitted UID81 refusal are recorded
+in [the kernel information result](QTEE-TPM-INFORMATION-RESULT.md). This page
+describes the separate native114 qualification.
+
 15 November 2026. [COPR11330476][native] successfully qualified source
 `6bda254682039263ee75fe75b7ccbc03c3d25287` on Rawhide AArch64. This is
 source/object evidence, not a deployed kernel or fitted TPM result. The
