@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "scope": "Cumulative full26 plus signed passive camera112 and first-probe HWKM qualification; no physical key acceptance",
+  "parent_full_build": 11322009,
+  "parent_full_release": 26,
+  "planned_full_release": 27,
+  "source_check_release": 113,
+  "parent_source": "c7adc996350e3692b4492ab007cad63070dde6c2",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11322009/senemos-uke-linux-kernel-mainline-unstable-7.3.3-26.src.rpm",
+  "parent_srpm_sha256": "2c7dcb0fdf1fa9d1eae7ab41977912aaae468970b7a103a48b6343dbe3509225",
+  "parent_spec_sha256": "c9be72fd18936adde5ffa86385802330f5af021368c77573c6495aee5848b345",
+  "camera_proof": {
+    "build": 11327411,
+    "source_check_release": 112,
+    "source_commit": "f03d7eb191a98feaf03d6806c14550ff97ef3c07",
+    "receipt_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/11327411-uke-kernel-migration-check/uke-kernel-migration-check-7.3.3-112.fc46.aarch64.rpm",
+    "receipt_sha256": "37cbf36febf32ce2dc8d83b912ef3359f2e044ae3d77f7cc984a8b7992c70e10",
+    "trusted_fingerprint": "2204A661EA630A5303500085538797E72A3E4ECA"
+  },
+  "declared_changed_parent_composition_fields": [
+    "source_commit",
+    "kernel_release",
+    "rpm_revision",
+    "diagnostic_audio_driver"
+  ],
+  "raw_kernel_configs_unchanged": true,
+  "firmware_crm_activation_allowed": false,
+  "speaker_gain_ceiling": 223,
+  "new_runtime_packages": 0,
+  "full_kernel_built": false,
+  "hardware_key_accepted": false,
+  "encrypted_io_accepted": false,
+  "automatic_unlock_accepted": false,
+  "source_assets": [
+    {
+      "path": "LICENSES/GPL-2.0-only.txt",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79"
+    },
+    {
+      "path": "docs/HWKM-EARLY-DELIVERY.md",
+      "sha256": "eda9efdab28b0d8591160577b470da30342912fc8850385baaf87456b1dc3d1a"
+    },
+    {
+      "path": "packaging/native/copr-hwkm-early733.sh",
+      "sha256": "a06ee4cbce4a723490c08ce804351f9ed0de70deb1cd32407d95b1d697b17cc3"
+    },
+    {
+      "path": "packaging/native/prepare-hwkm-early733.sh",
+      "sha256": "91f6f3a41c3a3bdc7500d50308a0302e3a17f222d3ac0b348154c14f417e8b9f"
+    },
+    {
+      "path": "packaging/native/hwkm-early-legacy-view733.sh",
+      "sha256": "843b8a86f469263b76d5e04b3b1acb56bb7efb2bad32e580ffe174f08a4e7adc"
+    },
+    {
+      "path": "packaging/native/check-hwkm-early733.sh",
+      "sha256": "ca41e6cc7df749187e0edfc6a8618dd37f34c61406af74450dbdc57f737bb35a"
+    },
+    {
+      "path": "packaging/native/rewrite-hwkm-early733.mjs",
+      "sha256": "d923ca266555dc88a8908e7aecfe2b347546d07407d33be9f0cd20778454f52b"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "src/boot/dracut/module-setup.sh",
+      "sha256": "8706df4b2ecb730165df782047fcd5b0fe248d56f4adfe872b3d767f01cd301d"
+    },
+    {
+      "path": "src/boot/dracut/uke-hwkm.conf",
+      "sha256": "0067c55ee68852a6d08893d4a74feb6280649813377d439cd17602e505d62b16"
+    }
+  ],
+  "result": {
+    "planned_full_spec_sha256": "456c1bf86fd7700fe05667937924e9654a51036a314c87155e4dfd7ca222b059",
+    "full_recipe_inverse_passed": true
+  }
+}
