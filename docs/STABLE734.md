@@ -77,7 +77,16 @@ source RPM: the transformation incorrectly expected Iris patches in the boot
 helper archive. Those patches and their manifest belong only to the native
 profile; both archives retain a shared capability fixture. The correction
 asserts that exact ownership instead of adding a duplicate stack. Source
-counter5 remains unused; this does not consume runtime release2.
+counter5 remains available for that retry; this does not consume runtime release2.
+
+The retry11331501 creates source RPM7.3.4-5, then stops at an unrelated torch
+preparation dependency. The generic checkout's preparation contains older
+standalone torch additions absent from the complete full28 recipe. The LED
+overlay now retains the actual full28 preparation and inserts only its new
+battery fixture call, with an exact preimage and whole-file inverse check.
+No torch, flash-thermal or other hardware protection is removed from full28.
+Because check5 produced a source RPM, changed source-check bytes use counter6;
+the pending full runtime release remains7.3.4-2.
 
 The same candidate stages the requested native battery LED policy and actual
 worker fixtures. It adds no runtime bridge package. The existing Control RGB

@@ -168,7 +168,7 @@ test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
 %{_datadir}/%{name}/*
 
 %changelog
-* Sun Nov 15 2026 Uke contributors - 7.3.4-5
+* Sun Nov 15 2026 Uke contributors - 7.3.4-6
 - Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
 SPEC
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
