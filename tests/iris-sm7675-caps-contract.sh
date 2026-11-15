@@ -166,6 +166,7 @@ int main() {
     assert(iris_enum_framesizes(&f,nullptr,&size)==0 && size.stepwise.min_width==128);
     v4l2_frmivalenum rate{}; rate.pixel_format=V4L2_PIX_FMT_H264; rate.width=2016; rate.height=2048;
     assert(iris_enum_frameintervals(&f,nullptr,&rate)==0 && rate.stepwise.min.denominator==128);
+    assert(rate.type==V4L2_FRMIVAL_TYPE_CONTINUOUS && rate.stepwise.step.denominator==1);
     rate.width=4096; rate.height=2160;
     assert(iris_enum_frameintervals(&f,nullptr,&rate)==0 && rate.stepwise.min.denominator==60);
     rate.height=2176; assert(iris_enum_frameintervals(&f,nullptr,&rate)==-EINVAL);

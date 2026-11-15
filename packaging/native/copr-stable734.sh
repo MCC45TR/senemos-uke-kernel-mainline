@@ -75,11 +75,16 @@ for pair in "$profile:native_profile" "$boot:boot_recipe"; do
   install -m644 "$owner/tests/$name" "$tree/tests/$name"
  done
 done
+bash "$owner/packaging/native/prepare-led-overlay734.sh" "$profile" "$boot"
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --argjson tuple "$tuple" '. + {
  source_commit:$commit,kernel_release:$tuple.kernel_release,rpm_revision:($tuple.release|tostring),
  diagnostic_audio_driver:($tuple.audio_driver|gsub("_";".")),upstream_version:$tuple.version,
- upstream_commit:$tuple.upstream.commit,upstream_sha256:$tuple.upstream.source_sha256
+ upstream_commit:$tuple.upstream.commit,upstream_sha256:$tuple.upstream.source_sha256,
+ rgb_battery_charge_kernel_layer:1,rgb_warning_thresholds_inclusive:true,
+ rgb_charge_rearm_percentage_points:2,rgb_healthy_idle_periodic_poll:false,
+ rgb_hardware_brightness_limit_unchanged:true,rgb_new_runtime_bridge_packages:0,
+ rgb_control_status_reader_qualified:false
 }' "$work/stable734/parent-composition.json" > "$profile/source-composition.json"
 jq --slurpfile parent "$work/stable734/parent-composition.json" -e '
  . as $next | all($parent[0]|to_entries[]; .key as $key |
@@ -105,13 +110,31 @@ jq --slurpfile m "$manifest" '.version=$m[0].upstream.version | .upstream_commit
  < "$adaptation/source-lock.json" > "$work/source-lock.json"
 cp "$work/source-lock.json" "$adaptation/source-lock.json"
 sha256sum -c --strict --quiet "$work/configs.sha256"
+for tree in "$profile" "$boot"; do
+ video=$tree/manifests/video-linux73-candidate-20261025.json
+ printf '%s  %s\n' b5631a741328f3448a02be52b757842980561bc63431a625d76817c0f25368ed "$tree/tests/iris-sm7675-caps-contract.sh" | sha256sum -c --strict --quiet -
+ install -m644 "$owner/tests/iris-sm7675-caps-contract.sh" "$tree/tests/iris-sm7675-caps-contract.sh"
+ while IFS= read -r name; do
+  bash "$owner/packaging/native/retarget-iris734.sh" "$tree/patches/video/$name" "$work/iris-next.patch"
+  install -m644 "$work/iris-next.patch" "$tree/patches/video/$name"
+  hash=$(sha256sum "$work/iris-next.patch"); hash=${hash%% *}
+  jq --arg name "$name" --arg hash "$hash" '(.patches[]|select(.path==("patches/video/"+$name))).sha256=$hash' "$video" > "$work/video-next.json"
+  cp "$work/video-next.json" "$video"
+  unlink "$work/iris-next.patch"
+ done <<'PATCHES'
+0008-sm7675-firmware-memory-lifetime.patch
+0012-sm7675-checked-power-and-oneshot-irq.patch
+0013-sm7675-codec-caps-and-q16-rates.patch
+PATCHES
+done
 (cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 (cd "$boot"; find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$work/assets.sha256"
 jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$work/assets.sha256" > "$work/assets.json"
 jq --slurpfile assets "$work/assets.json" '.source_assets=$assets[0]' "$boot/lock.json" > "$work/lock.json"
 cp "$work/lock.json" "$boot/lock.json"; cp "$work/lock.json" "$output/boot-payload.json"
 # Keep historical changelog entries exact. This is source qualification only.
-awk '/^%changelog$/{exit}{gsub(/7[.]3[.]3/,"7.3.4");if($0=="%global senemos_build_release 28")$0="%global senemos_build_release 1";print}' "$parent" > "$work/candidate.spec"
+full=$(jq -er .full_release "$manifest")
+awk -v full="$full" '/^%changelog$/{exit}{gsub(/7[.]3[.]3/,"7.3.4");if($0=="%global senemos_build_release 28")$0="%global senemos_build_release "full;print}' "$parent" > "$work/candidate.spec"
 spec=$output/uke-kernel-migration-check.spec
 check=$(jq -er .source_check_release "$manifest")
 awk -v check="$check" '/^%description/{exit} /^Name:/{$0="Name: uke-kernel-migration-check"} /^Release:/{$0="Release: "check"%{?dist}"} /^Summary:/{$0="Summary: Full28-preserving Linux7.3.4 source and native object qualification"} /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next} /^ExclusiveArch:/{print "Source201: uke-stable734.tar.xz"} {print}' "$work/candidate.spec" > "$spec"
@@ -140,7 +163,7 @@ test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
 %{_datadir}/%{name}/*
 
 %changelog
-* Sun Nov 15 2026 Uke contributors - 7.3.4-4
+* Sun Nov 15 2026 Uke contributors - 7.3.4-5
 - Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
 SPEC
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)

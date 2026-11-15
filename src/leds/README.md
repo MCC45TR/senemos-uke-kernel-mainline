@@ -1,5 +1,28 @@
 # Uke kernel light ownership
 
+15 November 2026 candidate. Native policy now requests inclusive low15% and
+critical5% warnings. Both use a one-second rise and fall. Low holds for one
+second and stays off ten seconds; critical holds half a second and stays off
+three seconds. The existing8/511 PWM ceiling, camera priority, exact LPG
+supplier and electrical DT remain unchanged.
+
+Charge completion is a finite three blue pulses, each one second off and half
+a second on. Valid battery telemetry, a stable standard stop threshold, a
+reported Full/NotCharging state and online USB power are required. Repeated
+target notifications do not restart the sequence. SOC must first drop two
+percentage points below the target before a new completion can arm. Booting
+at the target or reducing the target below the current SOC does not create a
+completion. Missing telemetry preserves an armed state and an existing warning.
+Normal operation follows power-supply events; read errors get only three
+startup/recovery retries. A quiet or constant frame does not schedule a timer.
+
+The new mode is appended to the existing UAPI; structure sizes stay unchanged.
+The existing Control status reader rejects unknown modes and must gain the new
+label before runtime delivery. Hardware policy remains in the kernel; no new
+runtime bridge package or polling daemon is introduced. Candidate source tests,
+native kernel objects, signed runtime delivery and physical timing are separate
+gates. This source is not yet installed or physically qualified.
+
 The [30 October OSS PWM/current review](../../docs/TORCH-PWM-RESEARCH-20261030.md)
 clarifies that two torch steps follow the current native 20 mA total policy,
 not a proven intrinsic hardware ceiling. Exact Uke OEM source admits more

@@ -1,6 +1,9 @@
 # Linux 7.3.4 cumulative preparation
 
-15 November 2026. The requested next runtime tuple is `7.3.4-1-unstable`.
+15 November 2026. The latest explicitly requested next runtime tuple is
+`7.3.4-2-unstable`. Failed full attempts retain that tuple; only successful
+full releases advance it. Native source-check counters are independent and
+do not establish that a corresponding runtime kernel was built or installed.
 This source preparation does not reserve or build a full kernel. It preserves
 the actual complete full28 source RPM from COPR11330530, rather than rebuilding
 an older generic recipe with a new version number.
@@ -19,7 +22,8 @@ retargets the compact ALSA identity, and changes only16 admitted version helper
 copies with whole-file inverse comparison. The recipe keeps all existing
 preparation and behavioral checks. Unknown patch or source-seal differences
 must fail and be reviewed; this version update does not remove those checks.
-COPR then compiles ten affected native units without an Image or firmware
+COPR then compiles affected native units, the native RGB owner and the complete
+Iris composite without an Image or firmware
 operation. Source and native qualification remain pending.
 
 The first check11331348 stops in source preparation at adaptation0056:
@@ -52,6 +56,21 @@ those two signed upstream statements and recovers the complete original
 retirement60 SHA256. The updated734 seal is868b5639; every other sealed source
 and the whole-file check remain. This preserves the upstream lifetime fix
 instead of reverting it to satisfy an old checksum.
+
+Check4/11331415 reaches Iris. Its734 IOVA declarations and power-off ordering
+change two patch contexts; the rebases retain those upstream changes with
+whole-patch inverses. The frame-interval adaptation also preserves the new
+standard continuous interval type and its unused step denominator, while
+retaining exact codec limits and conservative bandwidth arithmetic. All21
+Iris patches apply in a PC text rehearsal. Native fixtures still check their
+power, firmware, DMA and error lifecycles; the full Iris composite is added to
+the native object gate. No firmware call or video operation occurred in this
+rehearsal.
+
+The same candidate stages the requested native battery LED policy and actual
+worker fixtures. It adds no runtime bridge package. The existing Control RGB
+status reader needs the appended mode label before delivery; source success
+alone does not close that compatibility or physical LED gate.
 
 The fresh KDE image currently boots full28 with original Fedora audio providers.
 Supplying the missing exact generic DSP data restores the normal HiFi profile;

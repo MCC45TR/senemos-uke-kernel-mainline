@@ -10,6 +10,7 @@
 enum uke_rgb_mode {
 	UKE_RGB_OFF, UKE_RGB_MANUAL, UKE_RGB_LOW_BATTERY,
 	UKE_RGB_CRITICAL_BATTERY, UKE_RGB_FRONT_CAMERA, UKE_RGB_TEST,
+	UKE_RGB_CHARGE_COMPLETE,
 };
 struct uke_rgb_color {
 	/* rgb is 0xRRGGBB, each channel 0..255; brightness_percent is 0..100. */

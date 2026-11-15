@@ -34,10 +34,13 @@ struct uke_rgb {
 	struct delayed_work pattern_work, battery_work;
 	struct notifier_block battery_notifier, pm_notifier, reboot_notifier;
 	enum uke_rgb_mode battery_mode, mode;
-	u64 epoch_ms, test_until_ms;
+	struct uke_rgb_charge charge;
+	u64 epoch_ms, test_until_ms, charge_epoch_ms;
 	u32 manual_rgb, manual_percent, effective_rgb, effective_brightness;
 	int battery_soc, last_io_error;
+	unsigned int telemetry_retries;
 	bool manual, battery_valid, camera, camera_seen, suspended, dead, active, writer_open;
+	bool charge_notice;
 };
 static DEFINE_MUTEX(controller_lock);
 static struct uke_rgb *controller;
@@ -65,8 +68,13 @@ static int output(struct uke_rgb *rgb, struct uke_rgb_frame frame)
 }
 static enum uke_rgb_mode selected(struct uke_rgb *rgb, u64 now)
 {
-	return uke_rgb_select(rgb->camera, now < rgb->test_until_ms,
-			      rgb->battery_mode, rgb->manual);
+	enum uke_rgb_mode mode = uke_rgb_select(rgb->camera, now < rgb->test_until_ms,
+					       rgb->battery_mode, rgb->manual);
+
+	if ((mode == UKE_RGB_OFF || mode == UKE_RGB_MANUAL) && rgb->charge_notice &&
+	    now >= rgb->charge_epoch_ms && now - rgb->charge_epoch_ms < UKE_RGB_CHARGE_NOTICE_MS)
+		return UKE_RGB_CHARGE_COMPLETE;
+	return mode;
 }
 static void pattern_work(struct work_struct *work)
 {
@@ -85,7 +93,9 @@ static void pattern_work(struct work_struct *work)
 		rgb->epoch_ms = now;
 	}
 	frame = uke_rgb_frame(mode, mode == UKE_RGB_TEST ?
-			     now - (rgb->test_until_ms - UKE_RGB_TEST_MS) : now - rgb->epoch_ms, rgb->manual_rgb,
+			     now - (rgb->test_until_ms - UKE_RGB_TEST_MS) :
+			     mode == UKE_RGB_CHARGE_COMPLETE ? now - rgb->charge_epoch_ms :
+			     now - rgb->epoch_ms, rgb->manual_rgb,
 			     rgb->manual_percent ? max_t(u32, 1, rgb->manual_percent * UKE_RGB_LIMIT / 100) : 0);
 	if (frame.rgb != rgb->effective_rgb || frame.brightness != rgb->effective_brightness) {
 		if (output(rgb, frame)) {
@@ -96,8 +106,9 @@ static void pattern_work(struct work_struct *work)
 	}
 	if (mode == UKE_RGB_TEST)
 		frame.delay_ms = min_t(u64, frame.delay_ms, rgb->test_until_ms - now);
-	mod_delayed_work(system_freezable_wq, &rgb->pattern_work,
-			 max_t(unsigned long, 1, msecs_to_jiffies(frame.delay_ms)));
+	if (frame.delay_ms)
+		mod_delayed_work(system_freezable_wq, &rgb->pattern_work,
+				 max_t(unsigned long, 1, msecs_to_jiffies(frame.delay_ms)));
  out:
 	mutex_unlock(&rgb->lock);
 }
@@ -105,28 +116,59 @@ static void battery_work(struct work_struct *work)
 {
 	struct uke_rgb *rgb = container_of(to_delayed_work(work), struct uke_rgb, battery_work);
 	struct power_supply *supply;
-	union power_supply_propval value = {};
-	int ret = -ENODEV;
+	union power_supply_propval value = {}, status = {}, target = {}, target_again = {}, online = {};
+	int ret = -ENODEV, status_ret = -ENODEV, target_ret = -ENODEV;
+	int target_again_ret = -ENODEV, online_ret = -ENODEV;
+	bool complete;
 
 	if (READ_ONCE(rgb->dead))
 		return;
 	supply = power_supply_get_by_name("qcom-battmgr-bat");
 	if (supply) {
-		if (supply->desc->type == POWER_SUPPLY_TYPE_BATTERY)
+		if (supply->desc->type == POWER_SUPPLY_TYPE_BATTERY) {
 			ret = power_supply_get_property(supply, POWER_SUPPLY_PROP_CAPACITY, &value);
+			if (!ret && value.intval >= 0 && value.intval <= 100) {
+				status_ret = power_supply_get_property(supply, POWER_SUPPLY_PROP_STATUS, &status);
+				target_ret = power_supply_get_property(supply,
+					POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD, &target);
+				target_again_ret = power_supply_get_property(supply,
+					POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD, &target_again);
+			}
+		}
 		power_supply_put(supply);
+	}
+	complete = !status_ret && (status.intval == POWER_SUPPLY_STATUS_FULL ||
+				  status.intval == POWER_SUPPLY_STATUS_NOT_CHARGING);
+	if (complete) {
+		supply = power_supply_get_by_name("qcom-battmgr-usb");
+		if (supply) {
+			online_ret = power_supply_get_property(supply, POWER_SUPPLY_PROP_ONLINE, &online);
+			power_supply_put(supply);
+		}
 	}
 	mutex_lock(&rgb->lock);
 	if (!rgb->dead) {
 		rgb->battery_valid = !ret && value.intval >= 0 && value.intval <= 100;
 		if (rgb->battery_valid) {
+			rgb->telemetry_retries = 0;
 			rgb->battery_soc = value.intval;
 			rgb->battery_mode = uke_rgb_battery_mode(value.intval, rgb->battery_mode);
+			if (!target_ret && !target_again_ret && target.intval == target_again.intval &&
+			    uke_rgb_charge_event(&rgb->charge, target.intval, value.intval,
+					 complete, !online_ret && online.intval == 1)) {
+				rgb->charge_epoch_ms = now_ms();
+				rgb->charge_notice = true;
+			}
+		} else if (rgb->telemetry_retries < 3) {
+			/* Bounded startup/transport recovery; ordinary operation waits
+			 * for native power-supply events instead of polling forever.
+			 */
+			mod_delayed_work(system_freezable_wq, &rgb->battery_work,
+					 (1U << rgb->telemetry_retries++) * HZ);
 		}
 		/* Missing telemetry never clears an already reported low-battery warning. */
 		if (!rgb->suspended)
 			mod_delayed_work(system_freezable_wq, &rgb->pattern_work, 0);
-		mod_delayed_work(system_freezable_wq, &rgb->battery_work, 60 * HZ);
 	}
 	mutex_unlock(&rgb->lock);
 }
@@ -137,7 +179,8 @@ static int battery_event(struct notifier_block *nb, unsigned long event, void *d
 
 	if (event == PSY_EVENT_PROP_CHANGED && READ_ONCE(rgb->active) &&
 	    !READ_ONCE(rgb->dead) && supply &&
-	    !strcmp(supply->desc->name, "qcom-battmgr-bat"))
+	    (!strcmp(supply->desc->name, "qcom-battmgr-bat") ||
+	     !strcmp(supply->desc->name, "qcom-battmgr-usb")))
 		mod_delayed_work(system_freezable_wq, &rgb->battery_work, 0);
 	return NOTIFY_OK;
 }
