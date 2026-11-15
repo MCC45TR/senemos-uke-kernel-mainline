@@ -135,3 +135,12 @@ LIVEPATCH setting and a pinned public certificate, preserving mandatory module
 signatures and all other protections. Source6 predates these changes. The next
 COPR check must compile their actual native objects; no signed patch load,
 camera image, new kernel installation or physical acceptance is yet claimed.
+
+Check7/11331595 reaches the cumulative battery layers, then rejects an old
+whole-file seal. Stable734 adds deduplicated charger-online notifications for
+the SC8280XP shared path. The Uke fixed-band, event, standard getter, demand
+and observation layers all retain that upstream code. Each of their four
+complete source stages recovers its old hash when only the signed upstream
+delta is reversed. Five contracts receive those admitted before/after hashes
+with complete JSON inverses; no charging writer, threshold, event or assertion
+changes. The actual battery and PCM frontend objects join the native build gate.

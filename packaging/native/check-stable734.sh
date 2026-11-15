@@ -23,6 +23,7 @@ objects=(drivers/gpu/drm/msm/dsi/dsi_host.o drivers/gpu/drm/msm/disp/dpu1/dpu_en
  drivers/tee/qcomtee/call.o drivers/tee/qcomtee/qtee-tpm-info.o
  sound/soc/qcom/qdsp6/q6apm.o
  drivers/leds/leds-uke-rgb.o
+ drivers/power/supply/qcom_battmgr.o sound/soc/qcom/qdsp6/q6apm-dai.o
  kernel/livepatch/livepatch.o certs/system_keyring.o certs/system_certificates.o
  drivers/media/platform/qcom/iris/qcom-iris.o
  sound/soc/qcom/uke-audio-card.o drivers/iio/common/uke-ssc/uke-ssc-iio.o)
