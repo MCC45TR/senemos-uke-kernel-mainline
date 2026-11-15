@@ -204,3 +204,16 @@ linked comparison independently adds livepatch to its base reference, leaving
 its exact eight-option storage delta intact. Payload and storage helper edits
 have complete inverses; all other qualified archive bytes remain checked.
 No Image was produced and failed full attempts retain release2.
+
+Attempt11331776/source017c80e4 completed the kernel, modules and embedded Image:
+kernel compilation1165s, complete boot bundle1460s. The new linked livepatch
+symbol, strict config and extra-certificate checks passed. Final package checks
+then rejected the7.3.4-resolved NFC-before reference against the original7200
+whole-config model. No runtime RPM was released; this failed attempt retains2.
+
+Before repeating the full build, diagnostic fixture11 replays the exact full28
+and failed734 source preparation and independently resolves all three reference
+configs. It captures whole effective-setting differences and original guard
+outcomes without producing an Image. Its successful data-RPM build, if any,
+means only that observations were captured; it does not qualify those guard
+outcomes, a full kernel or hardware. The original guard digest stays unchanged.
