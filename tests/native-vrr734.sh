@@ -5,6 +5,15 @@ set -Eeuo pipefail
 source=$1/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
+# Check the real call site as well as the isolated policy function. A call in
+# another encoder path can pass a policy fixture but fail the native object.
+awk '/^struct drm_encoder \*dpu_encoder_init\(/{emit=1}emit{print}
+ emit&&/^}/{n++;exit}END{if(n!=1)exit 1}' "$source" > "$work/init.c"
+[[ $(grep -Fc 'dpu_encoder_uke_vrr_default(dpu_kms, disp_info);' "$source") == 1 ]]
+awk '/ret = dpu_encoder_setup_display/{setup=NR}/return ERR_PTR/{failed=NR}
+ /dpu_encoder_uke_vrr_default\(dpu_kms, disp_info\)/{hook=NR}
+ /atomic_set\(&dpu_enc->frame_done_timeout_cnt/{timer=NR}
+ END{if(!(setup&&setup<failed&&failed<hook&&hook<timer))exit 1}' "$work/init.c"
 cat > "$work/check.c" <<'C'
 #include <assert.h>
 #include <stdbool.h>

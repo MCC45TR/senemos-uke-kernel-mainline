@@ -25,7 +25,9 @@ objects=(drivers/gpu/drm/msm/dsi/dsi_host.o drivers/gpu/drm/msm/disp/dpu1/dpu_en
  sound/soc/qcom/qdsp6/q6apm.o
  drivers/leds/leds-uke-rgb.o
  drivers/power/supply/qcom_battmgr.o sound/soc/qcom/qdsp6/q6apm-dai.o
- kernel/livepatch/livepatch.o certs/system_keyring.o certs/system_certificates.o
+ kernel/livepatch/core.o kernel/livepatch/patch.o kernel/livepatch/shadow.o
+ kernel/livepatch/state.o kernel/livepatch/transition.o
+ certs/system_keyring.o certs/system_certificates.o
  drivers/media/platform/qcom/iris/qcom-iris.o
  sound/soc/qcom/uke-audio-card.o drivers/iio/common/uke-ssc/uke-ssc-iio.o)
 make -C "$kernel" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="$localversion" KCFLAGS=-Werror -j4 "${objects[@]}"
@@ -37,11 +39,10 @@ llvm-nm --undefined-only "$out/drivers/soc/qcom/pmic_glink_altmode.o" | grep -w 
 sha256sum "$out/.config" > "$out/config.sha256"
 paths=(Makefile drivers/nvmem/core.c)
 for object in "${objects[@]}"; do
- case $object in drivers/media/platform/qcom/iris/qcom-iris.o|kernel/livepatch/livepatch.o|certs/system_certificates.o) continue;; esac
+ case $object in drivers/media/platform/qcom/iris/qcom-iris.o|certs/system_certificates.o) continue;; esac
  paths+=("${object%.o}.c")
 done
 paths+=(drivers/media/platform/qcom/iris/iris_probe.c drivers/media/platform/qcom/iris/iris_vpu_common.c)
-paths+=(kernel/livepatch/core.c kernel/livepatch/patch.c kernel/livepatch/shadow.c kernel/livepatch/state.c kernel/livepatch/transition.c)
 paths+=(certs/system_certificates.S)
 (cd "$kernel"; sha256sum "${paths[@]}") > "$out/source.sha256"
 printf 'Linux7.3.4 cumulative source, native LED and affected AArch64 objects including the full Iris composite passed; no Image, module load or firmware invocation\n'

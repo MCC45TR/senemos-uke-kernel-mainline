@@ -153,3 +153,14 @@ qualified patch before measuring the whole encoder pre/post images, and the
 native gate adds the actual MST object. No MST or display feature is removed;
 the VRR patch still changes only native initialization and explicit policy
 precedence. The next check must qualify the new functions and actual objects.
+
+Check9/11331630 passes the complete source preparation, all four compiler and
+sanitizer modes of native VRR initialization/API/capability fixtures, and the
+resolved livepatch/security configuration. Native compilation catches two
+integration errors: the VRR call matched an earlier repeated counter-reset
+statement rather than encoder initialization, and Kbuild does not expose the
+built-in livepatch composite as that direct object target. The call now follows
+successful `dpu_encoder_setup_display()` inside `dpu_encoder_init()`, with an
+explicit placement/refusal check. Compile all five actual livepatch units
+instead. The native gate remains mandatory; no full kernel or physical result
+was produced by this failed check. The complete Iris composite compiled.

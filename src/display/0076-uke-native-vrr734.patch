@@ -48,11 +48,11 @@ This source change does not qualify physical cadence or receiver tolerance.
  static u32 dither_matrix[DITHER_MATRIX_SZ] = {
  	15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10
  };
-@@ -1754,6 +1772,7 @@
- 		return;
- 	dpu_enc->dsc = dpu_encoder_get_dsc_config(drm_enc);
+@@ -3309,6 +3327,7 @@
+ 		return ERR_PTR(-ENOMEM);
+ 	}
  
 +	dpu_encoder_uke_vrr_default(dpu_kms, disp_info);
  	atomic_set(&dpu_enc->frame_done_timeout_cnt, 0);
- 
- 	mutex_lock(&dpu_enc->enc_lock);
+ 	timer_setup(&dpu_enc->frame_done_timer,
+ 			dpu_encoder_frame_done_timeout, 0);
