@@ -11,7 +11,12 @@
   "original_checker_whole_text_inverse_passed": true,
   "pc_fixture_scope": "Actual qualified DPU postimage and four synthetic ledger files, not native ARM64 compilation",
   "pc_positive_and_nine_refusals_passed": true,
-  "native_actual_five_file_preflight_pending": true,
+  "native_actual_five_file_preflight_pending": false,
   "full_build_pending": true,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "native_actual_five_file_preflight_passed": true,
+  "native_build": 11332099,
+  "native_source": "a569f92e00548c78014a6752ff0e2814545dda8b",
+  "native_report_sha256": "c34faca55fda6b86cb383f4f1705be2853b0d05d10f4af316d25480008a94f82",
+  "production_source_hashes_identical_to_native12": true
 }

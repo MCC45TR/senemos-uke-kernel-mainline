@@ -7,13 +7,13 @@
   "first_full_release": 2,
   "parent_full_build": 11330530,
   "source_check": {
-    "build": 11332029,
-    "release": 12,
-    "source_commit": "38f6a081737717cb989d577855ad44c3879b3897",
-    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11332029/uke-kernel-migration-check-7.3.4-12.src.rpm",
-    "srpm_sha256": "5a484dd541832381a73f6c4bb2834d8ddb559cdb1d596ac6a0967c09b6f1b2e0",
-    "receipt_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-12.fc46.aarch64.rpm",
-    "receipt_sha256": "5efb712f03fa36ca0704f809baad532eff81ae646251a8f9fdd0e6e5366601f1",
+    "build": 11332099,
+    "release": 13,
+    "source_commit": "a569f92e00548c78014a6752ff0e2814545dda8b",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11332099/uke-kernel-migration-check-7.3.4-13.src.rpm",
+    "srpm_sha256": "b4a98b3692e6a89a8abcbb2e72137b069c67815866fd66cbf461ee27543a1997",
+    "receipt_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-13.fc46.aarch64.rpm",
+    "receipt_sha256": "c34faca55fda6b86cb383f4f1705be2853b0d05d10f4af316d25480008a94f82",
     "native_qualified": true,
     "contains_kernel_image": false
   },
@@ -34,5 +34,6 @@
   "full_kernel_built": false,
   "installed_on_target": false,
   "physical_acceptance": false,
-  "oem_verified_boot_qualified": false
+  "oem_verified_boot_qualified": false,
+  "qualification_updated_date": "2026-11-16"
 }
