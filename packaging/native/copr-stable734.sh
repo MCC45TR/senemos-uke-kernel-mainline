@@ -114,6 +114,11 @@ for tree in "$profile" "$boot"; do
  video=$tree/manifests/video-linux73-candidate-20261025.json
  printf '%s  %s\n' b5631a741328f3448a02be52b757842980561bc63431a625d76817c0f25368ed "$tree/tests/iris-sm7675-caps-contract.sh" | sha256sum -c --strict --quiet -
  install -m644 "$owner/tests/iris-sm7675-caps-contract.sh" "$tree/tests/iris-sm7675-caps-contract.sh"
+ if [[ $tree == "$boot" ]]; then
+  # This archive owns boot helpers and a shared fixture, not the video stack.
+  [[ ! -e $tree/patches/video && ! -e $video ]]
+  continue
+ fi
  while IFS= read -r name; do
   bash "$owner/packaging/native/retarget-iris734.sh" "$tree/patches/video/$name" "$work/iris-next.patch"
   install -m644 "$work/iris-next.patch" "$tree/patches/video/$name"

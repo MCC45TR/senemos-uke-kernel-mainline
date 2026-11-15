@@ -67,6 +67,13 @@ power, firmware, DMA and error lifecycles; the full Iris composite is added to
 the native object gate. No firmware call or video operation occurred in this
 rehearsal.
 
+Check5 attempt11331483 stops during source generation before producing a
+source RPM: the transformation incorrectly expected Iris patches in the boot
+helper archive. Those patches and their manifest belong only to the native
+profile; both archives retain a shared capability fixture. The correction
+asserts that exact ownership instead of adding a duplicate stack. Source
+counter5 remains unused; this does not consume runtime release2.
+
 The same candidate stages the requested native battery LED policy and actual
 worker fixtures. It adds no runtime bridge package. The existing Control RGB
 status reader needs the appended mode label before delivery; source success
