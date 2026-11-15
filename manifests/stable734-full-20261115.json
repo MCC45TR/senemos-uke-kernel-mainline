@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "package": "senemos-uke-linux-kernel-mainline-unstable",
+  "full_release": 2,
+  "failed_attempt_consumes_release": false,
+  "first_full_release": 2,
+  "parent_full_build": 11330530,
+  "source_check": {
+    "build": 11331654,
+    "release": 10,
+    "source_commit": "3323e7a7b73f3f80ebcf5373a68b3078f9e6b23f",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11331654/uke-kernel-migration-check-7.3.4-10.src.rpm",
+    "srpm_sha256": "68aa606042975cbad399395bae2aa237b191742f89db564c144eff034092b79f",
+    "receipt_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-10.fc46.aarch64.rpm",
+    "receipt_sha256": "3f540da38a34794ea70833c30069b4c48e6ba654481cd3ee1d2d6edd144499d6",
+    "native_qualified": true,
+    "contains_kernel_image": false
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "selected_tracker_items": ["native kernel DRM VRR default", "kernel battery RGB policy", "signed livepatch support"],
+  "runtime_status_reader": {
+    "capability": "uke-control(rgb-charge-status-v1)",
+    "build": 11331625,
+    "version": "2.17.0-20.fc46",
+    "native_build_qualified": true,
+    "firmware_posttransaction_gate_repair_pending": true
+  },
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "physical_acceptance": false,
+  "oem_verified_boot_qualified": false
+}

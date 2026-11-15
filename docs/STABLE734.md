@@ -164,3 +164,23 @@ successful `dpu_encoder_setup_display()` inside `dpu_encoder_init()`, with an
 explicit placement/refusal check. Compile all five actual livepatch units
 instead. The native gate remains mandatory; no full kernel or physical result
 was produced by this failed check. The complete Iris composite compiled.
+
+Check10/11331654 succeeds in364 seconds. Complete inherited preparation,
+native VRR/API/capability controls, actual initialization placement, strict
+livepatch/security config, all requested ARM64 objects including the five
+livepatch units and full Iris composite, and the embedded public DER comparison
+pass. The signed text receipt3f540da3 has both expected2204 signatures; source
+RPM68aa6060 and payload commit3323e7a7 are frozen in the full qualification
+manifest. There is no Image in this source check and no physical VRR or patch
+load acceptance.
+
+The full candidate renderer preserves the entire actual full28 recipe through
+an inverse, adding the late admitted VRR initialization, final livepatch gates,
+an existing Control reader capability dependency and small matched build-support
+metadata for future signed patch work. It compares its selected runtime source
+files with the signed native receipt before compiling. The assembler refuses
+an unsuccessful/unpinned proof, a full-release conflict or any unrelated source
+change. Only metadata identity/qualification fields change in the qualified
+native archive; raw configs, hardware C/DT, firmware paths and boot input archive
+remain. No full build, staging, reboot or physical result follows merely from
+rendering this recipe.
