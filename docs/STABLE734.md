@@ -1,0 +1,38 @@
+# Linux 7.3.4 cumulative preparation
+
+15 November 2026. The requested next runtime tuple is `7.3.4-1-unstable`.
+This source preparation does not reserve or build a full kernel. It preserves
+the actual complete full28 source RPM from COPR11330530, rather than rebuilding
+an older generic recipe with a new version number.
+
+The Linux stable archive is SHA256
+`b11b6df8295e8e991ff040b71aaa4994a8b55caa23b6b092907f195b5840fd1f`.
+Its detached signature verifies against stable maintainer fingerprint
+`647F28654894E3BD457199BE38DBBDC86092693E`; the signed tag resolves to
+`7595a62d45ee1a2297eafa5f2ef5d0a45142d84d`. The NVMEM core source seal is
+unchanged from7.3.3. The incremental upstream change contains1109 paths;
+DSI-host and UFS changes require native compilation with the retained stack.
+
+The source worker verifies the parent RPM/spec and archive manifests, retains
+all hardware feature fields, all configuration bytes and unrelated inputs,
+retargets the compact ALSA identity, and changes only16 admitted version helper
+copies with whole-file inverse comparison. The recipe keeps all existing
+preparation and behavioral checks. Unknown patch or source-seal differences
+must fail and be reviewed; this version update does not remove those checks.
+COPR then compiles eight affected native units without an Image or firmware
+operation. Source and native qualification remain pending.
+
+The fresh KDE image currently boots full28 with original Fedora audio providers.
+Supplying the missing exact generic DSP data restores the normal HiFi profile;
+a notification succeeds and audible speaker output is confirmed. Permanent
+out-of-box data delivery and restart, microphone and channel checks remain open.
+Read-only KDE observations show VRR incapable, automatic brightness enabled,
+adaptive backlight modulation supported at level1 and PowerDevil active with no
+restarts. Preserve the backlight and ALS interfaces during native VRR work.
+
+The requested final kernel still needs native VRR/data integration, cumulative
+qualification, a complete signed build, normal DNF staging and physical tests.
+RPM/module signatures do not establish an OEM-to-Linux verified boot chain.
+No OEM bootloader write, relock or speculative enrollment is part of this
+preparation. Rescue, DTBO/vendor_boot, commissioning USB, hardware-bound storage
+keys, encryption and hibernate retain their separate open acceptance gates.

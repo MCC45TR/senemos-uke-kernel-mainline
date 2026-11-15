@@ -1,0 +1,121 @@
+#!/usr/bin/bash
+# Source preparation only. Preserve the actual complete full28 recipe.
+set -Eeuo pipefail
+[[ $# == 1 && ! -e /etc/senemos/kernel-update.conf ]]
+owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
+manifest=$owner/manifests/stable734-20261115.json
+output=$(realpath -m "$1")
+[[ ! -e $output && ! -L $output && -z $(git -C "$owner" status --porcelain) ]]
+work=$(mktemp -d)
+trap 'find "$work" -depth -delete' EXIT
+curl -qfsSL --retry 2 --max-time 600 --max-filesize 314572800 "$(jq -er .parent_srpm_url "$manifest")" -o "$work/parent.src.rpm"
+printf '%s  %s\n' "$(jq -er .parent_srpm_sha256 "$manifest")" "$work/parent.src.rpm" | sha256sum -c --strict --quiet -
+[[ $(rpm -qp --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{SOURCEPACKAGE}' "$work/parent.src.rpm") == senemos-uke-linux-kernel-mainline-unstable-7.3.3-28.1 ]]
+rpm2cpio "$work/parent.src.rpm" | cpio -t --quiet > "$work/paths"
+awk '/^\/|(^|\/)\.\.($|\/)/{bad=1}END{exit bad}' "$work/paths"
+mkdir "$output"
+rpm2cpio "$work/parent.src.rpm" | (cd "$output"; cpio -idm --quiet --no-absolute-filenames)
+parent=$output/senemos-uke-linux-kernel-mainline-unstable.spec
+printf '%s  %s\n' "$(jq -er .parent_spec_sha256 "$manifest")" "$parent" | sha256sum -c --strict --quiet -
+find "$output" -maxdepth 1 -type f \
+ ! -name '*.spec' ! -name 'linux-7.3.3.tar.*' ! -name 'senemos-uke-adaptation-7.3.3.tar.xz' \
+ ! -name 'senemos-native-profile-7.3.3.tar.xz' ! -name senemos-uke-boot-recipe.tar.xz ! -name boot-payload.json \
+ -print0 | sort -z | xargs -0 sha256sum > "$work/retained.sha256"
+for archive in senemos-native-profile-7.3.3.tar.xz senemos-uke-boot-recipe.tar.xz senemos-uke-adaptation-7.3.3.tar.xz; do
+ tar -tJf "$output/$archive" | awk '/^\/|(^|\/)\.\.($|\/)/{bad=1}END{exit bad}'
+ tar -xJf "$output/$archive" -C "$work"
+done
+profile=$work/native-profile; boot=$work/boot-recipe; adaptation=$work/senemos-adaptation
+(cd "$profile"; sha256sum -c --strict --quiet SHA256SUMS)
+(cd "$boot"; jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
+mkdir "$work/stable734"
+commit=$(git -C "$owner" rev-parse HEAD)
+printf '%s\n' "$commit" > "$work/stable734/source-commit"
+install -m644 "$manifest" "$work/stable734/manifest.json"
+install -m644 "$owner/packaging/native/check-stable734.sh" "$work/stable734/check-stable734.sh"
+cp "$profile/source-composition.json" "$work/stable734/parent-composition.json"
+sha256sum "$profile/native.config" "$boot/packaging/native/native.config" > "$work/configs.sha256"
+jq --slurpfile m "$manifest" '.full_release=$m[0].full_release | .source_check_release=$m[0].source_check_release | .upstream=$m[0].upstream' \
+ "$profile/manifests/cumulative-release.json" > "$work/plan.json"
+tuple=$(bash "$owner/scripts/kernel-release.sh" json "$work/plan.json")
+before_audio=$(awk '$2=="./src/audio/uke-audio-card.c" || $2=="src/audio/uke-audio-card.c"{print $1}' "$profile/SHA256SUMS")
+[[ $before_audio =~ ^[a-f0-9]{64}$ ]]
+bash "$owner/packaging/native/retarget-audio-tuple733.sh" "$profile" "$boot" "$work/plan.json" "$before_audio"
+# Change only the admitted helper copies. Inverse comparison retains every
+# non-version byte, including hardware gates and existing test assertions.
+for pair in "$profile:native_profile" "$boot:boot_recipe"; do
+ tree=${pair%:*}; kind=${pair##*:}
+ while IFS= read -r path; do
+  [[ $path != /* && $path != *..* && -f $tree/$path && ! -L $tree/$path ]]
+  sed -e 's/7\.3\.3/7.3.4/g' -e 's/7\\\.3\\\.3/7\\.3\\.4/g' "$tree/$path" > "$work/helper-next"
+  sed -e 's/7\.3\.4/7.3.3/g' -e 's/7\\\.3\\\.4/7\\.3\\.3/g' "$work/helper-next" | cmp - "$tree/$path"
+  bash -n "$work/helper-next"
+  install -m644 "$work/helper-next" "$tree/$path"
+ done < <(jq -er --arg kind "$kind" '.version_helper_hashes[$kind]|keys[]' "$tree/manifests/stable733-cumulative-20261107.json")
+ install -m644 "$work/plan.json" "$tree/manifests/cumulative-release.json"
+done
+printf '%s\n' "$commit" > "$profile/source-commit"
+jq --arg commit "$commit" --argjson tuple "$tuple" '. + {
+ source_commit:$commit,kernel_release:$tuple.kernel_release,rpm_revision:($tuple.release|tostring),
+ diagnostic_audio_driver:($tuple.audio_driver|gsub("_";".")),upstream_version:$tuple.version,
+ upstream_commit:$tuple.upstream.commit,upstream_sha256:$tuple.upstream.source_sha256
+}' "$work/stable734/parent-composition.json" > "$profile/source-composition.json"
+jq --slurpfile parent "$work/stable734/parent-composition.json" -e '
+ . as $next | all($parent[0]|to_entries[]; .key as $key |
+ (["source_commit","kernel_release","rpm_revision","diagnostic_audio_driver","upstream_version","upstream_commit","upstream_sha256"]|index($key))!=null or $next[$key]==.value)
+' "$profile/source-composition.json" >/dev/null
+jq --slurpfile m "$manifest" '.version=$m[0].upstream.version | .upstream_commit=$m[0].upstream.commit |
+ .source_sha256=$m[0].upstream.source_sha256 | .source_url=$m[0].upstream.source_url |
+ .signature_url=$m[0].upstream.signature_url | .source_date_epoch=$m[0].upstream.released_epoch' \
+ < "$adaptation/source-lock.json" > "$work/source-lock.json"
+cp "$work/source-lock.json" "$adaptation/source-lock.json"
+sha256sum -c --strict --quiet "$work/configs.sha256"
+(cd "$profile"; find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+(cd "$boot"; find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$work/assets.sha256"
+jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$work/assets.sha256" > "$work/assets.json"
+jq --slurpfile assets "$work/assets.json" '.source_assets=$assets[0]' "$boot/lock.json" > "$work/lock.json"
+cp "$work/lock.json" "$boot/lock.json"; cp "$work/lock.json" "$output/boot-payload.json"
+# Keep historical changelog entries exact. This is source qualification only.
+awk '/^%changelog$/{exit}{gsub(/7[.]3[.]3/,"7.3.4");if($0=="%global senemos_build_release 28")$0="%global senemos_build_release 1";print}' "$parent" > "$work/candidate.spec"
+spec=$output/uke-kernel-migration-check.spec
+awk '/^%description/{exit} /^Name:/{$0="Name: uke-kernel-migration-check"} /^Summary:/{$0="Summary: Full28-preserving Linux7.3.4 source and native object qualification"} /^(Requires|Provides|Recommends|Conflicts|Obsoletes)(\([^)]*\))?:/{next} /^ExclusiveArch:/{print "Source201: uke-stable734.tar.xz"} {print}' "$work/candidate.spec" > "$spec"
+printf '\n%%description\nQualify signed Linux7.3.4 against the complete cumulative full28 source and native objects. No full Image, firmware activation or physical acceptance.\n\n' >> "$spec"
+awk '/^%prep$/{emit=1}/^%build$/{exit}emit{print}' "$work/candidate.spec" >> "$spec"
+printf '\ntar -xJf %%{SOURCE201}\n' >> "$spec"
+awk '/^%build$/{emit=1;next}/^bash boot-recipe\/src\/boot\/build-payload[.]sh /{exit}emit{print}' "$work/candidate.spec" >> "$spec"
+cat >> "$spec" <<'SPEC'
+
+%build
+bash stable734/check-stable734.sh "$PWD" "$PWD/stable734-objects"
+
+%install
+install -d %{buildroot}%{_datadir}/%{name}
+install -m644 stable734/{manifest.json,source-commit,parent-composition.json} \
+ stable734-objects/{source.sha256,native-objects.sha256,config.sha256} \
+ %{_topdir}/source-verification.txt %{buildroot}%{_datadir}/%{name}/
+
+%check
+test ! -e arch/arm64/boot/Image
+test ! -e stable734-objects/arch/arm64/boot/Image
+test -s %{buildroot}%{_datadir}/%{name}/native-objects.sha256
+
+%files
+%license COPYING
+%{_datadir}/%{name}/*
+
+%changelog
+* Sun Nov 15 2026 Uke contributors - 7.3.4-1
+- Retain cumulative full28 and qualify signed Linux7.3.4 with native objects.
+SPEC
+epoch=$(git -C "$owner" show -s --format=%ct HEAD)
+for pair in senemos-native-profile-7.3.4.tar.xz:native-profile senemos-uke-boot-recipe.tar.xz:boot-recipe senemos-uke-adaptation-7.3.4.tar.xz:senemos-adaptation uke-stable734.tar.xz:stable734; do
+ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -cJf "$output/${pair%%:*}" -C "$work" "${pair#*:}"
+done
+for file in linux-7.3.3.tar.xz linux-7.3.3.tar.sign senemos-native-profile-7.3.3.tar.xz senemos-uke-adaptation-7.3.3.tar.xz "${parent##*/}"; do
+ unlink "$output/$file"
+done
+curl -qfsSL --retry 2 --max-time 600 --max-filesize 209715200 "$(jq -er .upstream.source_url "$manifest")" -o "$output/linux-7.3.4.tar.xz"
+curl -qfsSL --retry 2 --max-time 60 --max-filesize 16384 "$(jq -er .upstream.signature_url "$manifest")" -o "$output/linux-7.3.4.tar.sign"
+printf '%s  %s\n' "$(jq -er .upstream.source_sha256 "$manifest")" "$output/linux-7.3.4.tar.xz" | sha256sum -c --strict --quiet -
+sha256sum -c --strict --quiet "$work/retained.sha256"
+printf 'Exact full28 retained; source7.3.4-1 qualification prepared without full revision reservation or hardware operation\n'

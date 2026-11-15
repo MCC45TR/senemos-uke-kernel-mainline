@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "scope": "Full28-preserving Linux7.3.4 source and native-object qualification; no full release reservation",
+  "parent_full_build": 11330530,
+  "parent_source_commit": "8eb8316d3af498f4bbd25e89896d648d0ba37202",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11330530/senemos-uke-linux-kernel-mainline-unstable-7.3.3-28.src.rpm",
+  "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
+  "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
+  "full_release": 1,
+  "source_check_release": 1,
+  "upstream": {
+    "version": "7.3.4",
+    "commit": "7595a62d45ee1a2297eafa5f2ef5d0a45142d84d",
+    "source_sha256": "b11b6df8295e8e991ff040b71aaa4994a8b55caa23b6b092907f195b5840fd1f",
+    "source_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.4.tar.xz",
+    "signature_url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.4.tar.sign",
+    "primary_signer": "647F28654894E3BD457199BE38DBBDC86092693E",
+    "released_epoch": 1794334272,
+    "source_seals": {
+      "drivers/nvmem/core.c": "6cdf164cac773046074a5b7587cd3747564694ea02aa46e86cc5702ded3e6da4"
+    }
+  },
+  "incremental_patch_sha256": "28df51493ae01b36c575a1aa257ac4a6896054af772d180fbf73a98e6190dbc6",
+  "retained_hardware_feature_fields": true,
+  "speaker_gain_ceiling": 223,
+  "no_runtime_rpm_added": true,
+  "source_native_qualified": false,
+  "full_kernel_built": false,
+  "installed_on_target": false,
+  "oem_secure_boot_chain_qualified": false,
+  "physical_acceptance": false
+}
