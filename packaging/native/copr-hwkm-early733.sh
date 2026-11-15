@@ -95,6 +95,7 @@ jq --slurpfile assets "$work/boot-assets.json" '.source_assets=$assets[0]' "$boo
 cp "$work/lock.json" "$boot/lock.json"
 cp "$work/lock.json" "$output/boot-payload.json"
 node "$owner/packaging/native/rewrite-hwkm-early733.mjs" "$parent" "$work/full27.spec" "$manifest"
+sha256sum "$work/full27.spec"
 printf '%s  %s\n' "$(jq -er .result.planned_full_spec_sha256 "$manifest")" "$work/full27.spec" | sha256sum -c --strict --quiet -
 cp "$work/full27.spec" "$parent"
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
