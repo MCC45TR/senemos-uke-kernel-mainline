@@ -99,25 +99,25 @@ int main(void)
  struct device child={.parent=&gdev.dev};apm.gdev=&gdev;
  for (int pos=0;pos<2;pos++) {
   info_slot=(struct audioreach_graph_info){42,99};reply_next=0;reply_count=1;reply_status=0;apm.wait=0;
-  int ret=__q6apm_unmap_memory_fixed_region(&child,7,pos);
+  int ret=__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,pos);
   if (ret) fprintf(stderr,"APM unmap success returned %d; expected 0\n",ret);
   assert(ret==0 && apm.wait==1 && !apm.lock.held);
   assert(sent_token==(7U | (pos?APM_MMAP_TOKEN_MAP_TYPE_POS_BUF:0)));
   assert(sent_handle==(pos?99U:42U));
   assert(info_slot.mem_map_handle==(pos?42U:0) && info_slot.pos_buf_mem_map_handle==(pos?0:99U));
-  int before=sends;assert(__q6apm_unmap_memory_fixed_region(&child,7,pos)==0 && sends==before);
+  int before=sends;assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,pos)==0 && sends==before);
   info_slot=(struct audioreach_graph_info){42,99};reply_next=0;reply_status=7;
-  assert(__q6apm_unmap_memory_fixed_region(&child,7,pos)==-EINVAL);
+  assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,pos)==-EINVAL);
   assert(info_slot.mem_map_handle==42 && info_slot.pos_buf_mem_map_handle==99);
   reply_next=0;send_error=-EPIPE;
-  assert(__q6apm_unmap_memory_fixed_region(&child,7,pos)==-EPIPE && !reply_next);
+  assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,pos)==-EPIPE && !reply_next);
   assert(info_slot.mem_map_handle==42 && info_slot.pos_buf_mem_map_handle==99);
   send_error=0;reply_count=0;
-  assert(__q6apm_unmap_memory_fixed_region(&child,7,pos)==-ETIMEDOUT);
+  assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,pos)==-ETIMEDOUT);
   assert(info_slot.mem_map_handle==42 && info_slot.pos_buf_mem_map_handle==99);
  }
- allocation_fail=true;assert(__q6apm_unmap_memory_fixed_region(&child,7,false)==-ENOMEM);allocation_fail=false;
- present=false;int before=sends;assert(__q6apm_unmap_memory_fixed_region(&child,7,false)==-ENODEV && sends==before);
+ allocation_fail=true;assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,false)==-ENOMEM);allocation_fail=false;
+ present=false;int before=sends;assert(__q6apm_unmap_memory_fixed_region(dev_get_drvdata(child.parent),7,false)==-ENODEV && sends==before);
  struct gpr_ibasic_rsp_result_t result={APM_CMD_SHARED_MEM_UNMAP_REGIONS,0};
  struct gpr_resp_pkt reply={.hdr={.opcode=GPR_BASIC_RSP_RESULT,.token=7},.payload=&result,.payload_size=sizeof(result)};
  apm.wait=0;unmap_response(&apm,&reply);assert(!apm.wait && info_slot.mem_map_handle==42 && info_slot.pos_buf_mem_map_handle==99);

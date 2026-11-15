@@ -19,7 +19,7 @@ retargets the compact ALSA identity, and changes only16 admitted version helper
 copies with whole-file inverse comparison. The recipe keeps all existing
 preparation and behavioral checks. Unknown patch or source-seal differences
 must fail and be reviewed; this version update does not remove those checks.
-COPR then compiles nine affected native units without an Image or firmware
+COPR then compiles ten affected native units without an Image or firmware
 operation. Source and native qualification remain pending.
 
 The first check11331348 stops in source preparation at adaptation0056:
@@ -30,6 +30,19 @@ policy into both normal event and service-loss queueing, preserving the Uke
 consumer ACK ordering, lifetime, quarantine and teardown. A four-line whole
 patch inverse and actual source application pass; the real PMIC object must
 reference `system_freezable_wq`. No event or power guard is removed.
+
+The second check11331363 reaches the AudioReach unmap change. Upstream now
+contains most of adaptation0085 and changes its internal producer argument
+from child device to APM instance, while also freeing mappings during component
+removal. The rebased patch retains the Uke missing-graph refusal and leaves
+upstream teardown, token and error handling intact. Existing fixture calls now
+resolve the same APM instance; all assertions remain. Adaptation0091 moves the
+new hardware-position reset to successful fresh allocation, preserving both
+the upstream reset and the Uke repeat/allocation-failure cursor contract.
+The buffer fixture additionally checks those reset and preservation cases.
+All122 adaptation patches apply to the signed7.3.4 source in a small PC text
+rehearsal, without compiling. Complete preparation and native object results
+remain separate COPR gates.
 
 The fresh KDE image currently boots full28 with original Fedora audio providers.
 Supplying the missing exact generic DSP data restores the normal HiFi profile;

@@ -1,0 +1,39 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qcom: preserve Uke missing-graph unmap refusal on 7.3.4
+
+Linux7.3.4 already carries the map-type token, returned status and selected
+handle fix. Keep its apm-based unmap helper, removal-time mapping cleanup,
+position reset and error logging. Retain the cumulative Uke refusal to alter
+the shared response or wake a waiter for an absent graph.
+
+Signed-off-by: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+---
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -1038,8 +1038,6 @@
+ 			wake_up(&apm->wait);
+ 			break;
+ 		case APM_CMD_SHARED_MEM_UNMAP_REGIONS:
+-			apm->result.opcode = result->opcode;
+-			apm->result.status = result->status;
+ 			if (result->status)
+ 				dev_err(dev, "Error (%d) Processing 0x%08x cmd\n", result->status,
+ 					result->opcode);
+@@ -1048,13 +1046,16 @@
+ 			is_pos_buf = hdr->token & APM_MMAP_TOKEN_MAP_TYPE_POS_BUF;
+ 
+ 			info = idr_find(&apm->graph_info_idr, graph_id);
+-			if (info && !result->status) {
++			if (!info)
++				break;
++			if (!result->status) {
+ 				if (is_pos_buf)
+ 					info->pos_buf_mem_map_handle = 0;
+ 				else
+ 					info->mem_map_handle = 0;
+ 			}
+ 
++			apm->result = *result;
+ 			wake_up(&apm->wait);
+ 			break;
+ 		default:
