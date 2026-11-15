@@ -6,6 +6,11 @@ owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 manifest=$owner/manifests/stable734-20261115.json
 output=$(realpath -m "$1")
 [[ ! -e $output && ! -L $output && -z $(git -C "$owner" status --porcelain) ]]
+cert=src/livepatch/uke-livepatch-20261115.pem
+git -C "$owner" ls-files --error-unmatch "$cert" >/dev/null
+printf '%s  %s\n' "$(jq -er .certificate_pem_sha256 "$owner/manifests/livepatch734-20261115.json")" "$owner/$cert" | sha256sum -c --strict --quiet -
+grep -Fxq -- '-----BEGIN CERTIFICATE-----' "$owner/$cert"
+! grep -Eq 'BEGIN .*PRIVATE KEY' "$owner/$cert"
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 curl -qfsSL --retry 2 --max-time 600 --max-filesize 314572800 "$(jq -er .parent_srpm_url "$manifest")" -o "$work/parent.src.rpm"

@@ -10,6 +10,7 @@
 .directory
 *.key
 *.pem
+!/src/livepatch/uke-livepatch-20261115.pem
 *.part
 *.bundle
 *.img
