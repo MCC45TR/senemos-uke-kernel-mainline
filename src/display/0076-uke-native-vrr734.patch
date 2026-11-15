@@ -48,7 +48,7 @@ This source change does not qualify physical cadence or receiver tolerance.
  static u32 dither_matrix[DITHER_MATRIX_SZ] = {
  	15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10
  };
-@@ -1750,6 +1768,7 @@
+@@ -1754,6 +1772,7 @@
  		return;
  	dpu_enc->dsc = dpu_encoder_get_dsc_config(drm_enc);
  

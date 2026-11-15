@@ -144,3 +144,12 @@ complete source stages recovers its old hash when only the signed upstream
 delta is reversed. Five contracts receive those admitted before/after hashes
 with complete JSON inverses; no charging writer, threshold, event or assertion
 changes. The actual battery and PCM frontend objects join the native build gate.
+
+Check8/11331623 passes the complete inherited source preparation, including all
+battery stages. The late VRR preimage check correctly rejects an incomplete
+local rehearsal: it omitted the already retained MST stream-depth layer. The
+actual recipe had that feature throughout. The rehearsal now includes its exact
+qualified patch before measuring the whole encoder pre/post images, and the
+native gate adds the actual MST object. No MST or display feature is removed;
+the VRR patch still changes only native initialization and explicit policy
+precedence. The next check must qualify the new functions and actual objects.

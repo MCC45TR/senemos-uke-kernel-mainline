@@ -10,7 +10,7 @@
   "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
   "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
   "full_release": 2,
-  "source_check_release": 8,
+  "source_check_release": 9,
   "full_release_policy": "increment-after-success",
   "explicit_user_next_release": 2,
   "first_full_release": 2,

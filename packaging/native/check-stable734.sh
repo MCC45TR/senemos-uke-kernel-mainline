@@ -18,6 +18,7 @@ make -s -C "$kernel" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="$localv
 bash "$kernel/native-profile/tests/kernel-hardening-config-contract.sh" "$out/.config"
 grep -Fxq 'CONFIG_LIVEPATCH=y' "$out/.config"
 objects=(drivers/gpu/drm/msm/dsi/dsi_host.o drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.o
+ drivers/gpu/drm/msm/dp/dp_mst_drm.o
  drivers/soc/qcom/pmic_glink_altmode.o
  drivers/gpu/drm/panel/panel-xiaomi-o82.o drivers/ufs/core/ufshcd.o
  drivers/tee/qcomtee/call.o drivers/tee/qcomtee/qtee-tpm-info.o
