@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "copr_build": 11327411,
+  "source_check_release": 112,
+  "source_commit": "f03d7eb191a98feaf03d6806c14550ff97ef3c07",
+  "native_seconds": 438,
+  "signed_report_sha256": "37cbf36febf32ce2dc8d83b912ef3359f2e044ae3d77f7cc984a8b7992c70e10",
+  "trusted_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "compiler_sanitizer_modes": 4,
+  "passive_objects": 30,
+  "read_faults_per_mode": 40,
+  "semantic_mutants": 4,
+  "native_handoff_modes": 4,
+  "provider_object_sha256": "03c856ce27cb4f06b9f9b8e494dac1aaba4e970bf521a56dcfedd41ed40d5fbf",
+  "all38_adapter_object_sha256": "4f69671f3ea91de0381a36df55f8f892b57f216b472c66800ae1b29b72c9d4f8",
+  "firmware_guard_unchanged": true,
+  "crm_activated": false,
+  "full_kernel_built": false,
+  "target_changed": false,
+  "raw_frame_captured": false
+}

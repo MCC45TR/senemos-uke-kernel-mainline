@@ -1,0 +1,26 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: expose bounded speaker enable diagnostics
+
+Add one volatile read-only diagnostic under the existing admitted graph owner
+and guard generation. Unprivileged or inactive reads issue no DSP request.
+The enable result cannot authorize gain243 or substitute for VI/limiter proof.
+All existing state, provisioning, protection, graph and codec callbacks remain.
+
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -296,6 +296,7 @@ static int fs19xx_state_get(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_v
+ 	value->value.enumerated.item[0] = state;
+ 	return 0;
+ }
++#include "uke-fs19xx-enable-control.h"
+ static const struct snd_kcontrol_new fs19xx_controls[] = {
+ 	{ .iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = UKE_FS19XX_CONTROL,
+ 	  /* alsactl must not serialize a zero readback and replay it over READY. */
+@@ -304,6 +305,7 @@ static const struct snd_kcontrol_new fs19xx_controls[] = {
+ 	{ .iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = UKE_FS19XX_STATUS,
+ 	  .access = SNDRV_CTL_ELEM_ACCESS_READ | SNDRV_CTL_ELEM_ACCESS_VOLATILE,
+ 	  .info = fs19xx_state_info, .get = fs19xx_state_get },
++	UKE_FS19XX_ENABLE_CONTROL,
+ };
+ int q6apm_fs19xx_controls(struct snd_soc_component *component)
+ {

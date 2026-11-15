@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "kernel_parent": "424caffa1313639827d8a5c523a2b3dd7d01f37a",
+  "contribution": "9ea9a0c8eb12fc66e76b5ea44a66d13f6a44124d",
+  "qualified_build": 11267985,
+  "qualified_build_retired_after_evidence_preservation": true,
+  "receipt_sha256": "9e07a1a0e936ab03cd1dcfd3221721a7757a6176848cf0121be15d556fec3c99",
+  "trusted_signatures_independently_verified": 2,
+  "signer_fingerprint": "2204A661EA630A5303500085538797E72A3E4ECA",
+  "previous_codec_sha256": "13cb6a40a5e11234e5f349260f266e66c48699d68dcfcf6742d47e69bc9bf0fb",
+  "inputs": [
+    {"path": "src/boot/boot-image.cpp", "sha256": "d8391eacf845448f3134892f1be431ba1e3f51c58aa522370728ff4965f3dcfa"},
+    {"path": "tests/boot-image-contract.sh", "sha256": "2ff6a874fb60749ced1504aff552557fb1e732c52c6ee91dbb96e5ad17e776fc"}
+  ],
+  "scope": "Zero Android OS-version metadata in newly created and packed v4 headers; retain historical inspection and every other gate",
+  "native_profile_and_boot_recipe_both_required": true,
+  "avb_change": false,
+  "firmware_change": false,
+  "physical_acceptance": false
+}

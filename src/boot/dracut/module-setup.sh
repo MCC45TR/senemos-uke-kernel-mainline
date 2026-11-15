@@ -18,6 +18,9 @@ install() {
     inst_binary "$moddir/uke-userdata-grow" /usr/libexec/uke-userdata-grow
     inst_multiple /usr/sbin/fsck.f2fs /usr/sbin/resize.f2fs
     inst_simple "$moddir/uke-coresight-bringup.conf" /usr/lib/modprobe.d/uke-coresight-bringup.conf
+    # This candidate selects wrapped keys at the first ICE probe. A later
+    # vendor ramdisk or a live parameter change cannot rebuild that profile.
+    inst_simple "$moddir/uke-hwkm.conf" /usr/lib/modprobe.d/uke-hwkm.conf
     inst_simple "$moddir/root-guard.sh" /usr/libexec/uke-root-guard
     chmod 755 "$initdir/usr/libexec/uke-root-guard"
     inst_simple "$moddir/uke-root-guard.service" "$systemdsystemunitdir/uke-root-guard.service"

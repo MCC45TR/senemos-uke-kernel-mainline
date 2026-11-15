@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Cumulative7334 plus qualified enable alignment and upstream ZRAM extra backends/multi and default-off Zswap, without new runtime packages or swap policy",
+  "parent_full_build": 11284537,
+  "parent_full_source": "d8c1f6913d3af8aecdef968bc24da3f5b4d7f811",
+  "qualified_audio_check": 11284652,
+  "qualified_audio_source": "5e451db3750bc42337e600258453dbe9bfeae0a6",
+  "previous_native_config_sha256": "ef98810f064de0f97a1ef9361737d37cd7d7353fdfb0e71fc7979fca456c9136",
+  "source_refs": [
+    {
+      "repository": "gregkh/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "files": [
+        "drivers/block/zram/Kconfig",
+        "drivers/block/zram/Makefile",
+        "drivers/block/zram/backend_lz4hc.c",
+        "drivers/block/zram/backend_deflate.c",
+        "drivers/block/zram/backend_842.c",
+        "mm/Kconfig",
+        "mm/zswap.c",
+        "mm/zsmalloc.c",
+        "lib/Kconfig"
+      ],
+      "license": "GPL-2.0 / GPL-2.0-only per file",
+      "role": "Unmodified upstream Kconfig and implementations; generic memory feature, no board protocol or OEM value transplant"
+    },
+    {
+      "repository": "MCC45TR/senemos-uke-kernel-mainline",
+      "commit": "0823cd051dae53a818fce5dacd356cd7b7c7ae8f",
+      "files": [
+        "configs/kernel-manager/resources.config",
+        "configs/kernel-manager/resource-dependencies.txt",
+        "tests/kernel-manager-config-contract.sh",
+        "packaging/native/apply-kernel-manager-config.sh"
+      ],
+      "license": "Project GPL-2.0",
+      "role": "Existing complete intent/dependency delta checks for all manager roles; original checks remain"
+    }
+  ],
+  "payload_assets": [
+    "configs/memory-compression733.config",
+    "packaging/native/check-memory-compression733.sh",
+    "packaging/native/copr-memory-compression733.sh",
+    "docs/MEMORY-COMPRESSION-733.md",
+    "packaging/native/prepare-memory-manager733.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "configs/memory-compression733.config",
+      "sha256": "406433ebc03c0d6360b0fc142ef0f2aed47078285a55ff453215fcca173e552b"
+    },
+    {
+      "path": "packaging/native/check-memory-compression733.sh",
+      "sha256": "9bf5e4d2fdeaea3a368a163fde5056239b22c2d6392a6d1475a66e130ad01506"
+    },
+    {
+      "path": "packaging/native/copr-memory-compression733.sh",
+      "sha256": "2c23b35e280995578303bb409293a3d1fbb1781863bc002a37a5bed270e5095e"
+    },
+    {
+      "path": "docs/MEMORY-COMPRESSION-733.md",
+      "sha256": "db9791c5401dd179fba7ed10923142f2d5ff0a9189a919b409062611c1c67a57"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
+    },
+    {
+      "path": "manifests/stable733-cumulative-20261107.json",
+      "sha256": "8714c9954560307c625d6a69d177d9a49154783a78926ad612188ba9fc23328c"
+    },
+    {
+      "path": "manifests/stop-deadline-cumulative-20261107.json",
+      "sha256": "98547d54e527b4ab3a16520c08021febf9765501f6a81e244b15ec2f73248788"
+    },
+    {
+      "path": "manifests/pcm-period-cumulative-20261107.json",
+      "sha256": "79f6d89b065b2a18df07ade3a831229259e9650a10de7619c6b7a110d6488f76"
+    },
+    {
+      "path": "manifests/speaker-enable-control-cumulative-20261107.json",
+      "sha256": "db65df168c1a18d0dfb7e9494330eb813ede931660c94390436eb1af541367ec"
+    },
+    {
+      "path": "packaging/native/prepare-memory-manager733.sh",
+      "sha256": "30981ede5ecfcf8c52c3c098cd9f9f2bf3912a5133fb4096701876aee2975d01"
+    }
+  ],
+  "acceptance": {
+    "actual_native_zram_zswap_zsmalloc_objects": false,
+    "all_three_reference_config_gates_required": true,
+    "embedded_boot_config_gate_required": true,
+    "seven_zram_backends_required": true,
+    "existing_lzo_rle_default_required": true,
+    "zswap_default_off_required": true,
+    "no_new_swap_or_writeback_policy": true,
+    "physical_roundtrip_and_pressure_acceptance": false,
+    "physical_speaker_limiter_qualified": false,
+    "gain_ceiling": 223
+  },
+  "prior_attempt": {
+    "build": 11284729,
+    "source": "a40bc8395fa29d340631d72872ff113e27ef2017",
+    "source_release": 20,
+    "state": "failed",
+    "duration_seconds": 415,
+    "stage": "prepare-migration-manager complete config contract",
+    "memory_objects_reached": false,
+    "correction": "Backend-selected compression libraries follow modular ZRAM; preserve dependency checks and add bounded failure diagnostics; native result required"
+  },
+  "config_identity_followup": {
+    "failed_build": 11284750,
+    "source_release": 21,
+    "reason": "All manager/reference configs and native compilation passed; old stable733 inherited field comparison rejects the intentionally changed native-config digest",
+    "correction": "Admit only exact prior/new native-config digest under this layer and require byte-exact inverse; no other retained field exempted",
+    "native_result": false
+  }
+}

@@ -1,0 +1,133 @@
+diff --git a/drivers/iio/common/uke-ssc/uke-ssc-iio.c b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+index 0000000..1111111 100644
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -31,6 +31,8 @@
+ #define SSC_QMI_REPORT_LARGE 0x22
+ #define SSC_REPORT_TYPE_LARGE 1
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
++#include "uke-ssc-heading.h"
++
+ #define SSC_SENSOR_COUNT 12
+ #define SSC_SAMPLE_MAX 6
+ /* IIO repeat4 s64 elements require a 32-byte-aligned 64-byte scan. */
+@@ -43,6 +45,8 @@ enum ssc_stream_user {
+ 	SSC_STREAM_DIRECT = 1U,
+ 	SSC_STREAM_BUFFER = 2U,
+ 	SSC_STREAM_DUAL = 4U,
++	SSC_STREAM_HEADING_DIRECT = 8U,
++	SSC_STREAM_HEADING_BUFFER = 16U,
+ 	/* Auxiliary ownership is per SUID. Only ALS uses DUAL; only the
+ 	 * distinct physical proximity SUID can use the input consumer.
+ 	 */
+@@ -88,6 +92,9 @@ struct ssc_sensor {
+ 	const struct ssc_description *description;
+ 	struct iio_dev *iio;
+ 	struct input_dev *input;
++	struct iio_dev *heading_iio;
++	struct iio_chan_spec heading_channel[2];
++	bool heading_registered, heading_buffered;
+ 	bool input_registered, input_open;
+ 	struct iio_chan_spec channel[SSC_SAMPLE_MAX + 1];
+ 	struct uke_ssc_suid suid;
+@@ -433,6 +440,7 @@ static void ssc_client_reset(struct qmi_handle *qmi)
+ 
+ static void ssc_dual_feed_locked(struct ssc_sensor *s);
+ static void ssc_proximity_feed_locked(struct ssc_sensor *s);
++static void ssc_heading_feed_locked(struct ssc_sensor *s);
+ 
+ /* The caller holds c->state; values have passed the sensor's exact API decoder. */
+ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[SSC_SAMPLE_MAX], u64 ticks)
+@@ -454,6 +462,7 @@ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[SSC_SAMPLE_
+ 	complete(&s->sample_done);
+ 	ssc_dual_feed_locked(s);
+ 	ssc_proximity_feed_locked(s);
++	ssc_heading_feed_locked(s);
+ 	/* Coalesce acquisition events in the existing serialized worker. It
+ 	 * performs no new request when the demanded streams are unchanged.
+ 	 */
+@@ -759,7 +768,7 @@ static void ssc_report(struct qmi_handle *qmi, struct sockaddr_qrtr *peer,
+ 						c->dual.buffer_fault |= c->dual.buffered;
+ 				}
+ 				s->ready = false;
+-				s->buffer_fault |= s->buffered && s->stream_active;
++				s->buffer_fault |= (s->buffered || s->heading_buffered) && s->stream_active;
+ 				s->need_stop |= s->stream_active;
+ 				s->error = -EREMOTEIO;
+ 				complete_all(&s->metadata_done);
+@@ -868,7 +877,7 @@ static int ssc_start(struct ssc_sensor *s)
+ 	if (ret) {
+ 		/* A lost acknowledgement leaves stream ownership uncertain. */
+ 		spin_lock_irqsave(&c->state, flags);
+-		s->buffer_fault |= s->buffered;
++		s->buffer_fault |= s->buffered || s->heading_buffered;
+ 		ssc_invalidate_locked(c);
+ 		ssc_schedule_locked(c);
+ 		spin_unlock_irqrestore(&c->state, flags);
+@@ -916,13 +925,15 @@ static int ssc_stop(struct ssc_sensor *s)
+ static unsigned int ssc_stream_wanted(const struct ssc_sensor *s)
+ {
+ 	return s->stream_users & (SSC_STREAM_DIRECT | SSC_STREAM_DUAL |
+-		(s->buffer_fault ? 0U : SSC_STREAM_BUFFER));
++		SSC_STREAM_HEADING_DIRECT | (s->buffer_fault ? 0U :
++		(SSC_STREAM_BUFFER | SSC_STREAM_HEADING_BUFFER)));
+ }
+ 
+ static bool ssc_stream_user_valid(unsigned int user)
+ {
+ 	return user == SSC_STREAM_DIRECT || user == SSC_STREAM_BUFFER ||
+-	       user == SSC_STREAM_DUAL;
++	       user == SSC_STREAM_DUAL || user == SSC_STREAM_HEADING_DIRECT ||
++	       user == SSC_STREAM_HEADING_BUFFER;
+ }
+ 
+ static int ssc_stream_get(struct ssc_sensor *s, unsigned int user)
+@@ -981,6 +992,7 @@ static int ssc_stream_put(struct ssc_sensor *s, unsigned int user)
+ }
+ 
+ #include "uke-ssc-proximity-input.h"
++#include "uke-ssc-heading-input.h"
+ 
+ static int ssc_read_sample(struct iio_dev *iio, s64 value[SSC_SAMPLE_MAX])
+ {
+@@ -1271,6 +1283,16 @@ static void ssc_reconcile(struct work_struct *work)
+ 			s->registered = true;
+ 			spin_unlock_irqrestore(&c->state, flags);
+ 		}
++		if (ready && s->heading_iio && !s->heading_registered) {
++			ret = iio_device_register(s->heading_iio);
++			if (ret) {
++				ssc_record_failure(c, generation, SSC_FAILURE_REGISTRATION, ret);
++			} else {
++				spin_lock_irqsave(&c->state, flags);
++				s->heading_registered = true;
++				spin_unlock_irqrestore(&c->state, flags);
++			}
++		}
+ 		if (ready && apply && buffered)
+ 			ssc_start(s);
+ 	}
+@@ -1882,9 +1904,12 @@ static void ssc_shutdown(struct ssc_controller *c)
+ 	ssc_proximity_unregister(c);
+ 	if (c->dual.registered)
+ 		iio_device_unregister(c->dual.iio);
+-	for (i = 0; i < SSC_SENSOR_COUNT; i++)
++	for (i = 0; i < SSC_SENSOR_COUNT; i++) {
++		if (c->sensor[i].heading_registered)
++			iio_device_unregister(c->sensor[i].heading_iio);
+ 		if (c->sensor[i].registered)
+ 			iio_device_unregister(c->sensor[i].iio);
++	}
+ 	destroy_workqueue(c->workqueue);
+ }
+ 
+@@ -1957,6 +1982,9 @@ static int ssc_probe(struct platform_device *pdev)
+ 		ret = ssc_allocate_iio(c, &c->sensor[i]);
+ 		if (ret)
+ 			return ret;
++		ret = ssc_heading_allocate(c, &c->sensor[i]);
++		if (ret)
++			return ret;
+ 	}
+ 	ret = ssc_dual_allocate(c);
+ 	if (ret)

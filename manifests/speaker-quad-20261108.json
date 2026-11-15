@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Four corner program-channel routing in MFC; physical calibration and VI retain their existing identities",
+  "parent_full_build": 11287616,
+  "parent_source_commit": "78121e3f24357f2f9bcfb728779279532c8da7cf",
+  "source_stage_draft": false,
+  "native_callback_lifetime_qualified": false,
+  "full_delivery_source_qualified": false,
+  "physical_accepted": false,
+  "gain_ceiling": 223,
+  "new_runtime_rpms": 0,
+  "new_services": 0,
+  "per_sample_cpu_processing": false,
+  "payload_assets": [
+    "src/audio/uke-speaker-quad.h",
+    "src/audio/uke-speaker-quad-lpass.h",
+    "src/audio/uke-speaker-quad-control.h",
+    "src/audio/apply-speaker-quad733.sh",
+    "tests/speaker-quad-route.c",
+    "tests/speaker-quad-route.sh",
+    "packaging/native/check-speaker-quad733.sh",
+    "packaging/native/stage-speaker-quad733.sh",
+    "docs/SPEAKER-QUAD-ROTATION.md",
+    "tests/speaker-quad-lpass.c",
+    "packaging/native/copr-speaker-quad733.sh",
+    "tests/speaker-quad-card.c",
+    "src/audio/uke-speaker-quad-wire.h",
+    "tests/speaker-quad-wire.c",
+    "src/health/rproc-crash-event.patch",
+    "src/health/apply-rproc-event733.sh",
+    "packaging/native/check-rproc-event733.sh",
+    "tests/rproc-crash-event.c",
+    "tests/rproc-crash-event.sh",
+    "src/audio/uke-speaker-quad-apm.h",
+    "src/audio/uke-speaker-quad-transport.h"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-speaker-quad.h",
+      "sha256": "e2c3dd04eaf5eaf534ae941b659dfa61277816977f42251f5d8de65ffa72fcc0"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-lpass.h",
+      "sha256": "42456ccc065b73bd39ecf1e8b5ae48b12597eb04f23e90995f07f8977c090b76"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-control.h",
+      "sha256": "ccb25ae92bab0751ffb419fff9462b9f4b68e562963be653ceb181eb4b760a3f"
+    },
+    {
+      "path": "src/audio/apply-speaker-quad733.sh",
+      "sha256": "4bc98ed68fd2e10c9118bceae53ac25b82c0ac9936f85eea2f29f837c8c84c99"
+    },
+    {
+      "path": "tests/speaker-quad-route.c",
+      "sha256": "c44bcb1837c45fc7891d91b47f338b3c561a3e9be53153b5517689c7f2aa5923"
+    },
+    {
+      "path": "tests/speaker-quad-route.sh",
+      "sha256": "134a17009bdca2e6086dbf4de8ea2b2a138220a546869853e1bf3e14f04aa203"
+    },
+    {
+      "path": "packaging/native/check-speaker-quad733.sh",
+      "sha256": "d03081752c2089a9a2922d607d0e26c303c767aea6a5b8ee285533277b7b8a46"
+    },
+    {
+      "path": "packaging/native/stage-speaker-quad733.sh",
+      "sha256": "3616c94f0ac437bd47a447ff8ed96e6ebd547c9efa06cf16e11df252d89d2158"
+    },
+    {
+      "path": "docs/SPEAKER-QUAD-ROTATION.md",
+      "sha256": "eb98e3330ed83e1d491596d8ac7357b5743d61660b82e7b81ab13bb9724b11d6"
+    },
+    {
+      "path": "tests/speaker-quad-lpass.c",
+      "sha256": "6f4ab7529a3f3536f8628f893b610224e07965c6e24ff27573d147d2d8218a8f"
+    },
+    {
+      "path": "packaging/native/copr-speaker-quad733.sh",
+      "sha256": "34f5afdf398c394f8b3e73a62655d3c5cc46e38af26a83e800fa36afd8b42903"
+    },
+    {
+      "path": "tests/speaker-quad-card.c",
+      "sha256": "b01664939e05f33ea9733c1edca07eba14c0f4172c82bd860ba6c03d0b891eaf"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-wire.h",
+      "sha256": "5a7e8219e68756e7632a3f7d9c9a3905c85c936284d810b4376982f64e577090"
+    },
+    {
+      "path": "tests/speaker-quad-wire.c",
+      "sha256": "ff2d040db928f1bb20accdb8862fb8f216eb9f089e66c3b7034236edf8692194"
+    },
+    {
+      "path": "src/health/rproc-crash-event.patch",
+      "sha256": "ea5d1accc0c38b9c962c4537aaa97a996d1d42b429b777d49d63f447e17aa0a4"
+    },
+    {
+      "path": "src/health/apply-rproc-event733.sh",
+      "sha256": "7a4e622d1a2b7f782d5446cfbf4c8c7291965886cb65af9d4b521398fbf0cc7e"
+    },
+    {
+      "path": "packaging/native/check-rproc-event733.sh",
+      "sha256": "d49fbce6cc8a569c6ddce4b7d599919f5d7b918ce19c0714f005f4d758d8757c"
+    },
+    {
+      "path": "tests/rproc-crash-event.c",
+      "sha256": "afa9470a365ae89875f5761c645179e3a74636432ef4bd01fb982c852089eb40"
+    },
+    {
+      "path": "tests/rproc-crash-event.sh",
+      "sha256": "eb83ee13af12538a329d8fe04bafe0a987f151743938ee358b15bdd308b097f8"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-apm.h",
+      "sha256": "32dc51fba14aefa51e94bbed92f909ffe7a2ac063c042be5715fb75d3dc6293f"
+    },
+    {
+      "path": "src/audio/uke-speaker-quad-transport.h",
+      "sha256": "c1d018042c93092992b202bf309366e542373429ba879cef0eae9827f735651c"
+    }
+  ],
+  "donors": [
+    {
+      "repository": "MiCode/vendor_qcom_opensource_audio-kernel",
+      "commit": "8eb0eccbc4027ae4a4987e4bced03a4381039714",
+      "path": "asoc/codecs/fs19xx/fsm_core.c",
+      "scope": "Actual OEM stereo-only CHS12 selection, not a four-corner implementation",
+      "license": "GPL-2.0-only"
+    },
+    {
+      "repository": "stable/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "paths": [
+        "sound/soc/qcom/qdsp6/q6apm-lpass-dais.c",
+        "sound/soc/qcom/qdsp6/audioreach.c",
+        "sound/soc/qcom/qdsp6/audioreach.h"
+      ],
+      "scope": "Existing MFC ordered-channel media format and backend graph callbacks"
+    },
+    {
+      "repository": "KDE/kwin",
+      "commit": "f130ab33c8e6f3b9d728aade87836086ae9a8ed4",
+      "path": "src/wayland/output_interface.cpp",
+      "scope": "Read-only transform/native-size event comparison; original compositor retained"
+    },
+    {
+      "repository": "AudioReach/audioreach-engine",
+      "commit": "5773bf8e627c9857481dd338a9ec4aea4a49afd3",
+      "paths": [
+        "modules/cmn/pcm_mf_cnv/capi/mfc/api/mfc_api.h",
+        "modules/processing/channel_mixer/api/chmixer_common_api.h",
+        "modules/processing/channel_mixer/capi/src/capi_chmixer.cpp"
+      ],
+      "license": "BSD-3-Clause",
+      "scope": "MFC coefficient-table ABI, Q14 unity matrices and canonical input/output identities; Uke binary firmware acceptance remains unverified"
+    },
+    {
+      "repository": "systemd/systemd",
+      "commit": "8cc40e0c5e9234bf45084751ac53b1fbfe70b492",
+      "scope": "Public sd-device/sd-event interfaces used by the existing Control acceptance unit; no distribution fork"
+    }
+  ],
+  "actual_lpass_adapter_fixture_prepared": true,
+  "full_recipe_prepared": true,
+  "exact_source_quad_receipt_required": true,
+  "native_fixture_compiler_sanitizer_modes": 4,
+  "actual_machine_callback_fixture_prepared": true,
+  "concurrent_close_and_live_command_fixture_prepared": true,
+  "previous_source_check": {
+    "build": 11287831,
+    "release": 44,
+    "terminal_state": "failed",
+    "duration_seconds": 622,
+    "route_cases_per_mode": 41,
+    "lpass_cases_per_mode": 24,
+    "compiler_sanitizer_modes": 4,
+    "complete_source_inverse": true,
+    "actual_arm64_compilation_failed": true,
+    "errors": [
+      "current task macro collided with a helper parameter",
+      "ALSA get_channel_map requires a const DAI"
+    ]
+  },
+  "coefficient_api_prepared": true,
+  "coefficient_param_id": "0x0800101f",
+  "output_media_format_reconfiguration": false,
+  "canonical_prepare_extra_dsp_commands": 0,
+  "coefficient_wire_test_prepared": true,
+  "previous_full_device_rejected": {
+    "build": 11287899,
+    "kernel": "7.3.3-8-unstable",
+    "adsp_fatal_observed": true,
+    "battery_telemetry_epipe_observed": true,
+    "physical_quad_accepted": false,
+    "previous_source": "9e1a01fec4cf16a07653cbf5c16e8b7dfb8e51af"
+  },
+  "remoteproc_crash_event_prepared": true,
+  "critical_rollback_control_required": true,
+  "composite_transport_export_prepared": true,
+  "failed_full9": {
+    "build": 11288251,
+    "state": "failed",
+    "duration_seconds": 1363,
+    "error": "LPASS used non-exported q6apm_send_cmd_sync across module boundary",
+    "runtime_rpms_published": false
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Actual CAMCC FDT converter: exact permanent CFG/CRMC and IRQ topology; no CRM activation",
+  "source_check_release": 103,
+  "parent_full_build": 11309609,
+  "parent_full_release": 24,
+  "parent_source": "6719b05ea34725031a4a0b888fa7b57b5cd49839",
+  "parent_converter_sha256": "d2294f748f159e5db626c3ee44249db9e0dacc394cbc350dfc3879f326be1d71",
+  "firmware_guard_sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d",
+  "oem_dt": {
+    "repository": "https://github.com/MiCode/kernel_devicetree",
+    "revision": "94c84aeb9e517dbde546fc732033c184094c8e57",
+    "path": "qcom/cliffs.dtsi"
+  },
+  "native_qualified": false,
+  "full_kernel_built": false,
+  "physical_camera_accepted": false,
+  "crm_activation_allowed": false,
+  "new_runtime_packages": 0,
+  "source_assets": [
+    {
+      "path": "src/camera/provider/uke-camcc-dt.h",
+      "sha256": "7ce37bfa582cbc4c390339ff934f579e045e961add64a4b1ab7f23786e460f33"
+    },
+    {
+      "path": "tests/fixtures/camcc-controller-fdt-check.c",
+      "sha256": "4f881c35b3be3980bfdc62be9167053871538292a346ec7a862cb802c0db71b3"
+    },
+    {
+      "path": "tests/camcc-controller-fdt731-contract.sh",
+      "sha256": "2b18346075ed6f3dd2502367006ee0db6eac122561a3e8e017d6306ec2e14bc9"
+    },
+    {
+      "path": "packaging/native/copr-camcc-resource-dt733-check.sh",
+      "sha256": "bb99bb6ad6d880c9b81b3dcb777129927edfb76e0a9cce44834a89fb9ccd291d"
+    },
+    {
+      "path": "docs/CAMCC-CRM-DT-RESOURCES.md",
+      "sha256": "f33c9c75f7bfde18f2085122208f19f93caefdb086b0382189c7e485099f0d0d"
+    }
+  ]
+}

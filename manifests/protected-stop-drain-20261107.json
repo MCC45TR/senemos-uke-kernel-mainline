@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-07",
+  "scope": "Complete full12216 plus muted output/retained VI transport until DSP GRAPH_STOP; proposed check38 and no full17 reservation",
+  "parent_build": 11272573,
+  "parent_source": "4d9ccc1b9c9d343e63f99e00e77550491aeb6698",
+  "parent_srpm_sha256": "021491be63b8068e4c6edae4591817c51a2a5d72ce0ba0b9a118dbe3cf927cee",
+  "source_check_release": 38,
+  "proposed_full_revision": 12217,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0015-uke-protected-stop-drain.patch",
+      "sha256": "8d9b1f9ed87f5634c12c0f06b5231a7d46ad81adb8259c0fe2840546cb7be22b"
+    },
+    {
+      "path": "src/audio/0016-uke-protected-stop-source-seals.patch",
+      "sha256": "65173e3855ee55f8901497d8d080d46bcfad09e62b9ee8a33bbf6e5d0aeaec15"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-muted-stop.h",
+      "sha256": "aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955"
+    },
+    {
+      "path": "src/audio/apply-protected-stop731.sh",
+      "sha256": "05efae418f73e8eb2107cf03748d6503bf69103c3efed50813d7839a9764b956"
+    },
+    {
+      "path": "tests/audio-protected-stop.c",
+      "sha256": "8ea040fbdfd63fe2087d8dad781570ff7d3e8ce84e07294afdb893dbd56b2597"
+    },
+    {
+      "path": "tests/audio-protected-stop.sh",
+      "sha256": "d1cb3e04cda14f0d4f29c93e4ef67391799755fadc7837700e43ca6890cb68c4"
+    },
+    {
+      "path": "tests/audio-protected-stop-seal.sh",
+      "sha256": "40a26f919fcce19c5b5c12796ac723ebba224e65006ee765d739465ae62dcbc9"
+    },
+    {
+      "path": "packaging/native/check-protected-stop731.sh",
+      "sha256": "91269b6c9ebcee669e768ad2037a8685887591aaf2242f26b302c6fcad404e5c"
+    },
+    {
+      "path": "packaging/native/copr-migration-protected-stop731.sh",
+      "sha256": "48b8bd2fab787de987d22f3ce072dc8cb31425769e84cdfa7ab9c20043bfa016"
+    },
+    {
+      "path": "docs/PROTECTED-STOP-DRAIN.md",
+      "sha256": "5ddc4b3cf111980b0711e100fec14c209ea2c89a01cfb95047955c1c72a87db9"
+    },
+    {
+      "path": "manifests/kernel-migration-full12216-20261107.json",
+      "sha256": "6e5ea324588bad2ad0cfee04a59c86ef0c639870117cfeace1c3210bdddb8afe"
+    }
+  ],
+  "source_hashes": {
+    "sound/soc/codecs/fs19xx.c": {
+      "before": "e2ca68c256f47bb7bc339ffb4dfb5833dc5787904828eed68f75dafd613f77b8",
+      "after": "4c7ce07b2868cdc76fc0534f9bfe46805b956ebdb6200dacd44fa205579651e2"
+    },
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c": {
+      "before": "0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee",
+      "after": "3774c03041895fb5876611c4e73d3bf19aaa191d1d5cd3278fd13667dc1492b5"
+    },
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h": {
+      "before": "58bd8b9c9c947632cae1c0951fb0b5facd25a683e8a6b2bd93e0a27d35a0466a",
+      "after": "465cf1060b9e0252ae5febf3b669034be67c08c86d6e00f42f669bea32c1804c"
+    },
+    "sound/soc/qcom/qdsp6/q6apm.c": {
+      "before": "7ccd1442087c2f26769bae2f3378b33539d7aa6868880d32aac71ad14e91dd43",
+      "after": "e6569ecf3efef40c4613b45faa7891e905c17946096eb36f1434795a4e6278e6"
+    },
+    "helper": "aac729f7c7c893cf69048da8c21c8c0cdf078dd9563ddf0a594c63323a004955"
+  },
+  "q6apm_hash_scope": "q6apm.c hashes identify only the extracted q6apm_graph_stop function, not the complete source file; whole source inverse comparison is also mandatory in actual cumulative build",
+  "checker_hashes": {
+    "check-oob-runtime731.sh": {
+      "before": "566bcdac08d51165a6e0080d22f6ee491f350bb0ec0cc50df1f78fcf20fb7993",
+      "after": "08da7b78c062d95135c21c12614561bd67494434c848be7671fd5f38119a887b"
+    },
+    "check-client-byte-ready731.sh": {
+      "before": "0101afe68e6092203b6b4f1cbd9c09a0f239114766087ebe530e8e3635bdc0f6",
+      "after": "b64c55bb7571f271dbde91689a11721546918d5735a4f5ddcf232328a9340773"
+    },
+    "check-speaker-inclusion.sh": {
+      "before": "514a460eb7d0af84096a1ed1062b7a120bef76d22c421ad6278e8c6495e21887",
+      "after": "7d543876ba0a3a9524d4216f8c76765c873c83758536d025a664e2a35492f03d"
+    }
+  },
+  "unchanged_parent_nonidentity_fields": 452,
+  "actual_callback_modes": 4,
+  "cases_per_mode": 40,
+  "original_refusal_controls": 2,
+  "assertion_mutants": 8,
+  "source_seal_refusal_controls": 12,
+  "mute_i2c_faults": 20,
+  "actual_worker_polls_until_fault": 200,
+  "helper_preserves": [
+    "VI",
+    "PLL",
+    "I2S",
+    "gain",
+    "temperature",
+    "privatecalibration",
+    "DACnonmutebits"
+  ],
+  "actual_objects": [
+    "sound/soc/qcom/qdsp6/q6apm.o",
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o",
+    "sound/soc/codecs/fs19xx.o"
+  ],
+  "device_installation": false,
+  "physical_acceptance": false,
+  "prior_source_check": {
+    "build": 11282599,
+    "source": "45d32b1edfba2a030a64187fde4107d27ffed868",
+    "result": "All four exact16 preimages pass; second split q6apm STOP hunk refuses during dry-run, before new C controls. Check35 uses one whole-function hunk; implementation/postimages unchanged."
+  }
+}

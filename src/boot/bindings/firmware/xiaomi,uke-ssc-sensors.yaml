@@ -42,6 +42,20 @@ patternProperties:
       xiaomi,model-candidates:
         $ref: /schemas/types.yaml#/definitions/string-array
         description: Alternative registry model names; no fitted identity claim.
+      mount-matrix:
+        description: Rotation from firmware-reported acceleration to the native panel axes.
+        $ref: /schemas/types.yaml#/definitions/string-array
+        minItems: 9
+        maxItems: 9
+    allOf:
+      - if:
+          properties:
+            qcom,ssc-datatype:
+              const: accel
+        then: {}
+        else:
+          properties:
+            mount-matrix: false
     required: [compatible, label, 'qcom,ssc-datatype', 'xiaomi,model-candidates']
     additionalProperties: false
 

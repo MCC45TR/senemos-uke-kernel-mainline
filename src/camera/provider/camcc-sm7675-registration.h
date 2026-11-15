@@ -210,6 +210,10 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	ret = cam_cc_crm_guard_map(pdev);
 	if (ret)
 		goto clean_failure;
+	cam_cc_native_probe_phase("crmc-map");
+	ret = cam_cc_crmc_resource_map(pdev);
+	if (ret)
+		goto clean_failure;
 	cam_cc_native_probe_phase("clocks-init");
 	ret = cam_cc_clocks_init();
 	if (ret)
@@ -304,6 +308,7 @@ clean_failure:
 	if (cam_cc_owner_busy())
 		return cam_cc_native_quarantine(dev, ret);
 	cam_cc_native_probe_complete(ret);
+	cam_cc_crmc_resource_put();
 	cam_cc_crm_guard_put();
 	cam_cc_native_parents_put();
 	return cam_cc_owner_probe_failed(ret);

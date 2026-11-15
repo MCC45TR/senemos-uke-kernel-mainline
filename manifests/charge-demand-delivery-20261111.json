@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11303322,
+  "parent_full_release": 21,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11303322/senemos-uke-linux-kernel-mainline-unstable-7.3.3-21.src.rpm",
+  "parent_srpm_sha256": "cef2d63aaae7efc8a4a06aaf2b1991aba378a7b879c51eff616ba64a723dcae5",
+  "parent_spec_sha256": "435167f880da1039387aeceb305666d91ebe2cae5abbe4d1000980ea73246d55",
+  "parent_audio_card_sha256": "ee97239607a341e489d51de0d4fabd913a9c4207406e273070d3bc61071d1e73",
+  "retained_parent_fields": 763,
+  "protected_gain": 223,
+  "proof": {
+    "build": 11304264,
+    "version": "7.3.3-93",
+    "source_check_release": 93,
+    "source": "24ce78254f7578c2b34e226939c11ba32ea3b55c",
+    "source_tree": "4cc1d0d0e497c9a26e2885bfc6979166c19d1a4e",
+    "receipt_sha256": "61ce6a0ebb1532bc9bb92c109c41c255d56ad16e9389cda832c5049afd8caca5"
+  },
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0124-uke-demand-protection-observation.patch",
+      "sha256": "48ca07528d773c87031c73e85353d3d6bbad76cb03a0f00b0420b74892553248"
+    },
+    {
+      "path": "tests/battery-demand-observation.sh",
+      "sha256": "45ea9e78036f005290fbd20a4e518b93b95593b8c3fa0025e7d5cec14bfff507"
+    },
+    {
+      "path": "packaging/native/check-charge-demand733.sh",
+      "sha256": "9fc7b74bacf8528edc51c6b3518bc24ae8fcb4fff5ae22cdfe78e04f150acdd6"
+    },
+    {
+      "path": "docs/CHARGE-DEMAND-OBSERVATION.md",
+      "sha256": "410be053353131983ee134ef384fb7acb8717a97ced5d21e82615fa43cc22db5"
+    },
+    {
+      "path": "packaging/native/copr-charge-demand733.sh",
+      "sha256": "db862e3896c5aee910774033de5a5eae93e429f17c7c8cd0ab8522c1e5ea7322"
+    },
+    {
+      "path": "packaging/native/prepare-charge-demand-full733.sh",
+      "sha256": "31d9a0b7451de74e31cbec07b9ea552854ba4fc90289d8bef3f8ad246553f4cc"
+    },
+    {
+      "path": "packaging/native/charge-demand-legacy-view733.sh",
+      "sha256": "1bf5b7430d233e8788fdf3beb6dc1d1c9eebdec47ab2cf7c936b9bc9079c2a9b"
+    },
+    {
+      "path": "packaging/native/rewrite-charge-demand-full733.sh",
+      "sha256": "df383aaca973cafa878c8b8e3c11bb85e798517671f6c50c4a1a727b727606d8"
+    },
+    {
+      "path": "packaging/native/copr-charge-demand-full733.sh",
+      "sha256": "dba3b6631078e330fe147931cfaa3bf8ba0d99cbc94a435959506307f3ba03dc"
+    },
+    {
+      "path": "docs/CHARGE-DEMAND-CUMULATIVE-DELIVERY.md",
+      "sha256": "466e1611c6ec38858efa582636693ca22e2f72242f22cd30fb9f6f76f60135d2"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0124-uke-demand-protection-observation.patch",
+    "tests/battery-demand-observation.sh",
+    "packaging/native/check-charge-demand733.sh",
+    "docs/CHARGE-DEMAND-OBSERVATION.md",
+    "manifests/charge-demand-20261111.json",
+    "packaging/native/prepare-charge-demand-full733.sh",
+    "packaging/native/charge-demand-legacy-view733.sh",
+    "packaging/native/rewrite-charge-demand-full733.sh",
+    "docs/CHARGE-DEMAND-CUMULATIVE-DELIVERY.md"
+  ],
+  "production_config_unchanged": true,
+  "encryption_fragment_enabled_in_full": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "legacy_guard_retired": false,
+  "physical_protection_accepted": false
+}

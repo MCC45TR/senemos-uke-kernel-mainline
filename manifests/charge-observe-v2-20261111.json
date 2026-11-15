@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11304282,
+  "parent_full_release": 22,
+  "parent_source_commit": "ea3b01a3301298e225fb13956dca28d479edb88f",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11304282/senemos-uke-linux-kernel-mainline-unstable-7.3.3-22.src.rpm",
+  "parent_srpm_sha256": "3bdae451d8d08442ca9bdb715d666b748565bffc79ec779057cc12c1392e0842",
+  "parent_spec_sha256": "0c320c64f760cef309f002ac76c0f5c366ae899d7ccf15aa58a215a39fb69d8d",
+  "parent_profile_sha256": "9aa5974679cef032563738ec52b79d28ba0e01bf9e0d5dfbd095890eb08b7842",
+  "source_check_release": 95,
+  "retained_parent_fields": 768,
+  "patch": "patches/7.3.0/0125-uke-versioned-protection-observation.patch",
+  "source_units": [
+    {
+      "path": "drivers/power/supply/qcom_battmgr_uke_control.h",
+      "before_sha256": "7d7ebc8f03fbb89252d921d8c4a9b7531d36b34d13975022bc41b2ed8a1a0fdb",
+      "after_sha256": "b3d0f556963568aaf1b4a9129388eb954e5690ac1802432118b4ab177f5e128f"
+    },
+    {
+      "path": "drivers/power/supply/qcom_battmgr.c",
+      "before_sha256": "cac2ca201e5f2f33bf5474a3cd83130c3fca2fcb5af510c8259f2e823e697c7e",
+      "after_sha256": "57d7ed9d043694afcd4d3c09cf7c2edd031ac1b4924f5b332c5fd67bced90905"
+    },
+    {
+      "path": "Documentation/ABI/testing/sysfs-driver-uke-protection-observe-v2",
+      "before_sha256": "absent",
+      "after_sha256": "311823e404eb6aa46421fd7b25de12d0d88e69897d11956b6a9b9bc15638fde7"
+    }
+  ],
+  "legacy_passive_header_sha256": "e0d82e37df7b91c23aa6668ce779960cfd63b74ac0995acbd965bffcbd889c06",
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0125-uke-versioned-protection-observation.patch",
+      "sha256": "ebd09b7724ef66d7d358b8010f12d764390561e584d94387b0409002f17d7bce"
+    },
+    {
+      "path": "tests/battery-protection-observe-v2.sh",
+      "sha256": "2f104d84fa27115d273ec23fb435b2ea175f4833125fb2cfe7faddfb37231793"
+    },
+    {
+      "path": "packaging/native/check-charge-observe733.sh",
+      "sha256": "e5c94b81ae95bf7f6f8f72096e2b4c9c65621024081b80a6c9e362076a8b26ff"
+    },
+    {
+      "path": "docs/CHARGE-PROTECTION-OBSERVE-V2.md",
+      "sha256": "36718112f123645c9d4269a5b8adb8f01949966a306f8bef58c240f3499736f7"
+    },
+    {
+      "path": "packaging/native/copr-charge-observe733.sh",
+      "sha256": "1902c4992517c11b54d917ca8b1a329cbdcf93cfc6640cd6f1d2c171a96d3b3b"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0125-uke-versioned-protection-observation.patch",
+    "tests/battery-protection-observe-v2.sh",
+    "packaging/native/check-charge-observe733.sh",
+    "docs/CHARGE-PROTECTION-OBSERVE-V2.md",
+    "manifests/charge-observe-v2-20261111.json"
+  ],
+  "native_qualified": false,
+  "full_kernel_reserved": false,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "legacy_snapshot_passive": true,
+  "explicit_observation_version": 2,
+  "explicit_observation_fields": 14,
+  "explicit_observation_mode": "0400",
+  "get_provenance_reported": true,
+  "firmware_get_only": true,
+  "new_timers": 0,
+  "new_workers": 0,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "legacy_guard_retired": false,
+  "physical_protection_accepted": false
+}

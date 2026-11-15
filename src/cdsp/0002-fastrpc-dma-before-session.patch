@@ -1,0 +1,57 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: misc: fastrpc: admit DMA before publishing context sessions
+
+Keep a failed DMA-mask admission from leaving an allocatable session or
+driver-data pointer. Retain the selected domain mask, session IDs, duplicate
+session policy and generic platform/IOMMU probe path.
+
+Linux 7.3.1 GPL-2.0 source; retain its existing copyright and attribution.
+
+--- a/drivers/misc/fastrpc.c
++++ b/drivers/misc/fastrpc.c
+@@ -17,13 +17,22 @@
+ 	if (of_property_read_u32(dev->of_node, "reg", &sid))
+ 		dev_info(dev, "FastRPC Session ID not specified in DT\n");
+ 
++	/* Publish no session until its device has a usable DMA mask. */
++	dma_bits = cctx->soc_data->dma_addr_bits_default;
++	if (cctx->domain_id == CDSP_DOMAIN_ID)
++		dma_bits = cctx->soc_data->dma_addr_bits_cdsp;
++	rc = dma_set_mask(dev, DMA_BIT_MASK(dma_bits));
++	if (rc) {
++		dev_err(dev, "%u-bit DMA enable failed\n", dma_bits);
++		return rc;
++	}
++
+ 	spin_lock_irqsave(&cctx->lock, flags);
+ 	if (cctx->sesscount >= FASTRPC_MAX_SESSIONS) {
+ 		spin_unlock_irqrestore(&cctx->lock, flags);
+ 		dev_err(&pdev->dev, "too many sessions\n");
+ 		return -ENOSPC;
+ 	}
+-	dma_bits = cctx->soc_data->dma_addr_bits_default;
+ 	sess = &cctx->session[cctx->sesscount++];
+ 	sess->used = false;
+ 	sess->valid = true;
+@@ -31,9 +40,6 @@
+ 	dev_set_drvdata(dev, sess);
+ 	sess->sid = sid;
+ 
+-	if (cctx->domain_id == CDSP_DOMAIN_ID)
+-		dma_bits = cctx->soc_data->dma_addr_bits_cdsp;
+-
+ 	if (sessions > 0) {
+ 		struct fastrpc_session_ctx *dup_sess;
+ 
+@@ -45,11 +51,6 @@
+ 		}
+ 	}
+ 	spin_unlock_irqrestore(&cctx->lock, flags);
+-	rc = dma_set_mask(dev, DMA_BIT_MASK(dma_bits));
+-	if (rc) {
+-		dev_err(dev, "%u-bit DMA enable failed\n", dma_bits);
+-		return rc;
+-	}
+ 
+ 	return 0;
+ }

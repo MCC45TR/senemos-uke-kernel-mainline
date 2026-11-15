@@ -1,0 +1,97 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: expose a root-only on-demand time reference
+
+Bracket the Linux architectural counter with BOOTTIME while snapshotting
+existing admitted SSC cache metadata under its state lock. Do not contact
+firmware, start streams, poll at idle, alter buffers or admit a clock/frame
+mapping. This diagnostic is a prerequisite for measured acquisition-time work.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -21,6 +21,11 @@
+ #include <linux/spinlock.h>
+ #include <linux/sysfs.h>
+ #include <linux/workqueue.h>
++#include <linux/timekeeping.h>
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
++#include <asm/arch_timer.h>
++#include <clocksource/arm_arch_timer.h>
++#endif
+ #include "uke-ssc-protocol.h"
+ #include "uke-ssc-dual-light.h"
+ 
+@@ -322,6 +327,66 @@
+ }
+ static DEVICE_ATTR_RO(ssc_last_error_stage);
+ 
++/* Root-only diagnostic. Reading does not start a stream or contact firmware.
++ * The reference brackets the Linux architectural counter with BOOTTIME.
++ * It does not admit a shared SSC epoch, rate, frame or acquisition timestamp.
++ */
++static ssize_t ssc_time_reference_show(struct device *dev,
++				     struct device_attribute *attr, char *buf)
++{
++	struct ssc_controller *c = dev_get_drvdata(dev);
++	struct {
++		u64 ticks, sequence;
++		bool valid, active;
++	} sample[SSC_SENSOR_COUNT] = {};
++	u64 generation, counter = 0, before = 0, after = 0;
++	u32 frequency = 0;
++	unsigned long flags;
++	unsigned int i;
++	bool connected, available = false;
++	ssize_t n;
++
++	spin_lock_irqsave(&c->state, flags);
++	generation = c->generation;
++	connected = ssc_current(c);
++	if (connected) {
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
++		frequency = arch_timer_get_cntfrq();
++		before = ktime_get_boottime_ns();
++		counter = arch_timer_read_counter();
++		after = ktime_get_boottime_ns();
++		available = frequency && counter && after >= before;
++#endif
++		for (i = 0; i < SSC_SENSOR_COUNT; i++) {
++			const struct ssc_sensor *s = &c->sensor[i];
++
++			if (!s->declared || !s->ready || !s->registered || s->error ||
++			    !s->ticks || !s->sample_sequence)
++				continue;
++			sample[i].valid = true;
++			sample[i].active = s->stream_active;
++			sample[i].ticks = s->ticks;
++			sample[i].sequence = s->sample_sequence;
++		}
++	}
++	spin_unlock_irqrestore(&c->state, flags);
++	n = sysfs_emit(buf,
++		"schema=1 admitted=0 generation=%llu connected=%u reference_available=%u "
++		"cntfrq_hz=%u linux_arch_counter=%llu boottime_before_ns=%llu "
++		"boottime_after_ns=%llu sensor_count=%u\n",
++		(unsigned long long)generation, connected, available, frequency,
++		(unsigned long long)counter, (unsigned long long)before,
++		(unsigned long long)after, SSC_SENSOR_COUNT);
++	for (i = 0; i < SSC_SENSOR_COUNT; i++)
++		n += sysfs_emit_at(buf, n,
++			"sensor=%u cached_valid=%u stream_active=%u sequence=%llu sensor_ticks=%llu\n",
++			i, sample[i].valid, sample[i].active,
++			(unsigned long long)sample[i].sequence,
++			(unsigned long long)sample[i].ticks);
++	return n;
++}
++static DEVICE_ATTR(ssc_time_reference, 0400, ssc_time_reference_show, NULL);
++
+ static struct attribute *ssc_observation_attrs[] = {
+ 	&dev_attr_ssc_service_count.attr,
+ 	&dev_attr_ssc_lookup_fault.attr,
+@@ -333,6 +398,7 @@
+ 	&dev_attr_ssc_registered_sensors.attr,
+ 	&dev_attr_ssc_last_error.attr,
+ 	&dev_attr_ssc_last_error_stage.attr,
++	&dev_attr_ssc_time_reference.attr,
+ 	NULL,
+ };
+ ATTRIBUTE_GROUPS(ssc_observation);

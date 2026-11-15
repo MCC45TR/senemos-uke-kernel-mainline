@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "parent": {
+    "url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11263248/senemos-uke-linux-kernel-mainline-unstable-7.3.1-12204.src.rpm",
+    "sha256": "e54174d1c281ec3b90bfc2ad8a1d11566bcdb1f197208df441b7bf89802247c3",
+    "source_commit": "de1bdf9ab531d772a8c02847c51b01ed4ffcd42f",
+    "copr_build": 11263248
+  },
+  "roles": {
+    "audio": "c2932addf1f9b885a9a559b40d1ce5b7d43fe98b",
+    "manager": "0823cd051dae53a818fce5dacd356cd7b7c7ae8f",
+    "hall": "ab15a54ed48bebed90ecbfca535448ea92eb7fdf",
+    "als": "f4b5020e3bcf25ec23ee3831960962c9a2e0439f"
+  },
+  "required_checks": [11263248, 11264589, 11263198, 11266380, 11263802, 11264114, 11266477],
+  "camera_crm_runtime_activation": false,
+  "hdr_runtime_activation": false,
+  "speaker_gain_ceiling": 223,
+  "physical_acceptance": false,
+  "stable_promotion": false,
+  "failed_source_rehearsals": [
+    {"copr_build":11266930,"check_release":3,"scope":"source preparation before native compilation", "cause":"ALS admission correctly refused the already protected graph metadata", "correction":"apply both qualified ALS layers before the protected audio layer"},
+    {"copr_build":11266955,"check_release":4,"scope":"original preparation passed; build stopped at historical governor comparison", "cause":"the retained governor-only check received the newer manager configuration", "correction":"keep the exact post-governor/pre-manager config as the historical comparison and check manager deltas independently"}
+  ]
+}

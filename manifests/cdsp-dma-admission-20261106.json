@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-06",
+  "scope": "Kernel-only FastRPC DMA admission; bounded existing-kernel RPC observation is separate",
+  "integration_baseline": {
+    "kernel_release": "7.3.1-12211-unstable",
+    "source": "dba56903ddba878aba8db22d87a9ab130ef1e1db",
+    "copr_build": 11269695,
+    "latest_qualified_peer_handoffs_required": true
+  },
+  "checked_code_source": "0f5eb8e6d2f2bae951a50d93f029762ba0aec443",
+  "attribution_metadata": "34624c2174e52e95c838ac0e29f859fbb769cfea",
+  "inputs": [
+    {
+      "path": "src/cdsp/0002-fastrpc-dma-before-session.patch",
+      "sha256": "ebaf72b4c1a18059eaeb99d14355e183ccfffda0b957178194aee131d95524bb"
+    },
+    {
+      "path": "src/cdsp/apply-dma-admission.sh",
+      "sha256": "b261a20e5e714ac6d9fa8fc1e1a4d71f412b8003a60f07cee7b8bed681020781"
+    },
+    {
+      "path": "src/cdsp/fastrpc-cb-probe731-fixed.h",
+      "sha256": "1dc4e2a395c0be7442d1d11c617a99576d2d0a788c6f1a9fc61c56eb1ab798c1"
+    },
+    {
+      "path": "tests/fixtures/fastrpc-cb-probe731-original.h",
+      "sha256": "d5f30428c724773b31f28ea689bd1e1cf73c8404a854d2e7878d92827aff14ff"
+    },
+    {
+      "path": "tests/fixtures/fastrpc-cb-dma.c",
+      "sha256": "73c84d8bcf4b7e5e7e2b61ab86815615276fc0523397467ac701573c61c762b3"
+    },
+    {
+      "path": "tests/fastrpc-cb-dma-contract.sh",
+      "sha256": "72eb310b026121060dcc318c04966797b02b5801321793c008a9b69aaa6fd03e"
+    },
+    {
+      "path": "tests/fastrpc-cb-dma-qualify.sh",
+      "sha256": "9dd7e77537a9f59b27c98ae43825645e9aab15bdeacae6ab48c6892a24d2b53e"
+    },
+    {
+      "path": "packaging/native/copr-cdsp-dma-check.sh",
+      "sha256": "102c146053c185be3b802cb927d41cc1b30ee8125757bcf33f2e41568a113f2f"
+    }
+  ],
+  "qualification": {
+    "copr_build": 11270377,
+    "nvr": "uke-cdsp-kernel-check-7.3.1-2.fc46",
+    "state": "succeeded",
+    "duration_seconds": 108,
+    "actual_callback_cases_per_mode": 401,
+    "compiler_sanitizer_modes": 4,
+    "original_controls": 2,
+    "assertion_mutants": 2,
+    "retained_coherent_buffer_tests": true,
+    "full_fastrpc_translation_unit": true,
+    "architecture": "AArch64",
+    "build_config_scope": "independent upstream defconfig, not complete cumulative Uke Image",
+    "prepared_fastrpc_sha256": "a3b361e28c1be4bfcb3f528772b16e591adf76c1ae90ab5d266662a8f4c4f303",
+    "object_sha256": "b91a5d4703c1ceda4bb5741ac74613c7c81d776ab58a50b3f868561666732446",
+    "log_gzip_sha256": "12336bf081fd48a050c8f129c6d00e3f9d225f731f75a9a55898c3392948091e",
+    "receipt_sha256": "ce2fb1c38c79e81151949fd9c55b4db1eafa798b53a36fdaed20bd1e5be75514",
+    "trusted_openpgp_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "both_signatures_and_header_payload_digests": true,
+    "receipt_files": 3,
+    "receipt_text_only": true,
+    "receipt_scripts": false,
+    "receipt_installed": false
+  },
+  "earlier_failure": {
+    "copr_build": 11270346,
+    "source": "7a5f58d9",
+    "stage": "Clang ASan link; missing compiler-rt after three passed callback modes",
+    "driver_fix_changed": false,
+    "log_gzip_sha256": "c6f4c5d8b1d457af40cca48c70e94683891388b1331a622787ad7d6166e8cc3c"
+  },
+  "device": {
+    "kernel_release": "7.3.1-12211-unstable",
+    "manual_cdsp_start": 0,
+    "translated_contexts": 2,
+    "init_attach": 0,
+    "completed_invoke_returns": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "bounded_seconds": 6,
+    "kernel_new_error_count": 0,
+    "after_state": "running",
+    "physical_arithmetic_qualified": false,
+    "physical_workload_dma_qualified": false
+  },
+  "constraints": {
+    "userspace_runtime_package_added": false,
+    "automatic_boot_policy_changed": false,
+    "secure_policy_or_vmids_changed": false,
+    "smmu_bypass_added": false,
+    "dt_streams_changed": false,
+    "full_kernel_revision_reserved": false,
+    "full_cumulative_image_built": false,
+    "new_patch_installed": false,
+    "coordinator_full_native_and_device_gates_required": true
+  }
+}

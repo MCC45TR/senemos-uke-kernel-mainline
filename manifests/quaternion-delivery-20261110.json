@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "parent_full_release": 14,
+  "parent_full_build": 11297525,
+  "parent_source": "909b7eb39cb97fc164964b4cb92bc1dc1da7b48c",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11297525/senemos-uke-linux-kernel-mainline-unstable-7.3.3-14.src.rpm",
+  "parent_srpm_sha256": "b267d0e9e602a9704d771accba5c6a2a637e9c5618cd8f323d3ce2991b0c0f57",
+  "parent_spec_sha256": "da12f1a3ab320cff75c80e7476062b730d9b6c69af81e5a05a2ee81a71c984ba",
+  "parent_audio_card_sha256": "a60e1583a2510986bd99d6940ee4ee6f8f2e229e57a3d73ee2c24baaf388384f",
+  "proof": {
+    "build": 11299414,
+    "version": "7.3.3-79",
+    "source_check_release": 79,
+    "source": "86f49981b8cf1f724a02656614693d6fab52b249",
+    "receipt_sha256": "f7b99d1314c5b4b7628d9998671d9673c6d23f8ef42373fb3a612926651cfc3a"
+  },
+  "full_release_policy": "derive-next-successful-family-revision",
+  "retained_full14_source_fields": 716,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0014-ssc-quaternion-input.patch",
+    "src/sensors/0015-ssc-quaternion-native-dt.patch",
+    "src/sensors/apply-quaternion733.sh",
+    "tests/ssc-quaternion.c",
+    "tests/ssc-quaternion.sh",
+    "packaging/native/check-quaternion733.sh",
+    "docs/SSC-QUATERNION.md",
+    "manifests/ssc-quaternion-20261110.json",
+    "packaging/native/preflight-quaternion733.sh",
+    "packaging/native/quaternion-legacy-view733.sh",
+    "packaging/native/prepare-quaternion-full733.sh",
+    "packaging/native/rewrite-quaternion-full733.sh",
+    "tests/quaternion-delivery-source.sh",
+    "tests/quaternion-recipe-scope.sh",
+    "docs/SSC-QUATERNION-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0014-ssc-quaternion-input.patch",
+      "sha256": "df9e2487f22474eaeb5565065acd9d46a2bfaa82223a11ea656ef561c74463b3"
+    },
+    {
+      "path": "src/sensors/0015-ssc-quaternion-native-dt.patch",
+      "sha256": "d2bc4f03490b49945093fec6e5b383c95a34d54785ba327d7762f698b42db4da"
+    },
+    {
+      "path": "src/sensors/apply-quaternion733.sh",
+      "sha256": "548709e2fbc6bc9b9f70135ca6525ff16ea4c2e07043bd725ca252dda3c60b44"
+    },
+    {
+      "path": "tests/ssc-quaternion.c",
+      "sha256": "8590acea8fa815db4fe13f5ebfaf1a338d7d666a68c609f0b87d134ff84d7bd6"
+    },
+    {
+      "path": "tests/ssc-quaternion.sh",
+      "sha256": "28af80210d32801dfe95b524cfffa7c353fa3b46570573c8034aff64f3aa263c"
+    },
+    {
+      "path": "packaging/native/check-quaternion733.sh",
+      "sha256": "d247f52cc6154a543c67fdb40a194991416937f096ed744a8d0bf865df28d23c"
+    },
+    {
+      "path": "docs/SSC-QUATERNION.md",
+      "sha256": "ba4064b672b133e3a8b242c0862f338e84a1ef8cd349350e62c4d1702ea6c471"
+    },
+    {
+      "path": "manifests/ssc-quaternion-20261110.json",
+      "sha256": "d013a824c5b547735a88cbd3d866b820c950009de24b497d4e95f66eb88c3678"
+    },
+    {
+      "path": "packaging/native/preflight-quaternion733.sh",
+      "sha256": "20b843d5f2a8c189f16c767c7ebed31b67cb4c2c363d128096f41e1bffe1e0c6"
+    },
+    {
+      "path": "packaging/native/quaternion-legacy-view733.sh",
+      "sha256": "69737591fe0c7b78f93cf2a9b0f29f6726344f1ce113749d3983cc071706e9f3"
+    },
+    {
+      "path": "packaging/native/prepare-quaternion-full733.sh",
+      "sha256": "d31355a921454fe797a488ae5ceea4e6a64acbc98589b4d8958a8b23f6902f91"
+    },
+    {
+      "path": "packaging/native/rewrite-quaternion-full733.sh",
+      "sha256": "e207f23fec328c30d18bbc5671c1bf9d5c416eb264ee3ce78093cdeb275f76e9"
+    },
+    {
+      "path": "tests/quaternion-delivery-source.sh",
+      "sha256": "de5837ff0da30e9eea4eb5d10e26c24dc5bd8ed7a0f44a4ebc05b5838797673b"
+    },
+    {
+      "path": "tests/quaternion-recipe-scope.sh",
+      "sha256": "22d001a21a1397cca86c9b62a60c316f8398281e206e4a6e046af4a211454381"
+    },
+    {
+      "path": "docs/SSC-QUATERNION-DELIVERY.md",
+      "sha256": "c49c4da3a3e4928f36208a75acc1d1c7fe59f87a61c016a0308df431c87922f6"
+    },
+    {
+      "path": "packaging/native/copr-quaternion-full733.sh",
+      "sha256": "002b8c806c235031177ff9ed251ed23affc8b6c3ce43eb68bfef339e952288c8"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "tests/gravity-recipe-scope.sh",
+      "sha256": "9a0bca8f94c36d67deaa4425e94975f8a7d3f1df590b2ae2b9e1afc8c2d019ac"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 ${CXX:-c++} -std=c++17 -Wall -Wextra -Werror "$root/src/boot/offline-switch-root.cpp" -o "$work/switch-root"
 fixture=$work/root
-mkdir -p "$fixture"/{proc,sys/firmware/devicetree/base/chosen,sysroot/usr/libexec,sysroot/usr/lib/systemd/system}
+mkdir -p "$fixture"/{proc,sys/firmware/devicetree/base/chosen,sysroot/usr/libexec,sysroot/usr/lib/systemd/system,sysroot/usr/lib/systemd/system-generators}
 printf 'xiaomi,uke\0qcom,sm7675\0' > "$fixture/sys/firmware/devicetree/base/compatible"
 printf 'root=PARTLABEL=linux systemd.unit=multi-user.target\n' > "$fixture/proc/cmdline"
 "$work/switch-root" --inspect "$fixture" | jq -e '.executed==false and .charger_target_selected==false' >/dev/null
@@ -15,6 +15,8 @@ printf 'androidboot.mode = "charger"\n' > "$fixture/proc/bootconfig"
 touch "$fixture/sysroot/usr/lib/systemd/system/uke-offline-charge."{service,target}
 printf 'fixture only\n' > "$fixture/sysroot/usr/libexec/uke-offline-charge"
 chmod 755 "$fixture/sysroot/usr/libexec/uke-offline-charge"
+printf 'fixture only\n' > "$fixture/sysroot/usr/lib/systemd/system-generators/uke-offline-target-generator"
+chmod 755 "$fixture/sysroot/usr/lib/systemd/system-generators/uke-offline-target-generator"
 if [[ $(id -u) == 0 ]]; then
     "$work/switch-root" --inspect "$fixture" | jq -e '.executed==false and .matched_payload==true and .charger_target_selected==true' >/dev/null
     chmod g+w "$fixture/sysroot/usr/lib/systemd/system/uke-offline-charge.target"

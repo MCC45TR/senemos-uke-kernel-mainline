@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "parent_full_release": 17,
+  "parent_full_build": 11300656,
+  "parent_source": "f48a602935a98ad830a07f853a8f7ee6a67f7f72",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11300656/senemos-uke-linux-kernel-mainline-unstable-7.3.3-17.src.rpm",
+  "parent_srpm_sha256": "d982712a559dcfb3a720a405db06609e39903596b1fcb3600386fa9941c68063",
+  "parent_spec_sha256": "2f0f70ad10d8eedb4f588093dfe6a3cc758dafe7301312483d9e7c019363fde9",
+  "parent_audio_card_sha256": "20726f8a7bdd7c13ba1cbc23cc0b0061864ae535108742b57c22b5a8d6006fde",
+  "proof": {
+    "build": 11300939,
+    "version": "7.3.3-86",
+    "source_check_release": 86,
+    "source": "47daf1ad41928df8669573e3c2d570fdd9bdbf06",
+    "receipt_sha256": "bd445a8247d748aa01debfe111cb0d47fa0663c049f1fdf7413e71d9bfef84e3"
+  },
+  "full_release_policy": "derive-next-successful-family-revision",
+  "retained_full17_source_fields": 741,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/sensors/0018-ssc-proximity-input-abi.patch",
+    "tests/ssc-proximity-abi.c",
+    "tests/ssc-proximity-abi.sh",
+    "packaging/native/check-ssc-proximity-abi733.sh",
+    "docs/SSC-PROXIMITY-INPUT-ABI.md",
+    "manifests/ssc-proximity-abi-20261110.json",
+    "packaging/native/proximity-abi-legacy-view733.sh",
+    "packaging/native/prepare-proximity-abi-full733.sh",
+    "packaging/native/rewrite-proximity-abi-full733.sh",
+    "tests/proximity-abi-recipe-scope.sh",
+    "docs/SSC-PROXIMITY-INPUT-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0018-ssc-proximity-input-abi.patch",
+      "sha256": "dd3f26e96d5adc22f22f51e4f714757a9a2941bee76414f4d92d0fd4e1c282e9"
+    },
+    {
+      "path": "tests/ssc-proximity-abi.c",
+      "sha256": "3d58f8d9aae5c3201a58365629be295495df51e7f3b44866bf47bb035500d197"
+    },
+    {
+      "path": "tests/ssc-proximity-abi.sh",
+      "sha256": "66d108c0d85961de4850d47a64329df2badabebb2c0072f7e090deb6363c1ac0"
+    },
+    {
+      "path": "packaging/native/check-ssc-proximity-abi733.sh",
+      "sha256": "c2bb27cf3af7d1c60771e4cfac1a736fc93e345255a10db2251b8d03ca41f036"
+    },
+    {
+      "path": "docs/SSC-PROXIMITY-INPUT-ABI.md",
+      "sha256": "1ae522a7a2ae4164a71cbca2172ac6f344e580269379d582104443a13736d2e8"
+    },
+    {
+      "path": "manifests/ssc-proximity-abi-20261110.json",
+      "sha256": "7ce47ba7f605619917a920dd99a4aa5b5c754e07afc3246c834adce00677cc9e"
+    },
+    {
+      "path": "packaging/native/proximity-abi-legacy-view733.sh",
+      "sha256": "58002ca9bb732776c0653e4036e416e6978ad6e748059f5432702b8362b4c601"
+    },
+    {
+      "path": "packaging/native/prepare-proximity-abi-full733.sh",
+      "sha256": "2b7acd8faa4222688f9030ef6e7f6a96a9c1401a4389868703f583cec56d6e27"
+    },
+    {
+      "path": "packaging/native/rewrite-proximity-abi-full733.sh",
+      "sha256": "f60bcc8f87843247a3d97d61fa6165c4f783e1c1a2cb1b1211bd1a861e76be58"
+    },
+    {
+      "path": "tests/proximity-abi-recipe-scope.sh",
+      "sha256": "fe89971bc6987b597e589bd66b6a8359df05fb7dc426231f5c8accdc9d39f72b"
+    },
+    {
+      "path": "docs/SSC-PROXIMITY-INPUT-DELIVERY.md",
+      "sha256": "f45e3f97768d5ae833482abfceecf0cbfda769155b0ec3f76778ff1b1d45ee3c"
+    },
+    {
+      "path": "packaging/native/copr-proximity-abi-full733.sh",
+      "sha256": "b0fa951eac27858a338d0cd7a722e4d5c5f3b3b11bac98ed37ca9c6a8c73fefd"
+    }
+  ]
+}

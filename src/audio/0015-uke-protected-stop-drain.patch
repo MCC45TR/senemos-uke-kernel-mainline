@@ -1,0 +1,101 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: retain muted VI transport until GRAPH_STOP completes
+
+Mute and read back DAC output before STOP, preserving VI transport until its
+reply. Keep bounded fault shutdown, private erasure, gain and calibration.
+
+--- a/sound/soc/codecs/fs19xx.c
++++ b/sound/soc/codecs/fs19xx.c
+@@ -596,13 +596,17 @@
+ 	fs19xx_chip_stop(fs19xx);
+ }
+ 
++#include "uke-fs19xx-muted-stop.h"
++
+ static int fs19xx_protection_event(struct notifier_block *listener,
+ 				 unsigned long mode, void *unused)
+ {
+ 	struct fs19xx_priv *fs19xx = container_of(listener, struct fs19xx_priv, protection_listener);
+ 	int ret = 0;
+ 	guard(mutex)(&fs19xx->lock);
+-	if (mode != 2)
++	if (mode == 1)
++		ret = fs19xx_mute_transport(fs19xx);
++	else if (mode != 2)
+ 		fs19xx_power_off(fs19xx);
+ 	else if (fs19xx->stream_active && fs19xx->speaker_enabled &&
+ 		 !fs19xx->suspended && !fs19xx->removing)
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -76,8 +76,7 @@
+ 	spin_unlock_irqrestore(&fs19xx_guard_lock, flags);
+ 	if (ret)
+ 		return ret;
+-	if (mode != 1)
+-		ret = notifier_to_errno(blocking_notifier_call_chain(&fs19xx_listeners, mode, NULL));
++	ret = notifier_to_errno(blocking_notifier_call_chain(&fs19xx_listeners, mode, NULL));
+ 	spin_lock_irqsave(&fs19xx_guard_lock, flags);
+ 	if (mode && (!uke_fs_guard_configured(&fs19xx_guard) || fs19xx_guard.mode != mode))
+ 		ret = -EIO;
+@@ -445,6 +444,27 @@
+ 	if (!ret) fs->data.status = UKE_FS_RUNNING;
+ 	return ret;
+ }
++int q6apm_fs19xx_stopping(struct q6apm_graph *graph)
++{
++	struct q6apm_fs19xx *fs = graph->apm->fs19xx;
++	int ret;
++
++	if (!q6apm_fs19xx_graph(graph)) return 0;
++	guard(mutex)(&fs->lock);
++	if (fs->removing || fs->owner != graph->ar_graph ||
++	    (fs->data.status != UKE_FS_RUNNING && fs->data.status != UKE_FS_PREPARED))
++		return -ENODATA;
++	/* Read-back DAC mute on every amplifier; retain VI until DSP STOP replies. */
++	ret = fs19xx_gate(1);
++	if (ret) {
++		/* Also cover admission refusals before the notifier chain ran. */
++		fs19xx_gate(0);
++		uke_fs19xx_erase(&fs->data);
++		fs->data.status = UKE_FS_FAULT;
++	}
++	return ret;
++}
++
+ void q6apm_fs19xx_stopped(struct q6apm_graph *graph, bool failed)
+ {
+ 	struct q6apm_fs19xx *fs = graph->apm->fs19xx;
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.h
+@@ -13,6 +13,7 @@
+ int q6apm_fs19xx_prepare(struct q6apm_graph *graph);
+ int q6apm_fs19xx_prepared(struct q6apm_graph *graph);
+ int q6apm_fs19xx_started(struct q6apm_graph *graph);
++int q6apm_fs19xx_stopping(struct q6apm_graph *graph);
+ void q6apm_fs19xx_stopped(struct q6apm_graph *graph, bool failed);
+ void q6apm_fs19xx_shutdown(struct q6apm *apm);
+ bool q6apm_fs19xx_graph(struct q6apm_graph *graph);
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -956,17 +956,16 @@
+ int q6apm_graph_stop(struct q6apm_graph *graph)
+ {
+ 	struct audioreach_graph *ar_graph = graph->ar_graph;
+-	int ret;
++	int ret, mute_ret;
+ 
+ 	if (ar_graph->start_count == 0)
+ 		return 0;
+ 
+ 	if (--ar_graph->start_count > 0)
+ 		return 0;
+ 
+-	q6apm_fs19xx_stopped(graph, false);
++	mute_ret = q6apm_fs19xx_stopping(graph);
+ 	ret = audioreach_graph_mgmt_cmd(ar_graph, APM_CMD_GRAPH_STOP);
+-	if (ret)
+-		q6apm_fs19xx_stopped(graph, true);
+-	return ret;
++	q6apm_fs19xx_stopped(graph, mute_ret || ret);
++	return mute_ret ? mute_ret : ret;
+ }

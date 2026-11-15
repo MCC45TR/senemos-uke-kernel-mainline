@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "full_release": 12,
+  "qualified_source": "584afd2ea3a9426863e9e45a765a4edfb1aa3f08",
+  "qualified_tree": "a2c3f068692bcf2cd70b4fc0df9861239b8b4d64",
+  "qualified_build": 11293736,
+  "qualified_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11293736/uke-kernel-migration-check-7.3.3-65.src.rpm",
+  "qualified_srpm_sha256": "87b196a2d315b7529203487f5fca2e6761080d82f1cf5458e350af7cee50c6b1",
+  "qualified_spec_sha256": "d5fa9fd8ff9e5f1df64d761a583fd6910b0d59ab01f7ca933aaa7b6abb58c933",
+  "full_parent_build": 11293047,
+  "full_parent_spec_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293047/senemos-uke-linux-kernel-mainline-unstable.spec",
+  "parent_audio_card_sha256": "c25a5dbda103d8e98018eab7f87f6fd284027da87e2b3f32fb08771279a3379f",
+  "proofs": {
+    "stream": {
+      "build": 11293736,
+      "version": "7.3.3-65",
+      "receipt_sha256": "386938ced2b3106e42aa0b3b3c26ee743cdb64a8dd0660d26e036b87a787cad6"
+    },
+    "profiles": {
+      "build": 11293867,
+      "version": "7.3.3-67",
+      "receipt_sha256": "788c6fa7d193e14cb87d04e8ef436920374fa9bf1d3f02cb391ccfdf4a08ddce"
+    }
+  },
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "physical_output_count": 4,
+  "input_profiles": [
+    6,
+    8
+  ],
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/audio/prepare-surround-profiles733.sh",
+    "packaging/native/check-surround-profiles733.sh",
+    "tests/speaker-surround-ucm.cpp",
+    "docs/SPEAKER-SURROUND-PROFILES.md",
+    "packaging/native/prepare-surround-full733.sh",
+    "src/audio/0032-surround-delivery-views.patch",
+    "packaging/native/rewrite-surround-full733.sh",
+    "packaging/native/copr-surround-full733.sh",
+    "packaging/native/retarget-audio-tuple733.sh",
+    "tests/audio-tuple-delivery733.sh",
+    "tests/surround-full-spec733.sh",
+    "docs/SPEAKER-SURROUND-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/prepare-surround-profiles733.sh",
+      "sha256": "a750b4f7993bb3d6a4a7145a7964ea4dbcbf229aa2ecb130ca8efeea2edbb8cb"
+    },
+    {
+      "path": "packaging/native/check-surround-profiles733.sh",
+      "sha256": "24288ca2ccbe8d928564ad898459abdd537bb4625cd6e723cb4d57e8c0d59a19"
+    },
+    {
+      "path": "tests/speaker-surround-ucm.cpp",
+      "sha256": "08016a492519de5c52c47a666302db830896ecbedd3d8b9b89ed2beee9a81271"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-PROFILES.md",
+      "sha256": "513e1d24f20c5d4b36ddb8f039869a251607eb15222d12054ffa2d6427d6111b"
+    },
+    {
+      "path": "packaging/native/prepare-surround-full733.sh",
+      "sha256": "41da7286b53e9ae958a4472d0f9152081162ba37e9279c0f4db9cb3f8e592c4c"
+    },
+    {
+      "path": "src/audio/0032-surround-delivery-views.patch",
+      "sha256": "bc060db7e4e104a56a24ce141c49a4b8fff4e19d50b5a42e23eb33712d474211"
+    },
+    {
+      "path": "packaging/native/rewrite-surround-full733.sh",
+      "sha256": "56c94f4f0c91a3ce1213b216304db2810a29c8e37b5aafb66898d0bf5d150459"
+    },
+    {
+      "path": "packaging/native/copr-surround-full733.sh",
+      "sha256": "75b953388cc7613309024c2baea20ab08d3a4b9f74732f169cfa329dd2228f9f"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "tests/audio-tuple-delivery733.sh",
+      "sha256": "f87ad3eb1cc37a05745791a4336c7908048538ef182022104ed3596984bc6afb"
+    },
+    {
+      "path": "tests/surround-full-spec733.sh",
+      "sha256": "8f25bf338f86f61d74797cb80f3de986007a3c116e7c8543ffe3d2b5a06e5d41"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-DELIVERY.md",
+      "sha256": "4e11305c65a72694367a45753c0c3f1e0f2635c9c5d0ccc32b63761ca805bee4"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "ff7dfc767c7ab33fd7c694825b06469eda17b19ddc1d8c378a0c7935d75a184b"
+    }
+  ]
+}

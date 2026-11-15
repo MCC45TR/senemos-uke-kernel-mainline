@@ -1,0 +1,11 @@
+--- a/drivers/iio/common/uke-ssc/Kconfig
++++ b/drivers/iio/common/uke-ssc/Kconfig
+@@ -1,7 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ config IIO_UKE_SSC
+ 	tristate "Xiaomi Uke firmware-owned SSC sensors"
+-	depends on ARM64 && ARCH_QCOM && OF && IIO && QRTR && QCOM_QMI_HELPERS
++	depends on ARM64 && ARCH_QCOM && OF && IIO && QRTR && QCOM_QMI_HELPERS && INPUT
+ 	select IIO_BUFFER
+ 	select IIO_KFIFO_BUF
+ 	help

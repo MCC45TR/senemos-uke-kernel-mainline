@@ -1,0 +1,50 @@
+--- a/packaging/native/stop-deadline-source-view.sh
++++ b/packaging/native/stop-deadline-source-view.sh
+@@ -7,6 +7,11 @@
+  uke_stop_runtime_view=$(bash "$uke_stop_root/native-profile/packaging/native/speaker-readback-source-view.sh" "$uke_stop_root")
+ fi
+ uke_stop_muted_view=$uke_stop_root/sound/soc/codecs/uke-fs19xx-muted-stop.h
++if [[ -e $uke_stop_root/native-generated/surround-full733/applied.sha256 ]];then
++ bash "$uke_stop_root/native-profile/packaging/native/prepare-surround-full733.sh" "$uke_stop_root" "$uke_stop_root" verify
++ uke_stop_codec_view=$uke_stop_root/native-generated/surround-full733/codec-before.c
++ uke_stop_muted_view=$uke_stop_root/native-generated/surround-full733/muted-before.h
++fi
+ if [[ -e $uke_stop_root/native-generated/codec-before-stop-deadline.c ]];then
+  for uke_stop_before in codec-before-stop-deadline.c runtime-before-stop-deadline.c muted-before-stop-deadline.h;do
+   [[ -f $uke_stop_root/native-generated/$uke_stop_before && ! -L $uke_stop_root/native-generated/$uke_stop_before ]]
+--- a/packaging/native/check-speaker-quad733.sh
++++ b/packaging/native/check-speaker-quad733.sh
+@@ -9,6 +9,10 @@
+ work=$(mktemp -d)
+ trap 'find "$work" -depth -delete' EXIT
+ core=$kernel/sound/soc/qcom/qdsp6
++if [[ -e $kernel/native-generated/surround-full733/applied.sha256 ]];then
++ bash "$kernel/native-profile/packaging/native/prepare-surround-full733.sh" "$kernel" "$out" verify
++ core=$kernel/native-generated/surround-full733/quad-before
++fi
+ saved=$kernel/native-generated/speaker-quad-before
+ # Reconstruct the original files to account for every inherited byte.
+ awk '
+--- a/packaging/native/check-stop-deadline733.sh
++++ b/packaging/native/check-stop-deadline733.sh
+@@ -14,6 +14,7 @@
+ for function in fs19xx_chip_init fs19xx_chip_start fs19xx_chip_stop fs19xx_check_health fs19xx_unmute_output fs19xx_set_volume_reg;do
+  for kind in before after;do
+   file=$kernel/sound/soc/codecs/fs19xx.c
++  [[ ! -e $kernel/native-generated/surround-full733/applied.sha256 ]] || file=$kernel/native-generated/surround-full733/codec-before.c
+   [[ $kind != before ]] || file=$uke_stop_codec_view
+   awk -v name="$function" '$0~"^static (int|void) "name"\\("{p=1}p{print}p&&/^}/{n++;exit}END{if(n!=1)exit 1}' "$file" > "$work/$kind"
+  done
+--- a/packaging/native/check-pcm-period733.sh
++++ b/packaging/native/check-pcm-period733.sh
+@@ -7,6 +7,10 @@
+ phase=${3:-objects}
+ [[ $phase == source || $phase == objects || $phase == linked ]]
+ source=$kernel/sound/soc/qcom/qdsp6/q6apm-dai.c
++if [[ -e $kernel/native-generated/surround-full733/applied.sha256 ]];then
++ bash "$kernel/native-profile/packaging/native/prepare-surround-full733.sh" "$kernel" "$out" verify
++ source=$kernel/native-generated/surround-full733/quad-before/q6apm-dai.c
++fi
+ before=$kernel/native-generated/pcm-before-period-work.c
+ for file in "$source" "$before";do [[ -f $file && ! -L $file ]];done
+ printf '%s  %s\n' \

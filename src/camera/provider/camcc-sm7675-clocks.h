@@ -13,6 +13,7 @@ struct cam_cc_clock {
 	bool prepared;
 	bool voted;
 	struct cam_cc_crm_clock *crm;
+	bool crm_passive;
 	int (*disable_check)(struct cam_cc_clock *clock);
 };
 

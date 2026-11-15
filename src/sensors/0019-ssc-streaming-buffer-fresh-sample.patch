@@ -1,0 +1,27 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: wait for fresh streaming reports on buffer join
+
+Only on-change streams can replay their admitted unchanged state. A streaming
+sample may be old when another owner joins; do not stamp that cache with the
+new subscription time. Preserve demand, raw ABI, rates and early-report ACK
+ordering. Gravity and quaternion buffers receive the next actual report.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -1114,10 +1114,13 @@
+ 		spin_unlock_irqrestore(&c->state, flags);
+ 	} else {
+ 		spin_lock_irqsave(&c->state, flags);
+-		/* Supply the current valid sample once when joining an unchanged
+-		 * stream. An enable ACK that already published must not duplicate it.
++		/* Only an on-change subscription can replay its current state.
++		 * Streaming consumers wait for a new report instead of receiving an
++		 * old cached value stamped with the new subscription time. An enable
++		 * ACK that already published must not duplicate its first report.
+ 		 */
+-		if (ssc_current(c) && s->ready && s->stream_active && !s->error &&
++		if (s->attributes.stream_type == 1 && ssc_current(c) &&
++		    s->ready && s->stream_active && !s->error &&
+ 		    s->ticks && s->registered && s->sample_sequence == sequence) {
+ 			s64 scan[SSC_SCAN_MAX] = {};
+ 

@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_release": 23,
+  "parent_full_build": 11306825,
+  "parent_source_commit": "dde9b3034a095f14581c0fd5e23c42f1caf43986",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11306825/senemos-uke-linux-kernel-mainline-unstable-7.3.3-23.src.rpm",
+  "parent_srpm_sha256": "da4ea560897d1c1681dc909c8365009af15547ff1bf237941f52138f1268fd4a",
+  "parent_spec_sha256": "c6aa57e106b3398e7227aa7ada64ef83e8bea851eee6d061537b6988d589bfca",
+  "parent_profile_sha256": "9a0148dda24d742baa8750d6a03922317bfdd4e1530f724d0bf30f4391921360",
+  "parent_audio_card_sha256": "333a8957ecc8daef1bff9085fb32ba740092d732f621b5f7b7daeee2463515d8",
+  "base_native_config_sha256": "431c839cba7c69f6c8128f67ab180ea3586b6dbc771e532adc13c91bde0e9c33",
+  "seed_config_sha256": "3c106bfa71c99f350aa9e30b8b16d7b8271dfbd75f75146afa4a20a5e264c2ab",
+  "proof": {
+    "build": 11307222,
+    "source_check_release": 97,
+    "source": "f93c0d4571b9c4f18aad0b456188ade352b1ad12",
+    "version": "7.3.3-97",
+    "receipt_sha256": "c9ee24d0678610689594c213bc7deb5afb50fa1dd3cdb3d232983f962935b56b",
+    "manifest": "manifests/storage-cohort-20261111.json"
+  },
+  "changes": [
+    [
+      "CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_CRYPTO_ESSIV",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_CRYPTO_XTS",
+      "m",
+      "y"
+    ],
+    [
+      "CONFIG_DM_CRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_DM_INLINECRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_ALGS",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_INLINE_CRYPT",
+      "n",
+      "y"
+    ]
+  ],
+  "hooks_patch_sha256": "f716a704e389b819537ba1920cd95ef1acde9a91b0378429d940770c8a1e92d3",
+  "hooks": [
+    {
+      "path": "src/boot/build-payload.sh",
+      "before_sha256": "f0907e1e3c2f431868d57cf093532fb0ef9ff9a14bfadb17cff334db56c4407d",
+      "after_sha256": "4b60ff5d1b4786b59b8fc9aa7cb666ea70f619afec34de5e41dd1f04cfc7c932"
+    },
+    {
+      "path": "packaging/native/prepare-mst-power-delivery733.sh",
+      "before_sha256": "c7a911c0590f447d4ed81040400773c52fd063148c9a067fa0f3297309afc70d",
+      "after_sha256": "b6b539a1db00c15ecba5f89760b041d70a44a72596979eefbb680c794e9cdbd9"
+    }
+  ],
+  "retained_parent_fields": 774,
+  "declared_changed_parent_fields": [
+    "source_commit",
+    "kernel_release",
+    "rpm_revision",
+    "diagnostic_audio_driver",
+    "storage_encryption_native_admitted",
+    "storage_encryption_enabled_in_full_candidate"
+  ],
+  "payload_assets": [
+    "packaging/native/prepare-storage-config-full733.sh",
+    "packaging/native/prepare-storage-config733.mjs",
+    "tests/storage-full-config-delta733.mjs",
+    "manifests/storage-config-layer-20261111.json",
+    "configs/storage-encryption733.config",
+    "manifests/storage-cohort-20261111.json",
+    "docs/STORAGE-CONFIG-DELIVERY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "packaging/native/prepare-storage-config-full733.sh",
+      "sha256": "3db0cb848a9fe7b4e2a9f22569effc36edd178e27d8f5ffc14ad05ac92abb006"
+    },
+    {
+      "path": "packaging/native/prepare-storage-config733.mjs",
+      "sha256": "b6bd863312090259205ef526b8f44536e8378828d3e65f89309e5c7473cc549e"
+    },
+    {
+      "path": "tests/storage-full-config-delta733.mjs",
+      "sha256": "ebbc09a45cb0e2cea89aaa0e773ac39a9b46c053048032b78b6ee88ea4cc7f41"
+    },
+    {
+      "path": "manifests/storage-config-layer-20261111.json",
+      "sha256": "35c197926ef0a92309bd723694e61ae616d595f8b430eb43391b6b1c1aaa6fe6"
+    },
+    {
+      "path": "configs/storage-encryption733.config",
+      "sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086"
+    },
+    {
+      "path": "manifests/storage-cohort-20261111.json",
+      "sha256": "f50bfd5cc1f37fa38db2c5c27d95bb80224af322b42ac1156684ca95c687b22d"
+    },
+    {
+      "path": "docs/STORAGE-CONFIG-DELIVERY.md",
+      "sha256": "229cf541d5e160e1c980b0a806472ef29a83c54e2cdb56d8d8e05b3407dac5f9"
+    },
+    {
+      "path": "packaging/native/copr-storage-full733.sh",
+      "sha256": "426491d1f23ca25bf325579051ab96fc1ac71ad72aba29bb9814909bfe3e9645"
+    },
+    {
+      "path": "packaging/native/rewrite-storage-full733.sh",
+      "sha256": "ada89f5deabd5dec98071d8063c1a75d8d4cf3a6498167918d9d1154c90af406"
+    },
+    {
+      "path": "packaging/native/apply-storage-config-full733.sh",
+      "sha256": "a146c60c54f5ddf93c76156288598a9136fa5f4e4c25f0f6af6796f03200bf24"
+    },
+    {
+      "path": "packaging/native/storage-config-full733.patch",
+      "sha256": "f716a704e389b819537ba1920cd95ef1acde9a91b0378429d940770c8a1e92d3"
+    },
+    {
+      "path": "tests/storage-full-delivery-data.sh",
+      "sha256": "f2c0a9490f202186f2dcf3bb28ba493ebf685aefc5de88fda2bb6d6dba356e12"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    }
+  ],
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "physical_encrypted_io_accepted": false,
+  "tee_keys_accepted": false,
+  "encrypted_boot_accepted": false,
+  "upstream_evidence": {
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "license": "GPL-2.0-only",
+    "files": [
+      {
+        "path": "fs/crypto/keysetup.c",
+        "sha256": "05b3c1606ee5019111151cc618cc375ee02ecc87fbf70b0de7c17479451c4c38"
+      },
+      {
+        "path": "crypto/xts.c",
+        "sha256": "9d9ed4075c9c9728eb16e50a341726450979ad4e5f8aa6f8f83733837704a273"
+      },
+      {
+        "path": "crypto/essiv.c",
+        "sha256": "5c6994313f75389a8ef3e026914d129760ada762e5ed7af1f610ca3304162ec2"
+      }
+    ],
+    "new_donor_code_imported": false,
+    "scope": "Confirm native fscrypt symbol and XTS/ESSIV providers;no key or volume access."
+  }
+}

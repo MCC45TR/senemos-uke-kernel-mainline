@@ -156,6 +156,13 @@ int main(int argc,char **argv) {
         assert(!fdt_getprop(dt.data(),n,"reg",nullptr));
         assert(!fdt_getprop(dt.data(),n,"gpios",nullptr));++count;
     }assert(count==10);
+    const int accel=path(dt.data(),"/firmware/ssc-sensors/accelerometer");
+    const char *matrix[]={"0","1","0","-1","0","0","0","0","1"};
+    assert(fdt_stringlist_count(dt.data(),accel,"mount-matrix")==9);
+    for(int i=0;i<9;++i)
+        assert(!std::strcmp(fdt_stringlist_get(dt.data(),accel,"mount-matrix",i,nullptr),matrix[i]));
+    fdt_for_each_subnode(n,dt.data(),ssc)
+        if(n!=accel)assert(!fdt_getprop(dt.data(),n,"mount-matrix",nullptr));
     assert(!std::strcmp(text(dt.data(),"/firmware/ssc-sensors/sensor-temperature","qcom,ssc-datatype"),
         "sensor_temperature"));
     assert(!uke_hardware_simplify(dt.data()));

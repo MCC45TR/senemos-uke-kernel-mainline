@@ -1,0 +1,25 @@
+--- a/Documentation/devicetree/bindings/input/qcom,smp2p-switch.yaml
++++ b/Documentation/devicetree/bindings/input/qcom,smp2p-switch.yaml
+@@ -12,12 +12,21 @@
+ description:
+   A remotely owned switch reports mutually exclusive open and closed bits in
+   one SMP2P entry. Each bit has a rising-edge interrupt and supports reading
+-  its current line level. No local GPIO ownership or polling is required.
++  its current line level. An optional physical GPIO supplies an initial
++  level when the remote event pair is unavailable. Normal IRQ ownership
++  remains with the remote switch provider.
+ 
+ properties:
+   compatible:
+     const: qcom,smp2p-switch
+   label: true
++  state-gpios:
++    maxItems: 1
++    description: |
++      Optional physical closed-level input used only when the remote initial
++      event pair is unavailable. Direction and IRQ ownership are retained;
++      active-low wiring follows standard GPIO descriptor semantics.
++  wakeup-source: true
+   linux,code:
+     $ref: /schemas/types.yaml#/definitions/uint32
+     maximum: 16

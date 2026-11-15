@@ -1,0 +1,13 @@
+--- a/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
++++ b/Documentation/devicetree/bindings/firmware/xiaomi,uke-ssc-sensors.yaml
+@@ -28,6 +28,10 @@
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description: ADSP remote processor that owns the sensor firmware.
+ 
++  lid-switch:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Paired board lid input used to select the unoccluded ambient-light sensor.
++
+ patternProperties:
+   '^(accelerometer|gyroscope|magnetometer|front-light|rear-light|color-temperature|proximity|flicker|sar|sensor-temperature)$':
+     type: object

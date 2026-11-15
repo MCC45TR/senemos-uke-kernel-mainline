@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "MST per-stream RGB depth source qualification; no device or full kernel delivery",
+  "parent_commit": "6bc295fc6cf39b2292afe42fe0f7ec87f84a068a",
+  "parent_source_check": 11292306,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11292306/uke-kernel-migration-check-7.3.3-56.src.rpm",
+  "parent_srpm_sha256": "ee658dc48c46373c2289ad26d9527034e52e75f4b42ce73b82f2ed96c6e0bdbb",
+  "parent_spec_sha256": "a5883961925f070b1b89460226969817dde10c30af6cac92cc438bddc726e47c",
+  "source_check_release": 57,
+  "full_delivery_ready": false,
+  "native_qualified": false,
+  "physical_multisink_accepted": false,
+  "mst_hdr_accepted": false,
+  "mst_dsc_accepted": false,
+  "payload_assets": [
+    "src/display/0001-uke-mst-stream-depth733.patch",
+    "tests/dp-mst-depth733.sh",
+    "packaging/native/check-mst-depth733.sh",
+    "docs/MST-STREAM-DEPTH-733.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/display/0001-uke-mst-stream-depth733.patch",
+      "sha256": "64fe5dd7077ae2340dc14e3d0c951eb741f4d91e1b2ddd76676a248252e686d6"
+    },
+    {
+      "path": "tests/dp-mst-depth733.sh",
+      "sha256": "999b47e591d61a9d0bcc8a915f9a09910c56af10a6012bfa67ae74ce17e1d124"
+    },
+    {
+      "path": "packaging/native/check-mst-depth733.sh",
+      "sha256": "ce087c653f48165e5c4b2b76263819d6d473e6fd53fc4f80919a60a289baf886"
+    },
+    {
+      "path": "docs/MST-STREAM-DEPTH-733.md",
+      "sha256": "043dcf5eaa440fa0d605f0dcec104751dc91022335a886af3ff5ef8778515611"
+    },
+    {
+      "path": "packaging/native/copr-mst-depth733.sh",
+      "sha256": "b1528e3ad95fee5b08a94249d415f80d9360b9ac0b3b800169a25bec3f252b4f"
+    }
+  ]
+}

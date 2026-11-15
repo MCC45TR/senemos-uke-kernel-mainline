@@ -1,0 +1,29 @@
+diff --git a/drivers/remoteproc/remoteproc_sysfs.c b/drivers/remoteproc/remoteproc_sysfs.c
+index 925b0cd..a8f6012 100644
+--- a/drivers/remoteproc/remoteproc_sysfs.c
++++ b/drivers/remoteproc/remoteproc_sysfs.c
+@@ -218,6 +218,16 @@ static ssize_t name_show(struct device *dev, struct device_attribute *attr,
+ }
+ static DEVICE_ATTR_RO(name);
+ 
++/* Reading crash history must not start or wait for a remote processor. */
++static ssize_t crash_count_show(struct device *dev, struct device_attribute *attr,
++			       char *buf)
++{
++	struct rproc *rproc = to_rproc(dev);
++
++	return sysfs_emit(buf, "%u\n", READ_ONCE(rproc->crash_cnt));
++}
++static DEVICE_ATTR_RO(crash_count);
++
+ static umode_t rproc_is_visible(struct kobject *kobj, struct attribute *attr,
+ 				int n)
+ {
+@@ -240,6 +250,7 @@ static struct attribute *rproc_attrs[] = {
+ 	&dev_attr_firmware.attr,
+ 	&dev_attr_state.attr,
+ 	&dev_attr_name.attr,
++	&dev_attr_crash_count.attr,
+ 	NULL
+ };
+ 

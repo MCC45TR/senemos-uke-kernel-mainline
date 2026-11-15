@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11303322,
+  "parent_full_release": 21,
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11303322/senemos-uke-linux-kernel-mainline-unstable-7.3.3-21.src.rpm",
+  "parent_srpm_sha256": "cef2d63aaae7efc8a4a06aaf2b1991aba378a7b879c51eff616ba64a723dcae5",
+  "parent_spec_sha256": "435167f880da1039387aeceb305666d91ebe2cae5abbe4d1000980ea73246d55",
+  "source_check_release": 93,
+  "retained_parent_fields": 763,
+  "patch": "patches/7.3.0/0124-uke-demand-protection-observation.patch",
+  "source_units": [
+    {
+      "path": "drivers/power/supply/qcom_battmgr_uke_control.h",
+      "before_sha256": "e0d82e37df7b91c23aa6668ce779960cfd63b74ac0995acbd965bffcbd889c06",
+      "after_sha256": "7d7ebc8f03fbb89252d921d8c4a9b7531d36b34d13975022bc41b2ed8a1a0fdb"
+    }
+  ],
+  "unchanged_driver_sha256": "cac2ca201e5f2f33bf5474a3cd83130c3fca2fcb5af510c8259f2e823e697c7e",
+  "source_assets": [
+    {
+      "path": "patches/7.3.0/0124-uke-demand-protection-observation.patch",
+      "sha256": "48ca07528d773c87031c73e85353d3d6bbad76cb03a0f00b0420b74892553248"
+    },
+    {
+      "path": "tests/battery-demand-observation.sh",
+      "sha256": "45ea9e78036f005290fbd20a4e518b93b95593b8c3fa0025e7d5cec14bfff507"
+    },
+    {
+      "path": "packaging/native/check-charge-demand733.sh",
+      "sha256": "9fc7b74bacf8528edc51c6b3518bc24ae8fcb4fff5ae22cdfe78e04f150acdd6"
+    },
+    {
+      "path": "docs/CHARGE-DEMAND-OBSERVATION.md",
+      "sha256": "410be053353131983ee134ef384fb7acb8717a97ced5d21e82615fa43cc22db5"
+    },
+    {
+      "path": "packaging/native/copr-charge-demand733.sh",
+      "sha256": "db862e3896c5aee910774033de5a5eae93e429f17c7c8cd0ab8522c1e5ea7322"
+    }
+  ],
+  "payload_assets": [
+    "patches/7.3.0/0124-uke-demand-protection-observation.patch",
+    "tests/battery-demand-observation.sh",
+    "packaging/native/check-charge-demand733.sh",
+    "docs/CHARGE-DEMAND-OBSERVATION.md",
+    "manifests/charge-demand-20261111.json"
+  ],
+  "native_qualified": false,
+  "full_kernel_reserved": false,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "firmware_get_only": true,
+  "demand_snapshot": true,
+  "fresh_cache_avoids_rpc": true,
+  "new_timers": 0,
+  "new_workers": 0,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "legacy_guard_retired": false,
+  "notification_coverage_accepted": false,
+  "physical_protection_accepted": false
+}

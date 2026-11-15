@@ -1,0 +1,143 @@
+From: Uke contributors
+Subject: [PATCH] power: supply: permit a fixed above-limit cap reapplication
+
+Keep the offline operation unchanged. The new explicit root-only operation
+requires the exact already-enabled70/80 band,a present healthy battery,online
+input,a fresh SOC at/above80 and no latched protection fault. Preserve lifecycle
+guards and one-shot quarantine; receipt is not physical cutoff acceptance.
+
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+index 48e4105f..35e4192e 100644
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -2523,6 +2523,7 @@ static struct attribute *qcom_battmgr_uke_attrs[] = {
+ 	&dev_attr_uke_charge_settings.attr,
+ 	&dev_attr_uke_charge_enable_existing_cap.attr,
+ 	&dev_attr_uke_charge_apply_existing_cap.attr,
++	&dev_attr_uke_charge_apply_existing_cap_online.attr,
+ 	&dev_attr_uke_charge_lease.attr,
+ 	&dev_attr_uke_charge_thresholds.attr,
+ 	&dev_attr_uke_charge_refresh.attr,
+diff --git a/drivers/power/supply/qcom_battmgr_uke_control.h b/drivers/power/supply/qcom_battmgr_uke_control.h
+index 9f40e28f..42ecad85 100644
+--- a/drivers/power/supply/qcom_battmgr_uke_control.h
++++ b/drivers/power/supply/qcom_battmgr_uke_control.h
+@@ -1090,7 +1090,8 @@ static struct device_attribute dev_attr_uke_charge_enable_existing_cap =
+  * Send the existing 70/80 band once, offline. No configurable target or lease.
+  * Even a successful ACK/readback is not physical charge-stop or bypass proof.
+  */
+-static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
++static int qcom_battmgr_uke_apply_existing_cap_scope(struct qcom_battmgr *battmgr,
++						 bool online_reduction)
+ {
+ 	const unsigned int props[] = { BATT_PRESENT, BATT_HEALTH };
+ 	struct qcom_battmgr_uke_transaction *tx = &battmgr->transaction;
+@@ -1113,6 +1114,8 @@ static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
+ 		return -EUCLEAN;
+ 	if (battmgr->control.preconfigured_limit_attempted)
+ 		return -EALREADY;
++	if (online_reduction && (battmgr->protection.wet_latched || battmgr->protection.faults))
++		return -EACCES;
+ 	ret = qcom_battmgr_uke_settings_read(battmgr, &before, true);
+ 	if (ret)
+ 		return ret;
+@@ -1128,8 +1131,20 @@ static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
+ 	if (ret)
+ 		return ret;
+ 	if (!battmgr->info.present || battmgr->status.health != POWER_SUPPLY_HEALTH_GOOD ||
+-	    battmgr->usb.online)
++	    (online_reduction ? !battmgr->usb.online : battmgr->usb.online))
+ 		return -ERANGE;
++	/* The online exception cannot raise the existing ceiling: a fresh battery
++	 * GET must already be at/above that exact enabled80-percent target.
++	 * No new preference,feature-enable,current,CV or input-suspend request.
++	 */
++	if (online_reduction) {
++		ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET,
++						  BATT_CAPACITY, 0);
++		if (ret)
++			return ret;
++		if (battmgr->status.percent < 80 || battmgr->status.percent > 100)
++			return -ERANGE;
++	}
+ 	spin_lock_irqsave(&tx->lock, flags);
+ 	if (!battmgr->service_up || tx->desynced || tx->suspended || tx->removing ||
+ 	    before.instance != tx->instance_ns || before.generation != tx->generation ||
+@@ -1153,8 +1168,13 @@ static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
+ 	spin_unlock_irqrestore(&tx->lock, flags);
+ 	if (ret)
+ 		return ret;
+-	dev_info(battmgr->dev, "existing 70/80 request: opaque %zu-byte reply, effect unverified\n",
+-		 battmgr->transaction.response_len);
++	if (online_reduction)
++		dev_notice(battmgr->dev,
++			   "existing 70/80 online request: SOC=%u, opaque %zu-byte reply, effect unverified\n",
++			   battmgr->status.percent, battmgr->transaction.response_len);
++	else
++		dev_info(battmgr->dev, "existing 70/80 request: opaque %zu-byte reply, effect unverified\n",
++			 battmgr->transaction.response_len);
+ 	ret = qcom_battmgr_uke_settings_read(battmgr, &after, false);
+ 	if (ret)
+ 		return ret;
+@@ -1169,6 +1189,11 @@ static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
+ 	return 0;
+ }
+ 
++static int qcom_battmgr_uke_apply_existing_cap(struct qcom_battmgr *battmgr)
++{
++	return qcom_battmgr_uke_apply_existing_cap_scope(battmgr, false);
++}
++
+ static ssize_t uke_charge_apply_existing_cap_store(struct device *dev,
+ 		struct device_attribute *attr, const char *buf, size_t count)
+ {
+@@ -1188,6 +1213,30 @@ static ssize_t uke_charge_apply_existing_cap_store(struct device *dev,
+ static struct device_attribute dev_attr_uke_charge_apply_existing_cap =
+ 	__ATTR(uke_charge_apply_existing_cap, 0200, NULL, uke_charge_apply_existing_cap_store);
+ 
++/* Explicit one-shot reapplication while above the existing cap. The same
++ * request quarantine,correlated reply and same-epoch GET checks apply.
++ * A successful return remains effect-unverified; there is no replay/undo.
++ */
++static ssize_t uke_charge_apply_existing_cap_online_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct qcom_battmgr *battmgr = dev_get_drvdata(dev);
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++	if (!sysfs_streq(buf, "1"))
++		return -EINVAL;
++	if (!mutex_trylock(&battmgr->lock))
++		return -EBUSY;
++	ret = qcom_battmgr_uke_apply_existing_cap_scope(battmgr, true);
++	mutex_unlock(&battmgr->lock);
++	return ret ? ret : (ssize_t)count;
++}
++static struct device_attribute dev_attr_uke_charge_apply_existing_cap_online =
++	__ATTR(uke_charge_apply_existing_cap_online, 0200, NULL,
++	       uke_charge_apply_existing_cap_online_store);
++
+ static int qcom_battmgr_uke_control_split(const char *buf, size_t count,
+ 					 char *data, size_t size, char **words, size_t capacity)
+ {
+diff --git a/Documentation/ABI/testing/sysfs-driver-uke-charge-online b/Documentation/ABI/testing/sysfs-driver-uke-charge-online
+new file mode 100644
+--- /dev/null
++++ b/Documentation/ABI/testing/sysfs-driver-uke-charge-online
+@@ -0,0 +1,14 @@
++What:           /sys/bus/platform/devices/.../uke_charge_apply_existing_cap_online
++Date:           November 2026
++KernelVersion:  7.3.3
++Contact:        Uke kernel contributors
++Description:
++                Root-only explicit one-shot request, write literal 1.
++                Requires the existing enabled 70/80 band, present/Good battery,
++                online input, fresh SOC 80..100 and no latched protection fault.
++                Shares the offline probe's lifecycle, deadline and quarantine.
++                Sends only enable=1,target=80,delta=10; no preference change,
++                arbitrary selector, current, voltage, input suspend or replay.
++                Success means correlated receipt and same-epoch configuration
++                GETs only, not physical charge cutoff or autonomous protection.
++                Opaque/failed outcomes stay uncertain until separately measured.

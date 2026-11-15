@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "source_commit": "a73b16e022b1db49d710da39d1ab6094949a5aa5",
+  "source_tree": "64111461370cbed1d3700a54a31f452616d52752",
+  "scope": "Additive Uke acceleration mount metadata; retain pending front/rear ALS and all other cumulative features",
+  "copr": {
+    "build": 11266477,
+    "state": "succeeded",
+    "duration_seconds": 155,
+    "package": "uke-kernel-migration-check-1.0-2.fc46.aarch64",
+    "rpm_sha256": "1f2ce48a9609a7dada1c660cb6f4f98bd74a4780e0a4af1060d129986073bbfb",
+    "trusted_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+    "log_gzip_sha256": "4c6263a8537830c05043f4b93bfcc942886de4ca809d0400ffeae13efb5d01ef",
+    "receipt_is_text_only": true,
+    "receipt_installed": false,
+    "preceding_subset_check": {
+      "build": 11266457,
+      "scope": "mount-only source evidence; superseded for cumulative source qualification",
+      "receipt_retained": true
+    }
+  },
+  "qualified": {
+    "actual_callback_compilers": [
+      "gcc",
+      "clang"
+    ],
+    "modes": [
+      "plain",
+      "ASan+UBSan"
+    ],
+    "assertion_mutants": 3,
+    "dt_compilers": [
+      "g++",
+      "clang++"
+    ],
+    "real_aarch64_objects": [
+      "uke-ssc-iio.o",
+      "uke-ssc-protocol.o",
+      "uke-ssc.o"
+    ],
+    "retained_native_qmi_and_supplier_gates": true,
+    "combined_light_orders": [
+      "metadata-first",
+      "vectors-first"
+    ]
+  },
+  "additive_iio_patch_preimages": [
+    {
+      "label": "qualified-layer2",
+      "source_commit": "f4b5020e3bcf25ec23ee3831960962c9a2e0439f",
+      "before_sha256": "a1774b25995513cc9f86f541360b8a2fe8f5966c82af91698e7c6496552ac9c7",
+      "after_sha256": "ada60c55d1c53dc6066481267f5cec4cd47979bc42ec9cf8a8e652b51eafdb72"
+    },
+    {
+      "label": "qualified-front-als",
+      "source_commit": "f4b5020e3bcf25ec23ee3831960962c9a2e0439f",
+      "before_sha256": "bd0bc022b3fd9d9d20767a23ad559872948fdcf905d27b285180fb2faa9cd601",
+      "after_sha256": "c1870e2dd36cc75c7c537e09fc7714770acd16b32778247a1c19eb5fce268add"
+    },
+    {
+      "label": "qualified-front-and-rear-als",
+      "source_commit": "f4b5020e3bcf25ec23ee3831960962c9a2e0439f",
+      "before_sha256": "7295cad2448f6d4cc814670cefacc413b56a20b39ac36e2c756241be2125fc04",
+      "after_sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd"
+    }
+  ],
+  "assets": [
+    {
+      "path": "src/sensors/0003-ssc-mount-matrix.patch",
+      "sha256": "c52cfc5d97eaff65a17ef6d54e9cdc56bc7e0e5772c8b6d639a5a1f5b1c329e0"
+    },
+    {
+      "path": "src/boot/uke-hardware.h",
+      "sha256": "029efa34bc8fa7682b63e358d03a1cf05a3728a49941b85bbe690d76c7bfacc9"
+    },
+    {
+      "path": "src/boot/bindings/firmware/xiaomi,uke-ssc-sensors.yaml",
+      "sha256": "6ac44534fd8510a2d7e58d0b8652110212f5163ee3ca06f18b7f06b1509876bc"
+    },
+    {
+      "path": "tests/ssc-native-host.h",
+      "sha256": "598db4f72ea32077ceda100075b4ffe2d7e09d0bfefcc4e426114f705e2efa4e"
+    },
+    {
+      "path": "tests/hardware-dt.cpp",
+      "sha256": "c20493f55a054823d27a54b7e53f3134d744062955804fedc67b4937c968fc82"
+    },
+    {
+      "path": "tests/ssc-mount-matrix.c",
+      "sha256": "3a62294e84a6cd715d00bd871065c126593ef5cd5db96c9b071ec25a3f911e9b"
+    },
+    {
+      "path": "tests/ssc-mount-matrix.sh",
+      "sha256": "6bdaeb4d70992a8cd1b80274a487b3895999ce72e6f589087f1affe32b9d4c8a"
+    },
+    {
+      "path": "packaging/native/prepare.sh",
+      "sha256": "d66329f5c637472922c6750fe14500cda00e54355ec8294b55bdf579836948a2"
+    },
+    {
+      "path": "packaging/native/check-ssc-native-objects.sh",
+      "sha256": "6ab15384905711e52cb5fe8ef1247410e5a2a020f38ef4e732c6a8c276033831"
+    },
+    {
+      "path": "scripts/kernel-migration-inventory.sh",
+      "sha256": "c423c89410e4641cafcee9ff5651ace950b27077327b067a9441b4ee833e76ca"
+    },
+    {
+      "path": "manifests/kernel-package-migration.json",
+      "sha256": "4ee7cc8465c94141194a2f13ef0043f4353fe339b4335699ecf2f4e8674afb44"
+    },
+    {
+      "path": "src/sensors/uke-ssc-iio.c",
+      "sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd"
+    },
+    {
+      "path": "tests/ssc-native-contract.c",
+      "sha256": "32a3c55171343a2af5458fb9604ccfdef7195f4f34a35b8e8cdb1ed569405f4a"
+    },
+    {
+      "path": "tests/ssc-native-contract.sh",
+      "sha256": "540e9b9d60056395fddb63a2106fb99e42213ca6602d8fa47fbcaec473bbd435"
+    },
+    {
+      "path": "src/sensors/0001-ssc-stk3bcx-als-vector.patch",
+      "sha256": "37da0a30cd8f7ad830a6cf80f30ee20b06fcdde5f3b8342d235352514f3ffccf"
+    },
+    {
+      "path": "src/sensors/0002-ssc-sip1328-rear-als.patch",
+      "sha256": "1f08939f2d321ebbfc699e2a0b7bce2e4e9bacdf887dc8b113e5f5b562a952d9"
+    },
+    {
+      "path": "tests/ssc-als-vector-contract.c",
+      "sha256": "8192a58ae81de0e240e770952a84a85edec266a3918eb27c412d7854cbf48e5c"
+    },
+    {
+      "path": "tests/ssc-als-vector-contract.sh",
+      "sha256": "e019289342f42cccff4e1bb5365087d8fed7e27acf745e78ac95524c86266974"
+    },
+    {
+      "path": "tests/ssc-rear-als-contract.c",
+      "sha256": "badecb06a43b1fd600175f5e77074d3fa578773c1c95e5b49b420fe6c37bb045"
+    },
+    {
+      "path": "tests/ssc-rear-als-contract.sh",
+      "sha256": "4910024d5de9cfe5d2371a023dc560c2156996e61f2742c1073826444f5c7c3f"
+    }
+  ],
+  "integration": {
+    "only_coordinator_submits_full_kernel": true,
+    "patch_existing_consumer_instead_of_replacing_with_old_snapshot": true,
+    "update_both_native_profile_and_boot_recipe": true,
+    "native_profile_prepare_path": "prepare.sh",
+    "boot_recipe_prepare_path": "packaging/native/prepare.sh",
+    "refresh_profile_SHA256SUMS_and_boot_source_assets": true,
+    "all_config_inputs_unchanged": true,
+    "all_pending_camera_audio_ssc_pogo_manager_features_required": true,
+    "front_rear_and_mount_patch_order_commutes": true,
+    "combined_iio_sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd",
+    "qualified_peer_sources": {
+      "front": "9896de456f92c9a0a27c5509c80c6bbf38fc90b5",
+      "rear": "f4b5020e3bcf25ec23ee3831960962c9a2e0439f"
+    }
+  },
+  "full_kernel_built": false,
+  "target_installed": false,
+  "physical_acceptance": false,
+  "package_retirement": false
+}

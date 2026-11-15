@@ -1,0 +1,25 @@
+From: Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] platform: Uke: allow schedutil bursts in the low-power profile
+
+A ceiling equal to cpuinfo.min_freq makes low-power fixed-frequency and
+prevents schedutil from responding to interactive load. Remove only this
+profile-owned CPU ceiling. Keep the existing GPU preference, performance
+floor, transaction rollback and all independent thermal/user QoS requests.
+
+This is an experimental source candidate. Energy and latency comparison
+are required before adding it to a delivered default kernel. OEM WALT and
+scene-specific policies are not reproduced by this change.
+
+--- a/drivers/soc/qcom/uke-platform-profile.c
++++ b/drivers/soc/qcom/uke-platform-profile.c
+@@ -197,8 +197,8 @@
+ 	for (i = 0; i < UKE_POLICIES; i++) {
+ 		next.min[i] = choice == PLATFORM_PROFILE_PERFORMANCE ?
+ 			profile->cpu[i].policy->cpuinfo.max_freq : FREQ_QOS_MIN_DEFAULT_VALUE;
+-		next.max[i] = choice == PLATFORM_PROFILE_LOW_POWER ?
+-			profile->cpu[i].policy->cpuinfo.min_freq : FREQ_QOS_MAX_DEFAULT_VALUE;
++		/* Permit schedutil/EAS bursts; independent thermal/QoS ceilings still win. */
++		next.max[i] = FREQ_QOS_MAX_DEFAULT_VALUE;
+ 	}
+ 	ret = uke_profile_transaction(profile, &next);
+ 	if (!ret)

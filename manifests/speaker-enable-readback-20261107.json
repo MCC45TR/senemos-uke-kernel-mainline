@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-07",
+  "scope": "Fixed in-band FS19xx RX/TX enable query draft and focused actual-source synthetic transport proof; no current kernel change",
+  "parent_full_build": 11283960,
+  "parent_source": "fa9d36d77a0b6dfe73e168e993b688ad5f3374f2",
+  "source_refs": [
+    {
+      "repository": "AudioReach/audioreach-graphservices",
+      "commit": "558ddfc2c87019496957855c209dd5ece4f6aceb",
+      "files": [
+        "spf/api/apm/apm_api.h",
+        "gsl/src/gsl_graph.c"
+      ],
+      "license": "BSD-3-Clause",
+      "role": "In-band GET_CFG and response/status/alignment contract; no copied donor implementation"
+    },
+    {
+      "repository": "MiCode/vendor_qcom_opensource_audio-kernel",
+      "commit": "8eb0eccbc4027ae4a4987e4bced03a4381039714",
+      "files": [
+        "asoc/codecs/fs19xx/fsm_q6afe.c",
+        "asoc/codecs/fs19xx/fsm_q6afe.h",
+        "asoc/codecs/fs19xx/Kbuild"
+      ],
+      "license": "Fourier notice; no clear file-level redistribution license; reference only",
+      "role": "Dormant Q6AFE protocol lead, not an active AudioReach protection-mode contract"
+    },
+    {
+      "repository": "AudioReach/audioreach-engine",
+      "commit": "5773bf8e627c9857481dd338a9ec4aea4a49afd3",
+      "role": "Current framework source identity, not fitted firmware or FourSemi implementation"
+    }
+  ],
+  "payload_assets": [
+    "src/audio/uke-fs19xx-readback.h",
+    "src/audio/uke-fs19xx-readback.c",
+    "tests/audio-fs19xx-readback.c",
+    "tests/audio-fs19xx-readback-backend.c",
+    "tests/audio-fs19xx-readback.sh",
+    "packaging/native/speaker-readback.spec",
+    "packaging/native/copr-speaker-readback.sh",
+    "docs/SPEAKER-ENABLE-READBACK.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-fs19xx-readback.h",
+      "sha256": "a5c4f6255f56aa428a57eedbe5f150663f2534384690e4c4e5d1324b9d98bc91"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-readback.c",
+      "sha256": "75a82b2bbbf8b7bc946e38488e51c220f995a57af8c286f2957535a261c9b7e8"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback.c",
+      "sha256": "db99841938f2dbf25617abe916c3d017288e6da6f758191905fe10d155f9007f"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback-backend.c",
+      "sha256": "3ce1acc128b43c0b673d372337074f7195a92fcb14aaa7f3c76d4c9fb2b48106"
+    },
+    {
+      "path": "tests/audio-fs19xx-readback.sh",
+      "sha256": "ef9e0b315fb2a7c03f08d86e41b0cbcfcd815f8df498b911457b1fdc31b9f856"
+    },
+    {
+      "path": "packaging/native/speaker-readback.spec",
+      "sha256": "ab98bb6346368c082f0d19edc46eb3a6b431eeaf2115b7708236a2615eac612e"
+    },
+    {
+      "path": "packaging/native/copr-speaker-readback.sh",
+      "sha256": "69ed3190b094570eb8b2407fde8493063c5db3ae493f7e3d8eb178a48b8d08c5"
+    },
+    {
+      "path": "docs/SPEAKER-ENABLE-READBACK.md",
+      "sha256": "90399e69ef89dd99e02959eb1e3d6b4b9eaa973fce9190ec1f921fc75f34871d"
+    }
+  ],
+  "fixed_parameters": [
+    {
+      "instance": "0x4040",
+      "parameter": "0x11111611",
+      "bytes": 4
+    },
+    {
+      "instance": "0x49fd",
+      "parameter": "0x11111601",
+      "bytes": 4
+    }
+  ],
+  "query_timeout_ms": 250,
+  "no_shared_dma": true,
+  "no_configuration_write": true,
+  "registered_runtime_interface": false,
+  "actual_kernel_object_qualified": false,
+  "native_focused_test_passed": false,
+  "on_device_query_tested": false,
+  "physical_limiter_qualified": false,
+  "gain_ceiling": 223,
+  "full_revision_reserved": false
+}

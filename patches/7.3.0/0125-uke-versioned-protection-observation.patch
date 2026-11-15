@@ -1,0 +1,119 @@
+--- a/drivers/power/supply/qcom_battmgr_uke_control.h
++++ b/drivers/power/supply/qcom_battmgr_uke_control.h
+@@ -457,10 +457,43 @@
+ {
+ 	struct qcom_battmgr *battmgr = dev_get_drvdata(dev);
+ 	struct qcom_battmgr_uke_transaction *tx = &battmgr->transaction;
++	u64 now = ktime_get_boottime_ns();
++	bool valid;
++	unsigned long flags;
++	ssize_t len;
++
++	mutex_lock(&battmgr->lock);
++	spin_lock_irqsave(&tx->lock, flags);
++	valid = battmgr->protection.received_ns && now >= battmgr->protection.received_ns &&
++		now - battmgr->protection.received_ns <= 5ULL * NSEC_PER_SEC &&
++		battmgr->protection.generation == tx->generation &&
++		battmgr->protection.firmware == tx->firmware_generation &&
++		battmgr->protection.source == tx->source_generation && battmgr->service_up &&
++		!tx->desynced && !tx->suspended && !tx->removing;
++	len = sysfs_emit(buf, "1 %llu %u %u %u %llu %u %u %u %u %u %llu %u\n",
++		tx->instance_ns, tx->generation, tx->firmware_generation, tx->source_generation,
++		battmgr->protection.received_ns, battmgr->protection.enabled,
++		battmgr->protection.moisture, valid, battmgr->protection.wet_latched,
++		battmgr->protection.inhibit_verified && valid &&
++		battmgr->protection.inhibit_readback_ns && now >= battmgr->protection.inhibit_readback_ns &&
++		now - battmgr->protection.inhibit_readback_ns <= 5ULL * NSEC_PER_SEC,
++		battmgr->protection.dry_since_ns, battmgr->protection.faults);
++	spin_unlock_irqrestore(&tx->lock, flags);
++	mutex_unlock(&battmgr->lock);
++	return len;
++}
++static DEVICE_ATTR_RO(uke_charge_protection_state);
++
++/* Explicit versioned observation; the legacy state remains passive. */
++static ssize_t uke_charge_protection_observe_v2_show(struct device *dev,
++		struct device_attribute *attr, char *buf)
++{
++	struct qcom_battmgr *battmgr = dev_get_drvdata(dev);
++	struct qcom_battmgr_uke_transaction *tx = &battmgr->transaction;
+ 	struct qcom_battmgr_uke_protection observation;
+ 	u64 now;
+ 	int ret;
+-	bool valid;
++	bool valid, refreshed = false;
+ 	unsigned long flags;
+ 	ssize_t len;
+ 
+@@ -476,23 +509,26 @@
+ 			mutex_unlock(&battmgr->lock);
+ 			return ret;
+ 		}
++		refreshed = true;
+ 	}
+ 	spin_lock_irqsave(&tx->lock, flags);
+ 	now = ktime_get_boottime_ns();
+ 	valid = qcom_battmgr_uke_protection_cache_live(battmgr, now);
+-	len = sysfs_emit(buf, "1 %llu %u %u %u %llu %u %u %u %u %u %llu %u\n",
++	len = sysfs_emit(buf, "2 %llu %u %u %u %llu %u %u %u %u %u %llu %u %u\n",
+ 		tx->instance_ns, tx->generation, tx->firmware_generation, tx->source_generation,
+ 		battmgr->protection.received_ns, battmgr->protection.enabled,
+ 		battmgr->protection.moisture, valid, battmgr->protection.wet_latched,
+ 		battmgr->protection.inhibit_verified && valid &&
+ 		battmgr->protection.inhibit_readback_ns && now >= battmgr->protection.inhibit_readback_ns &&
+ 		now - battmgr->protection.inhibit_readback_ns <= 5ULL * NSEC_PER_SEC,
+-		battmgr->protection.dry_since_ns, battmgr->protection.faults);
++		battmgr->protection.dry_since_ns, battmgr->protection.faults, refreshed);
+ 	spin_unlock_irqrestore(&tx->lock, flags);
+ 	mutex_unlock(&battmgr->lock);
+ 	return len;
+ }
+-static DEVICE_ATTR_RO(uke_charge_protection_state);
++static struct device_attribute dev_attr_uke_charge_protection_observe_v2 =
++	__ATTR(uke_charge_protection_observe_v2, 0400,
++	       uke_charge_protection_observe_v2_show, NULL);
+ 
+ static int qcom_battmgr_uke_control_guard(struct qcom_battmgr *battmgr)
+ {
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -2414,6 +2414,7 @@
+ 
+ static struct attribute *qcom_battmgr_uke_attrs[] = {
+ 	&dev_attr_uke_charge_protection_state.attr,
++	&dev_attr_uke_charge_protection_observe_v2.attr,
+ 	&dev_attr_uke_charge_wet_guard.attr,
+ 	&dev_attr_uke_charge_protection.attr,
+ 	&dev_attr_uke_charge_moisture_enable.attr,
+diff --git a/Documentation/ABI/testing/sysfs-driver-uke-protection-observe-v2 b/Documentation/ABI/testing/sysfs-driver-uke-protection-observe-v2
+new file mode 100644
+--- /dev/null
++++ b/Documentation/ABI/testing/sysfs-driver-uke-protection-observe-v2
+@@ -0,0 +1,27 @@
++What:           /sys/bus/platform/devices/.../uke_charge_protection_state
++Date:           November 2026
++KernelVersion:  7.3.3
++Contact:        Uke kernel contributors
++Description:
++                Existing version-1 passive snapshot. Reads never request
++                firmware, acquire control, clear faults or change settings.
++                A stale/absent snapshot reports valid=0, not a fresh dry state.
++
++What:           /sys/bus/platform/devices/.../uke_charge_protection_observe_v2
++Date:           November 2026
++KernelVersion:  7.3.3
++Contact:        Uke kernel contributors
++Description:
++                Root-only (0400) read-only version-2 observation. A valid
++                five-second same-epoch cache avoids requests; otherwise two
++                fixed moisture GETs refresh it under the request mutex.
++                No SET, lease, timer, automatic retry or fault reset is added.
++                Errors remain errno; a partial GET does not become a record.
++
++                Fourteen decimal fields: version=2, instance, generation,
++                firmware epoch, source epoch, received boottime ns, detection
++                enabled, moisture, valid, wet latch, inhibit readback valid,
++                dry-since boottime ns, fault mask, GETs performed for this read.
++                The final flag is 0 for cache use and 1 after successful GETs;
++                an epoch race can still leave valid=0. It is not physical
++                moisture/thermal/cutoff qualification or actuator admission.

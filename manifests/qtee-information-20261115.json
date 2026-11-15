@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "scope": "Explicit once-only kernel QTEE TPM vendor information; no startup or physical acceptance",
+  "parent_full_build": 11330023,
+  "parent_full_release": 27,
+  "planned_full_release": 28,
+  "source_check_release": 114,
+  "parent_source": "2ee8b189d4657c243cdd9cfdfa64e36894f3a4e6",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11330023/senemos-uke-linux-kernel-mainline-unstable-7.3.3-27.src.rpm",
+  "parent_srpm_sha256": "accf15a8a7930b1795469e3196f2474970472b935221a949c05c119cf2dfd860",
+  "parent_spec_sha256": "4fb8122e1e00cb0eda47544a18085a7bf921d6e39043a8af60a8b6623a303bc8",
+  "declared_changed_parent_composition_fields": [
+    "source_commit",
+    "kernel_release",
+    "rpm_revision",
+    "diagnostic_audio_driver"
+  ],
+  "raw_kernel_configs_unchanged": true,
+  "firmware_crm_activation_allowed": false,
+  "speaker_gain_ceiling": 223,
+  "new_runtime_packages": 0,
+  "automatic_firmware_request": false,
+  "physical_tpm_qualified": false,
+  "source_assets": [
+    {
+      "path": "LICENSES/GPL-2.0-only.txt",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79"
+    },
+    {
+      "path": "docs/QTEE-TPM-INFORMATION.md",
+      "sha256": "ba599d2e4839c3a91f5c70f876f287f412137dd258b024ff46df43c0482955fd"
+    },
+    {
+      "path": "src/security/qtee-tpm-info.c",
+      "sha256": "202f8087b2e6aa5a7ef0786ecde8b5ee48986d66c3196f33de229dfa1269194d"
+    },
+    {
+      "path": "src/security/qtee-tpm-info.h",
+      "sha256": "9b39c1162aadc8f676c80ce3e39d3b15f07c65d666afef510f0c5ac587437448"
+    },
+    {
+      "path": "src/security/qtee-tpm-info-core.h",
+      "sha256": "072002765ead09c431c9248bec1d018436dcdcefd5353460752e41434f990418"
+    },
+    {
+      "path": "src/security/apply-qtee-tpm-info733.sh",
+      "sha256": "d4b74a6ddb212f13ff3a52b99fa1c355c46fb8d3b56302170d7ddf804f6a8826"
+    },
+    {
+      "path": "tests/qtee-tpm-info-core.cpp",
+      "sha256": "def96994cea09c330f82d3a7ee083160c679bb483df0fe3ba0f2fa40ea93c90f"
+    },
+    {
+      "path": "packaging/native/prepare-qtee-information733.sh",
+      "sha256": "ae4f99efb808fb32edef92fbe4b87518f691a5a133fde374b297f0c203c4f487"
+    },
+    {
+      "path": "packaging/native/check-qtee-information733.sh",
+      "sha256": "f8657b8e7acd447fda875d5dbdbbed16ac843ef17ad8613472bc24bd6f2cd2d1"
+    },
+    {
+      "path": "packaging/native/rewrite-qtee-information733.sh",
+      "sha256": "5f1accbd1cbb40e2ac679430de8c761eabd22ce1be7e7d135bbf2ac068961bd0"
+    },
+    {
+      "path": "packaging/native/copr-qtee-information733.sh",
+      "sha256": "bf8d2b75f4a06fef31994801e5a344ef0beeb5dbdb0cf9fb19907834439b7aa7"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    }
+  ],
+  "result": {
+    "planned_full_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
+    "full_recipe_inverse_passed": true,
+    "pc_data_only_apply_rehearsal_passed": true,
+    "native_qualified": false,
+    "full_kernel_built": false,
+    "physical_tpm_qualified": false
+  }
+}

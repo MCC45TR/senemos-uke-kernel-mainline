@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "full_release": 13,
+  "source_check_release": 72,
+  "parent_full_build": 11293945,
+  "parent_source": "b14c66405258832ccf92ba9a46cfceb03f635755",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11293945/senemos-uke-linux-kernel-mainline-unstable-7.3.3-12.src.rpm",
+  "parent_srpm_sha256": "7889e2efb4a15780737d5d6c2f712fd5f093f1194232940162f020a7b128298b",
+  "parent_spec_sha256": "b85fdf18606c2b52dbf35b0755b9884deeec872878b36ff7cf2f683de37e026e",
+  "parent_audio_card_sha256": "45102888d1f5481a99282304660b35cf679ef01270b39ec3fc886ad590cd675c",
+  "proofs": {
+    "pcm": {
+      "build": 11295453,
+      "version": "7.3.3-72",
+      "source": "dc9d6e2d932052afd12b8aa9ae35f15b4f228632",
+      "receipt_sha256": "c062d4c29bfcf2985216bd08d61d06765531f4295ec096336b838acf2028a904"
+    },
+    "profiles": {
+      "build": 11295383,
+      "version": "7.3.3-69",
+      "source": "3421d4be69e5e0a85d01ca677ebea1a51b086269",
+      "receipt_sha256": "869775b55788514c903f589094031102421d6ddaa8bbfab96e55e4472b0f22f5"
+    }
+  },
+  "retained_full12_source_fields": 699,
+  "production_config_unchanged": true,
+  "protected_gain": 223,
+  "physical_output_count": 4,
+  "full_build_accepted": false,
+  "installed_on_target": false,
+  "physical_accepted": false,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "payload_assets": [
+    "src/audio/0033-audioreach-eight-channel-pcm.patch",
+    "src/audio/prepare-pcm-surround733.sh",
+    "packaging/native/check-pcm-surround733.sh",
+    "tests/pcm-surround-encoders.c",
+    "docs/PCM-SURROUND-ENCODERS.md",
+    "tests/audio-pcm-formats-contract.sh",
+    "src/audio/prepare-surround-profiles733.sh",
+    "packaging/native/check-surround-profiles733.sh",
+    "tests/speaker-surround-ucm.cpp",
+    "docs/SPEAKER-SURROUND-PROFILES.md",
+    "src/audio/verify-pcm-surround733.sh",
+    "packaging/native/prepare-pcm-surround-full733.sh",
+    "packaging/native/prepare-surround-full733.sh",
+    "packaging/native/rewrite-pcm-surround-full733.sh",
+    "packaging/native/copr-pcm-surround-full733.sh",
+    "docs/PCM-SURROUND-DELIVERY.md",
+    "manifests/pcm-surround-20261110.json",
+    "manifests/speaker-surround-profiles-20261110.json"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/0033-audioreach-eight-channel-pcm.patch",
+      "sha256": "a7f3ecbfe16b5cd45f2fb56f6445f5a81402d45e8e0aaf1d439de23ac19396f7"
+    },
+    {
+      "path": "src/audio/prepare-pcm-surround733.sh",
+      "sha256": "b8e603a9441ce6ca3ac3b154900d67843b5669e9238229424b1f0e05766cbad7"
+    },
+    {
+      "path": "packaging/native/check-pcm-surround733.sh",
+      "sha256": "bd526bc234f5a738238c61c2b254ab9aa1deff4709da2dcd754d424e7cf7738f"
+    },
+    {
+      "path": "tests/pcm-surround-encoders.c",
+      "sha256": "ef1273f56242399a113111479c46ab3523eb87f4a407a87dde09919bfd2ff4c0"
+    },
+    {
+      "path": "docs/PCM-SURROUND-ENCODERS.md",
+      "sha256": "1ad0714c3b865eb56278ec3e4c6c4c9305ebf20aafb67bf4cc39ea4f6855c69c"
+    },
+    {
+      "path": "tests/audio-pcm-formats-contract.sh",
+      "sha256": "68fa870f0a7c2360250cbdabe1ad3257e437c9b5b166c0d58f2ac8d074e3a5e2"
+    },
+    {
+      "path": "src/audio/prepare-surround-profiles733.sh",
+      "sha256": "4aa105be4d94609e93622e68c4c4848b1aefa1887601771c14db7d1502398f1c"
+    },
+    {
+      "path": "packaging/native/check-surround-profiles733.sh",
+      "sha256": "f0e254b944d0fa1a7dfa6d8af2d6e8edda340b08a5f987770cf2441a747954ba"
+    },
+    {
+      "path": "tests/speaker-surround-ucm.cpp",
+      "sha256": "7d21719a10f1689797a431bb2b6899c45d68aa10a119e70b365b3b1104ec2354"
+    },
+    {
+      "path": "docs/SPEAKER-SURROUND-PROFILES.md",
+      "sha256": "a0290e7f10cfc89f2faee7a4adaf7d439ce1ebdfa726b74f70658eec11090e4d"
+    },
+    {
+      "path": "src/audio/verify-pcm-surround733.sh",
+      "sha256": "eba672aec0bd72cff600d3081f95103c6795831c7437bfb4d72b746e317a947c"
+    },
+    {
+      "path": "packaging/native/prepare-pcm-surround-full733.sh",
+      "sha256": "ad6a657732b3b25718220caba9143e1c06c5b4c2c26892ef4ae270351e7bcb74"
+    },
+    {
+      "path": "packaging/native/prepare-surround-full733.sh",
+      "sha256": "e6d8ce261bc02c2ca599cd252fd9b74d134ceb93455f30a6d4a040f009460597"
+    },
+    {
+      "path": "packaging/native/rewrite-pcm-surround-full733.sh",
+      "sha256": "96c702457db76602e0ca814e59e0bd0363c67cd29b49601af60f34009183c7fe"
+    },
+    {
+      "path": "packaging/native/copr-pcm-surround-full733.sh",
+      "sha256": "f3e287995d2ef2d3338028a7dce63c892614a0aeeb013a35baa99d7937dbb044"
+    },
+    {
+      "path": "docs/PCM-SURROUND-DELIVERY.md",
+      "sha256": "ec2d5fefe085b022ec52608fdf40f89f460c438d0094f2ba7b227f5fb44decc1"
+    },
+    {
+      "path": "manifests/pcm-surround-20261110.json",
+      "sha256": "aa2aa28a4386ef6108c7846320b7f015b1c1bc763e456a802d3507a5e471dfc3"
+    },
+    {
+      "path": "manifests/speaker-surround-profiles-20261110.json",
+      "sha256": "213baca28187e19ee16fb5ba71d7a4062bec78e5f27871206faf10bad82797d1"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "1d211f3adffd79e4154924e2be690d666fce1fea887b52150e31214d31f61ada"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+diff --git a/src/boot/build-payload.sh b/src/boot/build-payload.sh
+--- a/src/boot/build-payload.sh
++++ b/src/boot/build-payload.sh
+@@ -38,6 +38,7 @@ ExecStart=
+ ExecStart=/usr/libexec/uke-offline-switch-root
+ UNIT
+ cp "$here/../../packaging/native/native.config" "$out/.config"
++bash "$kernel/native-profile/packaging/native/prepare-storage-config-full733.sh" "$kernel" "$out" seed
+ usb_profile=$(cat "$kernel/native-generated/usb-profile")
+ case $usb_profile in peripheral|typec-v1) ;; *) echo 'Missing USB source-profile receipt' >&2; exit 2;; esac
+ if [[ $usb_profile == typec-v1 ]]; then
+diff --git a/packaging/native/prepare-mst-power-delivery733.sh b/packaging/native/prepare-mst-power-delivery733.sh
+--- a/packaging/native/prepare-mst-power-delivery733.sh
++++ b/packaging/native/prepare-mst-power-delivery733.sh
+@@ -50,11 +50,12 @@ grep -E '[[:space:]]T[[:space:]]+msm_dp_mst_output_bpc$' "$work/msm-linked-symbo
+ if grep -E '[[:space:]]U[[:space:]]+msm_dp_mst_output_bpc$' "$work/msm-linked-symbols.txt";then exit 1;fi
+ llvm-nm "$out/vmlinux" | awk '$NF=="uke_profile_set"{found=1}END{exit !found}'
+ [[ $(modinfo -F vermagic "$out/drivers/gpu/drm/msm/msm.ko") == "$(cat "$out/include/config/kernel.release") "* ]]
+-# Crypto56 is separately qualified. This candidate preserves the exact existing
+-# production config; no volume or encrypted-boot capability is silently claimed.
++# Native97 qualifies the explicit eight-option layer;raw production inputs
++# remain exact and the independent full-config delta retains all other options.
+ cmp "$profile/native.config" "$kernel/boot-recipe/packaging/native/native.config"
+-grep -Fx '# CONFIG_DM_CRYPT is not set' "$out/.config"
+-grep -Fx '# CONFIG_FS_ENCRYPTION is not set' "$out/.config"
++jq -e '.storage_encryption_config_layer==1 and .storage_encryption_config_native_build==11307222 and .storage_encryption_native_admitted and .storage_encryption_enabled_in_full_candidate and (.storage_encryption_encrypted_io_accepted|not)' "$profile/source-composition.json" >/dev/null
++grep -Fx 'CONFIG_DM_CRYPT=m' "$out/.config"
++grep -Fx 'CONFIG_FS_ENCRYPTION=y' "$out/.config"
+ tuple=$(bash "$profile/scripts/kernel-release.sh" json "$profile/manifests/cumulative-release.json")
+ audio_name=uke$(jq -er .version <<< "$tuple")-$(jq -er .release <<< "$tuple")u
+ [[ ${audio_name//./_} == "$(jq -er .diagnostic_audio_driver "$profile/source-composition.json")" ]]

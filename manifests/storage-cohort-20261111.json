@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "parent_full_build": 11306825,
+  "parent_full_release": 23,
+  "parent_source_commit": "dde9b3034a095f14581c0fd5e23c42f1caf43986",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11306825/senemos-uke-linux-kernel-mainline-unstable-7.3.3-23.src.rpm",
+  "parent_srpm_sha256": "da4ea560897d1c1681dc909c8365009af15547ff1bf237941f52138f1268fd4a",
+  "parent_spec_sha256": "c6aa57e106b3398e7227aa7ada64ef83e8bea851eee6d061537b6988d589bfca",
+  "parent_profile_sha256": "9a0148dda24d742baa8750d6a03922317bfdd4e1530f724d0bf30f4391921360",
+  "source_check_release": 97,
+  "retained_parent_fields": 774,
+  "prior_native_proof": {
+    "build": 11303293,
+    "receipt_sha256": "6ac564ec1795665ad1a839a8d531543a3f9e6e3faef176ba106853bc82d334ac"
+  },
+  "fragment": "configs/storage-encryption733.config",
+  "fragment_sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086",
+  "changes": [
+    [
+      "CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_CRYPTO_ESSIV",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_CRYPTO_XTS",
+      "m",
+      "y"
+    ],
+    [
+      "CONFIG_DM_CRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_DM_INLINECRYPT",
+      "n",
+      "m"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_ALGS",
+      "n",
+      "y"
+    ],
+    [
+      "CONFIG_FS_ENCRYPTION_INLINE_CRYPT",
+      "n",
+      "y"
+    ]
+  ],
+  "profiles": [
+    {
+      "role": "native",
+      "path": "native.config",
+      "sha256": "431c839cba7c69f6c8128f67ab180ea3586b6dbc771e532adc13c91bde0e9c33"
+    },
+    {
+      "role": "cdsp",
+      "path": "configs/nfc-cdsp-reference.config",
+      "sha256": "83226623001a693f20da67883dd5880e46be85d478c6d662804f604ce474e545"
+    },
+    {
+      "role": "waydroid",
+      "path": "configs/nfc-waydroid-reference.config",
+      "sha256": "b71f1974e504c02b846b6725332158823373a5c2a95c9af47fada4ffacf733e7"
+    },
+    {
+      "role": "cdsp-before",
+      "path": "configs/governor-before-nfc-cdsp.config",
+      "sha256": "d7a47d22e8d187d3b51044aabc220aeeb9aa6f23ddc0d4632050ac78d6c23617"
+    }
+  ],
+  "source_assets": [
+    {
+      "path": "tests/storage-cohort733.mjs",
+      "sha256": "527061ef47cd4c9e40d60924854c42bb9c53537765d1446c21d6c379422398e7"
+    },
+    {
+      "path": "packaging/native/check-storage-cohort733.sh",
+      "sha256": "6ceb4717f4c1c0f6980ec72b43dce4a12c61f287415d0be789e788b5498250a5"
+    },
+    {
+      "path": "packaging/native/copr-storage-cohort733.sh",
+      "sha256": "e99a4b198ef335a671770e9555914ce67a8d2a11a1333f986d7c36e1a942fec6"
+    },
+    {
+      "path": "docs/STORAGE-COHORT-QUALIFICATION.md",
+      "sha256": "b910de6a1554e23b888f86000facc9f0d3e39a3a4cad787f3d24d0bcb990b632"
+    },
+    {
+      "path": "configs/storage-encryption733.config",
+      "sha256": "2a0d19a23bdaa5e5d244d06f15c413853ce83f35578a413b664dcf027a1b2086"
+    },
+    {
+      "path": "tests/storage-cohort-data.sh",
+      "sha256": "ed6fbcf2227730bc6dfd3a43ed0f10734b23006ae88b7dab78798ff249ac652f"
+    },
+    {
+      "path": "packaging/native/check-storage-history733.sh",
+      "sha256": "f165dcf62b4519f05eb932a0385f6c5659b4a59063e1d7a9d60df18043f84f7d"
+    }
+  ],
+  "payload_assets": [
+    "tests/storage-cohort733.mjs",
+    "packaging/native/check-storage-cohort733.sh",
+    "docs/STORAGE-COHORT-QUALIFICATION.md",
+    "configs/storage-encryption733.config",
+    "packaging/native/check-storage-history733.sh",
+    "manifests/storage-cohort-20261111.json"
+  ],
+  "native_qualified": false,
+  "full_kernel_reserved": false,
+  "encrypted_io_accepted": false,
+  "volume_or_key_operations": false,
+  "new_runtime_packages": 0,
+  "protected_gain": 223,
+  "previous_attempt": {
+    "build": 11307169,
+    "source_check_release": 96,
+    "result": "four resolved deltas passed; nonembedded config supplied to embedded historical guard; object build not reached"
+  }
+}

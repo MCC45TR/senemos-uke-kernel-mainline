@@ -1,0 +1,27 @@
+From: Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qcom: scope failed OPEN cleanup to its graph
+
+The protected speaker runtime belongs to backend40. A failed OPEN of another
+graph currently calls the provider removal callback, permanently rejecting
+subsequent provisioning with ENODEV and erasing the speaker state. Use the
+graph-scoped release callback instead. A failed speaker OPEN still mutes and
+erases its calibration, marks Fault and retains the failed graph ID. Failed
+OPEN IDs remain quarantined until provider removal, including non-speaker IDs.
+
+Report the failed graph ID and errno without logging packet or calibration
+contents. This is needed to distinguish the observed DSP duplicate response
+from the later speaker failure; physical audio acceptance remains separate.
+
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -111,7 +111,9 @@
+ 	if (ret < 0) {
+ 		/* Retain the ID until removal; remote ownership may be ambiguous. */
+ 		graph->state = ret;
+-		q6apm_fs19xx_shutdown(apm);
++		q6apm_fs19xx_release(graph);
++		dev_err(apm->dev, "Graph %u OPEN failed: %d; ID quarantined\n",
++			graph_id, ret);
+ 		return ERR_PTR(ret);
+ 	}
+ 

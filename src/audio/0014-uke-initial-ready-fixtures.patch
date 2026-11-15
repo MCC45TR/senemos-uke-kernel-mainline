@@ -1,0 +1,55 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] tests: retain actual runtime callbacks with waitqueue primitives
+
+Keep the original admission and failed-OPEN assertions. The admission fixture
+executes the actual new helper with a timeout-only peer; the dedicated readiness
+test exercises successful publication and notification faults.
+
+--- a/tests/audio-controls-only-oob731.sh
++++ b/tests/audio-controls-only-oob731.sh
+@@ -67,7 +67,26 @@
+ #define MODULE_ID_TDM_SOURCE 2
+ #define MODULE_ID_MFC 3
+ C
++# New runtime uses a waitqueue; keep actual helper and mock timeout primitives.
++# Notification/publication behavior is separately exercised by audio-initial-ready.
++if grep -Fq 'fs19xx_wait_initial_ready(' "$source_file";then
++ cat >> "$stage/check.c" <<'C'
++typedef unsigned int wait_queue_head_t;
++#define init_waitqueue_head(q) (*(q)=0)
++#define wake_up_all(q) ((void)(++*(q)))
++#define READ_ONCE(v) (v)
++#define time_after_eq(a,b) ((long)((a)-(b))>=0)
++#define msecs_to_jiffies(v) ((unsigned long)(v))
++#define wait_event_timeout(q,c,t) ((void)(q),(void)(t),(c)?1:0)
++static unsigned long jiffies;
++static void mutex_lock(struct mutex *m){(void)acquire_mutex(m);}
++static void mutex_unlock(struct mutex *m){cleanup_mutex(&m);}
++C
++fi
+ awk '/^struct q6apm_fs19xx \{/ {emit=1} emit {print} emit && /^};/ {exit}' "$source_file" >> "$stage/check.c"
++if grep -Fq 'fs19xx_wait_initial_ready(' "$source_file";then
++ printf '#include "uke-fs19xx-initial-ready.h"\n' >> "$stage/check.c"
++fi
+ for function in q6apm_fs19xx_init q6apm_fs19xx_controls q6apm_fs19xx_graph q6apm_fs19xx_claim q6apm_fs19xx_prepare q6apm_fs19xx_prepared q6apm_fs19xx_started q6apm_fs19xx_stopped q6apm_fs19xx_quiesce q6apm_fs19xx_release q6apm_fs19xx_shutdown; do
+  awk -v name="$function" '$0 ~ "^(int|bool|void) "name"\\(" {emit=1} emit {print} emit && /^}/ {exit}' "$source_file" >> "$stage/check.c"
+  grep -Fq "$function(" "$stage/check.c"
+--- a/tests/audio-open-failure-contract.sh
++++ b/tests/audio-open-failure-contract.sh
+@@ -36,13 +36,15 @@
+ enum { UKE_FS_READY=2,UKE_FS_PREPARED,UKE_FS_RUNNING,UKE_FS_FAULT };
+ struct audioreach_graph;
+ struct snapshot { int status; unsigned char calibration[96]; };
+-struct q6apm_fs19xx { bool admitted,removing; int lock; struct audioreach_graph *owner; struct snapshot data; };
++struct q6apm_fs19xx { bool admitted,removing; int lock; unsigned ready_wait; struct audioreach_graph *owner; struct snapshot data; };
+ struct idr { void *entry; unsigned id; };
+ struct q6apm { bool removing; struct q6apm_fs19xx *fs19xx; struct idr graph_idr,graph_info_idr; int cmd_lock,lock,dev; };
+ struct audioreach_graph_info { int unused; };
+ struct kref { int count; };
+ struct audioreach_graph { struct q6apm *apm; struct audioreach_graph_info *info; unsigned id; void *graph; int state; struct kref refcount; };
+ static unsigned gates,sends,claims;
++/* Queue publication itself is covered by the actual readiness callback tests. */
++static void __attribute__((unused)) wake_up_all(unsigned *queue) { (*queue)++; }
+ static int response=-EINVAL;
+ static void fs19xx_gate(int value) { assert(value==0);gates++; }
+ static void uke_fs19xx_erase(struct snapshot *data) { memset(data,0,sizeof(*data)); }

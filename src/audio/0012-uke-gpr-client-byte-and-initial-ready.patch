@@ -1,0 +1,85 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: Uke: accept target client byte and wait for initial parameters
+
+The fitted DSP returns client data0xc8 in a size-valid SET response. Keep
+upper-byte reserved refusal and every identity/bounds/lifetime check.
+Wait once for initial private parameter publication before claiming a graph;
+release the mutex while waiting and preserve Fault/ownership refusal.
+
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c
+@@ -46,8 +46,8 @@
+ 	    header->src_port != UKE_OOB_APM_PORT || header->dest_port != client->port_id)
+ 		goto out;
+ 	/* A matching but malformed reply is ambiguous, never a completion fence. */
+-	/* Linux names the upper16 bits reserved; GPR assigns their low4 to client data. */
+-	if (header->version != GPR_PKT_VER || (header->reserved & 0xfff0U) ||
++	/* The fitted Uke firmware uses the full client byte; the upper byte is reserved. */
++	if (header->version != GPR_PKT_VER || (header->reserved & 0xff00U) ||
+ 	    header->hdr_size != GPR_PKT_HEADER_WORD_SIZE ||
+ 	    reply->payload_size < 0 || !reply->payload ||
+ 	    (size_t)header->pkt_size != GPR_HDR_SIZE + (size_t)reply->payload_size)
+--- a/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
++++ b/sound/soc/qcom/qdsp6/uke-fs19xx-runtime.c
+@@ -4,6 +4,8 @@
+ #include <linux/capability.h>
+ #include <linux/cleanup.h>
+ #include <linux/hex.h>
++#include <linux/jiffies.h>
++#include <linux/wait.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/spinlock.h>
+@@ -20,6 +22,9 @@
+ 
+ struct q6apm_fs19xx {
+ 	struct mutex lock;
++	wait_queue_head_t ready_wait;
++	unsigned long ready_deadline;
++	bool ready_wait_started;
+ 	struct uke_fs19xx_state data;
+ 	struct audioreach_graph *owner;
+ 	struct crypto_shash *sha256;
+@@ -28,6 +33,8 @@
+ 	uke_fs_generation provision_generation;
+ };
+ 
++#include "uke-fs19xx-initial-ready.h"
++
+ /* No pointer into a removable APM device is exposed to an amplifier. */
+ static DEFINE_MUTEX(fs19xx_listeners_lock);
+ static BLOCKING_NOTIFIER_HEAD(fs19xx_listeners);
+@@ -160,6 +167,7 @@
+ 	if (!fs)
+ 		return admitted ? -ENOMEM : 0;
+ 	mutex_init(&fs->lock);
++	init_waitqueue_head(&fs->ready_wait);
+ 	fs->admitted = admitted;
+ 	fs->sha256 = crypto_alloc_shash("sha256", 0, 0);
+ 	if (IS_ERR(fs->sha256))
+@@ -227,6 +235,7 @@
+ 	}
+ 	/* The control core does not retain this write value; erase its copy too. */
+ 	memzero_explicit(value->value.bytes.data, UKE_FS19XX_FRAME_BYTES);
++	wake_up_all(&fs->ready_wait);
+ 	return ret ? ret : 1;
+ }
+ static const char * const fs19xx_state_names[] = {
+@@ -299,6 +308,9 @@
+ 
+ 	if (!fs || !fs->admitted || graph->id != 40)
+ 		return 0;
++	ret = fs19xx_wait_initial_ready(fs);
++	if (ret)
++		return ret;
+ 	guard(mutex)(&fs->lock);
+ 	if (fs->removing || fs->owner || fs->data.status != UKE_FS_READY)
+ 		return -ENODATA;
+@@ -472,6 +484,7 @@
+ 	if (!fs) return;
+ 	guard(mutex)(&fs->lock);
+ 	fs->removing = true;
++	wake_up_all(&fs->ready_wait);
+ 	fs19xx_gate(0);
+ 	uke_fs19xx_erase(&fs->data);
+ }

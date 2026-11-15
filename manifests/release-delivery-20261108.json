@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Native machine-level speaker display routing and reduced duplicate full-build validation; physical and duration acceptance separate",
+  "parent_source_build": 11286908,
+  "parent_failed_full_build": 11286962,
+  "full_parent_spec_sha256": "ea6a277cd33ae6d5246a828f42f46e9a640ff5cdfe16f369d59769ce0722a8ce",
+  "payload_assets": [
+    "src/audio/uke-speaker-display.h",
+    "src/audio/uke-speaker-display-control.h",
+    "src/audio/0029-uke-speaker-display-control.patch",
+    "src/audio/apply-speaker-display733.sh",
+    "tests/speaker-display-route.sh",
+    "packaging/native/rewrite-lean-full733.sh",
+    "packaging/native/check-shipping-audio733.sh",
+    "tests/lean-full-spec.sh",
+    "packaging/native/copr-release733.sh",
+    "docs/NATIVE-SPEAKER-DISPLAY.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/audio/uke-speaker-display.h",
+      "sha256": "43a06e0c6caef9fc59a92bfcc639f49e80029a9b0cb35dce3631443e4c9d4c07"
+    },
+    {
+      "path": "src/audio/uke-speaker-display-control.h",
+      "sha256": "8a09a86449e217c8ccdd061a14ef01ba385c3361508d44c41c7c39dc90657599"
+    },
+    {
+      "path": "src/audio/0029-uke-speaker-display-control.patch",
+      "sha256": "a5ddad45795919904c71c8e5c4e9fa7903ebaa48449b26fd7d22e4150a2efffe"
+    },
+    {
+      "path": "src/audio/apply-speaker-display733.sh",
+      "sha256": "42964f06bc3cac27b1d64ccd3d3da49a877e6e484fc128f4fe298f6015c92979"
+    },
+    {
+      "path": "tests/speaker-display-route.sh",
+      "sha256": "64010550adbdeae6ec3f5d979292a23f51fc993f3270107d63c4573e1298aca9"
+    },
+    {
+      "path": "packaging/native/rewrite-lean-full733.sh",
+      "sha256": "3f9346b9a3c56b037ee1cb75a8abe52afa1ae2072478d00da6f22b4236fa2de7"
+    },
+    {
+      "path": "packaging/native/check-shipping-audio733.sh",
+      "sha256": "e833fa014c9bee454e33af1f98056d0e538a8cd3d5ae82a7a5ee5ce8d083f359"
+    },
+    {
+      "path": "tests/lean-full-spec.sh",
+      "sha256": "b65010c8c43844c1983b3f5e2d2113be8fb1172dd7fa3be815a2fc09018e2ae0"
+    },
+    {
+      "path": "packaging/native/copr-release733.sh",
+      "sha256": "04957575dc88920aa7f363253626eff64d2e51323997ee1253638b3a9d08550c"
+    },
+    {
+      "path": "docs/NATIVE-SPEAKER-DISPLAY.md",
+      "sha256": "aa7f867818175e6b9f5e0e49dabe71ad39a786d8c8e43d32d70b1d039f1058f6"
+    }
+  ],
+  "speaker_display_physical_accepted": false,
+  "full_build_target_seconds": 1200,
+  "full_build_timing_qualified": false,
+  "userspace_display_policy_retained": true
+}

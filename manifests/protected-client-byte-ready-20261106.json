@@ -1,0 +1,123 @@
+{
+  "date": "2026-11-06",
+  "scope": "Complete full12215 plus fitted GPR client byte and bounded initial private readiness; proposed check33, no full reservation",
+  "parent_build": 11272105,
+  "parent_source": "25dfab3a6c1570961a7e14d2a37d6d118dae3189",
+  "parent_srpm_sha256": "a087230d9245052ef7ef5980eb62dba77f1eda805392b76308d1259537f100af",
+  "source_check_release": 33,
+  "proposed_full_revision": 12216,
+  "full_revision_reserved": false,
+  "source_assets": [
+    {
+      "path": "src/audio/0012-uke-gpr-client-byte-and-initial-ready.patch",
+      "sha256": "64128cfac487eea90feb30b3911805b962e617f6d9a87112c2667cd5950ba17b"
+    },
+    {
+      "path": "src/audio/0013-uke-client-byte-ready-source-seals.patch",
+      "sha256": "e6afdf7cf304255ac882e2ec893821dd083ff201a9a9a9227fa67cbae14791af"
+    },
+    {
+      "path": "src/audio/uke-fs19xx-initial-ready.h",
+      "sha256": "73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401"
+    },
+    {
+      "path": "src/audio/apply-client-byte-ready731.sh",
+      "sha256": "51212c20fa861088e924d81dab8880ac17f822b4e1b608ae4321363ad71d8401"
+    },
+    {
+      "path": "tests/audio-gpr-client-byte.c",
+      "sha256": "1d04c311ddfeec524776b852a8900dbad823f16ee447b608f5be9ceb2d595edf"
+    },
+    {
+      "path": "tests/audio-gpr-client-byte.sh",
+      "sha256": "e91d23ead3e9f91b94a10434692f04312e7813f3c66ac90132436d23c2fc808e"
+    },
+    {
+      "path": "tests/audio-initial-ready.c",
+      "sha256": "59d900fdd69fee3429c9c0d395958b06a9037c975345e0d39ffa05d65d2205bd"
+    },
+    {
+      "path": "tests/audio-initial-ready.sh",
+      "sha256": "3cbcf615803b3b2ccfe47dd29fcf253d779fff9a9928e5cbce0e4d658510d71b"
+    },
+    {
+      "path": "tests/audio-client-byte-ready-seal.sh",
+      "sha256": "d7c3323d0a3094d4c6f7c1726fb7151cafbeed3359c45bfa3e4ea1717321841f"
+    },
+    {
+      "path": "packaging/native/check-client-byte-ready731.sh",
+      "sha256": "0101afe68e6092203b6b4f1cbd9c09a0f239114766087ebe530e8e3635bdc0f6"
+    },
+    {
+      "path": "packaging/native/copr-migration-client-byte-ready731.sh",
+      "sha256": "ee75c978e7afb4df64ee92a647cf064ba65b4c1939002f2df7a1184d30221c45"
+    },
+    {
+      "path": "docs/PROTECTED-CLIENT-BYTE-READY.md",
+      "sha256": "69a2d3df1fc267ba0697b9c3483604e7839de3e7e1a0f7155381c10ebcb69979"
+    },
+    {
+      "path": "manifests/kernel-migration-full12215-20261106.json",
+      "sha256": "bc6170254d2d9a8f740cda3cdf4a7c62747f40fecac81ed8b50858ea2768e0f1"
+    },
+    {
+      "path": "src/audio/0014-uke-initial-ready-fixtures.patch",
+      "sha256": "212257b37916054fbb67960c1a0179b9c5ed0f608af7c168d8d1bd60d123d50e"
+    }
+  ],
+  "source_hashes": {
+    "backend_before": "bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690",
+    "backend_after": "6d9b4b98558345593762a2f10291d7d17f1279453bc8dacb15ee42c4a33d5113",
+    "runtime_before": "58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3",
+    "runtime_after": "0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee",
+    "initial_ready_helper": "73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401"
+  },
+  "unchanged_parent_nonidentity_fields": 437,
+  "new_backend_modes": 4,
+  "backend_cases_per_mode": 8712,
+  "valid_client_values": 256,
+  "true_reserved_bits": 8,
+  "original_backend_refusal_controls": 2,
+  "backend_assertion_mutants": 4,
+  "initial_ready_modes": 4,
+  "initial_ready_cases_per_mode": 29,
+  "initial_ready_assertion_mutants": 6,
+  "source_seal_refusal_controls": 11,
+  "initial_ready_timeout_ms": 2000,
+  "initial_ready_single_budget": true,
+  "actual_objects": [
+    "sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o",
+    "sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.o",
+    "sound/soc/qcom/qdsp6/snd-q6apm.o"
+  ],
+  "required_runtime_imports": [
+    "schedule_timeout",
+    "prepare_to_wait_event",
+    "finish_wait",
+    "__wake_up"
+  ],
+  "target_changed": false,
+  "physical_acceptance": false,
+  "prior_source_checks": [
+    {
+      "build": 11272447,
+      "source": "37f1e5914e718f77ab938e75652cac6411973c9c",
+      "result": "Normal GCC8712 backend and29 readiness cases pass; missing-notify mutant compilation refuses intentionally unused mock callback; production bytes unchanged"
+    },
+    {
+      "build": 11272464,
+      "source": "70a06888eea98155a6132bc39a59e6ea5eddef90",
+      "result": "All four new backend/readiness modes, mutants and seals pass; inherited runtime callback fixture lacks waitqueue primitive peers before actual AArch64 compilation"
+    }
+  ],
+  "inherited_callback_fixture_primitives": {
+    "audio-controls-only-oob731.sh": {
+      "before": "c1b822217d345161458e786620f9a7dfef0e11c640b9b04eacfabeffc18cc232",
+      "after": "4b6fceca6addd373dc2f62015f1252e913c81c4fc798955aee61c8bca9f79054"
+    },
+    "audio-open-failure-contract.sh": {
+      "before": "db1725ed1df2b9e29e1d87f861ba32fc2244ebbf66bfe4bc3965ab5fd15c812a",
+      "after": "840f21f35f62745ee64f5c816c5c3fd5141001e8af7854c91d13cbdb5717a545"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+From: Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] ASoC: qcom: connect the protected speaker route at its input
+
+The cumulative parent retains the original mixer-to-TDM route. The protected
+topology builder only rewrites a newer mixer-to-MFC variant, silently retaining
+an external FE connection to the TDM sink input already owned by the RX chain.
+The DSP can reject that duplicate input connection during GRAPH_OPEN.
+
+Accept both authenticated baseline route forms, connect the mixer to the MFC
+before the protected RX, and retain the separate VI chain. Reject missing or
+ambiguous entry/chain matches. No module identity, protection, tuning, gain,
+firmware ownership, microphone or HDMI route is changed.
+
+--- a/src/audio/build-protected-topology.sh
++++ b/src/audio/build-protected-topology.sh
+@@ -128,9 +128,25 @@
+ awk '
+     /^SectionControlMixer\."MultiMedia2"/ {copy=1}
+     copy {
+-        if ($0 ~ /"spk.sink, , spk.mfc"/) {
++        if ($0 ~ /"spk.sink, , SECONDARY_TDM_RX_0 Audio Mixer"/) {
++            entry++; chain++
++            print "        \"spk.mfc, , SECONDARY_TDM_RX_0 Audio Mixer\""
++            print "        \"spk.fs.rx, , spk.mfc\""
++            print "        \"spk.sink, , spk.fs.rx\""
++            print "        \"spk.fs.tx, , spk.vi.source\""
++        } else if ($0 ~ /"spk.mfc, , SECONDARY_TDM_RX_0 Audio Mixer"/) {
++            entry++
++            print
++        } else if ($0 ~ /"spk.sink, , spk.mfc"/) {
++            chain++
+             print "        \"spk.fs.rx, , spk.mfc\""
+             print "        \"spk.sink, , spk.fs.rx\""
+             print "        \"spk.fs.tx, , spk.vi.source\""
+         } else print
++    }
++    END {
++        if (entry != 1 || chain != 1) {
++            print "Protected speaker route is missing or ambiguous" > "/dev/stderr"
++            exit 1
++        }
+     }' "$owner/POCO-Pad-X1.conf" >> "$output"

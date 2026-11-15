@@ -1,0 +1,216 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: share stream lifetime between native consumers
+
+Keep the existing wire and restart contracts while allowing raw, buffered
+and the planned combined-light consumer to retain independent demand.
+Stop only the last owner and retain live admitted on-change samples.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -31,6 +31,13 @@
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
+ #define SSC_SENSOR_COUNT 8
+ 
++/* Separate consumers of one SSC SUID, serialized by controller->control. */
++enum ssc_stream_user {
++	SSC_STREAM_DIRECT = 1U,
++	SSC_STREAM_BUFFER = 2U,
++	SSC_STREAM_DUAL = 4U,
++};
++
+ enum ssc_kind { SSC_ACCEL, SSC_GYRO, SSC_MAG, SSC_LIGHT, SSC_PROXIMITY, SSC_SAR, SSC_TEMPERATURE };
+ struct ssc_description {
+ 	const char *datatype, *api, *name;
+@@ -66,6 +73,7 @@
+ 	u64 revision, sample_sequence, ticks;
+ 	s64 sample[3];
+ 	u32 rate;
++	unsigned int stream_users;
+ 	int error;
+ 	bool declared, have_suid, ready, registered, need_metadata, need_apply;
+ 	bool buffered, stream_active, need_stop, buffer_fault;
+@@ -807,14 +815,84 @@
+ 	return ret;
+ }
+ 
++/* Keep persistent demand across a namespace reset. The old buffer's fault
++ * latch prevents its automatic restart; it does not own another consumer.
++ */
++static unsigned int ssc_stream_wanted(const struct ssc_sensor *s)
++{
++	return s->stream_users & (SSC_STREAM_DIRECT | SSC_STREAM_DUAL |
++		(s->buffer_fault ? 0U : SSC_STREAM_BUFFER));
++}
++
++static bool ssc_stream_user_valid(unsigned int user)
++{
++	return user == SSC_STREAM_DIRECT || user == SSC_STREAM_BUFFER ||
++	       user == SSC_STREAM_DUAL;
++}
++
++static int ssc_stream_get(struct ssc_sensor *s, unsigned int user)
++{
++	struct ssc_controller *c = s->controller;
++	unsigned long flags;
++	bool active;
++	int ret;
++
++	lockdep_assert_held(&c->control);
++	if (!ssc_stream_user_valid(user))
++		return -EINVAL;
++	spin_lock_irqsave(&c->state, flags);
++	if (s->stream_users & user) {
++		spin_unlock_irqrestore(&c->state, flags);
++		return -EBUSY;
++	}
++	if (!ssc_current(c) || !s->ready || s->need_stop) {
++		spin_unlock_irqrestore(&c->state, flags);
++		return -ENODEV;
++	}
++	active = s->stream_active;
++	s->stream_users |= user;
++	spin_unlock_irqrestore(&c->state, flags);
++	/* Never replace a live request belonging to a different consumer. */
++	ret = active ? 0 : ssc_start(s);
++	if (ret) {
++		spin_lock_irqsave(&c->state, flags);
++		s->stream_users &= ~user;
++		spin_unlock_irqrestore(&c->state, flags);
++	}
++	return ret;
++}
++
++static int ssc_stream_put(struct ssc_sensor *s, unsigned int user)
++{
++	struct ssc_controller *c = s->controller;
++	unsigned long flags;
++	unsigned int remaining;
++
++	lockdep_assert_held(&c->control);
++	if (!ssc_stream_user_valid(user))
++		return -EINVAL;
++	spin_lock_irqsave(&c->state, flags);
++	if (!(s->stream_users & user)) {
++		spin_unlock_irqrestore(&c->state, flags);
++		return -EINVAL;
++	}
++	s->stream_users &= ~user;
++	remaining = s->stream_users;
++	spin_unlock_irqrestore(&c->state, flags);
++	/* Only the final owner disables the shared SSC request. Fault/restart
++	 * recovery still uses ssc_stop()/client release independently of demand.
++	 */
++	return remaining ? 0 : ssc_stop(s);
++}
++
+ static int ssc_read_raw(struct iio_dev *iio, const struct iio_chan_spec *channel,
+ 			int *val, int *val2, long mask)
+ {
+ 	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+ 	struct ssc_controller *c = s->controller;
+ 	unsigned long flags;
+-	u64 sequence;
+ 	s64 value = 0;
++	bool cached;
+ 	int ret, stop_ret;
+ 
+ 	if (mask == IIO_CHAN_INFO_SCALE)
+@@ -824,25 +902,30 @@
+ 	if (!iio_device_claim_direct(iio))
+ 		return -EBUSY;
+ 	mutex_lock(&c->control);
+-	spin_lock_irqsave(&c->state, flags);
+-	sequence = s->sample_sequence;
+-	spin_unlock_irqrestore(&c->state, flags);
+-	ret = ssc_start(s);
++	ret = ssc_stream_get(s, SSC_STREAM_DIRECT);
+ 	if (!ret) {
+-		if (!wait_for_completion_timeout(&s->sample_done, SSC_TIMEOUT))
++		spin_lock_irqsave(&c->state, flags);
++		cached = ssc_current(c) && s->ready && s->stream_active &&
++			 !s->error && s->ticks;
++		spin_unlock_irqrestore(&c->state, flags);
++		/* A continuously subscribed on-change stream may have no new event
++		 * when illumination is unchanged. Its admitted current sample is
++		 * valid; do not restart it or wait for an unrelated light change.
++		 */
++		if (!cached && !wait_for_completion_timeout(&s->sample_done, SSC_TIMEOUT))
+ 			ret = -ETIMEDOUT;
+ 		spin_lock_irqsave(&c->state, flags);
+ 		if (!ret) {
+-			if (!ssc_current(c) || !s->ready || s->error || s->sample_sequence == sequence)
++			if (!ssc_current(c) || !s->ready || !s->stream_active || s->error || !s->ticks)
+ 				ret = s->error ? s->error : -ENODATA;
+ 			else
+ 				value = s->sample[channel->address];
+ 		}
+ 		spin_unlock_irqrestore(&c->state, flags);
++		stop_ret = ssc_stream_put(s, SSC_STREAM_DIRECT);
++		if (!ret)
++			ret = stop_ret;
+ 	}
+-	stop_ret = ssc_stop(s);
+-	if (!ret)
+-		ret = stop_ret;
+ 	spin_lock_irqsave(&c->state, flags);
+ 	if (!ret && (!ssc_current(c) || !s->ready))
+ 		ret = -ENOTCONN;
+@@ -860,19 +943,38 @@
+ 	struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(iio);
+ 	struct ssc_controller *c = s->controller;
+ 	unsigned long flags;
++	u64 sequence;
+ 	int ret;
+ 
+ 	mutex_lock(&c->control);
+ 	spin_lock_irqsave(&c->state, flags);
++	if (s->buffered) {
++		spin_unlock_irqrestore(&c->state, flags);
++		mutex_unlock(&c->control);
++		return -EBUSY;
++	}
++	sequence = s->sample_sequence;
+ 	s->buffered = true;
+ 	s->buffer_fault = false;
+ 	spin_unlock_irqrestore(&c->state, flags);
+-	ret = ssc_start(s);
++	ret = ssc_stream_get(s, SSC_STREAM_BUFFER);
+ 	if (ret) {
+ 		spin_lock_irqsave(&c->state, flags);
+ 		s->buffered = false;
+ 		spin_unlock_irqrestore(&c->state, flags);
+-		ssc_stop(s);
++	} else {
++		spin_lock_irqsave(&c->state, flags);
++		/* Supply the current valid sample once when joining an unchanged
++		 * stream. An enable ACK that already published must not duplicate it.
++		 */
++		if (ssc_current(c) && s->ready && s->stream_active && !s->error &&
++		    s->ticks && s->registered && s->sample_sequence == sequence) {
++			s64 scan[4] = {};
++
++			memcpy(scan, s->sample, sizeof(s->sample));
++			iio_push_to_buffers_with_ts(iio, scan, sizeof(scan), iio_get_time_ns(iio));
++		}
++		spin_unlock_irqrestore(&c->state, flags);
+ 	}
+ 	mutex_unlock(&c->control);
+ 	return ret;
+@@ -888,7 +990,7 @@
+ 	spin_lock_irqsave(&c->state, flags);
+ 	s->buffered = false;
+ 	spin_unlock_irqrestore(&c->state, flags);
+-	ssc_stop(s);
++	ssc_stream_put(s, SSC_STREAM_BUFFER);
+ 	mutex_unlock(&c->control);
+ 	return 0;
+ }
+@@ -1010,7 +1112,7 @@
+ 		ready = ssc_current(c) && s->ready && s->revision == revision;
+ 		apply = s->need_apply;
+ 		s->need_apply = false;
+-		buffered = s->buffered && !s->buffer_fault;
++		buffered = ssc_stream_wanted(s) != 0;
+ 		spin_unlock_irqrestore(&c->state, flags);
+ 		if (ready && !s->registered) {
+ 			ret = iio_device_register(s->iio);

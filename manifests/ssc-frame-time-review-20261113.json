@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Research only: SSC hardware time and gravity frame admission; full25 remains unchanged",
+  "owning_full_build": 11318688,
+  "native_source_build": 11318588,
+  "driver_timestamp_semantics": "host-arrival",
+  "gravity_frame_admitted": false,
+  "ssc_counter_domain_measured": false,
+  "new_runtime_packages": 0,
+  "device_changed": false,
+  "code_copied_from_donors": false,
+  "sources": [
+    {
+      "repository": "https://github.com/qualcomm/sensinghub",
+      "revision": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+      "path": "utils/inc/qshTimeUtil.h",
+      "sha256": "00a62ff65220faa7421d6060395835c1fb9f14a95c7fe3f6e3b597350cef8c8f",
+      "license": "BSD-3-Clause-Clear",
+      "attribution": "Qualcomm Technologies and subsidiaries"
+    },
+    {
+      "repository": "https://github.com/qualcomm/sensinghub",
+      "revision": "6363cb4af0b2e48266d49bf37438171f6dc7006a",
+      "path": "utils/inc/qshTimeUtil.h",
+      "sha256": "0c8ad43512dab4d157e0c57b9b1563a7f8d3b14e46cd916106f77cf9a36767ad",
+      "license": "BSD-3-Clause",
+      "attribution": "Qualcomm Technologies and subsidiaries"
+    },
+    {
+      "repository": "https://github.com/qualcomm/sensinghub",
+      "revision": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+      "path": "apis/proto/sns_accel.proto",
+      "sha256": "f62d9ddfb67cd43553281ea4a5245a13e26a1e3fa7d326d469d26f0f041c81ee",
+      "license": "BSD-3-Clause-Clear",
+      "attribution": "Qualcomm Technologies and subsidiaries"
+    },
+    {
+      "repository": "https://github.com/qualcomm/sensinghub",
+      "revision": "329551963bcc063f6a89f6cbca259c5b5c9c4e0b",
+      "path": "apis/proto/sns_client.proto",
+      "sha256": "81946d438ba1eed7be4b3b8f0b06524f0064185e8e6e6d00827f81208cdf2a0c",
+      "license": "BSD-3-Clause-Clear",
+      "attribution": "Qualcomm Technologies and subsidiaries"
+    },
+    {
+      "repository": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource",
+      "revision": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/clocksource/arm_arch_timer.c",
+      "sha256": "e383e0edf8fa8d9eac4c72d6d293c5056d895a158e040d9530470c999a899c56",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    },
+    {
+      "repository": "https://github.com/OnePlusOSS/android_kernel_oneplus_sm7675",
+      "revision": "fc892483f1d61f245924681eb5abd563564d9cba",
+      "path": "drivers/clocksource/arm_arch_timer.c",
+      "sha256": "e383e0edf8fa8d9eac4c72d6d293c5056d895a158e040d9530470c999a899c56",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    },
+    {
+      "repository": "https://github.com/torvalds/linux",
+      "revision": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "path": "drivers/clocksource/arm_arch_timer.c",
+      "sha256": "7719bb322e3b08848dea35f32f2217c9238ffa53f5e2cf8a38f2297aba62d89b",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    },
+    {
+      "repository": "https://github.com/torvalds/linux",
+      "revision": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "path": "include/clocksource/arm_arch_timer.h",
+      "sha256": "0e55581f1dbb3059f79a5d091c06d46e94f5ad5c904e76c28ad2d8e6bcf0c033",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    },
+    {
+      "repository": "https://github.com/torvalds/linux",
+      "revision": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "path": "arch/arm64/include/asm/arch_timer.h",
+      "sha256": "52c09f59e4ad1c8da2b6fbb5ce7fcbe8409e440b8e1b9012dbdd669b9b9b3088",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    },
+    {
+      "repository": "https://github.com/torvalds/linux",
+      "revision": "7e1392a42ea288d70a266f6553fe06f57f8647ea",
+      "path": "drivers/clocksource/arm_arch_timer.c",
+      "sha256": "7719bb322e3b08848dea35f32f2217c9238ffa53f5e2cf8a38f2297aba62d89b",
+      "license": "GPL-2.0-only",
+      "attribution": "Original Linux ARM architectural timer authors; file attribution retained"
+    }
+  ],
+  "existing_frame_review": "kernel-package-migration.json",
+  "pending": [
+    "Exact fitted SSC counter-domain correlation and selected-IIO-clock mapping",
+    "Acquisition timestamp retention across joins and early ACK",
+    "Bounded uncertainty, overflow/future-time, generation/suspend and reset qualification",
+    "Gravity endpoint frame admission through standard IIO mount metadata",
+    "Cumulative native/DNF/boot and separate physical acceptance"
+  ],
+  "source_assets": [
+    {
+      "path": "docs/SSC-HARDWARE-TIME-REVIEW.md",
+      "sha256": "32c52170409113016f036da012a0652b9bfe572f2e24df37a41ac3a253225812"
+    }
+  ]
+}

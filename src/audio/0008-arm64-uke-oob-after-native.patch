@@ -1,0 +1,26 @@
+--- a/arch/arm64/kernel/uke-abl.c
++++ b/arch/arm64/kernel/uke-abl.c
+@@ -1102,9 +1102,6 @@
+ 	ret = uke_framebuffer(output);
+ 	if (ret)
+ 		return ret;
+-	ret = uke_audio_config_graph(output);
+-	if (ret)
+-		return ret;
+ 	ret = fdt_pack(output);
+ 	return ret ? ret : 1;
+ }
+@@ -1133,6 +1130,13 @@
+ 		if (!ret)
+ 			ret = uke_abl_native_select(uke_fdt, uke_native_panels,
+ 						    ARRAY_SIZE(uke_native_panels));
++		if (!ret) {
++			ret = fdt_open_into(uke_fdt, uke_fdt, sizeof(uke_fdt));
++			if (!ret)
++				ret = uke_audio_config_graph(uke_fdt);
++			if (!ret)
++				ret = fdt_pack(uke_fdt);
++		}
+ 		if (!ret)
+ 			ret = 1;
+ 	}

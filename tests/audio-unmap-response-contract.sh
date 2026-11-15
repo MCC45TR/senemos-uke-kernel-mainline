@@ -87,6 +87,8 @@ static void inject_reply(void)
  (void)(q); (void)(timeout); \
  while (!(condition) && reply_next<reply_count) inject_reply(); \
  (condition)?1:0; })
+#define APM_CMD_SET_CFG 0x01001006
+#define gpr_send_pkt_wait gpr_send_pkt
 C
 awk '/^int audioreach_send_cmd_sync\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$kernel/sound/soc/qcom/qdsp6/audioreach.c" >> "$work/check.c"
 awk '/^(int q6apm_send_cmd_sync|static int __q6apm_unmap_memory_fixed_region)\(/ {emit=1} emit {print} emit && /^}/ {emit=0}' "$source" >> "$work/check.c"

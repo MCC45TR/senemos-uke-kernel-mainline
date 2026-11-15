@@ -1,0 +1,54 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: identify the native proximity input contract
+
+Expose an IIO capability with device registration so stock SensorProxy
+can select SW_FRONT_PROXIMITY without racing the later input add event.
+Preserve raw values and all stream, calibration and input lifecycles.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -1145,7 +1145,27 @@
+ 	return 0;
+ }
+ 
+-static const struct iio_info ssc_iio_info = { .read_raw_multi = ssc_read_raw_multi };
++/* Capability, not physical acceptance. The IIO core creates these attributes
++ * atomically with the raw device, before its add event; input may arrive later.
++ */
++static ssize_t ssc_proximity_input_abi_show(struct device *dev,
++					 struct device_attribute *attr, char *buf)
++{
++	const struct ssc_sensor *s = *(struct ssc_sensor **)iio_priv(dev_to_iio_dev(dev));
++
++	if (s->declared && s->description->kind == SSC_PROXIMITY)
++		return sysfs_emit(buf, "1\n");
++	return sysfs_emit(buf, "0\n");
++}
++static DEVICE_ATTR_RO(ssc_proximity_input_abi);
++static struct attribute *ssc_iio_attrs[] = {
++	&dev_attr_ssc_proximity_input_abi.attr, NULL,
++};
++static const struct attribute_group ssc_iio_attr_group = { .attrs = ssc_iio_attrs };
++
++static const struct iio_info ssc_iio_info = {
++	.read_raw_multi = ssc_read_raw_multi, .attrs = &ssc_iio_attr_group,
++};
+ static const struct iio_buffer_setup_ops ssc_buffer_ops = {
+ 	.postenable = ssc_buffer_enable, .predisable = ssc_buffer_disable,
+ };
+--- /dev/null
++++ b/Documentation/ABI/testing/sysfs-driver-uke-ssc-proximity-input
+@@ -0,0 +1,13 @@
++What:		/sys/bus/iio/devices/iio:deviceX/ssc_proximity_input_abi
++Date:		November 2026
++KernelVersion:	7.3.3
++Contact:	Uke kernel contributors
++Description:
++		Read-only driver capability on raw Uke SSC IIO devices.
++		1 identifies the declared native binary SW_FRONT_PROXIMITY input
++		contract; 0 identifies a different or undeclared sensor. The IIO
++		core creates this attribute before the device add event. Reading
++		it does not wait for input registration or start a stream.
++		This is not physical probe/sample/calibration acceptance.
++		Raw IIO 0/1 values and independent consumers are retained.
++		Older kernels may omit this attribute; retain their classification.

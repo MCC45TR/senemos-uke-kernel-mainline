@@ -1,0 +1,47 @@
+From: Uke contributors
+Subject: [PATCH] iio: uke-ssc: reserve the complete repeat-four scan layout
+
+The IIO core aligns a four-s64 repeated element to32bytes. Adding its
+timestamp gives a64-byte scan, including tail padding. Reserve64bytes at
+all three publication sites rather than56, so the timestamp helper admits
+the scan. Keep six-value sample storage and all scalar/XYZ/gravity data.
+Zero initialization prevents padding disclosure. No wire or coordinate change.
+
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -33,6 +33,8 @@
+ #define SSC_QMI_REPORT_MAX (UKE_SSC_MESSAGE_MAX + 16)
+ #define SSC_SENSOR_COUNT 12
+ #define SSC_SAMPLE_MAX 6
++/* IIO repeat4 s64 elements require a 32-byte-aligned 64-byte scan. */
++#define SSC_SCAN_MAX 8
+ #define SSC_FRONT_LIGHT 3
+ #define SSC_REAR_LIGHT 4
+ 
+@@ -444,7 +446,7 @@
+ 	s->sample_sequence++;
+ 	s->error = 0;
+ 	if (s->buffered && s->registered) {
+-		s64 scan[SSC_SAMPLE_MAX + 1] = {};
++		s64 scan[SSC_SCAN_MAX] = {};
+ 
+ 		memcpy(scan, s->sample, sizeof(s->sample));
+ 		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
+@@ -688,7 +690,7 @@
+ 			continue;
+ 		for (j = 0; j < events->count; j++) {
+ 			const struct uke_ssc_event *event = &events->event[j];
+-			s64 scan[SSC_SAMPLE_MAX + 1] = {};
++			s64 scan[SSC_SCAN_MAX] = {};
+ 
+ 			if (is_lookup) {
+ 				if (event->message != 768)
+@@ -1105,7 +1107,7 @@
+ 		 */
+ 		if (ssc_current(c) && s->ready && s->stream_active && !s->error &&
+ 		    s->ticks && s->registered && s->sample_sequence == sequence) {
+-			s64 scan[SSC_SAMPLE_MAX + 1] = {};
++			s64 scan[SSC_SCAN_MAX] = {};
+ 
+ 			memcpy(scan, s->sample, sizeof(s->sample));
+ 			iio_push_to_buffers_with_ts(iio, scan, sizeof(scan), iio_get_time_ns(iio));

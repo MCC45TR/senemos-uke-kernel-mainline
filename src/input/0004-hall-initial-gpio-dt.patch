@@ -1,0 +1,68 @@
+--- a/src/boot/uke-hall.h
++++ b/src/boot/uke-hall.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+-/* Preserve exact Uke remote hall events without acquiring physical GPIOs. */
++/* Preserve Uke remote events and its optional physical lid startup level. */
+ static int UKE_INIT uke_hall(void *fdt)
+ {
+ 	static const struct {
+@@ -13,12 +13,14 @@
+ 	unsigned int i;
+ 	int parent = fdt_path_offset(fdt, "/soc/xiaomi_hall"), child, entry, node, bytes, ret;
+ 	const fdt32_t *value;
+-	fdt32_t irq[6];
++	fdt32_t irq[6], gpio[3];
++	int initial_gpio;
+ 	char path[128];
+ 
+ 	if (parent < 0 || fdt_node_check_compatible(fdt, parent, "xiaomi-hall"))
+ 		return -FDT_ERR_BADVALUE;
+ 	for (i = 0; i < sizeof(switches) / sizeof(switches[0]); i++) {
++		initial_gpio = 0;
+ 		snprintf(path, sizeof(path), "/soc/xiaomi_hall/%s", switches[i].child);
+ 		child = fdt_path_offset(fdt, path);
+ 		value = fdt_getprop(fdt, child, "linux,code", &bytes);
+@@ -27,6 +29,30 @@
+ 		value = fdt_getprop(fdt, child, "linux,input-type", &bytes);
+ 		if (!value || bytes != 4 || fdt32_to_cpu(*value) != 5)
+ 			return -FDT_ERR_BADVALUE;
++		/* Only fitted front-lid wiring is measured. Missing optional wiring
++		 * keeps the historical remote-only path; malformed data is not guessed.
++		 */
++		if (!i) {
++			value = fdt_getprop(fdt, child, "hall_pin", &bytes);
++			if (value) {
++				int controller = fdt_path_offset(fdt, "/soc/pinctrl@f000000");
++				const fdt32_t *cells;
++
++				if (bytes != sizeof(gpio) || controller < 0 ||
++				    !fdt_get_phandle(fdt, controller) ||
++				    fdt32_to_cpu(value[0]) != fdt_get_phandle(fdt, controller) ||
++				    fdt32_to_cpu(value[1]) != 99 || fdt32_to_cpu(value[2]) != 1 ||
++				    !fdt_getprop(fdt, controller, "gpio-controller", NULL))
++					return -FDT_ERR_BADVALUE;
++				memcpy(gpio, value, sizeof(gpio));
++				cells = fdt_getprop(fdt, controller, "#gpio-cells", &bytes);
++				if (!cells || bytes != 4 || fdt32_to_cpu(*cells) != 2)
++					return -FDT_ERR_BADVALUE;
++				initial_gpio = 1;
++			} else if (bytes != -FDT_ERR_NOTFOUND) {
++				return -FDT_ERR_BADVALUE;
++			}
++		}
+ 		value = fdt_getprop(fdt, child, "interrupts-extended", &bytes);
+ 		if (!value || bytes != sizeof(irq))
+ 			return -FDT_ERR_BADVALUE;
+@@ -67,6 +93,11 @@
+ 		ret = fdt_setprop(fdt, node, "interrupts-extended", irq, sizeof(irq));
+ 		if (ret)
+ 			return ret;
++		if (initial_gpio) {
++			ret = fdt_setprop(fdt, node, "state-gpios", gpio, sizeof(gpio));
++			if (ret)
++				return ret;
++		}
+ 	}
+ 	node = fdt_path_offset(fdt, "/hall-lid");
+ 	ret = fdt_setprop(fdt, node, "wakeup-source", NULL, 0);

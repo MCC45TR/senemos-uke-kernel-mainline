@@ -224,7 +224,7 @@ static int cam_cc_native_handoff_init(void)
 		if (!clock->clock)
 			continue;
 		clock->init.flags |= CLK_HOLD_STATE;
-		if (clock->crm)
+		if (clock->crm || clock->crm_passive)
 			continue;
 		if (clock->native->disable)
 			clock->disable_check = cam_cc_native_disable_check;
@@ -251,6 +251,16 @@ branch:
 	return 0;
 }
 
+static bool cam_cc_native_pll_passive(struct clk_alpha_pll *pll)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++)
+		if (cam_cc_clock_state[i].clock == &pll->clkr)
+			return cam_cc_clock_state[i].crm_passive;
+	return false;
+}
+
 static int cam_cc_native_plls_configure(void)
 {
 	size_t i;
@@ -261,6 +271,8 @@ static int cam_cc_native_plls_configure(void)
 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_plls); i++) {
 		struct clk_alpha_pll *pll = cam_cc_sm7675_plls[i];
 
+		if (cam_cc_native_pll_passive(pll))
+			continue;
 		if (!pll->config || !pll->regs)
 			return -EINVAL;
 		ret = regmap_read(cam_cc_power.map,
@@ -273,6 +285,8 @@ static int cam_cc_native_plls_configure(void)
 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_plls); i++) {
 		struct clk_alpha_pll *pll = cam_cc_sm7675_plls[i];
 
+		if (cam_cc_native_pll_passive(pll))
+			continue;
 		ret = regmap_read(cam_cc_power.map, pll->offset, &mode);
 		if (ret)
 			return ret;

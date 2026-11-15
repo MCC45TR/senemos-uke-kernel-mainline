@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "scope": "Read-only unpublished camera ROM parent qualification; firmware CRM remains refused",
+  "parent_full_build": 11330530,
+  "parent_kernel": "7.3.3-28-unstable",
+  "parent_source": "8eb8316d3af498f4bbd25e89896d648d0ba37202",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11330530/senemos-uke-linux-kernel-mainline-unstable-7.3.3-28.src.rpm",
+  "parent_srpm_sha256": "74f878d9d0258893262b95252d864405fac38860e95a062434c8e688505a37e5",
+  "parent_spec_sha256": "f21757f6b329114b8727846afb6f495d517a8c09b0d52e856cf9713226f48631",
+  "source_check_release": 116,
+  "native_qualified": false,
+  "crm_activation_allowed": false,
+  "full_kernel_built": false,
+  "physical_camera_accepted": false,
+  "new_runtime_packages": 0,
+  "source_assets": [
+    {
+      "path": "LICENSES/GPL-2.0-only.txt",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79"
+    },
+    {
+      "path": "docs/CAMCC-CRM-ROM.md",
+      "sha256": "ddd64a892e68c0e97a0fd3b0688d11ee48ddcefd3c277565615ef574d0892771"
+    },
+    {
+      "path": "packaging/native/copr-crm-rom733.sh",
+      "sha256": "c75e467b9deadfb289ed0d6f4f58171a716428327de5e9860f8048f9ef63b13c"
+    },
+    {
+      "path": "src/camera/camcc-sm7675.c",
+      "sha256": "3482f70e34f33823f0973aa9753dc224fea1a0b84df6c4a2465b0dbeafbcfefa"
+    },
+    {
+      "path": "src/camera/provider/apply-crm-rom733.sh",
+      "sha256": "33acc2b6e2716f3bbf9cc0b7c67896c5e235e108e5ab24884c504b6ec735bfba"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-rom.h",
+      "sha256": "6e520b0c25e7689ec29cfbe98934e1169626b9201ffef70d4769bf6d31ea4900"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-passive.h",
+      "sha256": "b1789597c9a7ee4e1e77f4dd92cf7b7cc091cbf29b99449b195a2078e196487c"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-core.h",
+      "sha256": "00150ea5b25d15e7eb130f6005e3320d4f886668b421dd1b1ddac0686d215378"
+    },
+    {
+      "path": "src/camera/provider/camcc-sm7675-crm-lut.h",
+      "sha256": "db49bf4213a2b837212acc064e185a431de9ec43e692c346e533f43c19108049"
+    },
+    {
+      "path": "tests/camcc-crm-rom.sh",
+      "sha256": "b2412a73c6da7b803f3fa2a49cb04de90ebb71e6b968221c01bf3459108f5e69"
+    },
+    {
+      "path": "tests/camcc-crm-rom-object.sh",
+      "sha256": "cd3b27ae50157d0a7b19a59a6cbaf7a7ca4be0f7402daf3b2ca919952732e1be"
+    },
+    {
+      "path": "tests/fixtures/camcc-crm-rom-check.c",
+      "sha256": "fb6c8b570f484d02d05069f56ead20d00160c0a98ac7e934f5422e2694d8e4e0"
+    },
+    {
+      "path": "referances/camera-rom-20261115/camcc-cliffs.c",
+      "sha256": "1a76c029c51710af6684a6d4f87e1486c125cd25badfce7b80ba642d820affe6"
+    },
+    {
+      "path": "referances/camera-rom-20261115/clk-alpha-pll.c",
+      "sha256": "ea8a97cb6be05ebe807860f81152d4407eda1819b795c6c1573e59fc3e0b32e0"
+    },
+    {
+      "path": "referances/camera-rom-20261115/clk-rcg2.c",
+      "sha256": "87b1645f20fd2ddbe07344ad707c74f81df9871bb53902b9243c1f617584da20"
+    }
+  ],
+  "runtime_units": [
+    {
+      "path": "drivers/clk/qcom/camcc-sm7675.c",
+      "before_sha256": "a12590ce926d3a08a2b651cf49733633d0a0dc270c6f471e7a541f14864f89a7",
+      "after_sha256": "0d0c1601d4adcbd358f47935a1900f8ecc61707547ec1c0632e006526d121df1"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-rom.h",
+      "before_sha256": "absent",
+      "after_sha256": "6e520b0c25e7689ec29cfbe98934e1169626b9201ffef70d4769bf6d31ea4900"
+    }
+  ],
+  "retained_camera_units": [
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-passive.h",
+      "sha256": "b1789597c9a7ee4e1e77f4dd92cf7b7cc091cbf29b99449b195a2078e196487c"
+    },
+    {
+      "path": "drivers/clk/qcom/provider/camcc-sm7675-crm-guard.h",
+      "sha256": "99146d46b929e93c7bea936f881d1f463081d08871a5c808464edfa23d3a953d"
+    }
+  ],
+  "comparison_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/OnePlusOSS/android_kernel_oneplus_sm7675/fc892483f1d61f245924681eb5abd563564d9cba/drivers/clk/qcom/clk-rcg2.c",
+      "sha256": "dc45172d1de4461ad8c335d4cff1a9c88e0b09f959434f797aaa2edfe000679e",
+      "scope": "Same-SoC CRMC function comparison; no board data copied"
+    },
+    {
+      "url": "https://codeberg.org/palawan-mainline/linux/raw/commit/0d9f7fdf720ae9f4ecfbee4fadaf1e3b5c442e95/drivers/clk/qcom/camcc-palawan.c",
+      "sha256": "3910a9e959a4f37f268b045f8ae78295e991faf22d0c4e2e307765f20a1c8fda",
+      "scope": "Shared-IP direct RCG comparison; does not admit active firmware CRM"
+    }
+  ],
+  "parent_source_phase_sha256": "75e9eba0be9ac2683165d1a77825857699c1a98e07a71c896a88a8c0c85b8c2e",
+  "previous_failed": {
+    "release": 115,
+    "build": 11331331,
+    "stage": "source-before-srpm",
+    "reason": "Classifier rejected inherited configuration-only make olddefconfig; no native build"
+  }
+}

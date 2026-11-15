@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "scope": "Cumulative full25 plus signed native110 demand-only root SSC counter diagnostic; full kernel, delivery and physical acceptance remain pending",
+  "parent_full_build": 11318688,
+  "parent_full_release": 25,
+  "planned_full_release": 26,
+  "parent_source": "e2cd9c24f814f3a900bb26dbdb340e509ec0ae08",
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11318688/senemos-uke-linux-kernel-mainline-unstable-7.3.3-25.src.rpm",
+  "parent_srpm_sha256": "28a795d54b16a343aa7525ce667b0b77768cebb61dab1794eaac025b42dd2503",
+  "parent_spec_sha256": "022166f48a935a09257d88ce9c1b3caad341b32f3b33bb62519ba6c19bfcae6c",
+  "parent_profile_sha256": "6f06c480827c8aa624907fae0c50bc7195fa1f5370043c88866cee1ed50b57a6",
+  "parent_boot_recipe_sha256": "9175ad64911111591e86cf67e0892a3a67a9b86c03d4ad4c3d0b3f7a74269a5a",
+  "parent_audio_card_sha256": "68020417b7a08405fe716e2ebb373baf1eb97858cd532e06d0d52e890ee10e37",
+  "parent_raw_config_sha256": "431c839cba7c69f6c8128f67ab180ea3586b6dbc771e532adc13c91bde0e9c33",
+  "parent_native_hardware_source_manifest_sha256": "490b1866b8c21de5fb8f9946b25c4c6da345d6d67bcbd0115716959b3ee32953",
+  "parent_composition_fields": 793,
+  "declared_changed_parent_fields": [
+    "source_commit",
+    "kernel_release",
+    "rpm_revision",
+    "diagnostic_audio_driver"
+  ],
+  "proof": {
+    "build": 11321888,
+    "source_check_release": 110,
+    "source": "fc4c1ab304c8f274b516889d59b0578846676d2e",
+    "native_qualified": true,
+    "receipt_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/uke-kernel-migration-check-7.3.3-110.fc46.aarch64.rpm",
+    "receipt_sha256": "b7a2ab451ace4a9dbbef7052af11cbf481384637792c0b239dfd5ce64fa77dee",
+    "qualification_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/native-ssc-time110-source-qualification.json",
+    "qualification_sha256": "105c8c18ed3fc3cadc5ef929f64e22056deb1ec8e03330664c4d3ac379e8d97e",
+    "incremental_source_url": "https://github.com/MCC45TR/uke-linux-hardware-support/releases/download/copr-consolidation-archive-20261101/native-ssc-time110-incremental-source.tar.xz",
+    "incremental_source_sha256": "2cda89e9d06aea7df873afc52971e388c8329b034f9d36c26ff3adaeedccad94"
+  },
+  "speaker_gain_ceiling": 223,
+  "new_runtime_packages": 0,
+  "new_services": 0,
+  "crm_activation_allowed": false,
+  "clock_mapping_admitted": false,
+  "gravity_frame_admitted": false,
+  "production_motion_admission": false,
+  "full_kernel_built": false,
+  "installed": false,
+  "physical_acceptance": false,
+  "result": {
+    "spec_sha256": "c9be72fd18936adde5ffa86385802330f5af021368c77573c6495aee5848b345"
+  },
+  "source_assets": [
+    {
+      "path": "LICENSES/GPL-2.0-only.txt",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79"
+    },
+    {
+      "path": "packaging/native/prepare-ssc-time-reference-full733.sh",
+      "sha256": "658765c66e12364a12fc63549a08bd7dfeacc36775b99e5a893ecc0ea4331a79"
+    },
+    {
+      "path": "packaging/native/rewrite-ssc-time-reference-full733.mjs",
+      "sha256": "3327c75ec7666dcc84e6291499f7210029b5c7eb5ad9b6eb60d165eb06a6d741"
+    },
+    {
+      "path": "packaging/native/copr-ssc-time-reference-full733.sh",
+      "sha256": "4ea5563b42e7c5e6aafd020a96efbb3b272d33efc2ce4af02abc5d078a5e9ada"
+    },
+    {
+      "path": "packaging/native/retarget-audio-tuple733.sh",
+      "sha256": "2256cd3f7a970af8e1aa21e48ecfafe369e775f74947640b6a138c4e97befbc3"
+    },
+    {
+      "path": "scripts/kernel-release.sh",
+      "sha256": "5af423280355236a02f775bb1a0530855e6b24ee877cba1f1d6917cff1bc9506"
+    },
+    {
+      "path": "docs/SSC-TIME-REFERENCE-DELIVERY.md",
+      "sha256": "b94a03c1f72cce216107d04975f4ca09ab5fa489f372edfc2096f89c76afabe5"
+    }
+  ]
+}

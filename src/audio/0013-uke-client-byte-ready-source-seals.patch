@@ -1,0 +1,57 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] packaging: seal the target client-byte and initial-ready layers
+
+Retain exact historical and new source identities.
+
+--- a/packaging/native/check-oob-runtime731.sh
++++ b/packaging/native/check-oob-runtime731.sh
+@@ -14,11 +14,30 @@
+ jq -e '.protected_oob_native_backend_layer==1 and .speaker_gain_ceiling==223 and
+  .speaker_protection_graph_admitted and (.speaker_physical_protection_qualified|not)' \
+  "$profile/source-composition.json" >/dev/null
+-printf '%s  %s\n' \
+- 8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57 "$original" \
+- 58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3 "$actual" | sha256sum -c --strict --quiet -
++printf '%s  %s\n' 8b6202e36fbfb9c94f290a19a2dfc907d1b1e0c2018dd1f31547ed70df66ea57 "$original" | sha256sum -c --strict --quiet -
++if [[ -e $kernel/native-generated/runtime-before-initial-ready.c ]];then
++ before_ready=$kernel/native-generated/runtime-before-initial-ready.c
++ [[ -f $before_ready && ! -L $before_ready ]]
++ jq -e '.protected_initial_ready_wait_layer==1 and .protected_initial_ready_timeout_ms==2000 and .protected_initial_ready_single_budget and .protected_initial_ready_writer_unlocked and .protected_initial_ready_before_dsp' "$profile/source-composition.json" >/dev/null
++ printf '%s  %s\n' \
++  58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3 "$before_ready" \
++  0e526c3eddccff940925900fc2db4cd0279136de14cac7f393375f98f1ae21ee "$actual" \
++  73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-initial-ready.h" \
++  73c29c31f8beb9a70d8787809b4ab3fd8301d5234170e17f9c18fd94f55cc401 "$profile/src/audio/uke-fs19xx-initial-ready.h" | sha256sum -c --strict --quiet -
++else
++ printf '%s  %s\n' 58626ac77c9fd677ccadc991f5789766ba380bab63fcc76e5030979e8b87d4e3 "$actual" | sha256sum -c --strict --quiet -
++fi
+ for asset in uke-fs19xx-oob-backend.c uke-fs19xx-oob-backend.h uke-fs19xx-oob.h;do
+- if [[ $asset == uke-fs19xx-oob-backend.c && -e $kernel/native-generated/backend-before-client-data.c ]];then
++ if [[ $asset == uke-fs19xx-oob-backend.c && -e $kernel/native-generated/backend-before-client-byte.c ]];then
++  before_byte=$kernel/native-generated/backend-before-client-byte.c
++  [[ -f $before_byte && ! -L $before_byte ]]
++  jq -e '.protected_gpr_client_byte_layer==1 and .protected_gpr_client_byte_allowed_mask==255 and .protected_gpr_client_byte_reserved_mask==65280 and .protected_gpr_client_byte_identity_lifetime_unchanged' "$profile/source-composition.json" >/dev/null
++  printf '%s  %s\n' \
++   785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73 "$profile/src/audio/$asset" \
++   785cc934edcad0cbdcbd78248bed352e3c80992f9a1b0961c4c466c9d1508b73 "$kernel/native-generated/backend-before-client-data.c" \
++   bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690 "$before_byte" \
++   6d9b4b98558345593762a2f10291d7d17f1279453bc8dacb15ee42c4a33d5113 "$kernel/sound/soc/qcom/qdsp6/$asset" | sha256sum -c --strict --quiet -
++ elif [[ $asset == uke-fs19xx-oob-backend.c && -e $kernel/native-generated/backend-before-client-data.c ]];then
+   before=$kernel/native-generated/backend-before-client-data.c
+   [[ -f $before && ! -L $before ]]
+   jq -e '.protected_gpr_client_data_layer==1 and
+--- a/packaging/native/check-client-data731.sh
++++ b/packaging/native/check-client-data731.sh
+@@ -5,7 +5,11 @@
+ out=$(realpath "${2:?Native output}")
+ phase=${3:-objects}
+ [[ $phase == objects || $phase == linked ]]
+-printf '%s  %s\n' bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c" | sha256sum -c --strict -
++if [[ -e $kernel/native-generated/backend-before-client-byte.c ]];then
++ printf '%s  %s\n' 6d9b4b98558345593762a2f10291d7d17f1279453bc8dacb15ee42c4a33d5113 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c" | sha256sum -c --strict -
++else
++ printf '%s  %s\n' bcbff25aebc8189deafbc957dd754943c76434ed12712b45bb3ff998c2ef1690 "$kernel/sound/soc/qcom/qdsp6/uke-fs19xx-oob-backend.c" | sha256sum -c --strict -
++fi
+ bash "$kernel/native-profile/packaging/native/check-config-smmu731.sh" "$kernel" "$out" "$phase"
+ bash "$kernel/native-profile/packaging/native/check-oob-objects731.sh" "$kernel" "$out" "$phase"
+ printf 'Actual AArch64 client-data backend and APM composite pass:%s; physical audio remains unqualified.\n' "$phase"

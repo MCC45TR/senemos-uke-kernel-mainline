@@ -1,0 +1,74 @@
+--- a/packaging/native/check-speaker-inclusion.sh
++++ b/packaging/native/check-speaker-inclusion.sh
+@@ -84,7 +84,9 @@
+   module=$output/sound/soc/qcom/qdsp6/snd-q6apm.ko
+   [[ -s $object && -s $module ]]
+   release=$(jq -er .kernel_release "$composition")
+-  [[ $release =~ ^7\.3\.1-[1-9][0-9]*-unstable$ ]]
++  release_owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
++  expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
++  [[ $release == "$expected_release" ]]
+   [[ $(modinfo -F vermagic "$module") == "$release "* ]]
+   bash "$profile/tests/audio-speaker-observer-code.sh" "$object" "$module"
+   if [[ $mode == controls-only ]]; then
+--- a/tests/camcc-controller-linked731-check.sh
++++ b/tests/camcc-controller-linked731-check.sh
+@@ -5,7 +5,9 @@
+ output=$(realpath "$1")
+ root=$(realpath "$2")
+ release=$3
+-[[ $release =~ ^7\.3\.1-[1-9][0-9]{3,4}(-unstable)?$ ]]
++release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
++expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
++[[ $release == "$expected_release" ]]
+ grep -Fx 'CONFIG_SM_CAMCC_7675=y' "$output/.config"
+ llvm-readelf -h "$output/drivers/clk/qcom/camcc-sm7675.o" | grep -E 'Machine:.*AArch64'
+ for field in phase error gate_register gate_readback; do
+--- a/tests/camss-sm7675-linked731-check.sh
++++ b/tests/camss-sm7675-linked731-check.sh
+@@ -4,7 +4,9 @@
+ [[ $# == 2 ]] || exit 2
+ root=$(realpath "$1")
+ release=$2
+-[[ $release =~ ^7\.3\.1-[1-9][0-9]{3,4}(-unstable)?$ ]]
++release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
++expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
++[[ $release == "$expected_release" ]]
+ module=$root/usr/lib/modules/$release/kernel/drivers/media/platform/qcom/camss/qcom-camss.ko.zst
+ test -s "$module"
+ modinfo -F alias "$module" | grep -Fx 'of:N*T*Cqcom,sm7675-camssC*'
+--- a/tests/audio-protected-package-contract.sh
++++ b/tests/audio-protected-package-contract.sh
+@@ -5,7 +5,9 @@
+ objects=${2:?Kernel object directory}
+ generated=${3:?Native generated directory}
+ release=${4:?Kernel release}
+-[[ $release =~ ^7[.]3[.]1-[1-9][0-9]+-unstable$ ]]
++release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
++expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
++[[ $release == "$expected_release" ]]
+ audio_release=${release%-unstable}u
+ audio_driver=uke${audio_release//./_}
+ [[ ${#audio_driver} -lt 16 ]]
+--- a/tests/msm-kms-alternate-build.sh
++++ b/tests/msm-kms-alternate-build.sh
+@@ -5,7 +5,9 @@
+ output=$(realpath "${2:?Completed native output}")
+ root=$(realpath "${3:?Staged package root}")
+ release=${4:?Versioned kernel release}
+-[[ $release =~ ^7[.]3[.](0|1)-[1-9][0-9]*(-unstable)?$ ]]
++release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
++expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
++[[ $release == "$expected_release" ]]
+ work=$(mktemp -d)
+ trap 'find "$work" -depth -delete' EXIT
+ [[ ! -e $output/certs/signing_key.pem ]]
+@@ -13,7 +15,7 @@
+  find "$root/usr/lib/modules/$release" "$root/usr/lib/senemos/kernel-updates/$release" "$root/usr/share/senemos/uke/$release" -type f -print0
+  printf '%s\0' "$output/.config" "$output/arch/arm64/boot/Image"
+ } | sort -z | xargs -0 sha256sum > "$work/before.sha256"
+-make -C "$kernel" O="$output" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="-${release##*-}" \
++make -C "$kernel" O="$output" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="-${release#*-}" \
+  KCONFIG_NOSILENTUPDATE=1 CONFIG_DRM_MSM_MDP4=y CONFIG_DRM_MSM_MDP5=y \
+  KCFLAGS='-DCONFIG_DRM_MSM_MDP4=1 -DCONFIG_DRM_MSM_MDP5=1' \
+  drivers/gpu/drm/msm/disp/mdp4/mdp4_kms.o drivers/gpu/drm/msm/disp/mdp5/mdp5_kms.o

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-09",
+  "scope": "Experimental source qualification only; no production default change",
+  "parent_commit": "e8e1dee55b7e0a4944fd62c45679d6e688782fa8",
+  "parent_source_check": 11290970,
+  "parent_full_build": 11291017,
+  "parent_spec_sha256": "d6eb763c60a80f85e1eecfc06c14d71fca0ecf7ecd5e059e3310921deb511eac",
+  "source_check_release": 53,
+  "driver_before_sha256": "f56f75f74eeacc2c0b3694feeeef034bab4a0ac62939ffe70fcb493df35bcc4e",
+  "driver_after_sha256": "db359645c60d7d751efd9640d7d9daef71d5c2f396855414d8428e136d61c3c8",
+  "full_delivery_ready": false,
+  "native_qualified": false,
+  "energy_accepted": false,
+  "latency_accepted": false,
+  "physical_accepted": false,
+  "payload_assets": [
+    "src/power/0001-uke-saver-allow-cpu-bursts.patch",
+    "tests/platform-profile-response.sh",
+    "packaging/native/check-profile-response733.sh",
+    "docs/RESPONSIVE-SAVER-EXPERIMENT.md"
+  ],
+  "source_assets": [
+    {
+      "path": "src/power/0001-uke-saver-allow-cpu-bursts.patch",
+      "sha256": "f10730f436e6ddf0736f7dd8b0709dd5e0be30f0b5d54edfcb1202616d24d634"
+    },
+    {
+      "path": "tests/platform-profile-response.sh",
+      "sha256": "4816c34b0df6a7995df9f9fdd1c9658c6dcfc8fff1bbcb05cc6b07573c278f13"
+    },
+    {
+      "path": "packaging/native/check-profile-response733.sh",
+      "sha256": "d99895a23a0eb7c2ea0bcae1ce795a7c6c4cc3ff09d74271a1e3a6ad4e50f2f8"
+    },
+    {
+      "path": "packaging/native/copr-profile-response733.sh",
+      "sha256": "6815ffc9bd5f19198353697c94b205fb84b5fde93b38c52dea502ef6898be2bb"
+    },
+    {
+      "path": "docs/RESPONSIVE-SAVER-EXPERIMENT.md",
+      "sha256": "3e464c3555d3ac316b2857f2a9f755538e74193b90a4047290ab9201f760dc9c"
+    }
+  ],
+  "parent_srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11290970/uke-kernel-migration-check-7.3.3-52.src.rpm",
+  "parent_srpm_sha256": "6c85d659c041ace595365cbbd43ff10a400656f97cc9a099d165b51ad50533b3"
+}

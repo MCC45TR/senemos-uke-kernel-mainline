@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Source-only event reducer for native dual ALS and rear-only closed-cover behavior; no runtime integration or provider replacement",
+  "parent_full_build": 11285130,
+  "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+  "source_check_release": 25,
+  "proposed_full_release": 6,
+  "full_release_reserved": false,
+  "full_build_refused_until_integration": true,
+  "legacy_ssc_driver_sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd",
+  "source_refs": [
+    {
+      "repository": "MCC45TR/senemos-uke-kernel-mainline",
+      "commit": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+      "files": [
+        "src/sensors/uke-ssc-iio.c",
+        "src/sensors/uke-ssc-protocol.c"
+      ],
+      "license": "GPL-2.0-only",
+      "role": "Existing metadata, ACK, sample validity, units and generation ownership; not changed by this milestone"
+    },
+    {
+      "repository": "hadess/iio-sensor-proxy",
+      "ref": "3.9",
+      "archive_sha256": "19a4ae99b1b8af603fc789841025f9747bf445418d69ec7389e75adb6c8186bf",
+      "files": [
+        "src/drv-iio-poll-light.c",
+        "src/drv-iio-buffer-light.c",
+        "src/iio-sensor-proxy.c"
+      ],
+      "license": "GPL-3.0; Bastien Nocera and Elad Alfassa notices retained in reference",
+      "role": "Original-reader protocol limits only; no code copied into kernel",
+      "direct_poll_milliseconds": 800,
+      "buffer_poll_milliseconds": 700,
+      "buffer_channel": "in_intensity_both"
+    },
+    {
+      "copr_build": 11228192,
+      "package": "uke-iio-sensor-proxy-3.9-24.fc46",
+      "role": "Actual current userspace selection baseline, not proof of complete OEM equivalence"
+    },
+    {
+      "repository": "gregkh/linux",
+      "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+      "files": [
+        "drivers/iio/industrialio-core.c",
+        "drivers/iio/inkern.c",
+        "include/linux/iio/consumer.h"
+      ],
+      "license": "GPL-2.0 / original file attribution",
+      "role": "Standard IIO units, processed/raw representations and lifecycle API; no existing matching dual-physical-ALS engine established"
+    }
+  ],
+  "payload_assets": [
+    "src/sensors/uke-ssc-dual-light.h",
+    "tests/ssc-dual-light-events.c",
+    "tests/ssc-dual-light-events.sh",
+    "tests/ssc-dual-light-native.c",
+    "packaging/native/check-dual-light-events733.sh",
+    "packaging/native/copr-dual-light-events733.sh",
+    "docs/DUAL-LIGHT-EVENT-REDUCER.md",
+    "referances/native-als-20261108/dual-light-events24.h"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/uke-ssc-dual-light.h",
+      "sha256": "e8f7d56fca1e4b97448c2503f49a17eaba94d4f2716c6b633d45e3e75f1b4ea4"
+    },
+    {
+      "path": "tests/ssc-dual-light-events.c",
+      "sha256": "eb27d51992e9a8f2edb7920ff264b48d9373c82d102a88ab9890058c554b5a4f"
+    },
+    {
+      "path": "tests/ssc-dual-light-events.sh",
+      "sha256": "63be163a2173ceec91b3fd984615e7f13f953587b4b3a1344a7f6cee1c40623d"
+    },
+    {
+      "path": "tests/ssc-dual-light-native.c",
+      "sha256": "ddb816000058ed5a5bb75890f7f4e2773c2079f433078c3533f7c544c2c2c6e6"
+    },
+    {
+      "path": "packaging/native/check-dual-light-events733.sh",
+      "sha256": "728d76ec104616e4b9dda389a8b6fe16fe80891fc90bd07c200a685f63e48e78"
+    },
+    {
+      "path": "packaging/native/copr-dual-light-events733.sh",
+      "sha256": "def216b2510ece472d906428ce756a9a66ab20961f4ddbdc9d4b3691f736e44d"
+    },
+    {
+      "path": "docs/DUAL-LIGHT-EVENT-REDUCER.md",
+      "sha256": "88527177bfd199aa6b856970e6820b0e75757c07f577251f409d732de20b7b0a"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
+    },
+    {
+      "path": "manifests/hall-initial-cumulative-20261107.json",
+      "sha256": "f8577ddd8e53742e23bbfceef9d4ee9639c56d722c1437370e8b8c02d0114d06"
+    },
+    {
+      "path": "referances/native-als-20261108/dual-light-events24.h",
+      "sha256": "e62f6e396fa7f9c11d8c28918a2cb200a6c539ea33cb19accadb2c8217e6a809"
+    }
+  ],
+  "acceptance": {
+    "four_compiler_modes_required": true,
+    "real_aarch64_compile_consumer_required": true,
+    "actual_driver_integration": false,
+    "hall_event_subscription": false,
+    "standard_iio_buffer_endpoint": false,
+    "original_sensor_proxy_event_path": false,
+    "physical_cover_and_light_accepted": false,
+    "monitor_ddc_accepted": false,
+    "physical_power_accepted": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223,
+    "twelve_behavioral_mutants_required": true,
+    "two_original_header_refusals_required": true,
+    "assertions_per_mode": 549
+  },
+  "previous_source_trial": {
+    "source": "9f3b9b35f23489c1d9c0794e328008cb5e483044",
+    "copr_build": 11285551,
+    "source_check_release": 24,
+    "state": "failed",
+    "stage": "Third behavioral mutant fails compilation because removed epoch comparison leaves an unused parameter under -Werror",
+    "qualified_scope": "Only GCC normal548 positive assertions and two mutant refusals observed; no full qualification",
+    "correction": "Retain warning gates and consume ignored epoch in mutant; add original-header replay refusal and ignored-front timestamp watermark"
+  }
+}

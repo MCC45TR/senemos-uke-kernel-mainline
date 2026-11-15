@@ -1,0 +1,91 @@
+# O82 dual-interface AVR period recovery
+
+8 November 2026. Candidate source; native qualification and device acceptance
+are separate. No new daemon, RPM, DT property or panel command is introduced.
+
+The cumulative live-retime callback writes each INTF's AVR period before the
+common CTL flush. Previously, a second write/readback error or unequal target
+period returned without restoring the first register. Its atomic caller then
+entered the existing pre-flush quarantine and required recovery. The old test
+deliberately expected AVR to remain enabled after an error.
+
+The new transaction validates both active interfaces and their callbacks,
+snapshots both nonzero periods and refuses an already unequal pair before
+writing. It serializes MMIO with the existing encoder spinlock and rechecks
+AVR admission after taking that lock. Successful programming requires matching
+target periods and final readback from both interfaces.
+
+On failure, both saved periods are restored and checked, including the interface
+whose write may have partially failed. Failure is latched to prevent page-flip
+retry. If restoration cannot be verified, both local AVR enables are cleared
+and software admission is revoked. This is best-effort register containment,
+not a claim that a failed MMIO device obeyed the disable write.
+
+Restoring AVR periods does not restore the DSI host or the preceding timing
+changes. The callback always returns the original error, or EIO if rollback
+fails, preserving the caller's existing quarantine/recovery requirement. A
+complete modeset fallback remains a separate task. No physical failure has
+been reproduced on the tablet in this work.
+
+The existing seven modes, panel suppliers, requested30Hz floor, capability API,
+watchdog, DP, touch, brightness, protected223 audio and A/B flow remain. The
+change adds MMIO reads only during an existing live-retime transaction; it adds
+no healthy-idle timer or sensor subscription.
+
+Source references: project59966c3d88efbeaaa4cf133b9ef09a24ba1667d9,
+patches/display/0034 and0042; Linux7.3.3 at
+d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd; exact Uke MiCode display
+44275c404a677d9d9e5230fedd1af2ef02fc7b9a, msm/sde/sde_hw_intf.c
+AVR_VTOTAL/CONTROL contract. No new register value or adjacent-board setting
+is imported. The implementation follows existing GPL-2.0-only kernel code.
+The downstream interfaces differ from upstream DPU and are not copied as a
+replacement driver. No applicable same-SoC donor supplies this project-specific
+transaction; the existing local two-INTF admission remains authoritative.
+
+Qualification runs the actual encoder and MMIO callbacks with controlled
+providers under GCC and Clang, plain and ASan/UBSan, including partial writes,
+snapshot/readback failures, unequal periods, provider loss, lock-time revocation
+and failed restoration. Direct fault scenarios exercise both interfaces.
+Real ARM64 encoder/INTF objects and the final MSM module are checked separately.
+The original source suites run before this late patch and remain tied to the
+same cumulative source receipt. These checks are not physical VRR acceptance.
+
+Source40/COPR11287493 fails606s before the new callback tests: three sparse
+patch hunks are anchored to fragment boundaries rather than their real source
+context. The encoder hunk and retained source/native gates pass. The corrected
+patch uses the original INTF/header surroundings; a text-only apply/inverse
+fixture places those exact source fragments away from file boundaries. Actual
+cumulative application and ARM64 callback qualification remain required.
+
+`scripts/advance-kernel-release.sh COMPLETE_HISTORY PLAN` computes both counters
+with the existing publication rules and updates the plan's dependent manifest
+hashes before writing source files. It preserves unrelated feature fields and
+refuses an unreviewed hash, malformed manifest or nonconsecutive published
+history. Metadata-only fixtures cover nested hashes, idempotence and refusal
+without mutation. Failed full7 remains7; the published internal check40 source
+uses the next unique proof41. This helper does not submit a build, write a boot
+slot or turn an incomplete history into admission. Its caller owns the single
+delivery lock and supplies complete current history before source publication.
+
+Source41/COPR11287532 applies the corrected patch and passes the release-plan
+fixture, then fails597s at GCC's maybe-uninitialized analysis of the saved
+period array. The snapshot loop used a mutable encoder count even though the
+callback admits exactly two interfaces. All six loops now use that explicit
+two-interface bound; warnings and sanitizer settings remain enabled.
+
+The callback tests now run at the beginning of source-check build work in an
+isolated copy of the three actual C/header postimages. The inherited source
+tree remains unchanged for its original checks. After the late patch is applied
+to that tree, all three whole-file hashes must match the early tested view
+before compiling the final ARM64 objects. The tests run once, and never run
+again in the full Image build. Metadata fixtures use the selected upstream
+version instead of embedding a release version. These changes improve failure
+feedback; they do not establish the twenty-minute full-build target.
+
+Source42/COPR11287569 fails235s in the early test after GCC/plain passes
+all30 transaction scenarios and the real MMIO accessors. The test mutation
+generator omits an opening brace and produces invalid C. That brittle generator
+is removed; the30 direct fault scenarios, four compiler/sanitizer modes, actual
+MMIO callbacks, early/late source identity and real ARM64 object/module gates
+remain. Production C, hardware admission, Werror and sanitizer settings do not
+change in this test correction. No full7 build or device update has occurred.

@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-08",
+  "scope": "Source-only actual SSC shared stream ownership foundation; no combined IIO endpoint, Hall subscription, runtime provider or physical acceptance",
+  "parent_full_build": 11285130,
+  "parent_full_source": "24d9fcdc3443f38783ba4c0ae26b2ebd8154b342",
+  "parent_source_check": 11285557,
+  "source_check_release": 28,
+  "proposed_full_release": 6,
+  "full_release_reserved": false,
+  "full_build_refused_until_endpoint_integration": true,
+  "driver_before_sha256": "c7a271fb57d329cdbc31f0d8876af4c4ef95ee16e880137e7fd003a8f45630fd",
+  "driver_after_sha256": "eb85f8b56aac951d47208e9b0e7ace6c3a6a0da1ad93f61373b4a1d7e0abd0f6",
+  "source_refs": [
+    "manifests/dual-light-events-20261108.json"
+  ],
+  "payload_assets": [
+    "src/sensors/0004-ssc-shared-stream-owners.patch",
+    "tests/ssc-stream-owners-host.h",
+    "tests/ssc-stream-owners.c",
+    "tests/ssc-stream-owners.sh",
+    "packaging/native/check-ssc-stream-owners733.sh",
+    "packaging/native/copr-ssc-stream-owners733.sh",
+    "docs/SSC-SHARED-STREAM-OWNERS.md",
+    "packaging/native/inject-ssc-stream-checks.awk",
+    "tests/ssc-stream-check-order.sh"
+  ],
+  "source_assets": [
+    {
+      "path": "src/sensors/0004-ssc-shared-stream-owners.patch",
+      "sha256": "53a651cb7606bbe5b20a2b90731a240d526fada7833cd1c6e9d905dddf2a14c2"
+    },
+    {
+      "path": "tests/ssc-stream-owners-host.h",
+      "sha256": "068b6f61e48ce1ddb7708b0a6edb3173274f41134864850d1f3f20f6bc6db598"
+    },
+    {
+      "path": "tests/ssc-stream-owners.c",
+      "sha256": "39e502a6ac1633783afea90766872de5f4fab58e10e6d326125914e39aeeea59"
+    },
+    {
+      "path": "tests/ssc-stream-owners.sh",
+      "sha256": "d59f6b255116a17354a07695b6154196cf847a12f09901c0cd94b1d55a586ce6"
+    },
+    {
+      "path": "packaging/native/check-ssc-stream-owners733.sh",
+      "sha256": "ebe14ce438b7c972ef0bd8dfa3ab7a9aafa842579deb9a10f817af993282465f"
+    },
+    {
+      "path": "packaging/native/copr-ssc-stream-owners733.sh",
+      "sha256": "83fd5cbce6f505a59d823559a86b2412e9d8fe3af46798d11180d6ceccc71fc5"
+    },
+    {
+      "path": "docs/SSC-SHARED-STREAM-OWNERS.md",
+      "sha256": "995674b10424403e155a5fdfa24c42a01b73c5d81315d37850108f2a5e8aaa60"
+    },
+    {
+      "path": "manifests/cumulative-release.json",
+      "sha256": "f6a625ee83cf86ba41d2744c721ccd108cfd47a72e6512ec7cb8866e5cf79995"
+    },
+    {
+      "path": "manifests/dual-light-events-20261108.json",
+      "sha256": "882101ca6152e897b91525fe41bb3abbc1bed1287f3889d6c8b86e55ab2097f9"
+    },
+    {
+      "path": "packaging/native/inject-ssc-stream-checks.awk",
+      "sha256": "3cfdea0b8e76efb7bd9d00203f735ed9ee553b4c39d5f21e99072671a1b2cb85"
+    },
+    {
+      "path": "tests/ssc-stream-check-order.sh",
+      "sha256": "1377bbb3e49701e44ab4a751a28c00a03b803190eae0eb6fb707bdf7015c4887"
+    },
+    {
+      "path": "packaging/native/check-dual-light-events733.sh",
+      "sha256": "728d76ec104616e4b9dda389a8b6fe16fe80891fc90bd07c200a685f63e48e78"
+    }
+  ],
+  "acceptance": {
+    "four_actual_callback_modes_required": true,
+    "ten_compiled_behavioral_mutants_required": true,
+    "original_qmi_assertions_unchanged": true,
+    "whole_driver_inverse_required": true,
+    "actual_aarch64_driver_composite_required": true,
+    "combined_iio_endpoint": false,
+    "hall_input_subscription": false,
+    "original_sensor_proxy_event_path": false,
+    "physical_cover_brightness_and_power": false,
+    "provider_retirement": false,
+    "gain_ceiling": 223,
+    "pinned_iio_header_required": true,
+    "real_selector_result_and_scale_refusals_required": true,
+    "assertions_per_mode": 1235,
+    "postimage_compile_after_all_retained_checks": true,
+    "exact_build_identities_required": true,
+    "order_regression_required": true
+  },
+  "upstream_iio_api": {
+    "repository": "gregkh/linux",
+    "commit": "d50d994bffa3c7c6db2d8bc4c5f0c55e3f46b0cd",
+    "path": "include/linux/iio/types.h",
+    "blob": "d8944c9e5e906ae663c36934c82489847047a082",
+    "license": "GPL-2.0-only; Jonathan Cameron",
+    "raw_selector": 0,
+    "processed_selector": 1,
+    "scale_selector": 2,
+    "int64_result": 6
+  },
+  "previous_source26": {
+    "source": "3f4e8c98e123e7120290f433ab75ed8408fc4b5c",
+    "copr_build": 11285615,
+    "source_check_release": 26,
+    "qualification_limit": "Original provider fixture uses SCALE1/INT64 result7 instead of actual2/6. Production driver compiles against real kernel headers; fixture selector/result ABI unqualified.",
+    "state": "failed",
+    "duration_seconds": 397,
+    "positive_assertions_observed": 1224,
+    "positive_modes_observed": 1,
+    "compiled_mutant_refusals_observed": 2,
+    "stage": "Third mutant generator emits invalid C because unescaped ampersands expand awk match text",
+    "correction": "Whole-line mutant emission, exact five-mutant text controls, pinned real IIO header and actual selector/result assertions"
+  },
+  "previous_source27": {
+    "source": "e5ed41b2f0a270caf6c72205a05502daa74ff3cb",
+    "copr_build": 11285628,
+    "state": "failed",
+    "duration_seconds": 502,
+    "positive_assertions_per_mode": 1235,
+    "positive_modes_observed": 4,
+    "compiled_mutant_refusals_observed": 10,
+    "original_qmi_replay_passed": true,
+    "actual_aarch64_shared_driver_compiled": true,
+    "qualification_limit": "Later retained cumulative byte-exact SSC gate correctly rejects postimage; no signed completed receipt",
+    "correction": "Keep every legacy check and compile postimage last in source-only build; pin unchanged LOCALVERSION/config/release/UTS through both new compile commands"
+  }
+}

@@ -1,0 +1,25 @@
+From: Uke Linux contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] iommu: admit the permanent Uke protected configuration supplier
+
+The root supplier must receive its translated context before APM creates
+its frontend. Match only the exact provider, board, protected graph and
+original audio streams/controller. Keep all ACTLR and boot reservations.
+
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -875,6 +875,7 @@ static int qcom_uke_smmu_cfg_probe(struct arm_smmu_device *smmu)
+ #include "uke-display-smmu.c"
+ #include "uke-video-smmu.c"
+ #include "uke-cdsp-smmu.c"
++#include "uke-audio-config-smmu.c"
+ 
+ static int qcom_uke_smmu_alloc_context_bank(struct arm_smmu_domain *domain,
+ 		struct arm_smmu_device *smmu, struct device *dev, int start)
+@@ -909,6 +910,7 @@ static int qcom_uke_smmu_alloc_context_bank(struct arm_smmu_domain *domain,
+ 
+ 		if (sid != 0x40 && sid != 0xb6 &&
+ 		    !((qcom_uke_sensor_cb(dev) || qcom_uke_hdmi_dma(dev) ||
++		       qcom_uke_audio_config_dma(dev, smmu) ||
+ 		       sid == 0x60 || sid == 0xa3 || sid == 0x423 ||
+ 		       sid == 0x436 || sid == 0x11400) &&
+ 		      of_device_is_compatible(smmu->dev->of_node, "qcom,sm7675-boot-smmu")))

@@ -12,6 +12,8 @@ printf 'Retained kernel source: '; cat "$profile/source-commit"
 printf 'REGDMA extension source: '; cat "$addon/source-commit"
 bash "$addon/tests/o82-platform-contract.sh"
 bash "$addon/tests/o82-lutbus-contract.sh"
+bash "$addon/tests/o82-regdma-transport-contract.sh" "$addon" "$kernel"
+bash "$addon/tests/o82-atomic-contract.sh" "$addon" "$kernel"
 # Check the real caller's order and unwind, in addition to testing the helpers.
 awk '
  /dpu_kms->hw_vbif = hw;/ {vbif=NR}
@@ -22,6 +24,20 @@ awk '
  suspend && /return rc;/ && guard && !refuse {refuse=NR}
  suspend && /clk_bulk_disable_unprepare/ {clocks=NR;suspend=0}
  END {exit !(vbif && init==vbif+1 && unwind==init+2 && guard && refuse>guard && clocks>refuse)}
+' "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
+awk '
+ /^static void _dpu_kms_mmu_destroy\(/ && !/;$/ {mmu=1}
+ /^static void _dpu_kms_hw_destroy\(/ {hw=1}
+ /^err_mmu_destroy:/ {unwind=1}
+ mmu && /dpu_o82_platform_fini\(dpu_kms\);/ {drain_mmu=NR}
+ mmu && /mmu->funcs->detach\(mmu\);/ {detach=NR}
+ hw && /dpu_o82_platform_fini\(dpu_kms\);/ {drain_hw=NR}
+ hw && /dpu_kms->hw_intr = NULL;/ {destroy_hw=NR}
+ unwind && /dpu_o82_platform_fini\(dpu_kms\);/ {drain_unwind=NR}
+ unwind && /dpu_kms->hw_vbif = NULL;/ {clear_unwind=NR;unwind=0}
+ /^}/ {mmu=hw=0}
+ END {exit !(drain_mmu && drain_mmu<detach && drain_hw && drain_hw<destroy_hw &&
+             drain_unwind && drain_unwind<clear_unwind)}
 ' "$kernel/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c"
 mkdir -p "$out"
 cp "$profile/native.config" "$out/.config"
@@ -38,10 +54,16 @@ make -C "$kernel" O="$out" KCFLAGS=-Werror -j4 drivers/gpu/drm/msm/msm.o
 linked=$out/drivers/gpu/drm/msm/msm.o
 [[ -s $linked ]]
 readelf -h "$linked" | grep -E 'Machine:.*AArch64'
-for function in dpu_o82_platform_init dpu_o82_platform_suspend dpu_o82_regdma_init dpu_o82_regdma_can_unmap; do
+for function in dpu_o82_platform_init dpu_o82_platform_suspend dpu_o82_regdma_init \
+    dpu_o82_regdma_can_unmap dpu_o82_upload dpu_o82_upload_release \
+    dpu_o82_power_upload dpu_o82_power_recover dpu_o82_power_close \
+    dpu_o82_platform_fini dpu_o82_regdma_reset_isolated \
+    dpu_o82_color_init dpu_o82_color_connectors_init dpu_o82_color_check \
+    dpu_o82_color_commit dpu_o82_color_gc dpu_o82_color_blocked \
+    dpu_encoder_o82_stopped dpu_o82_color_fini; do
     llvm-nm --defined-only "$linked" | awk -v name="$function" '$2 ~ /^[tT]$/ && $3==name {found=1} END {exit !found}'
 done
-! llvm-nm --undefined-only "$linked" | grep -E ' dpu_o82_(platform|regdma)_'
+! llvm-nm --undefined-only "$linked" | grep -E ' dpu_o82_(platform|regdma|upload|lutbus|power|color|profiles)_'
 # Rebuild the actual paired overlays after the retained preparation, changing
 # only the explicitly declared base DT. No retained hash receipt is rewritten.
 install -m644 "$addon/src/display/sm7675-uke-native-display.dtso" \
