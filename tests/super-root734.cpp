@@ -36,14 +36,29 @@ int main()
         assert(result.find("root=/dev/mapper/uke-rescue ")!=result.npos);
         assert(result.find(" ro ")!=result.npos&&result.find(" rw ")==result.npos);
         assert(result.find("rootfstype=ext4 ")!=result.npos);
-        assert(result.ends_with(" senemos.role=rescue noresume"));
+        assert(result.ends_with(" senemos.role=rescue senemos.super=seed4-v1 noresume"));
     }
+    const auto super=invoke("senemos.root=userdata senemos.super=seed4-v1 androidboot.slot_suffix=_b",1);
+    assert(super.find("root=PARTLABEL=userdata ")!=super.npos);
+    assert(super.find(" rw ")!=super.npos&&super.find(" ro ")==super.npos);
+    assert(super.ends_with(" senemos.super=seed4-v1")&&super.find("noresume")==super.npos);
+    const auto explicit_super=invoke("senemos.root=userdata senemos.role=rescue senemos.super=seed4-v1",1);
+    assert(explicit_super.ends_with(" senemos.role=rescue senemos.super=seed4-v1 noresume"));
     for(const auto* args:{"senemos.role=rescue","senemos.root=linux senemos.role=rescue",
         "senemos.root=userdata senemos.role=","senemos.root=userdata senemos.role=normal",
         "senemos.root=userdata senemos.role=rescue/","senemos.root=userdata senemos.role=rescue senemos.role=rescue",
         "senemos.root=userdata senemos.role=rescue androidboot.slot_suffix=_c",
         "senemos.root=linux senemos.root=userdata senemos.role=rescue",
-        "senemos.root=userdata senemos.role=rescue msm.o82_vrr_test_min_hz=31"})invoke(args,-1);
+        "senemos.root=userdata senemos.role=rescue msm.o82_vrr_test_min_hz=31",
+        "senemos.super=seed4-v1","senemos.root=linux senemos.super=seed4-v1",
+        "senemos.root=userdata senemos.super=seed5-v1",
+        "senemos.root=userdata senemos.super=seed4-v1 senemos.super=seed4-v1",
+        "senemos.root=userdata senemos.role=rescue senemos.super=",
+        "senemos.root=userdata senemos.role=rescue senemos.super=seed4-v1/"})invoke(args,-1);
+    invoke("senemos.root=userdata senemos.role=rescue",-1,2048,
+        "root=PARTLABEL=linux rw rootfstype=ext4,f2fs,xfs,btrfs panic=0 senemos.role=rescue");
+    invoke("senemos.root=userdata senemos.super=seed4-v1",-1,2048,
+        "root=PARTLABEL=linux rw rootfstype=ext4,f2fs,xfs,btrfs panic=0 senemos.super=seed4-v1");
     invoke("senemos.root=userdata senemos.role=rescue",-1,2048,
         "root=PARTLABEL=linux rw rw rootfstype=ext4,f2fs,xfs,btrfs panic=0");
     invoke("senemos.root=userdata senemos.role=rescue",-1,2048,

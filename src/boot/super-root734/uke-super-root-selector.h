@@ -3,13 +3,17 @@
 #ifndef UKE_SUPER_ROOT_SELECTOR734_H
 #define UKE_SUPER_ROOT_SELECTOR734_H
 
+#ifdef __KERNEL__
+#include <asm/setup.h>
+#endif
+
 #define uke_select_root uke_select_base_root734
 #include "uke-root-selector.h"
 #undef uke_select_root
 
 #ifdef __KERNEL__
 ELFNOTE64("UKE", 0x554b4503,
-	  "super-root-v1;role=rescue;root=dm-uke-rescue;readonly;noresume");
+	  "super-root-v1;role=rescue;root=dm-uke-rescue;readonly;noresume;seed=4GiB");
 #define UKE_SUPER_INITDATA __initdata
 #else
 #define UKE_SUPER_INITDATA
@@ -51,8 +55,12 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 {
 	static const char prefix[] = "senemos.role=";
 	static const char rescue[] = "senemos.role=rescue";
-	static const char suffix[] = " senemos.role=rescue noresume";
-	size_t pos = 0, roles = 0, length;
+	static const char super_prefix[] = "senemos.super=";
+	static const char super[] = "senemos.super=seed4-v1";
+	static const char rescue_suffix[] = " senemos.role=rescue senemos.super=seed4-v1 noresume";
+	static const char normal_suffix[] = " senemos.super=seed4-v1";
+	const char *suffix;
+	size_t pos = 0, roles = 0, supers = 0, length, suffix_bytes;
 	char *work = uke_super_cmdline734;
 	int selected;
 
@@ -69,6 +77,13 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		while (pos < bytes - 1 && !uke_cmdline_space(handoff[pos]))
 			pos++;
 		count = pos - start;
+		if (count >= sizeof(super_prefix) - 1 &&
+		    !memcmp(handoff + start, super_prefix, sizeof(super_prefix) - 1)) {
+			if (++supers != 1 || count != sizeof(super) - 1 ||
+			    memcmp(handoff + start, super, count))
+				return -1;
+			continue;
+		}
 		if (count < sizeof(prefix) - 1 ||
 		    memcmp(handoff + start, prefix, sizeof(prefix) - 1))
 			continue;
@@ -76,7 +91,7 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		    memcmp(handoff + start, rescue, count))
 			return -1;
 	}
-	if (!roles)
+	if (!roles && !supers)
 		return uke_select_base_root734(cmdline, capacity, handoff, bytes);
 	if (capacity > sizeof(uke_super_cmdline734))
 		return -1;
@@ -85,21 +100,39 @@ static int UKE_INIT uke_select_root(char *cmdline, size_t capacity,
 		length++;
 	if (length == capacity)
 		return -1;
+	pos = 0;
+	while (pos < length) {
+		size_t start, count;
+
+		while (pos < length && uke_cmdline_space(cmdline[pos]))
+			pos++;
+		start = pos;
+		while (pos < length && !uke_cmdline_space(cmdline[pos]))
+			pos++;
+		count = pos - start;
+		if ((count >= sizeof(prefix) - 1 &&
+		     !memcmp(cmdline + start, prefix, sizeof(prefix) - 1)) ||
+		    (count >= sizeof(super_prefix) - 1 &&
+		     !memcmp(cmdline + start, super_prefix, sizeof(super_prefix) - 1)))
+			return -1;
+	}
 	memcpy(work, cmdline, length + 1);
 	selected = uke_select_base_root734(work, capacity, handoff, bytes);
 	if (selected != 1)
 		return -1;
-	if (uke_super_replace734(work, capacity, "root=PARTLABEL=userdata",
+	if (roles && (uke_super_replace734(work, capacity, "root=PARTLABEL=userdata",
 				 "root=/dev/mapper/uke-rescue") ||
 	    uke_super_replace734(work, capacity, "rootfstype=ext4,f2fs,xfs,btrfs",
 				 "rootfstype=ext4") ||
-	    uke_super_replace734(work, capacity, "rw", "ro"))
+	    uke_super_replace734(work, capacity, "rw", "ro")))
 		return -1;
+	suffix = roles ? rescue_suffix : normal_suffix;
+	suffix_bytes = roles ? sizeof(rescue_suffix) : sizeof(normal_suffix);
 	length = strlen(work);
-	if (length >= capacity || sizeof(suffix) > capacity - length)
+	if (length >= capacity || suffix_bytes > capacity - length)
 		return -1;
-	memcpy(work + length, suffix, sizeof(suffix));
-	memcpy(cmdline, work, length + sizeof(suffix));
+	memcpy(work + length, suffix, suffix_bytes);
+	memcpy(cmdline, work, length + suffix_bytes);
 	return 1;
 }
 #undef UKE_SUPER_INITDATA
