@@ -41,7 +41,14 @@ SPEC
 cat > "$work/root" <<'SPEC'
 # UKE_SUPER_FULL7344_ROOT_BEGIN
 export LOCALVERSION=-%{senemos_build_release}-unstable
-bash full4/root15/tests/native-super-root734.sh "$PWD" %{_uke_out}
+super_objects=$PWD/native-generated/super734-native-objects
+test ! -e "$super_objects"
+mkdir "$super_objects"
+cp native-profile/native.config "$super_objects/.config"
+bash native-profile/src/livepatch/configure734.sh "$PWD" "$super_objects/.config" "$PWD/native-profile"
+bash scripts/config --file "$super_objects/.config" --set-str INITRAMFS_SOURCE ''
+make -s O="$super_objects" ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig prepare modules_prepare
+bash full4/root15/tests/native-super-root734.sh "$PWD" "$super_objects"
 sha256sum -c --strict --quiet "$super_native/source.sha256"
 # UKE_SUPER_FULL7344_ROOT_END
 SPEC
