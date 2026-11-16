@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-16",
+  "full_release": 5,
+  "parent": {
+    "build": 11333980,
+    "source_commit": "4a424e96c528920d59541fa9cc2aa426a90f296e",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11333980/senemos-uke-linux-kernel-mainline-unstable-7.3.4-4.src.rpm",
+    "srpm_sha256": "c638d2d7e795afaaa7c22bc671b5b44b456b02094aa23123e34d0140cd3ec019",
+    "spec_sha256": "141c2c4052c96e7f749f0caa3bd3f75eed141dd3644be1842b0b1092eda4e9dc",
+    "source_files": 26
+  },
+  "native": {
+    "build": 11336575,
+    "release": 16,
+    "source_commit": "8a6c3d9c6c33f9fdf9e9e41aba3d96752aa5373c",
+    "source_files": 21,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11336575/uke-kernel-migration-check-7.3.4-16.src.rpm",
+    "srpm_sha256": "7971d5a6169d8fb67dbfca87ef34561a5341dae2811bae609a48f19a3e3f8959",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-16.fc46.aarch64.rpm",
+    "proof_sha256": "9ba6b06cd54756658239aed1250998439c7d791bfd0d49372b7021a82ffe2b57",
+    "spec_sha256": "6a99c62c69cbfd527ae0208c9d08e5db1f465ab5a72ae093128b514ae6468b9b",
+    "source_rpm_signed": false,
+    "proof_rpm_trusted_signatures": 2,
+    "compiler_modes": 4,
+    "actual_arm64_provider_objects": 1,
+    "normal_park_restore_retained": true
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Remove the gray interval before native display takeover while preserving full4 feature and safety closure."
+}
