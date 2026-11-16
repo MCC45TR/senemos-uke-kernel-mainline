@@ -1,6 +1,6 @@
 Name: uke-super-root-source-check
 Version: 0.1
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: Native source qualification for an explicit Uke rescue root role
 License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -13,6 +13,7 @@ ExclusiveArch: aarch64
 BuildRequires: gcc-c++ clang compiler-rt libasan libubsan binutils coreutils
 BuildRequires: android-tools dracut systemd systemd-udev f2fs-tools kmod
 BuildRequires: util-linux findutils gawk grep sed gzip cpio xz jq rpm ripgrep
+BuildRequires: git-core
 %global debug_package %{nil}
 %global __os_install_post %{nil}
 
@@ -79,6 +80,9 @@ test ! -e arch/arm64/boot/Image
 %{_datadir}/%{name}/
 
 %changelog
+* Mon Nov 16 2026 Uke contributors - 0.1-5
+- Declare the codec patch tool and isolate its patch root from enclosing source repositories.
+
 * Mon Nov 16 2026 Uke contributors - 0.1-4
 - Qualify the opt-in early super initrd and both capability-gated boot profiles; preserve all original checks.
 

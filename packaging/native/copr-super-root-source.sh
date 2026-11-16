@@ -57,5 +57,5 @@ done
 git -C "$work/builder" rev-parse HEAD > "$work/early-super/builder-source-commit"
 (cd "$work/early-super";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 tar --sort=name --mtime=@1794787200 --owner=0 --group=0 --numeric-owner -cJf "$result/uke-super-early-source.tar.xz" -C "$work" early-super
-[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-4.fc46 ]]
+[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-5.fc46 ]]
 printf 'Native rescue parser source check assembled; packaged parent header only, prepared kernel/initrd integration remains unqualified.\n'

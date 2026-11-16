@@ -10,12 +10,17 @@ work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 mkdir -p "$work/src/boot"
 cp "$file" "$work/parent.cpp"
-git -C "$boot" apply --check "$here/boot-profiles.patch"
-git -C "$boot" apply "$here/boot-profiles.patch"
-printf '%s  %s\n' a37fefd6f64c510ef142940046f561cbc554f2d0350e091e0663f7fa42975b9f "$file" | sha256sum -c --strict --quiet -
 cp "$file" "$work/src/boot/boot-image.cpp"
+# A boot recipe may be nested inside the kernel's Git tree. Own the patch root
+# explicitly so Git cannot silently skip paths relative to an outer repository.
+git -C "$work" init -q
+git -C "$work" apply --check "$here/boot-profiles.patch"
+git -C "$work" apply "$here/boot-profiles.patch"
+printf '%s  %s\n' a37fefd6f64c510ef142940046f561cbc554f2d0350e091e0663f7fa42975b9f "$work/src/boot/boot-image.cpp" | sha256sum -c --strict --quiet -
+cp "$work/src/boot/boot-image.cpp" "$work/new.cpp"
 git -C "$work" apply --reverse "$here/boot-profiles.patch"
 cmp "$work/parent.cpp" "$work/src/boot/boot-image.cpp"
+install -m644 "$work/new.cpp" "$file"
 jq '.source_assets |= map(if .path=="src/boot/boot-image.cpp" then .sha256="a37fefd6f64c510ef142940046f561cbc554f2d0350e091e0663f7fa42975b9f" else . end)' "$boot/lock.json" > "$work/lock.json"
 mv "$work/lock.json" "$boot/lock.json"
 echo 'Boot codec whole inverse passed; new profiles require one exact aligned kernel capability.'

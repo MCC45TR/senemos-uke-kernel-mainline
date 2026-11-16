@@ -34,3 +34,10 @@ legacy behavior and gates new userdata-super/rescue headers on one exact aligned
 kernel capability note. Four native/sanitizer modes rerun the original codec
 contracts plus old, malformed, duplicate and unaligned capability refusals.
 A new full kernel is not reserved by this source check.
+
+Source check 4 (11333621) retained all four 80-case parser modes and the old
+initrd measurement, then stopped because the build chroot lacked git-core.
+The dependency is declared for check 5. The codec patch now owns a temporary
+Git root explicitly; a source-only fixture inside an enclosing Git repository
+passes the whole inverse and produces the exact intended postimage. Runtime
+code and acceptance gates were not weakened to address this build failure.
