@@ -1,6 +1,6 @@
 Name: uke-super-root-source-check
 Version: 0.1
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: Native source qualification for an explicit Uke rescue root role
 License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -8,6 +8,7 @@ Source0: uke-super-root-source.tar.xz
 Source1: senemos-uke-boot-recipe.tar.xz
 Source2: uke-super-tools.tar.xz
 Source3: measure-initrd.sh
+Source4: uke-super-early-source.tar.xz
 ExclusiveArch: aarch64
 BuildRequires: gcc-c++ clang compiler-rt libasan libubsan binutils coreutils
 BuildRequires: android-tools dracut systemd systemd-udev f2fs-tools kmod
@@ -52,15 +53,24 @@ mkdir initrd-inputs
 tar -xJf %{SOURCE1} -C initrd-inputs
 tar -xJf %{SOURCE2} -C initrd-inputs
 bash %{SOURCE3} "$PWD/initrd-inputs/boot-recipe" "$PWD/initrd-inputs/super-tools" "$PWD/initrd-measurement"
+tar -xJf %{SOURCE4}
+(cd early-super;sha256sum -c --strict --quiet SHA256SUMS)
+bash early-super/src/boot/super-root734/measure-early-initrd.sh \
+ "$PWD/initrd-inputs/boot-recipe" "$PWD/early-super" \
+ "$PWD/initrd-measurement/measurement.json" "$PWD/early-initrd-measurement"
 
 %install
 install -d %{buildroot}%{_datadir}/%{name}
 install -m644 native-results.txt SHA256SUMS source-commit %{buildroot}%{_datadir}/%{name}/
 install -m644 initrd-measurement/measurement.json %{buildroot}%{_datadir}/%{name}/
+install -d %{buildroot}%{_datadir}/%{name}/early
+install -m644 early-initrd-measurement/{measurement.json,codec-results.txt,boot-source-lock.json,units.log} \
+ early-super/{SHA256SUMS,builder-source-commit} %{buildroot}%{_datadir}/%{name}/early/
 install -Dm644 initrd-inputs/super-tools/LICENSE %{buildroot}%{_licensedir}/%{name}/super-tools-MIT
 
 %check
 test "$(grep -c '^PASS: super root' native-results.txt)" = 4
+test "$(grep -c '^PASS: boot super profiles' early-initrd-measurement/codec-results.txt)" = 4
 test ! -e arch/arm64/boot/Image
 
 %files
@@ -69,6 +79,9 @@ test ! -e arch/arm64/boot/Image
 %{_datadir}/%{name}/
 
 %changelog
+* Mon Nov 16 2026 Uke contributors - 0.1-4
+- Qualify the opt-in early super initrd and both capability-gated boot profiles; preserve all original checks.
+
 * Mon Nov 16 2026 Uke contributors - 0.1-3
 - Supply the original initramfs privacy audit's required ripgrep build tool.
 

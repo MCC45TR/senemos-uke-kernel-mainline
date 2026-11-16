@@ -38,5 +38,24 @@ done
 install -m644 "$work/builder/src/image/dracut/95uke-super-tools/module-setup.sh" "$work/super-tools/"
 install -m644 "$work/builder/LICENSE" "$work/super-tools/"
 tar --sort=name --mtime=@1794787200 --owner=0 --group=0 --numeric-owner -cJf "$result/uke-super-tools.tar.xz" -C "$work" super-tools
-[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-3.fc46 ]]
+git -C "$work/builder" fetch -q --depth=1 origin 4f64b2085487b0bc6fd261d89989bb88a9f4a222
+git -C "$work/builder" checkout -q --detach FETCH_HEAD
+[[ $(git -C "$work/builder" rev-parse HEAD) == 4f64b2085487b0bc6fd261d89989bb88a9f4a222 ]]
+mkdir "$work/early-super"
+for path in src/boot/super-root734/integrate-initrd.sh src/boot/super-root734/apply-boot-profiles.sh \
+ src/boot/super-root734/boot-profiles.patch src/boot/super-root734/measure-early-initrd.sh tests/boot-super-profiles734.sh;do
+ install -Dm644 "$owner/$path" "$work/early-super/$path"
+done
+for path in src/image/fastboot-singleboot-layout.sh src/image/inspect-fastboot-super.sh \
+ src/image/plan-super-provision.sh src/image/provision-fastboot-super.sh src/image/map-fastboot-rescue.sh \
+ src/image/select-uke-super.sh src/image/early-super-policy.sh src/image/prepare-early-super.sh \
+ src/image/guard-early-rescue.sh src/image/dracut/95uke-super-tools/module-setup.sh \
+ src/image/dracut/96uke-super-boot/module-setup.sh src/image/dracut/96uke-super-boot/uke-super-prepare.service \
+ tests/early-super-policy.sh tests/early-super-units.sh LICENSE;do
+ install -Dm644 "$work/builder/$path" "$work/early-super/builder/$path"
+done
+git -C "$work/builder" rev-parse HEAD > "$work/early-super/builder-source-commit"
+(cd "$work/early-super";find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+tar --sort=name --mtime=@1794787200 --owner=0 --group=0 --numeric-owner -cJf "$result/uke-super-early-source.tar.xz" -C "$work" early-super
+[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-4.fc46 ]]
 printf 'Native rescue parser source check assembled; packaged parent header only, prepared kernel/initrd integration remains unqualified.\n'

@@ -20,3 +20,17 @@ receipts cannot establish an OS boot, metadata authenticity, hardware sealing
 or hibernation. Initramfs mapping/provisioning integration remains separate.
 The source-only include transformation and complete inverse passed on the
 PC without compilation. Native compilation results remain pending.
+
+Native15 (COPR 11333522, source 7167bd3c) passed on AArch64: four modes with
+80 cases, two actual boot objects and both exact capability notes. The prepared
+parent header is c9d89868 and remains unchanged. The text receipt's two COPR
+signatures, actual source worker, complete recipe inverse and eighteen unchanged
+parent assets were independently checked. This does not qualify an OS boot.
+
+The next source check builds the original Fedora initrd with the separately
+qualified builder 4f64b20 modules. It preserves the original physical-root guard
+and the full make-initramfs recipe through an inverse. The codec patch retains
+legacy behavior and gates new userdata-super/rescue headers on one exact aligned
+kernel capability note. Four native/sanitizer modes rerun the original codec
+contracts plus old, malformed, duplicate and unaligned capability refusals.
+A new full kernel is not reserved by this source check.
