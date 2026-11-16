@@ -1,12 +1,17 @@
 Name: uke-super-root-source-check
 Version: 0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Native source qualification for an explicit Uke rescue root role
-License: GPL-2.0-only
+License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
 Source0: uke-super-root-source.tar.xz
+Source1: senemos-uke-boot-recipe.tar.xz
+Source2: uke-super-tools.tar.xz
+Source3: measure-initrd.sh
 ExclusiveArch: aarch64
 BuildRequires: gcc-c++ clang compiler-rt libasan libubsan binutils coreutils
+BuildRequires: android-tools dracut systemd systemd-udev f2fs-tools kmod
+BuildRequires: util-linux findutils gawk grep sed gzip cpio xz jq rpm
 %global debug_package %{nil}
 %global __os_install_post %{nil}
 
@@ -43,10 +48,16 @@ for compiler in g++ clang++;do
  done
 done
 cat native-results.txt
+mkdir initrd-inputs
+tar -xJf %{SOURCE1} -C initrd-inputs
+tar -xJf %{SOURCE2} -C initrd-inputs
+bash %{SOURCE3} "$PWD/initrd-inputs/boot-recipe" "$PWD/initrd-inputs/super-tools" "$PWD/initrd-measurement"
 
 %install
 install -d %{buildroot}%{_datadir}/%{name}
 install -m644 native-results.txt SHA256SUMS source-commit %{buildroot}%{_datadir}/%{name}/
+install -m644 initrd-measurement/measurement.json %{buildroot}%{_datadir}/%{name}/
+install -Dm644 initrd-inputs/super-tools/LICENSE %{buildroot}%{_licensedir}/%{name}/super-tools-MIT
 
 %check
 test "$(grep -c '^PASS: super root' native-results.txt)" = 4
@@ -54,8 +65,12 @@ test ! -e arch/arm64/boot/Image
 
 %files
 %license LICENSE
+%{_licensedir}/%{name}/super-tools-MIT
 %{_datadir}/%{name}/
 
 %changelog
+* Mon Nov 16 2026 Uke contributors - 0.1-2
+- Retain all parser modes and measure the original Fedora super-tool initramfs closure; no new boot hooks.
+
 * Mon Nov 16 2026 Uke contributors - 0.1-1
 - Check the retained normal parser and bounded read-only rescue role; no hardware acceptance.
