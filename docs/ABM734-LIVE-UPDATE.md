@@ -22,9 +22,22 @@ retain the ordinary full modeset rather than changing the proven DFPS path.
 
 Six exact7342 parent files and postimages are pinned. A complete inverse
 preserves the accepted early touch-retention change; the generic checkout's
-older panel source must not replace this source. This is a source candidate,
-not a compiled or installed fix. Compiler/sanitizer tests, actual ARM64
-objects, cumulative signed packaging and physical level-change/suspend tests
+older panel source must not replace this source.
+
+COPR11333196, source7a998264, passed the complete retained native13 checks
+and four actual-function fixture modes (GCC/Clang, plain and ASAN/UBSAN),
+57 cases each. The four affected kernel objects compiled as AArch64; the
+registry export and atomic caller were checked. The signed text receipt has
+SHA2561af91216686e38b3726f2dc0d3288b3c67b75fe1c561fae4e905a90533c3ef59,
+with both signatures verified against the pinned COPR key. The native build
+took455seconds. It contains no Image and was not installed on the tablet.
+
+The full3 source recipe preserves actual7342 and its complete recipe inverse.
+It keeps every earlier hardware/configuration check, reruns the ABM fixture
+on the production source and preserves the native13 source proof through an
+exact two-string audio-version inverse. The existing RGB client dependency
+moves from core to the desktop metapackage so lean rescue can resolve core.
+Full compilation, signed delivery and physical level-change/suspend tests
 remain required. Full3 is unreserved and published7342 is unchanged.
 
 The separate room-light report uses KDE's default linear0..10000lux curve.
