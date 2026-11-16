@@ -90,7 +90,7 @@ bash "$owner/packaging/native/prepare-vrr-historical734.sh" "$profile" "$boot"
 printf '%s\n' "$commit" > "$profile/source-commit"
 jq --arg commit "$commit" --argjson tuple "$tuple" '. + {
  source_commit:$commit,kernel_release:$tuple.kernel_release,rpm_revision:($tuple.release|tostring),
- diagnostic_audio_driver:($tuple.audio_driver|gsub("_";".")),upstream_version:$tuple.version,
+ diagnostic_audio_driver:$tuple.audio_driver,upstream_version:$tuple.version,
  upstream_commit:$tuple.upstream.commit,upstream_sha256:$tuple.upstream.source_sha256,
  rgb_battery_charge_kernel_layer:1,rgb_warning_thresholds_inclusive:true,
  rgb_charge_rearm_percentage_points:2,rgb_healthy_idle_periodic_poll:false,

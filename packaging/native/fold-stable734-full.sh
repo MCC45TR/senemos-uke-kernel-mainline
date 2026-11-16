@@ -25,6 +25,7 @@ mkdir native-generated/stable734-native-proof
 native_proof=$PWD/native-generated/stable734-native-proof/usr/share/uke-kernel-migration-check
 test "$(cat "$native_proof/source-commit")" = "$(jq -er .source_check.source_commit %{SOURCE202})"
 sha256sum -c --strict --quiet "$native_proof/source.sha256"
+bash native-profile/packaging/native/preflight-audio-identity734.sh "$PWD"
 # UKE_STABLE734_FULL_BUILD_END
 SPEC
 cat > "$work/check" <<'SPEC'
@@ -34,6 +35,7 @@ bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.confi
 openssl x509 -in native-profile/src/livepatch/uke-livepatch-20261115.pem -outform DER | cmp - %{_uke_out}/certs/x509_certificate_list
 llvm-nm %{_uke_out}/vmlinux | awk '$NF=="klp_enable_patch"{found=1}END{exit !found}'
 printf '%s  %s\n' "$(jq -er .after_encoder_sha256 native-profile/manifests/native-vrr734-20261115.json)" drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c | sha256sum -c --strict --quiet -
+bash native-profile/tests/audio-identity734.sh "$PWD/native-profile" %{_uke_out}/sound/soc/qcom/uke-audio-card.ko
 # UKE_STABLE734_FULL_CHECK_END
 SPEC
 cat > "$work/install" <<'SPEC'

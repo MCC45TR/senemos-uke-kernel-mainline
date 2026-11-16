@@ -1,5 +1,10 @@
 # Linux 7.3.4 cumulative preparation
 
+16 November update: full11332108 failed its final audio identity check after
+Image compilation. [Audio identity preparation](AUDIO-IDENTITY-734.md) fixes
+the metadata distinction and checks an actual small ARM64 object before the
+next full Image. Release2 is retained; no new runtime kernel is installed.
+
 15 November 2026. The latest explicitly requested next runtime tuple is
 `7.3.4-2-unstable`. Failed full attempts retain that tuple; only successful
 full releases advance it. Native source-check counters are independent and

@@ -62,6 +62,8 @@ boot=$work/boot-recipe
 (cd "$boot";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 (cd "$boot";find . -type f ! -name lock.json ! -path ./src/boot/build-payload.sh -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-boot.sha256"
 bash "$owner/packaging/native/fold-livepatch-full734.sh" "$profile" "$boot"
+install -m644 "$owner/tests/audio-identity734.sh" "$profile/tests/"
+install -m644 "$owner/packaging/native/preflight-audio-identity734.sh" "$profile/packaging/native/"
 (cd "$boot";sha256sum -c --strict --quiet "$work/retained-boot.sha256";
  find . -type f ! -name lock.json -print0 | sort -z | xargs -0 sha256sum) > "$work/boot-assets.sha256"
 jq -Rn '[inputs|capture("^(?<sha256>[a-f0-9]{64})  [.]?/?(?<path>.*)$")]|map({path,sha256})' < "$work/boot-assets.sha256" > "$work/boot-assets.json"
@@ -71,7 +73,13 @@ cp "$work/boot-lock.json" "$result/boot-payload.json"
 cp "$profile/source-composition.json" "$work/parent-composition.json"
 commit=$(git -C "$owner" rev-parse HEAD)
 printf '%s\n' "$commit" > "$profile/source-commit"
-jq --arg commit "$commit" --slurpfile q "$qualification" '.source_commit=$commit |
+tuple=$(bash "$profile/scripts/kernel-release.sh" json "$profile/manifests/cumulative-release.json")
+driver=$(jq -er .audio_driver <<< "$tuple")
+alias=$(jq -er .firmware_alias <<< "$tuple")
+old_driver=$(jq -er .diagnostic_audio_driver "$work/parent-composition.json")
+[[ ( $old_driver == "$alias" || $old_driver == "$driver" ) && ${alias//./_} == "$driver" ]]
+jq --arg commit "$commit" --arg driver "$driver" --slurpfile q "$qualification" '.source_commit=$commit |
+ .diagnostic_audio_driver=$driver |
  .native_stable734_qualification=$q[0].source_check |
  .vrr_native_boot_default_layer=1 | .vrr_native_boot_default_hz=30 |
  .vrr_explicit_zero_and_saved_policy_preserved=true |
@@ -80,7 +88,8 @@ jq --arg commit "$commit" --slurpfile q "$qualification" '.source_commit=$commit
  .rgb_status_reader_required_capability="uke-control(rgb-charge-status-v1)" |
  .livepatch_signed_patch_load_qualified=false |
  .vrr_native_physical_cadence_qualified=false' "$work/parent-composition.json" > "$profile/source-composition.json"
-jq --slurpfile old "$work/parent-composition.json" -e '. as $next | all($old[0]|to_entries[];.key=="source_commit" or $next[.key]==.value)' "$profile/source-composition.json" >/dev/null
+jq --slurpfile old "$work/parent-composition.json" -e '. as $next | all($old[0]|to_entries[];.key=="source_commit" or .key=="diagnostic_audio_driver" or $next[.key]==.value)' "$profile/source-composition.json" >/dev/null
+bash "$profile/tests/audio-identity734.sh" "$profile"
 (cd "$profile";sha256sum -c --strict --quiet "$work/retained-profile.sha256";
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 epoch=$(git -C "$owner" show -s --format=%ct HEAD)
