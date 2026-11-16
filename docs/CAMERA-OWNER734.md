@@ -50,3 +50,14 @@ then stopped while compiling the owner fixture. Its empty Linux errno stub
 shadowed the system errno constants through glibc. Native19 removes only that
 stub and keeps the system errno header; production camera code is unchanged.
 The owner fixtures and actual ARM64 composition remain unqualified.
+
+The next source qualification also checks a read-only AP SWDRV0 startup
+snapshot. It covers exactly the seven PERF and one CAMNOC bandwidth voter
+from the OEM register map. All tables and register bounds are admitted before
+reads; two vote observations and three status observations must agree.
+Unknown bits, nonzero bandwidth without VALID, unsupported level/quantization,
+pending completion and read errors refuse without publishing partial output.
+This detects observed changes; it does not prove an atomic firmware ownership
+transfer. No votes are adopted or withdrawn and production probe is unchanged.
+The fixture injects each of72 read failures,24 vote changes and24 pending
+status positions, plus two semantic mutants, in four native compiler modes.

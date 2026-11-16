@@ -8,34 +8,35 @@ printf '%s  %s\n' 6a99c62c69cbfd527ae0208c9d08e5db1f465ab5a72ae093128b514ae6468b
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 cat > "$work/header" <<'SPEC'
-# UKE_NATIVE_CAMERA19_HEADER_BEGIN
+# UKE_NATIVE_CAMERA20_HEADER_BEGIN
 Source210: uke-camera-owner734.tar.xz
-# UKE_NATIVE_CAMERA19_HEADER_END
+# UKE_NATIVE_CAMERA20_HEADER_END
 SPEC
 cat > "$work/build" <<'SPEC'
-# UKE_NATIVE_CAMERA19_BUILD_BEGIN
+# UKE_NATIVE_CAMERA20_BUILD_BEGIN
 tar -xJf %{SOURCE210}
 (cd camera-owner734;sha256sum -c --strict --quiet SHA256SUMS)
 bash camera-owner734/tests/native-camera-owner734.sh "$PWD" "$PWD/stable734-objects"
-# UKE_NATIVE_CAMERA19_BUILD_END
+# UKE_NATIVE_CAMERA20_BUILD_END
 SPEC
 cat > "$work/install" <<'SPEC'
-# UKE_NATIVE_CAMERA19_INSTALL_BEGIN
+# UKE_NATIVE_CAMERA20_INSTALL_BEGIN
 install -d %{buildroot}%{_datadir}/%{name}/camera-owner734
-install -m644 camera-owner734-result/{source.sha256,retained.sha256,native-objects.sha256,owner-results.txt,rom-results.txt,qualification.json,parent-camcc-sm7675.c} camera-owner734/{source-commit,SHA256SUMS} %{buildroot}%{_datadir}/%{name}/camera-owner734/
-# UKE_NATIVE_CAMERA19_INSTALL_END
+install -m644 camera-owner734-result/{source.sha256,retained.sha256,native-objects.sha256,owner-results.txt,rom-results.txt,startup-results.txt,qualification.json,parent-camcc-sm7675.c} camera-owner734/{source-commit,SHA256SUMS} %{buildroot}%{_datadir}/%{name}/camera-owner734/
+# UKE_NATIVE_CAMERA20_INSTALL_END
 SPEC
 cat > "$work/check" <<'SPEC'
-# UKE_NATIVE_CAMERA19_CHECK_BEGIN
+# UKE_NATIVE_CAMERA20_CHECK_BEGIN
 test "$(grep -c '^PASS: camera owner' camera-owner734-result/owner-results.txt)" = 4
+test "$(grep -c '^PASS: camera startup snapshot' camera-owner734-result/startup-results.txt)" = 4
 sha256sum -c --strict --quiet camera-owner734-result/source.sha256 camera-owner734-result/retained.sha256
-# UKE_NATIVE_CAMERA19_CHECK_END
+# UKE_NATIVE_CAMERA20_CHECK_END
 SPEC
 awk -v root="$work" '
  function inject(name,path,line){path=root"/"name;while((getline line<path)>0)print line;close(path)}
- /^%changelog$/{history=1;print;print "# UKE_NATIVE_CAMERA19_HISTORY_BEGIN";print "* Mon Nov 16 2026 Uke contributors - 7.3.4-19";print "- Compose the permanent camera IRQ and PM owner with fault retention and inherited AP0 preservation; retain firmware admission.";print "";print "# UKE_NATIVE_CAMERA19_HISTORY_END";next}
+ /^%changelog$/{history=1;print;print "# UKE_NATIVE_CAMERA20_HISTORY_BEGIN";print "* Mon Nov 16 2026 Uke contributors - 7.3.4-20";print "- Qualify read-only inherited AP0 snapshots with permanent IRQ/PM/ROM ownership; retain firmware admission.";print "";print "# UKE_NATIVE_CAMERA20_HISTORY_END";next}
  !history{
-  if($0=="Release: 16%{?dist}"){$0="Release: 19%{?dist}";release++}
+  if($0=="Release: 16%{?dist}"){$0="Release: 20%{?dist}";release++}
   if($0=="%description"){inject("header");header++}
   if($0=="%install"){inject("build");build++;print;inject("install");installs++;next}
   if($0=="%check"){print;inject("check");checks++;next}
@@ -43,11 +44,11 @@ awk -v root="$work" '
  END{if(release!=1||header!=1||build!=1||installs!=1||checks!=1)exit 1}
 ' "$before" > "$after"
 awk '
- /^# UKE_NATIVE_CAMERA19_[A-Z]+_BEGIN$/{skip=1;next}
- /^# UKE_NATIVE_CAMERA19_[A-Z]+_END$/{skip=0;next}
+ /^# UKE_NATIVE_CAMERA20_[A-Z]+_BEGIN$/{skip=1;next}
+ /^# UKE_NATIVE_CAMERA20_[A-Z]+_END$/{skip=0;next}
  skip{next}
  /^%changelog$/{history=1}
- !history&&$0=="Release: 19%{?dist}"{$0="Release: 16%{?dist}"}
+ !history&&$0=="Release: 20%{?dist}"{$0="Release: 16%{?dist}"}
  {print}
 ' "$after" | cmp - "$before"
-[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$after") == uke-kernel-migration-check-7.3.4-19.fc46 ]]
+[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$after") == uke-kernel-migration-check-7.3.4-20.fc46 ]]
