@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-16",
+  "full_release": 4,
+  "parent": {
+    "build": 11333235,
+    "source_commit": "44be649381405be367cfbc47af92447545b11a1d",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11333235/senemos-uke-linux-kernel-mainline-unstable-7.3.4-3.src.rpm",
+    "srpm_sha256": "8343162259135cbc962ac1a06bd42f062908a684d29e48f53ff7c8bb8bd8c32a",
+    "spec_sha256": "ad51469d681b8e5db62956c728e1d1c98c752a7c5a90f84a786092699be39823",
+    "source_files": 22
+  },
+  "native": {
+    "build": 11333522,
+    "release": 15,
+    "source_commit": "7167bd3ca352cc4c409be1c55b9e70e65fc89866",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11333522/uke-kernel-migration-check-7.3.4-15.src.rpm",
+    "srpm_sha256": "b200def10b656b689d139ae957a17b77d19464b2c3fc79ec185896cf192de8a4",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-15.fc46.aarch64.rpm",
+    "proof_sha256": "4154b3ac70825c3323d264a5fd36e4b51cb7c9641f3d1c99efdefeade90b6088",
+    "source_files": 20,
+    "qualified": true,
+    "compiler_modes": 4,
+    "cases_per_mode": 80,
+    "kernel_object_count": 2
+  },
+  "initrd": {
+    "build": 11333677,
+    "release": 6,
+    "source_commit": "4ae3e26dfdd189dfb77f36560eb9fa9112fc6e3c",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11333677/uke-super-root-source-check-0.1-6.src.rpm",
+    "srpm_sha256": "fca228c28096981586f36145f5442329b2f3a859ab3412377d8ae3c79e3ecc49",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-super-root-source-check-0.1-6.fc46.aarch64.rpm",
+    "proof_sha256": "2e9f6aa24295a42e44da7635d31a1f3044b40de53b91dbf6c823cb8c1d6c66dc",
+    "source_files": 6,
+    "qualified": true,
+    "codec_compiler_modes": 4,
+    "original_codec_contracts_retained": true,
+    "dracut_units_verified": true,
+    "early_cpio_gzip_bytes": 23772466
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "required_consumer_capability": "uke-control(super-root-boot-v1) = 1",
+  "default_userdata_profile_unchanged": true,
+  "seed_contract_bytes": 4294967296
+}
