@@ -38,3 +38,9 @@ synchronized withdrawal must be completed together before activation. Native
 front GENI/CCI, fitted sensor, CSIPHY4, CAMSS and completed RAW buffers follow.
 This preparation is not a camera frame or physical camera acceptance. Both
 cameras, read-only fitted calibration and rear focus remain open.
+
+Native17/11336732 stopped at the whole-provider preimage check, before the
+new owner tests. The Git source omitted the inherited prepared s2idle include
+and PM selection. Native18 pins the already qualified prepared-provider hash
+and inserts only two includes, then verifies its complete inverse. The s2idle
+hook and native PM selection remain unchanged; no comparison is weakened.
