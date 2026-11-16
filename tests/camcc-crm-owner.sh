@@ -7,7 +7,7 @@ work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 ulimit -c 0
 mkdir -p "$work/linux"
-for header in completion compiler device interrupt io jiffies mutex spinlock errno types;do
+for header in completion compiler device interrupt io jiffies mutex spinlock types;do
  printf '%s\n' '#pragma once' > "$work/linux/$header.h"
 done
 for header in core transport pm owner;do

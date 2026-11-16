@@ -44,3 +44,9 @@ new owner tests. The Git source omitted the inherited prepared s2idle include
 and PM selection. Native18 pins the already qualified prepared-provider hash
 and inserts only two includes, then verifies its complete inverse. The s2idle
 hook and native PM selection remain unchanged; no comparison is weakened.
+
+Native18/11336815 passed source composition and the retained native checks,
+then stopped while compiling the owner fixture. Its empty Linux errno stub
+shadowed the system errno constants through glibc. Native19 removes only that
+stub and keeps the system errno header; production camera code is unchanged.
+The owner fixtures and actual ARM64 composition remain unqualified.
