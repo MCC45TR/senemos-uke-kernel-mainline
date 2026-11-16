@@ -41,3 +41,13 @@ The dependency is declared for check 5. The codec patch now owns a temporary
 Git root explicitly; a source-only fixture inside an enclosing Git repository
 passes the whole inverse and produces the exact intended postimage. Runtime
 code and acceptance gates were not weakened to address this build failure.
+
+Source check 5 (11333644) stopped in unprivileged systemd verification:
+systemd262 creates `/run/systemd` before applying the supplied root, including
+in test mode (`src/core/manager.c`, `manager_make_runtime_dir`). A private user
+and mount namespace now supplies an 8 MiB `/run` only for original systemd
+analysis. All capabilities are dropped before the analyzer executes; system
+scope, real unit parsing and negative cycle/protected-policy tests are retained.
+The launcher passes the original fixture on Fedora262.2 without modifying host
+runtime state. It is a host test input and is excluded from the tablet initrd.
+COPR namespace support and the remaining actual initrd/codec checks are pending.

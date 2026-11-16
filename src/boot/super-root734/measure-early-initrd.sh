@@ -14,7 +14,11 @@ bash "$here/integrate-initrd.sh" "$work/recipe" "$early/builder"
 bash "$here/apply-boot-profiles.sh" "$work/recipe"
 (cd "$work/recipe";jq -r '.source_assets[]|.sha256+"  "+.path' lock.json | sha256sum -c --strict --quiet -)
 bash "$early/builder/tests/early-super-policy.sh"
-bash "$early/builder/tests/early-super-units.sh"
+mkdir "$work/analysis-bin"
+install -m755 "$here/systemd-analyze-private.sh" "$work/analysis-bin/systemd-analyze"
+# Original systemd262 always creates /run/systemd even in verification mode.
+# Give only these host analyses a private runtime; never alter the initrd tools.
+PATH="$work/analysis-bin:$PATH" bash "$early/builder/tests/early-super-units.sh"
 bash "$work/recipe/src/boot/make-initramfs-base.sh" "$work/expanded" 7.3.4-3-unstable > "$result/dracut.log" 2>&1 || { tail -n40 "$result/dracut.log";exit 1; }
 base=$work/expanded/base
 cmp "$boot/src/boot/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
@@ -24,7 +28,7 @@ done
 unit=$base/usr/lib/systemd/system/uke-super-prepare.service
 cmp "$early/builder/src/image/dracut/96uke-super-boot/uke-super-prepare.service" "$unit"
 grep -Fxq 'ExecStart=/usr/libexec/uke-super/guard-early-rescue.sh' "$base/usr/lib/systemd/system/uke-root-guard.service.d/60-uke-super.conf"
-SYSTEMD_LOG_COLOR=0 SYSTEMD_LOG_LEVEL=warning systemd-analyze --root="$base" --man=no verify uke-root-guard.service uke-super-prepare.service > "$result/units.log" 2>&1 || { tail -n30 "$result/units.log";exit 1; }
+PATH="$work/analysis-bin:$PATH" SYSTEMD_LOG_COLOR=0 SYSTEMD_LOG_LEVEL=warning systemd-analyze --root="$base" --man=no verify uke-root-guard.service uke-super-prepare.service > "$result/units.log" 2>&1 || { tail -n30 "$result/units.log";exit 1; }
 : > "$result/codec-results.txt"
 for compiler in g++ clang++;do
  for mode in plain sanitized;do

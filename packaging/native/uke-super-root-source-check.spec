@@ -1,6 +1,6 @@
 Name: uke-super-root-source-check
 Version: 0.1
-Release: 5%{?dist}
+Release: 6%{?dist}
 Summary: Native source qualification for an explicit Uke rescue root role
 License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -80,6 +80,9 @@ test ! -e arch/arm64/boot/Image
 %{_datadir}/%{name}/
 
 %changelog
+* Mon Nov 16 2026 Uke contributors - 0.1-6
+- Give unprivileged system-scope verification a private runtime namespace; retain original systemd and all refusal checks.
+
 * Mon Nov 16 2026 Uke contributors - 0.1-5
 - Declare the codec patch tool and isolate its patch root from enclosing source repositories.
 
