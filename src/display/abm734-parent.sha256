@@ -1,0 +1,6 @@
+cebbc0707892bd25a5f3e3b50086b4e698e48c25119c47478ec6d2afa1c7759a  drivers/gpu/drm/drm_atomic_helper.c
+12b31f55aa710b5bbfab70985f3267925bc4ff2ae3bdda6d95566bb5e03e8f39  drivers/gpu/drm/msm/msm_atomic.c
+336c508d7ddf9c5e326dae7c22e3bd01191c29e11e388ed5dc1719ec8d903be1  drivers/gpu/drm/msm/dsi/dsi_manager.c
+dc2dadf8ac46b233a06bb4cf86ad744de10419dcf97d4051485f71e3c52e6e22  drivers/gpu/drm/msm/dsi/dsi.h
+3dd0ab8849bd3976061ab6e4887547c7b2fb38bc12c87bb11d6158098f91b78b  drivers/gpu/drm/panel/panel-xiaomi-o82.c
+662944dfd2a8e0039e21413f1a58efbd61f2007ee244755362de20a2b43abea8  include/linux/qcom-uke-display.h
