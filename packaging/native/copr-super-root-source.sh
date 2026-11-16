@@ -38,5 +38,5 @@ done
 install -m644 "$work/builder/src/image/dracut/95uke-super-tools/module-setup.sh" "$work/super-tools/"
 install -m644 "$work/builder/LICENSE" "$work/super-tools/"
 tar --sort=name --mtime=@1794787200 --owner=0 --group=0 --numeric-owner -cJf "$result/uke-super-tools.tar.xz" -C "$work" super-tools
-[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-2.fc46 ]]
+[[ $(rpmspec --target aarch64 --define 'dist .fc46' -q --srpm --qf '%{NAME}-%{VERSION}-%{RELEASE}' "$result/uke-super-root-source-check.spec") == uke-super-root-source-check-0.1-3.fc46 ]]
 printf 'Native rescue parser source check assembled; packaged parent header only, prepared kernel/initrd integration remains unqualified.\n'

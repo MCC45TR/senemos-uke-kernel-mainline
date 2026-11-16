@@ -1,6 +1,6 @@
 Name: uke-super-root-source-check
 Version: 0.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Native source qualification for an explicit Uke rescue root role
 License: GPL-2.0-only AND MIT
 URL: https://github.com/MCC45TR/senemos-uke-kernel-mainline
@@ -11,7 +11,7 @@ Source3: measure-initrd.sh
 ExclusiveArch: aarch64
 BuildRequires: gcc-c++ clang compiler-rt libasan libubsan binutils coreutils
 BuildRequires: android-tools dracut systemd systemd-udev f2fs-tools kmod
-BuildRequires: util-linux findutils gawk grep sed gzip cpio xz jq rpm
+BuildRequires: util-linux findutils gawk grep sed gzip cpio xz jq rpm ripgrep
 %global debug_package %{nil}
 %global __os_install_post %{nil}
 
@@ -69,6 +69,9 @@ test ! -e arch/arm64/boot/Image
 %{_datadir}/%{name}/
 
 %changelog
+* Mon Nov 16 2026 Uke contributors - 0.1-3
+- Supply the original initramfs privacy audit's required ripgrep build tool.
+
 * Mon Nov 16 2026 Uke contributors - 0.1-2
 - Retain all parser modes and measure the original Fedora super-tool initramfs closure; no new boot hooks.
 
