@@ -1,5 +1,10 @@
 # Linux 7.3.4 cumulative preparation
 
+16 November result: [full7.3.4-2 package and boot acceptance](FULL7342-ACCEPTANCE.md)
+records successful build11332265, signed DNF, actual accepted A boot, native
+DRM VRR availability and the running livepatch trust configuration. It also
+lists the remaining desktop, physical, camera and complete-image tests.
+
 16 November update: full11332108 failed its final audio identity check after
 Image compilation. [Audio identity preparation](AUDIO-IDENTITY-734.md) fixes
 the metadata distinction and checks an actual small ARM64 object before the
