@@ -117,7 +117,8 @@ static int uke_dispcc_voltage_init(struct device *dev)
 	uke_vdd_mm.regulator_names[0] = "vdd_mm";
 	uke_vdd_mxa.regulator_names[0] = "vdd_mxa";
 	uke_pll_ops = clk_alpha_pll_reset_lucid_ole_ops;
-	uke_shared_ops = clk_rcg2_shared_ops;
+	/* ABL still scans out: cache the inherited MDP config without parking it. */
+	uke_shared_ops = clk_rcg2_shared_no_init_park_ops;
 	uke_byte_ops = clk_byte2_ops;
 	uke_pixel_ops = clk_pixel_ops;
 	uke_dp_ops = clk_dp_ops;
