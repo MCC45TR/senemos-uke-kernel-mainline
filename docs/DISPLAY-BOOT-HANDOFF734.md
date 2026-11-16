@@ -2,9 +2,10 @@
 
 Lesson ID: UKE-DISPLAY-HANDOFF-20261116.
 
-On POCO Pad X1, a 16 November 2026 boot recording contains about 5.7 seconds
-of uniform gray between the initial firmware framebuffer console and native
-DRM scanout. The last visible kernel messages are near 1.45 seconds; the
+On POCO Pad X1, a 16 November 2026 boot recording contains about 4.4 seconds
+of uniform gray followed by about 1.2 seconds of black between the initial
+firmware framebuffer console and native DRM scanout. The complete console
+interruption is about 5.7 seconds. The last visible kernel messages are near 1.45 seconds; the
 native panel produces its first checked frame near 7.16 seconds. This occurs
 before graphical login. Temporal correspondence alone does not establish
 which register operation causes the visible failure.
