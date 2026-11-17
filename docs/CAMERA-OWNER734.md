@@ -121,3 +121,26 @@ This is a source qualification candidate. No sensor is enabled by these
 fixtures. The running kernel5 still correctly refuses at `crm-admission -95`;
 front GENI, OV08D10, CSIPHY4, CAMSS, completed RAW buffers, fitted read-only
 calibration and the rear camera/focus remain open.
+
+## Cumulative full6 preparation, 17 November
+
+Source22/COPR11339196 passed all24 compiler-mode groups, seven semantic
+mutants and two complete ARM64 objects. Its signed proof, exact source RPM
+and unchanged native16 parent inputs are pinned by
+`manifests/camera-full7346-20261117.json`. The full6 producer starts from the
+actual full5/COPR11336625 source RPM, preserving its display handoff fix,
+boot profiles, hardening, audio, VRR and all cumulative source checks.
+
+The full6 recipe applies the unchanged qualified camera layer after the old
+source proofs and before building the production Image. Historical camera
+checks use an exact source-only full5 projection with the five preimage files
+restored and five new headers hidden. The production source, objects and Image
+stay intact; the new source seal and linked-image checks verify that separately.
+PC text checks cover the complete old-recipe inverse, six runtime RPM names,
+repeated projection and refusal of altered parent or production source. No PC
+or tablet compilation is used.
+
+This prepares a runtime candidate, not camera acceptance. The full kernel,
+signed RPM/DNF transition, inactive-slot readback, actual boot, firmware ROM
+admission and resource release still need qualification. The sensor graph,
+RAW buffers, private read-only calibration and rear focus remain open.

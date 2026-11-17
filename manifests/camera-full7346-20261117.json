@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "full_release": 6,
+  "parent": {
+    "build": 11336625,
+    "source_commit": "502179c5e3999bdfae5d913c384d9b72f9adcc2a",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11336625/senemos-uke-linux-kernel-mainline-unstable-7.3.4-5.src.rpm",
+    "srpm_sha256": "39e789728b9d1a97267259941ebb863cb748ed7203bb1ca76e1d895c6f7ad2c2",
+    "spec_sha256": "c8fe66fbc9d9633fc26225acaf453fecb03c7d70a1a208e606fe310953f688fd",
+    "source_files": 29
+  },
+  "native": {
+    "build": 11339196,
+    "release": 22,
+    "source_commit": "d4ab70613a273917df1d69da1da87361aafe83f1",
+    "source_files": 22,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11339196/uke-kernel-migration-check-7.3.4-22.src.rpm",
+    "srpm_sha256": "5ffb8270300020a4f09ac91063d6c6a7d0e65a738778d7a1ce5c1543baeab9b9",
+    "spec_sha256": "0cf5fbeba9551ff0ccc1baea4ff8944ece8e95cee3135bb56e185b43ce9c91e3",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-22.fc46.aarch64.rpm",
+    "proof_sha256": "020a3e855b61b6ece606fc58f611f49e5387cbf287a64ade849d49672549ee53",
+    "source_rpm_signed": false,
+    "proof_rpm_trusted_signatures": 2,
+    "compiler_mode_groups": 24,
+    "actual_arm64_objects": 2,
+    "physical_camera_accepted": false
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Enable checked native firmware-CRM camera admission while preserving cumulative full5 and the measured display handoff fix. Sensor graph and physical frames remain separate."
+}
