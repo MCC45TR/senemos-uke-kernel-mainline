@@ -1,8 +1,9 @@
 # SM7675 native receive graph contract
 
-17 November 2026. The tablet runs accepted full8/B with CAMCC ready and runtime
-suspended. Its native front bus, sensor and aggregate CAMSS graph remain
-inactive. The following source and read-only live-DT comparison prepares the
+18 November 2026. The tablet runs accepted full10/A with CAMCC ready and runtime
+suspended. Its native front bus and read-only EEPROM bind; two complete private
+reads match. The sensor and aggregate CAMSS graph remain inactive. The following
+source and read-only live-DT comparison prepares the
 next receive-path work; it does not establish a camera frame or authorize
 unqualified resource activation.
 
@@ -40,7 +41,8 @@ coverage. The reset loop in accepted full8 writes one bit at a time to the same
 buffer-done mask register rather than accumulating enabled paths. Source31
 qualifies the [SM7675 completion interrupt hierarchy](CAMSS-CSID-IRQ734.md),
 including top-level and RUP masks, all selected buffer bits and unchanged
-legacy traces. It remains outside the installed kernel. This is source/object
+legacy traces. Source31 is included in full10, but the capture graph is inactive.
+This is source/object
 qualification, not a measured Uke interrupt or frame result.
 
 ## Shared PHY supply limits
@@ -76,8 +78,8 @@ Both cameras and all supported modes remain in scope.
 
 ## Bandwidth and sensor admission
 
-The existing native Cliffs interconnect extension explicitly admits the
-display route. It does not yet declare `qnm_camnoc_hf`. The Uke GPL
+The installed native Cliffs interconnect extension admits the shared display
+and video routes. It does not yet declare `qnm_camnoc_hf`. The Uke GPL
 `drivers/interconnect/qcom/cliffs.c` defines both HLOS and camera-specific
 voters. Their correct ownership, QoS and BCM route must be resolved before the
 aggregate CAMSS `hf_mnoc` dependency can be supplied. The static CPAS
@@ -92,6 +94,9 @@ the individual register-update return values are still discarded inside
 Simply adding the OEM CAMNOC HF QoS ports
 0xa8000/0xa9000 would therefore introduce early register writes. A camera
 route must establish ownership and error handling for those writes first.
+The [source34 candidate](CAMERA-ICC734.md) verifies the core's existing initial
+bandwidth aggregates and adds the camera HF member to the existing provider.
+Its source checks do not activate the runtime camera graph.
 
 The sensor address, fitted identity, lane mapping and complete board supply
 lifecycle remain unknown. The generic front DT client and an adjacent-board

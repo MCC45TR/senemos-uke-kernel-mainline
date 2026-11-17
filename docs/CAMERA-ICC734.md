@@ -1,6 +1,7 @@
 # Camera HF interconnect admission
 
-18 November 2026. Source34 candidate; not yet compiled or installed.
+18 November 2026. Source34/COPR11343921 passed in 547 seconds. The signed
+proof RPM has two trusted signatures. The layer is not installed on the tablet.
 Accepted full10/A remains running, with accepted full8/B recovery preserved.
 No new QoS register, RPMh vote or camera capture path is active on the tablet.
 
@@ -50,12 +51,12 @@ BCM initialization failures stop probe, and a failed auxiliary-data lookup no
 longer publishes a valid-looking address cache that could hide a failed retry.
 
 The COPR gate executes actual native initial-node, aggregation, set, BCM-init
-and QoS functions against modeled register/transport/clock operations. Planned
+and QoS functions against modeled register/transport/clock operations. Passing
 coverage includes four compiler/sanitizer modes, all fifteen register failure
 positions, commit/clock/auxiliary-data failures, 256 shared-video demand/idle
 cycles per mode, two original-failure controls, four semantic mutants, exact
-legacy display/video write traces and both real ARM64 driver objects. No test
-pass is claimed before its build result. The full probe is compiled, not
+legacy display/video write traces and both real ARM64 driver objects.
+The full probe is compiled, not
 emulated; source checks verify its dependency and refusal ordering.
 
 The OEM `cliffs.c`, `icc-rpmh.c`, native Linux7.3.4 `icc-rpmh.c` and
@@ -63,7 +64,8 @@ The OEM `cliffs.c`, `icc-rpmh.c`, native Linux7.3.4 `icc-rpmh.c` and
 Qualcomm attribution and licenses apply. The source comparison neither admits
 fitted sensor wiring nor establishes a physical frame, private read-only
 calibration, rear focus or full OEM functionality. See the
-[candidate manifest](../manifests/camera-icc-hf734-20261118.json).
+[source manifest](../manifests/camera-icc-hf734-20261118.json) and
+[signed qualification](../manifests/camera-icc-hf734-qualification-20261118.json).
 
 Primary source links: [native initial requests](https://github.com/gregkh/linux/blob/v7.3.4/drivers/interconnect/core.c),
 [current upstream QoS dependency](https://github.com/torvalds/linux/blob/666539eecdf4db623f5e3c3e55cf9f2dfad24aa4/drivers/interconnect/qcom/icc-rpmh.c),

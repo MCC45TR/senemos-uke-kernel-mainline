@@ -1,10 +1,10 @@
 # Camera source admission on Linux 7.3.4
 
 17 November 2026. Camera development continues from published, licensed open
-source implementations. Accepted full8/B has passed native CAMCC admission
-and idle release. Source27, source30, source31 and source32 qualify further
-receive-path changes;
-the bus, sensor and aggregate graph remain inactive. These source/object
+source implementations. Accepted full10/A includes source27, source30,
+source31, source32 and the corrected late source33 gate. Its native front bus
+and read-only EEPROM bind, with two identical complete private reads and idle
+release. The sensor and aggregate graph remain inactive. These source/object
 results do not establish camera operation on Uke.
 
 | Source and exact revision | License and attribution | Useful contract and limit |
@@ -61,6 +61,8 @@ the [demand-scoped PHY supplies](CAMSS-PHY-POWER734.md) also passed source/objec
 qualification. The [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation.
 The [CSID IRQ hierarchy](CAMSS-CSID-IRQ734.md) and
 [shared stream lifecycle](CAMERA-NABU-CFM880-20261117.md) also passed source/object checks.
+The [shared HF interconnect](CAMERA-ICC734.md) passed source34 qualification;
+it has not yet been installed.
 Enabling the sensor/media graph, completing RAW buffers, consuming private read-only fitted
 calibration and providing both cameras with rear focus remain separate work.
 Original Fedora media/desktop packages and the existing signed RPM/DNF delivery
