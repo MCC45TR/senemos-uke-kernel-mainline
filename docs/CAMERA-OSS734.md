@@ -2,7 +2,8 @@
 
 17 November 2026. Camera development continues from published, licensed open
 source implementations. Accepted full8/B has passed native CAMCC admission
-and idle release. Source27 and source30 qualify further receive-path changes;
+and idle release. Source27, source30, source31 and source32 qualify further
+receive-path changes;
 the bus, sensor and aggregate graph remain inactive. These source/object
 results do not establish camera operation on Uke.
 
@@ -16,6 +17,7 @@ results do not establish camera operation on Uke.
 | Same Linux revision, `drivers/reset/core.c` and `drivers/regulator/fixed.c` | GPL-2.0-or-later | Reset-control lookup supports the `reset-gpios` fallback. The fixed-regulator driver owns the enable GPIO. Both dependencies already exist in the cumulative configuration. |
 | [Rockchip OV08D10](https://github.com/rockchip-linux/kernel/blob/77168c8d5ab82399f65a80e9f807b50ba37cf483/drivers/media/i2c/ov08d10.c) | GPL-2.0; Rockchip Electronics | Independent sensor comparison agrees on the 0x5608 ID at byte registers 0/1. Its modes require 24 MHz; no Rockchip power sequence, clock setting or board GPIO is selected for Uke. |
 | [MiCode OV08D10 module](https://github.com/MiCode/mtkcam-kernel_device_modules/blob/bfd3e45948f5c1e1307ef6e217960596a08c5f61/imgsensor/src-v4l2/common/duchampov08d10ultra_mipi_raw/duchampov08d10ultramipiraw_Sensor.c), plus `kd_imgsensor.h` in `MTK_kernel_device_modules` at `3c4ccd07d5624879555ec710c11bb8818e5cb5c6` | GPL-2.0; MediaTek | Independent 0x5608 ID and 8-bit `0x6c/0x20` to native `0x36/0x10` conversion. Duchamp power/clock settings are not Uke board evidence; see the [complete comparison](CAMERA-MICODE-SENSORS734.md). |
+| [CFM880 Nabu camera](https://github.com/CFM880/nabu-camera/tree/3f341b7d1249536067693ec28cb44f52a7795250), common `camss-csid.c` | GPL-2.0-only; original Linux camera authors, Cheng Fangming's camera series | Source32 qualifies every stream start/stop with fixed links. Its SM8150 registers, board DT, always-on workaround and closed-derived tuning are not imported; see the [comparison and measured scope](CAMERA-NABU-CFM880-20261117.md). |
 
 The exact Uke OEM kernel also contains the Intel OV08D10 driver. A bounded
 search of its arm64 configuration and DT sources did not establish its
@@ -56,8 +58,10 @@ Full8 has since passed native CAMCC admission and idle release on two normal
 boots; see [its measured scope](CAMERA-FULL7348.md). The next
 [lite VFE source review](CAMSS-LITE734.md) passed source/object qualification;
 the [demand-scoped PHY supplies](CAMSS-PHY-POWER734.md) also passed source/object
-qualification. The [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation. Enabling the
-sensor/media graph, completing RAW buffers, consuming private read-only fitted
+qualification. The [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation.
+The [CSID IRQ hierarchy](CAMSS-CSID-IRQ734.md) and
+[shared stream lifecycle](CAMERA-NABU-CFM880-20261117.md) also passed source/object checks.
+Enabling the sensor/media graph, completing RAW buffers, consuming private read-only fitted
 calibration and providing both cameras with rear focus remain separate work.
 Original Fedora media/desktop packages and the existing signed RPM/DNF delivery
 and recovery flow remain in use.

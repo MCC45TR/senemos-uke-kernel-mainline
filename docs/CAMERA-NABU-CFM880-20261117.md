@@ -1,6 +1,9 @@
 # Pad 5 camera source comparison
 
-17 November 2026. The relevant contributor is Cheng Fangming, **CFM880**.
+17 November 2026. Source32/COPR11341240 passed in 542 seconds; its signed
+proof and actual source match the
+[qualification record](../manifests/csid-stream734-qualification-20261117.json).
+The relevant contributor is Cheng Fangming, **CFM880**.
 The Uke maintainer's `nabu-camera` repository credits his original camera
 implementation, and GitHub's contributor records include CFM880 in both that
 repository and `nabu-linux-kernel`. The reviewed source is
@@ -24,6 +27,14 @@ The userspace path uses libcamera, GStreamer and standard V4L2 controls.
 | VDIG always-on workaround | Diagnostic rail-retention change; not imported into Uke's demand-based lifecycle |
 | Simple IPA tuning | Repository README identifies closed QTI tuning recovery; not admitted under the OSS-only camera scope |
 | Snapshot patch and install scripts | Not imported; preserve original Fedora applications and signed DNF delivery |
+
+Uke's selected front bus is GENI8 I2C, rather than the donor's CCI path.
+The fitted address is still unresolved; neither a donor address nor the generic
+inherited sensor-node `reg` establishes that address. Linux 7.3.4 OV13B10 also
+has two- and four-lane support, while this donor overlay selects four lanes.
+Replacing the driver wholesale would discard newer native functionality.
+Existing Uke OV13B10 OF-match and OV08D10 source patches retain their separate
+qualification and activation status; this comparison does not enable them.
 
 ## Shared stream lifecycle correction
 
@@ -55,8 +66,11 @@ callback with the actual gen3 dispatcher. It requires two original failure
 controls, four GCC/Clang plain/sanitized modes, 2048 fixed-link cycles per mode,
 48 unchanged entry/refusal cases, five semantic mutants and two real ARM64
 objects. The cycles cover repeated stop, changed formats and modeled power
-transitions. These are source/model/object checks, not a hardware suspend or
-capture test. Qualification is pending until the signed COPR output is audited.
+transitions. All of these checks passed. The actual SRPM has 29 members and
+retains all 27 immutable parent inputs; the complete parent recipe inverse,
+new layer, donor callback and packaged result hashes match. Both proof
+signatures verify against the trusted COPR key. These are source/model/object
+checks, not a hardware suspend or capture test.
 
 Accepted full8/B remains installed. Source27 lite VFE, source30 scoped PHY
 power and source31 CSID IRQ changes remain cumulative. No sensor graph is
