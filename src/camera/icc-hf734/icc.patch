@@ -1,0 +1,211 @@
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] interconnect: verify initial votes and add the Cliffs HLOS camera HF route
+
+Retain existing startup requests and shared MM0/MM1 ownership. Propagate
+commit, command-db and register-update errors before publishing required QoS.
+Camera resource values follow exact Uke GPL cliffs.c at 5712080a.
+
+--- a/drivers/interconnect/qcom/icc-rpmh.c
++++ b/drivers/interconnect/qcom/icc-rpmh.c
+@@ -28,25 +28,33 @@
+  * @qp: qcom icc provider to which @node belongs
+  * @node: qcom icc node to operate on
+  */
+-static void qcom_icc_set_qos(struct qcom_icc_provider *qp,
++static int qcom_icc_set_qos(struct qcom_icc_provider *qp,
+ 			     struct qcom_icc_node *node)
+ {
+ 	const struct qcom_icc_qosbox *qos = node->qosbox;
+-	int port;
++	int port, ret;
+ 
+ 	for (port = 0; port < qos->num_ports; port++) {
+-		regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
++		ret = regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
+ 				   QOS_DISABLE_MASK,
+ 				   FIELD_PREP(QOS_DISABLE_MASK, qos->prio_fwd_disable));
++		if (ret)
++			return ret;
+ 
+-		regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
++		ret = regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
+ 				   QOS_DFLT_PRIO_MASK,
+ 				   FIELD_PREP(QOS_DFLT_PRIO_MASK, qos->prio));
++		if (ret)
++			return ret;
+ 
+-		regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
++		ret = regmap_update_bits(qp->regmap, QOSGEN_MAINCTL_LO(qos, port),
+ 				   QOS_SLV_URG_MSG_EN_MASK,
+ 				   FIELD_PREP(QOS_SLV_URG_MSG_EN_MASK, qos->urg_fwd));
++		if (ret)
++			return ret;
+ 	}
++
++	return 0;
+ }
+ 
+ /**
+@@ -130,9 +138,7 @@
+ 
+ 	qp = to_qcom_provider(node->provider);
+ 
+-	qcom_icc_bcm_voter_commit(qp->voter);
+-
+-	return 0;
++	return qcom_icc_bcm_voter_commit(qp->voter);
+ }
+ EXPORT_SYMBOL_GPL(qcom_icc_set);
+ 
+@@ -148,14 +154,15 @@
+ 	struct qcom_icc_node *qn;
+ 	const struct bcm_db *data;
+ 	size_t data_count;
++	u32 addr;
+ 	int i;
+ 
+ 	/* BCM is already initialised*/
+ 	if (bcm->addr)
+ 		return 0;
+ 
+-	bcm->addr = cmd_db_read_addr(bcm->name);
+-	if (!bcm->addr) {
++	addr = cmd_db_read_addr(bcm->name);
++	if (!addr) {
+ 		dev_err(dev, "%s could not find RPMh address\n",
+ 			bcm->name);
+ 		return -EINVAL;
+@@ -173,6 +180,8 @@
+ 		return -EINVAL;
+ 	}
+ 
++	/* Publish the cache only after all fallible command-db reads succeed. */
++	bcm->addr = addr;
+ 	bcm->aux_data.unit = le32_to_cpu(data->unit);
+ 	bcm->aux_data.width = le16_to_cpu(data->width);
+ 	bcm->aux_data.vcd = data->vcd;
+@@ -197,15 +206,29 @@
+ /**
+  * qcom_icc_rpmh_configure_qos - configure QoS parameters
+  * @qp: qcom icc provider associated with QoS endpoint nodes
++ * @sync_initial_votes: verify the existing initial BCM votes before QoS access
+  *
+  * Return: 0 on success, or an error code otherwise
+  */
+-static int qcom_icc_rpmh_configure_qos(struct qcom_icc_provider *qp)
++static int qcom_icc_rpmh_configure_qos(struct qcom_icc_provider *qp,
++				       bool sync_initial_votes)
+ {
+ 	struct qcom_icc_node *qnode;
+ 	size_t i;
+ 	int ret;
+ 
++	/* icc_node_add() installs INT_MAX initial requests but discards set errors.
++	 * Recommit their existing aggregates, without changing ownership, tags or
++	 * keepalive policy. Do not touch QoS after an unverified RPMh transition.
++	 */
++	if (sync_initial_votes) {
++		for (i = 0; i < qp->num_bcms; i++)
++			qcom_icc_bcm_voter_add(qp->voter, qp->bcms[i]);
++		ret = qcom_icc_bcm_voter_commit(qp->voter);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = clk_bulk_prepare_enable(qp->num_clks, qp->clks);
+ 	if (ret)
+ 		return ret;
+@@ -215,8 +238,11 @@
+ 		if (!qnode)
+ 			continue;
+ 
+-		if (qnode->qosbox)
+-			qcom_icc_set_qos(qp, qnode);
++		if (qnode->qosbox) {
++			ret = qcom_icc_set_qos(qp, qnode);
++			if (ret)
++				break;
++		}
+ 	}
+ 
+ 	clk_bulk_disable_unprepare(qp->num_clks, qp->clks);
+@@ -272,8 +298,11 @@
+ 	if (IS_ERR(qp->voter))
+ 		return PTR_ERR(qp->voter);
+ 
+-	for (i = 0; i < qp->num_bcms; i++)
+-		qcom_icc_bcm_init(qp->bcms[i], dev);
++	for (i = 0; i < qp->num_bcms; i++) {
++		ret = qcom_icc_bcm_init(qp->bcms[i], dev);
++		if (ret)
++			return dev_err_probe(dev, ret, "Failed to initialize BCM\n");
++	}
+ 
+ 	for (i = 0; i < num_nodes; i++) {
+ 		qn = qnodes[i];
+@@ -344,7 +373,7 @@
+ 			goto skip_qos_config;
+ 		}
+ 
+-		ret = qcom_icc_rpmh_configure_qos(qp);
++		ret = qcom_icc_rpmh_configure_qos(qp, desc->qos_required);
+ 		if (ret && desc->qos_required)
+ 			goto err_remove_nodes;
+ 		if (ret)
+--- a/drivers/interconnect/qcom/cliffs-display-icc.h
++++ b/drivers/interconnect/qcom/cliffs-display-icc.h
+@@ -5,8 +5,9 @@
+  * OEM commit: 5712080a4b0c0b1a879e6d145c601c649ddaddfd.
+  * Included in the isolated native-display qnoc-cliffs-usb.c.
+  * Reuses the existing LLCC/DDR and configuration nodes, not parallel providers.
+- * No display-voter aliases or camera/DP paths are admitted here.
++ * Reuses HLOS camera HF with the existing shared memory route; no voter aliases.
+  */
++#define MASTER_CAMNOC_HF 11
+ #define MASTER_MDP 21
+ #define MASTER_MNOC_HF_MEM_NOC 23
+ #define SLAVE_DISPLAY_CFG 524
+@@ -21,6 +22,24 @@
+ static struct qcom_icc_node qnm_mnoc_sf;
+ static struct qcom_icc_node qns_mem_noc_sf;
+ 
++/* Exact Uke OEM HLOS camera route; source 5712080a cliffs.c. */
++static const struct qcom_icc_qosbox qnm_camnoc_hf_qos = {
++	.num_ports = 2,
++	.port_offsets = { 0xa8000, 0xa9000 },
++	.prio = 0,
++	.urg_fwd = 1,
++	.prio_fwd_disable = 0,
++};
++
++static struct qcom_icc_node qnm_camnoc_hf = {
++	.name = "qnm_camnoc_hf",
++	.channels = 2,
++	.buswidth = 32,
++	.qosbox = &qnm_camnoc_hf_qos,
++	.num_links = 1,
++	.link_nodes = { &qns_mem_noc_hf },
++};
++
+ /* Exact Uke OEM video route and QoS, using only the existing HLOS voters. */
+ static const struct qcom_icc_qosbox qnm_video_qos = {
+ 	.num_ports = 1,
+@@ -73,8 +92,8 @@
+ static struct qcom_icc_bcm bcm_mm1 = {
+ 	.name = "MM1",
+ 	.enable_mask = 0x1,
+-	.num_nodes = 1,
+-	.nodes = { &qns_mem_noc_sf },
++	.num_nodes = 2,
++	.nodes = { &qns_mem_noc_sf, &qnm_camnoc_hf },
+ };
+ 
+ static const struct qcom_icc_qosbox qnm_mdp_qos = {
+@@ -136,6 +155,7 @@
+ };
+ 
+ static struct qcom_icc_node * const mmss_noc_nodes[] = {
++	[MASTER_CAMNOC_HF] = &qnm_camnoc_hf,
+ 	[MASTER_VIDEO] = &qnm_video,
+ 	[SLAVE_MNOC_SF_MEM_NOC] = &qns_mem_noc_sf,
+ 	[MASTER_MDP] = &qnm_mdp,

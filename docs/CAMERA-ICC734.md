@@ -1,7 +1,8 @@
 # Camera HF interconnect admission
 
-17 November 2026. Source comparison only. Accepted full8/B is unchanged;
-no new QoS register, RPMh vote or camera path is activated.
+18 November 2026. Source34 candidate; not yet compiled or installed.
+Accepted full10/A remains running, with accepted full8/B recovery preserved.
+No new QoS register, RPMh vote or camera capture path is active on the tablet.
 
 The exact Uke GPL kernel at `5712080a4b0c0b1a879e6d145c601c649ddaddfd`
 defines a HLOS camera HF master with two 32-byte channels, QoS ports
@@ -20,10 +21,12 @@ QoS access also needs its dependencies. The OEM `icc-rpmh.c` identifies HLOS
 BCMs containing QoS nodes, temporarily supplies a minimum bandwidth vote,
 then enables configuration clocks before programming their ports. It restores
 the prior keepalive policy and withdraws the temporary vote after configuration.
-The native Linux 7.3.4 setup enables clocks but has no equivalent bandwidth
-proxy. A successful clock call alone is therefore insufficient evidence for a
-new camera-port access. An uncertain partial transition also needs explicit
-ownership and failure handling rather than an assumed rollback.
+The native Linux 7.3.4 setup has no explicit equivalent bandwidth proxy, but
+its ICC core already installs INT_MAX initial requests before configuration.
+Current upstream also deliberately retains that behavior for QoS providers.
+This corrects the earlier inference that native startup has no bandwidth
+dependency. A successful clock call alone still does not verify that dependency:
+both the core node-add caller and the old RPMh set callback discard errors.
 
 The OEM MM0 also requests an early keepalive. The native display source
 explicitly records that the original field has no direct counterpart in its
@@ -38,15 +41,30 @@ the integer-returning BCM voter commit. The existing cumulative `qos_required`
 flag propagates setup errors that reach it; it cannot detect errors discarded
 inside those helpers. These are source findings, not observed Uke failures.
 
-A qualified implementation must establish the exact HLOS proxy and register
-ownership, preserve unrelated consumer votes, propagate the first real failure,
-bound all accesses, and retain necessary references after uncertain errors.
-Normal idle must release camera-owned demand without polling or narrowing a
-shared provider's capabilities. Actual callback/fault tests and ARM64 objects
-precede a cumulative full kernel and the aggregate DT dependency.
+The candidate extends the existing MM1 with the exact HLOS camera HF master;
+it adds no provider, second BCM, rate, temporary keepalive or register value.
+Before required QoS configuration it recommits the existing BCM aggregates and
+checks the result. It does not change requests, tags or inherited-vote policy.
+The first register-update failure returns after balancing configuration clocks.
+BCM initialization failures stop probe, and a failed auxiliary-data lookup no
+longer publishes a valid-looking address cache that could hide a failed retry.
+
+The COPR gate executes actual native initial-node, aggregation, set, BCM-init
+and QoS functions against modeled register/transport/clock operations. Planned
+coverage includes four compiler/sanitizer modes, all fifteen register failure
+positions, commit/clock/auxiliary-data failures, 256 shared-video demand/idle
+cycles per mode, two original-failure controls, four semantic mutants, exact
+legacy display/video write traces and both real ARM64 driver objects. No test
+pass is claimed before its build result. The full probe is compiled, not
+emulated; source checks verify its dependency and refusal ordering.
 
 The OEM `cliffs.c`, `icc-rpmh.c`, native Linux7.3.4 `icc-rpmh.c` and
 `bcm-voter.h` are the primary source inputs. Original Linux Foundation and
 Qualcomm attribution and licenses apply. The source comparison neither admits
 fitted sensor wiring nor establishes a physical frame, private read-only
-calibration, rear focus or full OEM functionality.
+calibration, rear focus or full OEM functionality. See the
+[candidate manifest](../manifests/camera-icc-hf734-20261118.json).
+
+Primary source links: [native initial requests](https://github.com/gregkh/linux/blob/v7.3.4/drivers/interconnect/core.c),
+[current upstream QoS dependency](https://github.com/torvalds/linux/blob/666539eecdf4db623f5e3c3e55cf9f2dfad24aa4/drivers/interconnect/qcom/icc-rpmh.c),
+and [exact Uke HLOS topology](https://github.com/MiCode/Xiaomi_Kernel_OpenSource/blob/5712080a4b0c0b1a879e6d145c601c649ddaddfd/drivers/interconnect/qcom/cliffs.c).

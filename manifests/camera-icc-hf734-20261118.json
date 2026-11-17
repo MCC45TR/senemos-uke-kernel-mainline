@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-18",
+  "stage": "source-only candidate",
+  "source_check_release": 34,
+  "qualified_parent": {"release": 33, "copr_build": 11341679},
+  "runtime_baseline": {"release": "7.3.4-10-unstable", "copr_build": 11342132},
+  "oem": {
+    "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+    "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+    "file": "drivers/interconnect/qcom/cliffs.c",
+    "sha256": "20b50ed6d9b1e318ff0ac14f07827c102e5ab7cdcaa154008f9957c215b2fb79",
+    "license": "GPL-2.0-only"
+  },
+  "native_core": {
+    "repository": "gregkh/linux",
+    "ref": "v7.3.4",
+    "file": "drivers/interconnect/core.c",
+    "sha256": "177b6dc3f59862089099f8ff83015157400d023893b5616aadd6b55fbe7dca10"
+  },
+  "current_upstream": {
+    "repository": "torvalds/linux",
+    "commit": "666539eecdf4db623f5e3c3e55cf9f2dfad24aa4",
+    "file": "drivers/interconnect/qcom/icc-rpmh.c",
+    "sha256": "132d2a56255b28dd4ee4fb8e54bed4fb173c8e2631ae1f014f568e64233838c6",
+    "finding": "QoS providers retain INT_MAX initial votes; get_bw is not copied"
+  },
+  "route": "HLOS camera HF -> existing HF memory NoC -> existing LLCC/DDR",
+  "duplicate_provider": false,
+  "duplicate_bcm": false,
+  "permanent_keepalive_added": false,
+  "new_bandwidth_or_clock_value": false,
+  "sensor_activation": false,
+  "capture_activation": false,
+  "physical_camera_accepted": false
+}
