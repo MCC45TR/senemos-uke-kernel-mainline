@@ -51,7 +51,8 @@ admitted native driver and its documented lifecycle.
 
 Full8 has since passed native CAMCC admission and idle release on two normal
 boots; see [its measured scope](CAMERA-FULL7348.md). The next
-[lite VFE source review](CAMSS-LITE734.md) remains unqualified. Enabling the
+[lite VFE source review](CAMSS-LITE734.md) passed source/object qualification;
+the [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation. Enabling the
 sensor/media graph, completing RAW buffers, consuming private read-only fitted
 calibration and providing both cameras with rear focus remain separate work.
 Original Fedora media/desktop packages and the existing signed RPM/DNF delivery

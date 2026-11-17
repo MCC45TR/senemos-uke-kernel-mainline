@@ -28,7 +28,14 @@ all writes against independently extracted OEM fields for all four lite RDIs,
 three strides, two heights and three addresses. Two original before-controls,
 four compiler/sanitizer modes, unchanged legacy traces, three semantic mutants
 and the actual ARM64 gen3 object are required. No C compilation runs on the
-development PC or tablet. Native COPR qualification is pending.
+development PC or tablet.
+
+Source27/COPR11340229 passed in 598 seconds. All four compiler/sanitizer modes,
+two original before-controls, 31 unchanged legacy trace cases per mode, three
+semantic mutants and the actual ARM64 object passed. The signed proof has two
+trusted repository signatures. The actual recipe matches the reviewed bytes;
+all 24 parent non-spec inputs and the complete old recipe remain intact.
+This is source/object qualification; full8 on the tablet has not changed.
 
 Read-only live-DT observations also show that the OEM lite CSID and VFE
 descriptions overlap: CSID occupies the first 0xa00 bytes, while the combined
