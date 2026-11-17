@@ -49,7 +49,9 @@ description. Upstream example values, another board's settings and closed-HAL
 parameters cannot fill these gaps. Subsequent device checks must use an
 admitted native driver and its documented lifecycle.
 
-Full6 first qualifies the existing CAMCC admission on the tablet. Enabling the
+Full8 has since passed native CAMCC admission and idle release on two normal
+boots; see [its measured scope](CAMERA-FULL7348.md). The next
+[lite VFE source review](CAMSS-LITE734.md) remains unqualified. Enabling the
 sensor/media graph, completing RAW buffers, consuming private read-only fitted
 calibration and providing both cameras with rear focus remain separate work.
 Original Fedora media/desktop packages and the existing signed RPM/DNF delivery

@@ -1,0 +1,54 @@
+From: Uke contributors <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] media: qcom: camss: match the SM7675 lite VFE bus contract
+
+The Uke GPL camera driver selects the lite88x bus table for lite860. Its
+test_bus_ctrl is 0x1394, relative to the OEM combined CSID/VFE mapping.
+The VFE register origin is 0x1000, so native CAMSS needs offset 0x394.
+Other lite gen3 profiles use 0x2dc; the full VFE offset remains 0xcdc.
+The same lite table omits frame-drop registers. The OEM bus driver only
+programs these controls for full IFE, so exclude those writes on SM7675
+lite while retaining its per-frame interrupt and continuous capture policy.
+
+Source: MiCode/vendor_qcom_opensource_camera-kernel at
+699fa15a98abd40fbb94f3a6fc00f91723d29d35,
+cam_vfe_lite86x.h and cam_vfe_lite88x.h. The latter is byte-identical to
+the same-SoC OnePlus source at 1138e00fee63582a0cc6a53af3286621786827b7.
+Retain the Linux/Qualcomm GPL attribution. This does not activate a DT node.
+
+--- a/drivers/media/platform/qcom/camss/camss-vfe-gen3.c
++++ b/drivers/media/platform/qcom/camss/camss-vfe-gen3.c
+@@ -16,6 +16,9 @@
+ 	    ((vfe->camss->res->version == CAMSS_8775P) \
+ 	    || (vfe->camss->res->version == CAMSS_8300))
+ 
++#define IS_VFE_860_LITE(vfe) \
++	    (vfe->camss->res->version == CAMSS_7675 && vfe_is_lite(vfe))
++
+ #define BUS_REG_BASE_690 \
+ 	    (vfe_is_lite(vfe) ? 0x480 : 0x400)
+ #define BUS_REG_BASE_780 \
+@@ -29,8 +32,10 @@
+ 
+ #define VFE_BUS_WM_TEST_BUS_CTRL_690 (BUS_REG_BASE + 0xFC)
+ #define VFE_BUS_WM_TEST_BUS_CTRL_780 (BUS_REG_BASE + 0xDC)
++#define VFE_BUS_WM_TEST_BUS_CTRL_860_LITE (BUS_REG_BASE + 0x194)
+ #define VFE_BUS_WM_TEST_BUS_CTRL \
+ 	    (IS_VFE_690(vfe) ? VFE_BUS_WM_TEST_BUS_CTRL_690 \
++	     : IS_VFE_860_LITE(vfe) ? VFE_BUS_WM_TEST_BUS_CTRL_860_LITE \
+ 	     : VFE_BUS_WM_TEST_BUS_CTRL_780)
+ /*
+  * Bus client mapping:
+@@ -101,8 +106,11 @@
+ 			vfe->base + VFE_TOP_CORE_CFG);
+ 
+ 	/* no dropped frames, one irq per frame */
+-	writel(0, vfe->base + VFE_BUS_WM_FRAMEDROP_PERIOD(wm));
+-	writel(1, vfe->base + VFE_BUS_WM_FRAMEDROP_PATTERN(wm));
++	/* Lite860 has no frame-drop registers in its OEM bus table. */
++	if (!IS_VFE_860_LITE(vfe)) {
++		writel(0, vfe->base + VFE_BUS_WM_FRAMEDROP_PERIOD(wm));
++		writel(1, vfe->base + VFE_BUS_WM_FRAMEDROP_PATTERN(wm));
++	}
+ 	writel(0, vfe->base + VFE_BUS_WM_IRQ_SUBSAMPLE_PERIOD(wm));
+ 	writel(1, vfe->base + VFE_BUS_WM_IRQ_SUBSAMPLE_PATTERN(wm));
+ 
