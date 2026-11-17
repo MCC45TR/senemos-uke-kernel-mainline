@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "full_release": 9,
+  "parent": {
+    "build": 11339909,
+    "source_commit": "cac75d6ba7673429bd0ff80b0cd9878a3a8ae6ac",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11339909/senemos-uke-linux-kernel-mainline-unstable-7.3.4-8.src.rpm",
+    "srpm_sha256": "9c2e3cc3606a51ce8d7a11f81022d481173bf6a994ae41ed3ae44ad744686f41",
+    "spec_sha256": "bebc04e4c93f34f73a96877115548a4feeea0518e2993f3dd3faa9c5cdd13f21",
+    "source_files": 38,
+    "native_health_accepted": true,
+    "normal_boot_observations": 2,
+    "accepted_recovery": "7.3.4-8-unstable/B"
+  },
+  "native": {
+    "build": 11341240,
+    "release": 32,
+    "source_commit": "bbef2027fb512b5660fdc698f07ce5ca55a401e4",
+    "source_files": 29,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11341240/uke-kernel-migration-check-7.3.4-32.src.rpm",
+    "srpm_sha256": "627a4164740a514f48e6b9211c974122bc550a775ab52bc6a8be2318e794cf58",
+    "spec_sha256": "83649dac95cab14b7a0e2cf4ba96022667ba8aaab3d321905209981f0ba0761b",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/11341240-uke-kernel-migration-check/uke-kernel-migration-check-7.3.4-32.fc46.aarch64.rpm",
+    "proof_sha256": "ed53d96fc06084a32569058d180588db0b499fe5b2a816a6db0b8f479f4f5a5c",
+    "proof_rpm_trusted_signatures": 2,
+    "physical_camera_accepted": false
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Admit the exact front GENI8/read-only EEPROM path after two accepted controller-only boots, preserving full8 and qualified receive-path layers27/30/31/32. Identify the fitted front module privately before admitting its sensor. No frame is claimed.",
+  "qualified_layers": [
+    {
+      "name": "camss-lite734",
+      "source_commit": "3ac452187b4f1f9f97a2add732f95e669557fce2"
+    },
+    {
+      "name": "phy-power734",
+      "source_commit": "536a6e86889ffd5f1d80f4503571627e88308e50"
+    },
+    {
+      "name": "csid-irq734",
+      "source_commit": "2519d8821a5cdd7f5b124446ee7a00cc9d830e1e"
+    },
+    {
+      "name": "csid-stream734",
+      "source_commit": "bbef2027fb512b5660fdc698f07ce5ca55a401e4"
+    }
+  ],
+  "front_activation": {
+    "read_only_eeprom": true,
+    "sensor": false,
+    "capture_graph": false,
+    "fitted_identity_known": false,
+    "controller_isolated_boots": 2
+  }
+}
