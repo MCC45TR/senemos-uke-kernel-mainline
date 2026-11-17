@@ -55,6 +55,9 @@ release its own vote only after successful power-off. A failure must preserve
 the resources needed for safe recovery. Idle camera ownership must not block
 the other consumers' valid operating ranges.
 
+The [source28 supply lifecycle](CAMSS-PHY-POWER734.md) prepares this change;
+its COPR qualification and the built-in runtime profile remain separate gates.
+
 The selected PHY0 compatible is `qcom,csiphy-v2.2.1-n16t`; PHY1–4 select ordinary
 2.2.1. The existing front PHY4 helper does not establish the rear PHY0 variant.
 Both cameras and all supported modes remain in scope.
@@ -74,6 +77,9 @@ driver's probe list do not establish those facts. Future source/object and
 binding checks precede a cumulative signed kernel, DNF delivery, native graph
 observation and completed buffers. Private fitted calibration remains read-only;
 rear focus and full OEM capability remain open.
+
+The [MiCode sensor comparison](CAMERA-MICODE-SENSORS734.md) records the
+additional GPL OV08D10 driver, its address convention and board power limits.
 
 The implementation sources are the pinned Uke GPL kernel
 `5712080a4b0c0b1a879e6d145c601c649ddaddfd`, Uke GPL camera driver

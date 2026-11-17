@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "scope": "SM7675 native PHY consumer supply lifecycle; source qualification",
+  "parent": {
+    "native_build": 11340229,
+    "source_release": "7.3.4-27",
+    "raw_srpm_sha256": "a99fe9711a6f6a348ee6d10ef97f2c69cc80c639e7ba3ff6a3eb9b0eb59082d7",
+    "spec_sha256": "3b3b8d295f9fdc8f476486ece77497b7a1469b39f9a21652b07dc26afb004787",
+    "retained_non_spec_source_members": 25,
+    "whole_recipe_inverse_required": true
+  },
+  "sources": [
+    {
+      "repository": "MiCode/Xiaomi_Kernel_OpenSource",
+      "commit": "5712080a4b0c0b1a879e6d145c601c649ddaddfd",
+      "path": "drivers/regulator/core.c",
+      "license": "GPL-2.0-or-later",
+      "use": "OEM regulator framework comparison; no foreign board policy"
+    },
+    {
+      "repository": "MiCode/vendor_qcom_opensource_camera-kernel",
+      "commit": "699fa15a98abd40fbb94f3a6fc00f91723d29d35",
+      "path": "drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.c",
+      "license": "GPL-2.0-only",
+      "use": "Source-defined per-consumer voltage/load requests and regulated power lifecycle"
+    },
+    {
+      "repository": "gregkh/linux",
+      "commit": "7595a62d45ee1a2297eafa5f2ef5d0a45142d84d",
+      "paths": ["drivers/regulator/core.c", "drivers/media/platform/qcom/camss/camss-csiphy.c", "drivers/media/platform/qcom/camss/camss.c"],
+      "licenses_by_path": {"drivers/regulator/core.c": "GPL-2.0-or-later", "drivers/media/platform/qcom/camss/camss-csiphy.c": "GPL-2.0", "drivers/media/platform/qcom/camss/camss.c": "GPL-2.0"},
+      "use": "Native consumer API, PM, driver registration and original PHY callbacks"
+    }
+  ],
+  "board_facts": {
+    "origin": "Read-only selected xiaomi,uke device-tree properties; no overlay code copied",
+    "physical_voltage_measured": false,
+    "csi_0p9": {"provider": "pmxr2230 L2B", "consumer_min_uV": 880000, "consumer_max_uV": 912000, "load_uA": 98480, "provider_min_uV": 880000, "provider_max_uV": 950000, "shared": true},
+    "csi_1p2": {"provider": "pmxr2230 L4B", "consumer_min_uV": 1200000, "consumer_max_uV": 1200000, "load_uA": 17920}
+  },
+  "qualification_required": {
+    "original_before_controls": 2,
+    "production_callback_compiler_modes": 4,
+    "legacy_trace_cases_per_mode": 15,
+    "semantic_mutants": 5,
+    "actual_arm64_objects": 3,
+    "all_fallible_healthy_transition_calls_injected": true,
+    "cached_provider_ready_before_sync_state": true,
+    "manual_references_survive_fault_devres_cleanup": true,
+    "source_check_linkage_unchanged": true
+  },
+  "runtime_limits": {
+    "camss_must_be_builtin_and_static": true,
+    "current_module_admission_refused": true,
+    "full_builtin_linkage_and_profile_qualification_pending": true,
+    "graph_activated": false,
+    "physical_camera_accepted": false,
+    "sensor_identity_address_power_lane_contract_open": true,
+    "interconnect_route_open": true,
+    "rear_phy_variant_open": true,
+    "calibration_read_only": true
+  }
+}

@@ -1,0 +1,161 @@
+--- a/drivers/clk/qcom/camcc-sm7675.c
++++ b/drivers/clk/qcom/camcc-sm7675.c
+@@ -6,6 +6,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/sysfs.h>
++#include <linux/soc/qcom/sm7675-camcc.h>
+ 
+ #define CAM_CC_SM7675_GDSC_FLAGS \
+ 	(POLL_CFG_GDSCR | RETAIN_FF_ENABLE | GDSC_CONTROLLER_PM)
+@@ -25,6 +26,18 @@
+ #include "provider/camcc-sm7675-registration.h"
+ #include "provider/camcc-sm7675-sleep.h"
+ 
++int qcom_sm7675_camcc_status(void)
++{
++	int error = READ_ONCE(cam_cc_power.fault);
++
++	if (error)
++		return error;
++	if (!READ_ONCE(cam_cc_native.ready))
++		return -EPROBE_DEFER;
++	return READ_ONCE(cam_cc_power.fault);
++}
++EXPORT_SYMBOL_GPL(qcom_sm7675_camcc_status);
++
+ static ssize_t controller_state_show(struct device *dev,
+ 				    struct device_attribute *attribute, char *buffer)
+ {
+--- a/drivers/media/platform/qcom/camss/camss.c
++++ b/drivers/media/platform/qcom/camss/camss.c
+@@ -5764,7 +5764,6 @@
+ 	{ .compatible = "qcom,sm8250-camss", .data = &sm8250_resources },
+ 	{ .compatible = "qcom,sm8550-camss", .data = &sm8550_resources },
+ 	{ .compatible = "qcom,sm8650-camss", .data = &sm8650_resources },
+-	{ .compatible = "qcom,sm7675-camss", .data = &sm7675_resources },
+ 	{ .compatible = "qcom,x1e80100-camss", .data = &x1e80100_resources },
+ 	{ }
+ };
+@@ -5820,7 +5819,40 @@
+ 	},
+ };
+ 
+-module_platform_driver(qcom_camss_driver);
++/* Permanent Uke ownership is separate from the legacy removable driver. */
++static const struct of_device_id camss_sm7675_dt_match[] = {
++	{ .compatible = "qcom,sm7675-camss", .data = &sm7675_resources },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, camss_sm7675_dt_match);
++
++static struct platform_driver qcom_camss_sm7675_driver = {
++	.probe = camss_probe,
++	.remove = camss_remove,
++	.driver = {
++		.name = "qcom-camss-sm7675",
++		.of_match_table = camss_sm7675_dt_match,
++		.pm = &camss_pm_ops,
++		.suppress_bind_attrs = true,
++	},
++};
++
++static struct platform_driver * const camss_drivers[] = {
++	&qcom_camss_driver,
++	&qcom_camss_sm7675_driver,
++};
++
++static int __init camss_init(void)
++{
++	return platform_register_drivers(camss_drivers, ARRAY_SIZE(camss_drivers));
++}
++module_init(camss_init);
++
++static void __exit camss_exit(void)
++{
++	platform_unregister_drivers(camss_drivers, ARRAY_SIZE(camss_drivers));
++}
++module_exit(camss_exit);
+ 
+ MODULE_DESCRIPTION("Qualcomm Camera Subsystem driver");
+ MODULE_AUTHOR("Todor Tomov <todor.tomov@linaro.org>");
+--- a/drivers/media/platform/qcom/camss/camss-csiphy.c
++++ b/drivers/media/platform/qcom/camss/camss-csiphy.c
+@@ -193,6 +193,8 @@
+ 	return 0;
+ }
+ 
++#include "camss-csiphy-sm7675-power.h"
++
+ /*
+  * csiphy_set_power - Power on/off CSIPHY module
+  * @sd: CSIPHY V4L2 subdevice
+@@ -205,6 +207,9 @@
+ 	struct csiphy_device *csiphy = v4l2_get_subdevdata(sd);
+ 	struct device *dev = csiphy->camss->dev;
+ 
++	if (csiphy->camss->res->version == CAMSS_7675)
++		return csiphy_sm7675_set_power(csiphy, on);
++
+ 	if (on) {
+ 		int ret;
+ 
+@@ -594,6 +599,12 @@
+ 	csiphy->cfg.combo_mode = 0;
+ 	csiphy->res = &res->csiphy;
+ 
++	if (camss->res->version == CAMSS_7675) {
++		ret = csiphy_sm7675_owner_check(camss);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = csiphy->res->hw_ops->init(csiphy);
+ 	if (ret)
+ 		return ret;
+@@ -704,6 +715,9 @@
+ 			csiphy->num_supplies++;
+ 	}
+ 
++	if (camss->res->version == CAMSS_7675)
++		return csiphy_sm7675_power_init(csiphy, res);
++
+ 	if (csiphy->num_supplies > 0)
+ 		ret = devm_regulator_bulk_get_const(camss->dev, csiphy->num_supplies,
+ 						    res->regulators, &csiphy->supplies);
+--- a/drivers/media/platform/qcom/camss/camss-csiphy.h
++++ b/drivers/media/platform/qcom/camss/camss-csiphy.h
+@@ -82,7 +82,15 @@
+ 	int (*init)(struct csiphy_device *csiphy);
+ };
+ 
++struct csiphy_supply_voltage {
++	unsigned int min_uV;
++	unsigned int max_uV;
++};
++
++struct csiphy_sm7675_power;
++
+ struct csiphy_subdev_resources {
++	struct csiphy_supply_voltage voltage[2];
+ 	u8 id;
+ 	const struct csiphy_hw_ops *hw_ops;
+ 	const struct csiphy_formats *formats;
+@@ -110,6 +118,7 @@
+ 	u32 timer_clk_rate;
+ 	struct regulator_bulk_data *supplies;
+ 	int num_supplies;
++	struct csiphy_sm7675_power *uke_power;
+ 	struct csiphy_config cfg;
+ 	struct v4l2_mbus_framefmt fmt[MSM_CSIPHY_PADS_NUM];
+ 	const struct csiphy_subdev_resources *res;
+--- a/drivers/media/platform/qcom/camss/camss-sm7675-data.h
++++ b/drivers/media/platform/qcom/camss/camss-sm7675-data.h
+@@ -19,6 +19,7 @@
+ 	.reg = { "csiphy" #n }, \
+ 	.interrupt = { "csiphy" #n }, \
+ 	.csiphy = { \
++		.voltage = { { 880000, 912000 }, { 1200000, 1200000 } }, \
+ 		.id = n, \
+ 		.hw_ops = &csiphy_ops_sm7675, \
+ 		.formats = &csiphy_formats_sdm845, \
