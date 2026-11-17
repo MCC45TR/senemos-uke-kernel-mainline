@@ -1,7 +1,11 @@
 # SM7675 CSID completion interrupts
 
-17 November 2026. Source candidate; COPR qualification is pending. Accepted
-full8/B remains installed. No receiver graph, sensor or frame is activated.
+17 November 2026. Source31/COPR11340606 passed in 504 seconds. Four GCC/Clang
+plain/sanitized modes, two original failure controls, five semantic mutants,
+96 unchanged legacy traces per mode and a real ARM64 object passed. The signed
+proof and actual source match the
+[qualification record](../manifests/csid-irq734-qualification-20261117.json).
+Accepted full8/B remains installed. No receiver graph, sensor or frame is activated.
 
 The selected Uke CSID860/lite860 descriptions use the GPL CSID880/lite880
 tables. Both exact MiCode camera source at
@@ -30,15 +34,18 @@ Every other platform follows the complete original reset sequence.
 
 The COPR test imports the actual reset, ISR and update callbacks, and derives
 the oracle from independent CSID fields and VFE completion-group tables. It
-requires GCC/Clang plain and sanitizer modes, original failure controls,
+passed GCC/Clang plain and sanitizer modes, original failure controls,
 48 reset/timeout cases, 1152 independent/combined frame and RUP events,
 488 invalid masks, 96 unchanged legacy traces, five semantic mutants and an
 actual ARM64 object. Modeled MMIO and interrupts do not establish hardware
 operation or a completed frame.
 
-Stream-on register-update ordering is a separate remaining contract. The
-[upstream proposal](https://lore.kernel.org/linux-media/20261011-kaanapali-camss-v21-4-04fd28d815c6@oss.qualcomm.com/)
-discusses issuing the initial update after receiver configuration. This reset
-change does not claim to implement or qualify that ordering. The HF interconnect
-route, complete aggregate resources, fitted sensor identity/address/power/lanes,
-private read-only calibration and rear focus also remain open.
+The older stream-on ordering proposal was subsequently revised. The
+[2 November v24 proposal](https://lists.openwall.net/linux-kernel/2026/11/02/1172)
+limits deferred initial RUP to CSID980-and-newer implementations with an
+address-update callback. It preserves the initial VFE update when that callback
+is absent. The earlier v21 discussion therefore does not establish an ordering
+correction for Uke's 860/880 path; no such change is made here. Physical stream
+ordering still requires qualification. The HF interconnect route, complete
+aggregate resources, fitted sensor identity/address/power/lanes, private
+read-only calibration and rear focus also remain open.

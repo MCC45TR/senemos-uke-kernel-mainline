@@ -36,11 +36,12 @@ The selected full/lite CSID and VFE compatibles are the 860 variants. Their
 GPL headers select the 880 register tables. Basic CSID RDI origins/strides,
 receive registers and subsample offsets agree with native gen3; full VFE
 clients 23/24/25 map to RDI0/1/2. Interrupt admission still needs separate
-coverage. In particular, the current reset loop writes one bit at a time to
-the same buffer-done mask register rather than accumulating enabled paths.
-Neither source27 nor the PHY supply change qualifies multi-path completion
-or changes that CSID logic. This is a source review finding, not a measured
-Uke interrupt failure.
+coverage. The reset loop in accepted full8 writes one bit at a time to the same
+buffer-done mask register rather than accumulating enabled paths. Source31
+qualifies the [SM7675 completion interrupt hierarchy](CAMSS-CSID-IRQ734.md),
+including top-level and RUP masks, all selected buffer bits and unchanged
+legacy traces. It remains outside the installed kernel. This is source/object
+qualification, not a measured Uke interrupt or frame result.
 
 ## Shared PHY supply limits
 
