@@ -9,7 +9,7 @@ native24 does not explain this source-one selection.
 
 The native constructor currently decodes ROM before configuring local PLLs.
 The original GPL Uke provider configures its PLLs before `qcom_cc_really_probe`
-populates CRM frequency tables. Native25 moves the existing guarded native
+populates CRM frequency tables. The candidate moves the existing guarded native
 preparation ahead of ROM decoding. The original passive catalog identifies
 firmware PLL3–7; neither preparation pass reads or programs those five PLLs.
 The remaining PLLs retain their original configuration, FSM refusal, powered
@@ -38,3 +38,8 @@ framework models do not prove physical ROM admission or a working camera.
 Full7 also rolled back because native touch readiness did not meet the boot
 health window; that guard remains intact. A later legitimate candidate must
 separately qualify boot health, camera power/graph/frames and proper release.
+
+Source25 passed its original-constructor controls and first constructor mode,
+then failed because the new direct-PLL framework model had no register map.
+Source26 binds that modeled map explicitly. The production overlay is unchanged;
+all compiler modes and complete ARM64 objects remain required.

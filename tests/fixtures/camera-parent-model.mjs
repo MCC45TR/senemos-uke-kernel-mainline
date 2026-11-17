@@ -59,7 +59,7 @@ static int cam_cc_crm_native_plls_finalize(void)
 static bool skip_firmware_pll(struct clk_alpha_pll *pll) {return pll==&plls[1];}
 static void setup_parent(void)
 {
- defaults(false);model_device.dev.active=true;assert(!cam_cc_clocks_init());
+ defaults(false);model_device.dev.active=true;cam_cc_power.map=&model_map;assert(!cam_cc_clocks_init());
  model_map.words[(plls[1].offset+pll_regs[PLL_OFF_L_VAL])/4]=0x1234;
  model_map.words[(plls[1].offset+pll_regs[PLL_OFF_USER_CTL])/4]=CAM_CC_PLL_FSM;
 }
@@ -77,9 +77,9 @@ int main(void)
  setup_parent();model_map.words[pll_regs[PLL_OFF_USER_CTL]/4]=CAM_CC_PLL_FSM;
  assert(cam_cc_native_plls_configure_except(skip_firmware_pll)==-EOPNOTSUPP && !configured_plls);
  setup_parent();plls[0].config=NULL;assert(cam_cc_native_plls_configure_except(skip_firmware_pll)==-EINVAL && !configured_plls);
- defaults(true);model_device.dev.active=true;assert(!cam_cc_clocks_init());
+ defaults(true);model_device.dev.active=true;cam_cc_power.map=&model_map;assert(!cam_cc_clocks_init());
  assert(!cam_cc_native_plls_configure_except(skip_firmware_pll) && !configured_plls);
- defaults(false);model_device.dev.active=true;assert(!cam_cc_clocks_init());
+ defaults(false);model_device.dev.active=true;cam_cc_power.map=&model_map;assert(!cam_cc_clocks_init());
  assert(!cam_cc_native_plls_configure() && configured_plls==2);
  unsigned old_finalize=finalize_calls;defaults(false);assert(!cam_cc_native_probe(&model_device));
  assert(finalize_calls==old_finalize+1);
