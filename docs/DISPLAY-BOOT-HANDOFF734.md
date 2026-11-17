@@ -40,3 +40,37 @@ AArch64 DISPCC object are required. These checks do not prove an optical
 fix: the matched cumulative kernel must subsequently be signed, delivered
 through DNF and observed during a fresh boot. A full first-setup reflash and
 independent rescue tests are outside this gray-screen experiment.
+
+## Recorded device result, 17 November 2026
+
+The later bounded webcam baseline on kernel7.3.4-4 refines the initial timing:
+4.33 seconds of uniform gray and approximately0.90 seconds of dark transition.
+The earlier timing above describes a separate initial recording. Use raw
+`dmesg` or `_SOURCE_MONOTONIC_TIMESTAMP` for early kernel correlation;
+`journalctl -o short-monotonic` can show delayed journal reception instead.
+The gray begins within one30fps frame of DISPCC registration and ends near
+the checked MDSS handoff.
+
+Source qualification11336575 and cumulative full build11336625 succeeded.
+Signed kernel7.3.4-5 RPMs were installed through DNF. Control27 and firmware18
+restore the updater's exact admitted factory input sources after the storage
+layout stopped exposing Android ODM; the existing identity, private profile,
+signature, slot readback and rollback checks remain required. The normal
+updater staged slotB while preserving accepted kernel4 in slotA.
+
+Two normal kernel5 boots were recorded for90seconds each, without audio.
+All5393 captured frames were analyzed numerically and the transition sheets
+were inspected. Neither recording contains the previous sustained gray
+interval; the early console remains visible until native MDSS takeover.
+The two recordings total about7MB of video. Both boots report complete native
+status, no issues, accepted kernel5/slotB and no failed units; persistent
+preferences, enforcing SELinux, integrity lockdown and the exact recovery
+slotA image remain unchanged.
+
+This fixes the measured early multi-second gray defect in these two normal
+boots. Native takeover still clears the console for approximately0.20/0.30
+seconds and then goes dark for about0.53 seconds before the native console
+returns. A later graphical-session blackout also remains. These recordings
+do not qualify cold power-on, suspend/resume, the camera or the other open
+hardware requirements. Private videos and unit logs are retained outside
+the public source tree.
