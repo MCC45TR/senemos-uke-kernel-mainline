@@ -193,3 +193,13 @@ checks exercise the production reporter in four compiler/sanitizer modes,
 rerun the actual admission fixture with the changed header, and compile the
 complete provider and a forced reporter adapter for ARM64. Source, full kernel,
 signed delivery and the next physical ROM observation remain separate gates.
+
+Source23/COPR11339509 passed in 488 seconds. The four reporter modes, four
+additional production-admission modes, two actual ARM64 objects and retained
+native22 checks passed. The exact generated source, all 21 parent inputs and
+signed proof were verified. The full7 recipe preserves the complete full6
+recipe and inputs. After the qualified overlay, it refreshes exactly one
+runtime source-seal entry, preserving the old ledger and verifying its exact
+inverse. The independently signed source23 proof binds the new header and
+reporter; the old source22 proof remains evidence for its earlier phase.
+Full7 installation and the actual failing client/rate remain unqualified.

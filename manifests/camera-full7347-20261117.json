@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "full_release": 7,
+  "parent": {
+    "build": 11339390,
+    "source_commit": "b86cb02a58716946f3e8a458c05aee58f7a6faaf",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11339390/senemos-uke-linux-kernel-mainline-unstable-7.3.4-6.src.rpm",
+    "srpm_sha256": "ea56d874804d3f88aef6b9cc72080f0c0a60381285806a7047f4c811acb3139f",
+    "spec_sha256": "df05e3e99b2f168bc12221b319b65b78127feb99e9827297adc43cb06e3c2b93",
+    "source_files": 32
+  },
+  "native": {
+    "build": 11339509,
+    "release": 23,
+    "source_commit": "a49cfc71ae87eb769223c47ed2a6e5fd939e9c46",
+    "source_files": 23,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11339509/uke-kernel-migration-check-7.3.4-23.src.rpm",
+    "srpm_sha256": "1e989eba01f91e266b2cf82809894e09a6b7470c59b6929d6e45f9be98f606b3",
+    "spec_sha256": "090dfdab0158c478a048ba600a49dbde64f2311fb6b5722267ae0faf86bddd05",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-23.fc46.aarch64.rpm",
+    "proof_sha256": "c37be81c7a8462fd4bb0bbc041967fc6c798dc75e0a37c2d49c31ab2a9b64275",
+    "source_rpm_signed": false,
+    "proof_rpm_trusted_signatures": 2,
+    "physical_camera_accepted": false,
+    "reporter_modes": 4,
+    "production_admission_modes": 4,
+    "actual_arm64_objects": 2
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Identify the actual cached CRM ROM refusal while preserving full6, firmware ownership and the qualified display handoff. This diagnostic does not claim a camera frame."
+}
