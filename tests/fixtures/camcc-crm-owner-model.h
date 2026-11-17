@@ -80,6 +80,16 @@ static void owner_checks(void)
     assert(cam_cc_crm_owner_transport.quiesced && !cam_cc_crm_owner_transport.ready);
     assert(cam_cc_power.after_resume(cam_cc_power.transport_context)==0);
     assert(cam_cc_crm_owner_transport.ready && !freed && !votes);
+    /* A late/spurious owned IRQ quarantines the controller without a CCF call. */
+    reset_owner();
+    assert(cam_cc_crm_owner_transport_bind()==0);
+    memory[(0x1060+0x100)/4]=1;
+    assert(registered_handler(121,registered_context)==IRQ_HANDLED);
+    assert(cam_cc_crm_owner_transport.fault==-EUCLEAN && masks==1);
+    assert(cam_cc_power.fault==-EIO && cam_cc_power.primary_error==-EUCLEAN);
+    before=writes;
+    assert(cam_cc_power.before_suspend(cam_cc_power.transport_context)==-EUCLEAN);
+    assert(writes==before && !freed);
     /* Existing AP0 votes are retained and refuse power withdrawal. */
     reset_owner();
     for(unsigned state=0;state<3;state++)memory[(0x1060+state*0x40)/4]=3;

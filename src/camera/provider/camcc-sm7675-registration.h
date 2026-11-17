@@ -261,6 +261,10 @@ static int cam_cc_native_probe(struct platform_device *pdev)
 	}
 	cam_cc_native_probe_phase("crm-admission");
 	ret = cam_cc_crm_guard_admit();
+	if (ret == -EOPNOTSUPP)
+		ret = cam_cc_crm_native_admit();
+	if (!ret)
+		ret = cam_cc_power_access(&cam_cc_power, 0);
 	if (ret)
 		return cam_cc_native_quarantine(dev, ret);
 	cam_cc_native_probe_phase("boot-handoff");
@@ -335,6 +339,9 @@ static void cam_cc_native_sync_state(struct device *dev)
 		clk_put(cam_cc_native.boot_rcgs[i]);
 		cam_cc_native.boot_rcgs[i] = NULL;
 	}
+	ret = cam_cc_crm_native_sync();
+	if (ret)
+		return;
 	/* Existing genpd stay_on protects boot-ON domains until this callback. */
 	of_genpd_sync_state(dev->of_node);
 	if (READ_ONCE(cam_cc_power.fault))

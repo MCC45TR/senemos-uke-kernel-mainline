@@ -21,6 +21,7 @@
 #include "provider/camcc-sm7675-crm-passive.h"
 #include "provider/camcc-sm7675-crm-rom.h"
 #include "provider/camcc-sm7675-crm-owner.h"
+#include "provider/camcc-sm7675-crm-native.h"
 #include "provider/camcc-sm7675-registration.h"
 
 static ssize_t controller_state_show(struct device *dev,
@@ -38,6 +39,8 @@ static ssize_t crm_mode_show(struct device *dev,
 	/* Cached probe observation; sysfs must not read an unpowered register. */
 	if (!READ_ONCE(cam_cc_crm_guard.checked))
 		return sysfs_emit(buffer, "unchecked\n");
+	if (READ_ONCE(cam_cc_crm_native_ready))
+		return sysfs_emit(buffer, "firmware-managed\n");
 	return sysfs_emit(buffer, "%s\n", READ_ONCE(cam_cc_crm_guard.firmware_enabled) ?
 			  "firmware-enabled-refused" : "direct-programming");
 }

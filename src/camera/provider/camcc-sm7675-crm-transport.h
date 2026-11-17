@@ -33,6 +33,8 @@ struct cam_cc_crm_transport {
 	struct completion completion;
 	struct cam_cc_crm_vote_state votes[2][8];
 	int (*access)(void *context);
+	/* Optional permanent owner notification: non-sleeping, no I/O/reentry. */
+	void (*failed)(void *context, int error);
 	void *power_context;
 	u32 version;
 	u32 pending_kind;
@@ -56,6 +58,8 @@ struct cam_cc_crm_transaction {
 /* Called with lock held; a late acknowledgement can never clear this fault. */
 static inline int cam_cc_crm_transport_fail(struct cam_cc_crm_transport *t, int error)
 {
+	bool first = !t->fault;
+
 	if (!t->fault)
 		t->fault = error < 0 ? error : -EIO;
 	t->ready = false;
@@ -63,6 +67,8 @@ static inline int cam_cc_crm_transport_fail(struct cam_cc_crm_transport *t, int 
 		disable_irq_nosync(t->irq);
 		t->irq_masked = true;
 	}
+	if (first && t->failed)
+		t->failed(t->power_context, t->fault);
 	if (t->pending) {
 		t->pending = false;
 		complete(&t->completion);

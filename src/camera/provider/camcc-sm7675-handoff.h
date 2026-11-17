@@ -218,6 +218,9 @@ static int cam_cc_native_handoff_init(void)
 	u32 command;
 	int ret;
 
+	ret = cam_cc_power_access(&cam_cc_power, 0);
+	if (ret)
+		return ret;
 	for (i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++) {
 		struct cam_cc_clock *clock = &cam_cc_clock_state[i];
 
@@ -267,6 +270,9 @@ static int cam_cc_native_plls_configure(void)
 	u32 mode, opmode, value;
 	int ret;
 
+	ret = cam_cc_power_access(&cam_cc_power, 0);
+	if (ret)
+		return ret;
 	/* Reject unsupported firmware voting before programming any PLL. */
 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_plls); i++) {
 		struct clk_alpha_pll *pll = cam_cc_sm7675_plls[i];
@@ -296,6 +302,9 @@ static int cam_cc_native_plls_configure(void)
 			return ret;
 		if (mode & CAM_CC_PLL_OUTCTRL && opmode & BIT(0))
 			continue;
+		ret = cam_cc_power_access(&cam_cc_power, 0);
+		if (ret)
+			return ret;
 		qcom_clk_alpha_pll_configure(pll, cam_cc_power.map);
 		ret = cam_cc_power_access(&cam_cc_power, 0);
 		if (ret)

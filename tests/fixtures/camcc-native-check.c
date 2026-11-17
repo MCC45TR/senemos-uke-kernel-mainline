@@ -91,7 +91,10 @@ static unsigned int bootstrap_requests;
 static const char *observed_probe_phases[1024];
 static int observed_probe_errors[1024];
 static int sequence[1024], sequence_size;
-enum { EVENT_CLOCK_SYNC = 1001, EVENT_RCG_DROP, EVENT_DOMAIN_SYNC, EVENT_PROXY_DROP, EVENT_PM_DROP };
+enum { EVENT_CLOCK_SYNC = 1001, EVENT_RCG_DROP, EVENT_DOMAIN_SYNC, EVENT_PROXY_DROP, EVENT_PM_DROP, EVENT_CRM_SYNC };
+static int crm_admission_result = -EOPNOTSUPP, crm_sync_result;
+static unsigned int crm_admissions, crm_syncs;
+static bool crm_admission_irq_fault;
 static struct regmap model_map;
 static struct clk parent_clks[3], boot_clk;
 static struct device_node model_node;
@@ -360,6 +363,32 @@ static void of_genpd_sync_state(struct device_node *node)
 	}
 }
 #include "native-handoff.h"
+/* Exercise the actual probe/sync callers. The constructor and vote adapter
+ * have separate fixtures; this boundary supplies their admission results.
+ */
+static int cam_cc_crm_native_admit(void)
+{
+	assert(crm_active && crm_mapping && crmc_mapping);
+	assert(cam_cc_native.probe_pm_held && cam_cc_native.proxy_votes == 7);
+	assert(!cam_cc_power.publication_started && !configured_plls);
+	crm_admissions++;
+	if (crm_admission_result)
+		return crm_admission_result;
+	for (size_t i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++)
+		cam_cc_clock_state[i].crm_passive = true;
+	if (crm_admission_irq_fault)
+		cam_cc_power_fail(-EUCLEAN, 0, 0);
+	return 0;
+}
+static int cam_cc_crm_native_sync(void)
+{
+	if (!crm_active)
+		return 0;
+	assert(cam_cc_native.probe_pm_held && cam_cc_native.proxy_votes == 7);
+	assert(!genpd_syncs && !cam_cc_power.fault);
+	event(EVENT_CRM_SYNC); crm_syncs++;
+	return crm_sync_result ? cam_cc_native_fail(crm_sync_result) : 0;
+}
 #include "native-registration.h"
 
 static void observe_probe_step(void)
@@ -428,6 +457,8 @@ static void defaults(bool boot_on)
 	stuck_gate = -1;
 	bootstrap_dependency = false;
 	bootstrap_requests = 0;
+	crm_admission_result = -EOPNOTSUPP; crm_sync_result = 0;
+	crm_admissions = crm_syncs = 0; crm_admission_irq_fault = false;
 	memset(observed_probe_phases, 0, sizeof(observed_probe_phases));
 	memset(observed_probe_errors, 0, sizeof(observed_probe_errors));
 	model_driver.sync_state = cam_cc_native_sync_state;
@@ -701,6 +732,7 @@ static void bootstrap_order_control(void)
 static void crm_passive_handoff(void)
 {
 	defaults(false);
+	model_device.dev.active = true;
 	assert(!cam_cc_clocks_init());
 	for (unsigned i = 0; i < ARRAY_SIZE(cam_cc_clock_state); i++)
 		cam_cc_clock_state[i].crm_passive = true;
@@ -713,6 +745,43 @@ static void crm_passive_handoff(void)
 	puts("Actual CRM passive handoff: both PLL programming passes and native boot-hold/disable paths excluded without MMIO");
 }
 
+static void crm_registration_lifecycle(void)
+{
+	for (int on = 0; on < 2; on++) {
+		defaults(on); crm_active = true; crm_admission_result = 0;
+		assert(!cam_cc_native_probe(&model_device));
+		assert(crm_admissions == 1 && cam_cc_native.ready && !cam_cc_power.fault);
+		assert(!configured_plls && !boot_clk.enabled && !boot_clk.references);
+		sequence_size = 0;
+		cam_cc_native_sync_state(&model_device.dev);
+		int expected[] = {EVENT_CLOCK_SYNC, EVENT_CRM_SYNC, EVENT_DOMAIN_SYNC,
+			EVENT_PROXY_DROP, EVENT_PROXY_DROP, EVENT_PROXY_DROP, EVENT_PM_DROP};
+		assert(sequence_size == (int)ARRAY_SIZE(expected));
+		assert(!memcmp(expected, sequence, sizeof(expected)));
+		assert(crm_syncs == 1 && cam_cc_native.synchronized);
+		assert(!cam_cc_native.proxy_votes && !cam_cc_native.probe_pm_held);
+		assert(!model_device.dev.usage);
+	}
+	defaults(true); crm_active = true; crm_admission_result = 0;
+	crm_admission_irq_fault = true;
+	assert(!cam_cc_native_probe(&model_device));
+	assert(crm_admissions == 1 && cam_cc_power.primary_error == -EUCLEAN);
+	assert(!configured_plls && !registered_clocks && !reset_published);
+	assert(!cam_cc_native.ready && resources && cam_cc_native.probe_pm_held);
+	assert(cam_cc_native.proxy_votes == 7);
+	defaults(true); crm_active = true; crm_admission_result = 0;
+	assert(!cam_cc_native_probe(&model_device));
+	crm_sync_result = -ETIMEDOUT;
+	cam_cc_native_sync_state(&model_device.dev);
+	assert(crm_syncs == 1 && !genpd_syncs && !cam_cc_native.synchronized);
+	assert(cam_cc_power.primary_error == -ETIMEDOUT && resources);
+	assert(cam_cc_native.proxy_votes == 7 && cam_cc_native.probe_pm_held);
+	int old_steps = steps;
+	cam_cc_native_sync_state(&model_device.dev);
+	assert(steps == old_steps && crm_syncs == 1);
+	puts("CAMCC CRM callers: admission, asynchronous quarantine and inherited-vote synchronization precede domain/proxy/PM release; failed sync retains ownership");
+}
+
 int main(void)
 {
 #ifdef CAMCC_GATE_ORDER_BEFORE
@@ -721,6 +790,7 @@ int main(void)
 	normal_lifecycle(); probe_failures(); probe_observations(); reset_and_lookup(); disable_postconditions(); handoff_failures();
 	bootstrap_order_control();
 	crm_passive_handoff();
+	crm_registration_lifecycle();
 #endif
 	return 0;
 }

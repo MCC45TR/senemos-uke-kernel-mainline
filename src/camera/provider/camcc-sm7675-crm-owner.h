@@ -5,6 +5,15 @@
 
 static struct cam_cc_crm_transport cam_cc_crm_owner_transport;
 
+/* IRQ-safe quarantine only: never release a clock, rail or mapping here. */
+static void cam_cc_crm_owner_fault(void *context, int error)
+{
+	if (context != &cam_cc_power || READ_ONCE(cam_cc_power.fault))
+		return;
+	WRITE_ONCE(cam_cc_power.primary_error, error < 0 ? error : -EIO);
+	WRITE_ONCE(cam_cc_power.fault, -EIO);
+}
+
 static int cam_cc_crm_owner_fail(int error)
 {
 	struct cam_cc_crm_transport *transport = &cam_cc_crm_owner_transport;
@@ -19,7 +28,9 @@ static int cam_cc_crm_owner_fail(int error)
 	/* No failed owner may reach resource_put or power-off with a live IRQ. */
 	if (!cam_cc_power.transport_context)
 		cam_cc_power.transport_context = transport;
-	return cam_cc_power_fail(error, 0, 0);
+	if (!READ_ONCE(cam_cc_power.fault))
+		cam_cc_power_fail(error, 0, 0);
+	return -EIO;
 }
 
 /* Called once by a future fully admitted CRM path, before CCF publication.
@@ -46,6 +57,7 @@ static int __maybe_unused cam_cc_crm_owner_transport_bind(void)
 	ret = cam_cc_power_access(&cam_cc_power, 0);
 	if (ret)
 		return ret;
+	transport->failed = cam_cc_crm_owner_fault;
 	ret = cam_cc_crm_transport_init(transport, cam_cc_power.dev,
 			cam_cc_crm_guard.base, cam_cc_crmc_resource.irq,
 			cam_cc_crm_pm_access, &cam_cc_power);

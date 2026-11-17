@@ -107,7 +107,7 @@ static int cam_cc_crm_ccf_determine(struct clk_hw *hw, struct clk_rate_request *
 	return 0;
 }
 
-static int __maybe_unused cam_cc_crm_ccf_attach(struct cam_cc_crm_clock clients[8])
+static int cam_cc_crm_ccf_preflight(struct cam_cc_crm_clock clients[8])
 {
 	struct cam_cc_clock *clock;
 	u32 i, value, level, parent;
@@ -143,6 +143,17 @@ static int __maybe_unused cam_cc_crm_ccf_attach(struct cam_cc_crm_clock clients[
 				return -EINVAL;
 		}
 	}
+	return 0;
+}
+
+static int __maybe_unused cam_cc_crm_ccf_attach(struct cam_cc_crm_clock clients[8])
+{
+	struct cam_cc_clock *clock;
+	u32 i;
+	int ret = cam_cc_crm_ccf_preflight(clients);
+
+	if (ret)
+		return ret;
 	for (i = 0; i < ARRAY_SIZE(cam_cc_crm_rcgs); i++) {
 		clock = cam_cc_clock_find(&cam_cc_crm_rcgs[i].rcg->clkr.hw);
 		clock->crm = &clients[i];

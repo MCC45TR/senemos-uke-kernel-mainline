@@ -82,3 +82,42 @@ A partial failure stays latched and requires the caller to retain power/proxy.
 No CCF software rate is inferred from the firmware's aggregate rate. This
 adapter still needs the complete production admission and sync-state caller;
 these source checks do not activate firmware CRM or a sensor.
+
+## Complete admission candidate, 17 November
+
+The next source candidate calls the composed admission path from the normal
+probe only after the existing firmware-mode observation refuses direct clock
+programming. It requires the original powered resources, all maximum supply
+proxy votes and the unpublished catalog. The eight ROM tables must fit the
+existing characterized voltage map. All30 passive clocks and eight software
+voters are validated before the permanent IRQ is enabled. Primary CRM startup
+votes are read separately from the CRMC ROM, decoded, then checked again under
+the permanent transport lock before callbacks are attached. Observed changes
+refuse admission; two reads do not establish an atomic firmware transaction.
+
+The maximum inherited AP0 votes remain floors until successful CCF boot-hold
+synchronization. Only then are the floors withdrawn, before genpd, voltage
+proxy and probe-PM references can be released. Partial withdrawal errors stay
+latched. A first transport fault also quarantines the controller immediately,
+including an unexpected IRQ without a waiting CCF caller. Quarantine retains
+rails, mappings and the permanent IRQ; no live retry or fault clearing is added.
+
+The runtime-resume candidate checks the actual ROM words captured during
+admission while the IRQ remains quiesced, refreshes passive observations, then
+rearms the transport. Unknown state or a failed refresh retains power. Physical
+ROM content, voltage-table coverage and runtime/suspend behavior still require
+the matched full kernel on the tablet; the qualified host model is not that
+evidence.
+
+Source22 adds four compiler modes for the actual constructor with framework
+boundaries modeled, four modes for the actual registration/sync callers and
+real ARM64 code generation for the complete provider and forced admission,
+resume and sync functions. Existing owner, ROM, startup, floor and historical
+native tests remain. Exact whole-file preimages, postimages and an inverse
+patch preserve the prepared provider's s2idle integration; the Git provider
+alone remains insufficient to reconstruct that cumulative source.
+
+This is a source qualification candidate. No sensor is enabled by these
+fixtures. The running kernel5 still correctly refuses at `crm-admission -95`;
+front GENI, OV08D10, CSIPHY4, CAMSS, completed RAW buffers, fitted read-only
+calibration and the rear camera/focus remain open.
