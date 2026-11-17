@@ -55,7 +55,7 @@ release its own vote only after successful power-off. A failure must preserve
 the resources needed for safe recovery. Idle camera ownership must not block
 the other consumers' valid operating ranges.
 
-The [source28 supply lifecycle](CAMSS-PHY-POWER734.md) prepares this change;
+The [native supply lifecycle](CAMSS-PHY-POWER734.md) prepares this change;
 its COPR qualification and the built-in runtime profile remain separate gates.
 
 The selected PHY0 compatible is `qcom,csiphy-v2.2.1-n16t`; PHY1–4 select ordinary
@@ -70,6 +70,14 @@ display route. It does not yet declare `qnm_camnoc_hf`. The Uke GPL
 voters. Their correct ownership, QoS and BCM route must be resolved before the
 aggregate CAMSS `hf_mnoc` dependency can be supplied. The static CPAS
 `cam_ahb` path alone does not complete that contract.
+
+Linux 7.3.4's `qcom_icc_rpmh_probe()` calls
+`qcom_icc_rpmh_configure_qos()` before publishing the provider. That function
+programs every declared node's QoS box. The existing cumulative
+`qos_required` extension makes these failures fatal; it does not postpone
+programming until camera demand. Simply adding the OEM CAMNOC HF QoS ports
+0xa8000/0xa9000 would therefore introduce early register writes. A camera
+route must establish ownership and error handling for those writes first.
 
 The sensor address, fitted identity, lane mapping and complete board supply
 lifecycle remain unknown. The generic front DT client and an adjacent-board

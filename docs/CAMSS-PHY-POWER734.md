@@ -1,7 +1,9 @@
 # Demand-scoped SM7675 PHY supplies
 
-17 November 2026. Source28 prepares native consumer voltage requests for the
-Uke receive path. Qualification is pending. Accepted full8/B remains installed;
+17 November 2026. Source29 prepares native consumer voltage requests for the
+Uke receive path. Qualification is pending after correcting a fixture counter
+that collided with the standard C library. The power candidate is unchanged.
+Accepted full8/B remains installed;
 the sensor, bus and CAMSS graph remain inactive.
 
 The selected device tree limits CSI L2B to 880000–912000 microvolts, while the

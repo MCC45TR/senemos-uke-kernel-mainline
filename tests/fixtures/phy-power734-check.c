@@ -46,7 +46,7 @@ static struct device dev;
 static struct camss_resources resources;
 static struct camss camss;
 static struct csiphy_device phy;
-static unsigned calls,inject,operations,gets,puts,allocs,frees,pm,clocks,irq;
+static unsigned calls,inject,operations,model_get_refs,model_put_refs,allocs,frees,pm,clocks,irq;
 static bool strict,board,trace,conflict,fail_alloc,fail_action,fail_disable_provider;
 static void (*action)(void *);
 static void *action_data;
@@ -64,8 +64,8 @@ static void mutex_lock(struct mutex *m){assert(!m->held);m->held=true;}
 static void mutex_unlock(struct mutex *m){assert(m->held);m->held=false;}
 static void *kzalloc(size_t n,int flags){assert(!flags);if(fail_alloc)return NULL;allocs++;return calloc(1,n);}
 static void kfree(void *p){assert(p);frees++;free(p);}
-static struct device *get_device(struct device *d){assert(d==&dev);gets++;return d;}
-static void put_device(struct device *d){assert(d==&dev && gets>puts);puts++;}
+static struct device *get_device(struct device *d){assert(d==&dev);model_get_refs++;return d;}
+static void put_device(struct device *d){assert(d==&dev && model_get_refs>model_put_refs);model_put_refs++;}
 static struct regulator *regulator_get(struct device *d,const char *s)
 {
 	assert(d==&dev);int id=!strcmp(s,"vdd-csiphy-1p2");
@@ -124,7 +124,7 @@ static int regulator_bulk_disable(int n,struct regulator_bulk_data *s){assert(n=
 static void setup(unsigned ver)
 {
 	memset(rails,0,sizeof(rails));for(int i=0;i<2;i++)rails[i].id=i;
-	calls=inject=operations=gets=puts=allocs=frees=pm=clocks=irq=0;
+	calls=inject=operations=model_get_refs=model_put_refs=allocs=frees=pm=clocks=irq=0;
 	board=true;strict=true;conflict=fail_alloc=fail_action=fail_disable_provider=false;
 	cam_cc_power.fault=0;cam_cc_native.ready=true;cam_cc_native.synchronized=false;
 	node=(struct device_node){0};driver=(struct device_driver){NULL,true};dev=(struct device){&node,&driver};
@@ -136,7 +136,7 @@ static void create(void)
 {
 	assert(csiphy_sm7675_owner_check(&camss)==0);
 	assert(csiphy_sm7675_power_init(&phy,&policy)==0);
-	assert(phy.uke_power && gets==1&&rails[0].refs==1&&rails[1].refs==1);
+	assert(phy.uke_power && model_get_refs==1&&rails[0].refs==1&&rails[1].refs==1);
 	calls=operations=0;
 }
 /* Tests simulate reboot only after verifying that production retained ownership. */
@@ -154,7 +154,7 @@ static void healthy(void)
 	assert(!rails[0].min&&!rails[1].min&&!rails[0].load&&!rails[1].load);
 	n=operations;assert(csiphy_set_power(&phy.subdev,0)==0&&operations==n);
 	action(action_data);action_data=NULL;
-	assert(puts==gets&&frees==allocs&&!rails[0].refs&&!rails[1].refs);
+	assert(model_put_refs==model_get_refs&&frees==allocs&&!rails[0].refs&&!rails[1].refs);
 }
 static unsigned fault_cases(void)
 {
@@ -170,7 +170,7 @@ static unsigned fault_cases(void)
 		if(phy.uke_power->fault){
 			assert(!irq);unsigned n=operations;
 			assert(csiphy_set_power(&phy.subdev,0)==ret&&csiphy_set_power(&phy.subdev,1)==ret&&operations==n);
-			action(action_data);assert(frees==0&&puts==0&&rails[0].refs==1&&rails[1].refs==1);
+			action(action_data);assert(frees==0&&model_put_refs==0&&rails[0].refs==1&&rails[1].refs==1);
 		}else{assert(!pm&&!rails[0].enabled&&!rails[1].enabled);action(action_data);action_data=NULL;assert(frees==1);}
 		reboot_model();count++;
 	}
@@ -194,15 +194,15 @@ static void admission(void)
 	cam_cc_native.ready=false;assert(csiphy_sm7675_owner_check(&camss)==-EPROBE_DEFER);
 	cam_cc_native.ready=true;assert(!csiphy_sm7675_owner_check(&camss));
 	cam_cc_power.fault=-EIO;assert(actual_qcom_sm7675_camcc_status()==-EIO);cam_cc_native.ready=false;
-	assert(actual_qcom_sm7675_camcc_status()==-EIO);assert(!gets&&!allocs&&!pm);
+	assert(actual_qcom_sm7675_camcc_status()==-EIO);assert(!model_get_refs&&!allocs&&!pm);
 	for(unsigned at=1;at<=2;at++){
 		setup(CAMSS_7675);inject=at;assert(csiphy_sm7675_power_init(&phy,&policy)==-EPROBE_DEFER);
-		assert(gets==puts&&allocs==frees&&!rails[0].refs&&!rails[1].refs);
+		assert(model_get_refs==model_put_refs&&allocs==frees&&!rails[0].refs&&!rails[1].refs);
 	}
-	setup(CAMSS_7675);fail_alloc=true;assert(csiphy_sm7675_power_init(&phy,&policy)==-ENOMEM&&!gets);
+	setup(CAMSS_7675);fail_alloc=true;assert(csiphy_sm7675_power_init(&phy,&policy)==-ENOMEM&&!model_get_refs);
 	setup(CAMSS_7675);fail_action=true;assert(csiphy_sm7675_power_init(&phy,&policy)==-ENOMEM);
-	assert(gets==puts&&allocs==frees&&!rails[0].refs&&!rails[1].refs);
-	setup(CAMSS_7675);phy.num_supplies=1;assert(csiphy_sm7675_power_init(&phy,&policy)==-EINVAL&&!gets);
+	assert(model_get_refs==model_put_refs&&allocs==frees&&!rails[0].refs&&!rails[1].refs);
+	setup(CAMSS_7675);phy.num_supplies=1;assert(csiphy_sm7675_power_init(&phy,&policy)==-EINVAL&&!model_get_refs);
 }
 static void legacy(void)
 {
@@ -212,7 +212,7 @@ static void legacy(void)
 		for(int i=0;i<2;i++)s[i]=(struct regulator_bulk_data){.consumer=&rails[i]};phy.supplies=s;
 		inject=at;printf("case %u %u\n",ver,at);int ret=csiphy_set_power(&phy.subdev,1);printf("result %d\n",ret);
 		if(!ret)assert(!csiphy_set_power(&phy.subdev,0));
-		assert(!pm&&!clocks&&!irq&&!gets&&!allocs);
+		assert(!pm&&!clocks&&!irq&&!model_get_refs&&!allocs);
 	}
 	trace=false;
 }

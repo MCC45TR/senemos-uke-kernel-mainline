@@ -16,8 +16,10 @@ documented sensor probe options, rather than a measured Uke address.
 Identification selects page zero through byte register 0xfd and reads bytes
 0x00/0x01. The independently reviewed Intel and Rockchip GPL drivers identify
 OV08D10 as 0x5608 at the same byte registers. The MediaTek driver's named sensor
-ID macro is external to the reviewed module tree; its exact expansion has not
-been established here. No source comparison was used as a physical sensor ID.
+ID macro comes from the separate GPL device-module repository:
+[`kd_imgsensor.h` at 3c4ccd07](https://github.com/MiCode/MTK_kernel_device_modules/blob/3c4ccd07d5624879555ec710c11bb8818e5cb5c6/drivers/misc/mediatek/imgsensor/inc/kd_imgsensor.h#L648)
+defines `DUCHAMPOV08D10ULTRA_SENSOR_ID` as 0x5608. This closes the MiCode
+protocol comparison across both repositories; it is not a physical Uke ID.
 
 Duchamp's power table includes board GPIO rails, 1.8 V digital power and a
 24 MHz clock. Uke's selected front description instead declares 19.2 MHz and
