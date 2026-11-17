@@ -1,0 +1,141 @@
+--- a/drivers/clk/qcom/provider/camcc-sm7675-crm-native.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-crm-native.h
+@@ -19,6 +19,19 @@
+ static bool cam_cc_crm_native_started;
+ static bool cam_cc_crm_native_ready;
+ 
++/* The original catalog identifies PLL3-7 as firmware CRM parents. */
++static bool cam_cc_crm_native_firmware_pll(struct clk_alpha_pll *pll)
++{
++	u32 i;
++
++	for (i = 0; i < ARRAY_SIZE(cam_cc_crm_passive); i++) {
++		if (cam_cc_crm_passive[i].kind == CAM_CC_CRM_PLL &&
++		    cam_cc_crm_passive[i].clock == &pll->clkr)
++			return true;
++	}
++	return false;
++}
++
+ static int cam_cc_crm_native_primary_read(void *context, u32 offset, u32 *value)
+ {
+ 	int ret;
+@@ -129,6 +142,16 @@
+ 	if (ret)
+ 		return ret;
+ 	cam_cc_crm_native_started = true;
++	/* OEM configures local PLL parents before CRMC populates RCG tables.
++	 * An L=0 ROM entry reads that current parent. Keep the five firmware
++	 * PLLs untouched and use the existing guarded native programming path.
++	 */
++	cam_cc_native_probe_phase("crm-native-plls");
++	ret = cam_cc_crm_passive_catalog_preflight();
++	if (!ret)
++		ret = cam_cc_native_plls_configure_except(cam_cc_crm_native_firmware_pll);
++	if (ret)
++		return ret;
+ 	cam_cc_native_probe_phase("crm-rom");
+ 	for (client = 0; client < 8; client++) {
+ 		ret = cam_cc_crm_rom_load(client, cam_cc_crm_native_rom_read,
+@@ -241,4 +264,14 @@
+ 	return ret ? cam_cc_crm_owner_fail(ret) : 0;
+ }
+ 
++/* The fully admitted firmware path already configured its local parents. */
++static int cam_cc_crm_native_plls_finalize(void)
++{
++	if (!cam_cc_crm_guard.firmware_enabled)
++		return cam_cc_native_plls_configure();
++	if (!cam_cc_crm_native_ready)
++		return -EINVAL;
++	return cam_cc_power_access(&cam_cc_power, 0);
++}
++
+ #endif /* UKE_CAMCC_SM7675_CRM_NATIVE_H */
+--- a/drivers/clk/qcom/provider/camcc-sm7675-crm-passive.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-crm-passive.h
+@@ -206,14 +206,13 @@
+ 	return ret ? ret : READ_ONCE(cam_cc_crm_passive_cache[i].enabled);
+ }
+ 
+-static int cam_cc_crm_passive_preflight(void)
++static int cam_cc_crm_passive_catalog_preflight(void)
+ {
+ 	struct cam_cc_clock *clock;
+ 	struct clk_alpha_pll *pll;
+ 	struct clk_alpha_pll_postdiv *divider;
+ 	struct clk_branch *branch;
+ 	u32 i, n;
+-	int ret;
+ 
+ 	if (!cam_cc_clocks_ready || cam_cc_crm_passive_attached ||
+ 	    cam_cc_power.publication_started)
+@@ -250,6 +249,16 @@
+ 			break;
+ 		}
+ 	}
++	return 0;
++}
++
++static int cam_cc_crm_passive_preflight(void)
++{
++	u32 i;
++	int ret = cam_cc_crm_passive_catalog_preflight();
++
++	if (ret)
++		return ret;
+ 	/* Check the entire topology before reading any object. No catalog mutation
+ 	 * occurs until every powered snapshot and all eight RCG preflights succeed.
+ 	 */
+--- a/drivers/clk/qcom/provider/camcc-sm7675-handoff.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-handoff.h
+@@ -264,7 +264,7 @@
+ 	return false;
+ }
+ 
+-static int cam_cc_native_plls_configure(void)
++static int cam_cc_native_plls_configure_except(bool (*firmware_pll)(struct clk_alpha_pll *))
+ {
+ 	size_t i;
+ 	u32 mode, opmode, value;
+@@ -277,7 +277,8 @@
+ 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_plls); i++) {
+ 		struct clk_alpha_pll *pll = cam_cc_sm7675_plls[i];
+ 
+-		if (cam_cc_native_pll_passive(pll))
++		if (cam_cc_native_pll_passive(pll) ||
++		    (firmware_pll && firmware_pll(pll)))
+ 			continue;
+ 		if (!pll->config || !pll->regs)
+ 			return -EINVAL;
+@@ -291,7 +292,8 @@
+ 	for (i = 0; i < ARRAY_SIZE(cam_cc_sm7675_plls); i++) {
+ 		struct clk_alpha_pll *pll = cam_cc_sm7675_plls[i];
+ 
+-		if (cam_cc_native_pll_passive(pll))
++		if (cam_cc_native_pll_passive(pll) ||
++		    (firmware_pll && firmware_pll(pll)))
+ 			continue;
+ 		ret = regmap_read(cam_cc_power.map, pll->offset, &mode);
+ 		if (ret)
+@@ -319,4 +321,9 @@
+ 	return 0;
+ }
+ 
++static int cam_cc_native_plls_configure(void)
++{
++	return cam_cc_native_plls_configure_except(NULL);
++}
++
+ #endif /* UKE_CAMCC_SM7675_HANDOFF_H */
+--- a/drivers/clk/qcom/provider/camcc-sm7675-registration.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-registration.h
+@@ -272,7 +272,7 @@
+ 	if (ret)
+ 		return cam_cc_native_quarantine(dev, ret);
+ 	cam_cc_native_probe_phase("pll-configuration");
+-	ret = cam_cc_native_plls_configure();
++	ret = cam_cc_crm_native_plls_finalize();
+ 	if (ret)
+ 		return cam_cc_native_quarantine(dev, ret);
+ 	cam_cc_native_probe_phase("begin-publication");
