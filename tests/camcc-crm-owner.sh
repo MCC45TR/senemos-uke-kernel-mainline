@@ -31,12 +31,12 @@ for compiler in gcc clang;do
  done
 done
 cp "$work/camcc-sm7675-crm-owner.h" "$work/owner-original.h"
-for mutant in drop-fault-owner drop-irq-mask;do
+for mutant in drop-fault-owner drop-irq-mask wrong-register-map;do
  node - "$work/owner-original.h" "$work/camcc-sm7675-crm-owner.h" "$mutant" <<'JS'
 const fs=require('fs'),[src,out,kind]=process.argv.slice(2),s=fs.readFileSync(src,'utf8');
-const needle=kind==='drop-fault-owner'?'cam_cc_power.transport_context = transport;':'cam_cc_crm_transport_fail(transport, error);';
+const needle=kind==='drop-fault-owner'?'cam_cc_power.transport_context = transport;':kind==='drop-irq-mask'?'cam_cc_crm_transport_fail(transport, error);':'cam_cc_crm_guard.base, cam_cc_crmc_resource.irq,';
 if(s.split(needle).length!==2)throw Error('Exact owner mutation anchor');
-fs.writeFileSync(out,s.replace(needle,'(void)error;'));
+fs.writeFileSync(out,s.replace(needle,kind==='wrong-register-map'?'cam_cc_crmc_resource.base, cam_cc_crmc_resource.irq,':'(void)error;'));
 JS
  gcc -std=gnu11 -O1 -g -UNDEBUG -Wall -Wextra -Werror -I"$work" "$work/check.c" -o "$work/mutant"
  status=0

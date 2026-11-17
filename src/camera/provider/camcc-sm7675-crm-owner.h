@@ -35,6 +35,7 @@ static int __maybe_unused cam_cc_crm_owner_transport_bind(void)
 	    !cam_cc_crm_guard.owned || !cam_cc_crm_guard.base ||
 	    !cam_cc_crm_guard.checked || !cam_cc_crm_guard.firmware_enabled ||
 	    !cam_cc_crmc_resource.owned || !cam_cc_crmc_resource.base ||
+	    cam_cc_crmc_resource.base == cam_cc_crm_guard.base ||
 	    cam_cc_crmc_resource.irq <= 0 ||
 	    cam_cc_crmc_resource.dev != cam_cc_power.dev || !cam_cc_power.dev)
 		return -EINVAL;
@@ -46,7 +47,7 @@ static int __maybe_unused cam_cc_crm_owner_transport_bind(void)
 	if (ret)
 		return ret;
 	ret = cam_cc_crm_transport_init(transport, cam_cc_power.dev,
-			cam_cc_crmc_resource.base, cam_cc_crmc_resource.irq,
+			cam_cc_crm_guard.base, cam_cc_crmc_resource.irq,
 			cam_cc_crm_pm_access, &cam_cc_power);
 	if (ret)
 		return cam_cc_crm_owner_fail(ret);

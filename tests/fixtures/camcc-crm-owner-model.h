@@ -2,6 +2,8 @@
 /* Included into the original transport fixture after its model helpers. */
 #define __maybe_unused __attribute__((unused))
 static struct device owner_device;
+/* AP0 command registers and CRMC ROM are distinct OEM MMIO resources. */
+static u32 owner_crmc_memory[0x2000/4];
 static struct {
     struct device *dev;
     void *transport_context;
@@ -36,13 +38,13 @@ static void reset_owner(void)
     cam_cc_power.dev=&owner_device;
     cam_cc_crm_guard.owned=cam_cc_crm_guard.checked=cam_cc_crm_guard.firmware_enabled=true;
     cam_cc_crm_guard.base=memory;
-    cam_cc_crmc_resource.owned=true;cam_cc_crmc_resource.base=memory;
+    cam_cc_crmc_resource.owned=true;cam_cc_crmc_resource.base=owner_crmc_memory;
     cam_cc_crmc_resource.dev=&owner_device;cam_cc_crmc_resource.irq=121;
     cam_cc_clocks_ready=true;mutate_on_access=0;
 }
 static void owner_checks(void)
 {
-    for(unsigned scenario=0;scenario<12;scenario++){
+    for(unsigned scenario=0;scenario<14;scenario++){
         reset_owner();
         switch(scenario){
         case 0:cam_cc_clocks_ready=false;break;
@@ -57,6 +59,8 @@ static void owner_checks(void)
         case 9:cam_cc_power.transport_context=memory;break;
         case 10:cam_cc_power.before_suspend=cam_cc_crm_pm_idle;break;
         case 11:cam_cc_power.after_resume=cam_cc_crm_pm_resume;break;
+        case 12:cam_cc_crm_guard.base=NULL;break;
+        case 13:cam_cc_crmc_resource.base=memory;break;
         }
         assert(cam_cc_crm_owner_transport_bind()<0 && !reads && !writes && !registered);
     }
@@ -66,6 +70,8 @@ static void owner_checks(void)
     assert(cam_cc_crm_owner_transport_bind()==-EIO && !reads && !writes && !registered);
     reset_owner();
     assert(cam_cc_crm_owner_transport_bind()==0 && enables==8 && votes==0);
+    assert(cam_cc_crm_owner_transport.base==cam_cc_crm_guard.base);
+    assert(cam_cc_crm_owner_transport.base!=cam_cc_crmc_resource.base);
     assert(cam_cc_power.transport_context==&cam_cc_crm_owner_transport);
     assert(cam_cc_power.before_suspend==cam_cc_crm_pm_idle && cam_cc_power.after_resume==cam_cc_crm_pm_resume);
     unsigned before=writes;

@@ -61,3 +61,24 @@ This detects observed changes; it does not prove an atomic firmware ownership
 transfer. No votes are adopted or withdrawn and production probe is unchanged.
 The fixture injects each of72 read failures,24 vote changes and24 pending
 status positions, plus two semantic mutants, in four native compiler modes.
+
+The17 November activation review found a source-composition error before any
+probe activation: AP SWDRV0 registers use the primary CRM window, while the
+frequency ROM uses the separate CRMC window. Exact OEM crm.c assigns each
+software driver's base to crm->base and maps the CRMC manager separately.
+The constructor now passes the primary owned CRM mapping to the transport.
+The owner fixture uses two distinct address windows and rejects a wrong-map
+mutant. Earlier owner19/20 checks shared a single modeled window and did not
+cover this distinction; their other results do not establish hardware admission.
+No wrong-window access was performed on the tablet.
+
+The inherited-vote adapter records Linux software requests separately from the
+maximum checked boot vote for each of the eight AP0 clients. Until provider
+synchronization, a new request cannot withdraw that minimum. The permanent
+caller must hold the maximum admitted voltage proxy and controller power.
+Synchronization serializes with consumer callbacks, withdraws only minima
+above the latest software request and performs no redundant IRQ transaction.
+A partial failure stays latched and requires the caller to retain power/proxy.
+No CCF software rate is inferred from the firmware's aggregate rate. This
+adapter still needs the complete production admission and sync-state caller;
+these source checks do not activate firmware CRM or a sensor.

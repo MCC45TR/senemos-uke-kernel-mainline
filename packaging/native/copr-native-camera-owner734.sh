@@ -21,7 +21,7 @@ rpm2cpio "$work/parent.src.rpm" | (cd "$work/parent";cpio -idm --quiet --no-abso
 bash "$owner/packaging/native/fold-native-camera-owner734.sh" "$work/parent/uke-kernel-migration-check.spec" "$work/new.spec"
 cp -a "$work/parent/." "$result/"
 install -m644 "$work/new.spec" "$result/uke-kernel-migration-check.spec"
-for path in src/camera/camcc-sm7675.c src/camera/provider/{apply-crm-owner734.sh,camcc-sm7675-crm-owner.h,camcc-sm7675-crm-rom.h,camcc-sm7675-crm-startup.h,camcc-sm7675-crm-core.h,camcc-sm7675-crm-lut.h,camcc-sm7675-crm-passive.h,camcc-sm7675-crm-pm.h,camcc-sm7675-crm-transport.h} tests/{native-camera-owner734.sh,camcc-crm-owner.sh,camcc-crm-rom.sh,camcc-crm-startup.sh} tests/fixtures/{camcc-crm-owner-model.h,camera-crm-transport-check.c,camcc-crm-rom-check.c,camcc-crm-startup-check.c};do
+for path in src/camera/camcc-sm7675.c src/camera/provider/{apply-crm-owner734.sh,camcc-sm7675-crm-owner.h,camcc-sm7675-crm-rom.h,camcc-sm7675-crm-startup.h,camcc-sm7675-crm-floor.h,camcc-sm7675-crm-core.h,camcc-sm7675-crm-lut.h,camcc-sm7675-crm-passive.h,camcc-sm7675-crm-pm.h,camcc-sm7675-crm-transport.h} tests/{native-camera-owner734.sh,camcc-crm-owner.sh,camcc-crm-rom.sh,camcc-crm-startup.sh,camcc-crm-floor.sh} tests/fixtures/{camcc-crm-owner-model.h,camera-crm-transport-check.c,camcc-crm-rom-check.c,camcc-crm-startup-check.c,camcc-crm-floor-check.c};do
  [[ -f $owner/$path && ! -L $owner/$path ]]
  install -Dm644 "$owner/$path" "$work/camera-owner734/$path"
 done
