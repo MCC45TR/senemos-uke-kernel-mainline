@@ -1,10 +1,13 @@
 # Late front EEPROM gate in the cumulative kernel
 
-17 November 2026. Full10 is prepared from the exact successful full9 source
-RPM and signed source33 qualification. It has not yet built or booted. Full9's
+17 November 2026. Full10/COPR11342132 passed its full build and signed-package
+checks, was delivered through DNF, and booted on slot A. Native health accepted
+7.3.4-10-unstable with no pending switch or failed systemd units. The preserved
+full8/B raw partition and four saved preferences remain unchanged. Full9's
 normal boot remained at the POCO logo; the tablet was recovered to accepted8/B
-without rewriting either boot partition. The default-selector RPM was returned
-to 8 through DNF. Native monitoring is active again, with the failed 9 record,
+without rewriting either boot partition. The recovery first returned the
+default-selector RPM to 8 through DNF; the subsequent normal DNF10 transaction
+selected the current full10. Native monitoring is active, with the failed 9 record,
 automatic staging and all persistent preferences retained.
 
 The runtime delta is the source33-qualified move of the unchanged read-only
@@ -32,9 +35,19 @@ EEPROM contents. Four compiler/sanitizer modes must admit its 8 KiB read-only
 profile, preserve the input and disabled sensor, and repeat without changing
 bytes. This fixture is never installed as a runtime DT.
 
-These checks do not establish physical GENI/EEPROM binding or a camera frame.
-The full Image, signed RPMs, normal DNF transition, preserved8/B recovery,
-actual boot and scoped read-only device lifecycle still require verification.
+The native GENI8 adapter and at24 read-only NVMEM provider now bind on the
+tablet. Two bounded 8192-byte reads were byte-identical and contained programmed
+data; both the adapter and EEPROM returned to runtime suspend after each read.
+The NVMEM file is root-only mode 0400. Fitted bytes remain in private root-only
+files and are absent from source, COPR inputs and this report.
+
+GPI aborted-transfer errors occurred during initial access and read retries.
+The complete reads succeeded, but the transient cause is not established;
+binding and repeatability are not evidence of an error-free bus or a physical
+voltage measurement. The controller remains ready, firmware-managed and idle.
+See the [bounded device result](../manifests/camera-full73410-device-20261117.json).
+
+There is still no sensor/capture graph or completed camera frame.
 Fitted sensor identity/address, complete sensor power and lane wiring,
 interconnect ownership, aggregate CAMSS, private calibration, rear focus and
 both cameras' full capabilities remain open.
