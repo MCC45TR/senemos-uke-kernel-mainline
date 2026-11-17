@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "source_check_release": 32,
+  "parent_build": 11340606,
+  "parent_source_sha256": "622e3d20adde5908c0be037cffb77a175505d504751d68572d31257c73e483d5",
+  "parent_spec_sha256": "b46df1d9102bc237b028c66b03ccf0a41021c01555dd7f27f0d7d564102225c4",
+  "retained_parent_inputs": 27,
+  "upstream_kernel_commit": "7595a62d45ee1a2297eafa5f2ef5d0a45142d84d",
+  "candidate": "Call common CSID configure_stream for every start and stop; retain existing control and link refusals",
+  "donor": {
+    "repository": "CFM880/nabu-camera",
+    "commit": "3f341b7d1249536067693ec28cb44f52a7795250",
+    "author": "Cheng Fangming (CFM880)",
+    "base_kernel": "5181e1358ddd6ea8028e841d928942373e6aebc8",
+    "callback_identical": true
+  },
+  "upstream_corroboration": {
+    "author": "Bryan O'Donoghue",
+    "url": "https://lists.openwall.net/linux-kernel/2026/10/05/1531",
+    "message_id": "20261005-linux-mainline-7-2-sm8650-hdk-rfc-0-v1-15-ed985aefd611@kernel.org",
+    "status": "proposal; shared stream callback behavior only"
+  },
+  "oracle_sources": [
+    {
+      "name": "cfm-camss-csid.c",
+      "url": "https://raw.githubusercontent.com/CFM880/nabu-camera/3f341b7d1249536067693ec28cb44f52a7795250/kernel-overlay/drivers/media/platform/qcom/camss/camss-csid.c",
+      "sha256": "477358b56c7b050def587c75da1c2c6f098a980bddb443de9132a8d5eca10d90",
+      "license": "GPL-2.0-only"
+    }
+  ],
+  "scope": {
+    "board_values_imported": false,
+    "regulator_always_on_imported": false,
+    "proprietary_tuning_imported": false,
+    "userspace_fork_imported": false
+  },
+  "native_qualification_pending": true,
+  "graph_activated": false,
+  "full_revision_reserved": false,
+  "physical_camera_accepted": false
+}
