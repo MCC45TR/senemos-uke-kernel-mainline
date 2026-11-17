@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "source_check_release": 23,
+  "parent_build": 11339196,
+  "parent_source_sha256": "5ffb8270300020a4f09ac91063d6c6a7d0e65a738778d7a1ce5c1543baeab9b9",
+  "parent_spec_sha256": "0cf5fbeba9551ff0ccc1baea4ff8944ece8e95cee3135bb56e185b43ce9c91e3",
+  "parent_input_count": 21,
+  "observed_runtime": "7.3.4-6-unstable",
+  "observed_phase": "crm-rom",
+  "observed_errno": -22,
+  "runtime_delta": "Bounded error-only report of previously cached ROM words and resolved frequencies; unchanged refusal and quarantine",
+  "maximum_lines_per_error": 23,
+  "additional_hardware_reads": 0,
+  "additional_hardware_writes": 0,
+  "firmware_admission_preserved": true,
+  "native_qualification_pending": true,
+  "full_revision_reserved": false,
+  "physical_camera_accepted": false
+}

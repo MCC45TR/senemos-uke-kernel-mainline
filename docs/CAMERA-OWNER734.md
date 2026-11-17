@@ -169,3 +169,27 @@ This prepares a runtime candidate, not camera acceptance. The full kernel,
 signed RPM/DNF transition, inactive-slot readback, actual boot, firmware ROM
 admission and resource release still need qualification. The sensor graph,
 RAW buffers, private read-only calibration and rear focus remain open.
+
+## Full6 runtime observation and bounded ROM diagnostics
+
+On 17 November, full6 booted and received native boot-health acceptance in
+slot A, with the accepted full5 recovery in B. CAMCC reached the new ROM
+admission path, then quarantined with `-EINVAL` at `crm-rom`. The observed
+transport gate readback was one; the maximum supply proxies and interface
+remained held. No sensor or media node was published. Boot-health acceptance
+does not establish camera operation.
+
+The existing error record cannot distinguish a ROM reader/parent failure from
+a frequency that the characterized voltage map rejects. Source23 adds an
+error-only report identifying the failed client and load, catalog or voltage
+stage. It prints at most 23 lines from words and rates already cached by the
+admitted probe. It performs no additional hardware access, changes no votes,
+preserves the original errno and retains quarantine. Invalid cached counts
+stop the report before traversal. No sensor, calibration or firmware data is
+read for this diagnostic.
+
+The candidate keeps the complete native22 inputs and recipe. Its additional
+checks exercise the production reporter in four compiler/sanitizer modes,
+rerun the actual admission fixture with the changed header, and compile the
+complete provider and a forced reporter adapter for ARM64. Source, full kernel,
+signed delivery and the next physical ROM observation remain separate gates.

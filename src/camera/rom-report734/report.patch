@@ -1,0 +1,31 @@
+--- a/drivers/clk/qcom/provider/camcc-sm7675-crm-native.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-crm-native.h
+@@ -14,6 +14,8 @@
+ 	u32 values[14];
+ 	u32 count;
+ } cam_cc_crm_native_rom_words[8];
++#include "rom-report.h"
++
+ static bool cam_cc_crm_native_started;
+ static bool cam_cc_crm_native_ready;
+ 
+@@ -132,16 +134,16 @@
+ 		ret = cam_cc_crm_rom_load(client, cam_cc_crm_native_rom_read,
+ 					&client, &cam_cc_crm_native_tables[client]);
+ 		if (ret)
+-			return ret;
++			return cam_cc_crm_rom_report(client, "load", 0, ret);
+ 		clock = cam_cc_clock_find(&cam_cc_crm_rcgs[client].rcg->clkr.hw);
+ 		if (!clock)
+-			return -EINVAL;
++			return cam_cc_crm_rom_report(client, "catalog", 0, -EINVAL);
+ 		/* ROM frequencies must fit the original, characterized voltage map. */
+ 		for (level = 0; level < cam_cc_crm_native_tables[client].count; level++) {
+ 			ret = clk_find_vdd_level(&clock->clock->hw, &clock->clock->vdd_data,
+ 				cam_cc_crm_native_tables[client].rates[level].hz);
+ 			if (ret < 0)
+-				return ret;
++				return cam_cc_crm_rom_report(client, "voltage", level + 1, ret);
+ 		}
+ 		cam_cc_crm_native_clients[client] = (struct cam_cc_crm_clock) {
+ 			.table = &cam_cc_crm_native_tables[client],
