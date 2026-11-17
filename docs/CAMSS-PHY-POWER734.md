@@ -1,11 +1,13 @@
 # Demand-scoped SM7675 PHY supplies
 
-17 November 2026. Source30 prepares native consumer voltage requests for the
-Uke receive path. Four compiler/sanitizer modes and legacy comparisons passed
-in the preceding run. Full qualification is pending after correcting the
-semantic mutant generator. The power candidate is unchanged.
-Accepted full8/B remains installed;
-the sensor, bus and CAMSS graph remain inactive.
+17 November 2026. Source30/COPR11340489 passed source and ARM64 object
+qualification in 515 seconds. Four GCC/Clang plain/sanitized modes passed
+healthy transitions and 24 fault cases each, two original before-controls,
+five semantic mutants and unchanged legacy traces. Three real ARM64 objects
+compiled. The signed result matches the published source and actual SRPM;
+see [the qualification record](../manifests/phy-power734-qualification-20261117.json).
+Accepted full8/B remains installed; the sensor, bus and CAMSS graph remain
+inactive. Built-in runtime linkage and physical operation are unqualified.
 
 The selected device tree limits CSI L2B to 880000–912000 microvolts, while the
 shared regulator provider permits up to 950000. Display, USB, DP and UFS also
@@ -34,7 +36,7 @@ SM7675 additionally refuses module ownership or dynamic DT storage. The source
 check retains the current module configuration to compile the cumulative
 objects; a future runtime profile needs separate built-in linkage validation.
 
-The planned COPR check runs actual power, dispatch and provider-status
+The COPR check runs actual power, dispatch and provider-status
 functions under GCC/Clang with and without ASan/UBSan. It includes original
 before-controls, every fallible call in a healthy first-on/last-off sequence,
 shared-consumer conflict, clock teardown fault, supplier deferral, clean and

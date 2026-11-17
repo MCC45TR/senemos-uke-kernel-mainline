@@ -1,8 +1,10 @@
 # Camera source admission on Linux 7.3.4
 
 17 November 2026. Camera development continues from published, licensed open
-source implementations. Native22 is unchanged in the full6 candidate. Its
-source/object qualification does not establish camera operation on Uke.
+source implementations. Accepted full8/B has passed native CAMCC admission
+and idle release. Source27 and source30 qualify further receive-path changes;
+the bus, sensor and aggregate graph remain inactive. These source/object
+results do not establish camera operation on Uke.
 
 | Source and exact revision | License and attribution | Useful contract and limit |
 |---|---|---|
@@ -13,6 +15,7 @@ source/object qualification does not establish camera operation on Uke.
 | Same Linux revision, `Documentation/devicetree/bindings/media/i2c/ovti,ov08d10.yaml` | GPL-2.0-only OR BSD-2-Clause | Sensor graph, clock, reset GPIO and supply description. An example address or lane mapping is not board evidence. |
 | Same Linux revision, `drivers/reset/core.c` and `drivers/regulator/fixed.c` | GPL-2.0-or-later | Reset-control lookup supports the `reset-gpios` fallback. The fixed-regulator driver owns the enable GPIO. Both dependencies already exist in the cumulative configuration. |
 | [Rockchip OV08D10](https://github.com/rockchip-linux/kernel/blob/77168c8d5ab82399f65a80e9f807b50ba37cf483/drivers/media/i2c/ov08d10.c) | GPL-2.0; Rockchip Electronics | Independent sensor comparison agrees on the 0x5608 ID at byte registers 0/1. Its modes require 24 MHz; no Rockchip power sequence, clock setting or board GPIO is selected for Uke. |
+| [MiCode OV08D10 module](https://github.com/MiCode/mtkcam-kernel_device_modules/blob/bfd3e45948f5c1e1307ef6e217960596a08c5f61/imgsensor/src-v4l2/common/duchampov08d10ultra_mipi_raw/duchampov08d10ultramipiraw_Sensor.c), plus `kd_imgsensor.h` in `MTK_kernel_device_modules` at `3c4ccd07d5624879555ec710c11bb8818e5cb5c6` | GPL-2.0; MediaTek | Independent 0x5608 ID and 8-bit `0x6c/0x20` to native `0x36/0x10` conversion. Duchamp power/clock settings are not Uke board evidence; see the [complete comparison](CAMERA-MICODE-SENSORS734.md). |
 
 The exact Uke OEM kernel also contains the Intel OV08D10 driver. A bounded
 search of its arm64 configuration and DT sources did not establish its
@@ -52,7 +55,8 @@ admitted native driver and its documented lifecycle.
 Full8 has since passed native CAMCC admission and idle release on two normal
 boots; see [its measured scope](CAMERA-FULL7348.md). The next
 [lite VFE source review](CAMSS-LITE734.md) passed source/object qualification;
-the [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation. Enabling the
+the [demand-scoped PHY supplies](CAMSS-PHY-POWER734.md) also passed source/object
+qualification. The [aggregate graph contract](CAMSS-GRAPH734.md) remains under investigation. Enabling the
 sensor/media graph, completing RAW buffers, consuming private read-only fitted
 calibration and providing both cameras with rear focus remain separate work.
 Original Fedora media/desktop packages and the existing signed RPM/DNF delivery

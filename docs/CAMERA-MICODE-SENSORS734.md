@@ -34,6 +34,19 @@ power entries. L20B's provider range is wider than the sensor's 1.8 V request;
 enabling it without a scoped consumer request would be insufficient. These
 are static, read-only DT observations, not physical voltage measurements.
 
+Resolving the actual supplier phandles identifies the digital provider as
+`pm_v6c_l3`, whose range is 1.2–1.25 V, and the I/O provider as L20B, whose
+range is 1.62–3.544 V. Their sensor consumer requests remain exactly 1.2 V and
+1.8 V. A supplier name inferred from another PMIC variant would be incorrect.
+The selected `csiphy-sd-index` is 4; this confirms the front PHY index without
+establishing its physical lane permutation.
+
+The front `cam_clk-supply` resolves to the legacy Titan TOP GDSC at 0xadf32bc.
+The GPL Uke `cam_sensor_util.c` MCLK path enables this domain before enabling
+the clock. A native sensor therefore needs the corresponding CAMCC power-domain
+dependency, alongside its analog supplies. The extra inherited S2B/BOB entries
+still do not establish their selection or order in the fitted module's sequence.
+
 Bounded searches of the existing local GPL kernel/camera sources and the
 published Uke camera driver's C/H/build files have not found a Uke-specific
 OV08D10/OV13B10 probe and power table. MiCode's GPL MediaTek module driver adds

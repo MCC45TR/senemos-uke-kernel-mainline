@@ -32,6 +32,16 @@ DMA constraints. ISP/ICP/JPEG/CRE contexts are separate resources. The IRQ,
 clock, power-domain and interconnect tuples still need complete aggregate
 validation and their own source/build checks.
 
+The selected full/lite CSID and VFE compatibles are the 860 variants. Their
+GPL headers select the 880 register tables. Basic CSID RDI origins/strides,
+receive registers and subsample offsets agree with native gen3; full VFE
+clients 23/24/25 map to RDI0/1/2. Interrupt admission still needs separate
+coverage. In particular, the current reset loop writes one bit at a time to
+the same buffer-done mask register rather than accumulating enabled paths.
+Neither source27 nor the PHY supply change qualifies multi-path completion
+or changes that CSID logic. This is a source review finding, not a measured
+Uke interrupt failure.
+
 ## Shared PHY supply limits
 
 All five selected PHY descriptions use the same supplies and limits:
@@ -55,8 +65,9 @@ release its own vote only after successful power-off. A failure must preserve
 the resources needed for safe recovery. Idle camera ownership must not block
 the other consumers' valid operating ranges.
 
-The [native supply lifecycle](CAMSS-PHY-POWER734.md) prepares this change;
-its COPR qualification and the built-in runtime profile remain separate gates.
+The [native supply lifecycle](CAMSS-PHY-POWER734.md) passed source/object
+qualification in source30. The built-in runtime profile and physical operation
+remain separate gates.
 
 The selected PHY0 compatible is `qcom,csiphy-v2.2.1-n16t`; PHY1–4 select ordinary
 2.2.1. The existing front PHY4 helper does not establish the rear PHY0 variant.
@@ -74,8 +85,10 @@ aggregate CAMSS `hf_mnoc` dependency can be supplied. The static CPAS
 Linux 7.3.4's `qcom_icc_rpmh_probe()` calls
 `qcom_icc_rpmh_configure_qos()` before publishing the provider. That function
 programs every declared node's QoS box. The existing cumulative
-`qos_required` extension makes these failures fatal; it does not postpone
-programming until camera demand. Simply adding the OEM CAMNOC HF QoS ports
+`qos_required` extension propagates mapping, clock and reported setup errors;
+the individual register-update return values are still discarded inside
+`qcom_icc_set_qos()`. It does not postpone programming until camera demand.
+Simply adding the OEM CAMNOC HF QoS ports
 0xa8000/0xa9000 would therefore introduce early register writes. A camera
 route must establish ownership and error handling for those writes first.
 
