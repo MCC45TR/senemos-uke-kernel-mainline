@@ -1,0 +1,89 @@
+--- a/drivers/media/platform/qcom/camss/camss-csid-gen3.c
++++ b/drivers/media/platform/qcom/camss/camss-csid-gen3.c
+@@ -58,6 +58,7 @@
+ #define CSID_CSI2_RDIN_IRQ_STATUS(rdi)	(0xEC + 0x10 * (rdi))
+ #define		RUP_DONE_IRQ_STATUS		BIT(23)
+ 
++#define CSID_CSI2_RDIN_IRQ_MASK(rdi)	(0xF0 + 0x10 * (rdi))
+ #define CSID_CSI2_RDIN_IRQ_CLEAR(rdi)	(0xF4 + 0x10 * (rdi))
+ #define CSID_CSI2_RDIN_IRQ_SET(rdi)	(0xF8 + 0x10 * (rdi))
+ 
+@@ -302,6 +303,41 @@
+ 	return IRQ_HANDLED;
+ }
+ 
++/* Exact SM7675 CSID860/lite860 tables select CSID880/lite880 IRQs.
++ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Firmware/controller ownership and power must already belong to CAMSS.
++ */
++static int csid_reset_irqs_7675(struct csid_device *csid)
++{
++	u32 top = TOP_IRQ_STATUS_RESET_DONE, done = 0;
++	int i;
++
++	/* The native full VFE has three RDI lines; lite has four. */
++	if (csid->phy.en_vc & ~GENMASK(csid_is_lite(csid) ? 3 : 2, 0))
++		return -EINVAL;
++
++	/* Keep delivery masked until all owned status and masks are prepared. */
++	writel(0, csid->base + CSID_TOP_IRQ_MASK);
++	for (i = 0; i < MSM_CSID_MAX_SRC_STREAMS; i++) {
++		if (!(csid->phy.en_vc & BIT(i)))
++			continue;
++		top |= BIT(8 + i);
++		done |= BIT(BUF_DONE_IRQ_STATUS_RDI_OFFSET + i);
++		writel(RUP_DONE_IRQ_STATUS,
++		       csid->base + CSID_CSI2_RDIN_IRQ_CLEAR(i));
++		writel(RUP_DONE_IRQ_STATUS,
++		       csid->base + CSID_CSI2_RDIN_IRQ_MASK(i));
++	}
++	if (done)
++		top |= BIT(13);
++	writel(done, csid->base + CSID_BUF_DONE_IRQ_CLEAR);
++	writel(done, csid->base + CSID_BUF_DONE_IRQ_MASK);
++	writel(top, csid->base + CSID_TOP_IRQ_CLEAR);
++	writel(IRQ_CMD_CLEAR, csid->base + CSID_IRQ_CMD);
++	writel(top, csid->base + CSID_TOP_IRQ_MASK);
++	return 0;
++}
++
+ /*
+  * csid_reset - Trigger reset on CSID module and wait to complete
+  * @csid: CSID device
+@@ -316,18 +352,24 @@
+ 
+ 	reinit_completion(&csid->reset_complete);
+ 
+-	writel(1, csid->base + CSID_TOP_IRQ_CLEAR);
+-	writel(1, csid->base + CSID_IRQ_CMD);
+-	writel(1, csid->base + CSID_TOP_IRQ_MASK);
+-
+-	for (i = 0; i < MSM_CSID_MAX_SRC_STREAMS; i++)
+-		if (csid->phy.en_vc & BIT(i)) {
+-			writel(BIT(BUF_DONE_IRQ_STATUS_RDI_OFFSET + i),
+-			       csid->base + CSID_BUF_DONE_IRQ_CLEAR);
+-			writel(IRQ_CMD_CLEAR, csid->base + CSID_IRQ_CMD);
+-			writel(BIT(BUF_DONE_IRQ_STATUS_RDI_OFFSET + i),
+-			       csid->base + CSID_BUF_DONE_IRQ_MASK);
+-		}
++	if (csid->camss->res->version == CAMSS_7675) {
++		i = csid_reset_irqs_7675(csid);
++		if (i)
++			return i;
++	} else {
++		writel(1, csid->base + CSID_TOP_IRQ_CLEAR);
++		writel(1, csid->base + CSID_IRQ_CMD);
++		writel(1, csid->base + CSID_TOP_IRQ_MASK);
++
++		for (i = 0; i < MSM_CSID_MAX_SRC_STREAMS; i++)
++			if (csid->phy.en_vc & BIT(i)) {
++				writel(BIT(BUF_DONE_IRQ_STATUS_RDI_OFFSET + i),
++				       csid->base + CSID_BUF_DONE_IRQ_CLEAR);
++				writel(IRQ_CMD_CLEAR, csid->base + CSID_IRQ_CMD);
++				writel(BIT(BUF_DONE_IRQ_STATUS_RDI_OFFSET + i),
++				       csid->base + CSID_BUF_DONE_IRQ_MASK);
++			}
++	}
+ 
+ 	/* preserve registers */
+ 	val = RST_LOCATION | RST_MODE;
