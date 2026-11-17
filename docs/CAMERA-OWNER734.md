@@ -2,6 +2,9 @@
 
 Lesson ID: UKE-CAMERA-OWNER-20261116.
 
+The current [OSS source admission review](CAMERA-OSS734.md) records licensed
+camera sources, retained native22 provenance and unresolved sensor-board facts.
+
 Camera implementation and source admission use published OSS kernel/DT,
 sensor drivers, bindings and maintainer patches. Proprietary HAL-derived
 addresses, register tables, timings and parser interpretations are excluded
