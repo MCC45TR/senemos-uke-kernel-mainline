@@ -1,7 +1,10 @@
 # Front camera identification prerequisite
 
-17 November 2026. Full9 is a prepared candidate, not a completed build or a
-working camera claim. Accepted full8/B remains the runtime baseline. Its native
+17 November 2026. Full9/COPR11341382 built and passed signed-package checks,
+but its first normal boot stayed at the POCO logo throughout a 180-second
+optical observation. No Linux console, SSH identity or native health acceptance
+was obtained. The accepted full8/B boot partition was verified unchanged before
+the attempt and remains the recovery baseline. Its native
 CAMCC controller passed two normal boots and released to runtime suspend.
 The isolated-controller condition that held back the front EEPROM has been met.
 
@@ -52,3 +55,13 @@ Primary references are the existing Uke source inventory and the pinned GPL
 Linux 7.3.4 `i2c-qcom-geni.c`, `gpi.c` and GPI binding under
 `referances/front-geni734-20261117`. No donor scripts or closed camera code are
 executed or analyzed by this candidate.
+
+The source review after this failure found an entry-phase mismatch. The front
+helper validates two-argument GEM and MC interconnect tuples. The early full9
+call runs before native selection, while that selection later adds the tags
+through the existing bandwidth-monitor converters. The previous synthetic
+fixture supplied those final tuples at construction and did not exercise this
+phase boundary. The source mismatch is established; the inaccessible boot has
+not supplied a firmware or kernel log proving its exact stopping instruction.
+See [the late-entry correction](CAMERA-FRONT-STAGE734.md). No new device retry
+or camera acceptance is implied by that source work.

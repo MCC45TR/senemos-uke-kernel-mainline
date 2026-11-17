@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "source_check_release": 33,
+  "parent_source_build": 11341240,
+  "failed_runtime_build": 11341382,
+  "failed_runtime_release": "7.3.4-9-unstable",
+  "failure_observation": "180-second optical observation stayed at the POCO logo; no Linux console or SSH identity was obtained.",
+  "source_finding": "The front helper requires two-argument MC/GEM interconnect tuples. Native selection adds these tags after the early full9 call site.",
+  "fix": "Retain controller admission and QUP quarantine; invoke the unchanged read-only front helper after native selection and restored FDT capacity, before audio configuration and publication.",
+  "front_helper_unchanged": true,
+  "sensor_activation": false,
+  "new_board_values": false,
+  "physical_acceptance": false,
+  "source_check_qualified": false
+}

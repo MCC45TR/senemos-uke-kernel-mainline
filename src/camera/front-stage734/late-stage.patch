@@ -1,0 +1,27 @@
+--- a/arch/arm64/kernel/uke-abl.c
++++ b/arch/arm64/kernel/uke-abl.c
+@@ -1034,12 +1034,6 @@
+ 	ret = uke_scope_qup_buses(output);
+ 	if (ret)
+ 		return ret;
+-#ifdef CONFIG_SM_CAMCC_7675
+-	/* CAMCC-only boot is qualified; admit only the read-only front EEPROM. */
+-	ret = uke_front_eeprom_graph(output);
+-	if (ret)
+-		return ret;
+-#endif
+ 	ret = uke_empty_spmi_bus(output);
+ 	if (ret)
+ 		return ret;
+@@ -1132,6 +1126,11 @@
+ 						    ARRAY_SIZE(uke_native_panels));
+ 		if (!ret) {
+ 			ret = fdt_open_into(uke_fdt, uke_fdt, sizeof(uke_fdt));
++#ifdef CONFIG_SM_CAMCC_7675
++			/* Native ICC tags must exist before the read-only front gate. */
++			if (!ret)
++				ret = uke_front_eeprom_graph(uke_fdt);
++#endif
+ 			if (!ret)
+ 				ret = uke_audio_config_graph(uke_fdt);
+ 			if (!ret)
