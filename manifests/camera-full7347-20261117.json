@@ -7,7 +7,7 @@
     "source_commit": "b86cb02a58716946f3e8a458c05aee58f7a6faaf",
     "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11339390/senemos-uke-linux-kernel-mainline-unstable-7.3.4-6.src.rpm",
     "srpm_sha256": "ea56d874804d3f88aef6b9cc72080f0c0a60381285806a7047f4c811acb3139f",
-    "spec_sha256": "df05e3e99b2f168bc12221b319b65b78127feb99e9827297adc43cb06e3c2b93",
+    "spec_sha256": "543281fc13d354ee9f7f1500c0e5d0187b864452a5d56c80b1db4e098a5b4587",
     "source_files": 32
   },
   "native": {

@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ $# == 2 ]]
 before=$(realpath "$1");after=$(realpath -m "$2")
 [[ ! -e $after && ! -L $after ]]
-printf '%s  %s\n' df05e3e99b2f168bc12221b319b65b78127feb99e9827297adc43cb06e3c2b93 "$before" | sha256sum -c --strict --quiet -
+printf '%s  %s\n' 543281fc13d354ee9f7f1500c0e5d0187b864452a5d56c80b1db4e098a5b4587 "$before" | sha256sum -c --strict --quiet -
 work=$(mktemp -d)
 trap 'find "$work" -depth -delete' EXIT
 cat > "$work/header" <<'SPEC'
