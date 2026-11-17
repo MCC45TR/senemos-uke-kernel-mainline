@@ -2,6 +2,12 @@
 
 Lesson ID: UKE-CAMERA-OWNER-20261116.
 
+Camera implementation and source admission use published OSS kernel/DT,
+sensor drivers, bindings and maintainer patches. Proprietary HAL-derived
+addresses, register tables, timings and parser interpretations are excluded
+from subsequent implementation. Board-specific values require exact Uke
+source evidence and separate physical qualification.
+
 The 16 November POCO Pad X1 observation on kernel7.3.4-4 still stops at
 CAMCC `crm-admission -95`, before any sensor/media node. The powered ROM
 resolver qualified by native116 was not called from production. Firmware
@@ -150,6 +156,11 @@ to production files changed by the camera layer. A source fixture reproduces
 both the cached-path refusal and the stale-source-link failure, then verifies
 repeated successful projection, original preimages and unchanged production
 files with the adapter.
+
+The retained parent provider text is installed as `parent-provider.c` in the
+existing kernel build-support directory. This preserves its exact bytes while
+respecting the inherited package check that excludes standalone CAMCC driver
+artifacts. The check itself remains unchanged.
 
 This prepares a runtime candidate, not camera acceptance. The full kernel,
 signed RPM/DNF transition, inactive-slot readback, actual boot, firmware ROM

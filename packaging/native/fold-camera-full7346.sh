@@ -58,7 +58,8 @@ camera_full5_parent=$(bash camera-full7346/camera-full5-legacy-view734.sh "$PWD"
 camera_support=%{buildroot}/usr/share/senemos/uke/%{krel}/build-support/camera-native734
 install -d "$camera_support"
 install -m644 %{SOURCE217} "$camera_support/full-qualification.json"
-install -m644 camera-owner734-result/{source.sha256,retained.sha256,native-objects.sha256,owner-results.txt,rom-results.txt,startup-results.txt,floor-results.txt,composition-results.txt,caller-results.txt,qualification.json,parent-camcc-sm7675.c} "$camera_support/"
+install -m644 camera-owner734-result/{source.sha256,retained.sha256,native-objects.sha256,owner-results.txt,rom-results.txt,startup-results.txt,floor-results.txt,composition-results.txt,caller-results.txt,qualification.json} "$camera_support/"
+install -m644 camera-owner734-result/parent-camcc-sm7675.c "$camera_support/parent-provider.c"
 install -m644 camera-full7346/camera-owner734/{source-commit,SHA256SUMS} "$camera_support/"
 # UKE_CAMERA_FULL7346_INSTALL_END
 SPEC
