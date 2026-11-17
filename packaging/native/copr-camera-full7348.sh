@@ -11,9 +11,10 @@ trap 'find "$work" -depth -delete' EXIT
 mkdir "$work/native" "$work/camera-full7348" "$work/keyring" "$work/gnupg"
 for role in parent native;do
  id=$(jq -er ".$role.build" "$contract")
- curl -qfsSL --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$id" > "$work/$role-state.json"
+ printf 'Full8 source input: %s/build%s\n' "$role" "$id"
+ curl -qfsSL --retry 2 --retry-delay 2 --retry-max-time 100 --max-time 45 "https://copr.fedorainfracloud.org/api_3/build/$id" > "$work/$role-state.json"
  jq -e --arg url "$(jq -er ".$role.srpm_url" "$contract")" '.state=="succeeded" and .source_package.url==$url' "$work/$role-state.json" >/dev/null
- curl -qfsSL --max-time 600 --max-filesize 209715200 "$(jq -er ".$role.srpm_url" "$contract")" -o "$work/$role.src.rpm"
+ curl -qfsSL --retry 2 --retry-delay 2 --retry-max-time 900 --max-time 600 --max-filesize 209715200 "$(jq -er ".$role.srpm_url" "$contract")" -o "$work/$role.src.rpm"
  printf '%s  %s\n' "$(jq -er ".$role.srpm_sha256" "$contract")" "$work/$role.src.rpm" | sha256sum -c --strict --quiet -
  rpm2cpio "$work/$role.src.rpm" | cpio -t --quiet > "$work/$role-paths"
  awk -v expected="$(jq -er ".$role.source_files" "$contract")" '{name=$0;sub(/^\.\//,"",name);if(name!~/^[A-Za-z0-9_.+-]+$/||seen[name]++)bad=1;n++}END{if(bad||n!=expected)exit 1}' "$work/$role-paths"
@@ -26,9 +27,9 @@ mkdir "$result"
 rpm2cpio "$work/parent.src.rpm" | (cd "$result";cpio -idm --quiet --no-absolute-filenames --no-preserve-owner)
 (cd "$result";find . -type f ! -name senemos-uke-linux-kernel-mainline-unstable.spec ! -name senemos-native-profile-7.3.4.tar.xz ! -name senemos-uke-boot-recipe.tar.xz ! -name boot-payload.json -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-inputs.sha256"
 rpm2cpio "$work/native.src.rpm" | (cd "$work/native";cpio -idm --quiet --no-absolute-filenames --no-preserve-owner ./uke-camera-odd734.tar.xz ./uke-camera-parent734.tar.xz)
-curl -qfsSL --max-time 90 --max-filesize 2097152 "$(jq -er .native.proof_url "$contract")" -o "$result/camera-native26-proof.rpm"
+curl -qfsSL --retry 2 --retry-delay 2 --retry-max-time 190 --max-time 90 --max-filesize 2097152 "$(jq -er .native.proof_url "$contract")" -o "$result/camera-native26-proof.rpm"
 printf '%s  %s\n' "$(jq -er .native.proof_sha256 "$contract")" "$result/camera-native26-proof.rpm" | sha256sum -c --strict --quiet -
-curl -qfsSL --max-time 45 --max-filesize 65536 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg -o "$work/key.asc"
+curl -qfsSL --retry 2 --retry-delay 2 --retry-max-time 100 --max-time 45 --max-filesize 65536 https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/pubkey.gpg -o "$work/key.asc"
 fingerprint=$(GNUPGHOME="$work/gnupg" gpg --batch --with-colons --show-keys "$work/key.asc" 2>/dev/null | awk -F: '$1=="fpr"{print tolower($10);exit}')
 [[ $fingerprint == 2204a661ea630a5303500085538797e72a3e4eca ]]
 rpmkeys --define "_dbpath $work" --define '_keyring fs' --define "_keyringpath $work/keyring" --import "$work/key.asc"
@@ -57,7 +58,7 @@ profile=$work/native-profile;boot=$work/boot-recipe
 cp "$profile/manifests/cumulative-release.json" "$work/parent-plan.json"
 jq '.full_release=8|.source_check_release=26' "$work/parent-plan.json" > "$work/plan.json"
 jq '.full_release=7|.source_check_release=23' "$work/plan.json" | cmp - "$work/parent-plan.json"
-curl -qfsSL --max-time 45 'https://copr.fedorainfracloud.org/api_3/build/list?ownername=mcc45tr&projectname=uke-linux-unstable&packagename=senemos-uke-linux-kernel-mainline-unstable&limit=1000&order=id&order_type=DESC' > "$work/full-history.json"
+curl -qfsSL --retry 2 --retry-delay 2 --retry-max-time 100 --max-time 45 'https://copr.fedorainfracloud.org/api_3/build/list?ownername=mcc45tr&projectname=uke-linux-unstable&packagename=senemos-uke-linux-kernel-mainline-unstable&limit=1000&order=id&order_type=DESC' > "$work/full-history.json"
 [[ $(bash "$owner/scripts/kernel-release.sh" next-planned-full "$work/full-history.json" "$work/plan.json") == 8 ]]
 before_audio=$(awk '$2=="./src/audio/uke-audio-card.c"||$2=="src/audio/uke-audio-card.c"{print $1}' "$profile/SHA256SUMS")
 bash "$owner/packaging/native/retarget-audio-tuple733.sh" "$profile" "$boot" "$work/plan.json" "$before_audio"
