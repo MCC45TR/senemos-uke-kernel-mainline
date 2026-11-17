@@ -142,10 +142,14 @@ or tablet compilation is used.
 
 The historical HWKM helper caches an absolute path. Calling it through the
 new source projection therefore needs a canonical cache-directory path. The
-adapter pins the complete original helper and changes only that expression,
-then verifies its whole-file inverse before running it. A source fixture
-reproduces the original cached-path refusal and verifies repeated successful
-projection, original preimages and unchanged production files with the adapter.
+adapter pins the complete original helper and changes only its cache-directory
+expression, then verifies its whole-file inverse before running it. The
+projection has a separate cache, with read-only source-state links to the
+original preparation. This prevents an older cached view from retaining links
+to production files changed by the camera layer. A source fixture reproduces
+both the cached-path refusal and the stale-source-link failure, then verifies
+repeated successful projection, original preimages and unchanged production
+files with the adapter.
 
 This prepares a runtime candidate, not camera acceptance. The full kernel,
 signed RPM/DNF transition, inactive-slot readback, actual boot, firmware ROM
