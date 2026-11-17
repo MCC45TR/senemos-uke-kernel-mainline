@@ -17,7 +17,8 @@ access, inherited-running check and L readback. No frequency, voltage, sensor
 address, power sequence or calibration value is added.
 
 Admission still requires checked firmware ownership, both CRM resources,
-unpublished clocks, the probe PM reference and all seven maximum proxy votes.
+unpublished clocks, the probe PM reference and maximum proxy votes for all
+three rails (mask `0x7`).
 A pure catalog check precedes local programming. The complete powered passive
 snapshots and eight RCG preflights remain before IRQ binding and attachment.
 The later registration step checks completed admission and powered access;
