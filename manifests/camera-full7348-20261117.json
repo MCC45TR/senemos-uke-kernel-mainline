@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "full_release": 8,
+  "parent": {
+    "build": 11339702,
+    "source_commit": "9079b1d31f51310453430e126e58f3d2e3ff8146",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11339702/senemos-uke-linux-kernel-mainline-unstable-7.3.4-7.src.rpm",
+    "srpm_sha256": "b26c0263473afd18ccfa9cb717c6574e375bbda173c9c6b11dae71370d65ccb9",
+    "spec_sha256": "3ebbf025267e7ba7decccf3eb41b526181e0f22c8c5b678d1923faca3db1919e",
+    "source_files": 35,
+    "native_health_accepted": false,
+    "accepted_recovery": "7.3.4-6-unstable/A"
+  },
+  "native": {
+    "build": 11339884,
+    "release": 26,
+    "source_commit": "fcd671f6bb73d60013b6375946a28cff42c59729",
+    "source_files": 25,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11339884/uke-kernel-migration-check-7.3.4-26.src.rpm",
+    "srpm_sha256": "2420de92c201e311b9501b85795495c63e6c80cf3d50b56e08c29314f108fa5b",
+    "spec_sha256": "cf2433fa939a958cf16247f5718a8ee7f3d4626f11303082c02305044d2e041f",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/Packages/u/uke-kernel-migration-check-7.3.4-26.fc46.aarch64.rpm",
+    "proof_sha256": "31c884e00ef260bff91e98e9fe95c96b1141c66052f6d7c405d53ff72c46cf40",
+    "source_rpm_signed": false,
+    "proof_rpm_trusted_signatures": 2,
+    "constructor_modes": 4,
+    "actual_pll_and_caller_modes": 4,
+    "passive_modes": 4,
+    "passive_semantic_mutants": 4,
+    "before_controls": 2,
+    "actual_arm64_objects": 2,
+    "physical_camera_accepted": false
+  },
+  "odd": {
+    "build": 11339733,
+    "source_commit": "752083097c2507ece971cc5845d8a7ff6561daf2",
+    "compiler_modes": 4,
+    "before_controls": 2,
+    "actual_arm64_objects": 2,
+    "physical_camera_accepted": false
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Advance native camera ROM admission by preparing only local PLL parents before decoding and admitting the original odd postdivider field. Preserve full7 and accepted6/A recovery; retain native touch boot health and all firmware/voltage/calibration protections. No camera frame is established by source qualification."
+}

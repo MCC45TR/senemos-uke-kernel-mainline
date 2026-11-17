@@ -1,8 +1,9 @@
 # Camera ROM odd postdivider field
 
 17 November 2026. This source candidate fills a catalog coverage gap; it does
-not yet establish the cause of the tablet's full6 `crm-rom -EINVAL` refusal.
-The diagnostic full7 boot is still pending.
+not establish the cause of the tablet's full6 `crm-rom -EINVAL` refusal.
+Full7's cached record selects PLL0 main (source one), not its odd output.
+The diagnostic boot rolled back under the native touch-health policy.
 
 The original Uke catalog contains the PLL0 odd output with `post_div_shift=14`,
 width four and encoding two for division by three. Its even output uses shift

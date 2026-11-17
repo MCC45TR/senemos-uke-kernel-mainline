@@ -42,4 +42,8 @@ separately qualify boot health, camera power/graph/frames and proper release.
 Source25 passed its original-constructor controls and first constructor mode,
 then failed because the new direct-PLL framework model had no register map.
 Source26 binds that modeled map explicitly. The production overlay is unchanged;
-all compiler modes and complete ARM64 objects remain required.
+COPR11339884 passed in 508 seconds. All four constructor modes, four actual PLL
+and caller modes, four passive modes, four semantic mutants, two original
+controls and two complete ARM64 objects passed. The signed receipt and exact
+source/archive/recipe identities were independently checked. Physical ROM
+admission, front-camera frames and proper hardware release remain open.
