@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* Test-only projection of admitted Uke board predicates, 17 November 2026.
+ * Whitelisted properties only; phandles remapped. No boot arguments, unit
+ * identity, memory map, firmware data or EEPROM contents. Never boot this tree.
+ */
+/dts-v1/;
+/ {
+ compatible = [78 69 61 6f 6d 69 2c 75 6b 65 00 71 63 6f 6d 2c 73 6d 37 36 37 35 00 71 63 6f 6d 2c 63 6c 69 66 66 73 00];
+ #address-cells = [00 00 00 02];
+ #size-cells = [00 00 00 02];
+ soc {
+  #address-cells = [00 00 00 01];
+  #size-cells = [00 00 00 01];
+  apps-smmu@15000000 {
+   phandle = [00 00 01 03];
+   #iommu-cells = [00 00 00 02];
+  };
+  clock-controller@100000 {
+   compatible = [71 63 6f 6d 2c 63 6c 69 66 66 73 2d 67 63 63 00 73 79 73 63 6f 6e 00];
+   phandle = [00 00 01 01];
+   #clock-cells = [00 00 00 01];
+  };
+  interconnect@0 {
+   phandle = [00 00 01 04];
+   #interconnect-cells = [00 00 00 01];
+  };
+  interconnect@1 {
+   phandle = [00 00 01 08];
+   #interconnect-cells = [00 00 00 02];
+  };
+  interconnect@1600000 {
+   phandle = [00 00 01 06];
+   #interconnect-cells = [00 00 00 01];
+  };
+  interconnect@1700000 {
+   phandle = [00 00 01 07];
+   #interconnect-cells = [00 00 00 01];
+  };
+  interconnect@24100000 {
+   phandle = [00 00 01 05];
+   #interconnect-cells = [00 00 00 02];
+  };
+  pinctrl@f000000 {
+   compatible = [71 63 6f 6d 2c 63 6c 69 66 66 73 2d 70 69 6e 63 74 72 6c 00];
+   #gpio-cells = [00 00 00 02];
+   reg = [0f 00 00 00 01 00 00 00];
+   qupv3_se8_i2c_pins {
+    qupv3_se8_i2c_sleep {
+     phandle = [00 00 01 0b];
+     config {
+      pins = [67 70 69 6f 30 00 67 70 69 6f 31 00];
+      drive-strength = [00 00 00 02];
+      bias-pull-down;
+     };
+     mux {
+      pins = [67 70 69 6f 30 00 67 70 69 6f 31 00];
+      function = [67 70 69 6f 00];
+     };
+    };
+    uke_qupv3_se8_i2c_scl_active {
+     phandle = [00 00 01 0a];
+     config {
+      pins = [67 70 69 6f 31 00];
+      drive-strength = [00 00 00 02];
+      bias-disable;
+     };
+     mux {
+      pins = [67 70 69 6f 31 00];
+      function = [71 75 70 31 5f 73 65 30 5f 6c 31 00];
+     };
+    };
+    uke_qupv3_se8_i2c_sda_active {
+     phandle = [00 00 01 09];
+     config {
+      pins = [67 70 69 6f 30 00];
+      drive-strength = [00 00 00 02];
+      bias-disable;
+     };
+     mux {
+      pins = [67 70 69 6f 30 00];
+      function = [71 75 70 31 5f 73 65 30 5f 6c 30 00];
+     };
+    };
+   };
+  };
+  qcom,gpi-dma@800000 {
+   compatible = [71 63 6f 6d 2c 73 6d 38 34 35 30 2d 67 70 69 2d 64 6d 61 00];
+   phandle = [00 00 01 02];
+   #dma-cells = [00 00 00 03];
+   dma-channels = [00 00 00 0c];
+   dma-channel-mask = [00 00 00 1e];
+   status = [6f 6b 61 79 00];
+   reg = [00 80 00 00 00 06 00 00];
+   iommus = [00 00 01 03 00 00 04 36 00 00 00 00];
+  };
+  qcom,qupv3_1_geni_se@8c0000 {
+   compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 73 65 2d 71 75 70 00];
+   status = [6f 6b 61 79 00];
+   #address-cells = [00 00 00 01];
+   #size-cells = [00 00 00 01];
+   reg = [00 8c 00 00 00 00 20 00];
+   clocks = [00 00 01 01 00 00 00 6a 00 00 01 01 00 00 00 6b];
+   clock-names = [6d 2d 61 68 62 00 73 2d 61 68 62 00];
+   iommus = [00 00 01 03 00 00 04 23 00 00 00 00];
+   i2c@880000 {
+    compatible = [71 63 6f 6d 2c 69 32 63 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    #address-cells = [00 00 00 01];
+    #size-cells = [00 00 00 00];
+    reg = [00 88 00 00 00 00 40 00];
+    interrupts = [00 00 00 00 00 00 01 75 00 00 00 04];
+    clocks = [00 00 01 01 00 00 00 56];
+    clock-names = [73 65 2d 63 6c 6b 00];
+    dma-names = [74 78 00 72 78 00];
+    dmas = [00 00 01 02 00 00 00 00 00 00 00 00 00 00 00 03 00 00 04 00 00 00 00 00 00 00 01 02 00 00 00 01 00 00 00 00 00 00 00 03 00 00 04 00 00 00 00 00];
+    interconnects = [00 00 01 04 00 00 00 25 00 00 01 04 00 00 02 3d 00 00 01 05 00 00 00 02 00 00 00 00 00 00 01 06 00 00 02 1d 00 00 01 07 00 00 00 07 00 00 01 08 00 00 02 00 00 00 00 00];
+    interconnect-names = [71 75 70 2d 63 6f 72 65 00 71 75 70 2d 63 6f 6e 66 69 67 00 71 75 70 2d 6d 65 6d 6f 72 79 00];
+    pinctrl-0 = [00 00 01 09 00 00 01 0a];
+    pinctrl-1 = [00 00 01 0b];
+    pinctrl-names = [64 65 66 61 75 6c 74 00 73 6c 65 65 70 00];
+    qcom,clk-freq-out = [00 06 1a 80];
+    qcom,pm-ctrl-client;
+    qcom,cam-sensor1 {
+     compatible = [71 63 6f 6d 2c 63 61 6d 2d 69 32 63 2d 73 65 6e 73 6f 72 00];
+     status = [64 69 73 61 62 6c 65 64 00];
+     eeprom-src = [00 00 01 00];
+    };
+    qcom,eeprom1 {
+     compatible = [71 63 6f 6d 2c 63 61 6d 2d 69 32 63 2d 65 65 70 72 6f 6d 00];
+     status = [64 69 73 61 62 6c 65 64 00];
+     reg = [00 00 00 51];
+     phandle = [00 00 01 00];
+     cam_vio-supply = [00 00 01 0c];
+     cell-index = [00 00 00 01];
+     regulator-names = [63 61 6d 5f 76 69 6f 00];
+     rgltr-cntrl-support;
+     rgltr-min-voltage = [00 1b 77 40];
+     rgltr-max-voltage = [00 1b 77 40];
+     rgltr-load-current = [00 01 9e 10];
+    };
+   };
+   i2c@884000 {
+    compatible = [71 63 6f 6d 2c 69 32 63 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 88 40 00 00 00 40 00];
+   };
+   i2c@88c000 {
+    compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 69 32 63 00];
+    status = [6f 6b 61 79 00];
+    reg = [00 88 c0 00 00 00 40 00];
+   };
+   i2c@890000 {
+    compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 69 32 63 00];
+    status = [6f 6b 61 79 00];
+    reg = [00 89 00 00 00 00 40 00];
+   };
+   i2c@894000 {
+    compatible = [71 63 6f 6d 2c 69 32 63 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 89 40 00 00 00 40 00];
+   };
+   i2c@898000 {
+    compatible = [71 63 6f 6d 2c 69 32 63 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 89 80 00 00 00 40 00];
+   };
+   i2c@89c000 {
+    compatible = [71 63 6f 6d 2c 69 32 63 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 89 c0 00 00 00 40 00];
+   };
+   i3c-master@880000 {
+    compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 69 33 63 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 88 00 00 00 00 40 00 0e cd 00 00 00 01 00 00];
+   };
+   i3c-master@884000 {
+    compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 69 33 63 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 88 40 00 00 00 40 00 0e ce 00 00 00 01 00 00];
+   };
+   qcom,qup_uart@888000 {
+    compatible = [71 63 6f 6d 2c 67 65 6e 69 2d 75 61 72 74 00];
+    status = [6f 6b 61 79 00];
+    reg = [00 88 80 00 00 00 40 00];
+   };
+   spi@880000 {
+    compatible = [71 63 6f 6d 2c 73 70 69 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 88 00 00 00 00 40 00];
+   };
+   spi@88c000 {
+    compatible = [71 63 6f 6d 2c 73 70 69 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 88 c0 00 00 00 40 00];
+   };
+   spi@894000 {
+    compatible = [71 63 6f 6d 2c 73 70 69 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 89 40 00 00 00 40 00];
+   };
+   spi@898000 {
+    compatible = [71 63 6f 6d 2c 73 70 69 2d 67 65 6e 69 00];
+    status = [64 69 73 61 62 6c 65 64 00];
+    reg = [00 89 80 00 00 00 40 00];
+   };
+  };
+  rsc@17a00000 {
+   drv@2 {
+    rpmh-regulator-ldob20 {
+     compatible = [71 63 6f 6d 2c 72 70 6d 68 2d 76 72 6d 2d 72 65 67 75 6c 61 74 6f 72 00];
+     qcom,resource-name = [6c 64 6f 62 32 30 00];
+     qcom,regulator-type = [70 6d 69 63 35 2d 6c 64 6f 00];
+     regulator-pmxr2230-l20 {
+      phandle = [00 00 01 0c];
+      regulator-name = [70 6d 78 72 32 32 33 30 5f 6c 32 30 00];
+      regulator-min-microvolt = [00 18 b8 20];
+      regulator-max-microvolt = [00 36 13 c0];
+      qcom,init-voltage = [00 18 b8 20];
+     };
+    };
+   };
+  };
+ };
+};

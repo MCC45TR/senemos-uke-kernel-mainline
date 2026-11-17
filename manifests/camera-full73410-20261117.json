@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "full_release": 10,
+  "parent": {
+    "build": 11341382,
+    "source_commit": "a61118e496200b862385f8024bf99421e5593cf8",
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable/srpm-builds/11341382/senemos-uke-linux-kernel-mainline-unstable-7.3.4-9.src.rpm",
+    "srpm_sha256": "824e9079fe2fcc153eb940145b629787c049c167e86bc538545f4e0658ce1beb",
+    "spec_sha256": "b4082ea36915d9071d2dcfaeb55b963ffbea35bc91732e92c07a5f54fcfa5ac5",
+    "source_files": 41,
+    "full_build_succeeded": true,
+    "native_health_accepted": false,
+    "failed_boot_record_retained": true,
+    "accepted_recovery": "7.3.4-8-unstable/B"
+  },
+  "native": {
+    "build": 11341679,
+    "release": 33,
+    "source_commit": "4140d27ae3e17c25fc450a413fe112316a8f86be",
+    "source_files": 30,
+    "qualified": true,
+    "srpm_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/srpm-builds/11341679/uke-kernel-migration-check-7.3.4-33.src.rpm",
+    "srpm_sha256": "6e4cbc6bbd263ee17aad9bbab549453eb04f977e9b85e0fa4be290f9e3c37238",
+    "spec_sha256": "a67b34bdc614fc43fbf062bc1ecde9709a31f339ac5315e277cef7355e442bfb",
+    "proof_url": "https://download.copr.fedorainfracloud.org/results/mcc45tr/uke-linux-unstable:custom:kernel-migration-20261105/fedora-rawhide-aarch64/11341679-uke-kernel-migration-check/uke-kernel-migration-check-7.3.4-33.fc46.aarch64.rpm",
+    "proof_sha256": "db6a9b01448fc79d6684983c6ff764d69e3a9fdf79a486eb52ee4523eeb29984",
+    "proof_rpm_trusted_signatures": 2
+  },
+  "signer_fingerprint": "2204a661ea630a5303500085538797e72a3e4eca",
+  "full_kernel_built": false,
+  "physical_acceptance": false,
+  "installed_on_target": false,
+  "goal": "Move the unchanged read-only front gate after native MC/GEM interconnect tags and restored FDT capacity; retain every full9 feature and validate a remapped board-predicate projection before linking. Preserve accepted8/B for recovery; sensor and capture stay disabled.",
+  "qualified_layers": [
+    {
+      "name": "camss-lite734",
+      "source_commit": "3ac452187b4f1f9f97a2add732f95e669557fce2"
+    },
+    {
+      "name": "phy-power734",
+      "source_commit": "536a6e86889ffd5f1d80f4503571627e88308e50"
+    },
+    {
+      "name": "csid-irq734",
+      "source_commit": "2519d8821a5cdd7f5b124446ee7a00cc9d830e1e"
+    },
+    {
+      "name": "csid-stream734",
+      "source_commit": "bbef2027fb512b5660fdc698f07ce5ca55a401e4"
+    }
+  ],
+  "front_stage": {
+    "preimage": "4a38f7222df62bb5224515ffdb2f76bbb61932fa9abf60acd6761593574df505",
+    "postimage": "1faef554ffcf069b01e93a9f0fdd2ba6cc001b0e8a336ae8167d29378fc03b03",
+    "native_qualified": true
+  },
+  "observed_front_test": {
+    "sha256": "e1f0a9012641b17a05afe0313db211bd6864b6df27dafab3401c78935baa2b45",
+    "nodes": 42,
+    "properties": 135,
+    "remapped_phandles": 13,
+    "contains_unit_data": false,
+    "contains_eeprom_contents": false,
+    "test_only_never_boot": true
+  }
+}
