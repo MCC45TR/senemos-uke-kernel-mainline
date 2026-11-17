@@ -29,16 +29,7 @@ for compiler in gcc clang;do
  done
 done
 [[ $(grep -c '^PASS: PHY power:' "$result/results.txt") == 4 ]]
-node - "$model/after" "$model" <<'JS'
-const fs=require('fs'),a=require('assert/strict'),[source,out]=process.argv.slice(2);
-for(const [name,file,before,after]of [
- ['wide-voltage','actual-power.h','csiphy->res->voltage[i].max_uV','INT_MAX'],
- ['early-release','actual-power.h','ret = regulator_disable(power->supplies[i].consumer);','ret = regulator_set_voltage(power->supplies[i].consumer, 0, INT_MAX);'],
- ['discard-fault','actual-power.h','if (power->fault || power->active || power->voted || power->enabled ||\n\t    power->pm_held || power->clocks || power->irq)','if (false)'],
- ['sync-deadlock','actual-status.h','if (!READ_ONCE(cam_cc_native.ready))','if (!READ_ONCE(cam_cc_native.synchronized))'],
- ['legacy-dispatch','actual-dispatch.h','csiphy->camss->res->version == CAMSS_7675','1']
-]){fs.mkdirSync(out+'/'+name);for(const f of fs.readdirSync(source))fs.copyFileSync(source+'/'+f,out+'/'+name+'/'+f);const p=out+'/'+name+'/'+file,s=fs.readFileSync(p,'utf8');a.equal(s.split(before).length,2,name);fs.writeFileSync(p,s.replace(before,after));}
-JS
+node "$owner/tests/fixtures/phy-power734-mutants.mjs" "$model/after" "$model"
 for mutant in wide-voltage early-release discard-fault sync-deadlock legacy-dispatch;do
  gcc "${flags[@]}" -I"$model/$mutant" "$fixture" -o "$model/mutant"
  if [[ $mutant == legacy-dispatch ]];then

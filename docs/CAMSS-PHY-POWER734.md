@@ -1,8 +1,9 @@
 # Demand-scoped SM7675 PHY supplies
 
-17 November 2026. Source29 prepares native consumer voltage requests for the
-Uke receive path. Qualification is pending after correcting a fixture counter
-that collided with the standard C library. The power candidate is unchanged.
+17 November 2026. Source30 prepares native consumer voltage requests for the
+Uke receive path. Four compiler/sanitizer modes and legacy comparisons passed
+in the preceding run. Full qualification is pending after correcting the
+semantic mutant generator. The power candidate is unchanged.
 Accepted full8/B remains installed;
 the sensor, bus and CAMSS graph remain inactive.
 

@@ -21,7 +21,7 @@ rpm2cpio "$work/parent.src.rpm" | (cd "$work/parent";cpio -idm --quiet --no-abso
 bash "$owner/packaging/native/fold-native-phy-power734.sh" "$work/parent/uke-kernel-migration-check.spec" "$work/new.spec"
 layer=$work/layer/phy-power734
 mkdir -p "$layer"
-for path in src/camera/phy-power734/{apply.sh,pre.sha256,post.sha256,power.patch,camss-csiphy-sm7675-power.h,sm7675-camcc.h} tests/native-phy-power734.sh tests/fixtures/{phy-power734-model.mjs,phy-power734-check.c} manifests/phy-power734-20261117.json;do
+for path in src/camera/phy-power734/{apply.sh,pre.sha256,post.sha256,power.patch,camss-csiphy-sm7675-power.h,sm7675-camcc.h} tests/native-phy-power734.sh tests/fixtures/{phy-power734-model.mjs,phy-power734-check.c,phy-power734-mutants.mjs} manifests/phy-power734-20261117.json;do
  [[ -f $owner/$path && ! -L $owner/$path ]]
  install -Dm644 "$owner/$path" "$layer/$path"
 done
