@@ -1,0 +1,13 @@
+--- a/drivers/clk/qcom/provider/camcc-sm7675-crm-rom.h
++++ b/drivers/clk/qcom/provider/camcc-sm7675-crm-rom.h
+@@ -82,7 +82,9 @@
+ 	    !clock->init.parent_hws[0])
+ 		return -EOPNOTSUPP;
+ 	divider = container_of(clock->clock, struct clk_alpha_pll_postdiv, clkr);
+-	if (!divider->regs || divider->post_div_shift != 10 || divider->width != 4 ||
++	/* The original catalog has even [13:10] and odd [17:14] outputs. */
++	if (!divider->regs || (divider->post_div_shift != 10 &&
++	    divider->post_div_shift != 14) || divider->width != 4 ||
+ 	    !divider->post_div_table || !divider->num_post_div)
+ 		return -EINVAL;
+ 	/* Exactly one PLL then one postdivider; malformed chains cannot recurse. */

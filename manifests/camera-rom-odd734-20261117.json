@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "source_check_release": 24,
+  "parent_build": 11339509,
+  "parent_source_sha256": "1e989eba01f91e266b2cf82809894e09a6b7470c59b6929d6e45f9be98f606b3",
+  "parent_spec_sha256": "090dfdab0158c478a048ba600a49dbde64f2311fb6b5722267ae0faf86bddd05",
+  "parent_input_count": 22,
+  "candidate": "Support the documented original-catalog odd postdivider field at bit14 in addition to the even bit10 field",
+  "width_bits": 4,
+  "allowed_shifts": [10, 14],
+  "voltage_limits_unchanged": true,
+  "firmware_ownership_retained": true,
+  "native_qualification_pending": true,
+  "actual_device_fault_cause_proved": false,
+  "full_revision_reserved": false,
+  "physical_camera_accepted": false
+}
