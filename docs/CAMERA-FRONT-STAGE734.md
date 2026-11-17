@@ -1,10 +1,16 @@
 # Read-only front gate after native interconnect conversion
 
-17 November 2026. Source33 is prepared for COPR qualification. It is not a
-working-camera or successful-boot result. Full9's first boot remained at the
+17 November 2026. Source33/COPR11341679 passed in 525 seconds, with two
+trusted package signatures. Four compiler/sanitizer modes, two controller-off
+modes, two original-failure controls, three entry mutants and the real ARM64
+caller passed. This remains a source/object result. Full9's first boot remained at the
 POCO logo for the bounded 180-second observation; SSH never became available.
 The preserved full8/B recovery partition was unchanged before that boot.
-Physical recovery is pending access to the tablet.
+The tablet was recovered through fastboot selection of the unchanged full8/B
+partition and a normal reboot. Native health accepted8/B; the failed9 record
+and refusal remain. Only the signed default-selector package was returned to8
+through DNF, retaining automatic staging and all preferences. No partition was
+written during recovery.
 
 The unchanged front EEPROM helper requires two interconnect argument cells
 for the GEM and MC providers, including each request's zero tag. Full9 calls
