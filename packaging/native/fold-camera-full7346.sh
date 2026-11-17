@@ -33,7 +33,7 @@ bash camera-full7346/camera-owner734/tests/native-camera-owner734.sh "$PWD" "$su
 cmp "$camera_proof/qualification.json" camera-owner734-result/qualification.json
 sha256sum -c --strict --quiet "$camera_proof/source.sha256"
 camera_full5_parent=$(bash camera-full7346/camera-full5-legacy-view734.sh "$PWD")
-uke_hwkm_parent=$(bash hwkm-early/packaging/native/hwkm-early-legacy-view733.sh "$camera_full5_parent")
+uke_hwkm_parent=$(bash camera-full7346/camera-hwkm-legacy-view7346.sh "$camera_full5_parent")
 # UKE_CAMERA_FULL7346_BUILD_END
 SPEC
 cat > "$work/check" <<'SPEC'
@@ -81,7 +81,7 @@ awk -v root="$work" '
   }
   if(/^bash boot-recipe\/src\/boot\/build-payload[.]sh /){inject("build");build++;mutated=1}
   if(mutated && $0=="uke_hwkm_parent=$(bash hwkm-early/packaging/native/hwkm-early-legacy-view733.sh \"$PWD\")"){
-   print "# UKE_CAMERA_FULL7346_VIEW_BEGIN";print "uke_hwkm_parent=$(bash hwkm-early/packaging/native/hwkm-early-legacy-view733.sh \"$camera_full5_parent\")";print "# UKE_CAMERA_FULL7346_VIEW_END";views++;next
+   print "# UKE_CAMERA_FULL7346_VIEW_BEGIN";print "uke_hwkm_parent=$(bash camera-full7346/camera-hwkm-legacy-view7346.sh \"$camera_full5_parent\")";print "# UKE_CAMERA_FULL7346_VIEW_END";views++;next
   }
   if(mutated && /^bash hwkm-early\/packaging\/native\/prepare-hwkm-early733[.]sh "\$PWD" /){
    print "# UKE_CAMERA_FULL7346_HWKM_BEGIN";sub(/"\$PWD"/,"\"$camera_full5_parent\"");print;print "# UKE_CAMERA_FULL7346_HWKM_END";hwkm++;next
@@ -96,6 +96,7 @@ awk '
  /^# UKE_CAMERA_FULL7346_VIEW_BEGIN$/{view=1;next}
  /^# UKE_CAMERA_FULL7346_HWKM_BEGIN$/{hwkm=1;next}
  /^# UKE_CAMERA_FULL7346_(VIEW|HWKM)_END$/{view=0;hwkm=0;next}
+ view{sub(/camera-full7346\/camera-hwkm-legacy-view7346[.]sh/,"hwkm-early/packaging/native/hwkm-early-legacy-view733.sh")}
  view||hwkm{gsub(/"\$camera_full5_parent"/,"\"$PWD\"");print;next}
  /^# UKE_CAMERA_FULL7346_[A-Z]+_BEGIN$/{skip=1;next}
  /^# UKE_CAMERA_FULL7346_[A-Z]+_END$/{skip=0;next}

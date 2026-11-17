@@ -140,6 +140,13 @@ PC text checks cover the complete old-recipe inverse, six runtime RPM names,
 repeated projection and refusal of altered parent or production source. No PC
 or tablet compilation is used.
 
+The historical HWKM helper caches an absolute path. Calling it through the
+new source projection therefore needs a canonical cache-directory path. The
+adapter pins the complete original helper and changes only that expression,
+then verifies its whole-file inverse before running it. A source fixture
+reproduces the original cached-path refusal and verifies repeated successful
+projection, original preimages and unchanged production files with the adapter.
+
 This prepares a runtime candidate, not camera acceptance. The full kernel,
 signed RPM/DNF transition, inactive-slot readback, actual boot, firmware ROM
 admission and resource release still need qualification. The sensor graph,

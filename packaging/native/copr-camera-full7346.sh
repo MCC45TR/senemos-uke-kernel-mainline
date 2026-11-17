@@ -39,6 +39,7 @@ if grep -Eiq 'NOTFOUND|NOKEY|BAD|NOT OK' "$work/signatures";then exit 1;fi
 tar -xJf "$work/native/uke-camera-owner734.tar.xz" -C "$work/camera-full7346"
 layer=$work/camera-full7346/camera-owner734
 install -m644 "$owner/packaging/native/camera-full5-legacy-view734.sh" "$work/camera-full7346/camera-full5-legacy-view734.sh"
+install -m644 "$owner/packaging/native/camera-hwkm-legacy-view7346.sh" "$work/camera-full7346/camera-hwkm-legacy-view7346.sh"
 (cd "$layer";sha256sum -c --strict --quiet SHA256SUMS)
 [[ $(cat "$layer/source-commit") == "$(jq -er .native.source_commit "$contract")" ]]
 sed 's/uke7[.]3[.]4-4u/uke7.3.4-6u/g;s/two-string7344-to7342/two-string7346-to7342/g' "$owner/packaging/native/verify-parent-source-tuple7344.sh" > "$work/camera-full7346/verify-parent-source-tuple7346.sh"
