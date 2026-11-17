@@ -203,3 +203,10 @@ runtime source-seal entry, preserving the old ledger and verifying its exact
 inverse. The independently signed source23 proof binds the new header and
 reporter; the old source22 proof remains evidence for its earlier phase.
 Full7 installation and the actual failing client/rate remain unqualified.
+
+The linked-image seal is created at the end of `%build`, before `%install`
+consumes it. RPM executes build, install and check in that order even when
+the section text lists check before install. A source-only regression executes
+the actual added blocks in RPM order, reproduces the missing-seal failure and
+requires image/source tampering to refuse. The source worker runs this check
+before the expensive full kernel build. Camera code and admission are unchanged.

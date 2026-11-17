@@ -36,12 +36,18 @@ sha256sum -c --strict --quiet "$rom_proof/source.sha256"
 bash camera-full7347/seal-camera-rom-report7347.sh "$PWD" "$PWD/camera-rom-report734-result"
 # UKE_CAMERA_FULL7347_BUILD_END
 SPEC
-cat > "$work/check" <<'SPEC'
-# UKE_CAMERA_FULL7347_CHECK_BEGIN
+cat > "$work/linked" <<'SPEC'
+# UKE_CAMERA_FULL7347_LINKED_BEGIN
 sha256sum -c --strict --quiet camera-rom-report734-result/source.sha256
 grep -aqF 'Uke camera ROM refusal:' %{_uke_out}/drivers/clk/qcom/camcc-sm7675.o
 grep -aqF 'Uke camera ROM refusal:' %{_uke_out}/arch/arm64/boot/Image
 (cd %{_uke_out};sha256sum drivers/clk/qcom/camcc-sm7675.o arch/arm64/boot/Image vmlinux) > camera-rom-report734-result/full-linked.sha256
+# UKE_CAMERA_FULL7347_LINKED_END
+SPEC
+cat > "$work/check" <<'SPEC'
+# UKE_CAMERA_FULL7347_CHECK_BEGIN
+sha256sum -c --strict --quiet camera-rom-report734-result/source.sha256
+(cd %{_uke_out};sha256sum -c --strict --quiet "$OLDPWD/camera-rom-report734-result/full-linked.sha256")
 # UKE_CAMERA_FULL7347_CHECK_END
 SPEC
 cat > "$work/install" <<'SPEC'
@@ -66,7 +72,7 @@ awk -v root="$work" '
   if($0=="bash camera-full7346/verify-parent-source-tuple7346.sh \"$PWD\" \"$native_proof/source.sha256\""){
    print "# UKE_CAMERA_FULL7347_TUPLE_BEGIN";print "bash camera-full7347/verify-parent-source-tuple7347.sh \"$PWD\" \"$native_proof/source.sha256\"";print "# UKE_CAMERA_FULL7347_TUPLE_END";tuple++;next
   }
-  if($0=="%check"){print;inject("check");checks++;next}
+  if($0=="%check"){inject("linked");print;inject("check");checks++;next}
   if($0=="%install"){print;inject("install");installs++;next}
  }{print}END{if(release!=1||header!=1||prepares!=1||build!=1||tuple!=1||checks!=1||installs!=1)exit 1}
 ' "$before" > "$after"

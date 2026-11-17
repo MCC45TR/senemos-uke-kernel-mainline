@@ -21,6 +21,7 @@ for role in parent native;do
  rpm2cpio "$work/$role.src.rpm" | cpio -i --to-stdout --quiet "./$member" > "$work/$role.spec"
  printf '%s  %s\n' "$(jq -er ".$role.spec_sha256" "$contract")" "$work/$role.spec" | sha256sum -c --strict --quiet -
 done
+bash "$owner/tests/camera-full7347-phases.sh" "$work/parent.spec"
 mkdir "$result"
 rpm2cpio "$work/parent.src.rpm" | (cd "$result";cpio -idm --quiet --no-absolute-filenames --no-preserve-owner)
 (cd "$result";find . -type f ! -name senemos-uke-linux-kernel-mainline-unstable.spec ! -name senemos-native-profile-7.3.4.tar.xz ! -name senemos-uke-boot-recipe.tar.xz ! -name boot-payload.json -print0 | sort -z | xargs -0 sha256sum) > "$work/retained-inputs.sha256"
