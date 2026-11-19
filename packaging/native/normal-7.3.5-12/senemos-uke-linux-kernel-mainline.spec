@@ -1433,7 +1433,7 @@ bash native-profile/tests/nfc-cohort-config731.sh %{_uke_out}/.config native-gen
 test -s %{_uke_out}/drivers/hid/hid-nanosic-uke.o
 test -s %{_uke_out}/drivers/remoteproc/qcom_q6v5_pas.o
 test -n "$(find %{buildroot}/usr/lib/modules/%{krel} -type f -name 'hid-nanosic-uke.ko*' -print -quit)"
-bash %{SOURCE298} %{_specdir}/senemos-uke-linux-kernel-mainline.spec %{buildroot} %{krel}
+
 bash native-profile/tests/pstore-fdt731-contract.sh
 cmp native-profile/src/boot/uke-pstore-dt.h arch/arm64/kernel/uke-pstore-dt.h
 test "$(grep -Fc 'ret = uke_pstore_graph(output);' arch/arm64/kernel/uke-abl.c)" = 1
@@ -1506,7 +1506,7 @@ uke_check_start=$SECONDS
 bash native-profile/tests/kernel-hardening-config-contract.sh %{_uke_out}/.config
 bash native-profile/tests/kernel-module-signatures-contract.sh "$PWD" %{buildroot}/usr/lib/modules/%{krel} %{buildroot}/usr/share/senemos/uke/%{krel}/module-signing.x509
 test ! -e %{_uke_out}/certs/signing_key.pem
-bash %{SOURCE298} %{_specdir}/senemos-uke-linux-kernel-mainline.spec %{buildroot} %{krel}
+
 test -s %{buildroot}%{_docdir}/%{name}/%{krel}/README.md
 test ! -e %{buildroot}%{_docdir}/%{name}/README.md
 printf 'UKE_BUILD_STAGE package_checks elapsed_s=%d\n' "$((SECONDS-uke_check_start))"
@@ -1522,6 +1522,10 @@ sha256sum -c --strict --quiet camera-owner734-result/source.sha256 camera-owner7
 (cd %{_uke_out};sha256sum -c --strict --quiet "$OLDPWD/camera-owner734-result/full-linked.sha256")
 cmp %{_uke_out}/arch/arm64/boot/Image %{buildroot}/usr/lib/modules/%{krel}/vmlinuz
 # UKE_CAMERA_FULL7346_SEALED_END
+# Inherited installers compare the exact source record in the staging root.
+# Publish the normal ABI's verified runtime record after those checks finish.
+install -m644 native-generated/normal-source-composition.json %{buildroot}/usr/share/senemos/uke/%{krel}/source-composition.json
+bash %{SOURCE298} %{_specdir}/senemos-uke-linux-kernel-mainline.spec %{buildroot} %{krel}
 %install
 export SENEMOS_PUBLICATION_ABI='%{krel}'
 # UKE_CAMERA_FULL73410_INSTALL_BEGIN
@@ -1662,11 +1666,11 @@ bash native-profile/src/audio/desktop/install-policy.sh.publication '%{buildroot
 bash native-profile/packaging/native/prepare-surround-full733.sh.publication "$PWD" %{_uke_out} install '%{buildroot}'
 bash native-profile/packaging/native/prepare-pcm-surround-full733.sh "$PWD" %{_uke_out} install '%{buildroot}'
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
-install -m644 %{_uke_out}/module-signing.x509 "$identity/"
+install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
 jq -e --arg abi '%{krel}' --arg rev '%{senemos_build_release}' --arg parent '%{source_krel}' '
     select(.upstream_version=="7.3.5" and .rpm_revision==$rev and .kernel_release==$parent)
     | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360041,source_kernel_release:.kernel_release}
-    | .kernel_release=$abi' native-profile/source-composition.json > "$identity/source-composition.json"
+    | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
 heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
 buffer_parent=$(bash native-profile/packaging/native/quaternion-buffer-legacy-view733.sh "$heading_parent")
