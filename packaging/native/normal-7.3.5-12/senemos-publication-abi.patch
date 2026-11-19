@@ -1,0 +1,505 @@
+--- a/boot-recipe/src/boot/boot-status.cpp
++++ b/boot-recipe/src/boot/boot-status.cpp
+@@ -12,6 +12,7 @@
+     const bool unstable = input.size() > 9 && input.compare(input.size() - 9, 9, "-unstable") == 0;
+     const auto release = unstable ? input.substr(0, input.size() - 9) :
+         input.size() > 4 && input.compare(input.size() - 4, 4, "-kvm") == 0 ? input.substr(0, input.size() - 4) : input;
++    if (input == "7.4.5-senemos") return true;
+     const auto dash = release.find('-');
+     if (release.size() < 128 && (release.rfind("7.2.", 0) == 0 || release.rfind("7.3.", 0) == 0) && dash > 4 && dash != std::string::npos) {
+         const auto patch = release.substr(4, dash - 4);
+--- a/boot-recipe/src/boot/build-payload.sh
++++ b/boot-recipe/src/boot/build-payload.sh
+@@ -5,7 +5,7 @@
+ [[ $# == 5 ]] || exit 2
+ kernel=$(realpath "$1") out=$(realpath -m "$2")
+ base=$(realpath "$3") release=$4 jobs=$5
+-[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ && $jobs =~ ^[1-9][0-9]*$ ]]
++[[ $release =~ ^([0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?|7[.]4[.]5-senemos)$ && $jobs =~ ^[1-9][0-9]*$ ]]
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
+ cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
+@@ -54,13 +54,18 @@
+     fi
+ fi
+ localversion=-${release#*-}
++release_args=(LOCALVERSION="$localversion")
++if [[ $release == 7.4.5-senemos ]]; then
++    [[ $(make -s -C "$kernel" kernelversion) == 7.3.5 ]]
++    release_args+=(KERNELRELEASE="$release")
++fi
+ export ARCH=arm64 LLVM=1
+ bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE ''
+-make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
++make -C "$kernel" O="$out" "${release_args[@]}" olddefconfig
+ bash "$here/../../tests/waydroid-network-built731.sh" "$out" "$here/../../configs/waydroid-network.config" config-only
+ bash "$here/../../tests/kernel-hardening-config-contract.sh" "$out/.config"
+ bash "$here/../../tests/uke-build-scope-contract.sh" "$out/.config"
+-[[ $(make -s -C "$kernel" O="$out" LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
++[[ $(make -s -C "$kernel" O="$out" "${release_args[@]}" kernelrelease) == "$release" ]]
+ for flag in QCOM_UKE_ABL_DT GUNYAH_WATCHDOG INITRAMFS_FORCE CMDLINE_FORCE DRM_SIMPLEDRM FRAMEBUFFER_CONSOLE \
+     EXT4_FS F2FS_FS XFS_FS BTRFS_FS QCOM_UKE_PLATFORM_PROFILE ACPI_PLATFORM_PROFILE; do
+     grep -Fx "CONFIG_${flag}=y" "$out/.config"
+@@ -68,10 +73,10 @@
+ grep -F 'root=PARTLABEL=linux ' "$out/.config"
+ grep -Fx 'CONFIG_QCOM_Q6V5_PAS=m' "$out/.config"
+ uke_stage_start=$SECONDS
+-make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image modules qcom/sm7675-xiaomi-uke.dtb
++make -C "$kernel" O="$out" "${release_args[@]}" -j"$jobs" Image modules qcom/sm7675-xiaomi-uke.dtb
+ printf 'UKE_BUILD_STAGE kernel_compile elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
+ uke_stage_start=$SECONDS
+-make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" modules_install \
++make -C "$kernel" O="$out" "${release_args[@]}" -j"$jobs" modules_install \
+     INSTALL_MOD_PATH="$stage" INSTALL_MOD_STRIP=1 DEPMOD=true
+ source_modules=$stage/lib/modules/$release
+ find "$source_modules" -maxdepth 1 -type l \( -name build -o -name source \) -delete
+@@ -111,11 +116,11 @@
+ printf 'UKE_BUILD_STAGE initramfs elapsed_s=%d jobs=%s\n' "$((SECONDS-uke_stage_start))" "$jobs"
+ uke_stage_start=$SECONDS
+ bash "$kernel/scripts/config" --file "$out/.config" --set-str INITRAMFS_SOURCE "$out/boot-initramfs.cpio.gz"
+-make -C "$kernel" O="$out" LOCALVERSION="$localversion" olddefconfig
++make -C "$kernel" O="$out" "${release_args[@]}" olddefconfig
+ bash "$here/../../tests/waydroid-network-built731.sh" "$out" "$here/../../configs/waydroid-network.config" config-only
+ bash "$kernel/native-profile/packaging/native/check-migration-boot-config731.sh" "$kernel" "$out"
+ bash "$here/../../tests/kernel-hardening-config-contract.sh" "$out/.config"
+-make -C "$kernel" O="$out" LOCALVERSION="$localversion" -j"$jobs" Image
++make -C "$kernel" O="$out" "${release_args[@]}" -j"$jobs" Image
+ # Keep only the public certificate as a deliverable. The same key signed the
+ # stripped modules before compression and is built into both Image passes.
+ install -m644 "$out/certs/signing_key.x509" "$out/module-signing.x509"
+--- a/boot-recipe/src/boot/make-initramfs-base.sh
++++ b/boot-recipe/src/boot/make-initramfs-base.sh
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env bash
+ # Native AArch64 build dependency stage; no prebuilt or OEM firmware input.
+ set -Eeuo pipefail
+-[[ $# == 2 && $2 =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ ]] || exit 2
++[[ $# == 2 && $2 =~ ^([0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?|7[.]4[.]5-senemos)$ ]] || exit 2
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ work=$(realpath -m "$1") release=$2
+ [[ ! -e $work ]] || { echo 'Refusing to reuse an unverified dracut base' >&2; exit 1; }
+--- a/hwkm-early/packaging/native/prepare-hwkm-early733.sh
++++ b/hwkm-early/packaging/native/prepare-hwkm-early733.sh
+@@ -9,6 +9,7 @@
+ contract=$layer/manifests/hwkm-early-20261115.json
+ camera=$kernel/crm-passive
+ release=$(jq -er .kernel_release "$kernel/native-profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ if [[ $phase == source ]]; then
+  [[ $# == 4 && ! -e $work ]]
+  base=$(realpath "$4")
+--- a/native-hardware/packaging/native/prepare-native-hardware-full733.sh
++++ b/native-hardware/packaging/native/prepare-native-hardware-full733.sh
+@@ -9,6 +9,7 @@
+ contract=$layer/manifests/native-hardware-delivery-20261113.json
+ work=$kernel/native-generated/native-hardware733
+ release=$(jq -er .kernel_release "$kernel/native-profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ if [[ $phase == source ]];then
+  [[ ! -e $work ]]
+  mkdir -p "$work/before"
+--- a/native-profile/packaging/native/check-cumulative-camera731.sh
++++ b/native-profile/packaging/native/check-cumulative-camera731.sh
+@@ -82,7 +82,7 @@
+     exit 0
+ fi
+ [[ -s $output/arch/arm64/boot/Image ]]
+-[[ $(cat "$output/include/config/kernel.release") == "$(jq -er .kernel_release "$profile/source-composition.json")" ]]
++[[ $(cat "$output/include/config/kernel.release") == "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$profile/source-composition.json")}" ]]
+ for object in drivers/gpu/drm/msm/msm.o drivers/media/i2c/ov08d10.o \
+  drivers/iio/common/uke-ssc/uke-ssc-iio.o drivers/clk/qcom/camcc-sm7675.o \
+  drivers/iommu/arm/arm-smmu/arm-smmu-qcom.o sound/soc/qcom/qdsp6/uke-fs19xx-runtime.o; do
+--- a/native-profile/packaging/native/check-dual-light-delivery733.sh
++++ b/native-profile/packaging/native/check-dual-light-delivery733.sh
+@@ -81,6 +81,7 @@
+   exit 0
+ fi
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $(cat "$out/include/config/kernel.release") == "$release" ]]
+ grep -Fx CONFIG_INPUT=y "$out/.config"
+ sha256sum "$out/.config" "$out/include/config/kernel.release" "$out/include/generated/utsrelease.h" > "$work/identities.sha256"
+--- a/native-profile/packaging/native/check-dual-light-events733.sh
++++ b/native-profile/packaging/native/check-dual-light-events733.sh
+@@ -21,6 +21,7 @@
+ install -m644 "$profile/tests/ssc-dual-light-native.c" "$work/ssc-dual-light-proof.c"
+ printf 'obj-m += ssc-dual-light-proof.o\nccflags-y += -I%s/src/sensors\n' "$profile" > "$work/Makefile"
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ version=$(jq -er .upstream_version "$profile/source-composition.json")
+ [[ $release == "$version"-*-unstable ]]
+ localversion=${release#"$version"}
+--- a/native-profile/packaging/native/check-enable-readback733.sh
++++ b/native-profile/packaging/native/check-enable-readback733.sh
+@@ -35,7 +35,7 @@
+ strings "$out/sound/soc/qcom/qdsp6/snd-q6apm.o" | grep -Fx 'FS19xx DSP Enable State'
+ if [[ $phase == linked ]];then
+  module=$out/sound/soc/qcom/qdsp6/snd-q6apm.ko
+- [[ $(modinfo -F vermagic "$module") == "$(jq -er .kernel_release "$profile/source-composition.json") "* ]]
++ [[ $(modinfo -F vermagic "$module") == "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$profile/source-composition.json")} "* ]]
+  strings "$module" | grep -Fx 'FS19xx DSP Enable State'
+ fi
+ printf 'Actual cumulative AArch64 FS19xx query runtime/backend/composite passed:%s; limiter and243 remain unqualified.\n' "$phase"
+--- a/native-profile/packaging/native/check-hall-initial733.sh
++++ b/native-profile/packaging/native/check-hall-initial733.sh
+@@ -46,6 +46,6 @@
+ ! grep -Eq ' U (gpiod_direction_|gpiod_set_|gpiod_to_irq)' "$work/imports"
+ strings "$out/arch/arm64/kernel/uke-abl.o" | grep -Fx state-gpios
+ if [[ $phase == linked ]];then
+- modinfo -F vermagic "$out/drivers/input/misc/qcom-smp2p-switch.ko" | grep -F "$(jq -er .kernel_release "$profile/source-composition.json") "
++ modinfo -F vermagic "$out/drivers/input/misc/qcom-smp2p-switch.ko" | grep -F "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$profile/source-composition.json")} "
+ fi
+ printf 'Actual cumulative AArch64 Hall initial GPIO and early DT passed:%s; no output/direction/physicalIRQ writers, stationary boot acceptance separate.\n' "$phase"
+--- a/native-profile/packaging/native/check-memory-compression733.sh
++++ b/native-profile/packaging/native/check-memory-compression733.sh
+@@ -49,7 +49,7 @@
+ for symbol in zswap_load zswap_store;do llvm-nm --defined-only "$out/mm/zswap.o" | grep -E " [tT] $symbol$";done
+ llvm-nm --defined-only "$out/mm/zsmalloc.o" | grep -E ' T zs_malloc$'
+ if [[ $phase == linked ]];then
+- modinfo -F vermagic "$out/drivers/block/zram/zram.ko" | grep -F "$(jq -er .kernel_release "$meta") "
++ modinfo -F vermagic "$out/drivers/block/zram/zram.ko" | grep -F "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$meta")} "
+  grep -E '(^|/)mm/zsmalloc[.]ko$' "$out/modules.builtin"
+ fi
+ printf 'Actual cumulative memory compression: seven ZRAM backends/multi, Zswap default-off/LZ4 with Zstd available, builtin allocator and complete config gates passed:%s; pressure/performance acceptance separate.\n' "$phase"
+--- a/native-profile/packaging/native/check-migration-cohort731.sh
++++ b/native-profile/packaging/native/check-migration-cohort731.sh
+@@ -70,7 +70,7 @@
+ done
+ if [[ $phase == linked ]]; then
+  test -s "$out/arch/arm64/boot/Image"
+- [[ $(cat "$out/include/config/kernel.release") == "$(jq -er .kernel_release "$profile/source-composition.json")" ]]
++ [[ $(cat "$out/include/config/kernel.release") == "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$profile/source-composition.json")}" ]]
+  bash "$profile/packaging/native/check-speaker-inclusion.sh" "$kernel" linked "$out"
+  for module in drivers/iio/common/uke-ssc/uke-ssc.ko sound/soc/codecs/snd-soc-fs19xx.ko \
+   sound/soc/qcom/qdsp6/snd-q6apm.ko; do
+--- a/native-profile/packaging/native/check-pcm-period733.sh
++++ b/native-profile/packaging/native/check-pcm-period733.sh
+@@ -42,6 +42,6 @@
+ llvm-nm "$object" | grep -E ' t q6apm_pcm_period_work$'
+ if [[ $phase == linked ]];then
+  module=$out/sound/soc/qcom/qdsp6/q6apm-dai.ko
+- [[ $(modinfo -F vermagic "$module") == "$(jq -er .kernel_release "$kernel/native-profile/source-composition.json") "* ]]
++ [[ $(modinfo -F vermagic "$module") == "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$kernel/native-profile/source-composition.json")} "* ]]
+ fi
+ printf 'Actual cumulative AArch64 PCM period source/object/lifetime gates passed:%s; compressed, capture, formats and protection retained.\n' "$phase"
+--- a/native-profile/packaging/native/check-speaker-inclusion.sh
++++ b/native-profile/packaging/native/check-speaker-inclusion.sh
+@@ -94,6 +94,7 @@
+   release_owner=$(cd -- "$(dirname -- "$0")/../.." && pwd)
+   expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
+   [[ $release == "$expected_release" ]]
++  release=${SENEMOS_PUBLICATION_ABI:-$release}
+   [[ $(modinfo -F vermagic "$module") == "$release "* ]]
+   bash "$profile/tests/audio-speaker-observer-code.sh" "$object" "$module"
+   if [[ $mode == controls-only ]]; then
+--- a/native-profile/packaging/native/check-ssc-stream-owners733.sh
++++ b/native-profile/packaging/native/check-ssc-stream-owners733.sh
+@@ -59,6 +59,7 @@
+ git -C "$kernel" apply --whitespace=error "$delta"
+ printf '%s  %s\n' "$after" "$kernel/$driver" | sha256sum -c --strict --quiet -
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ version=$(jq -er .upstream_version "$profile/source-composition.json")
+ [[ $release == "$version"-*-unstable ]]
+ localversion=${release#"$version"}
+--- a/native-profile/packaging/native/check-stable733.sh
++++ b/native-profile/packaging/native/check-stable733.sh
+@@ -15,6 +15,9 @@
+ awk -v expected="$version" '$1=="VERSION"{v=$3}$1=="PATCHLEVEL"{p=$3}$1=="SUBLEVEL"{s=$3}
+  END{if(v"."p"."s!=expected)exit 1}' "$kernel/Makefile"
+ [[ $(make -s -C "$kernel" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1 LOCALVERSION="$localversion" kernelrelease) == "$release" ]]
++if [[ $phase == linked ]]; then
++    [[ $(cat "$out/include/config/kernel.release") == "${SENEMOS_PUBLICATION_ABI:-$release}" ]]
++fi
+ jq -e --argjson tuple "$tuple" '.upstream_version==$tuple.version and .upstream_commit==$tuple.upstream.commit and .upstream_sha256==$tuple.upstream.source_sha256 and .upstream_stable_cumulative_layer==1 and .upstream_stable_parent_build==11282652 and .kernel_release==$tuple.kernel_release and .rpm_revision==($tuple.release|tostring) and .speaker_gain_ceiling==223 and (.physical_acceptance|not)' "$profile/source-composition.json" >/dev/null
+ jq -S 'del(.source_commit,.rpm_revision,.kernel_release,.diagnostic_audio_driver,.upstream_version,.upstream_commit,.upstream_sha256)' "$profile/manifests/kernel-migration-full12217-20261107.json" > "$out/stable733-parent-fields.json"
+ jq --slurpfile parent "$out/stable733-parent-fields.json" -e '
+--- a/native-profile/packaging/native/check-stop-deadline733.sh
++++ b/native-profile/packaging/native/check-stop-deadline733.sh
+@@ -33,6 +33,6 @@
+ if [[ $phase == linked ]];then
+  module=$out/sound/soc/codecs/snd-soc-fs19xx.ko
+  test -s "$module"
+- [[ $(modinfo -F vermagic "$module") == "$(jq -er .kernel_release "$profile/source-composition.json") "* ]]
++ [[ $(modinfo -F vermagic "$module") == "${SENEMOS_PUBLICATION_ABI:-$(jq -er .kernel_release "$profile/source-composition.json")} "* ]]
+ fi
+ printf 'Actual cumulative AArch64 muted STOP source/object/guard gates passed:%s; all running hardware writers exact, physical limiting unqualified.\n' "$phase"
+--- a/native-profile/packaging/native/prepare-battery-event-full733.sh
++++ b/native-profile/packaging/native/prepare-battery-event-full733.sh
+@@ -24,6 +24,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  llvm-readelf -h "$out/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
+--- a/native-profile/packaging/native/prepare-charge-demand-full733.sh
++++ b/native-profile/packaging/native/prepare-charge-demand-full733.sh
+@@ -29,6 +29,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  llvm-readelf -h "$out/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
+--- a/native-profile/packaging/native/prepare-charge-observe-full733.sh
++++ b/native-profile/packaging/native/prepare-charge-observe-full733.sh
+@@ -41,6 +41,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  llvm-readelf -h "$out/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
+--- a/native-profile/packaging/native/prepare-charge-online-full733.sh
++++ b/native-profile/packaging/native/prepare-charge-online-full733.sh
+@@ -35,6 +35,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  object=$out/drivers/power/supply/qcom_battmgr.o
+--- a/native-profile/packaging/native/prepare-charge-standard-full733.sh
++++ b/native-profile/packaging/native/prepare-charge-standard-full733.sh
+@@ -28,6 +28,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  llvm-readelf -h "$out/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
+--- a/native-profile/packaging/native/prepare-gravity-full733.sh
++++ b/native-profile/packaging/native/prepare-gravity-full733.sh
+@@ -18,6 +18,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  object=$out/drivers/iio/common/uke-ssc/uke-ssc.o
+--- a/native-profile/packaging/native/prepare-heading-full733.sh
++++ b/native-profile/packaging/native/prepare-heading-full733.sh
+@@ -29,6 +29,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  object=$out/drivers/iio/common/uke-ssc/uke-ssc.o
+--- a/native-profile/packaging/native/prepare-proximity-abi-full733.sh
++++ b/native-profile/packaging/native/prepare-proximity-abi-full733.sh
+@@ -27,6 +27,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  llvm-readelf -h "$out/drivers/iio/common/uke-ssc/uke-ssc.o" | grep -F AArch64
+--- a/native-profile/packaging/native/prepare-quaternion-buffer-full733.sh
++++ b/native-profile/packaging/native/prepare-quaternion-buffer-full733.sh
+@@ -27,6 +27,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  object=$out/drivers/iio/common/uke-ssc/uke-ssc.o
+--- a/native-profile/packaging/native/prepare-quaternion-full733.sh
++++ b/native-profile/packaging/native/prepare-quaternion-full733.sh
+@@ -18,6 +18,7 @@
+ fi
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/applied.sha256")
+ release=$(jq -er .kernel_release "$profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  object=$out/drivers/iio/common/uke-ssc/uke-ssc.o
+--- a/native-profile/packaging/native/prepare-storage-config-full733.sh
++++ b/native-profile/packaging/native/prepare-storage-config-full733.sh
+@@ -67,6 +67,7 @@
+ (cd "$kernel";sha256sum -c --strict --quiet "$work/base-inputs.sha256")
+ (cd "$work/reference-history";sha256sum -c --strict --quiet "$work/reference-history.sha256")
+ release=$(jq -er .kernel_release "$meta")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ [[ $release == "$(cat "$out/include/config/kernel.release")" ]]
+ if [[ $phase == linked ]];then
+  [[ ! -e $work/qualification.json ]]
+--- a/native-profile/src/audio/desktop/install-policy.sh
++++ b/native-profile/src/audio/desktop/install-policy.sh
+@@ -5,9 +5,15 @@
+ root=$(cd -- "$(dirname -- "$0")" && pwd)
+ destination=${1:?RPM buildroot}
+ release=${2:?kernel release}
+-[[ $destination == /* && $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[0-9]+(-unstable)?$ ]]
+-audio_release=${release%-unstable}
+-[[ $release != *-unstable ]] || audio_release+=u
++[[ $destination == /* ]]
++if [[ $release == 7.4.5-senemos ]]; then
++    audio_release=${3:?Source audio release}
++    [[ $audio_release =~ ^7[.]3[.]5-[1-9][0-9]*u$ ]]
++else
++    [[ $# == 2 && $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[0-9]+(-unstable)?$ ]]
++    audio_release=${release%-unstable}
++    [[ $release != *-unstable ]] || audio_release+=u
++fi
+ driver=uke${audio_release//./_}
+ [[ ${#driver} -lt 16 ]]
+ ucm=$destination/usr/share/alsa/ucm2
+--- a/native-profile/src/boot/boot-status.cpp
++++ b/native-profile/src/boot/boot-status.cpp
+@@ -12,6 +12,7 @@
+     const bool unstable = input.size() > 9 && input.compare(input.size() - 9, 9, "-unstable") == 0;
+     const auto release = unstable ? input.substr(0, input.size() - 9) :
+         input.size() > 4 && input.compare(input.size() - 4, 4, "-kvm") == 0 ? input.substr(0, input.size() - 4) : input;
++    if (input == "7.4.5-senemos") return true;
+     const auto dash = release.find('-');
+     if (release.size() < 128 && (release.rfind("7.2.", 0) == 0 || release.rfind("7.3.", 0) == 0) && dash > 4 && dash != std::string::npos) {
+         const auto patch = release.substr(4, dash - 4);
+--- a/native-profile/src/boot/build-payload.sh
++++ b/native-profile/src/boot/build-payload.sh
+@@ -5,7 +5,7 @@
+ [[ $# == 5 ]] || exit 2
+ kernel=$(realpath "$1") out=$(realpath -m "$2")
+ base=$(realpath "$3") release=$4 jobs=$5
+-[[ $release =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ && $jobs =~ ^[1-9][0-9]*$ ]]
++[[ $release =~ ^([0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?|7[.]4[.]5-senemos)$ && $jobs =~ ^[1-9][0-9]*$ ]]
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ [[ -x $base/usr/lib/systemd/systemd && -x $base/usr/libexec/uke-root-guard ]]
+ cmp "$here/dracut/root-guard.sh" "$base/usr/libexec/uke-root-guard"
+--- a/native-profile/src/boot/make-initramfs-base.sh
++++ b/native-profile/src/boot/make-initramfs-base.sh
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env bash
+ # Native AArch64 build dependency stage; no prebuilt or OEM firmware input.
+ set -Eeuo pipefail
+-[[ $# == 2 && $2 =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?$ ]] || exit 2
++[[ $# == 2 && $2 =~ ^([0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*(-kvm|-unstable)?|7[.]4[.]5-senemos)$ ]] || exit 2
+ here=$(cd -- "$(dirname -- "$0")" && pwd)
+ work=$(realpath -m "$1") release=$2
+ [[ ! -e $work ]] || { echo 'Refusing to reuse an unverified dracut base' >&2; exit 1; }
+--- a/native-profile/tests/audio-protected-package-contract.sh
++++ b/native-profile/tests/audio-protected-package-contract.sh
+@@ -7,8 +7,8 @@
+ release=${4:?Kernel release}
+ release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
+ expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
+-[[ $release == "$expected_release" ]]
+-audio_release=${release%-unstable}u
++[[ $release == "${SENEMOS_PUBLICATION_ABI:-$expected_release}" ]]
++audio_release=${expected_release%-unstable}u
+ audio_driver=uke${audio_release//./_}
+ [[ ${#audio_driver} -lt 16 ]]
+ for symbol in q6apm_fs19xx_register q6apm_fs19xx_configured q6apm_fs19xx_running q6apm_fs19xx_fault; do
+--- a/native-profile/tests/camcc-controller-linked731-check.sh
++++ b/native-profile/tests/camcc-controller-linked731-check.sh
+@@ -7,7 +7,7 @@
+ release=$3
+ release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
+ expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
+-[[ $release == "$expected_release" ]]
++[[ $release == "${SENEMOS_PUBLICATION_ABI:-$expected_release}" ]]
+ grep -Fx 'CONFIG_SM_CAMCC_7675=y' "$output/.config"
+ llvm-readelf -h "$output/drivers/clk/qcom/camcc-sm7675.o" | grep -E 'Machine:.*AArch64'
+ for field in phase error gate_register gate_readback; do
+--- a/native-profile/tests/camss-sm7675-linked731-check.sh
++++ b/native-profile/tests/camss-sm7675-linked731-check.sh
+@@ -6,7 +6,7 @@
+ release=$2
+ release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
+ expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
+-[[ $release == "$expected_release" ]]
++[[ $release == "${SENEMOS_PUBLICATION_ABI:-$expected_release}" ]]
+ module=$root/usr/lib/modules/$release/kernel/drivers/media/platform/qcom/camss/qcom-camss.ko.zst
+ test -s "$module"
+ modinfo -F alias "$module" | grep -Fx 'of:N*T*Cqcom,sm7675-camssC*'
+--- a/native-profile/tests/mainline-boot-status-contract.sh
++++ b/native-profile/tests/mainline-boot-status-contract.sh
+@@ -7,7 +7,7 @@
+ "${CXX:-g++}" -std=c++17 -O2 -Wall -Wextra -Werror "$root/src/boot/boot-status.cpp" -o "$work/status"
+ mkdir -p "$work/root/sys/firmware/devicetree/base" "$work/root/proc/sys/kernel"
+ printf 'xiaomi,uke\0qcom,sm7675\0' > "$work/root/sys/firmware/devicetree/base/compatible"
+-for release in 7.3.0-1-kvm 7.2.12-9-kvm 7.3.0-1 7.3.1-1 7.3.17-39 7.2.12-37 7.2.10-senemos.1 7.3.0-1-unstable 7.3.1-7006-unstable 7.2.12-1-unstable; do
++for release in 7.4.5-senemos 7.3.0-1-kvm 7.2.12-9-kvm 7.3.0-1 7.3.1-1 7.3.17-39 7.2.12-37 7.2.10-senemos.1 7.3.0-1-unstable 7.3.1-7006-unstable 7.2.12-1-unstable; do
+     printf '%s\n' "$release" > "$work/root/proc/sys/kernel/osrelease"
+     "$work/status" --root "$work/root" --identity | jq -e '.selected_kernel_release and (.hardware_acceptance_granted|not)' >/dev/null
+ done
+@@ -19,11 +19,11 @@
+ build_guard=$(sed -n '/^\[\[ \$release =~ /p' "$root/src/boot/build-payload.sh")
+ base_guard=$(sed -n '/^\[\[ \$# == 2 && \$2 =~ /p' "$root/src/boot/make-initramfs-base.sh")
+ jobs=2
+-for release in 7.3.0-1 7.3.0-1-kvm 7.3.1-7006-unstable; do
++for release in 7.4.5-senemos 7.3.0-1 7.3.0-1-kvm 7.3.1-7006-unstable; do
+     eval "$build_guard"
+     (set -- fixture "$release"; eval "$base_guard")
+ done
+-for release in 7x3y0-1 7.3.0-0-unstable 7.3.0-01-unstable 7.3.0-1-unstable-extra 7.3.0-1-kvm-unstable; do
++for release in 7.4.5-senemos-extra 7.4.6-senemos 7x3y0-1 7.3.0-0-unstable 7.3.0-01-unstable 7.3.0-1-unstable-extra 7.3.0-1-kvm-unstable; do
+     if (eval "$build_guard") || (set -- fixture "$release"; eval "$base_guard"); then exit 1; fi
+ done
+ echo 'Read-only mainline/KVM/unstable identity, producer ABI, legacy fallback and malformed/foreign refusals passed'
+--- a/native-profile/tests/msm-kms-alternate-build.sh
++++ b/native-profile/tests/msm-kms-alternate-build.sh
+@@ -7,7 +7,7 @@
+ release=${4:?Versioned kernel release}
+ release_owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
+ expected_release=$(bash "$release_owner/scripts/kernel-release.sh" json "$release_owner/manifests/cumulative-release.json" | jq -er .kernel_release)
+-[[ $release == "$expected_release" ]]
++[[ $release == "${SENEMOS_PUBLICATION_ABI:-$expected_release}" ]]
+ work=$(mktemp -d)
+ trap 'find "$work" -depth -delete' EXIT
+ [[ ! -e $output/certs/signing_key.pem ]]
+--- a/qtee-information/packaging/native/prepare-qtee-information733.sh
++++ b/qtee-information/packaging/native/prepare-qtee-information733.sh
+@@ -6,6 +6,7 @@
+ layer=$kernel/qtee-information
+ work=$kernel/native-generated/qtee-information733
+ release=$(jq -er .kernel_release "$kernel/native-profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ if [[ $phase == source ]]; then
+  [[ $# == 3 && ! -e $work ]]
+  mkdir -p "$work/before"
+--- a/ssc-time-reference-full/packaging/native/prepare-ssc-time-reference-full733.sh
++++ b/ssc-time-reference-full/packaging/native/prepare-ssc-time-reference-full733.sh
+@@ -10,6 +10,7 @@
+ work=$kernel/native-generated/ssc-time-reference733
+ parent=$kernel/native-generated/native-hardware733
+ release=$(jq -er .kernel_release "$kernel/native-profile/source-composition.json")
++release=${SENEMOS_PUBLICATION_ABI:-$release}
+ driver=drivers/iio/common/uke-ssc/uke-ssc-iio.c
+ if [[ $phase == source ]];then
+  [[ ! -e $work && -f $parent/source-complete ]]
+--- a/native-profile/packaging/native/prepare-surround-full733.sh
++++ b/native-profile/packaging/native/prepare-surround-full733.sh
+@@ -77,6 +77,7 @@
+   chmod 644 "$ucm/$name.conf"
+  done
+  release=$(jq -er .kernel_release "$profile/source-composition.json")
++ release=${SENEMOS_PUBLICATION_ABI:-$release}
+  rule=$destination/usr/share/wireplumber/wireplumber.conf.d/95-uke-microphone-array-$release.conf
+  cp "$rule" "$work/scoped-microphone-before.json"
+  jq '."monitor.alsa.rules"[].matches[] |= if ."node.name"=="alsa_input.platform-sound-uke.HiFi__Mic__source" then ."node.name"="~alsa_input[.]platform-sound-uke[.].*__Mic__source" else . end' "$rule" > "$work/scoped-microphone-surround.json"
+--- a/native-profile/tests/migration-boot-config-boundary731.sh
++++ b/native-profile/tests/migration-boot-config-boundary731.sh
+@@ -20,7 +20,12 @@
+  out=$stage/out
+  here=${payload%/*}
+  release=$(jq -er .kernel_release "$profile/source-composition.json")
++ release=${SENEMOS_PUBLICATION_ABI:-$release}
+  localversion=-${release#*-}
++ release_args=(LOCALVERSION="$localversion")
++ if [[ $release == 7.4.5-senemos ]]; then
++     release_args+=(KERNELRELEASE="$release")
++ fi
+  export ARCH=arm64 LLVM=1 LLVM_IAS=1
+  source "$stage/actual-boot-branch.sh"
+ )
