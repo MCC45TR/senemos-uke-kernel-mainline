@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 28
-%global normal_parent_copr 11368889
+%global normal_rpm_release 29
+%global normal_parent_copr 11369108
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -234,6 +234,7 @@ Source426: uke-pmic-glink-safe-detach73527.tar.xz
 Source427: uke-hbr3-mainlink-fallback73526.tar.xz
 Source428: uke-dpu-optional-dspp73526.tar.xz
 Source429: uke-ov08d10-reset-unwind73527.tar.xz
+Source430: uke-front-vdig-guard28.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1373,7 +1374,17 @@ printf '%%s  %%s\n' 8726f3109396bd6cf9388c8c3c162066a928df5725cbb1a868ec0188e949
 mkdir "$ov08d10_assets"
 tar -xJf %{SOURCE429} -C "$ov08d10_assets"
 bash "$ov08d10_assets/overlay/prepare-ov08d10-reset73527.sh" prepare "$PWD"
+front_vdig_assets=$PWD/native-generated/front_vdig_demand
+printf '%%s  %%s\n' 103935f184402e3952f37f7e64b43586b91411f1350b3a89e31613c96daba07b %{SOURCE430} | sha256sum -c --strict --quiet -
+mkdir "$front_vdig_assets"
+tar -xJf %{SOURCE430} -C "$front_vdig_assets"
+bash "$front_vdig_assets/overlay/prepare-front-vdig-demand.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+for object in drivers/regulator/qcom-rpmh-regulator-uke.o arch/arm64/kernel/uke-abl.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+    strings "%{_uke_out}/$object" | grep -Fx 'xiaomi,uke-front-vdig-demand-only'
+done
+bash "$front_vdig_assets/overlay/prepare-front-vdig-demand.sh" restore "$PWD"
 ov08d10_object="%{_uke_out}/drivers/media/i2c/ov08d10.o"
 llvm-readelf -h "$ov08d10_object" | grep -F AArch64
 strings "$ov08d10_object" | grep -F 'failed to release sensor reset'
@@ -2175,6 +2186,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {hbr3_trial:true,hbr3_trial_check_copr:11368624,hbr3_trial_archive_sha256:"c757a4e1aaa9531d5c07aa3ff53b47a4fc694fb28ff64398084727206881e26d",pack_voltage_check_copr:11368497,pack_voltage_archive_sha256:"c1448ccd3c790aab1f00ce1da34e1c3e882b3acb2488187897b161b3680807c4"}
     | .publication += {detached_mux_retry_check_copr:11368876,detached_mux_retry_archive_sha256:"df46ad746cb2b65715570760dea24c8ea455fa7739f4087ac50158ac92befd71",hbr3_startup_recovery_check_copr:11368662,hbr3_startup_recovery_archive_sha256:"450881e6abcb7a6f63548c66f6b28e0f62b44dd1f43be84f053a969c5ab95c6b",dpu_optional_dspp_check_copr:11368711,dpu_optional_dspp_archive_sha256:"472b2fb86b3c3d485f15daaead5af2f2b5b3142cc57122f476ede5720fc9ca76"}
     | .publication += {ov08d10_reset_check_copr:11368979,ov08d10_reset_archive_sha256:"8726f3109396bd6cf9388c8c3c162066a928df5725cbb1a868ec0188e949109a"}
+    | .publication += {front_vdig_demand_check_copr:11369181,front_vdig_demand_archive_sha256:"103935f184402e3952f37f7e64b43586b91411f1350b3a89e31613c96daba07b"}
     | .rpm_revision=$rev
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
@@ -2295,6 +2307,9 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-30
+- Register the fitted front camera digital supply without a boot proxy vote.
+
 * Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-29
 - Abort OV08D10 power-on and release resources when reset fails.
 
