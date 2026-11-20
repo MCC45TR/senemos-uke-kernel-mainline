@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 29
-%global normal_parent_copr 11369108
+%global normal_rpm_release 30
+%global normal_parent_copr 11369320
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -236,6 +236,7 @@ Source428: uke-dpu-optional-dspp73526.tar.xz
 Source429: uke-ov08d10-reset-unwind73527.tar.xz
 Source430: uke-front-vdig-guard29.tar.xz
 Source431: uke-mst-detect-controller73529.tar.xz
+Source432: uke-juo-display73530.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1385,7 +1386,16 @@ printf '%%s  %%s\n' 32f3662ba97bf4212d0428530c94bf6901f3dff43eefa1e28979f6ac424f
 mkdir "$mst_controller_assets"
 tar -xJf %{SOURCE431} -C "$mst_controller_assets"
 bash "$mst_controller_assets/overlay/prepare-mst-detect-controller.sh" prepare "$PWD"
+juo_display_assets=$PWD/native-generated/juo_display
+printf '%%s  %%s\n' 0e7a12820cbb41882892253883823bd0ea3326b89bbf8d48023ec46e741850ee %{SOURCE432} | sha256sum -c --strict --quiet -
+mkdir "$juo_display_assets"
+tar -xJf %{SOURCE432} -C "$juo_display_assets"
+bash "$juo_display_assets/overlay/prepare-juo-display73530.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+for object in drivers/gpu/drm/msm/dp/dp_display.o drivers/gpu/drm/msm/dp/dp_mst_drm.o drivers/gpu/drm/display/drm_dp_mst_topology.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+bash "$juo_display_assets/overlay/prepare-juo-display73530.sh" restore "$PWD"
 mst_controller_object="%{_uke_out}/drivers/gpu/drm/msm/dp/dp_mst_drm.o"
 llvm-readelf -h "$mst_controller_object" | grep -F AArch64
 llvm-nm "$mst_controller_object" > "$mst_controller_assets/linked-symbols.txt"
@@ -2318,6 +2328,11 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-31
+- Prefer sink-advertised YCbCr 4:2:0 when RGB would fall below 8 bpc on SST.
+- Allocate the MST max-bpc property before device registration.
+- Keep virtual MST DDC adapters from enumerating the controller device tree.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-30
 - Register the fitted front camera digital supply without a boot proxy vote.
 - Use the DisplayPort controller power reference for MST port detection.
