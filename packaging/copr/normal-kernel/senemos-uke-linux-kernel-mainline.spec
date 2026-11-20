@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 24
-%global normal_parent_copr 11367655
+%global normal_rpm_release 25
+%global normal_parent_copr 11367793
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -227,6 +227,7 @@ Source419: uke-normal-rgb-ssc735.tar.xz
 Source420: uke-normal-touch-watchdog735.tar.xz
 Source421: uke-normal-bsg-monitor735.tar.xz
 Source422: uke-normal-touch-distinct735.tar.xz
+Source423: uke-normal-display-cap-status735.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1330,7 +1331,14 @@ printf '%%s  %%s\n' a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe6
 mkdir "$ktz_assets"
 tar -xJf %{SOURCE414} -C "$ktz_assets"
 bash "$ktz_assets/prepare-ktz-minimum.sh" prepare "$PWD"
+display_cap_assets=$PWD/native-generated/normal-display-cap-status-assets
+printf '%%s  %%s\n' 5cd55eb5ce9db3f12dfcb7f1524b7d57bab9c750e87ecc3f0a3123322273180a %{SOURCE423} | sha256sum -c --strict --quiet -
+mkdir "$display_cap_assets"
+tar -xJf %{SOURCE423} -C "$display_cap_assets"
+bash "$display_cap_assets/overlay/prepare-display-cap-status735.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+bash "$display_cap_assets/overlay/prepare-display-cap-status735.sh" linked %{_uke_out} '%{krel}'
+bash "$display_cap_assets/overlay/prepare-display-cap-status735.sh" restore "$PWD"
 bash "$ktz_assets/prepare-ktz-minimum.sh" linked %{_uke_out} '%{krel}'
 bash "$ktz_assets/prepare-ktz-minimum.sh" restore "$PWD"
 bash "$gpi_assets/prepare-gpi.sh" linked %{_uke_out} '%{krel}'
@@ -2228,6 +2236,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-26
+- Preserve Uke DSC resources for streams that require compression.
+- Keep partial charge status coherent across battery and source changes.
+
 * Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-23
 - Keep valid NT36532 frame repeats separate from firmware watchdog recovery.
 - Keep the fixed charge band request in its verified settings generation.

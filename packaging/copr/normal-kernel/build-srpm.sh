@@ -65,7 +65,7 @@ if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet 
     printf 'Merged-package gate digest does not match Source398 in the spec.\n' >&2
     exit 1
 fi
-install -m644 "$assets/inputs/uke-normal-touch-distinct735.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-normal-display-cap-status735.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]
