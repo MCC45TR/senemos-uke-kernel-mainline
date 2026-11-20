@@ -57,7 +57,7 @@ mv -- "$work/SOURCES/$package.spec" "$spec"
     git apply --whitespace=error "$assets/inputs/parent.patch"
 )
 cmp "$spec" "$assets/$package.spec"
-install -m644 "$assets/inputs/uke-normal-gpi735.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-normal-battery-status-burst735.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]

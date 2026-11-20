@@ -219,6 +219,7 @@ Source412: uke-normal-transport-charge735.tar.xz
 Source413: uke-normal-feedback-geni735.tar.xz
 Source414: uke-normal-ktz-minimum735.tar.xz
 Source415: uke-normal-gpi735.tar.xz
+Source416: uke-normal-battery-status-burst735.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1268,6 +1269,11 @@ printf '%%s  %%s\n' 60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bd
 mkdir "$transport_charge_assets"
 tar -xJf %{SOURCE412} -C "$transport_charge_assets"
 bash "$transport_charge_assets/prepare-normal-transport-charge.sh" prepare "$PWD"
+burst_assets=$PWD/native-generated/normal-battery-status-burst-assets
+printf '%%s  %%s\n' 23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f %{SOURCE416} | sha256sum -c --strict --quiet -
+mkdir "$burst_assets"
+tar -xJf %{SOURCE416} -C "$burst_assets"
+bash "$burst_assets/prepare-battery-status-burst.sh" prepare "$PWD"
 bash "$root_probe_assets/prepare-normal-root-probe.sh" prepare "$PWD/boot-recipe" %{uke_boot_userspace} "$root_probe_rollback"
 feedback_geni_assets=$PWD/native-generated/normal-feedback-geni-assets
 printf '%%s  %%s\n' e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf %{SOURCE413} | sha256sum -c --strict --quiet -
@@ -1294,6 +1300,8 @@ bash "$feedback_geni_assets/prepare-feedback-geni.sh" restore "$PWD"
 bash "$root_probe_assets/prepare-normal-root-probe.sh" embedded %{_uke_out}/boot-initramfs.cpio.gz
 bash "$root_probe_assets/prepare-normal-root-probe.sh" restore "$PWD/boot-recipe" %{uke_boot_userspace} "$root_probe_rollback"
 bash "$transport_charge_assets/prepare-normal-transport-charge.sh" linked %{_uke_out} '%{krel}'
+bash "$burst_assets/prepare-battery-status-burst.sh" linked %{_uke_out} '%{krel}'
+bash "$burst_assets/prepare-battery-status-burst.sh" restore "$PWD"
 bash "$transport_charge_assets/prepare-normal-transport-charge.sh" restore "$PWD"
 bash "$observation_assets/prepare-normal-observation-overlay.sh" linked %{_uke_out} '%{krel}'
 bash "$observation_assets/prepare-normal-observation-overlay.sh" restore "$PWD"
@@ -2049,7 +2057,7 @@ install -m644 native-profile/SHA256SUMS native-profile/source-commit native-prof
 install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
 jq -e --arg abi '%{krel}' --arg source_rev '%{senemos_build_release}' --arg rev '%{normal_rpm_release}' --arg parent '%{source_krel}' '
     select(.upstream_version=="7.3.5" and .rpm_revision==$source_rev and .kernel_release==$parent)
-    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:11366357,gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
+    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:11366541,battery_status_burst_check_copr:11366742,battery_status_burst_archive_sha256:"23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f",gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
     | .rpm_revision=$rev
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
