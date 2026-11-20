@@ -16,6 +16,7 @@ Version: 7.3.5
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
 %global normal_rpm_release 20
+%global normal_parent_copr 11366541
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -603,7 +604,7 @@ bash early-plymouth/prepare-full.sh compose "$PWD"
 # Keep the inherited source receipts valid during Plymouth verification.
 printf '%s  %s\n' 66ae8cbdc1d0c237f5341020fd1a8be28af187b25caacbff2e846c49730d724b %{SOURCE396} \
     2fb031a6628f6cb903b8cc549fc629ca6ba916074ef7ed5443e5473f53f9ebe0 %{SOURCE397} \
-    50b39f3d441b4d542c5b211a223a59148aac01c3f5568c14dd6ad420a9ac1418 %{SOURCE398} | sha256sum -c --strict --quiet -
+    bfc15ec7939591c3edfbfc29244792a03bd629de63d64ea97c64b91f9ea7644b %{SOURCE398} | sha256sum -c --strict --quiet -
 apply_normal_boot_recipe() {
     git apply --check --include='boot-recipe/**' %{SOURCE396}
     git apply --include='boot-recipe/**' %{SOURCE396}
@@ -1904,7 +1905,7 @@ cmp %{_uke_out}/arch/arm64/boot/Image %{buildroot}/usr/lib/modules/%{krel}/vmlin
 # Inherited installers compare the exact source record in the staging root.
 # Publish the normal ABI's verified runtime record after those checks finish.
 install -m644 native-generated/normal-source-composition.json %{buildroot}/usr/share/senemos/uke/%{krel}/source-composition.json
-bash %{SOURCE398} %{_specdir}/senemos-uke-linux-kernel-mainline.spec %{buildroot} %{krel}
+bash %{SOURCE398} %{_specdir}/senemos-uke-linux-kernel-mainline.spec %{buildroot} %{krel} %{normal_parent_copr}
 %install
 export SENEMOS_PUBLICATION_ABI='%{krel}'
 printf '%%s  %%s\n' 549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b %{SOURCE409} 6b8e63a13d9968f656220294d0c018f1757aaf65052aca20eda7b7c4af4dbb08 %{SOURCE410} 6561c6944c4d773f86eebe88f1310e303a4ea7569bd2dc222d44e72d064380f5 %{SOURCE411} | sha256sum -c --strict --quiet -
@@ -2055,9 +2056,9 @@ bash native-profile/packaging/native/prepare-surround-full733.sh.publication "$P
 bash native-profile/packaging/native/prepare-pcm-surround-full733.sh "$PWD" %{_uke_out} install '%{buildroot}'
 install -m644 native-profile/SHA256SUMS native-profile/source-commit native-profile/README.md "$identity/"
 install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
-jq -e --arg abi '%{krel}' --arg source_rev '%{senemos_build_release}' --arg rev '%{normal_rpm_release}' --arg parent '%{source_krel}' '
+jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg source_rev '%{senemos_build_release}' --arg rev '%{normal_rpm_release}' --arg parent '%{source_krel}' '
     select(.upstream_version=="7.3.5" and .rpm_revision==$source_rev and .kernel_release==$parent)
-    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:11366541,battery_status_burst_check_copr:11366742,battery_status_burst_archive_sha256:"23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f",gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
+    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:$normal_parent,battery_status_burst_check_copr:11366742,battery_status_burst_archive_sha256:"23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f",gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
     | .rpm_revision=$rev
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
