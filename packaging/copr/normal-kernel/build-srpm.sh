@@ -59,7 +59,7 @@ mv -- "$work/SOURCES/$package.spec" "$spec"
 cmp "$spec" "$assets/$package.spec"
 [[ $(grep -Ec '^%global normal_parent_copr [1-9][0-9]*$' "$spec") == 1 ]]
 grep -Fxq "%global normal_parent_copr $build" "$spec"
-install -m644 "$assets/inputs/uke-normal-battery-status-burst735.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-normal-fcc-remoteproc735.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]
