@@ -59,6 +59,12 @@ mv -- "$work/SOURCES/$package.spec" "$spec"
 cmp "$spec" "$assets/$package.spec"
 [[ $(grep -Ec '^%global normal_parent_copr [1-9][0-9]*$' "$spec") == 1 ]]
 grep -Fxq "%global normal_parent_copr $build" "$spec"
+# Verify the inherited merged-package gate before handing off a source RPM.
+read -r contract_hash _ < <(sha256sum "$work/SOURCES/normal-merged-contract.sh")
+if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet -" "$spec"; then
+    printf 'Merged-package gate digest does not match Source398 in the spec.\n' >&2
+    exit 1
+fi
 install -m644 "$assets/inputs/uke-normal-fcc-remoteproc735.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")

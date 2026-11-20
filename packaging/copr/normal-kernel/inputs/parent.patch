@@ -12,7 +12,7 @@ index 7413aaf..b99f902 100644
      .publication.battery_status_burst_archive_sha256=="23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f" and
      .publication.gpi_combined_archive_sha256=="9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7" and
 diff --git a/SPECS/senemos-uke-linux-kernel-mainline.spec b/SPECS/senemos-uke-linux-kernel-mainline.spec
-index 76870de..58c191a 100644
+index 76870de..18a841a 100644
 --- a/SPECS/senemos-uke-linux-kernel-mainline.spec
 +++ b/SPECS/senemos-uke-linux-kernel-mainline.spec
 @@ -15,8 +15,8 @@ Version: 7.3.5
@@ -34,6 +34,15 @@ index 76870de..58c191a 100644
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
+@@ -604,7 +605,7 @@ bash early-plymouth/prepare-full.sh compose "$PWD"
+ # Keep the inherited source receipts valid during Plymouth verification.
+ printf '%s  %s\n' 66ae8cbdc1d0c237f5341020fd1a8be28af187b25caacbff2e846c49730d724b %{SOURCE396} \
+     2fb031a6628f6cb903b8cc549fc629ca6ba916074ef7ed5443e5473f53f9ebe0 %{SOURCE397} \
+-    bfc15ec7939591c3edfbfc29244792a03bd629de63d64ea97c64b91f9ea7644b %{SOURCE398} | sha256sum -c --strict --quiet -
++    c73c7e135f6a3bcc8f901f24c24077708569853de5fe2807b3908bf0ebb9c4aa %{SOURCE398} | sha256sum -c --strict --quiet -
+ apply_normal_boot_recipe() {
+     git apply --check --include='boot-recipe/**' %{SOURCE396}
+     git apply --include='boot-recipe/**' %{SOURCE396}
 @@ -1275,6 +1276,11 @@ printf '%%s  %%s\n' 23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240
  mkdir "$burst_assets"
  tar -xJf %{SOURCE416} -C "$burst_assets"

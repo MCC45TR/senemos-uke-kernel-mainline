@@ -605,7 +605,7 @@ bash early-plymouth/prepare-full.sh compose "$PWD"
 # Keep the inherited source receipts valid during Plymouth verification.
 printf '%s  %s\n' 66ae8cbdc1d0c237f5341020fd1a8be28af187b25caacbff2e846c49730d724b %{SOURCE396} \
     2fb031a6628f6cb903b8cc549fc629ca6ba916074ef7ed5443e5473f53f9ebe0 %{SOURCE397} \
-    bfc15ec7939591c3edfbfc29244792a03bd629de63d64ea97c64b91f9ea7644b %{SOURCE398} | sha256sum -c --strict --quiet -
+    c73c7e135f6a3bcc8f901f24c24077708569853de5fe2807b3908bf0ebb9c4aa %{SOURCE398} | sha256sum -c --strict --quiet -
 apply_normal_boot_recipe() {
     git apply --check --include='boot-recipe/**' %{SOURCE396}
     git apply --include='boot-recipe/**' %{SOURCE396}
