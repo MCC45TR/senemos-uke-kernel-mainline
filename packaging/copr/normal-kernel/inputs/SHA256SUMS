@@ -1,5 +1,6 @@
-f564ac285bffb83a8282f1b8118549fe09dba13ed4712410493e5a980c02801b  parent.patch
+c4b25cc12e47c63d07a167e927b468c4b24a8ef576d215b4c412ef9153f091f2  parent.patch
 23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f  uke-normal-battery-status-burst735.tar.xz
+5837ce0c5a8902de2bae42a09e34f942c9b5df09afc8070b5028275b53bf810d  uke-normal-bsg-monitor735.tar.xz
 de582397521396819fe57dc4356162fef988b870b17d48fdeb7cff98ccb8a9c0  uke-normal-fixed-cap-epoch735.tar.xz
 9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7  uke-normal-gpi735.tar.xz
 ec84360ce6335b4e285ced16f92720fc30bbfe8118e816ca0decda8105872d6c  uke-normal-rgb-ssc735.tar.xz
