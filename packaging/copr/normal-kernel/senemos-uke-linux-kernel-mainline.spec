@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 26
-%global normal_parent_copr 11368308
+%global normal_rpm_release 27
+%global normal_parent_copr 11368669
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -230,6 +230,9 @@ Source422: uke-normal-touch-distinct735.tar.xz
 Source423: uke-normal-display-cap-status735.tar.xz
 Source424: uke-normal-pack-voltage73526.tar.xz
 Source425: uke-normal-dp-hbr3-trial73526.tar.xz
+Source426: uke-pmic-glink-safe-detach73527.tar.xz
+Source427: uke-hbr3-mainlink-fallback73526.tar.xz
+Source428: uke-dpu-optional-dspp73526.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1349,7 +1352,33 @@ mkdir "$hbr3_assets"
 tar -xJf %{SOURCE425} -C "$hbr3_assets"
 bash "$hbr3_assets/overlay/compile-hbr3-profile.sh" "$PWD"
 bash "$hbr3_assets/overlay/prepare-hbr3-trial73526.sh" prepare "$PWD"
+pmic_safe_assets=$PWD/native-generated/pmic_safe_assets
+printf '%%s  %%s\n' df46ad746cb2b65715570760dea24c8ea455fa7739f4087ac50158ac92befd71 %{SOURCE426} | sha256sum -c --strict --quiet -
+mkdir "$pmic_safe_assets"
+tar -xJf %{SOURCE426} -C "$pmic_safe_assets"
+bash "$pmic_safe_assets/overlay/prepare-safe-detach73527.sh" prepare "$PWD"
+hbr3_recovery_assets=$PWD/native-generated/hbr3_recovery_assets
+printf '%%s  %%s\n' 450881e6abcb7a6f63548c66f6b28e0f62b44dd1f43be84f053a969c5ab95c6b %{SOURCE427} | sha256sum -c --strict --quiet -
+mkdir "$hbr3_recovery_assets"
+tar -xJf %{SOURCE427} -C "$hbr3_recovery_assets"
+bash "$hbr3_recovery_assets/overlay/prepare-hbr3-fallback.sh" prepare "$PWD"
+dpu_optional_assets=$PWD/native-generated/dpu_optional_assets
+printf '%%s  %%s\n' 472b2fb86b3c3d485f15daaead5af2f2b5b3142cc57122f476ede5720fc9ca76 %{SOURCE428} | sha256sum -c --strict --quiet -
+mkdir "$dpu_optional_assets"
+tar -xJf %{SOURCE428} -C "$dpu_optional_assets"
+bash "$dpu_optional_assets/overlay/prepare-dpu-optional-dspp.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+for object in drivers/soc/qcom/pmic_glink_altmode.o drivers/phy/qualcomm/phy-qcom-qmp-combo.o drivers/gpu/drm/msm/dp/dp_ctrl.o drivers/gpu/drm/msm/disp/dpu1/dpu_rm.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+altmode_symbols="$pmic_safe_assets/linked-symbols.txt"
+llvm-nm "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" > "$altmode_symbols"
+grep -E ' U mod_delayed_work_on$' "$altmode_symbols"
+grep -E ' U disable_delayed_work_sync$' "$altmode_symbols"
+printf 'Uke Type-C detach, HBR3 startup recovery and optional DSPP diagnostics compiled.\n'
+bash "$dpu_optional_assets/overlay/prepare-dpu-optional-dspp.sh" restore "$PWD"
+bash "$hbr3_recovery_assets/overlay/prepare-hbr3-fallback.sh" restore "$PWD"
+bash "$pmic_safe_assets/overlay/prepare-safe-detach73527.sh" restore "$PWD"
 bash "$hbr3_assets/overlay/check-hbr3-linked.sh" %{_uke_out} "$PWD" '%{krel}'
 bash "$hbr3_assets/overlay/prepare-hbr3-trial73526.sh" restore "$PWD"
 bash "$pack_voltage_assets/overlay/prepare-pack-voltage73526.sh" linked %{_uke_out} '%{krel}'
@@ -2134,6 +2163,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     select(.upstream_version=="7.3.5" and .rpm_revision==$source_rev and .kernel_release==$parent)
     | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:$normal_parent,audio_bsg_native_check_copr:11367541,audio_bsg_archive_sha256:"5837ce0c5a8902de2bae42a09e34f942c9b5df09afc8070b5028275b53bf810d",normal_touch_distinct_check_copr:11367713,normal_touch_distinct_archive_sha256:"a21fce194b00af6ae1bd760400e0fcf21f2d652a5fd0f6731234395468fa636f",touch_watchdog_check_copr:11367440,touch_watchdog_archive_sha256:"f05b7b80a073d5583972871af4e0631822f9b61147b5e9bfacc6d3bcc2f2b02c",fixed_cap_epoch_check_copr:11367291,fixed_cap_epoch_archive_sha256:"de582397521396819fe57dc4356162fef988b870b17d48fdeb7cff98ccb8a9c0",rgb_usb_attach_check_copr:11362629,ssc_accel_batch_check_copr:11365772,rgb_ssc_archive_sha256:"ec84360ce6335b4e285ced16f92720fc30bbfe8118e816ca0decda8105872d6c",fcc_observation_check_copr:11367029,rproc_wakeup_check_copr:11367147,fcc_rproc_archive_sha256:"deaac33f3aea860085447177864d8c136b1abc314d099c0e97557bd47290f150",battery_status_burst_check_copr:11366742,battery_status_burst_archive_sha256:"23686f0c6ddcc0d5780fef26ad04b10a35a9727c2e88bf8cfea784ea7240790f",gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
     | .publication += {hbr3_trial:true,hbr3_trial_check_copr:11368624,hbr3_trial_archive_sha256:"c757a4e1aaa9531d5c07aa3ff53b47a4fc694fb28ff64398084727206881e26d",pack_voltage_check_copr:11368497,pack_voltage_archive_sha256:"c1448ccd3c790aab1f00ce1da34e1c3e882b3acb2488187897b161b3680807c4"}
+    | .publication += {detached_mux_retry_check_copr:11368876,detached_mux_retry_archive_sha256:"df46ad746cb2b65715570760dea24c8ea455fa7739f4087ac50158ac92befd71",hbr3_startup_recovery_check_copr:11368662,hbr3_startup_recovery_archive_sha256:"450881e6abcb7a6f63548c66f6b28e0f62b44dd1f43be84f053a969c5ab95c6b",dpu_optional_dspp_check_copr:11368711,dpu_optional_dspp_archive_sha256:"472b2fb86b3c3d485f15daaead5af2f2b5b3142cc57122f476ede5720fc9ca76"}
     | .rpm_revision=$rev
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
@@ -2254,6 +2284,11 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-28
+- Retry one busy Type-C mux transition after an explicit detach.
+- Retry HBR2 once after an early HBR3 link clock or PHY failure.
+- Keep expected DPU mixer capacity refusals at debug level.
+
 * Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-27
 - Embed the SM7675 HBR3 trial overlay in the Unstable build.
 - Add a read-only battery voltage provider for speaker qualification.

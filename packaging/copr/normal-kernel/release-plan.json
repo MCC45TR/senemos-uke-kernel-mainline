@@ -1,5 +1,5 @@
 {
-  "parent_build": 11368308,
-  "parent_filename": "senemos-uke-linux-kernel-mainline-7.3.5-26.fc46.src.rpm",
-  "parent_sha256": "3929369ed79890c0dda7dc16f768bd8557140a35bb9635411ea077b3db058c88"
+  "parent_build": 11368669,
+  "parent_filename": "senemos-uke-linux-kernel-mainline-7.3.5-27.fc46.src.rpm",
+  "parent_sha256": "eaa8c3dd4e0bcc1cbe8e739aa94633f5ae098b786eb7c143a0be8df9202fdb3b"
 }
