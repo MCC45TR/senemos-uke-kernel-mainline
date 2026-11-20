@@ -3,6 +3,11 @@ SHELL := /bin/bash
 .ONESHELL:
 .PHONY: srpm
 srpm:
+	if [[ "$(spec)" == *packaging/copr/normal-kernel/senemos-uke-linux-kernel-mainline.spec || "$(CURDIR)" == */packaging/copr/normal-kernel ]]; then
+		dnf -y --setopt=install_weak_deps=False install curl jq gnupg2 rpm-build cpio git-core xz tar coreutils
+		bash "$(dir $(abspath $(lastword $(MAKEFILE_LIST))))../packaging/copr/normal-kernel/build-srpm.sh" "$(outdir)"
+		exit
+	fi
 	version=$$(sed -n 's/^version := //p' Makefile)
 	bash scripts/require-unstable-series.sh "$$version"
 	# COPR runs source generation as root in its isolated Fedora mock chroot.

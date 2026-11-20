@@ -1,0 +1,163 @@
+--- a/SPECS/senemos-uke-linux-kernel-mainline.spec
++++ b/SPECS/senemos-uke-linux-kernel-mainline.spec
+@@ -15,8 +15,8 @@
+ %global senemos_build_release 13
+ %endif
+ %global source_krel %{version}-%{senemos_build_release}-unstable
+-%global krel 7.4.11-senemos
+-%global normal_rpm_release 19
++%global normal_rpm_release 20
++%global krel %{version}-%{normal_rpm_release}
+ %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
+ Release: %{normal_rpm_release}%{?dist}
+ Summary: Mainline Linux 7.3.5 Uke kernel with O82 display and Cliffs video
+@@ -218,6 +218,7 @@
+ Source412: uke-normal-transport-charge735.tar.xz
+ Source413: uke-normal-feedback-geni735.tar.xz
+ Source414: uke-normal-ktz-minimum735.tar.xz
++Source415: uke-normal-gpi735.tar.xz
+ 
+ %description
+ Source-built kernel with the reviewed O82 native display profile.
+@@ -236,7 +237,7 @@
+ Provides: %{name}-boot%{?_isa} = %{version}-%{release}
+ Provides: %{name}-dtbs = %{version}-%{release}
+ Provides: %{name}-dtbs%{?_isa} = %{version}-%{release}
+-Requires: uke-control >= 2.17.0-59
++Requires: uke-control >= 2.17.0-60
+ Requires: kmod
+ Requires: uke-firmware >= 3.0.304.0
+ Requires: uke-control(super-root-boot-v1) >= 1
+@@ -599,9 +600,9 @@
+ bash early-plymouth/prepare-full.sh compose "$PWD"
+ # UKE_EARLY_PLYMOUTH734_COMPOSE_END
+ # Keep the inherited source receipts valid during Plymouth verification.
+-printf '%s  %s\n' 0db885d8e9d3b3f4b84bd6f1e36da353dadd416bbe85ecd901efc1765a57e9e4 %{SOURCE396} \
++printf '%s  %s\n' 66ae8cbdc1d0c237f5341020fd1a8be28af187b25caacbff2e846c49730d724b %{SOURCE396} \
+     2fb031a6628f6cb903b8cc549fc629ca6ba916074ef7ed5443e5473f53f9ebe0 %{SOURCE397} \
+-    b57994ff5979bc8cf3af6dd9683c5f877cd445c646324bf3b1b9ec5f9e005e15 %{SOURCE398} | sha256sum -c --strict --quiet -
++    50b39f3d441b4d542c5b211a223a59148aac01c3f5568c14dd6ad420a9ac1418 %{SOURCE398} | sha256sum -c --strict --quiet -
+ apply_normal_boot_recipe() {
+     git apply --check --include='boot-recipe/**' %{SOURCE396}
+     git apply --include='boot-recipe/**' %{SOURCE396}
+@@ -1273,6 +1274,11 @@
+ mkdir "$feedback_geni_assets"
+ tar -xJf %{SOURCE413} -C "$feedback_geni_assets"
+ bash "$feedback_geni_assets/prepare-feedback-geni.sh" prepare "$PWD"
++gpi_assets=$PWD/native-generated/normal-gpi-assets
++printf '%%s  %%s\n' 9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7 %{SOURCE415} | sha256sum -c --strict --quiet -
++mkdir "$gpi_assets"
++tar -xJf %{SOURCE415} -C "$gpi_assets"
++bash "$gpi_assets/prepare-gpi.sh" prepare "$PWD"
+ ktz_assets=$PWD/native-generated/normal-ktz-minimum-assets
+ printf '%%s  %%s\n' a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04 %{SOURCE414} | sha256sum -c --strict --quiet -
+ mkdir "$ktz_assets"
+@@ -1281,6 +1287,8 @@
+ bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+ bash "$ktz_assets/prepare-ktz-minimum.sh" linked %{_uke_out} '%{krel}'
+ bash "$ktz_assets/prepare-ktz-minimum.sh" restore "$PWD"
++bash "$gpi_assets/prepare-gpi.sh" linked %{_uke_out} '%{krel}'
++bash "$gpi_assets/prepare-gpi.sh" restore "$PWD"
+ bash "$feedback_geni_assets/prepare-feedback-geni.sh" linked %{_uke_out} '%{krel}'
+ bash "$feedback_geni_assets/prepare-feedback-geni.sh" restore "$PWD"
+ bash "$root_probe_assets/prepare-normal-root-probe.sh" embedded %{_uke_out}/boot-initramfs.cpio.gz
+@@ -1507,7 +1515,7 @@
+     grep -Fx "$requirement" %{_uke_out}/.config
+ done
+ grep -Fx '# CONFIG_PSI_DEFAULT_DISABLED is not set' %{_uke_out}/.config
+-test "$(make -s O=%{_uke_out} LOCALVERSION=-senemos KERNELRELEASE=%{krel} kernelrelease)" = '%{krel}'
++test "$(make -s O=%{_uke_out} LOCALVERSION=-%{normal_rpm_release} kernelrelease)" = '%{krel}'
+ 
+ printf 'UKE_BUILD_STAGE boot_bundle elapsed_s=%d\n' "$((SECONDS-uke_build_start))"
+ 
+@@ -2041,7 +2049,7 @@
+ install -m644 native-profile/source-composition.json %{_uke_out}/module-signing.x509 "$identity/"
+ jq -e --arg abi '%{krel}' --arg source_rev '%{senemos_build_release}' --arg rev '%{normal_rpm_release}' --arg parent '%{source_krel}' '
+     select(.upstream_version=="7.3.5" and .rpm_revision==$source_rev and .kernel_release==$parent)
+-    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:11366170,pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
++    | .publication={family:"senemos-uke-linux-kernel-mainline",parent_copr_build:11360575,normal_parent_copr_build:11366357,gpi_combined_archive_sha256:"9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7",pstore_layout_check_copr:11366271,backlight_minimum_check_copr:11362478,pstore_header_sha256:"a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545",ktz_oem_minimum_archive_sha256:"a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04",feedback_layout_check_copr:11366032,geni_cleanup_check_copr:11365942,feedback_geni_archive_sha256:"e7842ecb237472c4df8a67db6111a95ff7cc3c9686ee62235210cc800f41aecf",audio_transport_check_copr:11365888,charge_policy_check_copr:11365780,transport_charge_archive_sha256:"60094e1242e5295e529535522ce2bf022043a5ffe788cd987c70c6a797bded1c",recovered_dtbo_rpm_sha256:"549a5827f2cab21b45a4be5bb740bffb35a2306a1bc4f5dcdbcdc5e414bbab9b",recovered_dtbo_qualification_copr:11365790,root_probe_archive_sha256:"ec8089f869207cffa482a66f94c936070cffce9a566f95a93da9fb61e2112f92",observation_archive_sha256:"6a83498907f2c772b5222ba6edbacc611e766a1070b3d336a1a76183dcc849a0",ucsi_fixed_contract_archive_sha256:"51a999c7fec2ed0782fbae29018289cbae0105b35cf2baff35683883a7291564",usb_type_archive_sha256:"38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6",battery_limit_archive_sha256:"7eea819b3b5f8b9952bc6f2641a9708f4e0d94a3a5e2e55a21d443d4a7074cf8",charge_band_epoch_archive_sha256:"997925be73a2539ec0b05c3cae5e7cfe01ffbabc43cb6c42cc11a4f3803816d5",threshold_observation_archive_sha256:"0159e8c92f449c84cd80a18f34c76edfa4833e243d16523253920b45a43c4dac",display_archive_sha256:"f93e2bef07dae46800cd2729ace96ebb9cacc8db34b171988b57d48fb0c544b1",source_kernel_release:.kernel_release,source_rpm_revision:$source_rev,charge_observation_archive_sha256:"e402a1b6969008f8525947cb1e2d77efe37460673396ad3a5938213ad73c8be2",vi_diagnostic_archive_sha256:"b8e5f7f4e475f2d70ca3e0ab01883249dc471daee5eb670a04edd15d2510a46f"}
+     | .rpm_revision=$rev
+     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
+ proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
+@@ -2106,10 +2114,12 @@
+ # UKE_CAMERA_FULL7346_HWKM_END
+ bash qtee-information/packaging/native/prepare-qtee-information733.sh.publication "$PWD" %{_uke_out} install '%{buildroot}'
+ 
++install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot}%{_licensedir}/%{name}-%{version}-%{release}/LICENSE.audioreach-topology"
++
+ %files
+ %doc %{_docdir}/%{name}/%{krel}/README.md
+ %license COPYING
+-%license native-profile/src/audio/LICENSE.audioreach-topology
++%license %{_licensedir}/%{name}-%{version}-%{release}/LICENSE.audioreach-topology
+ 
+ %files core
+ %dir /usr/lib/modules/%{krel}
+@@ -2160,6 +2170,11 @@
+ /usr/lib/senemos/default-boot.img
+ 
+ %changelog
++* Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-20
++- Use the built Linux version and RPM revision for the kernel ABI.
++- Isolate the topology licence per installonly release.
++- Preserve the signed GENI and GPI source changes.
++
+ * Fri Nov 20 2026 Uke Linux Maintainers - 7.3.5-19
+ - Preserve the bootloader ramoops layout when the optional Linux reservation is unavailable.
+ - Restore the fitted KTZ8866 backlight minimum at the first lit step.
+--- a/SOURCES/normal-merged-contract.sh
++++ b/SOURCES/normal-merged-contract.sh
+@@ -3,14 +3,13 @@
+ [[ $# == 3 ]]
+ spec=$1 root=$2 release=$3
+ family=senemos-uke-linux-kernel-mainline
+-[[ $release == 7.4.11-senemos ]]
+ evr=$(rpmspec --target aarch64 -q --srpm --qf '%{VERSION}-%{RELEASE}' "$spec")
+ names=$(rpmspec --target aarch64 -q --qf '%{NAME}\n' "$spec")
+ [[ $names == "$(printf '%s\n' "$family" "$family-core" "$family-singleboot")" ]]
+ parsed=$(rpmspec --target aarch64 --parse "$spec")
+ grep -Fxq "Provides: kernel-uname-r($release)" <<< "$parsed"
+ grep -Fxq 'Provides: uke-kernel(merged-layout-v1) = 1' <<< "$parsed"
+-grep -Fxq 'Requires: uke-control >= 2.17.0-59' <<< "$parsed"
++grep -Fxq 'Requires: uke-control >= 2.17.0-60' <<< "$parsed"
+ for alias in modules dtbs boot; do
+     grep -Fxq "Requires: $family-$alias = $evr" <<< "$parsed"
+     grep -Fxq "Provides: $family-$alias = $evr" <<< "$parsed"
+@@ -23,6 +22,9 @@
+     /^Obsoletes:/ { print package "\t" $0 }
+ ' <<< "$parsed")
+ dist=$(rpm --eval '%{?dist}')
++read -r version packaged_release < <(rpmspec --target aarch64 -q --srpm --qf '%{VERSION} %{RELEASE}\n' "$spec")
++revision=${packaged_release%$dist}
++[[ $revision =~ ^[1-9][0-9]*$ && $release == "$version-$revision" ]]
+ [[ $dist == .fc46 ]]
+ [[ $obsoletes == "$(printf '%s\t%s' '%package singleboot' "Obsoletes: uke-senemos-dtbo <= 1.0-1$dist")" ]]
+ grep -Fxq "Provides: uke-senemos-dtbo = 1.0-1$dist" <<< "$parsed"
+@@ -35,12 +37,13 @@
+ jq -e --arg release "$release" --arg name "$family-singleboot" '
+     .kernel_release==$release and .package==$name and .automatic_kernel_activation==false
+ ' "$root/usr/share/senemos/uke/singleboot.json" >/dev/null
+-jq -e --arg release "$release" --arg source "$(< "$identity/source-commit")" --arg family "$family" '
+-    .kernel_release==$release and .source_commit==$source and .upstream_version=="7.3.5" and .rpm_revision=="19" and
++jq -e --arg release "$release" --arg source "$(< "$identity/source-commit")" --arg family "$family" --arg version "$version" --arg revision "$revision" '
++    .kernel_release==$release and .source_commit==$source and .upstream_version==$version and .rpm_revision==$revision and
+     .publication.family==$family and .publication.parent_copr_build==11360575 and
+     .publication.source_kernel_release=="7.3.5-13-unstable" and .publication.source_rpm_revision=="13" and
+     .publication.usb_type_archive_sha256=="38341d486c2e5d369bcf9548b4b76f11aae34072710c4d6967a8508372c62da6" and
+-    .publication.normal_parent_copr_build==11366170 and
++    .publication.normal_parent_copr_build==11366357 and
++    .publication.gpi_combined_archive_sha256=="9a78ae2eb6a1b8d5ebf179cc53e7aa1d3cebd348c8b182699e7453aeea5c93f7" and
+     .publication.pstore_layout_check_copr==11366271 and .publication.backlight_minimum_check_copr==11362478 and
+     .publication.pstore_header_sha256=="a356b29e812917478125d512bc9740f0f95ad96131bc2eb0d2dd39137989a545" and
+     .publication.ktz_oem_minimum_archive_sha256=="a867c77b9e0541c26fb44b0fdc4d6bd10b2e8339b62f7075803752f3fbe60c04" and
+--- a/SOURCES/senemos-publication-abi.patch
++++ b/SOURCES/senemos-publication-abi.patch
+@@ -344,7 +344,7 @@
+ -audio_release=${release%-unstable}
+ -[[ $release != *-unstable ]] || audio_release+=u
+ +[[ $destination == /* ]]
+-+if [[ $release == 7.4.5-senemos || $release == 7.4.6-senemos || $release == 7.4.7-senemos || $release == 7.4.8-senemos || $release == 7.4.9-senemos || $release == 7.4.10-senemos || $release == 7.4.11-senemos ]]; then
+++if [[ $release == 7.4.5-senemos || $release == 7.4.6-senemos || $release == 7.4.7-senemos || $release == 7.4.8-senemos || $release == 7.4.9-senemos || $release == 7.4.10-senemos || $release == 7.4.11-senemos || ($# == 3 && $release == "${SENEMOS_PUBLICATION_ABI:-}") ]]; then
+ +    audio_release=${3:?Source audio release}
+ +    [[ $audio_release =~ ^7[.]3[.]5-[1-9][0-9]*u$ ]]
+ +else
