@@ -597,6 +597,10 @@ git apply --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.
 sha256sum -c --strict "$toolchain_assets/after.sha256"
 bash native-profile/tests/cdsp-pogo-toolchain-contract.sh "$ref/historical.config"
 bash native-profile/tests/cdsp-pogo-config-contract.sh "$ref/historical.config"
+sha256sum -c --strict "$toolchain_assets/after.sha256"
+git apply --reverse --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+git apply --reverse --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+sha256sum -c --strict "$toolchain_assets/before.sha256"
 bash native-profile/tests/governor-config-contract.sh "$ref/.config" native-generated/nfc-cdsp-reference/.config
 sha256sum "$ref/.config" "$ref/historical.config" > "$ref/historical-inputs.sha256"
 bash native-profile/packaging/native/prepare-memory-manager733.sh "$PWD" %{_uke_out}
@@ -2128,9 +2132,13 @@ cmp native-profile/src/boot/uke-pstore-dt.h arch/arm64/kernel/uke-pstore-dt.h
 test "$(grep -Fc 'ret = uke_pstore_graph(output);' arch/arm64/kernel/uke-abl.c)" = 1
 grep -aqF 'max-reason' %{_uke_out}/arch/arm64/kernel/uke-abl.o
 sha256sum -c --strict --quiet native-generated/nfc-cdsp-before-reference/historical-inputs.sha256
+toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6/overlay
+sha256sum -c --strict "$toolchain_assets/before.sha256"
+git apply --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+git apply --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+sha256sum -c --strict "$toolchain_assets/after.sha256"
 bash native-profile/tests/cdsp-pogo-toolchain-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
 bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
-toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6/overlay
 sha256sum -c --strict "$toolchain_assets/after.sha256"
 git apply --reverse --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
 git apply --reverse --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
