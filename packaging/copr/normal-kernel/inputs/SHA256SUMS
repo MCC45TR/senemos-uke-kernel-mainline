@@ -1,4 +1,4 @@
-6f2b2f74fa8cfb03f803e59aefb5551aa6f09afd5d0d03e87397c2ea8cbd590d  parent.patch
+010853a52823b7a98245b1cea9fa7c70fd24a2506a8ea83ec5e1e71eae5f76ba  parent.patch
 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef  uke-altmode-ack-publish73536.tar.xz
 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cdb90c  uke-altmode-hpd-route-error73534.tar.xz
 d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421  uke-altmode-pan-lifecycle73540.tar.xz
@@ -11,6 +11,7 @@ da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127  uke-dp-hbr3-us
 4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504  uke-dp-sdr-dsc-fallback73539.tar.xz
 048eddcf2bbed8f44e27b6e415835e8bc9204b0b898e0c5a71dd393afa00ffa8  uke-dp-sst422-73541.tar.xz
 5a47f945c896985f4c422e58c19f7b73b731866f4b0b63cd72cdd2ffd265ee08  uke-dpu-atomic-total73533.tar.xz
+fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53  uke-dpu-linear-gamma73544.tar.xz
 472b2fb86b3c3d485f15daaead5af2f2b5b3142cc57122f476ede5720fc9ca76  uke-dpu-optional-dspp73526.tar.xz
 d3ee03cef5637e4352d305b154fce4d88ea9a5f652c2a1c41f3e5761585a6f1b  uke-front-camera-id-qualification73535.tar.xz
 862de62ac0dbdac25dde1a478e7765936873f0237e7565e2b5f4b158fec7a4c4  uke-front-vdig-guard29.tar.xz
