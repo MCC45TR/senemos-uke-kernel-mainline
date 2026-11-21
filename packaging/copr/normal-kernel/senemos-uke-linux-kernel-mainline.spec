@@ -1638,7 +1638,15 @@ bash "$observation_assets/prepare-normal-observation-overlay.sh" restore "$PWD"
 bash "$camss_assets/check-camss-built-in735.sh" %{_uke_out} '%{krel}'
 bash "$camss_assets/camss-late-layer735.sh" restore "$PWD"
 mv -- "$vi_layer/migration-check-parent.sh" "$vi_checker"
-bash "$display_assets/prepare-normal-display.sh" linked %{_uke_out} '%{krel}'
+old_display_link_check="$display_assets/prepare-normal-display.sh"
+new_display_link_check="$display_assets/verify-linked-sst422.sh"
+test "$(grep -Fc ' msm_dp_stream_is_yuv420$' "$old_display_link_check")" = 1
+sed 's/msm_dp_stream_is_yuv420\$/msm_dp_stream_chroma_format$/' \
+    "$old_display_link_check" > "$new_display_link_check"
+test "$(grep -Fc ' msm_dp_stream_chroma_format$' "$new_display_link_check")" = 1
+sed 's/msm_dp_stream_chroma_format\$/msm_dp_stream_is_yuv420$/' "$new_display_link_check" |
+    cmp - "$old_display_link_check"
+bash "$new_display_link_check" linked %{_uke_out} '%{krel}'
 bash "$display_assets/prepare-normal-display.sh" restore "$PWD"
 charge_module=%{_uke_out}/drivers/power/supply/qcom_battmgr.ko
 test -s "$charge_module"
