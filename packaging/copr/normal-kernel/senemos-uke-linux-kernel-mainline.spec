@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 31
-%global normal_parent_copr 11369545
+%global normal_rpm_release 32
+%global normal_parent_copr 11370075
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -238,6 +238,7 @@ Source430: uke-front-vdig-guard29.tar.xz
 Source431: uke-mst-detect-controller73529.tar.xz
 Source432: uke-juo-display73530.tar.xz
 Source433: uke-usb-dp-stability73531.tar.xz
+Source434: uke-display-fault73531.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1397,7 +1398,16 @@ printf '%%s  %%s\n' 3f2e2c53abdd1a12819cb2886950929067181bc2fa1ef87b1ee3f68f0c9f
 mkdir "$usb_dp_assets"
 tar -xJf %{SOURCE433} -C "$usb_dp_assets"
 bash "$usb_dp_assets/overlay/prepare-usb-dp-stability73531.sh" prepare "$PWD"
+display_fault_assets=$PWD/native-generated/display_fault
+printf '%%s  %%s\n' 11afe01064fa2a98662afce1e48fba71a7b2c369a7a9850601f359b2b24baf11 %{SOURCE434} | sha256sum -c --strict --quiet -
+mkdir "$display_fault_assets"
+tar -xJf %{SOURCE434} -C "$display_fault_assets"
+bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" restore "$PWD"
 for object in dp_aux dp_ctrl dp_display dp_mst_drm; do
     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
 done
@@ -2338,6 +2348,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-33
+- Validate QCOM GPI event-ring producer pointers and bound the reset-time stale-event scan.
+- Compute DPU bandwidth and clock votes from the incoming visible planes and adjusted mode.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-32
 - Keep AUX operational for an attached MST hub after all streams stop.
 - Propagate the result of the final DisplayPort training attempt and handle unread AUX status.

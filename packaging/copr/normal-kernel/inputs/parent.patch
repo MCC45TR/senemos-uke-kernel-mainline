@@ -3,46 +3,45 @@
 @@ -16,7 +16,7 @@
  %endif
  %global source_krel %{version}-%{senemos_build_release}-unstable
- %global normal_rpm_release 31
--%global normal_parent_copr 11369320
-+%global normal_parent_copr 11369545
+ %global normal_rpm_release 32
+-%global normal_parent_copr 11369545
++%global normal_parent_copr 11370075
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
-@@ -237,6 +237,7 @@
- Source430: uke-front-vdig-guard29.tar.xz
+@@ -238,6 +238,7 @@
  Source431: uke-mst-detect-controller73529.tar.xz
  Source432: uke-juo-display73530.tar.xz
-+Source433: uke-usb-dp-stability73531.tar.xz
+ Source433: uke-usb-dp-stability73531.tar.xz
++Source434: uke-display-fault73531.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1391,7 +1392,16 @@
- mkdir "$juo_display_assets"
- tar -xJf %{SOURCE432} -C "$juo_display_assets"
- bash "$juo_display_assets/overlay/prepare-juo-display73530.sh" prepare "$PWD"
-+usb_dp_assets=$PWD/native-generated/usb_dp_stability
-+printf '%%s  %%s\n' 3f2e2c53abdd1a12819cb2886950929067181bc2fa1ef87b1ee3f68f0c9f08c0 %{SOURCE433} | sha256sum -c --strict --quiet -
-+mkdir "$usb_dp_assets"
-+tar -xJf %{SOURCE433} -C "$usb_dp_assets"
-+bash "$usb_dp_assets/overlay/prepare-usb-dp-stability73531.sh" prepare "$PWD"
+@@ -1397,7 +1398,16 @@
+ mkdir "$usb_dp_assets"
+ tar -xJf %{SOURCE433} -C "$usb_dp_assets"
+ bash "$usb_dp_assets/overlay/prepare-usb-dp-stability73531.sh" prepare "$PWD"
++display_fault_assets=$PWD/native-generated/display_fault
++printf '%%s  %%s\n' 11afe01064fa2a98662afce1e48fba71a7b2c369a7a9850601f359b2b24baf11 %{SOURCE434} | sha256sum -c --strict --quiet -
++mkdir "$display_fault_assets"
++tar -xJf %{SOURCE434} -C "$display_fault_assets"
++bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" prepare "$PWD"
  bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
-+for object in dp_aux dp_ctrl dp_display dp_mst_drm; do
-+    llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
++for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
++    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
 +done
-+bash "$usb_dp_assets/overlay/prepare-usb-dp-stability73531.sh" restore "$PWD"
- for object in drivers/gpu/drm/msm/dp/dp_display.o drivers/gpu/drm/msm/dp/dp_mst_drm.o drivers/gpu/drm/display/drm_dp_mst_topology.o; do
-     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
++bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" restore "$PWD"
+ for object in dp_aux dp_ctrl dp_display dp_mst_drm; do
+     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
  done
-@@ -2328,6 +2338,11 @@
+@@ -2338,6 +2348,10 @@
  /usr/lib/senemos/default-boot.img
  
  %changelog
-+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-32
-+- Keep AUX operational for an attached MST hub after all streams stop.
-+- Propagate the result of the final DisplayPort training attempt and handle unread AUX status.
-+- Use the same RGB bandwidth and depth rules in MST mode enumeration and atomic validation.
++* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-33
++- Validate QCOM GPI event-ring producer pointers and bound the reset-time stale-event scan.
++- Compute DPU bandwidth and clock votes from the incoming visible planes and adjusted mode.
 +
- * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-31
- - Prefer sink-advertised YCbCr 4:2:0 when RGB would fall below 8 bpc on SST.
- - Allocate the MST max-bpc property before device registration.
+ * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-32
+ - Keep AUX operational for an attached MST hub after all streams stop.
+ - Propagate the result of the final DisplayPort training attempt and handle unread AUX status.
