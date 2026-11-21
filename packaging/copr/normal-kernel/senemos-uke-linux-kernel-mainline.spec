@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 32
-%global normal_parent_copr 11370075
+%global normal_rpm_release 33
+%global normal_parent_copr 11370167
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -239,6 +239,7 @@ Source431: uke-mst-detect-controller73529.tar.xz
 Source432: uke-juo-display73530.tar.xz
 Source433: uke-usb-dp-stability73531.tar.xz
 Source434: uke-display-fault73531.tar.xz
+Source435: uke-dpu-atomic-total73533.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1403,10 +1404,22 @@ printf '%%s  %%s\n' 11afe01064fa2a98662afce1e48fba71a7b2c369a7a9850601f359b2b24b
 mkdir "$display_fault_assets"
 tar -xJf %{SOURCE434} -C "$display_fault_assets"
 bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" prepare "$PWD"
+dpu_atomic_assets=$PWD/native-generated/dpu_atomic_total
+printf '%%s  %%s\n' b0f2205ba66c32821cdefa2cfbda49bceed474119fffb7b1c3f246f001e17da8 %{SOURCE435} | sha256sum -c --strict --quiet -
+mkdir "$dpu_atomic_assets"
+tar -xJf %{SOURCE435} -C "$dpu_atomic_assets"
+bash "$dpu_atomic_assets/overlay/prepare-dpu-atomic-total.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
 done
+llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/msm_atomic.o" | grep -F AArch64
+for object in dpu_crtc dpu_kms; do
+    llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/$object.o" | grep -F AArch64
+done
+llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_core_perf.o" |
+    grep -E '[[:space:]]dpu_core_perf_atomic_check$'
+bash "$dpu_atomic_assets/overlay/prepare-dpu-atomic-total.sh" restore "$PWD"
 bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" restore "$PWD"
 for object in dp_aux dp_ctrl dp_display dp_mst_drm; do
     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
@@ -2348,6 +2361,9 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-34
+- Check all proposed real-time CRTC bandwidth reservations together before accepting a display configuration.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-33
 - Validate QCOM GPI event-ring producer pointers and bound the reset-time stale-event scan.
 - Compute DPU bandwidth and clock votes from the incoming visible planes and adjusted mode.
