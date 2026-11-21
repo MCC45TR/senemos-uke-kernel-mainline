@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 41
-%global normal_parent_copr 11370966
+%global normal_rpm_release 42
+%global normal_parent_copr 11371153
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -254,6 +254,7 @@ Source446: uke-dp-sdr-dsc-fallback73539.tar.xz
 Source447: uke-altmode-pan-lifecycle73540.tar.xz
 Source448: uke-resident-keymaster-73540.tar.xz
 Source449: uke-cdsp-toolchain-contract2316.tar.xz
+Source450: uke-dp-sst422-73541.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1501,6 +1502,17 @@ printf '%%s  %%s\n' 5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e5
 mkdir "$keymaster_assets"
 tar -xJf %{SOURCE448} -C "$keymaster_assets"
 bash "$keymaster_assets/apply.sh" "$PWD" "$keymaster_assets"
+dp_sst422_assets=$PWD/native-generated/dp_sst422_assets
+printf '%%s  %%s\n' 0c5f237cdc85513ef21e96b562586ac74ab390074a4eb93006ee75aa839ca801 %{SOURCE450} | sha256sum -c --strict --quiet -
+mkdir "$dp_sst422_assets"
+tar -xJf %{SOURCE450} -C "$dp_sst422_assets"
+(cd "$dp_sst422_assets"; sha256sum -c --strict --quiet SHA256SUMS)
+sha256sum -c --strict "$dp_sst422_assets/dp-preimage.sha256"
+git apply --check --whitespace=error "$dp_sst422_assets/0001-drm-msm-dp-support-native-sdr-ycbcr422.patch"
+git apply --whitespace=error "$dp_sst422_assets/0001-drm-msm-dp-support-native-sdr-ycbcr422.patch"
+git apply --check --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-link-clocks.patch"
+git apply --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-link-clocks.patch"
+sha256sum -c --strict "$dp_sst422_assets/dp-postimage.sha256"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
 llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
@@ -1516,6 +1528,13 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector
     grep -E '[[:space:]]drm_bridge_connector_hpd_probe_work$'
 llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
     grep -E '[[:space:]]T[[:space:]]+msm_dp_crtc_try_uncompressed$'
+llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
+    grep -E '[[:space:]]T[[:space:]]+msm_dp_stream_chroma_format$'
+git apply --reverse --check --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-link-clocks.patch"
+git apply --reverse --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-link-clocks.patch"
+git apply --reverse --check --whitespace=error "$dp_sst422_assets/0001-drm-msm-dp-support-native-sdr-ycbcr422.patch"
+git apply --reverse --whitespace=error "$dp_sst422_assets/0001-drm-msm-dp-support-native-sdr-ycbcr422.patch"
+sha256sum -c --strict "$dp_sst422_assets/dp-preimage.sha256"
 bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" restore "$PWD"
 bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" restore "$PWD"
 bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" restore "$PWD"
@@ -2388,6 +2407,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
     | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
     | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
+    | .publication += {dp_sst422_teardown_check_copr:11371418,dp_sst422_teardown_archive_sha256:"0c5f237cdc85513ef21e96b562586ac74ab390074a4eb93006ee75aa839ca801"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
@@ -2508,6 +2528,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-42
+- Add native eight-bit DisplayPort YCbCr 4:2:2 for SDR modes above the RGB link budget.
+- Avoid resetting the DisplayPort controller with its link clocks disabled.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-41
 - Keep USB-C Alt Mode acknowledgements moving during DisplayPort AUX waits.
 - Add a privileged version query for the resident Keymaster application.
