@@ -1,4 +1,4 @@
-905407c9ebdcd60c6f0c274f813080dc8f36242731e4fe258d9b6c114b2f68c7  ./parent.patch
+e5042af0af72d868a4b69f091c5e5525bf7cf70202b90f586a84e5ad746f5ddd  ./parent.patch
 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef  ./uke-altmode-ack-publish73536.tar.xz
 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cdb90c  ./uke-altmode-hpd-route-error73534.tar.xz
 d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421  ./uke-altmode-pan-lifecycle73540.tar.xz
@@ -32,7 +32,7 @@ c1448ccd3c790aab1f00ce1da34e1c3e882b3acb2488187897b161b3680807c4  ./uke-normal-p
 ec84360ce6335b4e285ced16f92720fc30bbfe8118e816ca0decda8105872d6c  ./uke-normal-rgb-ssc735.tar.xz
 a21fce194b00af6ae1bd760400e0fcf21f2d652a5fd0f6731234395468fa636f  ./uke-normal-touch-distinct735.tar.xz
 f05b7b80a073d5583972871af4e0631822f9b61147b5e9bfacc6d3bcc2f2b02c  ./uke-normal-touch-watchdog735.tar.xz
-e2a79ebde62e07005131697aa160815152cb428fd40ee774eac197be5b9971d5  ./uke-o82-boot-preferred73544.tar.xz
+7969374688daf2e6911f111f4a4641abb8a882cd2ab5376134fd36ffcb8157f2  ./uke-o82-boot-preferred73544.tar.xz
 8726f3109396bd6cf9388c8c3c162066a928df5725cbb1a868ec0188e949109a  ./uke-ov08d10-reset-unwind73527.tar.xz
 df46ad746cb2b65715570760dea24c8ea455fa7739f4087ac50158ac92befd71  ./uke-pmic-glink-safe-detach73527.tar.xz
 5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc  ./uke-resident-keymaster-73540.tar.xz
