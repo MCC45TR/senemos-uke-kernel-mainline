@@ -65,8 +65,9 @@ if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet 
     printf 'Merged-package gate digest does not match Source398 in the spec.\n' >&2
     exit 1
 fi
-install -m644 "$assets/inputs/uke-dpu-atomic-total73533.tar.xz" "$work/SOURCES/"
-install -m644 "$assets/inputs/uke-mst-single-payload73533.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-dp-attach-ownership73533.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-mst-rate-governor73533.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-mst-encoder-prepass73534.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]
