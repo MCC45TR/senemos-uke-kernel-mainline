@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 40
-%global normal_parent_copr 11370878
+%global normal_rpm_release 41
+%global normal_parent_copr 11370966
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -251,6 +251,8 @@ Source443: uke-altmode-ack-publish73536.tar.xz
 Source444: uke-mst-link-budget-guard73538.tar.xz
 Source445: uke-dp-hpd-worker73538.tar.xz
 Source446: uke-dp-sdr-dsc-fallback73539.tar.xz
+Source447: uke-altmode-pan-lifecycle73540.tar.xz
+Source448: uke-resident-keymaster-73540.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1450,6 +1452,11 @@ printf '%%s  %%s\n' 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d968
 mkdir "$altmode_ack_assets"
 tar -xJf %{SOURCE443} -C "$altmode_ack_assets"
 bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" prepare "$PWD"
+altmode_pan_assets=$PWD/native-generated/altmode_pan_assets
+printf '%%s  %%s\n' d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421 %{SOURCE447} | sha256sum -c --strict --quiet -
+mkdir "$altmode_pan_assets"
+tar -xJf %{SOURCE447} -C "$altmode_pan_assets"
+bash "$altmode_pan_assets/overlay/prepare-altmode-pan-lifecycle.sh" prepare "$PWD"
 battmgr_deadline_assets=$PWD/native-generated/battmgr_deadline_assets
 printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7bd4a6 %{SOURCE441} | sha256sum -c --strict --quiet -
 mkdir "$battmgr_deadline_assets"
@@ -1475,7 +1482,19 @@ printf '%%s  %%s\n' 4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d001
 mkdir "$dp_sdr_dsc_assets"
 tar -xJf %{SOURCE446} -C "$dp_sdr_dsc_assets"
 bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" prepare "$PWD"
+keymaster_assets=$PWD/native-generated/keymaster_assets
+printf '%%s  %%s\n' 5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc %{SOURCE448} | sha256sum -c --strict --quiet -
+mkdir "$keymaster_assets"
+tar -xJf %{SOURCE448} -C "$keymaster_assets"
+bash "$keymaster_assets/apply.sh" "$PWD" "$keymaster_assets"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
+llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
+grep -E "[[:space:]]dev_attr_uke_keymaster$" "$keymaster_assets/scm-symbols.txt"
+sha256sum -c --strict "$keymaster_assets/scm-after.sha256"
+git apply --reverse --check --whitespace=error "$keymaster_assets/0001-qcom-scm-report-resident-uke-keymaster.patch"
+git apply --reverse --whitespace=error "$keymaster_assets/0001-qcom-scm-report-resident-uke-keymaster.patch"
+sha256sum -c --strict "$keymaster_assets/scm-before.sha256"
 for object in drivers/gpu/drm/display/{drm_dp_mst_topology,drm_bridge_connector}.o; do
     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
 done
@@ -1508,6 +1527,9 @@ grep -Eq ' U pinctrl_select_state$' "$front_camera_id_assets/front-driver-symbol
 grep -Fq 'uke-front-camera-identify' <(strings "%{_uke_out}/arch/arm64/kernel/uke-abl.o")
 bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
+llvm-nm --defined-only "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" >"$altmode_pan_assets/pan-symbols.txt"
+grep -E "[[:space:]]pmic_glink_altmode_ack_worker$" "$altmode_pan_assets/pan-symbols.txt"
+bash "$altmode_pan_assets/overlay/prepare-altmode-pan-lifecycle.sh" restore "$PWD"
 bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" restore "$PWD"
 bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
@@ -2343,6 +2365,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
     | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
     | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
+    | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
 heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
@@ -2462,6 +2485,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-41
+- Keep USB-C Alt Mode acknowledgements moving during DisplayPort AUX waits.
+- Add a privileged version query for the resident Keymaster application.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-40
 - Admit a validated uncompressed SDR format when DisplayPort cannot reserve DSC.
 
