@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 35
-%global normal_parent_copr 11370258
+%global normal_rpm_release 36
+%global normal_parent_copr 11370334
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -244,6 +244,8 @@ Source436: uke-mst-single-payload73533.tar.xz
 Source437: uke-dp-attach-ownership73533.tar.xz
 Source438: uke-mst-rate-governor73533.tar.xz
 Source439: uke-mst-encoder-prepass73534.tar.xz
+Source440: uke-altmode-hpd-route-error73534.tar.xz
+Source441: uke-battmgr-deadline73534.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1433,6 +1435,16 @@ printf '%%s  %%s\n' a35babf246867daad963463c57783dce2fb1606acccf46f63864273cff56
 mkdir "$mst_encoder_assets"
 tar -xJf %{SOURCE439} -C "$mst_encoder_assets"
 bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" prepare "$PWD"
+altmode_hpd_assets=$PWD/native-generated/altmode_hpd_assets
+printf '%%s  %%s\n' 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cdb90c %{SOURCE440} | sha256sum -c --strict --quiet -
+mkdir "$altmode_hpd_assets"
+tar -xJf %{SOURCE440} -C "$altmode_hpd_assets"
+bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" prepare "$PWD"
+battmgr_deadline_assets=$PWD/native-generated/battmgr_deadline_assets
+printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7bd4a6 %{SOURCE441} | sha256sum -c --strict --quiet -
+mkdir "$battmgr_deadline_assets"
+tar -xJf %{SOURCE441} -C "$battmgr_deadline_assets"
+bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
@@ -1446,6 +1458,10 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_core_perf.
 for object in dp_ctrl dp_display dp_mst_drm; do
     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
 done
+llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
+bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
+llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
+bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" restore "$PWD"
 bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" restore "$PWD"
 bash "$mst_rate_assets/overlay/prepare-mst-rate-governor.sh" restore "$PWD"
 bash "$dp_attach_assets/overlay/prepare-dp-attach-ownership.sh" restore "$PWD"

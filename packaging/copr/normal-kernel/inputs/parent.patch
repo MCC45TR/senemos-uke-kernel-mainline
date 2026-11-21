@@ -4,66 +4,47 @@
  %global senemos_build_release 13
  %endif
  %global source_krel %{version}-%{senemos_build_release}-unstable
--%global normal_rpm_release 34
--%global normal_parent_copr 11370167
-+%global normal_rpm_release 35
-+%global normal_parent_copr 11370258
+-%global normal_rpm_release 35
+-%global normal_parent_copr 11370258
++%global normal_rpm_release 36
++%global normal_parent_copr 11370334
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
-@@ -241,6 +241,9 @@
- Source434: uke-display-fault73531.tar.xz
- Source435: uke-dpu-atomic-total73533.tar.xz
- Source436: uke-mst-single-payload73533.tar.xz
-+Source437: uke-dp-attach-ownership73533.tar.xz
-+Source438: uke-mst-rate-governor73533.tar.xz
-+Source439: uke-mst-encoder-prepass73534.tar.xz
+@@ -244,6 +244,8 @@
+ Source437: uke-dp-attach-ownership73533.tar.xz
+ Source438: uke-mst-rate-governor73533.tar.xz
+ Source439: uke-mst-encoder-prepass73534.tar.xz
++Source440: uke-altmode-hpd-route-error73534.tar.xz
++Source441: uke-battmgr-deadline73534.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1415,6 +1418,21 @@
- mkdir "$mst_slot_assets"
- tar -xJf %{SOURCE436} -C "$mst_slot_assets"
- bash "$mst_slot_assets/overlay/prepare-mst-slot-budget.sh" prepare "$PWD"
-+dp_attach_assets=$PWD/native-generated/dp_attach_ownership
-+printf '%%s  %%s\n' 62d1671e4df4703d8f875941464d153ae1e3fca83175353d3545bc3cd4b861dc %{SOURCE437} | sha256sum -c --strict --quiet -
-+mkdir "$dp_attach_assets"
-+tar -xJf %{SOURCE437} -C "$dp_attach_assets"
-+bash "$dp_attach_assets/overlay/prepare-dp-attach-ownership.sh" prepare "$PWD"
-+mst_rate_assets=$PWD/native-generated/mst_rate_governor
-+printf '%%s  %%s\n' bfac8d338bd021bcaf4682958e73cc258622ddc19fe9dbc96ae4347aae8c527a %{SOURCE438} | sha256sum -c --strict --quiet -
-+mkdir "$mst_rate_assets"
-+tar -xJf %{SOURCE438} -C "$mst_rate_assets"
-+bash "$mst_rate_assets/overlay/prepare-mst-rate-governor.sh" prepare "$PWD"
-+mst_encoder_assets=$PWD/native-generated/mst_encoder_prepass
-+printf '%%s  %%s\n' a35babf246867daad963463c57783dce2fb1606acccf46f63864273cff5671dc %{SOURCE439} | sha256sum -c --strict --quiet -
-+mkdir "$mst_encoder_assets"
-+tar -xJf %{SOURCE439} -C "$mst_encoder_assets"
-+bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" prepare "$PWD"
+@@ -1433,6 +1435,16 @@
+ mkdir "$mst_encoder_assets"
+ tar -xJf %{SOURCE439} -C "$mst_encoder_assets"
+ bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" prepare "$PWD"
++altmode_hpd_assets=$PWD/native-generated/altmode_hpd_assets
++printf '%%s  %%s\n' 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cdb90c %{SOURCE440} | sha256sum -c --strict --quiet -
++mkdir "$altmode_hpd_assets"
++tar -xJf %{SOURCE440} -C "$altmode_hpd_assets"
++bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" prepare "$PWD"
++battmgr_deadline_assets=$PWD/native-generated/battmgr_deadline_assets
++printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7bd4a6 %{SOURCE441} | sha256sum -c --strict --quiet -
++mkdir "$battmgr_deadline_assets"
++tar -xJf %{SOURCE441} -C "$battmgr_deadline_assets"
++bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" prepare "$PWD"
  bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
  for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
      llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
-@@ -1425,6 +1443,12 @@
+@@ -1446,6 +1458,10 @@
+ for object in dp_ctrl dp_display dp_mst_drm; do
+     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
  done
- llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_core_perf.o" |
-     grep -E '[[:space:]]dpu_core_perf_atomic_check$'
-+for object in dp_ctrl dp_display dp_mst_drm; do
-+    llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
-+done
-+bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" restore "$PWD"
-+bash "$mst_rate_assets/overlay/prepare-mst-rate-governor.sh" restore "$PWD"
-+bash "$dp_attach_assets/overlay/prepare-dp-attach-ownership.sh" restore "$PWD"
- bash "$mst_slot_assets/overlay/prepare-mst-slot-budget.sh" restore "$PWD"
- bash "$dpu_atomic_assets/overlay/prepare-dpu-atomic-total.sh" restore "$PWD"
- bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" restore "$PWD"
-@@ -2368,6 +2392,10 @@
- /usr/lib/senemos/default-boot.img
- 
- %changelog
-+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-35
-+- Balance DisplayPort attachment power references and preserve the exact MST stream rate.
-+- Select distinct MST encoders during simultaneous connector validation.
-+
- * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-34
- - Check all proposed real-time CRTC bandwidth reservations together before accepting a display configuration.
- - Use the DisplayPort MST payload slot limit during mode and color-depth selection.
++llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
++bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
++llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
++bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" restore "$PWD"
+ bash "$mst_encoder_assets/overlay/prepare-mst-encoder-prepass.sh" restore "$PWD"
+ bash "$mst_rate_assets/overlay/prepare-mst-rate-governor.sh" restore "$PWD"
+ bash "$dp_attach_assets/overlay/prepare-dp-attach-ownership.sh" restore "$PWD"
