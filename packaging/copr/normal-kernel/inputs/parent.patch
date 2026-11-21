@@ -1,66 +1,62 @@
+diff --git a/SPECS/senemos-uke-linux-kernel-mainline.spec b/SPECS/senemos-uke-linux-kernel-mainline.spec
+index 4332e23..dcc5cc4 100644
 --- a/SPECS/senemos-uke-linux-kernel-mainline.spec
 +++ b/SPECS/senemos-uke-linux-kernel-mainline.spec
-@@ -15,8 +15,8 @@
+@@ -15,8 +15,8 @@ Version: 7.3.5
  %global senemos_build_release 13
  %endif
  %global source_krel %{version}-%{senemos_build_release}-unstable
--%global normal_rpm_release 38
--%global normal_parent_copr 11370529
-+%global normal_rpm_release 39
-+%global normal_parent_copr 11370617
+-%global normal_rpm_release 39
+-%global normal_parent_copr 11370617
++%global normal_rpm_release 40
++%global normal_parent_copr 11370878
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
-@@ -248,6 +248,8 @@
- Source441: uke-battmgr-deadline73534.tar.xz
- Source442: uke-front-camera-id-qualification73535.tar.xz
+@@ -250,6 +250,7 @@ Source442: uke-front-camera-id-qualification73535.tar.xz
  Source443: uke-altmode-ack-publish73536.tar.xz
-+Source444: uke-mst-link-budget-guard73538.tar.xz
-+Source445: uke-dp-hpd-worker73538.tar.xz
+ Source444: uke-mst-link-budget-guard73538.tar.xz
+ Source445: uke-dp-hpd-worker73538.tar.xz
++Source446: uke-dp-sdr-dsc-fallback73539.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1457,7 +1459,24 @@
- mkdir "$front_camera_id_assets"
- tar -xJf %{SOURCE442} -C "$front_camera_id_assets"
- bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" prepare "$PWD"
-+mst_link_budget_assets=$PWD/native-generated/mst_link_budget_assets
-+printf '%%s  %%s\n' 833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9 %{SOURCE444} | sha256sum -c --strict --quiet -
-+mkdir "$mst_link_budget_assets"
-+tar -xJf %{SOURCE444} -C "$mst_link_budget_assets"
-+bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" prepare "$PWD"
-+dp_hpd_probe_assets=$PWD/native-generated/dp_hpd_probe_assets
-+printf '%%s  %%s\n' 7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276 %{SOURCE445} | sha256sum -c --strict --quiet -
-+mkdir "$dp_hpd_probe_assets"
-+tar -xJf %{SOURCE445} -C "$dp_hpd_probe_assets"
-+bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" prepare "$PWD"
+@@ -1469,12 +1470,20 @@ printf '%%s  %%s\n' 7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5
+ mkdir "$dp_hpd_probe_assets"
+ tar -xJf %{SOURCE445} -C "$dp_hpd_probe_assets"
+ bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" prepare "$PWD"
++dp_sdr_dsc_assets=$PWD/native-generated/dp_sdr_dsc_assets
++printf '%%s  %%s\n' 4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504 %{SOURCE446} | sha256sum -c --strict --quiet -
++mkdir "$dp_sdr_dsc_assets"
++tar -xJf %{SOURCE446} -C "$dp_sdr_dsc_assets"
++bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" prepare "$PWD"
  bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
-+for object in drivers/gpu/drm/display/{drm_dp_mst_topology,drm_bridge_connector}.o; do
-+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
-+done
-+llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector.o" |
-+    grep -E '[[:space:]]drm_bridge_connector_hpd_probe_work$'
-+bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" restore "$PWD"
-+bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" restore "$PWD"
- for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
+ for object in drivers/gpu/drm/display/{drm_dp_mst_topology,drm_bridge_connector}.o; do
      llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
  done
-@@ -2313,6 +2332,7 @@
-     | .rpm_revision=$rev
+ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector.o" |
+     grep -E '[[:space:]]drm_bridge_connector_hpd_probe_work$'
++llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
++    grep -E '[[:space:]]T[[:space:]]+msm_dp_crtc_try_uncompressed$'
++bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" restore "$PWD"
+ bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" restore "$PWD"
+ bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" restore "$PWD"
+ for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
+@@ -2333,6 +2342,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg
      | .publication.altmode_ack_deadline_check_copr=11370569
      | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
-+    | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
+     | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
++    | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
      | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
  proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
  heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
-@@ -2432,6 +2452,10 @@
+@@ -2452,6 +2462,9 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
  /usr/lib/senemos/default-boot.img
  
  %changelog
-+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-39
-+- Defer DisplayPort connector detection on passive HPD bridges so MST replies can reach pending sideband requests.
-+- Reject MST payload allocation until the link has negotiated nonzero slot bandwidth.
++* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-40
++- Admit a validated uncompressed SDR format when DisplayPort cannot reserve DSC.
 +
- * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-35
- - Balance DisplayPort attachment power references and preserve the exact MST stream rate.
- - Select distinct MST encoders during simultaneous connector validation.
+ * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-39
+ - Defer DisplayPort connector detection on passive HPD bridges so MST replies can reach pending sideband requests.
+ - Reject MST payload allocation until the link has negotiated nonzero slot bandwidth.

@@ -1,3 +1,4 @@
-36d0be03415141ae83c2f601395faa3fe8e93e8db4e44ab667e11bbe463e2c8f  parent.patch
-833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9  uke-mst-link-budget-guard73538.tar.xz
+c35f0eacde09c3afe0854eafa2d130e30b9ab14b2c72f559fa2df807f7cc33bb  parent.patch
 7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276  uke-dp-hpd-worker73538.tar.xz
+4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504  uke-dp-sdr-dsc-fallback73539.tar.xz
+833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9  uke-mst-link-budget-guard73538.tar.xz
