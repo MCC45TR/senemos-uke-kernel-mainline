@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 42
-%global normal_parent_copr 11371153
+%global normal_rpm_release 43
+%global normal_parent_copr 11371502
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -255,6 +255,7 @@ Source447: uke-altmode-pan-lifecycle73540.tar.xz
 Source448: uke-resident-keymaster-73540.tar.xz
 Source449: uke-cdsp-toolchain-contract2316.tar.xz
 Source450: uke-dp-sst422-73541.tar.xz
+Source451: uke-dp-idle-aux73542.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1515,6 +1516,17 @@ git apply --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-
 git apply --check --whitespace=error "$dp_sst422_assets/0003-drm-msm-dp-quiesce-stream-before-gating-pixel-clock.patch"
 git apply --whitespace=error "$dp_sst422_assets/0003-drm-msm-dp-quiesce-stream-before-gating-pixel-clock.patch"
 sha256sum -c --strict "$dp_sst422_assets/dp-postimage.sha256"
+dp_idle_aux_assets=$PWD/native-generated/dp_idle_aux_assets
+printf '%%s  %%s\n' 9d670fde91a633bdc368ee5a8c3397aa169cb155b2e4b461538a57cd9212eefc %{SOURCE451} | sha256sum -c --strict --quiet -
+mkdir "$dp_idle_aux_assets"
+tar -xJf %{SOURCE451} -C "$dp_idle_aux_assets"
+(cd "$dp_idle_aux_assets"; sha256sum -c --strict --quiet SHA256SUMS)
+sha256sum -c --strict "$dp_idle_aux_assets/idle-aux-before.sha256"
+for patch in 0001-drm-msm-dp-restore-idle-sst-aux-on-cliffs.patch 0002-drm-msm-dp-guard-idle-link-maintenance.patch; do
+    git apply --check --whitespace=error "$dp_idle_aux_assets/$patch"
+    git apply --whitespace=error "$dp_idle_aux_assets/$patch"
+done
+sha256sum -c --strict "$dp_idle_aux_assets/idle-aux-after.sha256"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
 llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
@@ -1532,6 +1544,12 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
     grep -E '[[:space:]]T[[:space:]]+msm_dp_crtc_try_uncompressed$'
 llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
     grep -E '[[:space:]]T[[:space:]]+msm_dp_stream_chroma_format$'
+strings "%{_uke_out}/drivers/gpu/drm/msm/dp/dp_display.o" | grep -F 'Failed to restore idle DP AUX'
+for patch in 0002-drm-msm-dp-guard-idle-link-maintenance.patch 0001-drm-msm-dp-restore-idle-sst-aux-on-cliffs.patch; do
+    git apply --reverse --check --whitespace=error "$dp_idle_aux_assets/$patch"
+    git apply --reverse --whitespace=error "$dp_idle_aux_assets/$patch"
+done
+sha256sum -c --strict "$dp_idle_aux_assets/idle-aux-before.sha256"
 git apply --reverse --check --whitespace=error "$dp_sst422_assets/0003-drm-msm-dp-quiesce-stream-before-gating-pixel-clock.patch"
 git apply --reverse --whitespace=error "$dp_sst422_assets/0003-drm-msm-dp-quiesce-stream-before-gating-pixel-clock.patch"
 git apply --reverse --check --whitespace=error "$dp_sst422_assets/0002-drm-msm-dp-reset-only-with-link-clocks.patch"
@@ -2420,6 +2438,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
     | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
     | .publication += {dp_sst422_teardown_check_copr:11371468,dp_sst422_teardown_archive_sha256:"048eddcf2bbed8f44e27b6e415835e8bc9204b0b898e0c5a71dd393afa00ffa8"}
+    | .publication += {dp_idle_aux_check_copr:11371833,dp_idle_aux_archive_sha256:"9d670fde91a633bdc368ee5a8c3397aa169cb155b2e4b461538a57cd9212eefc"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
@@ -2540,6 +2559,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-43
+- Restore AUX-only operation after the last display stream stops on Cliffs.
+- Keep link maintenance off when only AUX is powered, and retain disconnect ownership.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-42
 - Add native eight-bit DisplayPort YCbCr 4:2:2 for SDR modes above the RGB link budget.
 - Avoid resetting the DisplayPort controller with its link clocks disabled.
