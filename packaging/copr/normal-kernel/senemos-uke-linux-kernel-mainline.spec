@@ -1503,7 +1503,7 @@ mkdir "$keymaster_assets"
 tar -xJf %{SOURCE448} -C "$keymaster_assets"
 bash "$keymaster_assets/apply.sh" "$PWD" "$keymaster_assets"
 dp_sst422_assets=$PWD/native-generated/dp_sst422_assets
-printf '%%s  %%s\n' 0c5f237cdc85513ef21e96b562586ac74ab390074a4eb93006ee75aa839ca801 %{SOURCE450} | sha256sum -c --strict --quiet -
+printf '%%s  %%s\n' 82b3c4933ea79d61e7799763d10420d0dee2c8bfb4e415f6e285c5d72ee69796 %{SOURCE450} | sha256sum -c --strict --quiet -
 mkdir "$dp_sst422_assets"
 tar -xJf %{SOURCE450} -C "$dp_sst422_assets"
 (cd "$dp_sst422_assets"; sha256sum -c --strict --quiet SHA256SUMS)
@@ -2415,7 +2415,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
     | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
     | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
-    | .publication += {dp_sst422_teardown_check_copr:11371418,dp_sst422_teardown_archive_sha256:"0c5f237cdc85513ef21e96b562586ac74ab390074a4eb93006ee75aa839ca801"}
+    | .publication += {dp_sst422_teardown_check_copr:11371458,dp_sst422_teardown_archive_sha256:"82b3c4933ea79d61e7799763d10420d0dee2c8bfb4e415f6e285c5d72ee69796"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
