@@ -1,5 +1,5 @@
 diff --git a/SPECS/senemos-uke-linux-kernel-mainline.spec b/SPECS/senemos-uke-linux-kernel-mainline.spec
-index dcc5cc4..70a73cd 100644
+index dcc5cc4..5fd072a 100644
 --- a/SPECS/senemos-uke-linux-kernel-mainline.spec
 +++ b/SPECS/senemos-uke-linux-kernel-mainline.spec
 @@ -15,8 +15,8 @@ Version: 7.3.5
@@ -13,6 +13,19 @@ index dcc5cc4..70a73cd 100644
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
+@@ -59,9 +59,9 @@ Requires: %{name}-boot = %{version}-%{release}
+ Provides: installonlypkg(kernel)
+ 
+ Requires: uke-speaker-runtime >= 0.4-2
+-BuildRequires: clang = 23.1.5-1.fc46
+-BuildRequires: llvm = 23.1.5-1.fc46
+-BuildRequires: lld = 23.1.5-1.fc46
++BuildRequires: clang = 23.1.6-1.fc46
++BuildRequires: llvm = 23.1.6-1.fc46
++BuildRequires: lld = 23.1.6-1.fc46
+ Requires: uke-control(critical-rollback-v1) >= 1
+ Requires: uke-control(critical-crash-count-v1) >= 1
+ # UKE_STABLE734_FULL_SOURCES_BEGIN
 @@ -251,6 +251,8 @@ Source443: uke-altmode-ack-publish73536.tar.xz
  Source444: uke-mst-link-budget-guard73538.tar.xz
  Source445: uke-dp-hpd-worker73538.tar.xz
