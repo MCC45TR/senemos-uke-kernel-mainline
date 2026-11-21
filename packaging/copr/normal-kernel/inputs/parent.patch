@@ -9,23 +9,29 @@
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
-@@ -239,6 +239,7 @@
+@@ -239,6 +239,8 @@
  Source432: uke-juo-display73530.tar.xz
  Source433: uke-usb-dp-stability73531.tar.xz
  Source434: uke-display-fault73531.tar.xz
 +Source435: uke-dpu-atomic-total73533.tar.xz
++Source436: uke-mst-single-payload73533.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1403,10 +1404,22 @@
+@@ -1403,10 +1405,28 @@
  mkdir "$display_fault_assets"
  tar -xJf %{SOURCE434} -C "$display_fault_assets"
  bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" prepare "$PWD"
 +dpu_atomic_assets=$PWD/native-generated/dpu_atomic_total
-+printf '%%s  %%s\n' b0f2205ba66c32821cdefa2cfbda49bceed474119fffb7b1c3f246f001e17da8 %{SOURCE435} | sha256sum -c --strict --quiet -
++printf '%%s  %%s\n' 5a47f945c896985f4c422e58c19f7b73b731866f4b0b63cd72cdd2ffd265ee08 %{SOURCE435} | sha256sum -c --strict --quiet -
 +mkdir "$dpu_atomic_assets"
 +tar -xJf %{SOURCE435} -C "$dpu_atomic_assets"
 +bash "$dpu_atomic_assets/overlay/prepare-dpu-atomic-total.sh" prepare "$PWD"
++mst_slot_assets=$PWD/native-generated/mst_single_payload
++printf '%%s  %%s\n' ebeb950598e804683e84eccf68b759d8e1f5028a38b33c568c4bd735557c1cd9 %{SOURCE436} | sha256sum -c --strict --quiet -
++mkdir "$mst_slot_assets"
++tar -xJf %{SOURCE436} -C "$mst_slot_assets"
++bash "$mst_slot_assets/overlay/prepare-mst-slot-budget.sh" prepare "$PWD"
  bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
  for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
      llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
@@ -36,16 +42,18 @@
 +done
 +llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_core_perf.o" |
 +    grep -E '[[:space:]]dpu_core_perf_atomic_check$'
++bash "$mst_slot_assets/overlay/prepare-mst-slot-budget.sh" restore "$PWD"
 +bash "$dpu_atomic_assets/overlay/prepare-dpu-atomic-total.sh" restore "$PWD"
  bash "$display_fault_assets/overlay/prepare-display-fault73531.sh" restore "$PWD"
  for object in dp_aux dp_ctrl dp_display dp_mst_drm; do
      llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
-@@ -2348,6 +2361,9 @@
+@@ -2348,6 +2368,10 @@
  /usr/lib/senemos/default-boot.img
  
  %changelog
 +* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-34
 +- Check all proposed real-time CRTC bandwidth reservations together before accepting a display configuration.
++- Use the DisplayPort MST payload slot limit during mode and color-depth selection.
 +
  * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-33
  - Validate QCOM GPI event-ring producer pointers and bound the reset-time stale-event scan.
