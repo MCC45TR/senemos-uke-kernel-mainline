@@ -51,7 +51,24 @@
  bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" restore "$PWD"
  bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" restore "$PWD"
  bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" restore "$PWD"
-@@ -2388,6 +2407,7 @@
+@@ -1619,7 +1638,15 @@
+ bash "$camss_assets/check-camss-built-in735.sh" %{_uke_out} '%{krel}'
+ bash "$camss_assets/camss-late-layer735.sh" restore "$PWD"
+ mv -- "$vi_layer/migration-check-parent.sh" "$vi_checker"
+-bash "$display_assets/prepare-normal-display.sh" linked %{_uke_out} '%{krel}'
++old_display_link_check="$display_assets/prepare-normal-display.sh"
++new_display_link_check="$display_assets/verify-linked-sst422.sh"
++test "$(grep -Fc ' msm_dp_stream_is_yuv420$' "$old_display_link_check")" = 1
++sed 's/msm_dp_stream_is_yuv420\$/msm_dp_stream_chroma_format$/' \
++    "$old_display_link_check" > "$new_display_link_check"
++test "$(grep -Fc ' msm_dp_stream_chroma_format$' "$new_display_link_check")" = 1
++sed 's/msm_dp_stream_chroma_format\$/msm_dp_stream_is_yuv420$/' "$new_display_link_check" |
++    cmp - "$old_display_link_check"
++bash "$new_display_link_check" linked %{_uke_out} '%{krel}'
+ bash "$display_assets/prepare-normal-display.sh" restore "$PWD"
+ charge_module=%{_uke_out}/drivers/power/supply/qcom_battmgr.ko
+ test -s "$charge_module"
+@@ -2388,6 +2415,7 @@
      | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
      | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
      | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
@@ -59,7 +76,7 @@
      | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
      | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
  proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
-@@ -2508,6 +2528,10 @@
+@@ -2508,6 +2536,10 @@
  /usr/lib/senemos/default-boot.img
  
  %changelog
