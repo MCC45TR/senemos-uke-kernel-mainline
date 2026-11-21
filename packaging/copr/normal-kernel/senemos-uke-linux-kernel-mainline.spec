@@ -59,9 +59,9 @@ Requires: %{name}-boot = %{version}-%{release}
 Provides: installonlypkg(kernel)
 
 Requires: uke-speaker-runtime >= 0.4-2
-BuildRequires: clang = 23.1.5-1.fc46
-BuildRequires: llvm = 23.1.5-1.fc46
-BuildRequires: lld = 23.1.5-1.fc46
+BuildRequires: clang = 23.1.6-1.fc46
+BuildRequires: llvm = 23.1.6-1.fc46
+BuildRequires: lld = 23.1.6-1.fc46
 Requires: uke-control(critical-rollback-v1) >= 1
 Requires: uke-control(critical-crash-count-v1) >= 1
 # UKE_STABLE734_FULL_SOURCES_BEGIN
