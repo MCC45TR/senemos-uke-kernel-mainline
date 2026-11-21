@@ -1,5 +1,5 @@
 diff --git a/SPECS/senemos-uke-linux-kernel-mainline.spec b/SPECS/senemos-uke-linux-kernel-mainline.spec
-index dcc5cc4..5fd072a 100644
+index dcc5cc4..c5636f0 100644
 --- a/SPECS/senemos-uke-linux-kernel-mainline.spec
 +++ b/SPECS/senemos-uke-linux-kernel-mainline.spec
 @@ -15,8 +15,8 @@ Version: 7.3.5
@@ -26,16 +26,33 @@ index dcc5cc4..5fd072a 100644
  Requires: uke-control(critical-rollback-v1) >= 1
  Requires: uke-control(critical-crash-count-v1) >= 1
  # UKE_STABLE734_FULL_SOURCES_BEGIN
-@@ -251,6 +251,8 @@ Source443: uke-altmode-ack-publish73536.tar.xz
+@@ -251,6 +251,9 @@ Source443: uke-altmode-ack-publish73536.tar.xz
  Source444: uke-mst-link-budget-guard73538.tar.xz
  Source445: uke-dp-hpd-worker73538.tar.xz
  Source446: uke-dp-sdr-dsc-fallback73539.tar.xz
 +Source447: uke-altmode-pan-lifecycle73540.tar.xz
 +Source448: uke-resident-keymaster-73540.tar.xz
++Source449: uke-cdsp-toolchain-contract2316.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1450,6 +1452,11 @@ printf '%%s  %%s\n' 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d968
+@@ -583,6 +586,15 @@ test "$(grep -Fxc "$gain_off" "$ref/.config")" = 1
+ test "$(grep -Fxc "$publication_on" "$ref/.config")" = 1
+ grep -Fvx -e "$status_on" -e "$gain_off" -e "$publication_on" "$ref/.config" > "$ref/historical.config"
+ test "$(wc -l < "$ref/.config")" = "$(( $(wc -l < "$ref/historical.config") + 3 ))"
++toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6
++printf '%%s  %%s\n' ef9522bd27d3025f875a009c3ef7b2a2c851b640cd911b02b5b55867db6fd091 %{SOURCE449} | sha256sum -c --strict --quiet -
++mkdir "$toolchain_assets"
++tar -xJf %{SOURCE449} -C "$toolchain_assets"
++toolchain_assets=$toolchain_assets/overlay
++sha256sum -c --strict "$toolchain_assets/before.sha256"
++git apply --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
++git apply --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
++sha256sum -c --strict "$toolchain_assets/after.sha256"
+ bash native-profile/tests/cdsp-pogo-toolchain-contract.sh "$ref/historical.config"
+ bash native-profile/tests/cdsp-pogo-config-contract.sh "$ref/historical.config"
+ bash native-profile/tests/governor-config-contract.sh "$ref/.config" native-generated/nfc-cdsp-reference/.config
+@@ -1450,6 +1462,11 @@ printf '%%s  %%s\n' 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d968
  mkdir "$altmode_ack_assets"
  tar -xJf %{SOURCE443} -C "$altmode_ack_assets"
  bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" prepare "$PWD"
@@ -47,7 +64,7 @@ index dcc5cc4..5fd072a 100644
  battmgr_deadline_assets=$PWD/native-generated/battmgr_deadline_assets
  printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7bd4a6 %{SOURCE441} | sha256sum -c --strict --quiet -
  mkdir "$battmgr_deadline_assets"
-@@ -1475,7 +1482,19 @@ printf '%%s  %%s\n' 4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d001
+@@ -1475,7 +1492,19 @@ printf '%%s  %%s\n' 4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d001
  mkdir "$dp_sdr_dsc_assets"
  tar -xJf %{SOURCE446} -C "$dp_sdr_dsc_assets"
  bash "$dp_sdr_dsc_assets/overlay/prepare-dp-sdr-dsc-fallback.sh" prepare "$PWD"
@@ -67,7 +84,7 @@ index dcc5cc4..5fd072a 100644
  for object in drivers/gpu/drm/display/{drm_dp_mst_topology,drm_bridge_connector}.o; do
      llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
  done
-@@ -1508,6 +1527,9 @@ grep -Eq ' U pinctrl_select_state$' "$front_camera_id_assets/front-driver-symbol
+@@ -1508,6 +1537,9 @@ grep -Eq ' U pinctrl_select_state$' "$front_camera_id_assets/front-driver-symbol
  grep -Fq 'uke-front-camera-identify' <(strings "%{_uke_out}/arch/arm64/kernel/uke-abl.o")
  bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" restore "$PWD"
  llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
@@ -77,7 +94,19 @@ index dcc5cc4..5fd072a 100644
  bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" restore "$PWD"
  bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
  llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
-@@ -2343,6 +2365,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg
+@@ -2098,6 +2130,11 @@ grep -aqF 'max-reason' %{_uke_out}/arch/arm64/kernel/uke-abl.o
+ sha256sum -c --strict --quiet native-generated/nfc-cdsp-before-reference/historical-inputs.sha256
+ bash native-profile/tests/cdsp-pogo-toolchain-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
+ bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
++toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6/overlay
++sha256sum -c --strict "$toolchain_assets/after.sha256"
++git apply --reverse --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
++git apply --reverse --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
++sha256sum -c --strict "$toolchain_assets/before.sha256"
+ bash native-profile/tests/governor-config-contract.sh native-generated/nfc-cdsp-before-reference/.config native-generated/nfc-cdsp-reference/.config
+ cmp native-profile/src/camera/eeprom/uke-front-eeprom-dt.h arch/arm64/kernel/uke-front-eeprom-dt.h
+ test -s %{_uke_out}/drivers/regulator/qcom-rpmh-regulator-uke.o
+@@ -2343,6 +2380,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg
      | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
      | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
      | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
@@ -85,7 +114,7 @@ index dcc5cc4..5fd072a 100644
      | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
  proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
  heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
-@@ -2462,6 +2485,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
+@@ -2462,6 +2500,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
  /usr/lib/senemos/default-boot.img
  
  %changelog

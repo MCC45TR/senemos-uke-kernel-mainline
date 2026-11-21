@@ -66,7 +66,8 @@ if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet 
     exit 1
 fi
 install -m644 "$assets/inputs/uke-altmode-pan-lifecycle73540.tar.xz" \
-    "$assets/inputs/uke-resident-keymaster-73540.tar.xz" "$work/SOURCES/"
+    "$assets/inputs/uke-resident-keymaster-73540.tar.xz" \
+    "$assets/inputs/uke-cdsp-toolchain-contract2316.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]

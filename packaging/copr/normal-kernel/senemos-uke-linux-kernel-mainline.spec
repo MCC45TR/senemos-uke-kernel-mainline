@@ -253,6 +253,7 @@ Source445: uke-dp-hpd-worker73538.tar.xz
 Source446: uke-dp-sdr-dsc-fallback73539.tar.xz
 Source447: uke-altmode-pan-lifecycle73540.tar.xz
 Source448: uke-resident-keymaster-73540.tar.xz
+Source449: uke-cdsp-toolchain-contract2316.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -585,6 +586,15 @@ test "$(grep -Fxc "$gain_off" "$ref/.config")" = 1
 test "$(grep -Fxc "$publication_on" "$ref/.config")" = 1
 grep -Fvx -e "$status_on" -e "$gain_off" -e "$publication_on" "$ref/.config" > "$ref/historical.config"
 test "$(wc -l < "$ref/.config")" = "$(( $(wc -l < "$ref/historical.config") + 3 ))"
+toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6
+printf '%%s  %%s\n' ef9522bd27d3025f875a009c3ef7b2a2c851b640cd911b02b5b55867db6fd091 %{SOURCE449} | sha256sum -c --strict --quiet -
+mkdir "$toolchain_assets"
+tar -xJf %{SOURCE449} -C "$toolchain_assets"
+toolchain_assets=$toolchain_assets/overlay
+sha256sum -c --strict "$toolchain_assets/before.sha256"
+git apply --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+git apply --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+sha256sum -c --strict "$toolchain_assets/after.sha256"
 bash native-profile/tests/cdsp-pogo-toolchain-contract.sh "$ref/historical.config"
 bash native-profile/tests/cdsp-pogo-config-contract.sh "$ref/historical.config"
 bash native-profile/tests/governor-config-contract.sh "$ref/.config" native-generated/nfc-cdsp-reference/.config
@@ -2120,6 +2130,11 @@ grep -aqF 'max-reason' %{_uke_out}/arch/arm64/kernel/uke-abl.o
 sha256sum -c --strict --quiet native-generated/nfc-cdsp-before-reference/historical-inputs.sha256
 bash native-profile/tests/cdsp-pogo-toolchain-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
 bash native-profile/tests/cdsp-pogo-config-contract.sh native-generated/nfc-cdsp-before-reference/historical.config
+toolchain_assets=$PWD/native-generated/fedora-llvm-23.1.6/overlay
+sha256sum -c --strict "$toolchain_assets/after.sha256"
+git apply --reverse --check --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+git apply --reverse --whitespace=error "$toolchain_assets/cdsp-pogo-accept-fedora-llvm-23.1.6.patch"
+sha256sum -c --strict "$toolchain_assets/before.sha256"
 bash native-profile/tests/governor-config-contract.sh native-generated/nfc-cdsp-before-reference/.config native-generated/nfc-cdsp-reference/.config
 cmp native-profile/src/camera/eeprom/uke-front-eeprom-dt.h arch/arm64/kernel/uke-front-eeprom-dt.h
 test -s %{_uke_out}/drivers/regulator/qcom-rpmh-regulator-uke.o
