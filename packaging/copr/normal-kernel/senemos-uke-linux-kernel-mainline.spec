@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 37
-%global normal_parent_copr 11370436
+%global normal_rpm_release 38
+%global normal_parent_copr 11370529
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -247,6 +247,7 @@ Source439: uke-mst-encoder-prepass73534.tar.xz
 Source440: uke-altmode-hpd-route-error73534.tar.xz
 Source441: uke-battmgr-deadline73534.tar.xz
 Source442: uke-front-camera-id-qualification73535.tar.xz
+Source443: uke-altmode-ack-publish73536.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1441,6 +1442,11 @@ printf '%%s  %%s\n' 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cd
 mkdir "$altmode_hpd_assets"
 tar -xJf %{SOURCE440} -C "$altmode_hpd_assets"
 bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" prepare "$PWD"
+altmode_ack_assets=$PWD/native-generated/altmode_ack_assets
+printf '%%s  %%s\n' 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef %{SOURCE443} | sha256sum -c --strict --quiet -
+mkdir "$altmode_ack_assets"
+tar -xJf %{SOURCE443} -C "$altmode_ack_assets"
+bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" prepare "$PWD"
 battmgr_deadline_assets=$PWD/native-generated/battmgr_deadline_assets
 printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7bd4a6 %{SOURCE441} | sha256sum -c --strict --quiet -
 mkdir "$battmgr_deadline_assets"
@@ -1474,6 +1480,7 @@ grep -Eq ' U pinctrl_select_state$' "$front_camera_id_assets/front-driver-symbol
 grep -Fq 'uke-front-camera-identify' <(strings "%{_uke_out}/arch/arm64/kernel/uke-abl.o")
 bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
+bash "$altmode_ack_assets/overlay/prepare-altmode-ack-deadline.sh" restore "$PWD"
 bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
 bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" restore "$PWD"
@@ -2304,6 +2311,8 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {ov08d10_reset_check_copr:11368979,ov08d10_reset_archive_sha256:"8726f3109396bd6cf9388c8c3c162066a928df5725cbb1a868ec0188e949109a"}
     | .publication += {front_vdig_demand_check_copr:11369315,mst_controller_pm_check_copr:11369258,mst_controller_pm_archive_sha256:"32f3662ba97bf4212d0428530c94bf6901f3dff43eefa1e28979f6ac424fd5db",front_vdig_demand_archive_sha256:"862de62ac0dbdac25dde1a478e7765936873f0237e7565e2b5f4b158fec7a4c4"}
     | .rpm_revision=$rev
+    | .publication.altmode_ack_deadline_check_copr=11370569
+    | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
 heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
