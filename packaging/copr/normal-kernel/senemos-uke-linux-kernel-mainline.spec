@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 36
-%global normal_parent_copr 11370334
+%global normal_rpm_release 37
+%global normal_parent_copr 11370436
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -246,6 +246,7 @@ Source438: uke-mst-rate-governor73533.tar.xz
 Source439: uke-mst-encoder-prepass73534.tar.xz
 Source440: uke-altmode-hpd-route-error73534.tar.xz
 Source441: uke-battmgr-deadline73534.tar.xz
+Source442: uke-front-camera-id-qualification73535.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1445,6 +1446,11 @@ printf '%%s  %%s\n' e1529cdc9bf1520e8ae34c81aea798b482eaae0d697e5e89db1c20dc2a7b
 mkdir "$battmgr_deadline_assets"
 tar -xJf %{SOURCE441} -C "$battmgr_deadline_assets"
 bash "$battmgr_deadline_assets/overlay/prepare-battmgr-deadline.sh" prepare "$PWD"
+front_camera_id_assets=$PWD/native-generated/front_camera_id
+printf '%%s  %%s\n' d3ee03cef5637e4352d305b154fce4d88ea9a5f652c2a1c41f3e5761585a6f1b %{SOURCE442} | sha256sum -c --strict --quiet -
+mkdir "$front_camera_id_assets"
+tar -xJf %{SOURCE442} -C "$front_camera_id_assets"
+bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
@@ -1458,6 +1464,15 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_core_perf.
 for object in dp_ctrl dp_display dp_mst_drm; do
     llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/dp/$object.o" | grep -F AArch64
 done
+grep -Fxq 'CONFIG_SM_CAMCC_7675=y' "%{_uke_out}/.config"
+for object in drivers/media/i2c/uke-front-camera-id.o arch/arm64/kernel/uke-abl.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+llvm-nm "%{_uke_out}/drivers/media/i2c/uke-front-camera-id.o" > "$front_camera_id_assets/front-driver-symbols.txt"
+grep -Eq ' U i2c_transfer$' "$front_camera_id_assets/front-driver-symbols.txt"
+grep -Eq ' U pinctrl_select_state$' "$front_camera_id_assets/front-driver-symbols.txt"
+grep -Fq 'uke-front-camera-identify' <(strings "%{_uke_out}/arch/arm64/kernel/uke-abl.o")
+bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/soc/qcom/pmic_glink_altmode.o" | grep -F AArch64
 bash "$altmode_hpd_assets/overlay/prepare-altmode-hpd-route-error.sh" restore "$PWD"
 llvm-readelf -h "%{_uke_out}/drivers/power/supply/qcom_battmgr.o" | grep -F AArch64
