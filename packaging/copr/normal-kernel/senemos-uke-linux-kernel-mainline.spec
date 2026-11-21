@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 38
-%global normal_parent_copr 11370529
+%global normal_rpm_release 39
+%global normal_parent_copr 11370617
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -248,6 +248,8 @@ Source440: uke-altmode-hpd-route-error73534.tar.xz
 Source441: uke-battmgr-deadline73534.tar.xz
 Source442: uke-front-camera-id-qualification73535.tar.xz
 Source443: uke-altmode-ack-publish73536.tar.xz
+Source444: uke-mst-link-budget-guard73538.tar.xz
+Source445: uke-dp-hpd-worker73538.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1457,7 +1459,24 @@ printf '%%s  %%s\n' d3ee03cef5637e4352d305b154fce4d88ea9a5f652c2a1c41f3e5761585a
 mkdir "$front_camera_id_assets"
 tar -xJf %{SOURCE442} -C "$front_camera_id_assets"
 bash "$front_camera_id_assets/overlay/prepare-front-camera-id.sh" prepare "$PWD"
+mst_link_budget_assets=$PWD/native-generated/mst_link_budget_assets
+printf '%%s  %%s\n' 833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9 %{SOURCE444} | sha256sum -c --strict --quiet -
+mkdir "$mst_link_budget_assets"
+tar -xJf %{SOURCE444} -C "$mst_link_budget_assets"
+bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" prepare "$PWD"
+dp_hpd_probe_assets=$PWD/native-generated/dp_hpd_probe_assets
+printf '%%s  %%s\n' 7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276 %{SOURCE445} | sha256sum -c --strict --quiet -
+mkdir "$dp_hpd_probe_assets"
+tar -xJf %{SOURCE445} -C "$dp_hpd_probe_assets"
+bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" prepare "$PWD"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+for object in drivers/gpu/drm/display/{drm_dp_mst_topology,drm_bridge_connector}.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector.o" |
+    grep -E '[[:space:]]drm_bridge_connector_hpd_probe_work$'
+bash "$dp_hpd_probe_assets/hpd-overlay/prepare-dp-hpd-probe.sh" restore "$PWD"
+bash "$mst_link_budget_assets/overlay/prepare-mst-link-budget.sh" restore "$PWD"
 for object in drivers/dma/qcom/gpi.o drivers/gpu/drm/msm/disp/dpu1/{dpu_core_perf,dpu_plane}.o; do
     llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
 done
@@ -2313,6 +2332,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .rpm_revision=$rev
     | .publication.altmode_ack_deadline_check_copr=11370569
     | .publication.altmode_ack_deadline_archive_sha256="24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef"
+    | .publication += {mst_link_budget_check_copr:11370802,mst_link_budget_archive_sha256:"833bf1043c309d49c22962dc4d1478a27475635096274a143e8a4b353cacbaf9",dp_hpd_probe_check_copr:11370872,dp_hpd_probe_archive_sha256:"7b96228cd871f3b795c8d2af18beb8a6ae5f4889472cfa8e4f73037b86d5e276"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
 heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")
@@ -2432,6 +2452,10 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-39
+- Defer DisplayPort connector detection on passive HPD bridges so MST replies can reach pending sideband requests.
+- Reject MST payload allocation until the link has negotiated nonzero slot bandwidth.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-35
 - Balance DisplayPort attachment power references and preserve the exact MST stream rate.
 - Select distinct MST encoders during simultaneous connector validation.
