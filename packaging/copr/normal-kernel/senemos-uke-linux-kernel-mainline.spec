@@ -258,6 +258,7 @@ Source450: uke-dp-sst422-73541.tar.xz
 Source451: uke-dp-idle-aux73542.tar.xz
 Source452: uke-dp-hbr3-usb-pcs73543.tar.xz
 Source453: uke-dpu-linear-gamma73544.tar.xz
+Source454: uke-o82-boot-preferred73544.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1558,6 +1559,16 @@ dpu_gamma_patch=$dpu_gamma_assets/0001-drm-msm-skip-identity-gamma-hardware.patc
 git apply --check --whitespace=error "$dpu_gamma_patch"
 git apply --whitespace=error "$dpu_gamma_patch"
 sha256sum -c --strict "$dpu_gamma_assets/after.sha256"
+o82_preferred_assets=$PWD/native-generated/o82_preferred_assets
+printf '%%s  %%s\n' e2a79ebde62e07005131697aa160815152cb428fd40ee774eac197be5b9971d5 %{SOURCE454} | sha256sum -c --strict --quiet -
+mkdir "$o82_preferred_assets"
+tar -xJf %{SOURCE454} -C "$o82_preferred_assets"
+(cd "$o82_preferred_assets"; sha256sum -c --strict --quiet SHA256SUMS)
+sha256sum -c --strict "$o82_preferred_assets/before.sha256"
+o82_preferred_patch=$o82_preferred_assets/0001-drm-panel-o82-use-144hz-for-boot-handoff.patch
+git apply --check --whitespace=error "$o82_preferred_patch"
+git apply --whitespace=error "$o82_preferred_patch"
+sha256sum -c --strict "$o82_preferred_assets/after.sha256"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
 llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
@@ -1581,6 +1592,11 @@ sha256sum -c --strict "$dpu_gamma_assets/after.sha256"
 git apply --reverse --check --whitespace=error "$dpu_gamma_patch"
 git apply --reverse --whitespace=error "$dpu_gamma_patch"
 sha256sum -c --strict "$dpu_gamma_assets/before.sha256"
+llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/panel/panel-xiaomi-o82.o" | grep -F AArch64
+sha256sum -c --strict "$o82_preferred_assets/after.sha256"
+git apply --reverse --check --whitespace=error "$o82_preferred_patch"
+git apply --reverse --whitespace=error "$o82_preferred_patch"
+sha256sum -c --strict "$o82_preferred_assets/before.sha256"
 for ((index=${#dp_hbr3_usb_patches[@]}-1; index>=0; index--)); do
     patch=$dp_hbr3_usb_assets/${dp_hbr3_usb_patches[index]}
     git apply --reverse --check --whitespace=error "$patch"
@@ -2484,6 +2500,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {dp_idle_aux_check_copr:11371833,dp_idle_aux_archive_sha256:"9d670fde91a633bdc368ee5a8c3397aa169cb155b2e4b461538a57cd9212eefc"}
     | .publication += {dp_hbr3_usb_check_copr:11371940,dp_hbr3_usb_archive_sha256:"da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127"}
     | .publication += {dpu_linear_gamma_check_copr:11372164,dpu_linear_gamma_archive_sha256:"fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53"}
+    | .publication += {o82_boot_preferred_check_copr:11372199,o82_boot_preferred_archive_sha256:"e2a79ebde62e07005131697aa160815152cb428fd40ee774eac197be5b9971d5"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
