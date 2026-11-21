@@ -67,6 +67,7 @@ if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet 
 fi
 install -m644 "$assets/inputs/uke-dp-sst422-73541.tar.xz" "$work/SOURCES/"
 install -m644 "$assets/inputs/uke-dp-idle-aux73542.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-dp-hbr3-usb-pcs73543.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]
