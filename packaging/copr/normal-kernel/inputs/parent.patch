@@ -4,66 +4,55 @@
  %global senemos_build_release 13
  %endif
  %global source_krel %{version}-%{senemos_build_release}-unstable
--%global normal_rpm_release 43
--%global normal_parent_copr 11371502
-+%global normal_rpm_release 44
-+%global normal_parent_copr 11371841
+-%global normal_rpm_release 44
+-%global normal_parent_copr 11371841
++%global normal_rpm_release 45
++%global normal_parent_copr 11371977
  %global krel %{version}-%{normal_rpm_release}
  %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
  Release: %{normal_rpm_release}%{?dist}
-@@ -256,6 +256,7 @@
- Source449: uke-cdsp-toolchain-contract2316.tar.xz
+@@ -257,6 +257,7 @@
  Source450: uke-dp-sst422-73541.tar.xz
  Source451: uke-dp-idle-aux73542.tar.xz
-+Source452: uke-dp-hbr3-usb-pcs73543.tar.xz
+ Source452: uke-dp-hbr3-usb-pcs73543.tar.xz
++Source453: uke-dpu-linear-gamma73544.tar.xz
  
  %description
  Source-built kernel with the reviewed O82 native display profile.
-@@ -1527,6 +1528,25 @@
-     git apply --whitespace=error "$dp_idle_aux_assets/$patch"
+@@ -1547,6 +1548,16 @@
  done
- sha256sum -c --strict "$dp_idle_aux_assets/idle-aux-after.sha256"
-+dp_hbr3_usb_assets=$PWD/native-generated/dp_hbr3_usb_assets
-+printf '%%s  %%s\n' da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127 %{SOURCE452} | sha256sum -c --strict --quiet -
-+mkdir "$dp_hbr3_usb_assets"
-+tar -xJf %{SOURCE452} -C "$dp_hbr3_usb_assets"
-+(cd "$dp_hbr3_usb_assets"; sha256sum -c --strict --quiet SHA256SUMS)
-+sha256sum -c --strict "$dp_hbr3_usb_assets/hbr3-before.sha256"
-+sha256sum -c --strict "$dp_hbr3_usb_assets/usb-pcs-before.sha256"
-+dp_hbr3_usb_patches=(
-+    0001-drm-msm-check-displayport-link-training-transactions.patch
-+    0002-drm-msm-prefer-hbr-retries-by-available-bandwidth.patch
-+    0001-phy-qcom-qmp-preserve-pipe-clock-on-usb-start-failure.patch
-+    0002-phy-qcom-qmp-keep-usb-pcs-off-in-uke-dp-only-mode.patch
-+)
-+for patch in "${dp_hbr3_usb_patches[@]}"; do
-+    git apply --check --whitespace=error "$dp_hbr3_usb_assets/$patch"
-+    git apply --whitespace=error "$dp_hbr3_usb_assets/$patch"
-+done
-+sha256sum -c --strict "$dp_hbr3_usb_assets/hbr3-after.sha256"
-+sha256sum -c --strict "$dp_hbr3_usb_assets/usb-pcs-after.sha256"
+ sha256sum -c --strict "$dp_hbr3_usb_assets/hbr3-after.sha256"
+ sha256sum -c --strict "$dp_hbr3_usb_assets/usb-pcs-after.sha256"
++dpu_gamma_assets=$PWD/native-generated/dpu_gamma_assets
++printf '%%s  %%s\n' fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53 %{SOURCE453} | sha256sum -c --strict --quiet -
++mkdir "$dpu_gamma_assets"
++tar -xJf %{SOURCE453} -C "$dpu_gamma_assets"
++(cd "$dpu_gamma_assets"; sha256sum -c --strict --quiet SHA256SUMS)
++sha256sum -c --strict "$dpu_gamma_assets/before.sha256"
++dpu_gamma_patch=$dpu_gamma_assets/0001-drm-msm-skip-identity-gamma-hardware.patch
++git apply --check --whitespace=error "$dpu_gamma_patch"
++git apply --whitespace=error "$dpu_gamma_patch"
++sha256sum -c --strict "$dpu_gamma_assets/after.sha256"
  bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
  llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
  llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
-@@ -1545,6 +1565,13 @@
+@@ -1565,6 +1576,11 @@
  llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
      grep -E '[[:space:]]T[[:space:]]+msm_dp_stream_chroma_format$'
  strings "%{_uke_out}/drivers/gpu/drm/msm/dp/dp_display.o" | grep -F 'Failed to restore idle DP AUX'
-+for ((index=${#dp_hbr3_usb_patches[@]}-1; index>=0; index--)); do
-+    patch=$dp_hbr3_usb_assets/${dp_hbr3_usb_patches[index]}
-+    git apply --reverse --check --whitespace=error "$patch"
-+    git apply --reverse --whitespace=error "$patch"
-+done
-+sha256sum -c --strict "$dp_hbr3_usb_assets/hbr3-before.sha256"
-+sha256sum -c --strict "$dp_hbr3_usb_assets/usb-pcs-before.sha256"
- for patch in 0002-drm-msm-dp-guard-idle-link-maintenance.patch 0001-drm-msm-dp-restore-idle-sst-aux-on-cliffs.patch; do
-     git apply --reverse --check --whitespace=error "$dp_idle_aux_assets/$patch"
-     git apply --reverse --whitespace=error "$dp_idle_aux_assets/$patch"
-@@ -2439,6 +2466,7 @@
-     | .publication += {dp_sdr_dsc_fallback_check_copr:11370964,dp_sdr_dsc_fallback_archive_sha256:"4b9e8e03c058e1c8448c7cdf555d0e5a1b3965f60f04f3acf25ae6f4d0012504"}
++llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.o" | grep -F AArch64
++sha256sum -c --strict "$dpu_gamma_assets/after.sha256"
++git apply --reverse --check --whitespace=error "$dpu_gamma_patch"
++git apply --reverse --whitespace=error "$dpu_gamma_patch"
++sha256sum -c --strict "$dpu_gamma_assets/before.sha256"
+ for ((index=${#dp_hbr3_usb_patches[@]}-1; index>=0; index--)); do
+     patch=$dp_hbr3_usb_assets/${dp_hbr3_usb_patches[index]}
+     git apply --reverse --check --whitespace=error "$patch"
+@@ -2467,6 +2483,7 @@
      | .publication += {dp_sst422_teardown_check_copr:11371468,dp_sst422_teardown_archive_sha256:"048eddcf2bbed8f44e27b6e415835e8bc9204b0b898e0c5a71dd393afa00ffa8"}
      | .publication += {dp_idle_aux_check_copr:11371833,dp_idle_aux_archive_sha256:"9d670fde91a633bdc368ee5a8c3397aa169cb155b2e4b461538a57cd9212eefc"}
-+    | .publication += {dp_hbr3_usb_check_copr:11371940,dp_hbr3_usb_archive_sha256:"da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127"}
+     | .publication += {dp_hbr3_usb_check_copr:11371940,dp_hbr3_usb_archive_sha256:"da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127"}
++    | .publication += {dpu_linear_gamma_check_copr:11372164,dpu_linear_gamma_archive_sha256:"fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53"}
      | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
      | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
  proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
