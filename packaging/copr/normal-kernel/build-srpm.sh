@@ -67,6 +67,7 @@ if ! grep -Fxq "    $contract_hash %{SOURCE398} | sha256sum -c --strict --quiet 
 fi
 install -m644 "$assets/inputs/uke-dpu-linear-gamma73544.tar.xz" "$work/SOURCES/"
 install -m644 "$assets/inputs/uke-o82-boot-preferred73544.tar.xz" "$work/SOURCES/"
+install -m644 "$assets/inputs/uke-fixed-dsi-depth73545.tar.xz" "$work/SOURCES/"
 read -r version revision release < <(bash "$version_script" \
     "$work/SOURCES/linux-$parent_version.tar.xz" "$parent_version" "$parent_release")
 [[ $release == "$version-$revision" && $version == "$parent_version" ]]

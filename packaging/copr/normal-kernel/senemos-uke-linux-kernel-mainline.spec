@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 45
-%global normal_parent_copr 11371977
+%global normal_rpm_release 46
+%global normal_parent_copr 11372229
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -259,6 +259,7 @@ Source451: uke-dp-idle-aux73542.tar.xz
 Source452: uke-dp-hbr3-usb-pcs73543.tar.xz
 Source453: uke-dpu-linear-gamma73544.tar.xz
 Source454: uke-o82-boot-preferred73544.tar.xz
+Source455: uke-fixed-dsi-depth73545.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1569,6 +1570,16 @@ o82_preferred_patch=$o82_preferred_assets/0001-drm-panel-o82-use-144hz-for-boot-
 git apply --check --whitespace=error "$o82_preferred_patch"
 git apply --whitespace=error "$o82_preferred_patch"
 sha256sum -c --strict "$o82_preferred_assets/after.sha256"
+fixed_dsi_assets=$PWD/native-generated/fixed_dsi_assets
+printf '%%s  %%s\n' 9fa039e2aec91e31c8b6d84e3fd8a8835ca6781d2e9a38ba4ff1f83f305b471e %{SOURCE455} | sha256sum -c --strict --quiet -
+mkdir "$fixed_dsi_assets"
+tar -xJf %{SOURCE455} -C "$fixed_dsi_assets"
+(cd "$fixed_dsi_assets"; sha256sum -c --strict --quiet SHA256SUMS)
+sha256sum -c --strict "$fixed_dsi_assets/before.sha256"
+fixed_dsi_patch=$fixed_dsi_assets/0001-drm-bridge-restore-fixed-dsi-depth-on-state-create.patch
+git apply --check --whitespace=error "$fixed_dsi_patch"
+git apply --whitespace=error "$fixed_dsi_patch"
+sha256sum -c --strict "$fixed_dsi_assets/after.sha256"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
 llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
@@ -1588,6 +1599,11 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
     grep -E '[[:space:]]T[[:space:]]+msm_dp_stream_chroma_format$'
 strings "%{_uke_out}/drivers/gpu/drm/msm/dp/dp_display.o" | grep -F 'Failed to restore idle DP AUX'
 llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.o" | grep -F AArch64
+llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector.o" | grep -F AArch64
+sha256sum -c --strict "$fixed_dsi_assets/after.sha256"
+git apply --reverse --check --whitespace=error "$fixed_dsi_patch"
+git apply --reverse --whitespace=error "$fixed_dsi_patch"
+sha256sum -c --strict "$fixed_dsi_assets/before.sha256"
 sha256sum -c --strict "$dpu_gamma_assets/after.sha256"
 git apply --reverse --check --whitespace=error "$dpu_gamma_patch"
 git apply --reverse --whitespace=error "$dpu_gamma_patch"
@@ -2501,6 +2517,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {dp_hbr3_usb_check_copr:11371940,dp_hbr3_usb_archive_sha256:"da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127"}
     | .publication += {dpu_linear_gamma_check_copr:11372164,dpu_linear_gamma_archive_sha256:"fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53"}
     | .publication += {o82_boot_preferred_check_copr:11372224,o82_boot_preferred_archive_sha256:"7969374688daf2e6911f111f4a4641abb8a882cd2ab5376134fd36ffcb8157f2"}
+    | .publication += {dsi_fixed_depth_check_copr:11372326,dsi_fixed_depth_archive_sha256:"9fa039e2aec91e31c8b6d84e3fd8a8835ca6781d2e9a38ba4ff1f83f305b471e"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")

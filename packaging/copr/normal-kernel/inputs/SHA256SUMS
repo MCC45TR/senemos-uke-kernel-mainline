@@ -1,4 +1,4 @@
-e5042af0af72d868a4b69f091c5e5525bf7cf70202b90f586a84e5ad746f5ddd  ./parent.patch
+60c0f7162690363f89f97c0ba871c171174f3d6defe6192128ecf5b29adb6d69  ./parent.patch
 24324c55214f3d5fad698687681b11095e6ace7ad5a3ef15cfe1c146d96829ef  ./uke-altmode-ack-publish73536.tar.xz
 6170872eaed46b42582fef07c3c422386865e3af641e31feb4ae983c69cdb90c  ./uke-altmode-hpd-route-error73534.tar.xz
 d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421  ./uke-altmode-pan-lifecycle73540.tar.xz
@@ -13,6 +13,7 @@ da453b13dc906cd83c4a6a132a842e3ade5809bee666223fdb72c18259967127  ./uke-dp-hbr3-
 5a47f945c896985f4c422e58c19f7b73b731866f4b0b63cd72cdd2ffd265ee08  ./uke-dpu-atomic-total73533.tar.xz
 fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53  ./uke-dpu-linear-gamma73544.tar.xz
 472b2fb86b3c3d485f15daaead5af2f2b5b3142cc57122f476ede5720fc9ca76  ./uke-dpu-optional-dspp73526.tar.xz
+9fa039e2aec91e31c8b6d84e3fd8a8835ca6781d2e9a38ba4ff1f83f305b471e  ./uke-fixed-dsi-depth73545.tar.xz
 d3ee03cef5637e4352d305b154fce4d88ea9a5f652c2a1c41f3e5761585a6f1b  ./uke-front-camera-id-qualification73535.tar.xz
 862de62ac0dbdac25dde1a478e7765936873f0237e7565e2b5f4b158fec7a4c4  ./uke-front-vdig-guard29.tar.xz
 450881e6abcb7a6f63548c66f6b28e0f62b44dd1f43be84f053a969c5ab95c6b  ./uke-hbr3-mainlink-fallback73526.tar.xz
