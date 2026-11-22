@@ -22,5 +22,14 @@ signed parent and release plan when preparing a new revision.
 
 The [7.3.5-46-era checkout](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/a7680f9fe776502c104d412ecbb94688e21a8431)
 preserves the earlier preparation tools, profiles and fixtures at their
-original paths. The [KVM branch](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/kvm)
+original paths. The [KVM branch](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tree/7.3.5-kvm)
 owns the experimental EL2 producer.
+
+The isolated KVM branch retains its existing EL2 recipes, including the
+query artifact based on Linux 7.3.1-21-kvm. Release archives are available
+under [archive tags](https://github.com/MCC45TR/senemos-uke-kernel-mainline/tags).
+
+The experimental fragments under `kernel/configs/development/` are opt-in.
+Use `tests/contracts/performance-config.sh` to check a resolved configuration
+before qualifying an experimental build. The published RPM profile uses
+its signed configuration.
