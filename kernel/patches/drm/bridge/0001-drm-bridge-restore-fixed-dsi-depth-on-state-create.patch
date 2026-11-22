@@ -1,0 +1,32 @@
+--- a/drivers/gpu/drm/display/drm_bridge_connector.c
++++ b/drivers/gpu/drm/display/drm_bridge_connector.c
+@@ -22,6 +22,7 @@
+ #include <drm/drm_modeset_helper_vtables.h>
+ #include <drm/drm_print.h>
+ #include <drm/drm_probe_helper.h>
++#include <drm/drm_property.h>
+ #include <drm/display/drm_hdcp_helper.h>
+ #include <drm/display/drm_hdmi_audio_helper.h>
+ #include <drm/display/drm_hdmi_cec_helper.h>
+@@ -346,12 +347,21 @@
+ {
+ 	struct drm_bridge_connector *bridge_connector =
+ 		to_drm_bridge_connector(connector);
++	const struct drm_property *max_bpc = connector->max_bpc_property;
+ 	struct drm_connector_state *conn_state;
+ 
+ 	conn_state = drm_atomic_helper_connector_create_state(connector);
+ 	if (IS_ERR(conn_state))
+ 		return conn_state;
+ 
++	/* The fixed DSI depth must survive disposal of the old state. */
++	if (connector->connector_type == DRM_MODE_CONNECTOR_DSI &&
++	    max_bpc && max_bpc->num_values == 2 &&
++	    max_bpc->values[0] == max_bpc->values[1]) {
++		conn_state->max_requested_bpc = max_bpc->values[0];
++		conn_state->max_bpc = max_bpc->values[0];
++	}
++
+ 	if (bridge_connector->bridge_hdmi)
+ 		__drm_atomic_helper_connector_hdmi_state_init(connector,
+ 							      conn_state);

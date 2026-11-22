@@ -1,0 +1,181 @@
+From: Senemos Maintainers <75160848+MCC45TR@users.noreply.github.com>
+Subject: [PATCH] net: qrtr: publish transport receive context before HELLO
+
+Linux 7.3 includes core HELLO ownership and MHI resume from upstream
+544d85de4dc2 (Chris Lew, Deepak Kumar Singh and Pranav Mahesh Phansalkar)
+and 6a5719cc3ef2 (Daniel J Blueman). Match Uke mainline19's reviewed policy:
+request HELLO explicitly after SMD, MHI and TUN receive publication, remove
+the early register sender, retry GLINK intent timeouts and cancel pending
+work before teardown. MHI probe must queue its download buffers first.
+
+Remove the hello_sent packet-drop gate; do not add a control backlog.
+Retain the upstream READ_ONCE node-ID access and normal 7.3 packet flow.
+Include Igor Opaniuk's independent announcement/lookup continuation fix.
+No firmware, board values, power limits or audio activation changes.
+
+References:
+https://github.com/torvalds/linux/commit/544d85de4dc22c01badfd8cefa59829ce35c4858
+https://github.com/torvalds/linux/commit/6a5719cc3ef2e4d9857cc4ae18e6db09d59a8cc9
+https://lists.openwall.net/netdev/2026/10/19/240
+https://lists.openwall.net/netdev/2026/10/19/242
+
+Actual-source sanitizer fixtures pass. Repeated tablet discovery, firmware
+interoperability and suspend/resume remain separate acceptance gates.
+
+Linux 7.3.5 adds remote HELLO replay after local name-service readiness.
+Keep that replay and its successful-send state, plus transport-triggered
+startup, bounded retries and teardown. Ordinary packets take the same
+ungated transmit path regardless of the HELLO state.
+
+diff --git a/net/qrtr/af_qrtr.c b/net/qrtr/af_qrtr.c
+--- a/net/qrtr/af_qrtr.c
++++ b/net/qrtr/af_qrtr.c
+@@ -351,14 +351,6 @@
+ 	size_t len = skb->len;
+ 	int rc, confirm_rx;
+ 
+-	mutex_lock(&node->ep_lock);
+-	if (!node->hello_sent && type != QRTR_TYPE_HELLO) {
+-		mutex_unlock(&node->ep_lock);
+-		kfree_skb(skb);
+-		return -EAGAIN;
+-	}
+-	mutex_unlock(&node->ep_lock);
+-
+ 	confirm_rx = qrtr_tx_wait(node, to->sq_node, to->sq_port, type);
+ 	if (confirm_rx < 0) {
+ 		kfree_skb(skb);
+@@ -399,9 +391,6 @@
+ 	if (rc && confirm_rx)
+ 		qrtr_tx_flow_failed(node, to->sq_node, to->sq_port);
+ 
+-	if (rc == -EAGAIN && type == QRTR_TYPE_HELLO)
+-		schedule_delayed_work(&node->say_hello, msecs_to_jiffies(100));
+-
+ 	return rc;
+ }
+ 
+@@ -610,6 +599,13 @@
+ 	int rc = 0;
+ 
+ 	node = container_of(to_delayed_work(work), struct qrtr_node, say_hello);
++	mutex_lock(&node->ep_lock);
++	if (!node->ep) {
++		mutex_unlock(&node->ep_lock);
++		return;
++	}
++	hello_sent = node->hello_sent;
++	mutex_unlock(&node->ep_lock);
+ 
+ 	/* NS must be bound before we can send; retry with backoff if not ready */
+ 	ctrl = qrtr_port_lookup(QRTR_PORT_CTRL);
+@@ -618,10 +614,6 @@
+ 		return;
+ 	}
+ 
+-	mutex_lock(&node->ep_lock);
+-	hello_sent = node->hello_sent;
+-	mutex_unlock(&node->ep_lock);
+-
+ 	from.sq_node = qrtr_local_nid;
+ 	if (!hello_sent) {
+ 		skb = qrtr_alloc_ctrl_packet(&pkt, GFP_KERNEL);
+@@ -629,8 +621,11 @@
+ 			goto retry;
+ 
+ 		pkt->cmd = cpu_to_le32(QRTR_TYPE_HELLO);
+-		to.sq_node = node->nid;
+-		if (qrtr_node_enqueue(node, skb, QRTR_TYPE_HELLO, &from, &to))
++		to.sq_node = READ_ONCE(node->nid);
++		rc = qrtr_node_enqueue(node, skb, QRTR_TYPE_HELLO, &from, &to);
++		if (rc == -EAGAIN || rc == -ENOMEM || rc == -ETIMEDOUT)
++			goto retry;
++		if (rc)
+ 			goto out;
+ 	}
+ 
+@@ -711,9 +706,6 @@
+ 	mutex_unlock(&qrtr_node_lock);
+ 	ep->node = node;
+ 
+-	/* Initiate HELLO handshake from the core layer */
+-	schedule_delayed_work(&node->say_hello, 0);
+-
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(qrtr_endpoint_register);
+@@ -738,6 +730,7 @@
+ 	mutex_lock(&node->ep_lock);
+ 	node->ep = NULL;
+ 	mutex_unlock(&node->ep_lock);
++	cancel_delayed_work_sync(&node->say_hello);
+ 
+ 	/* Notify the local controller about the event */
+ 	spin_lock_irqsave(&qrtr_nodes_lock, flags);
+diff --git a/net/qrtr/mhi.c b/net/qrtr/mhi.c
+index e9a4bb9..15c524f 100644
+--- a/net/qrtr/mhi.c
++++ b/net/qrtr/mhi.c
+@@ -135,6 +135,8 @@ static int qcom_mhi_qrtr_probe(struct mhi_device *mhi_dev,
+ 	if (rc)
+ 		goto err_unregister;
+ 
++	qrtr_endpoint_hello(&qdev->ep);
++
+ 	dev_dbg(qdev->dev, "Qualcomm MHI QRTR driver probed\n");
+ 
+ 	return 0;
+diff --git a/net/qrtr/ns.c b/net/qrtr/ns.c
+index bcb090e..dfc2cda 100644
+--- a/net/qrtr/ns.c
++++ b/net/qrtr/ns.c
+@@ -232,7 +232,7 @@ static int announce_servers(struct sockaddr_qrtr *sq)
+ 				continue;
+ 
+ 			pr_err("failed to announce new service\n");
+-			return ret;
++			/* the remote needs the other servers no less */
+ 		}
+ 	}
+ 	return 0;
+@@ -488,10 +488,12 @@ static int ctrl_cmd_new_server(struct sockaddr_qrtr *from,
+ 
+ 	if (srv->node == qrtr_ns.local_node) {
+ 		ret = service_announce_new(&qrtr_ns.bcast_sq, srv);
+-		if (ret < 0) {
++		/*
++		 * A failed broadcast must not hide the server from the
++		 * lookups already registered for it.
++		 */
++		if (ret < 0)
+ 			pr_err("failed to announce new service\n");
+-			return ret;
+-		}
+ 	}
+ 
+ 	/* Notify any potential lookups about the new server */
+diff --git a/net/qrtr/smd.c b/net/qrtr/smd.c
+index c91bf03..72f8d11 100644
+--- a/net/qrtr/smd.c
++++ b/net/qrtr/smd.c
+@@ -74,6 +74,7 @@ static int qcom_smd_qrtr_probe(struct rpmsg_device *rpdev)
+ 		return rc;
+ 
+ 	dev_set_drvdata(&rpdev->dev, qdev);
++	qrtr_endpoint_hello(&qdev->ep);
+ 
+ 	dev_dbg(&rpdev->dev, "Qualcomm SMD QRTR driver probed\n");
+ 
+diff --git a/net/qrtr/tun.c b/net/qrtr/tun.c
+index 9726db3..04b87bb 100644
+--- a/net/qrtr/tun.c
++++ b/net/qrtr/tun.c
+@@ -48,6 +48,8 @@ static int qrtr_tun_open(struct inode *inode, struct file *filp)
+ 	if (ret)
+ 		goto out;
+ 
++	qrtr_endpoint_hello(&tun->ep);
++
+ 	return 0;
+ 
+ out:
