@@ -1,7 +1,7 @@
 name: KVM EL2 query artifact
 on:
   push:
-    branches: [kvm]
+    branches: [7.3.5-kvm]
     paths:
       - .github/workflows/kvm-el2-query.yml
       - scripts/build-el2-query-actions.sh
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.ref == 'refs/heads/kvm'
+    if: github.ref == 'refs/heads/7.3.5-kvm'
     runs-on: ubuntu-24.04-arm
     container: registry.fedoraproject.org/fedora:rawhide
     timeout-minutes: 180

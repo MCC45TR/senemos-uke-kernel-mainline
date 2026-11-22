@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Native build is restricted to the disposable Actions runner, never the tablet.
 set -Eeuo pipefail
-[[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REF:-} == refs/heads/kvm && $(uname -m) == aarch64 ]] || {
-    echo 'Run this artifact-only producer in the kvm GitHub Actions job.' >&2; exit 78;
+[[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REF:-} == refs/heads/7.3.5-kvm && $(uname -m) == aarch64 ]] || {
+    echo 'Run this artifact-only producer in the 7.3.5-kvm GitHub Actions job.' >&2; exit 78;
 }
 owner=$(cd -- "$(dirname -- "$0")/.." && pwd)
 lock=$owner/manifests/el2-query-20261103.json
