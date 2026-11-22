@@ -15,8 +15,8 @@ Version: 7.3.5
 %global senemos_build_release 13
 %endif
 %global source_krel %{version}-%{senemos_build_release}-unstable
-%global normal_rpm_release 46
-%global normal_parent_copr 11372229
+%global normal_rpm_release 47
+%global normal_parent_copr 11372350
 %global krel %{version}-%{normal_rpm_release}
 %global uke_audio_driver %(printf 'uke%%s' '%{version}-%{senemos_build_release}u' | tr '.' '_')
 Release: %{normal_rpm_release}%{?dist}
@@ -260,6 +260,7 @@ Source452: uke-dp-hbr3-usb-pcs73543.tar.xz
 Source453: uke-dpu-linear-gamma73544.tar.xz
 Source454: uke-o82-boot-preferred73544.tar.xz
 Source455: uke-fixed-dsi-depth73545.tar.xz
+Source456: uke-rtc-counter-boot73546.tar.xz
 
 %description
 Source-built kernel with the reviewed O82 native display profile.
@@ -1580,6 +1581,22 @@ fixed_dsi_patch=$fixed_dsi_assets/0001-drm-bridge-restore-fixed-dsi-depth-on-sta
 git apply --check --whitespace=error "$fixed_dsi_patch"
 git apply --whitespace=error "$fixed_dsi_patch"
 sha256sum -c --strict "$fixed_dsi_assets/after.sha256"
+rtc_counter_assets=$PWD/native-generated/rtc-counter-boot
+printf '%%s  %%s\n' bf7bb3394c5a781ce93625ebb958e82bddcac684c7f3030d128da520f4d78249 %{SOURCE456} | sha256sum -c --strict --quiet -
+mkdir "$rtc_counter_assets"
+tar -xJf %{SOURCE456} -C "$rtc_counter_assets"
+(cd "$rtc_counter_assets"; sha256sum -c --strict --quiet SHA256SUMS)
+sha256sum -c --strict "$rtc_counter_assets/before.sha256"
+rtc_bindings_patch=$rtc_counter_assets/0001-dt-bindings-rtc-describe-the-Qualcomm-PMIC-counter-w.patch
+rtc_counter_patch=$rtc_counter_assets/0002-rtc-keep-the-Uke-PMIC-counter-out-of-boot-clock-init.patch
+for patch in "$rtc_bindings_patch" "$rtc_counter_patch"; do
+    git apply --check --whitespace=error "$patch"
+    git apply --whitespace=error "$patch"
+done
+sha256sum -c --strict "$rtc_counter_assets/after.sha256"
+gcc -std=gnu11 -O2 -Wall -Wextra -Werror -UNDEBUG -Iarch/arm64/kernel \
+    "$rtc_counter_assets/rtc-counter-hctosys.c" -lfdt -o "$rtc_counter_assets/fdt-check"
+"$rtc_counter_assets/fdt-check"
 bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
 llvm-readelf -h "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" | grep -F AArch64
 llvm-nm --defined-only "%{_uke_out}/drivers/firmware/qcom/qcom_scm.o" >"$keymaster_assets/scm-symbols.txt"
@@ -1600,6 +1617,18 @@ llvm-nm --defined-only "%{_uke_out}/drivers/gpu/drm/msm/msm.ko" |
 strings "%{_uke_out}/drivers/gpu/drm/msm/dp/dp_display.o" | grep -F 'Failed to restore idle DP AUX'
 llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.o" | grep -F AArch64
 llvm-readelf -h "%{_uke_out}/drivers/gpu/drm/display/drm_bridge_connector.o" | grep -F AArch64
+for object in drivers/rtc/class.o drivers/rtc/rtc-pm8xxx.o arch/arm64/kernel/uke-abl.o; do
+    llvm-readelf -h "%{_uke_out}/$object" | grep -F AArch64
+done
+grep -aqF 'counter-only RTC cannot use a calendar backend' %{_uke_out}/drivers/rtc/rtc-pm8xxx.o
+grep -aqF 'qcom,rtc-counter-only' %{_uke_out}/arch/arm64/kernel/uke-abl.o
+grep -aqF 'qcom,rtc-counter-only' %{_uke_out}/arch/arm64/boot/Image
+sha256sum -c --strict "$rtc_counter_assets/after.sha256"
+for patch in "$rtc_counter_patch" "$rtc_bindings_patch"; do
+    git apply --reverse --check --whitespace=error "$patch"
+    git apply --reverse --whitespace=error "$patch"
+done
+sha256sum -c --strict "$rtc_counter_assets/before.sha256"
 sha256sum -c --strict "$fixed_dsi_assets/after.sha256"
 git apply --reverse --check --whitespace=error "$fixed_dsi_patch"
 git apply --reverse --whitespace=error "$fixed_dsi_patch"
@@ -2518,6 +2547,7 @@ jq -e --argjson normal_parent '%{normal_parent_copr}' --arg abi '%{krel}' --arg 
     | .publication += {dpu_linear_gamma_check_copr:11372164,dpu_linear_gamma_archive_sha256:"fa191fa776432d492f3fe8bda3c085a8108f72a0da74ff7e2badadafc209aa53"}
     | .publication += {o82_boot_preferred_check_copr:11372224,o82_boot_preferred_archive_sha256:"7969374688daf2e6911f111f4a4641abb8a882cd2ab5376134fd36ffcb8157f2"}
     | .publication += {dsi_fixed_depth_check_copr:11372326,dsi_fixed_depth_archive_sha256:"9fa039e2aec91e31c8b6d84e3fd8a8835ca6781d2e9a38ba4ff1f83f305b471e"}
+    | .publication += {rtc_counter_boot_check_copr:11373542,rtc_counter_boot_archive_sha256:"bf7bb3394c5a781ce93625ebb958e82bddcac684c7f3030d128da520f4d78249"}
     | .publication += {altmode_pan_lifecycle_check_copr:11371099,altmode_pan_lifecycle_archive_sha256:"d4c5a832a51418dd5185867574153402b0ebf87ce337fd99541b3c32f2a12421",resident_keymaster_check_copr:11371009,resident_keymaster_archive_sha256:"5842896f227e28660f4dcfa3bc695b7b86b2e6b30a943970ca05d19bb4e540dc"}
     | .kernel_release=$abi' native-profile/source-composition.json > native-generated/normal-source-composition.json
 proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
@@ -2638,6 +2668,9 @@ install -Dm644 native-profile/src/audio/LICENSE.audioreach-topology "%{buildroot
 /usr/lib/senemos/default-boot.img
 
 %changelog
+* Sun Nov 22 2026 Uke Linux Maintainers - 7.3.5-47
+- Keep the Uke PMIC counter from setting the absolute boot clock.
+
 * Sat Nov 21 2026 Uke Linux Maintainers - 7.3.5-43
 - Restore AUX-only operation after the last display stream stops on Cliffs.
 - Keep link maintenance off when only AUX is powered, and retain disconnect ownership.

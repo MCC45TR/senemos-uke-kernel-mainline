@@ -47,7 +47,7 @@ if [[ -n $source_dir ]]; then
 fi
 
 spec=packaging/rpm/kernel/senemos-uke-linux-kernel-mainline.spec
-sed -nE 's/^(dpu_gamma|o82_preferred|fixed_dsi)_patch=\$[a-z0-9_]+\/([^[:space:]]+\.patch)$/\2/p' "$spec" |
+sed -nE 's/^(dpu_gamma|o82_preferred|fixed_dsi|rtc_bindings|rtc_counter)_patch=\$[a-z0-9_]+\/([^[:space:]]+\.patch)$/\2/p' "$spec" |
     cmp - <(sed 's|.*/||' kernel/patches/release-delta.series)
 while IFS= read -r patch; do
     [[ -f kernel/patches/$patch ]]

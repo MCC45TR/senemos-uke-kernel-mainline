@@ -186,6 +186,8 @@ kernel/patches/regulator/0075-uke-qmp-ldob3-supplier.patch	1f1be3959b9ce795133e4
 kernel/patches/remoteproc/0014-cliffs-wpss-proxy-regulators.patch	99f958bd34a7c4def62323e58bb6e30d12be82097f3447b7f034c0b6d5e21742	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0014-cliffs-wpss-proxy-regulators.patch
 kernel/patches/remoteproc/0020-cliffs-adsp-pas.patch	3e7623998b148135d6e8098f5a4fd0472653893f35dc4a57ffa88552cd5ff80b	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0020-cliffs-adsp-pas.patch
 kernel/patches/rpmsg/0018-rpmsg-channel-modalias-fallback.patch	c0e19fe92d577b251e03b9c7c68896b17f563c271a5e492c209e940fd499927a	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0018-rpmsg-channel-modalias-fallback.patch
+kernel/patches/rtc/0001-dt-bindings-rtc-describe-the-Qualcomm-PMIC-counter-w.patch	395aa28cbb00b66a393ae4994282a9fbf232ccaadbbbe2b20d7cacfb3a1a0e7a	uke-rtc-counter-boot73546.tar.xz	./0001-dt-bindings-rtc-describe-the-Qualcomm-PMIC-counter-w.patch
+kernel/patches/rtc/0002-rtc-keep-the-Uke-PMIC-counter-out-of-boot-clock-init.patch	af70ef941db916ce83926ca07db97c24fa72b550c8ce724a01b49b9041084bfb	uke-rtc-counter-boot73546.tar.xz	./0002-rtc-keep-the-Uke-PMIC-counter-out-of-boot-clock-init.patch
 kernel/patches/slimbus/0030-slim-startup-error-propagation.patch	da894b89074ae57e1ba68f71716b7fa0233b1711b4670563013d66961aa20347	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0030-slim-startup-error-propagation.patch
 kernel/patches/soc/0027-uke-oem-gpr-domain.patch	993b4fb901bd0a2a3d8639e4ee40e3d4ba81ec41c942d8eec95de52b0837914d	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0027-uke-oem-gpr-domain.patch
 kernel/patches/soc/0028-uke-protection-domain-map.patch	560f280372567217ad98731e8302e2d0d57de78dda5ebf03b17bae69f13749be	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0028-uke-protection-domain-map.patch
@@ -236,6 +238,7 @@ kernel/patches/video/0042-uke-backlight-visible-minimum.patch	01d64d28d9cdb749bf
 kernel/patches/video/0074-uke-ktz-dimming-observation.patch	cc698c3801740b8342de44da08923b6bac4bc6170a78e69c998fb621b066df8f	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/patches/0074-uke-ktz-dimming-observation.patch
 kernel/source-lock.json	ae59e4d0800aa79e92869de1a41d66ec1e9317e146196f9145d59f9cdb48a2d8	senemos-uke-adaptation-7.3.5.tar.xz	senemos-adaptation/source-lock.json
 packaging/rpm/kernel/boot-payload.json	fb955526dd5b1f6a3eeed064f7d469ebb012b7b073c4ff9e5b9679572ba520f6	boot-payload.json	-
+tests/contracts/rtc-counter-hctosys.c	31f80561e1cb8dd29ea36eb2d2ea56b39e6f538d82ed0fc19b7880fdb30cea71	uke-rtc-counter-boot73546.tar.xz	./rtc-counter-hctosys.c
 tests/fixtures/display/test-fixed-bpc.c	c50f009d08f2da01a8fe0ef6feec7943176cd28579b95539dcd9850edb5cd6d9	uke-fixed-dsi-depth73545.tar.xz	test-fixed-bpc.c
 tests/fixtures/display/test-gamma.c	4cc0a25ee2ec2710dd49f97facd671fce51d9a657086698d2880ba244393a466	uke-dpu-linear-gamma73544.tar.xz	test-gamma.c
 tests/fixtures/display/test-preferred.c	c194de08d27e0e81d4e32128dca211c5760ab0f58f87455cedb4851dac0ad084	uke-o82-boot-preferred73544.tar.xz	test-preferred.c

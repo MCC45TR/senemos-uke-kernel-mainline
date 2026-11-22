@@ -1,3 +1,5 @@
 drm/dpu/0001-drm-msm-skip-identity-gamma-hardware.patch
 drm/panel/0001-drm-panel-o82-use-144hz-for-boot-handoff.patch
 drm/bridge/0001-drm-bridge-restore-fixed-dsi-depth-on-state-create.patch
+rtc/0001-dt-bindings-rtc-describe-the-Qualcomm-PMIC-counter-w.patch
+rtc/0002-rtc-keep-the-Uke-PMIC-counter-out-of-boot-clock-init.patch
