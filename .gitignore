@@ -1,10 +1,7 @@
-/referances/*
-!/referances/README.md
+/references/*
+!/references/README.md
 /build/
 /artifacts/
-/reports/private/
-/reports/*.log
-/src/upstream/
 .env
 .env.*
 .directory

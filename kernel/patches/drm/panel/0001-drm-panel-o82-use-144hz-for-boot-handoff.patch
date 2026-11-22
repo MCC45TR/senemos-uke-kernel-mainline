@@ -1,0 +1,31 @@
+--- a/drivers/gpu/drm/panel/panel-xiaomi-o82.c
++++ b/drivers/gpu/drm/panel/panel-xiaomi-o82.c
+@@ -789,8 +789,15 @@
+ static int o82_get_modes(struct drm_panel *panel, struct drm_connector *connector)
+ {
+ 	struct o82_panel *ctx = container_of(panel, struct o82_panel, panel);
++	int preferred_refresh = 60;
+ 	int i, count = 0;
+ 
++	if (ctx->initial_120hz_only)
++		preferred_refresh = 120;
++	/* Start the fitted OEM profile in the same mode as the greeter. */
++	else if (ctx->oem_refresh_modes && ctx->profiles == o82_42_02_0b_profiles)
++		preferred_refresh = 144;
++
+ 	ctx->connector = connector;
+ 	for (i = 0; i < ARRAY_SIZE(o82_modes); i++) {
+ 		struct drm_display_mode *mode;
+@@ -803,11 +810,7 @@
+ 			return -ENOMEM;
+ 		drm_mode_set_name(mode);
+ 		mode->type = DRM_MODE_TYPE_DRIVER;
+-		/* Start Tianma at the working reference's 60 Hz without hiding modes. */
+-		if (drm_mode_vrefresh(mode) ==
+-		    (ctx->initial_120hz_only ||
+-		     (ctx->oem_refresh_modes &&
+-		      ctx->profiles == o82_42_02_0b_profiles) ? 120 : 60))
++		if (drm_mode_vrefresh(mode) == preferred_refresh)
+ 			mode->type |= DRM_MODE_TYPE_PREFERRED;
+ 		drm_mode_probed_add(connector, mode);
+ 		count++;

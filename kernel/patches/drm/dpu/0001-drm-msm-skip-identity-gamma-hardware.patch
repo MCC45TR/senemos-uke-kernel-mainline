@@ -1,0 +1,114 @@
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+@@ -828,6 +828,25 @@
+ 	cfg->b.b = CONVERT_S3_15(ctm->matrix[8]);
+ }
+ 
++static bool dpu_crtc_gamma_is_identity(const struct drm_property_blob *blob)
++{
++	const struct drm_color_lut *lut = blob->data;
++	unsigned int i;
++
++	if (blob->length != DPU_GAMMA_LUT_SIZE * sizeof(*lut))
++		return false;
++
++	/* The PGC stores one 10-bit result for each 10-bit input. */
++	for (i = 0; i < DPU_GAMMA_LUT_SIZE; i++) {
++		if (drm_color_lut_extract(lut[i].red, 10) != i ||
++		    drm_color_lut_extract(lut[i].green, 10) != i ||
++		    drm_color_lut_extract(lut[i].blue, 10) != i)
++			return false;
++	}
++
++	return true;
++}
++
+ static void _dpu_crtc_get_gc_lut(struct drm_crtc_state *state,
+ 		struct dpu_hw_gc_lut *gc_lut)
+ {
+@@ -896,7 +915,7 @@
+ 
+ 		if (dspp->ops.setup_gc &&
+ 		    (!cstate->o82_native_color || !drm_atomic_crtc_needs_modeset(state))) {
+-			if (!state->gamma_lut && !cstate->o82_native_color) {
++			if (!cstate->needs_gamma_lut && !cstate->o82_native_color) {
+ 				dspp->ops.setup_gc(dspp, NULL);
+ 			} else {
+ 				gc_lut = kzalloc_obj(*gc_lut);
+@@ -1411,6 +1430,14 @@
+ #define MAX_CHANNELS_PER_CRTC PIPES_PER_PLANE
+ #define MAX_HDISPLAY_SPLIT 1080
+ 
++static bool dpu_crtc_needs_dspp(const struct drm_crtc_state *crtc_state)
++{
++	const struct dpu_crtc_state *cstate = to_dpu_crtc_state(crtc_state);
++
++	return crtc_state->ctm || cstate->needs_gamma_lut ||
++		dpu_o82_color_requested(crtc_state);
++}
++
+ static struct msm_display_topology dpu_crtc_get_topology(
+ 		struct drm_crtc *crtc,
+ 		struct dpu_kms *dpu_kms,
+@@ -1464,8 +1491,7 @@
+ 	else
+ 		topology.num_lm = 1;
+ 
+-	if (crtc_state->ctm || crtc_state->gamma_lut ||
+-	    dpu_o82_color_requested(crtc_state))
++	if (dpu_crtc_needs_dspp(crtc_state))
+ 		topology.num_dspp = topology.num_lm;
+ 
+ 	return topology;
+@@ -1542,12 +1568,6 @@
+ 	return 0;
+ }
+ 
+-static bool dpu_crtc_needs_dspp(const struct drm_crtc_state *crtc_state)
+-{
+-	return crtc_state->ctm || crtc_state->gamma_lut ||
+-		dpu_o82_color_requested(crtc_state);
+-}
+-
+ static bool dpu_crtc_has_dspp(const struct drm_crtc_state *crtc_state)
+ {
+ 	const struct dpu_crtc_state *cstate = to_dpu_crtc_state(crtc_state);
+@@ -1575,6 +1595,8 @@
+ {
+ 	struct drm_encoder *drm_enc;
+ 	struct drm_crtc *crtc = new_crtc_state->crtc;
++	struct dpu_crtc_state *cstate = to_dpu_crtc_state(new_crtc_state);
++	const struct drm_property_blob *gamma = new_crtc_state->gamma_lut;
+ 	bool clone_mode_enabled = drm_crtc_in_clone_mode(old_crtc_state);
+ 	bool clone_mode_requested = drm_crtc_in_clone_mode(new_crtc_state);
+ 
+@@ -1582,6 +1604,11 @@
+ 
+ 	dpu_o82_color_mode_changed(new_crtc_state);
+ 
++	/* Blob contents are immutable, so page flips can reuse the result. */
++	if (old_crtc_state->gamma_lut != gamma)
++		cstate->needs_gamma_lut = gamma &&
++			!dpu_crtc_gamma_is_identity(gamma);
++
+ 	/* Reserve new DSPPs only when the encoder is reprogrammed too. */
+ 	if (dpu_crtc_needs_dspp(new_crtc_state) &&
+ 	    !dpu_crtc_has_dspp(old_crtc_state))
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.h
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.h
+@@ -218,6 +218,7 @@
+ /**
+  * struct dpu_crtc_state - dpu container for atomic crtc state
+  * @base: Base drm crtc state structure
++ * @needs_gamma_lut: true when the DRM gamma blob changes a PGC output value
+  * @bw_control    : true if bw/clk controlled by core bw/clk properties
+  * @bw_split_vote : true if bw controlled by llcc/dram bw properties
+  * @lm_bounds     : LM boundaries based on current mode full resolution, no ROI.
+@@ -235,6 +236,7 @@
+  */
+ struct dpu_crtc_state {
+ 	struct drm_crtc_state base;
++	bool needs_gamma_lut;
+ 	bool o82_native_color;
+ 	bool o82_bt2020;
+ 	bool o82_pq;

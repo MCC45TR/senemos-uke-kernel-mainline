@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
+/* Explicit candidate overlay; pair only with the protected topology/kernel. */
+&uke_q6apm { xiaomi,fs19xx-protected; };
+&uke_amp_tl { foursemi,require-protection; };
+&uke_amp_tr { foursemi,require-protection; };
+&uke_amp_bl { foursemi,require-protection; };
+&uke_amp_br { foursemi,require-protection; };
