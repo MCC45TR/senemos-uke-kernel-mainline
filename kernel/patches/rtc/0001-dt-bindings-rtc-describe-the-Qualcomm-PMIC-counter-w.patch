@@ -1,0 +1,45 @@
+From e5b95cf801ce1df2b547daf2f12d574e05802e28 Mon Sep 17 00:00:00 2001
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Date: Sun, 22 Nov 2026 10:44:11 +0300
+Subject: [PATCH 1/2] dt-bindings: rtc: describe the Qualcomm PMIC counter
+ without an epoch
+
+Some boards expose a PMIC elapsed-seconds counter without a calendar
+offset provider or host permission to set the counter. Describe this
+configuration and disallow conflicting calendar providers.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+---
+ .../bindings/rtc/qcom-pm8xxx-rtc.yaml           | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/rtc/qcom-pm8xxx-rtc.yaml b/Documentation/devicetree/bindings/rtc/qcom-pm8xxx-rtc.yaml
+index 7497dc3..8edfbc6 100644
+--- a/Documentation/devicetree/bindings/rtc/qcom-pm8xxx-rtc.yaml
++++ b/Documentation/devicetree/bindings/rtc/qcom-pm8xxx-rtc.yaml
+@@ -61,8 +61,25 @@ properties:
+       RTC offset is stored as a four-byte GPS time offset in a 12-byte UEFI
+       variable 882f8c2b-9646-435f-8de5-f208ff80c1bd-RTCInfo
+ 
++  qcom,rtc-counter-only:
++    type: boolean
++    description:
++      The firmware-owned RTC counter measures elapsed seconds. No writable
++      counter or calendar offset provider is available to the host.
++
+   wakeup-source: true
+ 
++allOf:
++  - if:
++      required:
++        - qcom,rtc-counter-only
++    then:
++      properties:
++        allow-set-time: false
++        nvmem-cells: false
++        nvmem-cell-names: false
++        qcom,uefi-rtc-info: false
++
+ required:
+   - compatible
+   - reg

@@ -1,0 +1,125 @@
+From f4e74455cd8107d1e01deec377dab2550998c29b Mon Sep 17 00:00:00 2001
+From: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+Date: Sun, 22 Nov 2026 10:44:11 +0300
+Subject: [PATCH 2/2] rtc: keep the Uke PMIC counter out of boot clock
+ initialization
+
+The fitted PMK8550 exposes elapsed seconds and provides no host calendar
+offset. Mark the existing verified ABL handoff as counter-only. Keep RTC
+reads, the PM wake alarm and relative sleep accounting available. Reject
+conflicting calendar providers.
+
+Signed-off-by: MCC45TR <75160848+MCC45TR@users.noreply.github.com>
+---
+ arch/arm64/kernel/uke-rtc.h | 12 ++++++++++--
+ drivers/rtc/class.c         |  4 +++-
+ drivers/rtc/rtc-pm8xxx.c    | 19 +++++++++++++++----
+ include/linux/rtc.h         |  2 ++
+ 4 files changed, 30 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/kernel/uke-rtc.h b/arch/arm64/kernel/uke-rtc.h
+index 55a3443..c76a8d2 100644
+--- a/arch/arm64/kernel/uke-rtc.h
++++ b/arch/arm64/kernel/uke-rtc.h
+@@ -7,6 +7,7 @@ static int UKE_INIT uke_rtc_counter_only(void *fdt)
+ {
+ 	const char *path = "/soc/qcom,spmi@c42d000/qcom,pmk8550@0/rtc@6100";
+ 	const fdt32_t *reg;
++	const void *counter_only;
+ 	int node, size;
+ 
+ 	if (fdt_node_check_compatible(fdt, 0, "xiaomi,uke") ||
+@@ -22,8 +23,15 @@ static int UKE_INIT uke_rtc_counter_only(void *fdt)
+ 	if (fdt_getprop(fdt, node, "allow-set-time", NULL) ||
+ 	    fdt_getprop(fdt, node, "nvmem-cells", NULL) ||
+ 	    fdt_getprop(fdt, node, "nvmem-cell-names", NULL) ||
+-	    fdt_getprop(fdt, node, "qcom,uefi-rtc-info", NULL))
++	    fdt_getprop(fdt, node, "qcom,uefi-rtc-info", NULL) ||
++	    fdt_getprop(fdt, node, "start-year", NULL))
+ 		return -FDT_ERR_BADVALUE;
+-	return 0;
++	counter_only = fdt_getprop(fdt, node, "qcom,rtc-counter-only", &size);
++	if (counter_only)
++		return size ? -FDT_ERR_BADVALUE : 0;
++	if (size != -FDT_ERR_NOTFOUND)
++		return size;
++
++	return fdt_setprop_empty(fdt, node, "qcom,rtc-counter-only");
+ }
+ #endif
+diff --git a/drivers/rtc/class.c b/drivers/rtc/class.c
+index 01ba040..7e9aaa8 100644
+--- a/drivers/rtc/class.c
++++ b/drivers/rtc/class.c
+@@ -431,7 +431,9 @@ int __devm_rtc_register_device(struct module *owner, struct rtc_device *rtc)
+ 		 dev_name(&rtc->dev));
+ 
+ #ifdef CONFIG_RTC_HCTOSYS_DEVICE
+-	if (!strcmp(dev_name(&rtc->dev), CONFIG_RTC_HCTOSYS_DEVICE))
++	/* A counter with no epoch can measure sleep but cannot initialize UTC. */
++	if (!rtc->skip_hctosys &&
++	    !strcmp(dev_name(&rtc->dev), CONFIG_RTC_HCTOSYS_DEVICE))
+ 		rtc_hctosys(rtc);
+ #endif
+ 
+diff --git a/drivers/rtc/rtc-pm8xxx.c b/drivers/rtc/rtc-pm8xxx.c
+index 91ce0ac..9c595c4 100644
+--- a/drivers/rtc/rtc-pm8xxx.c
++++ b/drivers/rtc/rtc-pm8xxx.c
+@@ -644,11 +644,13 @@ static int pm8xxx_rtc_probe_offset(struct pm8xxx_rtc *rtc_dd)
+ 
+ static int pm8xxx_rtc_probe(struct platform_device *pdev)
+ {
++	struct device_node *np = pdev->dev.of_node;
+ 	const struct of_device_id *match;
+ 	struct pm8xxx_rtc *rtc_dd;
++	bool counter_only;
+ 	int rc;
+ 
+-	match = of_match_node(pm8xxx_id_table, pdev->dev.of_node);
++	match = of_match_node(pm8xxx_id_table, np);
+ 	if (!match)
+ 		return -ENXIO;
+ 
+@@ -669,9 +671,17 @@ static int pm8xxx_rtc_probe(struct platform_device *pdev)
+ 			return -ENXIO;
+ 	}
+ 
+-	rtc_dd->allow_set_time = of_property_read_bool(pdev->dev.of_node,
+-						      "allow-set-time");
+-	if (!rtc_dd->allow_set_time) {
++	counter_only = of_property_read_bool(np, "qcom,rtc-counter-only");
++	rtc_dd->allow_set_time = of_property_read_bool(np, "allow-set-time");
++	if (counter_only) {
++		if (rtc_dd->allow_set_time ||
++		    of_property_present(np, "nvmem-cells") ||
++		    of_property_present(np, "nvmem-cell-names") ||
++		    of_property_present(np, "qcom,uefi-rtc-info") ||
++		    of_property_present(np, "start-year"))
++			return dev_err_probe(&pdev->dev, -EINVAL,
++					     "counter-only RTC cannot use a calendar backend\n");
++	} else if (!rtc_dd->allow_set_time) {
+ 		rc = pm8xxx_rtc_probe_offset(rtc_dd);
+ 		if (rc)
+ 			return rc;
+@@ -689,6 +699,7 @@ static int pm8xxx_rtc_probe(struct platform_device *pdev)
+ 
+ 	rtc_dd->rtc->ops = &pm8xxx_rtc_ops;
+ 	rtc_dd->rtc->range_max = U32_MAX;
++	rtc_dd->rtc->skip_hctosys = counter_only;
+ 
+ 	if (rtc_dd->alarm_irq) {
+ 		rc = devm_request_any_context_irq(&pdev->dev, rtc_dd->alarm_irq,
+diff --git a/include/linux/rtc.h b/include/linux/rtc.h
+index 0f43b50..04f9fa5 100644
+--- a/include/linux/rtc.h
++++ b/include/linux/rtc.h
+@@ -151,6 +151,8 @@ struct rtc_device {
+ 	time64_t start_secs;
+ 	time64_t offset_secs;
+ 	bool set_start_time;
++	/* The RTC measures elapsed time but has no calendar epoch. */
++	bool skip_hctosys;
+ 
+ #ifdef CONFIG_RTC_INTF_DEV_UIE_EMUL
+ 	struct work_struct uie_task;
