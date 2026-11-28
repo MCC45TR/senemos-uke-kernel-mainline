@@ -1,0 +1,53 @@
+diff --git a/sound/soc/qcom/uke-audio-card.c b/sound/soc/qcom/uke-audio-card.c
+index c19c1d444..85f30dae7 100644
+--- a/sound/soc/qcom/uke-audio-card.c
++++ b/sound/soc/qcom/uke-audio-card.c
+@@ -333,6 +333,32 @@ static bool uke_backend_owned(struct snd_soc_dai_link *link)
+ 	       link->cpus[0].of_node->parent == link->platforms[0].of_node;
+ }
+ 
++static int uke_mic_remove_duplicate_dp_widget(struct snd_soc_card *card)
++{
++	const struct snd_soc_dapm_widget *widgets = card->of_dapm_widgets;
++	struct snd_soc_dapm_widget *filtered;
++	int i;
++
++	/* Older Uke DTBOs also declare the jack supplied by the card helper. */
++	for (i = 0; i < card->num_of_dapm_widgets; i++) {
++		if (widgets[i].id == snd_soc_dapm_spk &&
++		    !strcmp(widgets[i].name, "DP0 Jack"))
++			break;
++	}
++	if (i == card->num_of_dapm_widgets)
++		return 0;
++
++	filtered = devm_kmemdup(card->dev, widgets,
++			       card->num_of_dapm_widgets * sizeof(*widgets), GFP_KERNEL);
++	if (!filtered)
++		return -ENOMEM;
++	card->num_of_dapm_widgets--;
++	memmove(&filtered[i], &filtered[i + 1],
++		(card->num_of_dapm_widgets - i) * sizeof(*filtered));
++	card->of_dapm_widgets = filtered;
++	return 0;
++}
++
+ static int uke_speaker_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -360,9 +386,13 @@ static int uke_speaker_probe(struct platform_device *pdev)
+ 	if (card->num_links != (data->microphones ? 3 : 2) || card->num_aux_devs ||
+ 	    strcmp(card->name, "POCO-Pad-X1"))
+ 		return -EINVAL;
+-	/* UCM discovers the bounded capture capability from this card instance. */
+-	if (data->microphones)
++	if (data->microphones) {
++		ret = uke_mic_remove_duplicate_dp_widget(card);
++		if (ret)
++			return ret;
++		/* UCM discovers the bounded capture capability from this card instance. */
+ 		card->components = "mic:uke-4ch-v3";
++	}
+ 
+ 	for_each_card_prelinks(card, i, link) {
+ 		if (link->id == DISPLAY_PORT_RX_0 && !hdmi)

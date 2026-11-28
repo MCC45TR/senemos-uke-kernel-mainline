@@ -1,0 +1,14 @@
+diff --git a/boot-recipe/src/boot/dracut/module-setup.sh b/boot-recipe/src/boot/dracut/module-setup.sh
+index fb3c2c015..33fb75e3f 100644
+--- a/boot-recipe/src/boot/dracut/module-setup.sh
++++ b/boot-recipe/src/boot/dracut/module-setup.sh
+@@ -25,6 +25,9 @@ install() {
+     mkdir -p "$initdir$systemdsystemunitdir/sysroot.mount.requires"
+     ln -s ../uke-root-guard.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-root-guard.service"
+     inst_simple "$moddir/uke-userdata-grow.service" "$systemdsystemunitdir/uke-userdata-grow.service"
++    chmod 644 "$initdir$systemdsystemunitdir/uke-root-guard.service" \
++        "$initdir$systemdsystemunitdir/uke-initrd-screen.service" \
++        "$initdir$systemdsystemunitdir/uke-userdata-grow.service"
+     ln -s ../uke-userdata-grow.service "$initdir$systemdsystemunitdir/sysroot.mount.requires/uke-userdata-grow.service"
+     mkdir -p "$initdir$systemdsystemunitdir/initrd.target.wants"
+     ln -s ../uke-initrd-screen.service "$initdir$systemdsystemunitdir/initrd.target.wants/uke-initrd-screen.service"

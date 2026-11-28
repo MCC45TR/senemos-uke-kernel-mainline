@@ -1,0 +1,73 @@
+--- a/sound/soc/qcom/qdsp6/q6apm-dai.c
++++ b/sound/soc/qcom/qdsp6/q6apm-dai.c
+@@ -904,18 +904,35 @@
+ {
+ 	struct snd_compr_runtime *runtime = stream->runtime;
+ 	struct q6apm_dai_rtd *prtd = runtime->private_data;
+-	int ret = 0;
++	u64 available;
++	u32 bytes;
++	int ret;
++
++	guard(mutex)(&prtd->lock);
+ 
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+-		ret = q6apm_write_async(prtd->graph, prtd->pcm_count, 0, 0, NO_TIMESTAMP);
++		if (prtd->bytes_sent != prtd->copied_total ||
++		    prtd->bytes_sent >= prtd->bytes_received) {
++			prtd->state = Q6APM_STREAM_RUNNING;
++			break;
++		}
++
++		available = prtd->bytes_received - prtd->bytes_sent;
++		bytes = min_t(u64, available, prtd->pcm_count);
++		ret = q6apm_write_async(prtd->graph, bytes, 0, 0, NO_TIMESTAMP);
++		if (ret < 0)
++			return ret;
++
++		prtd->bytes_sent += bytes;
++		prtd->state = Q6APM_STREAM_RUNNING;
+ 		break;
+ 	case SNDRV_PCM_TRIGGER_STOP:
+-		break;
+ 	case SNDRV_PCM_TRIGGER_SUSPEND:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		prtd->state = Q6APM_STREAM_STOPPED;
+ 		break;
+ 	case SND_COMPR_TRIGGER_NEXT_TRACK:
+ 		prtd->next_track = true;
+@@ -925,11 +942,10 @@
+ 		prtd->notify_on_drain = true;
+ 		break;
+ 	default:
+-		ret = -EINVAL;
+-		break;
++		return -EINVAL;
+ 	}
+ 
+-	return ret;
++	return 0;
+ }
+ 
+ static int q6apm_dai_compr_ack(struct snd_soc_component *component, struct snd_compr_stream *stream,
+@@ -1003,6 +1019,9 @@
+ 		if (ret)
+ 			return ret;
+ 
++		/* ALSA can prefill the ring before triggering playback. */
++		scoped_guard(mutex, &prtd->lock)
++			prtd->state = Q6APM_STREAM_STOPPED;
+ 	} else {
+ 		cfg.direction = dir;
+ 		cfg.sample_rate = codec->sample_rate;
+@@ -1015,7 +1034,6 @@
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+-	prtd->state = Q6APM_STREAM_RUNNING;
+ 
+ 	return 0;
+ }

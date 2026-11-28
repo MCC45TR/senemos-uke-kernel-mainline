@@ -1,0 +1,131 @@
+Subject: [PATCH] soc: qcom: drain queued GPR packets before retiring ports
+
+An AudioReach graph can close while its final DSP completions are already
+in the GPR receive queue. Disarm its callbacks before returning to the
+caller so it can release graph state. Retain the address through the
+ordered receive batch and release it in the receive worker. Genuine
+messages to an unregistered port still follow the existing error path.
+---
+diff --git a/drivers/soc/qcom/apr.c b/drivers/soc/qcom/apr.c
+index 320225a..2464b5f 100644
+--- a/drivers/soc/qcom/apr.c
++++ b/drivers/soc/qcom/apr.c
+@@ -40,6 +40,12 @@ struct packet_router {
+ 	struct workqueue_struct *rxwq;
+ 	struct work_struct rx_work;
+ 	struct list_head rx_list;
++	struct list_head retired_ports;
++};
++
++struct gpr_allocated_port {
++	gpr_port_t service;
++	struct list_head retire_node;
+ };
+ 
+ struct apr_rx_buf {
+@@ -80,16 +86,24 @@ EXPORT_SYMBOL_GPL(apr_send_pkt);
+ 
+ void gpr_free_port(gpr_port_t *port)
+ {
++	struct gpr_allocated_port *allocated =
++		container_of(port, struct gpr_allocated_port, service);
+ 	struct packet_router *gpr = port->pr;
+ 	unsigned long flags;
+ 
++	/*
++	 * Stop client callbacks now. Keep the routing address until the
++	 * receive worker has consumed packets already queued for it.
++	 */
+ 	mutex_lock(&gpr->callback_lock);
+-	spin_lock_irqsave(&gpr->svcs_lock, flags);
+-	idr_remove(&gpr->svcs_idr, port->id);
+-	spin_unlock_irqrestore(&gpr->svcs_lock, flags);
++	port->callback = NULL;
++	port->priv = NULL;
++	spin_lock_irqsave(&gpr->rx_lock, flags);
++	list_add_tail(&allocated->retire_node, &gpr->retired_ports);
++	spin_unlock_irqrestore(&gpr->rx_lock, flags);
+ 	mutex_unlock(&gpr->callback_lock);
+ 
+-	kfree(port);
++	queue_work(gpr->rxwq, &gpr->rx_work);
+ }
+ EXPORT_SYMBOL_GPL(gpr_free_port);
+ 
+@@ -107,15 +121,15 @@ gpr_port_t *gpr_alloc_port(struct apr_device *gdev, struct device *dev,
+ 				gpr_port_cb cb,	void *priv)
+ {
+ 	struct packet_router *pr = dev_get_drvdata(gdev->dev.parent);
+-	gpr_port_t *port;
++	struct gpr_allocated_port *allocated;
+ 	struct pkt_router_svc *svc;
+ 	int id;
+ 
+-	port = kzalloc_obj(*port);
+-	if (!port)
++	allocated = kzalloc_obj(*allocated);
++	if (!allocated)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	svc = port;
++	svc = &allocated->service;
+ 	svc->callback = cb;
+ 	svc->pr = pr;
+ 	svc->priv = priv;
+@@ -127,7 +141,7 @@ gpr_port_t *gpr_alloc_port(struct apr_device *gdev, struct device *dev,
+ 			      GPR_DYNAMIC_PORT_END, GFP_ATOMIC);
+ 	if (id < 0) {
+ 		dev_err(dev, "Unable to allocate dynamic GPR src port\n");
+-		kfree(port);
++		kfree(allocated);
+ 		spin_unlock(&pr->svcs_lock);
+ 		return ERR_PTR(id);
+ 	}
+@@ -135,7 +149,7 @@ gpr_port_t *gpr_alloc_port(struct apr_device *gdev, struct device *dev,
+ 	svc->id = id;
+ 	spin_unlock(&pr->svcs_lock);
+ 
+-	return port;
++	return svc;
+ }
+ EXPORT_SYMBOL_GPL(gpr_alloc_port);
+ 
+@@ -337,12 +351,15 @@ static int gpr_do_rx_callback(struct packet_router *gpr, struct apr_rx_buf *abuf
+ static void apr_rxwq(struct work_struct *work)
+ {
+ 	struct packet_router *apr = container_of(work, struct packet_router, rx_work);
++	struct gpr_allocated_port *port, *next;
+ 	struct apr_rx_buf *abuf, *b;
+ 	unsigned long flags;
+ 	LIST_HEAD(packets);
++	LIST_HEAD(retired);
+ 
+ 	spin_lock_irqsave(&apr->rx_lock, flags);
+ 	list_splice_init(&apr->rx_list, &packets);
++	list_splice_init(&apr->retired_ports, &retired);
+ 	spin_unlock_irqrestore(&apr->rx_lock, flags);
+ 
+ 	list_for_each_entry_safe(abuf, b, &packets, node) {
+@@ -359,6 +376,14 @@ static void apr_rxwq(struct work_struct *work)
+ 		list_del(&abuf->node);
+ 		kfree(abuf);
+ 	}
++
++	list_for_each_entry_safe(port, next, &retired, retire_node) {
++		spin_lock_irqsave(&apr->svcs_lock, flags);
++		idr_remove(&apr->svcs_idr, port->service.id);
++		spin_unlock_irqrestore(&apr->svcs_lock, flags);
++		list_del(&port->retire_node);
++		kfree(port);
++	}
+ }
+ 
+ static int apr_device_match(struct device *dev, const struct device_driver *drv)
+@@ -690,6 +715,7 @@ static int apr_probe(struct rpmsg_device *rpdev)
+ 	}
+ 
+ 	INIT_LIST_HEAD(&apr->rx_list);
++	INIT_LIST_HEAD(&apr->retired_ports);
+ 	spin_lock_init(&apr->rx_lock);
+ 	spin_lock_init(&apr->svcs_lock);
+ 	mutex_init(&apr->callback_lock);

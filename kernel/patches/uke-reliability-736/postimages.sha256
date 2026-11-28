@@ -1,0 +1,5 @@
+d3e2a7e457fd39a3ebf055046e4f24fd23e074e6bc6765f5182daf39e2e0cb0b  drivers/bluetooth/hci_qca.c
+7e07f466b068beadae5e053b5c60e012c9b869765f228212d389898140cbf68d  drivers/iio/common/uke-ssc/uke-ssc-iio.c
+23b9230374e1bde8122c6251c642d6b8cad7a7942e42292e017d19e98f1007bf  drivers/of/property.c
+2a7f31d8e219cbeb9caa4308302ed83f539ec6a7d1ec6204b59b4f1265aa2825  drivers/soc/qcom/apr.c
+78101687586ee7c5bd3c6ba733601dc5dfc18b6031155a884215f77810d2d030  sound/soc/qcom/qdsp6/q6apm-dai.c

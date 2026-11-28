@@ -1,0 +1,304 @@
+Subject: [PATCH] usb: typec: ucsi: apply fitted Uke CC orientation before USB role
+
+The Uke PMIC exposes connector orientation through its charger service.
+Its connector can otherwise start xHCI before the separate DP event applies
+QMP polarity. Read the fitted fixed XM property through battmgr's serialized
+request path during UCSI connector status handling. Preserve GPIO and UCSI
+2.0 orientation handling, and preserve negotiated alternate-mode mux policy.
+If firmware is temporarily unavailable, retain the current role fallback.
+
+Link: https://github.com/wkai343/liuqin-linux-kit/blob/9b8e38fd75008f5d4bec912acb1a0331aa112047/build/kernel/patches/linux-7.3/0072-liuqin-usb-cc-orientation.patch
+---
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+index b271257..30973f6 100644
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -21,6 +21,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/power_supply.h>
+ #include <linux/power/uke-pack-voltage.h>
++#include <linux/power/uke-typec.h>
+ #include <linux/property.h>
+ #include <linux/reboot.h>
+ #include <linux/soc/qcom/pdr.h>
+@@ -132,6 +133,7 @@ enum uke_xm_status_property {
+ 	UKE_XM_PD_VERIFIED = 31,
+ 	UKE_XM_PD_PDO2 = 32,
+ 	UKE_XM_UVDM_STATE = 33,
++	UKE_XM_CC_ORIENTATION = 52,
+ 	UKE_XM_FAST_CHARGE_MODE = 54,
+ 	UKE_XM_NIGHT_CHARGING = 55,
+ 	UKE_XM_APDO_MAX = 60,
+@@ -553,6 +555,7 @@ static bool qcom_battmgr_uke_oem_status_property(u32 property)
+ 	case UKE_XM_PD_PDO2:
+ 	case UKE_XM_PD_VERIFIED:
+ 	case UKE_XM_UVDM_STATE:
++	case UKE_XM_CC_ORIENTATION:
+ 	case UKE_XM_POWER_CLASS:
+ 	case UKE_XM_CC_SHORT_VBUS:
+ 	case UKE_XM_ADAPTER_ID:
+@@ -3087,30 +3090,23 @@ struct uke_oem_status_attribute {
+ 	bool signed_value;
+ };
+ 
+-static ssize_t qcom_battmgr_uke_oem_status_show(struct device *dev,
+-					       struct device_attribute *attr, char *buf)
++static int qcom_battmgr_uke_oem_status_read(struct qcom_battmgr *battmgr,
++					  u32 opcode, u32 property, u32 *value)
+ {
+-	const struct uke_oem_status_attribute *field =
+-		container_of(attr, struct uke_oem_status_attribute, attr);
+-	/* This diagnostic table uses wire property IDs in each opcode. */
+ 	struct qcom_battmgr_property_request request = {
+ 		.hdr.owner = cpu_to_le32(PMIC_GLINK_OWNER_BATTMGR),
+ 		.hdr.type = cpu_to_le32(PMIC_GLINK_REQ_RESP),
+-		.hdr.opcode = cpu_to_le32(field->opcode),
+-		.property = cpu_to_le32(field->property),
++		.hdr.opcode = cpu_to_le32(opcode),
++		.property = cpu_to_le32(property),
+ 	};
+-	struct qcom_battmgr *battmgr = dev_get_drvdata(dev);
+ 	struct qcom_battmgr_uke_transaction *tx = &battmgr->transaction;
+ 	unsigned long flags;
+-	u32 generation, value = 0;
++	u32 generation;
+ 	int ret;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
+-		return -EACCES;
+-
+-	mutex_lock(&battmgr->lock);
++	lockdep_assert_held(&battmgr->lock);
+ 	generation = qcom_battmgr_uke_generation(battmgr);
+-	if (field->opcode == BATTMGR_BAT_PROPERTY_GET && field->property == UKE_BATT_FCC_WIRE)
++	if (opcode == BATTMGR_BAT_PROPERTY_GET && property == UKE_BATT_FCC_WIRE)
+ 		ret = qcom_battmgr_uke_request(battmgr, &request, sizeof(request), true);
+ 	else
+ 		ret = qcom_battmgr_request(battmgr, &request, sizeof(request));
+@@ -3120,9 +3116,26 @@ static ssize_t qcom_battmgr_uke_oem_status_show(struct device *dev,
+ 		    tx->suspended || tx->removing || tx->desynced)
+ 			ret = -EAGAIN;
+ 		else
+-			value = le32_to_cpu(tx->response.intval.value);
++			*value = le32_to_cpu(tx->response.intval.value);
+ 		spin_unlock_irqrestore(&tx->lock, flags);
+ 	}
++	return ret;
++}
++
++static ssize_t qcom_battmgr_uke_oem_status_show(struct device *dev,
++					       struct device_attribute *attr, char *buf)
++{
++	const struct uke_oem_status_attribute *field =
++		container_of(attr, struct uke_oem_status_attribute, attr);
++	struct qcom_battmgr *battmgr = dev_get_drvdata(dev);
++	u32 value;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EACCES;
++
++	mutex_lock(&battmgr->lock);
++	ret = qcom_battmgr_uke_oem_status_read(battmgr, field->opcode, field->property, &value);
+ 	mutex_unlock(&battmgr->lock);
+ 	if (ret)
+ 		return ret;
+@@ -3544,6 +3557,61 @@ static int qcom_battmgr_uke_match_supplier(struct device *dev, const void *data)
+ 	return READ_ONCE(dev->driver) == data;
+ }
+ 
++static int qcom_battmgr_uke_read_cc(struct device *dev, u32 *orientation)
++{
++	struct qcom_battmgr *battmgr;
++	u32 value;
++	int ret = -ENODEV;
++
++	if (!device_trylock(dev))
++		return -EAGAIN;
++	if (dev->driver != &qcom_battmgr_driver.driver)
++		goto unlock;
++	battmgr = dev_get_drvdata(dev);
++	if (!battmgr || battmgr->variant != QCOM_BATTMGR_UKE)
++		goto unlock;
++	ret = -EAGAIN;
++	if (!mutex_trylock(&battmgr->lock))
++		goto unlock;
++	ret = qcom_battmgr_uke_oem_status_read(battmgr, UKE_INPUT_SUSPEND_GET,
++					     UKE_XM_CC_ORIENTATION, &value);
++	mutex_unlock(&battmgr->lock);
++	if (!ret && value > 2)
++		ret = -EPROTO;
++	if (!ret)
++		*orientation = value;
++
++unlock:
++	device_unlock(dev);
++	return ret;
++}
++
++int qcom_battmgr_uke_read_cc_orientation(struct device *pmic, u32 *orientation)
++{
++	struct device *supplier;
++	int ret = -EAGAIN;
++
++	if (!orientation)
++		return -EINVAL;
++	if (!IS_ENABLED(CONFIG_BATTERY_QCOM_BATTMGR_UKE_OEM_STATUS) ||
++	    !of_machine_is_compatible("xiaomi,uke") ||
++	    !of_machine_is_compatible("qcom,sm7675") ||
++	    !of_device_is_compatible(pmic->of_node, "xiaomi,uke-typec-pmic-glink"))
++		return -EOPNOTSUPP;
++	/* The PMIC GLINK parent owns auxiliary device storage through devres. */
++	if (!device_trylock(pmic))
++		return -EAGAIN;
++	supplier = device_find_child(pmic, &qcom_battmgr_driver.driver,
++				     qcom_battmgr_uke_match_supplier);
++	if (supplier) {
++		ret = qcom_battmgr_uke_read_cc(supplier, orientation);
++		put_device(supplier);
++	}
++	device_unlock(pmic);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(qcom_battmgr_uke_read_cc_orientation);
++
+ static int qcom_battmgr_uke_read_live_voltage(struct device *dev, int *voltage_uv)
+ {
+ 	struct qcom_battmgr_uke_transaction *tx;
+diff --git a/drivers/usb/typec/ucsi/ucsi_glink.c b/drivers/usb/typec/ucsi/ucsi_glink.c
+index c6099d4..51216ff 100644
+--- a/drivers/usb/typec/ucsi/ucsi_glink.c
++++ b/drivers/usb/typec/ucsi/ucsi_glink.c
+@@ -4,11 +4,15 @@
+  * Copyright (c) 2023, Linaro Ltd
+  */
+ #include <linux/auxiliary_bus.h>
++#include <linux/delay.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
++#include <linux/of.h>
+ #include <linux/of_device.h>
++#include <linux/power/uke-typec.h>
+ #include <linux/property.h>
+ #include <linux/soc/qcom/pdr.h>
++#include <linux/usb/typec_altmode.h>
+ #include <linux/usb/typec_mux.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/soc/qcom/pmic_glink.h>
+@@ -247,10 +251,28 @@ static int pmic_glink_ucsi_async_control(struct ucsi *__ucsi, u64 command)
+ 	return ret;
+ }
+ 
++static bool pmic_glink_ucsi_use_uke_cc(struct ucsi_connector *con)
++{
++	struct pmic_glink_ucsi *ucsi = ucsi_get_drvdata(con->ucsi);
++
++	return IS_REACHABLE(CONFIG_BATTERY_QCOM_BATTMGR) &&
++	       IS_ENABLED(CONFIG_BATTERY_QCOM_BATTMGR_UKE_OEM_STATUS) &&
++	       con->num == 1 && con->ucsi->version < UCSI_VERSION_2_0 &&
++	       !ucsi->port_orientation[0] &&
++	       of_machine_is_compatible("xiaomi,uke") &&
++	       of_machine_is_compatible("qcom,sm7675") &&
++	       of_device_is_compatible(ucsi->dev->parent->of_node,
++				       "xiaomi,uke-typec-pmic-glink");
++}
++
+ static void pmic_glink_ucsi_update_connector(struct ucsi_connector *con)
+ {
+ 	struct pmic_glink_ucsi *ucsi = ucsi_get_drvdata(con->ucsi);
+ 
++	if (pmic_glink_ucsi_use_uke_cc(con)) {
++		con->typec_cap.orientation_aware = true;
++		return;
++	}
+ 	if (!con->num || con->num > PMIC_GLINK_MAX_PORTS ||
+ 	    !ucsi->port_orientation[con->num - 1])
+ 		return;
+@@ -258,16 +280,59 @@ static void pmic_glink_ucsi_update_connector(struct ucsi_connector *con)
+ 	con->typec_cap.orientation_aware = true;
+ }
+ 
++static int pmic_glink_ucsi_prepare_uke_cc(struct ucsi_connector *con)
++{
++	struct pmic_glink_ucsi *ucsi = ucsi_get_drvdata(con->ucsi);
++	unsigned int attempt, partner_type;
++	u32 cc;
++	int ret;
++
++	if (!UCSI_CONSTAT(con, PARTNER_FLAG_USB) ||
++	    (con->partner && !(UCSI_CONSTAT(con, CHANGE) & UCSI_CONSTAT_CONNECT_CHANGE)))
++		return 0;
++	partner_type = UCSI_CONSTAT(con, PARTNER_TYPE);
++	if (partner_type == UCSI_CONSTAT_PARTNER_TYPE_AUDIO ||
++	    partner_type == UCSI_CONSTAT_PARTNER_TYPE_DEBUG)
++		return 0;
++
++	/* Connector status can arrive before the fitted CC service settles. */
++	for (attempt = 0; attempt < 5; attempt++) {
++		ret = qcom_battmgr_uke_read_cc_orientation(ucsi->dev->parent, &cc);
++		if (!ret && cc)
++			break;
++		if (ret && ret != -EAGAIN)
++			return ret;
++		if (attempt != 4)
++			fsleep(20000);
++	}
++	if (attempt == 5)
++		return -EAGAIN;
++
++	ret = typec_set_orientation(con->port, cc == 1 ? TYPEC_ORIENTATION_NORMAL :
++						       TYPEC_ORIENTATION_REVERSE);
++	if (ret || con->partner || UCSI_CONSTAT(con, PARTNER_FLAG_ALT_MODE))
++		return ret;
++	/* Registration starts the first data role without a partner-change callback. */
++	return typec_set_mode(con->port, TYPEC_STATE_USB);
++}
++
+ static void pmic_glink_ucsi_connector_status(struct ucsi_connector *con)
+ {
+ 	struct pmic_glink_ucsi *ucsi = ucsi_get_drvdata(con->ucsi);
+-	int orientation;
++	int orientation, ret;
+ 
+ 	if (!UCSI_CONSTAT(con, CONNECTED)) {
+ 		typec_set_orientation(con->port, TYPEC_ORIENTATION_NONE);
+ 		return;
+ 	}
+ 
++	if (pmic_glink_ucsi_use_uke_cc(con)) {
++		ret = pmic_glink_ucsi_prepare_uke_cc(con);
++		if (ret)
++			dev_dbg(ucsi->dev, "connector %u CC preparation failed: %d\n", con->num, ret);
++		return;
++	}
++
+ 	if (!con->num || con->num > PMIC_GLINK_MAX_PORTS ||
+ 	    !ucsi->port_orientation[con->num - 1])
+ 		return;
+diff --git a/include/linux/power/uke-typec.h b/include/linux/power/uke-typec.h
+new file mode 100644
+index 0000000..c1c64c0
+--- /dev/null
++++ b/include/linux/power/uke-typec.h
+@@ -0,0 +1,21 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _LINUX_POWER_UKE_TYPEC_H
++#define _LINUX_POWER_UKE_TYPEC_H
++
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
++struct device;
++
++/* The fitted Uke firmware reports 0 for detached, 1 for CC1 and 2 for CC2. */
++#if IS_REACHABLE(CONFIG_BATTERY_QCOM_BATTMGR)
++int qcom_battmgr_uke_read_cc_orientation(struct device *pmic, u32 *orientation);
++#else
++static inline int qcom_battmgr_uke_read_cc_orientation(struct device *pmic, u32 *orientation)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
++#endif

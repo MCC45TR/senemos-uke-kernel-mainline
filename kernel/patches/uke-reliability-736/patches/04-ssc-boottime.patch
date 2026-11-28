@@ -1,0 +1,93 @@
+--- a/drivers/iio/common/uke-ssc/uke-ssc-iio.c
++++ b/drivers/iio/common/uke-ssc/uke-ssc-iio.c
+@@ -10,6 +10,7 @@
+ #include <linux/iio/kfifo_buf.h>
+ #include <linux/input.h>
+ #include <linux/jiffies.h>
++#include <linux/math64.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+@@ -44,6 +45,12 @@
+ #define SSC_FLICKER_CHANNELS 7
+ #define SSC_SAMPLE_MAX SSC_FLICKER_CHANNELS
+ #define SSC_ACCEL_BATCH_NS (2 * NSEC_PER_MSEC)
++
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
++static bool ssc_timestamp_trial;
++module_param(ssc_timestamp_trial, bool, 0444);
++MODULE_PARM_DESC(ssc_timestamp_trial, "Try acquisition timestamps on BOOTTIME gravity and game rotation buffers");
++#endif
+ /* IIO repeat4 s64 elements require a 32-byte-aligned 64-byte scan. */
+ #define SSC_SCAN_MAX 8
+ #define SSC_FRONT_LIGHT 3
+@@ -122,6 +129,8 @@
+ 	bool has_mount_matrix;
+ 	struct completion metadata_done, sample_done;
+ 	u64 revision, sample_sequence, ticks;
++	s64 last_acquisition_ns;
++	bool use_arrival_time;
+ 	s64 sample[SSC_SAMPLE_MAX];
+ 	u32 rate;
+ 	unsigned int stream_users;
+@@ -534,6 +543,42 @@
+ static void ssc_proximity_feed_locked(struct ssc_sensor *s);
+ static void ssc_heading_feed_locked(struct ssc_sensor *s);
+ 
++/* The admitted streaming buffer and its clock are stable under c->state. */
++static s64 ssc_iio_timestamp(struct ssc_sensor *s)
++{
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARM_ARCH_TIMER)
++	u64 before, after, counter, age, stamp;
++	u32 frequency;
++
++	if (ssc_timestamp_trial && !s->use_arrival_time &&
++	    s->attributes.stream_type == 0 &&
++	    (s->description->kind == SSC_GRAVITY ||
++	     !strcmp(s->description->datatype, "game_rv")) &&
++	    iio_device_get_clock(s->iio) == CLOCK_BOOTTIME) {
++		frequency = arch_timer_get_cntfrq();
++		before = ktime_get_boottime_ns();
++		counter = arch_timer_read_counter();
++		after = ktime_get_boottime_ns();
++		if (frequency == 19200000 && before && after >= before &&
++		    after - before <= 10 * NSEC_PER_USEC &&
++		    s->ticks && counter >= s->ticks && counter - s->ticks <= frequency / 10) {
++			age = div_u64((counter - s->ticks) * NSEC_PER_SEC, frequency);
++			stamp = before + (after - before) / 2;
++			if (stamp > age && stamp - age <= S64_MAX &&
++			    (s64)(stamp - age) > s->last_acquisition_ns) {
++				s->last_acquisition_ns = stamp - age;
++				return s->last_acquisition_ns;
++			}
++		}
++		/* Returning to acquisition time could date the next scan before
++		 * the fallback scan. Keep arrival time until the buffer is reopened.
++		 */
++		s->use_arrival_time = true;
++	}
++#endif
++	return iio_get_time_ns(s->iio);
++}
++
+ /* The caller holds c->state; values have passed the sensor's exact API decoder. */
+ static void ssc_publish_locked(struct ssc_sensor *s, const s64 value[SSC_SAMPLE_MAX], u64 ticks)
+ {
+@@ -554,7 +599,7 @@
+ 		s64 scan[SSC_SCAN_MAX] = {};
+ 
+ 		memcpy(scan, s->sample, sizeof(s->sample));
+-		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), iio_get_time_ns(s->iio));
++		iio_push_to_buffers_with_ts(s->iio, scan, sizeof(scan), ssc_iio_timestamp(s));
+ 	}
+ 	complete(&s->sample_done);
+ 	ssc_dual_feed_locked(s);
+@@ -1272,6 +1317,8 @@
+ 	sequence = s->sample_sequence;
+ 	s->buffered = true;
+ 	s->buffer_fault = false;
++	s->last_acquisition_ns = 0;
++	s->use_arrival_time = false;
+ 	spin_unlock_irqrestore(&c->state, flags);
+ 	ret = ssc_stream_get(s, SSC_STREAM_BUFFER);
+ 	if (ret) {

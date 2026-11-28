@@ -1,0 +1,20 @@
+Subject: [PATCH] drm/msm: use the GMU recovery shutdown path after a GPU hang
+
+The GPU recovery worker marks the GPU hung before invoking runtime
+suspend. Use the existing forced GMU shutdown while that flag is set,
+so a stuck GPU does not have to finish the graceful slumber request.
+Preserve the bus vote, GX, clock and runtime PM release order.
+
+Link: https://github.com/wkai343/liuqin-linux-kit/blob/9b8e38fd75008f5d4bec912acb1a0331aa112047/build/kernel/patches/linux-7.3/0081-drm-msm-bound-fault-dump-waits.patch
+---
+--- a/drivers/gpu/drm/msm/adreno/a6xx_gmu.c
++++ b/drivers/gpu/drm/msm/adreno/a6xx_gmu.c
+@@ -1510,7 +1510,7 @@ int a6xx_gmu_stop(struct a6xx_gpu *a6xx_gpu)
+ 	 * Force the GMU off if we detected a hang, otherwise try to shut it
+ 	 * down gracefully
+ 	 */
+-	if (gmu->hung)
++	if (gmu->hung || a6xx_gpu->hung)
+ 		a6xx_gmu_force_off(gmu);
+ 	else
+ 		a6xx_gmu_shutdown(gmu);

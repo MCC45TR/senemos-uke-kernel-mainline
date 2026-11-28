@@ -1,0 +1,43 @@
+Subject: [PATCH] of: skip inferred proxy links for Uke's OEM SMMU TBU nodes
+
+The fitted Uke DT retains Qualcomm's downstream QTB bindings. Linux does
+not instantiate their TBU children. Inferring an interconnect consumer
+from those descriptions attempts a late sync-only link to the parent
+SMMU. Keep the DT paths and native interconnect consumers available while
+excluding those inferred dependencies for the fitted legacy child binding.
+---
+diff --git a/drivers/of/property.c b/drivers/of/property.c
+index 72cf129..29b1c5b 100644
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -1392,7 +1392,29 @@ struct supplier_bindings {
+ };
+ 
+ DEFINE_SIMPLE_PROP(clocks, "clocks", "#clock-cells")
+-DEFINE_SIMPLE_PROP(interconnects, "interconnects", "#interconnect-cells")
++
++static struct device_node *parse_interconnects(struct device_node *np,
++					      const char *prop_name, int index)
++{
++	/*
++	 * Uke retains the OEM QTB description for its firmware. These child
++	 * compatibles have no Linux TBU driver on this board. A proxy link
++	 * would attach their interconnect suppliers to the already-bound
++	 * parent SMMU, which does not use those child interconnect paths.
++	 */
++	if (!strcmp(prop_name, "interconnects") &&
++	    of_device_is_compatible(np, "qcom,qsmmuv500-tbu") &&
++	    of_device_is_compatible(np, "qcom,qtb500") &&
++	    np->parent &&
++	    of_device_is_compatible(np->parent, "qcom,sm7675-boot-smmu") &&
++	    of_machine_is_compatible("xiaomi,uke") &&
++	    of_machine_is_compatible("qcom,sm7675"))
++		return NULL;
++
++	return parse_prop_cells(np, prop_name, index, "interconnects",
++				"#interconnect-cells");
++}
++
+ DEFINE_SIMPLE_PROP(iommus, "iommus", "#iommu-cells")
+ DEFINE_SIMPLE_PROP(mboxes, "mboxes", "#mbox-cells")
+ DEFINE_SIMPLE_PROP(io_channels, "io-channels", "#io-channel-cells")

@@ -1,0 +1,7 @@
+patches/01-cc.patch
+patches/02-dock.patch
+patches/03-gmu.patch
+patches/04-ambient.patch
+patches/05-pcm.patch
+patches/06-initrd-modes.patch
+patches/07-legacy-dp-jack.patch

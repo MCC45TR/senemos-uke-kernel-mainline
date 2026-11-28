@@ -1,0 +1,16 @@
+Subject: [PATCH] ASoC: qdsp6: use the default unbound PCM workqueue
+
+Use the supported default unbound workqueue for deferred PCM period
+notifications. Keep the existing queueing, locking and drain behavior.
+---
+--- a/sound/soc/qcom/qdsp6/q6apm-dai.c
++++ b/sound/soc/qcom/qdsp6/q6apm-dai.c
+@@ -151,7 +151,7 @@ static void q6apm_pcm_period_kick(struct q6apm_dai_rtd *prtd)
+ 
+ 	spin_lock_irqsave(&prtd->pcm_period_lock, flags);
+ 	if (!prtd->pcm_period_closed)
+-		queue_work(system_unbound_wq, &prtd->pcm_period_work);
++		queue_work(system_dfl_wq, &prtd->pcm_period_work);
+ 	spin_unlock_irqrestore(&prtd->pcm_period_lock, flags);
+ }
+ 

@@ -1,0 +1,5 @@
+patches/01-bluetooth.patch
+patches/02-smmu.patch
+patches/03-gpr.patch
+patches/04-ssc-boottime.patch
+patches/05-audioreach-start.patch

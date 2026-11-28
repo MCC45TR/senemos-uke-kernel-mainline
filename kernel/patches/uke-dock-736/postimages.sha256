@@ -1,0 +1,10 @@
+5b657648451b89a4b89bfd73de17e450602d6c2bd7d57084f4d7f46d02ab3403  drivers/power/supply/qcom_battmgr.c
+a8109f4edca7431d269d5a26d875ef85441841fc729bfee8c70a068813c7a740  drivers/soc/qcom/pmic_glink_altmode.c
+1f5a7e39d96c214a4d7a6fc9924ad56f38a567348dc751cbec2f96302bd287a3  drivers/gpu/drm/msm/adreno/a6xx_gmu.c
+874dc0db4421ff4e96920032b1b128eb8f9b49ff33ef95fd4f414ab9ac77b86d  drivers/gpu/drm/panel/panel-xiaomi-o82-ambient.h
+ac1f29e219b0340b6a71b8f5f31d3ea4ba7bbbb58d45909d01015f893c5356ed  sound/soc/qcom/qdsp6/q6apm-dai.c
+01339a590ae1752fe0e7753779a72b1269e411bee580f42d675486f735850a6f  drivers/usb/typec/ucsi/ucsi_glink.c
+f4d5236cd5c990a4bd93c070c44c8c7339cb9417b4f70e31435e6f1343e6ecf2  include/linux/power/uke-typec.h
+00a9cf7e2073073f44e97eb9094db738a034e4e1634c9a35bf001cc2345454ce  drivers/usb/typec/ucsi/ucsi.c
+754dce45f0c88852d78fc757635fadace1074cc10076e6454f78586502a2df00  boot-recipe/src/boot/dracut/module-setup.sh
+0e660ba9956c694d8820f120d40b9fb9b801da20c6bd6612b5a03eda9df9c2c1  sound/soc/qcom/uke-audio-card.c

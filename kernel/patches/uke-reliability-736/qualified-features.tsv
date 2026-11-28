@@ -1,0 +1,5 @@
+bluetooth-warm-baud	11403218	drivers/bluetooth/hci_qca.c
+smmu-proxy-links	11403218	drivers/of/property.c
+gpr-late-port	11403218	drivers/soc/qcom/apr.c
+ssc-acquisition-time	11402981	drivers/iio/common/uke-ssc/uke-ssc-iio.c
+audioreach-compressed-start	11403081	sound/soc/qcom/qdsp6/q6apm-dai.c

@@ -1,0 +1,17 @@
+Subject: [PATCH] drm/panel: o82: check the ambient phandle as a valued property
+
+The fitted ambient colour input is a valued phandle. The worker's
+startup gate needs a property-presence check. Read and validate the
+provider through the existing phandle path.
+---
+--- a/drivers/gpu/drm/panel/panel-xiaomi-o82-ambient.h
++++ b/drivers/gpu/drm/panel/panel-xiaomi-o82-ambient.h
+@@ -303,7 +303,7 @@
+ {
+ 	if (!ambient_white_balance || ctx->ambient_on ||
+ 	    !ctx->connector ||
+-	    !of_property_read_bool(ctx->dsi[0]->dev.of_node, "xiaomi,ambient-color-input"))
++	    !of_property_present(ctx->dsi[0]->dev.of_node, "xiaomi,ambient-color-input"))
+ 		return;
+ 	/* A real panel enable starts a new ownership interval. */
+ 	if (current_work() != &ctx->ambient_work.work)

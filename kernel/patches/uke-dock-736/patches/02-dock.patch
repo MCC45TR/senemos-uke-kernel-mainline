@@ -1,0 +1,222 @@
+Subject: [PATCH] soc: qcom: retry Uke dock routing after transient PHY ownership
+
+The PMIC can report detach or a replacement DisplayPort/USB route while
+DRM still owns the combo PHY. The old detach path only tried safe mode
+once after 100 ms. A busy attach dropped the acknowledged routing event.
+
+Give the same routing event a bounded window to finish after HPD releases
+the previous owner. A newer PAN event or firmware generation supersedes
+the pending route. Keep firmware acknowledgements separate from hardware
+retries and report terminal routing errors.
+---
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 1c8252e..f311386 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -99,7 +99,8 @@ enum pmic_glink_altmode_pin_assignment {
+ struct pmic_glink_altmode;
+ 
+ #define ALTMODE_EVENT_COUNT 32
+-#define UKE_ALTMODE_SAFE_RETRY_MS 100
++#define UKE_ALTMODE_ROUTE_RETRY_MS 100
++#define UKE_ALTMODE_ROUTE_RETRIES 10
+ struct pmic_glink_altmode_event {
+ 	u64 generation;
+ 	enum typec_orientation orientation;
+@@ -131,8 +132,8 @@ struct pmic_glink_altmode_port {
+ 	struct pmic_glink_altmode_fifo received;
+ 	struct pmic_glink_altmode_fifo acknowledged;
+ 	bool resync_pending;
+-	u64 safe_retry_generation;
+-	bool safe_retry_pending;
++	struct pmic_glink_altmode_event route_retry;
++	unsigned int route_retries;
+ 
+ 	struct auxiliary_device *bridge;
+ 	enum drm_connector_status hpd_status;
+@@ -213,6 +214,15 @@ static int pmic_glink_altmode_request(struct pmic_glink_altmode *altmode, u32 cm
+ 	return ret;
+ }
+ 
++static void pmic_glink_altmode_route_error(struct pmic_glink_altmode *altmode,
++					 const char *stage, int ret)
++{
++	if (altmode->uke && ret == -EBUSY)
++		dev_dbg(altmode->dev, "%s still busy\n", stage);
++	else
++		dev_err(altmode->dev, "%s failed: %d\n", stage, ret);
++}
++
+ static int pmic_glink_altmode_enable_dp(struct pmic_glink_altmode *altmode,
+ 					 struct pmic_glink_altmode_port *port,
+ 					 u8 mode, bool hpd_state,
+@@ -235,7 +245,7 @@ static int pmic_glink_altmode_enable_dp(struct pmic_glink_altmode *altmode,
+ 	ret = typec_mux_set(port->typec_mux, &port->state);
+ 	if (ret) {
+ 		port->retimer_dp_valid = false;
+-		dev_err(altmode->dev, "failed to switch mux to DP: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "DP mux", ret);
+ 		return ret;
+ 	}
+ 
+@@ -250,7 +260,7 @@ static int pmic_glink_altmode_enable_dp(struct pmic_glink_altmode *altmode,
+ 	ret = typec_retimer_set(port->typec_retimer, &port->retimer_state);
+ 	if (ret) {
+ 		port->retimer_dp_valid = false;
+-		dev_err(altmode->dev, "failed to setup retimer to DP: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "DP retimer", ret);
+ 		return ret;
+ 	}
+ 	port->retimer_dp_valid = true;
+@@ -380,7 +390,7 @@ static int pmic_glink_altmode_enable_usb(struct pmic_glink_altmode *altmode,
+ 
+ 	ret = typec_mux_set(port->typec_mux, &port->state);
+ 	if (ret) {
+-		dev_err(altmode->dev, "failed to switch mux to USB: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "USB mux", ret);
+ 		return ret;
+ 	}
+ 
+@@ -390,7 +400,7 @@ static int pmic_glink_altmode_enable_usb(struct pmic_glink_altmode *altmode,
+ 
+ 	ret = typec_retimer_set(port->typec_retimer, &port->retimer_state);
+ 	if (ret) {
+-		dev_err(altmode->dev, "failed to setup retimer to USB: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "USB retimer", ret);
+ 		return ret;
+ 	}
+ 	return 0;
+@@ -408,10 +418,7 @@ static int pmic_glink_altmode_safe(struct pmic_glink_altmode *altmode,
+ 
+ 	ret = typec_mux_set(port->typec_mux, &port->state);
+ 	if (ret) {
+-		if (altmode->uke && ret == -EBUSY)
+-			dev_dbg(altmode->dev, "DP PHY still owns the mux\n");
+-		else
+-			dev_err(altmode->dev, "failed to switch mux to safe mode: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "safe mux", ret);
+ 		return ret;
+ 	}
+ 
+@@ -421,7 +428,7 @@ static int pmic_glink_altmode_safe(struct pmic_glink_altmode *altmode,
+ 
+ 	ret = typec_retimer_set(port->typec_retimer, &port->retimer_state);
+ 	if (ret) {
+-		dev_err(altmode->dev, "failed to setup retimer to USB: %d\n", ret);
++		pmic_glink_altmode_route_error(altmode, "safe retimer", ret);
+ 		return ret;
+ 	}
+ 	return 0;
+@@ -551,7 +558,7 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 	struct pmic_glink_altmode_fifo *fifo = &port->acknowledged;
+ 	struct pmic_glink_altmode_event event;
+ 	unsigned long flags;
+-	bool valid, resync, route_changed, retry_safe;
++	bool valid, resync, route_changed, retrying, superseded, busy, retry;
+ 	int ret;
+ 
+ 	for (;;) {
+@@ -561,7 +568,7 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 			port->received.head = port->received.count = 0;
+ 			fifo->head = fifo->count = 0;
+ 			port->resync_pending = false;
+-			port->safe_retry_pending = false;
++			port->route_retries = 0;
+ 			spin_unlock_irqrestore(&am->event_lock, flags);
+ 			pmic_glink_altmode_hpd_notify(port, connector_status_disconnected, true);
+ 			port->hpd_status = connector_status_unknown;
+@@ -570,28 +577,24 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 				dev_err_ratelimited(am->dev, "port %u cleanup indeterminate: %d\n", port->index, ret);
+ 			return;
+ 		}
+-		if (!fifo->count) {
+-			retry_safe = port->safe_retry_pending &&
+-				!port->received.count &&
+-				port->safe_retry_generation == am->generation;
+-			port->safe_retry_pending = false;
+-			spin_unlock_irqrestore(&am->event_lock, flags);
+-			if (retry_safe) {
+-				ret = typec_switch_set(port->typec_switch, port->orientation);
+-				if (!ret)
+-					ret = pmic_glink_altmode_safe(am, port);
+-				if (ret)
+-					dev_err_ratelimited(am->dev, "port %u deferred safe mode failed: %d\n",
+-							    port->index, ret);
++		retrying = !fifo->count;
++		resync = port->resync_pending;
++		if (retrying) {
++			if (!port->route_retries || port->received.count || resync ||
++			    port->route_retry.generation != am->generation) {
++				port->route_retries = 0;
++				spin_unlock_irqrestore(&am->event_lock, flags);
++				return;
+ 			}
+-			return;
++			event = port->route_retry;
++			port->route_retries--;
++		} else {
++			/* New firmware events supersede a deferred hardware route. */
++			port->route_retries = 0;
++			event = fifo->events[fifo->head];
++			pmic_glink_altmode_fifo_pop(fifo);
++			port->resync_pending = false;
+ 		}
+-		/* A newer firmware event owns the next routing decision. */
+-		port->safe_retry_pending = false;
+-		event = fifo->events[fifo->head];
+-		pmic_glink_altmode_fifo_pop(fifo);
+-		resync = port->resync_pending;
+-		port->resync_pending = false;
+ 		valid = event.generation == am->generation;
+ 		spin_unlock_irqrestore(&am->event_lock, flags);
+ 		if (!valid)
+@@ -630,17 +633,29 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 		spin_lock_irqsave(&am->event_lock, flags);
+ 		valid = am->online && !am->stopping && !am->quarantined &&
+ 			event.generation == am->generation;
+-		retry_safe = am->uke && ret == -EBUSY && valid &&
+-			event.mux_ctrl == MUX_CTRL_STATE_NO_CONN &&
+-			!fifo->count && !port->received.count;
+-		if (retry_safe) {
+-			/* DRM releases the active DP PHY after the HPD notification. */
+-			port->safe_retry_pending = true;
+-			port->safe_retry_generation = event.generation;
++		superseded = fifo->count || port->received.count || port->resync_pending;
++		busy = am->uke && ret == -EBUSY && valid &&
++			(event.mux_ctrl == MUX_CTRL_STATE_NO_CONN ||
++			 event.mux_ctrl == MUX_CTRL_STATE_USB3_ONLY ||
++			 event.svid == USB_TYPEC_DP_SID);
++		retry = busy && !superseded && (!retrying || port->route_retries);
++		if (retry) {
++			/* HPD disconnect lets DRM release the previous DP PHY owner. */
++			port->route_retry = event;
++			if (!retrying)
++				port->route_retries = UKE_ALTMODE_ROUTE_RETRIES;
+ 			mod_delayed_work(system_freezable_wq, &port->work,
+-					 msecs_to_jiffies(UKE_ALTMODE_SAFE_RETRY_MS));
++					 msecs_to_jiffies(UKE_ALTMODE_ROUTE_RETRY_MS));
++		} else {
++			port->route_retries = 0;
+ 		}
+ 		spin_unlock_irqrestore(&am->event_lock, flags);
++		if (retrying && (!valid || superseded)) {
++			if (valid && ret && !busy)
++				dev_err_ratelimited(am->dev, "port %u superseded route failed: %d\n",
++						    port->index, ret);
++			continue;
++		}
+ 		if (!ret && valid)
+ 			pmic_glink_altmode_hpd_notify(port,
+ 				event.svid == USB_TYPEC_DP_SID && event.hpd_state &&
+@@ -650,9 +665,9 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 		else
+ 			pmic_glink_altmode_hpd_notify(port, connector_status_disconnected,
+ 						     !valid || route_changed);
+-		if (retry_safe)
++		if (retry)
+ 			return;
+-		if (ret)
++		if (ret && !(busy && superseded))
+ 			dev_err_ratelimited(am->dev, "port %u mux application failed: %d\n", port->index, ret);
+ 	}
+ }

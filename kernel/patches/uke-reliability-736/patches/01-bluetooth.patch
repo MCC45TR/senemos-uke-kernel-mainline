@@ -1,0 +1,123 @@
+Subject: [PATCH] Bluetooth: hci_qca: route Uke WCN6750 baud-rate completion
+
+The fitted WCN6750 responds to the raw UART baud-rate command with 0xfc48.
+Consume that reply in the pending UART transaction. Other HCI replies keep
+their original path. The fitted firmware can return Unknown HCI Command
+and continue at the new rate, so the existing later version query still
+validates the link. Keep the WCN3990 vendor-event flow independent.
+
+Link: https://lkml.rescloud.iu.edu/2408.2/06309.html
+---
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index a681235..25d13a1 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -69,10 +69,13 @@
+ #define QCA_LAST_SEQUENCE_NUM		0xFFFF
+ #define QCA_CRASHBYTE_PACKET_LEN	1096
+ #define QCA_MEMDUMP_BYTE		0xFB
++#define QCA_SET_BAUDRATE_OPCODE		0xfc48
++#define QCA_BAUDRATE_UNKNOWN_COMMAND	0x01
+ 
+ enum qca_flags {
+ 	QCA_IBS_DISABLED,
+ 	QCA_DROP_VENDOR_EVENT,
++	QCA_WAIT_BAUDRATE_COMPLETE,
+ 	QCA_SUSPENDING,
+ 	QCA_MEMDUMP_COLLECTION,
+ 	QCA_HW_ERROR_EVENT,
+@@ -162,6 +165,7 @@ struct qca_data {
+ 	struct qca_memdump_info *qca_memdump;
+ 	unsigned long flags;
+ 	struct completion drop_ev_comp;
++	u8 baudrate_status;
+ 	wait_queue_head_t suspend_wait_q;
+ 	enum qca_memdump_states memdump_state;
+ 	struct mutex hci_memdump_lock;
+@@ -1209,10 +1213,40 @@ static int qca_controller_memdump_event(struct hci_dev *hdev,
+ 	return 0;
+ }
+ 
++static bool qca_baudrate_complete(const struct sk_buff *skb, u8 *status)
++{
++	const struct hci_event_hdr *header = (const void *)skb->data;
++	const struct hci_ev_cmd_complete *event = (const void *)(header + 1);
++
++	if (skb->len != sizeof(*header) + sizeof(*event) + sizeof(*status) ||
++	    header->evt != HCI_EV_CMD_COMPLETE ||
++	    header->plen != sizeof(*event) + sizeof(*status) ||
++	    le16_to_cpu(event->opcode) != QCA_SET_BAUDRATE_OPCODE)
++		return false;
++
++	*status = *((const u8 *)(event + 1));
++	return true;
++}
++
++static bool qca_baudrate_status_failed(u8 status)
++{
++	return status && status != QCA_BAUDRATE_UNKNOWN_COMMAND;
++}
++
+ static int qca_recv_event(struct hci_dev *hdev, struct sk_buff *skb)
+ {
+ 	struct hci_uart *hu = hci_get_drvdata(hdev);
+ 	struct qca_data *qca = hu->priv;
++	u8 status;
++
++	if (test_bit(QCA_WAIT_BAUDRATE_COMPLETE, &qca->flags) &&
++	    qca_baudrate_complete(skb, &status) &&
++	    test_and_clear_bit(QCA_WAIT_BAUDRATE_COMPLETE, &qca->flags)) {
++		qca->baudrate_status = status;
++		complete(&qca->drop_ev_comp);
++		kfree_skb(skb);
++		return 0;
++	}
+ 
+ 	if (test_bit(QCA_DROP_VENDOR_EVENT, &qca->flags)) {
+ 		struct hci_event_hdr *hdr = (void *)skb->data;
+@@ -1496,6 +1530,8 @@ static int qca_set_speed(struct hci_uart *hu, enum qca_speed_type speed_type)
+ 			host_set_baudrate(hu, speed);
+ 	} else {
+ 		enum qca_btsoc_type soc_type = qca_soc_type(hu);
++		bool fitted_wcn6750 = soc_type == QCA_WCN6750 && hu->serdev &&
++			of_device_is_compatible(hu->serdev->dev.of_node, "xiaomi,uke-wcn6750-bt");
+ 
+ 		speed = qca_get_speed(hu, QCA_OPER_SPEED);
+ 		if (!speed)
+@@ -1521,6 +1557,12 @@ static int qca_set_speed(struct hci_uart *hu, enum qca_speed_type speed_type)
+ 		}
+ 
+ 		switch (soc_type) {
++		case QCA_WCN6750:
++			if (fitted_wcn6750) {
++				reinit_completion(&qca->drop_ev_comp);
++				set_bit(QCA_WAIT_BAUDRATE_COMPLETE, &qca->flags);
++			}
++			break;
+ 		case QCA_WCN3990:
+ 			reinit_completion(&qca->drop_ev_comp);
+ 			set_bit(QCA_DROP_VENDOR_EVENT, &qca->flags);
+@@ -1556,6 +1598,23 @@ error:
+ 		}
+ 
+ 		switch (soc_type) {
++		case QCA_WCN6750:
++			if (!fitted_wcn6750)
++				break;
++			/*
++			 * The fitted controller can report Unknown HCI Command
++			 * and still accept the next version query at the new
++			 * baud rate. Leave that query as the link check.
++			 */
++			if (!ret && wait_for_completion_timeout(&qca->drop_ev_comp,
++								msecs_to_jiffies(100)) &&
++			    qca_baudrate_status_failed(qca->baudrate_status)) {
++				bt_dev_err(hu->hdev, "Controller baud-rate status: %#x\n",
++					   qca->baudrate_status);
++				ret = -EIO;
++			}
++			clear_bit(QCA_WAIT_BAUDRATE_COMPLETE, &qca->flags);
++			break;
+ 		case QCA_WCN3990:
+ 			/* Wait for the controller to send the vendor event
+ 			 * for the baudrate change command.
