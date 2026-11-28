@@ -40,3 +40,4 @@ df46ad746cb2b65715570760dea24c8ea455fa7739f4087ac50158ac92befd71  ./uke-pmic-gli
 bf7bb3394c5a781ce93625ebb958e82bddcac684c7f3030d128da520f4d78249  ./uke-rtc-counter-boot73546.tar.xz
 3f2e2c53abdd1a12819cb2886950929067181bc2fa1ef87b1ee3f68f0c9f08c0  ./uke-usb-dp-stability73531.tar.xz
 cd45d4bc2ca4e11da3d51d68e6ad41730207a6cb24ee18eb1e0678fb001c2e7a  uke-camera-discovery-736.tar.xz
+a55d6f5cc3eb10ae90b78a6957f8340fec8c666c67d897d6d76efe5c380907cf  uke-camera-streams-736.tar.xz

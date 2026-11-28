@@ -1,0 +1,43 @@
+--- a/senemos-uke-linux-kernel-mainline-unstable.spec
++++ b/senemos-uke-linux-kernel-mainline-unstable.spec
+@@ -298,6 +298,8 @@
+ Source489: uke-73629-candidates.tar.xz
+ Source490: uke-73630-candidates.tar.xz
+ Source491: uke-dock-journal-followups.tar.xz
++Source492: uke-camera-discovery-736.tar.xz
++Source493: uke-camera-streams-736.tar.xz
+ 
+ %description
+ Source-built kernel with the reviewed O82 native display profile.
+@@ -1925,10 +1927,20 @@
+ tar -xJf %{SOURCE491} -C "$dock_followup"
+ (cd "$dock_followup"; sha256sum --strict -c SHA256SUMS)
+ bash "$dock_followup/fix-prepared-initrd-unit-modes.sh" %{uke_boot_userspace}/base
++camera_discovery=$PWD/native-generated/camera-discovery
++printf '%%s  %%s\n' cd45d4bc2ca4e11da3d51d68e6ad41730207a6cb24ee18eb1e0678fb001c2e7a "%{SOURCE492}" | sha256sum -c --strict
++mkdir "$camera_discovery"
++tar -xJf "%{SOURCE492}" -C "$camera_discovery"
++camera_streams=$PWD/native-generated/camera-streams
++printf '%%s  %%s\n' a55d6f5cc3eb10ae90b78a6957f8340fec8c666c67d897d6d76efe5c380907cf "%{SOURCE493}" | sha256sum -c --strict
++mkdir "$camera_streams"
++tar -xJf "%{SOURCE493}" -C "$camera_streams"
+ bash "$runtime_736_assets/build-with-runtime-layer.sh" "$PWD" %{_uke_out} "$runtime_736_assets" %{SOURCE0} %{SOURCE485} \
+     bash "$candidate_assets/build-with-73629.sh" "$PWD" %{_uke_out} "$candidate_assets" \
+         bash "$candidate_73630/build-with-73630.sh" "$PWD" %{_uke_out} "$candidate_73630" \
+         bash "$dock_followup/build-with-dock-followups.sh" "$PWD" "$dock_followup" \
++        bash "$camera_discovery/camera-discovery.sh" run "$PWD" %{_uke_out} \
++        bash "$camera_streams/camera-streams.sh" run "$PWD" %{_uke_out} \
+         bash boot-recipe/src/boot/build-payload.sh "$PWD" %{_uke_out} %{uke_boot_userspace}/base '%{krel}' "$jobs" fs19xx-vi-diagnostic
+ mkdir -p %{_uke_out}/uke-dock-followups
+ bash "$dock_followup/check-runtime-objects.sh" %{_uke_out} > %{_uke_out}/uke-dock-followups/candidate-objects.sha256
+@@ -3016,6 +3028,10 @@
+ install -Dm644 %{_uke_out}/uke-73630/qualified-features.tsv "$identity/linux-7.3.6-30-qualified-features.tsv"
+ install -Dm644 "%{uke_dock_followup_dir}/postimages.sha256" "$identity/linux-7.3.6-31-candidate-source.sha256"
+ install -Dm644 %{_uke_out}/uke-dock-followups/candidate-objects.sha256 "$identity/linux-7.3.6-31-candidate-objects.sha256"
++install -Dm644 %{_uke_out}/uke-camera-discovery/objects.sha256 "$identity/camera-discovery-objects.sha256"
++install -Dm644 %{_uke_out}/uke-camera-discovery/source.sha256 "$identity/camera-discovery-source.sha256"
++install -Dm644 %{_uke_out}/uke-camera-streams/objects.sha256 "$identity/camera-streams-objects.sha256"
++install -Dm644 %{_uke_out}/uke-camera-streams/source.sha256 "$identity/camera-streams-source.sha256"
+ install -Dm644 %{_uke_out}/uke-736-runtime/stable-replay.txt "$identity/linux-7.3.6-source-replay.txt"
+ proximity_parent=$(bash native-profile/packaging/native/proximity-abi-legacy-view733.sh "$uke_native_parent")
+ heading_parent=$(bash native-profile/packaging/native/heading-legacy-view733.sh "$proximity_parent")

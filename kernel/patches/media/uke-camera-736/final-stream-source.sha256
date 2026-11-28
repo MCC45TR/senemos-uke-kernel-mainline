@@ -1,0 +1,11 @@
+2bb82efac8f9fb798933c57457190a21dcc8725b87200663fb09398302f17b66  Documentation/devicetree/bindings/media/i2c/xiaomi,uke-rear-camera-identify.yaml
+12e8c8dea758d945631a184e070999de2d5190be419ed204361ae005c9daedaa  arch/arm64/kernel/uke-abl.c
+0b6a9d9a0c67d080bfebbd8d1c54a1b2298e9c269ad8e3286ccf064ae95ce428  arch/arm64/kernel/uke-camera-stream-dt.h
+d297cc01c334b661f711419c2674eb174b7cab6f76ca007ae6eb32f7fbb209cd  drivers/media/i2c/ov08d10.c
+740ee81bcac394ab2d3ebd698222fc95c7f8799a6762ed627b05050d7f757dac  drivers/media/i2c/ov13b10.c
+24a4a3f9963deb0902d257059d8465d913f0a8d2cedc401abe2ba98a00136579  drivers/media/i2c/uke-front-camera-id.c
+30e850a08bfdaea95ddb786f1ab0aee4df518bdbddf5ad0fbe2b3c57a8c3a455  drivers/media/i2c/uke-front-camera-resources.h
+cb6031322e14af7660ae75ff0912cb822a4983cde1384e393037c5e7ad48765e  drivers/media/i2c/uke-front-sensor-power.h
+f5a88f728d501bd0b54dbafe1b6929b6b6f70c0c80d8a1ef4e4a51401bf62f4b  drivers/media/i2c/uke-rear-camera-id.c
+708dd6926d990e7fa9d88c4ae12408295ae17baed385d8237b0730807317b811  drivers/media/i2c/uke-rear-camera-power.h
+a4087522add5d209922f94527a0edc17a6e396bbddf874d5cda9016fda4fa51b  drivers/media/i2c/uke-rear-camera-resources.h

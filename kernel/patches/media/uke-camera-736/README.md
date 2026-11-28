@@ -21,3 +21,10 @@ The first device check requires the expected signed kernel and checks the
 receiver, its media ABI and, in explicit identity mode, the fitted sensor
 IDs. Stream links, image capture, calibration and rear focus still require
 separate qualification.
+
+The `camera-streams.sh` layer adds the fitted OV13B10 and OV08D10 subdevices
+and the PHY1 and PHY4 links after discovery admission. The second RPM patch
+composes both archives in the Linux 7.3.6-unstable build. It enables the two
+sensor drivers in the kernel and verifies their built-in symbols. Signed ARM64
+source checks cover the sensor drivers and the graph. Device capture and
+calibration remain under qualification.
