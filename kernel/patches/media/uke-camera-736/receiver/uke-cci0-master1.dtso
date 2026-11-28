@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include <dt-bindings/clock/qcom,sm7675-camcc.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/dts-v1/;
+/plugin/;
+
+&tlmm {
+	uke_cci1_default: uke-cci0-master1-default-state {
+		sda-pins {
+			pins = "gpio72";
+			function = "cci_i2c_sda1";
+			drive-strength = <4>;
+			bias-disable;
+		};
+		scl-pins {
+			pins = "gpio73";
+			function = "cci_i2c_scl1";
+			drive-strength = <4>;
+			bias-disable;
+		};
+	};
+
+	uke_cci1_sleep: uke-cci0-master1-sleep-state {
+		sda-pins {
+			pins = "gpio72";
+			function = "cci_i2c_sda1";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+		scl-pins {
+			pins = "gpio73";
+			function = "cci_i2c_scl1";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+};
+
+&{/soc} {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	uke_cci0: i2c@ac15000 {
+		compatible = "qcom,sm8650-cci", "qcom,msm8996-cci";
+		reg = <0x0ac15000 0x1000>;
+		interrupt-parent = <&intc>;
+		interrupts = <GIC_SPI 426 IRQ_TYPE_EDGE_RISING>;
+		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
+		clocks = <&camcc CAM_CC_CCI_0_CLK_SRC>, <&camcc CAM_CC_CCI_0_CLK>;
+		clock-names = "cci_src", "cci";
+		assigned-clocks = <&camcc CAM_CC_CCI_0_CLK_SRC>;
+		assigned-clock-rates = <37500000>;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&uke_cci1_default>;
+		pinctrl-1 = <&uke_cci1_sleep>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		i2c-bus@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+		};
+	};
+};
