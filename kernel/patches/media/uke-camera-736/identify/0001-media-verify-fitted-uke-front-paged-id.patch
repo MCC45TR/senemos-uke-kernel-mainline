@@ -1,0 +1,188 @@
+--- a/uke-front-camera-id.c
++++ b/uke-front-camera-id.c
+@@ -10,14 +10,19 @@
+ 
+ #include "uke-front-sensor-power.h"
+ 
+-struct uke_front_camera_id {
+-	struct uke_front_sensor_power power;
+-	struct mutex lock;
++struct uke_front_camera_sample {
+ 	bool attempted;
+ 	int result;
+ 	u16 id;
+ };
+ 
++struct uke_front_camera_id {
++	struct uke_front_sensor_power power;
++	struct mutex lock;
++	struct uke_front_camera_sample oem;
++	struct uke_front_camera_sample paged;
++};
++
+ static const struct {
+ 	const char *name;
+ 	const char *property;
+@@ -74,13 +79,17 @@
+ }
+ 
+ static int uke_front_camera_read_id(struct i2c_client *client,
+-				    struct uke_front_camera_id *sensor)
++				    struct uke_front_camera_id *sensor,
++				    struct uke_front_camera_sample *sample,
++				    bool paged)
+ {
+ 	struct uke_front_sensor_power *power = &sensor->power;
+ 	struct device *dev = &client->dev;
+ 	void *resources;
+ 	int ret;
+ 
++	if (power->fault)
++		return power->fault;
+ 	resources = devres_open_group(dev, NULL, GFP_KERNEL);
+ 	if (!resources)
+ 		return -ENOMEM;
+@@ -94,9 +103,9 @@
+ 		goto release;
+ 	}
+ 
+-	sensor->attempted = true;
+-	ret = uke_front_sensor_identify(client, power, &sensor->id);
+-	sensor->result = ret;
++	sample->attempted = true;
++	ret = uke_front_sensor_identify(client, power, paged, &sample->id);
++	sample->result = ret;
+ 	if (power->fault) {
+ 		devres_remove_group(dev, resources);
+ 		dev_err(dev, "front camera power ownership retained after error %d\n", power->fault);
+@@ -108,25 +117,40 @@
+ 	return ret == -EPROBE_DEFER ? -EAGAIN : ret;
+ }
+ 
+-static ssize_t sensor_id_show(struct device *dev, struct device_attribute *attr,
+-			      char *buf)
++static ssize_t uke_front_camera_id_show(struct device *dev, char *buf, bool paged)
+ {
+ 	struct i2c_client *client = to_i2c_client(dev);
+ 	struct uke_front_camera_id *sensor = i2c_get_clientdata(client);
++	struct uke_front_camera_sample *sample = paged ? &sensor->paged : &sensor->oem;
+ 	int ret;
+ 
+ 	guard(mutex)(&sensor->lock);
+ 
+-	ret = sensor->attempted ? sensor->result : uke_front_camera_read_id(client, sensor);
++	ret = sample->attempted ? sample->result :
++		uke_front_camera_read_id(client, sensor, sample, paged);
+ 	if (ret)
+ 		return ret;
+-	return sysfs_emit(buf, "0x%04x\n", sensor->id);
++	return sysfs_emit(buf, "0x%04x\n", sample->id);
++}
++
++static ssize_t sensor_id_show(struct device *dev, struct device_attribute *attr,
++			      char *buf)
++{
++	return uke_front_camera_id_show(dev, buf, false);
++}
++
++static ssize_t paged_sensor_id_show(struct device *dev,
++				    struct device_attribute *attr, char *buf)
++{
++	return uke_front_camera_id_show(dev, buf, true);
+ }
+ 
+ static DEVICE_ATTR(sensor_id, 0400, sensor_id_show, NULL);
++static DEVICE_ATTR(paged_sensor_id, 0400, paged_sensor_id_show, NULL);
+ 
+ static struct attribute *uke_front_camera_attrs[] = {
+ 	&dev_attr_sensor_id.attr,
++	&dev_attr_paged_sensor_id.attr,
+ 	NULL,
+ };
+ 
+--- a/uke-front-sensor-power.h
++++ b/uke-front-sensor-power.h
+@@ -335,8 +335,7 @@
+ }
+ 
+ /* Read the configured OEM ID transaction without touching a mode table. */
+-static int uke_front_sensor_identify(struct i2c_client *client,
+-				    struct uke_front_sensor_power *power, u16 *id)
++static int uke_front_sensor_oem_id(struct i2c_client *client, u16 *id)
+ {
+ 	u8 address[2] = { 0, 0 };
+ 	u8 identification[2];
+@@ -346,24 +345,64 @@
+ 		  .buf = identification },
+ 	};
+ 	const int message_count = ARRAY_SIZE(messages);
++	int ret;
++
++	ret = i2c_transfer(client->adapter, messages, message_count);
++	if (ret != message_count)
++		return ret < 0 ? ret : -EIO;
++
++	*id = get_unaligned_be16(identification);
++	return 0;
++}
++
++/*
++ * The fitted OEM profile matches 0x5647 using a two-byte address, but
++ * uses paged byte commands to configure the sensor. Check the public
++ * OV08D10 identity sequence only after the OEM match in this power cycle.
++ */
++static int uke_front_sensor_paged_id(struct i2c_client *client, u16 *id)
++{
++	u16 oem_id;
++	int high, low, ret;
++
++	ret = uke_front_sensor_oem_id(client, &oem_id);
++	if (ret)
++		return ret;
++	if (oem_id != 0x5647)
++		return -ENODEV;
++
++	ret = i2c_smbus_write_byte_data(client, 0xfd, 0);
++	if (ret < 0)
++		return ret;
++	high = i2c_smbus_read_byte_data(client, 0);
++	if (high < 0)
++		return high;
++	low = i2c_smbus_read_byte_data(client, 1);
++	if (low < 0)
++		return low;
++
++	*id = (high << 8) | low;
++	return 0;
++}
++
++static int uke_front_sensor_identify(struct i2c_client *client,
++				     struct uke_front_sensor_power *power,
++				     bool paged, u16 *id)
++{
+ 	int ret, cleanup;
+ 
+ 	if (client->addr != 0x10 || (client->flags & I2C_CLIENT_TEN) ||
+ 	    !i2c_check_functionality(client->adapter, I2C_FUNC_I2C))
+ 		return -ENODEV;
+-
+ 	ret = uke_front_sensor_on(power);
+ 	if (ret)
+ 		return ret;
+-	ret = i2c_transfer(client->adapter, messages, message_count);
++	if (paged)
++		ret = uke_front_sensor_paged_id(client, id);
++	else
++		ret = uke_front_sensor_oem_id(client, id);
+ 	cleanup = uke_front_sensor_off(power);
+-	if (cleanup)
+-		return cleanup;
+-	if (ret != message_count)
+-		return ret < 0 ? ret : -EIO;
+-
+-	*id = get_unaligned_be16(identification);
+-	return 0;
++	return cleanup ?: ret;
+ }
+ 
+ #endif
