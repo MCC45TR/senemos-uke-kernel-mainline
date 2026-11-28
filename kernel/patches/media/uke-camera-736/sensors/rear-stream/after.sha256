@@ -1,0 +1,4 @@
+740ee81bcac394ab2d3ebd698222fc95c7f8799a6762ed627b05050d7f757dac  drivers/media/i2c/ov13b10.c
+f5a88f728d501bd0b54dbafe1b6929b6b6f70c0c80d8a1ef4e4a51401bf62f4b  drivers/media/i2c/uke-rear-camera-id.c
+708dd6926d990e7fa9d88c4ae12408295ae17baed385d8237b0730807317b811  drivers/media/i2c/uke-rear-camera-power.h
+a4087522add5d209922f94527a0edc17a6e396bbddf874d5cda9016fda4fa51b  drivers/media/i2c/uke-rear-camera-resources.h

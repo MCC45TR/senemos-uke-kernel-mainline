@@ -1,0 +1,625 @@
+diff --git a/before/drivers/media/i2c/ov13b10.c b/after/drivers/media/i2c/ov13b10.c
+index 12ac43d..b8a1dc1 100644
+--- a/before/drivers/media/i2c/ov13b10.c
++++ b/after/drivers/media/i2c/ov13b10.c
+@@ -14,6 +14,11 @@
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-fwnode.h>
+ 
++#if IS_BUILTIN(CONFIG_VIDEO_OV13B10) && IS_BUILTIN(CONFIG_SM_CAMCC_7675)
++#include "uke-rear-camera-resources.h"
++#define OV13B10_UKE
++#endif
++
+ #define OV13B10_REG_VALUE_08BIT		1
+ #define OV13B10_REG_VALUE_16BIT		2
+ #define OV13B10_REG_VALUE_24BIT		3
+@@ -742,6 +747,10 @@ struct ov13b10 {
+ 
+ 	/* True if the device has been identified */
+ 	bool identified;
++#ifdef OV13B10_UKE
++	struct uke_rear_camera_power *uke_power;
++	bool uke_streaming;
++#endif
+ };
+ 
+ #define to_ov13b10(_sd)	container_of(_sd, struct ov13b10, sd)
+@@ -1196,11 +1205,27 @@ static int ov13b10_identify_module(struct ov13b10 *ov13b)
+ 	return 0;
+ }
+ 
++#ifdef OV13B10_UKE
++static int ov13b10_uke_check_ids(const struct uke_rear_camera_sample *sample)
++{
++	if (sample->oem_result)
++		return sample->oem_result;
++	if (sample->model_result)
++		return sample->model_result;
++	return sample->oem_id == 0x0d42 && sample->model_id == OV13B10_CHIP_ID ? 0 : -ENODEV;
++}
++#endif
++
+ static int ov13b10_power_off(struct device *dev)
+ {
+ 	struct v4l2_subdev *sd = dev_get_drvdata(dev);
+ 	struct ov13b10 *ov13b10 = to_ov13b10(sd);
+ 
++#ifdef OV13B10_UKE
++	if (ov13b10->uke_power)
++		return uke_rear_camera_power_off(ov13b10->uke_power);
++#endif
++
+ 	gpiod_set_value_cansleep(ov13b10->reset, 1);
+ 	regulator_bulk_disable(ARRAY_SIZE(ov13b10_supply_names),
+ 			       ov13b10->supplies);
+@@ -1216,6 +1241,25 @@ static int ov13b10_power_on(struct device *dev)
+ 	struct ov13b10 *ov13b10 = to_ov13b10(sd);
+ 	int ret;
+ 
++#ifdef OV13B10_UKE
++	if (ov13b10->uke_power) {
++		struct uke_rear_camera_sample sample = {};
++		int cleanup;
++
++		ret = uke_rear_camera_power_on(ov13b10->uke_power);
++		if (ret)
++			return ret;
++		uke_rear_camera_read_ids(to_i2c_client(dev), &sample);
++		ret = ov13b10_uke_check_ids(&sample);
++		if (ret) {
++			cleanup = uke_rear_camera_power_off(ov13b10->uke_power);
++			return cleanup ?: ret;
++		}
++		ov13b10->identified = true;
++		return 0;
++	}
++#endif
++
+ 	ret = clk_prepare_enable(ov13b10->img_clk);
+ 	if (ret < 0) {
+ 		dev_err(dev, "failed to enable imaging clock: %d", ret);
+@@ -1294,6 +1338,10 @@ static int ov13b10_set_stream(struct v4l2_subdev *sd, int enable)
+ 
+ 	mutex_lock(&ov13b->mutex);
+ 
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power && ov13b->uke_streaming == !!enable)
++		goto err_unlock;
++#endif
+ 	if (enable) {
+ 		ret = pm_runtime_resume_and_get(ov13b->dev);
+ 		if (ret < 0)
+@@ -1307,15 +1355,40 @@ static int ov13b10_set_stream(struct v4l2_subdev *sd, int enable)
+ 		if (ret)
+ 			goto err_rpm_put;
+ 	} else {
++#ifdef OV13B10_UKE
++		if (ov13b->uke_power) {
++			int cleanup;
++
++			ret = ov13b10_stop_streaming(ov13b);
++			cleanup = pm_runtime_put_sync_suspend(ov13b->dev);
++			if (cleanup < 0)
++				ret = cleanup;
++			goto stream_done;
++		}
++#endif
+ 		ov13b10_stop_streaming(ov13b);
+ 		pm_runtime_put(ov13b->dev);
+ 	}
+ 
++#ifdef OV13B10_UKE
++stream_done:
++	if (ov13b->uke_power)
++		ov13b->uke_streaming = !!enable;
++#endif
+ 	mutex_unlock(&ov13b->mutex);
+ 
+ 	return ret;
+ 
+ err_rpm_put:
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power) {
++		int cleanup = pm_runtime_put_sync_suspend(ov13b->dev);
++
++		if (cleanup < 0)
++			ret = cleanup;
++		goto err_unlock;
++	}
++#endif
+ 	pm_runtime_put(ov13b->dev);
+ err_unlock:
+ 	mutex_unlock(&ov13b->mutex);
+@@ -1325,9 +1398,7 @@ err_unlock:
+ 
+ static int ov13b10_suspend(struct device *dev)
+ {
+-	ov13b10_power_off(dev);
+-
+-	return 0;
++	return ov13b10_power_off(dev);
+ }
+ 
+ static int ov13b10_resume(struct device *dev)
+@@ -1534,6 +1605,21 @@ static int ov13b10_check_hwcfg(struct ov13b10 *ov13b)
+ 		return ret;
+ 
+ 	dlane = bus_cfg.bus.mipi_csi2.num_data_lanes;
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power) {
++		if (dlane != OV13B10_4_DATA_LANES ||
++		    bus_cfg.nr_of_link_frequencies != ARRAY_SIZE(link_freq_menu_items)) {
++			ret = -EINVAL;
++			goto out_err;
++		}
++		for (i = 0; i < dlane; i++) {
++			if (bus_cfg.bus.mipi_csi2.data_lanes[i] != i) {
++				ret = -EINVAL;
++				goto out_err;
++			}
++		}
++	}
++#endif
+ 	switch (dlane) {
+ 	case OV13B10_4_DATA_LANES:
+ 		ov13b->supported_modes = supported_4_lanes_modes;
+@@ -1598,6 +1684,20 @@ static int ov13b10_probe(struct i2c_client *client)
+ 
+ 	ov13b->dev = &client->dev;
+ 
++#ifdef OV13B10_UKE
++	if (of_device_is_compatible(ov13b->dev->of_node, "xiaomi,uke-ov13b10")) {
++		if (!uke_rear_camera_check_bus(client))
++			return -ENODEV;
++		ret = uke_rear_camera_check_pins(ov13b->dev->of_node);
++		if (ret)
++			return ret;
++		ov13b->uke_power = devm_kzalloc(ov13b->dev, sizeof(*ov13b->uke_power),
++					      GFP_KERNEL);
++		if (!ov13b->uke_power)
++			return -ENOMEM;
++	}
++#endif
++
+ 	/* Check HW config */
+ 	ret = ov13b10_check_hwcfg(ov13b);
+ 	if (ret) {
+@@ -1608,11 +1708,33 @@ static int ov13b10_probe(struct i2c_client *client)
+ 	/* Initialize subdev */
+ 	v4l2_i2c_subdev_init(&ov13b->sd, client, &ov13b10_subdev_ops);
+ 
+-	ret = ov13b10_get_pm_resources(ov13b);
+-	if (ret)
+-		return ret;
++	full_power = false;
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power) {
++		struct uke_rear_camera_sample sample = {};
++
++		ret = uke_rear_camera_get_resources(ov13b->dev, ov13b->uke_power);
++		if (ret)
++			return dev_err_probe(ov13b->dev, ret, "rear camera resources\n");
++		ret = uke_rear_camera_sample(client, ov13b->uke_power, &sample);
++		if (ov13b->uke_power->fault) {
++			/* Keep ownership on failed park; publish no media entity. */
++			dev_err(ov13b->dev, "rear camera power fault %d\n", ov13b->uke_power->fault);
++			return 0;
++		}
++		if (!ret)
++			ret = ov13b10_uke_check_ids(&sample);
++		if (ret)
++			return dev_err_probe(ov13b->dev, ret, "fitted rear camera identity\n");
++	} else
++#endif
++	{
++		ret = ov13b10_get_pm_resources(ov13b);
++		if (ret)
++			return ret;
+ 
+-	full_power = acpi_dev_state_d0(ov13b->dev);
++		full_power = acpi_dev_state_d0(ov13b->dev);
++	}
+ 	if (full_power) {
+ 		ret = ov13b10_power_on(ov13b->dev);
+ 		if (ret) {
+@@ -1674,6 +1796,10 @@ error_handler_free:
+ 	dev_err(ov13b->dev, "%s failed:%d\n", __func__, ret);
+ 
+ error_power_off:
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power)
++		return ret;
++#endif
+ 	ov13b10_power_off(ov13b->dev);
+ 
+ 	return ret;
+@@ -1684,6 +1810,10 @@ static void ov13b10_remove(struct i2c_client *client)
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct ov13b10 *ov13b = to_ov13b10(sd);
+ 
++#ifdef OV13B10_UKE
++	if (ov13b->uke_power && !sd->ctrl_handler)
++		return;
++#endif
+ 	v4l2_async_unregister_subdev(sd);
+ 	media_entity_cleanup(&sd->entity);
+ 	ov13b10_free_controls(ov13b);
+@@ -1726,6 +1856,60 @@ static struct i2c_driver ov13b10_i2c_driver = {
+ 
+ module_i2c_driver(ov13b10_i2c_driver);
+ 
++#ifdef OV13B10_UKE
++static int __maybe_unused ov13b10_uke_system_suspend(struct device *dev)
++{
++	struct v4l2_subdev *sd = dev_get_drvdata(dev);
++	struct ov13b10 *ov13b = to_ov13b10(sd);
++	int ret;
++
++	if (!sd->ctrl_handler)
++		return READ_ONCE(ov13b->uke_power->fault);
++
++	mutex_lock(&ov13b->mutex);
++	ret = ov13b->uke_power->fault;
++	if (!ret)
++		ret = ov13b->uke_streaming ? -EBUSY : pm_runtime_force_suspend(dev);
++	mutex_unlock(&ov13b->mutex);
++	return ret;
++}
++
++static void ov13b10_uke_shutdown(struct i2c_client *client)
++{
++	struct v4l2_subdev *sd = i2c_get_clientdata(client);
++	int ret;
++
++	if (!sd->ctrl_handler)
++		return;
++	ret = ov13b10_set_stream(sd, 0);
++	if (ret)
++		dev_err(&client->dev, "rear camera shutdown: %d\n", ret);
++}
++
++static const struct dev_pm_ops ov13b10_uke_pm_ops = {
++	SET_RUNTIME_PM_OPS(ov13b10_suspend, ov13b10_resume, NULL)
++	SET_SYSTEM_SLEEP_PM_OPS(ov13b10_uke_system_suspend, pm_runtime_force_resume)
++};
++
++static const struct of_device_id ov13b10_uke_of_match[] = {
++	{ .compatible = "xiaomi,uke-ov13b10" },
++	{ }
++};
++
++static struct i2c_driver ov13b10_uke_driver = {
++	.driver = {
++		.name = "uke-ov13b10",
++		.of_match_table = ov13b10_uke_of_match,
++		.pm = pm_ptr(&ov13b10_uke_pm_ops),
++		.suppress_bind_attrs = true,
++	},
++	.probe = ov13b10_probe,
++	.remove = ov13b10_remove,
++	.shutdown = ov13b10_uke_shutdown,
++};
++builtin_i2c_driver(ov13b10_uke_driver);
++#endif
++
+ MODULE_AUTHOR("Kao, Arec <arec.kao@intel.com>");
+ MODULE_DESCRIPTION("Omnivision ov13b10 sensor driver");
+ MODULE_LICENSE("GPL v2");
+diff --git a/before/drivers/media/i2c/uke-rear-camera-id.c b/after/drivers/media/i2c/uke-rear-camera-id.c
+index 584b379..9ee82d7 100644
+--- a/before/drivers/media/i2c/uke-rear-camera-id.c
++++ b/after/drivers/media/i2c/uke-rear-camera-id.c
+@@ -1,14 +1,12 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-#include <dt-bindings/gpio/gpio.h>
+ #include <linux/device.h>
+ #include <linux/i2c.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+-#include <linux/of_address.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+ 
+-#include "uke-rear-camera-power.h"
++#include "uke-rear-camera-resources.h"
+ 
+ struct uke_rear_camera_id {
+ 	struct uke_rear_camera_power power;
+@@ -18,122 +16,6 @@ struct uke_rear_camera_id {
+ 	int result;
+ };
+ 
+-static bool uke_rear_camera_check_bus(struct i2c_client *client)
+-{
+-	struct device_node *sensor = client->dev.of_node;
+-	struct device_node *bus = client->adapter->dev.of_node;
+-	struct device_node *parent __free(device_node) = of_get_parent(sensor);
+-	struct device_node *cci __free(device_node) = of_get_parent(bus);
+-	struct resource registers;
+-	u32 master, frequency;
+-
+-	return of_machine_is_compatible("xiaomi,uke") &&
+-	       of_machine_is_compatible("qcom,sm7675") &&
+-	       sensor && !of_node_check_flag(sensor, OF_DYNAMIC) &&
+-	       bus && parent == bus && cci && client->addr == 0x10 &&
+-	       !(client->flags & I2C_CLIENT_TEN) &&
+-	       i2c_check_functionality(client->adapter, I2C_FUNC_I2C) &&
+-	       of_node_name_eq(bus, "i2c-bus") &&
+-	       !of_property_read_u32(bus, "reg", &master) && master == 1 &&
+-	       !of_property_read_u32(bus, "clock-frequency", &frequency) && frequency == 400000 &&
+-	       of_device_is_compatible(cci, "qcom,sm7675-cci") &&
+-	       !of_address_to_resource(cci, 0, &registers) &&
+-	       registers.start == 0x0ac15000 && resource_size(&registers) == 0x1000;
+-}
+-
+-static bool uke_rear_camera_pin_matches(struct device_node *sensor, struct device_node *tlmm,
+-					const char *property, int index, const char *name)
+-{
+-	struct device_node *pin __free(device_node) = of_parse_phandle(sensor, property, index);
+-	struct device_node *parent __free(device_node) = of_get_parent(pin);
+-
+-	return parent && parent == tlmm && of_node_name_eq(pin, name);
+-}
+-
+-static int uke_rear_camera_check_pins(struct device_node *sensor)
+-{
+-	struct of_phandle_args gpio;
+-	struct resource tlmm;
+-	int ret;
+-
+-	if (of_property_count_strings(sensor, "pinctrl-names") != 2 ||
+-	    of_property_match_string(sensor, "pinctrl-names", "sensor-active") != 0 ||
+-	    of_property_match_string(sensor, "pinctrl-names", "sensor-parked") != 1 ||
+-	    of_property_count_u32_elems(sensor, "pinctrl-0") != 2 ||
+-	    of_property_count_u32_elems(sensor, "pinctrl-1") != 2 ||
+-	    of_count_phandle_with_args(sensor, "reset-gpios", "#gpio-cells") != 1)
+-		return -EINVAL;
+-
+-	ret = of_parse_phandle_with_args(sensor, "reset-gpios", "#gpio-cells", 0, &gpio);
+-	if (ret)
+-		return ret;
+-	if (gpio.args_count != 2 || gpio.args[0] != 14 || gpio.args[1] != GPIO_ACTIVE_LOW ||
+-	    !of_device_is_compatible(gpio.np, "qcom,cliffs-pinctrl") ||
+-	    of_address_to_resource(gpio.np, 0, &tlmm) || tlmm.start != 0x0f000000 ||
+-	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-0", 0, "cam_sensor_mclk0_active") ||
+-	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-0", 1, "cam_sensor_wide_active_rst") ||
+-	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-1", 0, "cam_sensor_mclk0_suspend") ||
+-	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-1", 1, "cam_sensor_wide_suspend_rst"))
+-		ret = -EINVAL;
+-	of_node_put(gpio.np);
+-	return ret;
+-}
+-
+-static int uke_rear_camera_get_supplies(struct device *dev,
+-					struct uke_rear_camera_power *power)
+-{
+-	unsigned int rail;
+-
+-	for (rail = 0; rail < UKE_REAR_SUPPLY_COUNT; rail++) {
+-		const char *property = uke_rear_supply_spec[rail].property;
+-		struct device_node *supply __free(device_node) = NULL;
+-		const char *name;
+-
+-		if (of_property_count_u32_elems(dev->of_node, property) != 1)
+-			return -EINVAL;
+-
+-		supply = of_parse_phandle(dev->of_node, property, 0);
+-		if (!supply || of_property_read_string(supply, "regulator-name", &name) ||
+-		    strcmp(name, uke_rear_supply_spec[rail].provider))
+-			return -EINVAL;
+-
+-		power->supplies[rail] = devm_regulator_get_optional(dev, uke_rear_supply_spec[rail].name);
+-		if (IS_ERR(power->supplies[rail]))
+-			return PTR_ERR(power->supplies[rail]);
+-	}
+-	return 0;
+-}
+-
+-static int uke_rear_camera_get_resources(struct device *dev,
+-					 struct uke_rear_camera_power *power)
+-{
+-	int ret;
+-
+-	ret = uke_rear_camera_get_supplies(dev, power);
+-	if (ret)
+-		return ret;
+-
+-	power->clock = uke_camera_sensor_clock_get(dev, CAM_CC_MCLK0_CLK,
+-						  "uke-rear-camera-domain");
+-	if (IS_ERR(power->clock))
+-		return PTR_ERR(power->clock);
+-
+-	power->pinctrl = devm_pinctrl_get(dev);
+-	if (IS_ERR(power->pinctrl))
+-		return PTR_ERR(power->pinctrl);
+-	power->active = pinctrl_lookup_state(power->pinctrl, "sensor-active");
+-	if (IS_ERR(power->active))
+-		return PTR_ERR(power->active);
+-	power->parked = pinctrl_lookup_state(power->pinctrl, "sensor-parked");
+-	if (IS_ERR(power->parked))
+-		return PTR_ERR(power->parked);
+-	power->reset = devm_gpiod_get(dev, "reset", GPIOD_ASIS);
+-	if (IS_ERR(power->reset))
+-		return PTR_ERR(power->reset);
+-
+-	return gpiod_is_active_low(power->reset) ? 0 : -EINVAL;
+-}
+-
+ static int uke_rear_camera_identify(struct device *dev, struct uke_rear_camera_id *sensor)
+ {
+ 	struct uke_rear_camera_power *power = &sensor->power;
+diff --git a/before/drivers/media/i2c/uke-rear-camera-power.h b/after/drivers/media/i2c/uke-rear-camera-power.h
+index 9e68d7a..6bc52f6 100644
+--- a/before/drivers/media/i2c/uke-rear-camera-power.h
++++ b/after/drivers/media/i2c/uke-rear-camera-power.h
+@@ -205,16 +205,10 @@ static int uke_rear_camera_read_register(struct i2c_client *client, u16 reg,
+ 	return ret < 0 ? ret : -EIO;
+ }
+ 
+-static int uke_rear_camera_sample(struct i2c_client *client,
+-				  struct uke_rear_camera_power *power,
+-				  struct uke_rear_camera_sample *sample)
++static void uke_rear_camera_read_ids(struct i2c_client *client,
++				    struct uke_rear_camera_sample *sample)
+ {
+ 	u8 data[3];
+-	int ret;
+-
+-	ret = uke_rear_camera_power_on(power);
+-	if (ret)
+-		return ret;
+ 
+ 	sample->oem_result = uke_rear_camera_read_register(client, 0x300b, data, 2);
+ 	sample->model_result = sample->oem_result;
+@@ -227,7 +221,18 @@ static int uke_rear_camera_sample(struct i2c_client *client,
+ 				sample->model_id = get_unaligned_be24(data);
+ 		}
+ 	}
++}
+ 
++static inline int uke_rear_camera_sample(struct i2c_client *client,
++					 struct uke_rear_camera_power *power,
++					 struct uke_rear_camera_sample *sample)
++{
++	int ret;
++
++	ret = uke_rear_camera_power_on(power);
++	if (ret)
++		return ret;
++	uke_rear_camera_read_ids(client, sample);
+ 	return uke_rear_camera_power_off(power);
+ }
+ 
+diff --git a/after/drivers/media/i2c/uke-rear-camera-resources.h b/after/drivers/media/i2c/uke-rear-camera-resources.h
+new file mode 100644
+index 0000000..927dfcc
+--- /dev/null
++++ b/after/drivers/media/i2c/uke-rear-camera-resources.h
+@@ -0,0 +1,126 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef UKE_REAR_CAMERA_RESOURCES_H
++#define UKE_REAR_CAMERA_RESOURCES_H
++
++#include <dt-bindings/gpio/gpio.h>
++#include <linux/of_address.h>
++
++#include "uke-rear-camera-power.h"
++
++static bool uke_rear_camera_check_bus(struct i2c_client *client)
++{
++	struct device_node *sensor = client->dev.of_node;
++	struct device_node *bus = client->adapter->dev.of_node;
++	struct device_node *parent __free(device_node) = of_get_parent(sensor);
++	struct device_node *cci __free(device_node) = of_get_parent(bus);
++	struct resource registers;
++	u32 master, frequency;
++
++	return of_machine_is_compatible("xiaomi,uke") &&
++	       of_machine_is_compatible("qcom,sm7675") &&
++	       sensor && !of_node_check_flag(sensor, OF_DYNAMIC) &&
++	       bus && parent == bus && cci && client->addr == 0x10 &&
++	       !(client->flags & I2C_CLIENT_TEN) &&
++	       i2c_check_functionality(client->adapter, I2C_FUNC_I2C) &&
++	       of_node_name_eq(bus, "i2c-bus") &&
++	       !of_property_read_u32(bus, "reg", &master) && master == 1 &&
++	       !of_property_read_u32(bus, "clock-frequency", &frequency) && frequency == 400000 &&
++	       of_device_is_compatible(cci, "qcom,sm7675-cci") &&
++	       !of_address_to_resource(cci, 0, &registers) &&
++	       registers.start == 0x0ac15000 && resource_size(&registers) == 0x1000;
++}
++
++static bool uke_rear_camera_pin_matches(struct device_node *sensor, struct device_node *tlmm,
++					const char *property, int index, const char *name)
++{
++	struct device_node *pin __free(device_node) = of_parse_phandle(sensor, property, index);
++	struct device_node *parent __free(device_node) = of_get_parent(pin);
++
++	return parent && parent == tlmm && of_node_name_eq(pin, name);
++}
++
++static int uke_rear_camera_check_pins(struct device_node *sensor)
++{
++	struct of_phandle_args gpio;
++	struct resource tlmm;
++	int ret;
++
++	if (of_property_count_strings(sensor, "pinctrl-names") != 2 ||
++	    of_property_match_string(sensor, "pinctrl-names", "sensor-active") != 0 ||
++	    of_property_match_string(sensor, "pinctrl-names", "sensor-parked") != 1 ||
++	    of_property_count_u32_elems(sensor, "pinctrl-0") != 2 ||
++	    of_property_count_u32_elems(sensor, "pinctrl-1") != 2 ||
++	    of_count_phandle_with_args(sensor, "reset-gpios", "#gpio-cells") != 1)
++		return -EINVAL;
++
++	ret = of_parse_phandle_with_args(sensor, "reset-gpios", "#gpio-cells", 0, &gpio);
++	if (ret)
++		return ret;
++	if (gpio.args_count != 2 || gpio.args[0] != 14 || gpio.args[1] != GPIO_ACTIVE_LOW ||
++	    !of_device_is_compatible(gpio.np, "qcom,cliffs-pinctrl") ||
++	    of_address_to_resource(gpio.np, 0, &tlmm) || tlmm.start != 0x0f000000 ||
++	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-0", 0, "cam_sensor_mclk0_active") ||
++	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-0", 1, "cam_sensor_wide_active_rst") ||
++	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-1", 0, "cam_sensor_mclk0_suspend") ||
++	    !uke_rear_camera_pin_matches(sensor, gpio.np, "pinctrl-1", 1, "cam_sensor_wide_suspend_rst"))
++		ret = -EINVAL;
++	of_node_put(gpio.np);
++	return ret;
++}
++
++static int uke_rear_camera_get_supplies(struct device *dev,
++					struct uke_rear_camera_power *power)
++{
++	unsigned int rail;
++
++	for (rail = 0; rail < UKE_REAR_SUPPLY_COUNT; rail++) {
++		const char *property = uke_rear_supply_spec[rail].property;
++		struct device_node *supply __free(device_node) = NULL;
++		const char *name;
++
++		if (of_property_count_u32_elems(dev->of_node, property) != 1)
++			return -EINVAL;
++
++		supply = of_parse_phandle(dev->of_node, property, 0);
++		if (!supply || of_property_read_string(supply, "regulator-name", &name) ||
++		    strcmp(name, uke_rear_supply_spec[rail].provider))
++			return -EINVAL;
++
++		power->supplies[rail] = devm_regulator_get_optional(dev, uke_rear_supply_spec[rail].name);
++		if (IS_ERR(power->supplies[rail]))
++			return PTR_ERR(power->supplies[rail]);
++	}
++	return 0;
++}
++
++static int uke_rear_camera_get_resources(struct device *dev,
++					 struct uke_rear_camera_power *power)
++{
++	int ret;
++
++	ret = uke_rear_camera_get_supplies(dev, power);
++	if (ret)
++		return ret;
++
++	power->clock = uke_camera_sensor_clock_get(dev, CAM_CC_MCLK0_CLK,
++						  "uke-rear-camera-domain");
++	if (IS_ERR(power->clock))
++		return PTR_ERR(power->clock);
++
++	power->pinctrl = devm_pinctrl_get(dev);
++	if (IS_ERR(power->pinctrl))
++		return PTR_ERR(power->pinctrl);
++	power->active = pinctrl_lookup_state(power->pinctrl, "sensor-active");
++	if (IS_ERR(power->active))
++		return PTR_ERR(power->active);
++	power->parked = pinctrl_lookup_state(power->pinctrl, "sensor-parked");
++	if (IS_ERR(power->parked))
++		return PTR_ERR(power->parked);
++	power->reset = devm_gpiod_get(dev, "reset", GPIOD_ASIS);
++	if (IS_ERR(power->reset))
++		return PTR_ERR(power->reset);
++
++	return gpiod_is_active_low(power->reset) ? 0 : -EINVAL;
++}
++
++#endif
