@@ -1,0 +1,23 @@
+--- a/arch/arm64/kernel/uke-abl.c
++++ b/arch/arm64/kernel/uke-abl.c
+@@ -176,6 +176,9 @@
+ #include "uke-front-eeprom-dt.h"
+ #include "uke-front-vdig-dt.h"
+ #include "uke-front-camera-id-dt.h"
++#if IS_ENABLED(CONFIG_I2C_QCOM_CCI)
++#include "uke-cci0-dt.h"
++#endif
+ #endif
+ #include "uke-pstore-dt.h"
+ #include "uke-audio-config-dt.h"
+@@ -1136,6 +1139,10 @@
+ 				ret = uke_front_vdig_graph(uke_fdt);
+ 			if (!ret)
+ 				ret = uke_front_camera_id_graph(uke_fdt);
++#if IS_ENABLED(CONFIG_I2C_QCOM_CCI)
++			if (!ret)
++				ret = uke_cci0_graph(uke_fdt);
++#endif
+ #endif
+ 			if (!ret)
+ 				ret = uke_audio_config_graph(uke_fdt);

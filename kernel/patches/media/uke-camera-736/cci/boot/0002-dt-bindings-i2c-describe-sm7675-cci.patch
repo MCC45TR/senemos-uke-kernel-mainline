@@ -1,0 +1,32 @@
+--- a/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml
++++ b/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml
+@@ -39,6 +39,7 @@
+               - qcom,shikra-cci
+               - qcom,sm6150-cci
+               - qcom,sm6350-cci
++              - qcom,sm7675-cci
+               - qcom,sm8250-cci
+               - qcom,sm8450-cci
+               - qcom,sm8550-cci
+@@ -289,6 +290,21 @@
+             - const: cpas_ahb
+             - const: cci
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: qcom,sm7675-cci
++    then:
++      properties:
++        clocks:
++          minItems: 2
++          maxItems: 2
++        clock-names:
++          items:
++            - const: cci_src
++            - const: cci
++
+ additionalProperties: false
+ 
+ examples:

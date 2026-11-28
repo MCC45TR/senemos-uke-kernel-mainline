@@ -1,0 +1,188 @@
+diff --git a/arch/arm64/kernel/uke-cci0-dt.h b/arch/arm64/kernel/uke-cci0-dt.h
+new file mode 100644
+index 0000000..3f5b7a5
+--- /dev/null
++++ b/arch/arm64/kernel/uke-cci0-dt.h
+@@ -0,0 +1,182 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef UKE_CCI0_DT_H
++#define UKE_CCI0_DT_H
++
++#include <dt-bindings/clock/qcom,sm7675-camcc.h>
++
++#define UKE_CCI0_OEM "/soc/qcom,cci0@ac15000"
++#define UKE_CCI0_NATIVE "i2c@ac15000"
++#define UKE_CCI0_CAMCC "/soc/clock-controller@ade0000"
++#define UKE_CCI0_TLMM "/soc/pinctrl@f000000"
++#define UKE_CCI0_GIC "/soc/interrupt-controller@17100000"
++#define UKE_CCI0_TOP "/soc/qcom,gdsc@adf32bc"
++#define UKE_CCI0_RATE 37500000
++#define UKE_CCI0_BUS_RATE 400000
++
++static unsigned int UKE_INIT uke_cci0_pin(const void *fdt, const char *path,
++					  const char *line, const char *function,
++					  bool active)
++{
++	int node = fdt_path_offset(fdt, path);
++	int mux, config;
++
++	if (node < 0)
++		return 0;
++	mux = fdt_subnode_offset(fdt, node, "mux");
++	config = fdt_subnode_offset(fdt, node, "config");
++	if (mux < 0 || config < 0 ||
++	    !uke_front_bytes(fdt, mux, "pins", line, strlen(line) + 1) ||
++	    !uke_front_bytes(fdt, mux, "function", function, strlen(function) + 1) ||
++	    !uke_front_bytes(fdt, config, "pins", line, strlen(line) + 1) ||
++	    !uke_front_u32(fdt, config, "drive-strength", active ? 4 : 2) ||
++	    !uke_front_bytes(fdt, config, active ? "bias-disable" : "bias-pull-down", "", 0) ||
++	    fdt_getprop(fdt, config, active ? "bias-pull-down" : "bias-disable", NULL) ||
++	    fdt_getprop(fdt, config, "bias-pull-up", NULL) ||
++	    fdt_getprop(fdt, config, "output-high", NULL) ||
++	    fdt_getprop(fdt, config, "output-low", NULL))
++		return 0;
++	return fdt_get_phandle(fdt, node);
++}
++
++static int UKE_INIT uke_cci0_graph(void *fdt)
++{
++	static const char compatible[] = "qcom,sm7675-cci\0qcom,msm8996-cci";
++	static const char clock_names[] = "cci_src\0cci";
++	static const char legacy_clock_names[] = "cci_0_clk_src\0cci_0_clk";
++	static const char pin_names[] = "default\0sleep";
++	static const char legacy_pin_names[] = "m0_active\0m0_suspend\0m1_active\0m1_suspend";
++	static const struct {
++		const char *name;
++		unsigned int value;
++	} timing[] = {
++		{ "cci-clk-src", UKE_CCI0_RATE },
++		{ "hw-thigh", 0x26 }, { "hw-tlow", 0x38 },
++		{ "hw-tsu-sto", 0x28 }, { "hw-tsu-sta", 0x28 },
++		{ "hw-thd-dat", 0x16 }, { "hw-thd-sta", 0x23 },
++		{ "hw-tbuf", 0x3e }, { "hw-scl-stretch-en", 0 },
++		{ "hw-trdhld", 6 }, { "hw-tsp", 3 },
++	};
++	const fdt32_t ranges[] = {
++		cpu_to_fdt32(0x0ac15000), cpu_to_fdt32(0x1000),
++	};
++	const fdt32_t irq[] = { 0, cpu_to_fdt32(426), cpu_to_fdt32(1) };
++	const fdt32_t legacy_rates[] = { cpu_to_fdt32(UKE_CCI0_RATE), 0 };
++	fdt32_t clocks[4], domain[2], pins_default[2], pins_sleep[2];
++	int soc, old, camcc, top, gic, owner, parent, fast, bus, node, i, len, ret;
++	unsigned int clk, intr;
++	const fdt32_t *reg;
++
++	if (fdt_node_check_compatible(fdt, 0, "xiaomi,uke") ||
++	    fdt_node_check_compatible(fdt, 0, "qcom,sm7675"))
++		return 0;
++
++	soc = fdt_path_offset(fdt, "/soc");
++	old = fdt_path_offset(fdt, UKE_CCI0_OEM);
++	camcc = fdt_path_offset(fdt, UKE_CCI0_CAMCC);
++	top = fdt_path_offset(fdt, UKE_CCI0_TOP);
++	gic = fdt_path_offset(fdt, UKE_CCI0_GIC);
++	if (soc < 0 || old < 0 || camcc < 0 || top < 0 || gic < 0 ||
++	    !uke_front_u32(fdt, soc, "#address-cells", 1) ||
++	    !uke_front_u32(fdt, soc, "#size-cells", 1) ||
++	    fdt_node_check_compatible(fdt, old, "qcom,cci") ||
++	    !uke_front_disabled(fdt, old) || !uke_front_disabled(fdt, top) ||
++	    !uke_front_u32(fdt, old, "cell-index", 0) ||
++	    !uke_front_bytes(fdt, old, "reg", ranges, sizeof(ranges)) ||
++	    !uke_front_bytes(fdt, old, "interrupts", irq, sizeof(irq)) ||
++	    !uke_front_bytes(fdt, old, "clock-rates", legacy_rates, sizeof(legacy_rates)) ||
++	    !uke_front_bytes(fdt, old, "clock-names", legacy_clock_names, sizeof(legacy_clock_names)) ||
++	    !uke_front_bytes(fdt, old, "pinctrl-names", legacy_pin_names, sizeof(legacy_pin_names)) ||
++	    fdt_node_check_compatible(fdt, camcc, "qcom,sm7675-camcc") ||
++	    !uke_front_bytes(fdt, camcc, "status", "okay", sizeof("okay")) ||
++	    !uke_front_u32(fdt, camcc, "#clock-cells", 1) ||
++	    !uke_front_u32(fdt, camcc, "#power-domain-cells", 1) ||
++	    fdt_node_check_compatible(fdt, gic, "arm,gic-v3") ||
++	    !uke_front_u32(fdt, gic, "#interrupt-cells", 3))
++		return 0;
++
++	clk = fdt_get_phandle(fdt, camcc);
++	intr = fdt_get_phandle(fdt, gic);
++	if (!clk || !intr || !fdt_get_phandle(fdt, top) ||
++	    !uke_front_u32(fdt, old, "gdscr-supply", fdt_get_phandle(fdt, top)))
++		return 0;
++	/* Accept the actual inherited GIC relationship as well as an explicit one. */
++	parent = old;
++	while (parent > 0 && !fdt_getprop(fdt, parent, "interrupt-parent", NULL))
++		parent = fdt_parent_offset(fdt, parent);
++	if (parent < 0 || !uke_front_u32(fdt, parent, "interrupt-parent", intr))
++		return 0;
++
++	clocks[0] = clocks[2] = cpu_to_fdt32(clk);
++	clocks[1] = cpu_to_fdt32(CAM_CC_CCI_0_CLK_SRC);
++	clocks[3] = cpu_to_fdt32(CAM_CC_CCI_0_CLK);
++	domain[0] = clocks[0];
++	domain[1] = cpu_to_fdt32(CAM_CC_TITAN_TOP_GDSC);
++	if (!uke_front_bytes(fdt, old, "clocks", clocks, sizeof(clocks)))
++		return 0;
++
++	fast = fdt_subnode_offset(fdt, old, "qcom,i2c_fast_mode");
++	if (fast < 0)
++		return 0;
++	for (i = 0; i < (int)ARRAY_SIZE(timing); i++)
++		if (!uke_front_u32(fdt, fast, timing[i].name, timing[i].value))
++			return 0;
++
++	pins_default[0] = cpu_to_fdt32(uke_cci0_pin(fdt, UKE_CCI0_TLMM "/uke_cci_i2c_scl1_active",
++							     "gpio73", "cci_i2c_scl1", true));
++	pins_default[1] = cpu_to_fdt32(uke_cci0_pin(fdt, UKE_CCI0_TLMM "/uke_cci_i2c_sda1_active",
++							     "gpio72", "cci_i2c_sda1", true));
++	pins_sleep[0] = cpu_to_fdt32(uke_cci0_pin(fdt, UKE_CCI0_TLMM "/uke_cci_i2c_scl1_suspend",
++							   "gpio73", "cci_i2c_scl1", false));
++	pins_sleep[1] = cpu_to_fdt32(uke_cci0_pin(fdt, UKE_CCI0_TLMM "/uke_cci_i2c_sda1_suspend",
++							   "gpio72", "cci_i2c_sda1", false));
++	if (!pins_default[0] || !pins_default[1] || !pins_sleep[0] || !pins_sleep[1] ||
++	    !uke_front_bytes(fdt, old, "pinctrl-2", pins_default, sizeof(pins_default)) ||
++	    !uke_front_bytes(fdt, old, "pinctrl-3", pins_sleep, sizeof(pins_sleep)))
++		return 0;
++
++	fdt_for_each_subnode(owner, fdt, soc) {
++		reg = fdt_getprop(fdt, owner, "reg", &len);
++		if (owner != old && !uke_front_disabled(fdt, owner) &&
++		    reg && len >= (int)sizeof(ranges) && reg[0] == ranges[0])
++			return 0;
++	}
++	if (fdt_subnode_offset(fdt, soc, UKE_CCI0_NATIVE) != -FDT_ERR_NOTFOUND)
++		return 0;
++
++	/* The fitted graph adds fewer than 1024 bytes to an open FDT. */
++	if (fdt_totalsize(fdt) - fdt_off_dt_strings(fdt) - fdt_size_dt_strings(fdt) < 1024)
++		return 0;
++
++	/* Publish the native master only after all properties are in place. */
++	node = fdt_add_subnode(fdt, soc, UKE_CCI0_NATIVE);
++	if (node < 0)
++		return node;
++	if ((ret = fdt_setprop_string(fdt, node, "status", "disabled")) ||
++	    (ret = fdt_setprop(fdt, node, "compatible", compatible, sizeof(compatible))) ||
++	    (ret = fdt_setprop(fdt, node, "reg", ranges, sizeof(ranges))) ||
++	    (ret = fdt_setprop_u32(fdt, node, "interrupt-parent", intr)) ||
++	    (ret = fdt_setprop(fdt, node, "interrupts", irq, sizeof(irq))) ||
++	    (ret = fdt_setprop(fdt, node, "power-domains", domain, sizeof(domain))) ||
++	    (ret = fdt_setprop(fdt, node, "clocks", clocks, sizeof(clocks))) ||
++	    (ret = fdt_setprop(fdt, node, "clock-names", clock_names, sizeof(clock_names))) ||
++	    (ret = fdt_setprop(fdt, node, "assigned-clocks", clocks, sizeof(domain))) ||
++	    (ret = fdt_setprop_u32(fdt, node, "assigned-clock-rates", UKE_CCI0_RATE)) ||
++	    (ret = fdt_setprop(fdt, node, "pinctrl-names", pin_names, sizeof(pin_names))) ||
++	    (ret = fdt_setprop(fdt, node, "pinctrl-0", pins_default, sizeof(pins_default))) ||
++	    (ret = fdt_setprop(fdt, node, "pinctrl-1", pins_sleep, sizeof(pins_sleep))) ||
++	    (ret = fdt_setprop_u32(fdt, node, "#address-cells", 1)) ||
++	    (ret = fdt_setprop_u32(fdt, node, "#size-cells", 0)))
++		return ret;
++
++	bus = fdt_add_subnode(fdt, node, "i2c-bus@1");
++	if (bus < 0)
++		return bus;
++	if ((ret = fdt_setprop_u32(fdt, bus, "reg", 1)) ||
++	    (ret = fdt_setprop_u32(fdt, bus, "#address-cells", 1)) ||
++	    (ret = fdt_setprop_u32(fdt, bus, "#size-cells", 0)) ||
++	    (ret = fdt_setprop_u32(fdt, bus, "clock-frequency", UKE_CCI0_BUS_RATE)))
++		return ret;
++	return fdt_setprop_string(fdt, node, "status", "okay");
++}
++
++#endif
