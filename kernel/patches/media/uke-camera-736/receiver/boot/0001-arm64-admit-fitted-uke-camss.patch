@@ -1,0 +1,593 @@
+diff --git a/after/Documentation/devicetree/bindings/media/qcom,sm7675-camss.yaml b/after/Documentation/devicetree/bindings/media/qcom,sm7675-camss.yaml
+new file mode 100644
+index 0000000..86c05f3
+--- /dev/null
++++ b/after/Documentation/devicetree/bindings/media/qcom,sm7675-camss.yaml
+@@ -0,0 +1,181 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/media/qcom,sm7675-camss.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Qualcomm SM7675 Camera Subsystem (CAMSS)
++
++maintainers:
++  - Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
++
++description:
++  The CAMSS IP is a CSI decoder and ISP present on Qualcomm platforms.
++
++properties:
++  compatible:
++    const: qcom,sm7675-camss
++
++  reg:
++    maxItems: 16
++
++  reg-names:
++    items:
++      - const: csid_wrapper
++      - const: csid0
++      - const: csid1
++      - const: csid2
++      - const: csid_lite0
++      - const: csid_lite1
++      - const: csiphy0
++      - const: csiphy1
++      - const: csiphy2
++      - const: csiphy3
++      - const: csiphy4
++      - const: vfe0
++      - const: vfe1
++      - const: vfe2
++      - const: vfe_lite0
++      - const: vfe_lite1
++
++  clocks:
++    maxItems: 31
++
++  clock-names:
++    items:
++      - const: camnoc_axi
++      - const: cpas_ahb
++      - const: cpas_fast_ahb
++      - const: cpas_vfe0
++      - const: cpas_vfe1
++      - const: cpas_vfe2
++      - const: cpas_vfe_lite
++      - const: csid
++      - const: csiphy0
++      - const: csiphy0_timer
++      - const: csiphy1
++      - const: csiphy1_timer
++      - const: csiphy2
++      - const: csiphy2_timer
++      - const: csiphy3
++      - const: csiphy3_timer
++      - const: csiphy4
++      - const: csiphy4_timer
++      - const: csiphy_rx
++      - const: gcc_axi_hf
++      - const: qdss_debug_xo
++      - const: vfe0
++      - const: vfe0_fast_ahb
++      - const: vfe1
++      - const: vfe1_fast_ahb
++      - const: vfe2
++      - const: vfe2_fast_ahb
++      - const: vfe_lite
++      - const: vfe_lite_ahb
++      - const: vfe_lite_cphy_rx
++      - const: vfe_lite_csid
++
++  interrupts:
++    maxItems: 15
++
++  interrupt-names:
++    items:
++      - const: csid0
++      - const: csid1
++      - const: csid2
++      - const: csid_lite0
++      - const: csid_lite1
++      - const: csiphy0
++      - const: csiphy1
++      - const: csiphy2
++      - const: csiphy3
++      - const: csiphy4
++      - const: vfe0
++      - const: vfe1
++      - const: vfe2
++      - const: vfe_lite0
++      - const: vfe_lite1
++
++  interconnects:
++    maxItems: 2
++
++  interconnect-names:
++    items:
++      - const: ahb
++      - const: hf_mnoc
++
++  iommus:
++    maxItems: 1
++
++  power-domains:
++    items:
++      - description: IFE0 GDSC - Image Front End, Global Distributed Switch Controller.
++      - description: IFE1 GDSC - Image Front End, Global Distributed Switch Controller.
++      - description: IFE2 GDSC - Image Front End, Global Distributed Switch Controller.
++      - description: Titan GDSC - Titan ISP Block, Global Distributed Switch Controller.
++
++  power-domain-names:
++    items:
++      - const: ife0
++      - const: ife1
++      - const: ife2
++      - const: top
++
++  ports:
++    $ref: /schemas/graph.yaml#/properties/ports
++
++    description:
++      CSI input ports.
++
++    patternProperties:
++      "^port@[0-4]$":
++        $ref: /schemas/graph.yaml#/$defs/port-base
++        unevaluatedProperties: false
++
++        description:
++          Input port for receiving CSI data from a CSIPHY.
++
++        properties:
++          endpoint:
++            $ref: video-interfaces.yaml#
++            unevaluatedProperties: false
++
++            properties:
++              data-lanes:
++                minItems: 1
++                maxItems: 4
++
++              bus-type:
++                enum:
++                  - 1 # MEDIA_BUS_TYPE_CSI2_CPHY
++                  - 4 # MEDIA_BUS_TYPE_CSI2_DPHY
++
++            required:
++              - data-lanes
++
++  vdd-csiphy-0p9-supply:
++    description: Shared 0.9 V regulator supply for all five CSI PHYs.
++
++  vdd-csiphy-1p2-supply:
++    description: Shared 1.2 V regulator supply for all five CSI PHYs.
++
++  dma-coherent: true
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - clocks
++  - clock-names
++  - interrupts
++  - interrupt-names
++  - interconnects
++  - interconnect-names
++  - iommus
++  - power-domains
++  - power-domain-names
++  - vdd-csiphy-0p9-supply
++  - vdd-csiphy-1p2-supply
++
++additionalProperties: false
++...
+diff --git a/before/arch/arm64/kernel/uke-abl.c b/after/arch/arm64/kernel/uke-abl.c
+index 9202913..3bba2e3 100644
+--- a/before/arch/arm64/kernel/uke-abl.c
++++ b/after/arch/arm64/kernel/uke-abl.c
+@@ -180,6 +180,9 @@ static int UKE_INIT uke_empty_demura_regions(void *fdt)
+ #include "uke-cci0-dt.h"
+ #include "uke-rear-camera-id-dt.h"
+ #endif
++#if IS_ENABLED(CONFIG_VIDEO_QCOM_CAMSS)
++#include "uke-camss-dt.h"
++#endif
+ #endif
+ #include "uke-pstore-dt.h"
+ #include "uke-audio-config-dt.h"
+@@ -1146,6 +1149,10 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
+ 			if (!ret)
+ 				ret = uke_rear_camera_id_graph(uke_fdt);
+ #endif
++#if IS_ENABLED(CONFIG_VIDEO_QCOM_CAMSS)
++			if (!ret)
++				ret = uke_camss_graph(uke_fdt);
++#endif
+ #endif
+ 			if (!ret)
+ 				ret = uke_audio_config_graph(uke_fdt);
+diff --git a/after/arch/arm64/kernel/uke-camss-dt.h b/after/arch/arm64/kernel/uke-camss-dt.h
+new file mode 100644
+index 0000000..9dc16ce
+--- /dev/null
++++ b/after/arch/arm64/kernel/uke-camss-dt.h
+@@ -0,0 +1,375 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef UKE_CAMSS_DT_H
++#define UKE_CAMSS_DT_H
++
++#include <dt-bindings/clock/qcom,gcc-cliffs.h>
++#include <dt-bindings/clock/qcom,sm7675-camcc.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++
++#define UKE_CAMSS_NATIVE "isp@acb6000"
++#define UKE_CAMSS_CPAS "/soc/qcom,cam-cpas@ac13000"
++#define UKE_CAMSS_IFE "/soc/qcom,cam_smmu/msm_cam_smmu_ife"
++#define UKE_CAMSS_IFE_SID 0x800
++#define UKE_CAMSS_IFE_MASK 0x20
++#define UKE_CAMSS_FDT_RESERVE 4096
++
++static const struct {
++	const char *name;
++	const char *compatible;
++	unsigned int addr, size, irq;
++} uke_camss_oem[] = {
++	{ "qcom,csid0@acb7000", "qcom,csid860", 0xacb8000, 0xd00, 601 },
++	{ "qcom,csid1@acb9000", "qcom,csid860", 0xacba000, 0xd00, 603 },
++	{ "qcom,csid2@acbb000", "qcom,csid860", 0xacbc000, 0xd00, 431 },
++	{ "qcom,csid-lite0@acca000", "qcom,csid-lite860", 0xaccb000, 0xa00, 605 },
++	{ "qcom,csid-lite1@accf000", "qcom,csid-lite860", 0xacd0000, 0xa00, 376 },
++	{ "qcom,csiphy0@ace4000", "qcom,csiphy-v2.2.1-n16t", 0xace4000, 0x2000, 477 },
++	{ "qcom,csiphy1@ace6000", "qcom,csiphy-v2.2.1", 0xace6000, 0x2000, 478 },
++	{ "qcom,csiphy2@ace8000", "qcom,csiphy-v2.2.1", 0xace8000, 0x2000, 479 },
++	{ "qcom,csiphy3@acea000", "qcom,csiphy-v2.2.1", 0xacea000, 0x2000, 448 },
++	{ "qcom,csiphy4@acec000", "qcom,csiphy-v2.2.1", 0xacec000, 0x2000, 122 },
++	{ "qcom,ife0@ac62000", "qcom,vfe860", 0xac62000, 0xf000, 602 },
++	{ "qcom,ife1@ac71000", "qcom,vfe860", 0xac71000, 0xf000, 604 },
++	{ "qcom,ife2@ac80000", "qcom,vfe860", 0xac80000, 0xf000, 688 },
++	{ "qcom,ife-lite0@acca000", "qcom,vfe-lite860", 0xaccb000, 0x2800, 606 },
++	{ "qcom,ife-lite1@accf000", "qcom,vfe-lite860", 0xacd0000, 0x2800, 377 },
++};
++
++static const char uke_camss_irq_names[] =
++	"csid0\0csid1\0csid2\0csid_lite0\0csid_lite1\0"
++	"csiphy0\0csiphy1\0csiphy2\0csiphy3\0csiphy4\0"
++	"vfe0\0vfe1\0vfe2\0vfe_lite0\0vfe_lite1";
++static const char uke_camss_reg_names[] =
++	"csid_wrapper\0csid0\0csid1\0csid2\0csid_lite0\0csid_lite1\0"
++	"csiphy0\0csiphy1\0csiphy2\0csiphy3\0csiphy4\0"
++	"vfe0\0vfe1\0vfe2\0vfe_lite0\0vfe_lite1";
++
++static const char uke_camss_clock_names[] =
++	"camnoc_axi\0cpas_ahb\0cpas_fast_ahb\0cpas_vfe0\0cpas_vfe1\0cpas_vfe2\0"
++	"cpas_vfe_lite\0csid\0csiphy0\0csiphy0_timer\0csiphy1\0csiphy1_timer\0"
++	"csiphy2\0csiphy2_timer\0csiphy3\0csiphy3_timer\0csiphy4\0csiphy4_timer\0"
++	"csiphy_rx\0gcc_axi_hf\0qdss_debug_xo\0vfe0\0vfe0_fast_ahb\0vfe1\0"
++	"vfe1_fast_ahb\0vfe2\0vfe2_fast_ahb\0vfe_lite\0vfe_lite_ahb\0"
++	"vfe_lite_cphy_rx\0vfe_lite_csid";
++
++static const unsigned int uke_camss_clocks[] = {
++	CAM_CC_CAMNOC_AXI_RT_CLK, CAM_CC_CPAS_AHB_CLK, CAM_CC_CPAS_FAST_AHB_CLK,
++	CAM_CC_CPAS_IFE_0_CLK, CAM_CC_CPAS_IFE_1_CLK, CAM_CC_CPAS_IFE_2_CLK,
++	CAM_CC_CPAS_IFE_LITE_CLK, CAM_CC_CSID_CLK,
++	CAM_CC_CSIPHY0_CLK, CAM_CC_CSI0PHYTIMER_CLK,
++	CAM_CC_CSIPHY1_CLK, CAM_CC_CSI1PHYTIMER_CLK,
++	CAM_CC_CSIPHY2_CLK, CAM_CC_CSI2PHYTIMER_CLK,
++	CAM_CC_CSIPHY3_CLK, CAM_CC_CSI3PHYTIMER_CLK,
++	CAM_CC_CSIPHY4_CLK, CAM_CC_CSI4PHYTIMER_CLK,
++	CAM_CC_CSID_CSIPHY_RX_CLK, GCC_CAMERA_HF_AXI_CLK, CAM_CC_QDSS_DEBUG_XO_CLK,
++	CAM_CC_IFE_0_CLK, CAM_CC_IFE_0_FAST_AHB_CLK,
++	CAM_CC_IFE_1_CLK, CAM_CC_IFE_1_FAST_AHB_CLK,
++	CAM_CC_IFE_2_CLK, CAM_CC_IFE_2_FAST_AHB_CLK,
++	CAM_CC_IFE_LITE_CLK, CAM_CC_IFE_LITE_AHB_CLK,
++	CAM_CC_IFE_LITE_CPHY_RX_CLK, CAM_CC_IFE_LITE_CSID_CLK,
++};
++
++static const unsigned int uke_camss_domains[] = {
++	CAM_CC_IFE_0_GDSC, CAM_CC_IFE_1_GDSC, CAM_CC_IFE_2_GDSC, CAM_CC_TITAN_TOP_GDSC,
++};
++
++static bool UKE_INIT uke_camss_available(const void *fdt, int node)
++{
++	return node >= 0 && (!fdt_getprop(fdt, node, "status", NULL) ||
++		uke_front_bytes(fdt, node, "status", "ok", sizeof("ok")) ||
++		uke_front_bytes(fdt, node, "status", "okay", sizeof("okay")));
++}
++
++static unsigned int UKE_INIT uke_camss_provider(const void *fdt, const char *path,
++						const char *compatible, const char *cells,
++						unsigned int count)
++{
++	int node = fdt_path_offset(fdt, path);
++
++	if (!uke_camss_available(fdt, node) ||
++	    fdt_node_check_compatible(fdt, node, compatible) ||
++	    !uke_front_u32(fdt, node, cells, count))
++		return 0;
++	return fdt_get_phandle(fdt, node);
++}
++
++static unsigned int UKE_INIT uke_camss_inherited_irq(const void *fdt, int node)
++{
++	const fdt32_t *parent;
++	int len;
++
++	while (node >= 0) {
++		parent = fdt_getprop(fdt, node, "interrupt-parent", &len);
++		if (parent)
++			return len == (int)sizeof(*parent) ? fdt32_to_cpu(*parent) : 0;
++		node = fdt_parent_offset(fdt, node);
++	}
++	return 0;
++}
++
++static bool UKE_INIT uke_camss_owners(const void *fdt, int soc, unsigned int gic,
++				      unsigned int rail09, unsigned int rail12,
++				      fdt32_t *regs, fdt32_t *irqs)
++{
++	unsigned int i;
++
++	regs[0] = cpu_to_fdt32(0xacb6000);
++	regs[1] = cpu_to_fdt32(0x1000);
++	for (i = 0; i < ARRAY_SIZE(uke_camss_oem); i++) {
++		int node = fdt_subnode_offset(fdt, soc, uke_camss_oem[i].name);
++		unsigned int addr = uke_camss_oem[i].addr;
++		unsigned int size = uke_camss_oem[i].size;
++		const fdt32_t range[] = {
++			cpu_to_fdt32(addr), cpu_to_fdt32(size), regs[0], regs[1],
++		};
++		fdt32_t *irq = &irqs[3 * i];
++
++		irq[0] = cpu_to_fdt32(GIC_SPI);
++		irq[1] = cpu_to_fdt32(uke_camss_oem[i].irq);
++		irq[2] = cpu_to_fdt32(IRQ_TYPE_EDGE_RISING);
++		if (node < 0 || !uke_front_disabled(fdt, node) ||
++		    fdt_node_check_compatible(fdt, node, uke_camss_oem[i].compatible) ||
++		    uke_camss_inherited_irq(fdt, node) != gic ||
++		    !uke_front_bytes(fdt, node, "interrupts", irq, 3 * sizeof(*irq)) ||
++		    !uke_front_bytes(fdt, node, "reg", range, (i < 3 ? 4 : 2) * sizeof(*range)))
++			return false;
++
++		if (i >= 5 && i < 10 &&
++		    (!uke_front_u32(fdt, node, "csi-vdd-0p9-supply", rail09) ||
++		     !uke_front_u32(fdt, node, "csi-vdd-1p2-supply", rail12)))
++			return false;
++
++		/* The OEM Lite VFE window includes the separate Lite CSID. */
++		if (i >= 13) {
++			addr += 0x1000;
++			size -= 0x1000;
++		}
++		regs[2 * (i + 1)] = cpu_to_fdt32(addr);
++		regs[2 * (i + 1) + 1] = cpu_to_fdt32(size);
++	}
++	return true;
++}
++
++static bool UKE_INIT uke_camss_mmio_free(const void *fdt, int soc, const fdt32_t *cam_regs)
++{
++	int node;
++
++	fdt_for_each_subnode(node, fdt, soc) {
++		int len, i;
++		const fdt32_t *regs = fdt_getprop(fdt, node, "reg", &len);
++
++		if (!uke_camss_available(fdt, node) || !regs || len % (2 * sizeof(*regs)))
++			continue;
++		for (i = 0; i < len / (int)sizeof(*regs); i += 2) {
++			unsigned long start = fdt32_to_cpu(regs[i]);
++			unsigned long size = fdt32_to_cpu(regs[i + 1]);
++			unsigned int j;
++
++			if (!size)
++				continue;
++			for (j = 0; j < 2 * (ARRAY_SIZE(uke_camss_oem) + 1); j += 2) {
++				unsigned long cam = fdt32_to_cpu(cam_regs[j]);
++				unsigned long end = cam + fdt32_to_cpu(cam_regs[j + 1]);
++
++				if (start < end && cam < start + size)
++					return false;
++			}
++		}
++	}
++	return true;
++}
++
++static bool UKE_INIT uke_camss_smmu(const void *fdt, int smmu, unsigned int phandle)
++{
++	const fdt32_t pool[] = {
++		0, cpu_to_fdt32(0x100000), cpu_to_fdt32(0xf), cpu_to_fdt32(0xffe00000),
++	};
++	const fdt32_t stream[] = {
++		cpu_to_fdt32(phandle), cpu_to_fdt32(UKE_CAMSS_IFE_SID), cpu_to_fdt32(UKE_CAMSS_IFE_MASK),
++	};
++	int ife = fdt_path_offset(fdt, UKE_CAMSS_IFE);
++	int len, i;
++	const fdt32_t *rules;
++	bool matched = false;
++
++	if (ife < 0 || !uke_front_disabled(fdt, ife) ||
++	    !uke_front_bytes(fdt, ife, "dma-coherent", "", 0) ||
++	    !uke_front_bytes(fdt, ife, "iommus", stream, sizeof(stream)) ||
++	    !uke_front_bytes(fdt, ife, "qcom,iommu-dma-addr-pool", pool, sizeof(pool)))
++		return false;
++
++	rules = fdt_getprop(fdt, smmu, "qcom,actlr", &len);
++	if (!rules || !len || len % (3 * sizeof(*rules)))
++		return false;
++	for (i = 0; i < len / (int)sizeof(*rules); i += 3) {
++		unsigned int sid = fdt32_to_cpu(rules[i]);
++		unsigned int mask = fdt32_to_cpu(rules[i + 1]);
++
++		if ((sid ^ UKE_CAMSS_IFE_SID) & ~(mask | UKE_CAMSS_IFE_MASK))
++			continue;
++		if (matched || sid != UKE_CAMSS_IFE_SID || mask != UKE_CAMSS_IFE_MASK ||
++		    fdt32_to_cpu(rules[i + 2]) != 1)
++			return false;
++		matched = true;
++	}
++	return matched;
++}
++
++static bool UKE_INIT uke_camss_ife_unclaimed(const void *fdt, unsigned int smmu)
++{
++	int node;
++
++	for (node = fdt_next_node(fdt, -1, NULL); node >= 0;
++	     node = fdt_next_node(fdt, node, NULL)) {
++		int len, pos, ancestor;
++		const fdt32_t *cells = fdt_getprop(fdt, node, "iommus", &len);
++
++		if (!cells)
++			continue;
++		for (ancestor = node; ancestor >= 0; ancestor = fdt_parent_offset(fdt, ancestor))
++			if (!uke_camss_available(fdt, ancestor))
++				break;
++		if (ancestor >= 0)
++			continue;
++		if (len % sizeof(*cells))
++			return false;
++		len /= sizeof(*cells);
++		for (pos = 0; pos < len;) {
++			unsigned int phandle = fdt32_to_cpu(cells[pos++]);
++			int provider, bytes, width;
++			const fdt32_t *count;
++
++			if (!phandle)
++				continue;
++			provider = fdt_node_offset_by_phandle(fdt, phandle);
++			count = fdt_getprop(fdt, provider, "#iommu-cells", &bytes);
++			if (!count || bytes != (int)sizeof(*count))
++				return false;
++			width = fdt32_to_cpu(*count);
++			if (width < 0 || width > len - pos)
++				return false;
++			if (phandle == smmu) {
++				unsigned int sid, mask;
++
++				if (width != 2)
++					return false;
++				sid = fdt32_to_cpu(cells[pos]);
++				mask = fdt32_to_cpu(cells[pos + 1]);
++
++				if (!((sid ^ UKE_CAMSS_IFE_SID) & ~(mask | UKE_CAMSS_IFE_MASK)))
++					return false;
++			}
++			pos += width;
++		}
++	}
++	return true;
++}
++
++static int UKE_INIT uke_camss_graph(void *fdt)
++{
++	static const char domain_names[] = "ife0\0ife1\0ife2\0top";
++	static const char icc_names[] = "ahb\0hf_mnoc";
++	const char *smmu_path = "/soc/apps-smmu@15000000";
++	const char *camcc_path = "/soc/clock-controller@ade0000";
++	const char *hf_path = UKE_CAMSS_CPAS
++		"/camera-bus-nodes/level3-nodes/level3-rt-rd-wr-sum/qcom,axi-port-mnoc";
++	fdt32_t regs[2 * (ARRAY_SIZE(uke_camss_oem) + 1)];
++	fdt32_t irqs[3 * ARRAY_SIZE(uke_camss_oem)];
++	fdt32_t clocks[2 * ARRAY_SIZE(uke_camss_clocks)];
++	fdt32_t domains[2 * ARRAY_SIZE(uke_camss_domains)];
++	fdt32_t noc[10], iommu[3];
++	unsigned int camcc, gcc, gic, smmu, gem, cnoc, mnoc, mc, rail09, rail12, i;
++	int soc, node, cpas, hf, len, ret;
++	const fdt32_t *oem_hf;
++
++	if (fdt_node_check_compatible(fdt, 0, "xiaomi,uke") ||
++	    fdt_node_check_compatible(fdt, 0, "qcom,sm7675"))
++		return 0;
++	soc = fdt_path_offset(fdt, "/soc");
++	cpas = fdt_path_offset(fdt, UKE_CAMSS_CPAS);
++	hf = fdt_path_offset(fdt, hf_path);
++	if (soc < 0 || cpas < 0 || hf < 0 || !uke_front_disabled(fdt, cpas) ||
++	    !uke_front_u32(fdt, soc, "#address-cells", 1) ||
++	    !uke_front_u32(fdt, soc, "#size-cells", 1) ||
++	    fdt_subnode_offset(fdt, soc, UKE_CAMSS_NATIVE) != -FDT_ERR_NOTFOUND)
++		return 0;
++
++	camcc = uke_camss_provider(fdt, camcc_path, "qcom,sm7675-camcc", "#clock-cells", 1);
++	gcc = uke_camss_provider(fdt, "/soc/clock-controller@100000",
++				 "qcom,cliffs-gcc", "#clock-cells", 1);
++	gic = uke_camss_provider(fdt, "/soc/interrupt-controller@17100000",
++				 "arm,gic-v3", "#interrupt-cells", 3);
++	smmu = uke_camss_provider(fdt, smmu_path, "qcom,sm7675-boot-smmu", "#iommu-cells", 2);
++	gem = uke_camss_provider(fdt, "/soc/interconnect@24100000",
++				 "qcom,cliffs-gem_noc", "#interconnect-cells", 2);
++	cnoc = uke_camss_provider(fdt, "/soc/interconnect@1600000",
++				  "qcom,cliffs-cnoc_cfg", "#interconnect-cells", 1);
++	mnoc = uke_camss_provider(fdt, "/soc/interconnect@1400000",
++				  "qcom,cliffs-mmss_noc", "#interconnect-cells", 1);
++	mc = uke_camss_provider(fdt, "/soc/interconnect@1",
++				"qcom,cliffs-mc_virt", "#interconnect-cells", 2);
++	rail09 = uke_front_phandle(fdt, "/soc/rsc@17a00000/drv@2/rpmh-regulator-ldob2/regulator-pmxr2230-l2");
++	rail12 = uke_front_phandle(fdt, "/soc/rsc@17a00000/drv@2/rpmh-regulator-ldob4/regulator-pmxr2230-l4");
++	if (!camcc || !gcc || !gic || !smmu || !gem || !cnoc || !mnoc || !mc || !rail09 || !rail12 ||
++	    !uke_front_u32(fdt, fdt_path_offset(fdt, camcc_path), "#power-domain-cells", 1) ||
++	    !uke_camss_owners(fdt, soc, gic, rail09, rail12, regs, irqs) ||
++	    !uke_camss_mmio_free(fdt, soc, regs) ||
++	    !uke_camss_smmu(fdt, fdt_path_offset(fdt, smmu_path), smmu) ||
++	    !uke_camss_ife_unclaimed(fdt, smmu))
++		return 0;
++
++	noc[0] = cpu_to_fdt32(gem);
++	noc[1] = cpu_to_fdt32(2);
++	noc[2] = 0;
++	noc[3] = cpu_to_fdt32(cnoc);
++	noc[4] = cpu_to_fdt32(516);
++	noc[5] = cpu_to_fdt32(mnoc);
++	noc[6] = cpu_to_fdt32(11);
++	noc[7] = cpu_to_fdt32(mc);
++	noc[8] = cpu_to_fdt32(512);
++	noc[9] = 0;
++	oem_hf = fdt_getprop(fdt, hf, "interconnects", &len);
++	if (!uke_front_bytes(fdt, cpas, "interconnects", noc, 5 * sizeof(*noc)) ||
++	    !oem_hf || len < (int)(5 * sizeof(*noc)) || memcmp(oem_hf, &noc[5], 5 * sizeof(*noc)) ||
++	    fdt_totalsize(fdt) - fdt_off_dt_strings(fdt) - fdt_size_dt_strings(fdt) <
++	    UKE_CAMSS_FDT_RESERVE)
++		return 0;
++
++	for (i = 0; i < ARRAY_SIZE(uke_camss_clocks); i++) {
++		clocks[2 * i] = cpu_to_fdt32(i == 19 ? gcc : camcc);
++		clocks[2 * i + 1] = cpu_to_fdt32(uke_camss_clocks[i]);
++	}
++	for (i = 0; i < ARRAY_SIZE(uke_camss_domains); i++) {
++		domains[2 * i] = cpu_to_fdt32(camcc);
++		domains[2 * i + 1] = cpu_to_fdt32(uke_camss_domains[i]);
++	}
++	iommu[0] = cpu_to_fdt32(smmu);
++	iommu[1] = cpu_to_fdt32(UKE_CAMSS_IFE_SID);
++	iommu[2] = cpu_to_fdt32(UKE_CAMSS_IFE_MASK);
++
++	node = fdt_add_subnode(fdt, soc, UKE_CAMSS_NATIVE);
++	if (node < 0)
++		return node;
++	if ((ret = fdt_setprop_string(fdt, node, "status", "disabled")) ||
++	    (ret = fdt_setprop_string(fdt, node, "compatible", "qcom,sm7675-camss")) ||
++	    (ret = fdt_setprop(fdt, node, "reg", regs, sizeof(regs))) ||
++	    (ret = fdt_setprop(fdt, node, "reg-names", uke_camss_reg_names, sizeof(uke_camss_reg_names))) ||
++	    (ret = fdt_setprop_u32(fdt, node, "interrupt-parent", gic)) ||
++	    (ret = fdt_setprop(fdt, node, "interrupts", irqs, sizeof(irqs))) ||
++	    (ret = fdt_setprop(fdt, node, "interrupt-names", uke_camss_irq_names, sizeof(uke_camss_irq_names))) ||
++	    (ret = fdt_setprop(fdt, node, "clocks", clocks, sizeof(clocks))) ||
++	    (ret = fdt_setprop(fdt, node, "clock-names", uke_camss_clock_names, sizeof(uke_camss_clock_names))) ||
++	    (ret = fdt_setprop(fdt, node, "power-domains", domains, sizeof(domains))) ||
++	    (ret = fdt_setprop(fdt, node, "power-domain-names", domain_names, sizeof(domain_names))) ||
++	    (ret = fdt_setprop_u32(fdt, node, "vdd-csiphy-0p9-supply", rail09)) ||
++	    (ret = fdt_setprop_u32(fdt, node, "vdd-csiphy-1p2-supply", rail12)) ||
++	    (ret = fdt_setprop(fdt, node, "interconnects", noc, sizeof(noc))) ||
++	    (ret = fdt_setprop(fdt, node, "interconnect-names", icc_names, sizeof(icc_names))) ||
++	    (ret = fdt_setprop(fdt, node, "iommus", iommu, sizeof(iommu))) ||
++	    (ret = fdt_setprop(fdt, node, "dma-coherent", NULL, 0)))
++		return ret;
++	return fdt_setprop_string(fdt, node, "status", "okay");
++}
++
++#endif
