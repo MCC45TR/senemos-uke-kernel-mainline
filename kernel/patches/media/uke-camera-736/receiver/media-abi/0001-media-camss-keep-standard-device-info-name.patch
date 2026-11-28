@@ -1,0 +1,13 @@
+--- a/drivers/media/platform/qcom/camss/camss.c
++++ b/drivers/media/platform/qcom/camss/camss.c
+@@ -5423,6 +5423,10 @@
+ 		goto err_genpd_cleanup;
+ 
+ 	camss->media_dev.dev = camss->dev;
++	/* Keep the Media Controller name used by existing camera consumers. */
++	if (camss->res->version == CAMSS_7675)
++		strscpy(camss->media_dev.driver_name, "qcom-camss",
++			sizeof(camss->media_dev.driver_name));
+ 	strscpy(camss->media_dev.model, "Qualcomm Camera Subsystem",
+ 		sizeof(camss->media_dev.model));
+ 	camss->media_dev.ops = &camss_media_ops;
