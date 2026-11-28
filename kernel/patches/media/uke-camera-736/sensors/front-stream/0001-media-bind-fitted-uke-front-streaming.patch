@@ -1,0 +1,569 @@
+diff --git a/before/drivers/media/i2c/ov08d10.c b/after/drivers/media/i2c/ov08d10.c
+index 4bb08ab..90801ad 100644
+--- a/before/drivers/media/i2c/ov08d10.c
++++ b/after/drivers/media/i2c/ov08d10.c
+@@ -13,6 +13,11 @@
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-fwnode.h>
+ 
++#if IS_BUILTIN(CONFIG_VIDEO_OV08D10) && IS_BUILTIN(CONFIG_SM_CAMCC_7675)
++#include "uke-front-camera-resources.h"
++#define OV08D10_UKE
++#endif
++
+ #define OV08D10_SCLK			144000000ULL
+ #define OV08D10_ROWCLK			36000
+ #define OV08D10_DATA_LANES		2
+@@ -590,6 +595,10 @@ struct ov08d10 {
+ 
+ 	const struct ov08d10_lane_cfg *priv_lane;
+ 	u8 modes_size;
++#ifdef OV08D10_UKE
++	struct uke_front_sensor_power *uke_power;
++	bool uke_streaming;
++#endif
+ };
+ 
+ struct ov08d10_lane_cfg {
+@@ -1142,7 +1151,7 @@ static int ov08d10_start_streaming(struct ov08d10 *ov08d10)
+ 	return i2c_smbus_write_byte_data(client, OV08D10_REG_PAGE, 0x01);
+ }
+ 
+-static void ov08d10_stop_streaming(struct ov08d10 *ov08d10)
++static int ov08d10_stop_streaming(struct ov08d10 *ov08d10)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(&ov08d10->sd);
+ 	int ret;
+@@ -1150,20 +1159,32 @@ static void ov08d10_stop_streaming(struct ov08d10 *ov08d10)
+ 	ret = i2c_smbus_write_byte_data(client, OV08D10_REG_PAGE, 0x00);
+ 	if (ret < 0) {
+ 		dev_err(ov08d10->dev, "failed to stop streaming\n");
+-		return;
++		return ret;
+ 	}
+ 	ret = i2c_smbus_write_byte_data(client, OV08D10_REG_MODE_SELECT,
+ 					OV08D10_MODE_STANDBY);
+ 	if (ret < 0) {
+ 		dev_err(ov08d10->dev, "failed to stop streaming\n");
+-		return;
++		return ret;
+ 	}
+ 
+ 	ret = i2c_smbus_write_byte_data(client, OV08D10_REG_PAGE, 0x01);
+-	if (ret < 0) {
++	if (ret < 0)
+ 		dev_err(ov08d10->dev, "failed to stop streaming\n");
+-		return;
++	return ret;
++}
++
++static int ov08d10_put_stream_power(struct ov08d10 *ov08d10, int ret)
++{
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power) {
++		int cleanup = pm_runtime_put_sync_suspend(ov08d10->dev);
++
++		return cleanup < 0 ? cleanup : ret;
+ 	}
++#endif
++	pm_runtime_put(ov08d10->dev);
++	return ret;
+ }
+ 
+ static int ov08d10_set_stream(struct v4l2_subdev *sd, int enable)
+@@ -1172,6 +1193,12 @@ static int ov08d10_set_stream(struct v4l2_subdev *sd, int enable)
+ 	int ret = 0;
+ 
+ 	mutex_lock(&ov08d10->mutex);
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power && ov08d10->uke_streaming == !!enable) {
++		mutex_unlock(&ov08d10->mutex);
++		return 0;
++	}
++#endif
+ 	if (enable) {
+ 		ret = pm_runtime_resume_and_get(ov08d10->dev);
+ 		if (ret < 0) {
+@@ -1183,13 +1210,21 @@ static int ov08d10_set_stream(struct v4l2_subdev *sd, int enable)
+ 		if (ret) {
+ 			enable = 0;
+ 			ov08d10_stop_streaming(ov08d10);
+-			pm_runtime_put(ov08d10->dev);
++			ret = ov08d10_put_stream_power(ov08d10, ret);
+ 		}
+ 	} else {
+-		ov08d10_stop_streaming(ov08d10);
+-		pm_runtime_put(ov08d10->dev);
++		ret = ov08d10_stop_streaming(ov08d10);
++#ifdef OV08D10_UKE
++		if (!ov08d10->uke_power)
++#endif
++			ret = 0;
++		ret = ov08d10_put_stream_power(ov08d10, ret);
+ 	}
+ 
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power)
++		ov08d10->uke_streaming = !!enable;
++#endif
+ 	/* vflip and hflip cannot change during streaming */
+ 	__v4l2_ctrl_grab(ov08d10->vflip, enable);
+ 	__v4l2_ctrl_grab(ov08d10->hflip, enable);
+@@ -1386,6 +1421,10 @@ static int ov08d10_power_off(struct device *dev)
+ 	struct v4l2_subdev *sd = dev_get_drvdata(dev);
+ 	struct ov08d10 *ov08d10 = to_ov08d10(sd);
+ 
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power)
++		return uke_front_sensor_off(ov08d10->uke_power);
++#endif
+ 	reset_control_assert(ov08d10->reset);
+ 
+ 	regulator_bulk_disable(ARRAY_SIZE(ov08d10->supplies),
+@@ -1402,6 +1441,23 @@ static int ov08d10_power_on(struct device *dev)
+ 	struct ov08d10 *ov08d10 = to_ov08d10(sd);
+ 	int ret;
+ 
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power) {
++		u16 id;
++		int cleanup;
++
++		ret = uke_front_sensor_on(ov08d10->uke_power);
++		if (ret)
++			return ret;
++		ret = uke_front_sensor_paged_id(to_i2c_client(dev), &id);
++		if (!ret && id != OV08D10_CHIP_ID)
++			ret = -ENODEV;
++		if (!ret)
++			return 0;
++		cleanup = uke_front_sensor_off(ov08d10->uke_power);
++		return cleanup ?: ret;
++	}
++#endif
+ 	ret = regulator_bulk_enable(ARRAY_SIZE(ov08d10->supplies),
+ 				    ov08d10->supplies);
+ 	if (ret < 0) {
+@@ -1509,6 +1565,15 @@ static int ov08d10_get_hwcfg(struct ov08d10 *ov08d10)
+ 	ov08d10->priv_lane = &lane_cfg_2;
+ 	ov08d10->modes_size = ov08d10_modes_num(ov08d10);
+ 
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power &&
++	    (bus_cfg.bus.mipi_csi2.data_lanes[0] != 0 ||
++	     bus_cfg.bus.mipi_csi2.data_lanes[1] != 1 ||
++	     bus_cfg.nr_of_link_frequencies != ARRAY_SIZE(lane_cfg_2.link_freq_menu))) {
++		ret = -EINVAL;
++		goto check_hwcfg_error;
++	}
++#endif
+ 	if (!bus_cfg.nr_of_link_frequencies) {
+ 		dev_err(dev, "no link frequencies defined\n");
+ 		ret = -EINVAL;
+@@ -1541,6 +1606,10 @@ static void ov08d10_remove(struct i2c_client *client)
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct ov08d10 *ov08d10 = to_ov08d10(sd);
+ 
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power && !sd->ctrl_handler)
++		return;
++#endif
+ 	v4l2_async_unregister_subdev(sd);
+ 	media_entity_cleanup(&sd->entity);
+ 	v4l2_ctrl_handler_free(sd->ctrl_handler);
+@@ -1552,19 +1621,12 @@ static void ov08d10_remove(struct i2c_client *client)
+ 	mutex_destroy(&ov08d10->mutex);
+ }
+ 
+-static int ov08d10_probe(struct i2c_client *client)
++static int ov08d10_get_pm_resources(struct ov08d10 *ov08d10)
+ {
+-	struct ov08d10 *ov08d10;
+ 	unsigned long freq;
+ 	unsigned int i;
+ 	int ret;
+ 
+-	ov08d10 = devm_kzalloc(&client->dev, sizeof(*ov08d10), GFP_KERNEL);
+-	if (!ov08d10)
+-		return -ENOMEM;
+-
+-	ov08d10->dev = &client->dev;
+-
+ 	ov08d10->clk = devm_v4l2_sensor_clk_get(ov08d10->dev, NULL);
+ 	if (IS_ERR(ov08d10->clk))
+ 		return dev_err_probe(ov08d10->dev, PTR_ERR(ov08d10->clk),
+@@ -1581,13 +1643,6 @@ static int ov08d10_probe(struct i2c_client *client)
+ 				     freq);
+ 	ov08d10->xvclk_index = i;
+ 
+-	ret = ov08d10_get_hwcfg(ov08d10);
+-	if (ret) {
+-		dev_err(ov08d10->dev, "failed to get HW configuration: %d\n",
+-			ret);
+-		return ret;
+-	}
+-
+ 	ov08d10->reset = devm_reset_control_get_optional_exclusive(ov08d10->dev, NULL);
+ 	if (IS_ERR(ov08d10->reset))
+ 		return dev_err_probe(ov08d10->dev, PTR_ERR(ov08d10->reset),
+@@ -1604,16 +1659,81 @@ static int ov08d10_probe(struct i2c_client *client)
+ 		return dev_err_probe(ov08d10->dev, ret,
+ 				     "failed to get regulators\n");
+ 
+-	v4l2_i2c_subdev_init(&ov08d10->sd, client, &ov08d10_subdev_ops);
++	return 0;
++}
++
++static int ov08d10_probe(struct i2c_client *client)
++{
++	struct ov08d10 *ov08d10;
++	bool powered = false;
++	int ret;
++
++	ov08d10 = devm_kzalloc(&client->dev, sizeof(*ov08d10), GFP_KERNEL);
++	if (!ov08d10)
++		return -ENOMEM;
++	ov08d10->dev = &client->dev;
+ 
+-	ret = ov08d10_power_on(ov08d10->dev);
++#ifdef OV08D10_UKE
++	if (of_device_is_compatible(client->dev.of_node, "xiaomi,uke-ov08d10")) {
++		ret = uke_front_camera_check_bus(client);
++		if (ret)
++			return ret;
++		ret = uke_front_sensor_pins_graph(ov08d10->dev);
++		if (ret)
++			return ret;
++		ov08d10->uke_power = devm_kzalloc(ov08d10->dev,
++					       sizeof(*ov08d10->uke_power), GFP_KERNEL);
++		if (!ov08d10->uke_power)
++			return -ENOMEM;
++		ov08d10->uke_power->sensor = ov08d10->dev;
++	}
++#endif
++
++	ret = ov08d10_get_hwcfg(ov08d10);
+ 	if (ret)
+-		return dev_err_probe(ov08d10->dev, ret, "failed to power on\n");
++		return dev_err_probe(ov08d10->dev, ret, "failed to get HW configuration\n");
+ 
+-	ret = ov08d10_identify_module(ov08d10);
+-	if (ret) {
+-		dev_err(ov08d10->dev, "failed to find sensor: %d\n", ret);
+-		goto probe_error_power_off;
++	v4l2_i2c_subdev_init(&ov08d10->sd, client, &ov08d10_subdev_ops);
++
++#ifdef OV08D10_UKE
++	if (ov08d10->uke_power) {
++		ret = uke_front_camera_get_resources(ov08d10->uke_power);
++		if (ret)
++			return dev_err_probe(ov08d10->dev, ret, "front camera resources\n");
++		ov08d10->xvclk_index = ARRAY_SIZE(ov08d10_xvclk_freqs);
++		for (unsigned int i = 0; i < ARRAY_SIZE(ov08d10_xvclk_freqs); i++) {
++			if (ov08d10_xvclk_freqs[i] == UKE_CAMERA_MCLK_HZ) {
++				ov08d10->xvclk_index = i;
++				break;
++			}
++		}
++		if (ov08d10->xvclk_index >= ARRAY_SIZE(ov08d10_xvclk_freqs))
++			return -EINVAL;
++		ret = ov08d10_power_on(ov08d10->dev);
++		if (!ret)
++			ret = ov08d10_power_off(ov08d10->dev);
++		if (ov08d10->uke_power->fault) {
++			dev_err(ov08d10->dev, "front camera power fault %d\n", ov08d10->uke_power->fault);
++			return 0;
++		}
++		if (ret)
++			return dev_err_probe(ov08d10->dev, ret, "fitted front camera identity\n");
++	} else
++#endif
++	{
++		ret = ov08d10_get_pm_resources(ov08d10);
++		if (ret)
++			return ret;
++		ret = ov08d10_power_on(ov08d10->dev);
++		if (ret)
++			return dev_err_probe(ov08d10->dev, ret, "failed to power on\n");
++		powered = true;
++
++		ret = ov08d10_identify_module(ov08d10);
++		if (ret) {
++			dev_err(ov08d10->dev, "failed to find sensor: %d\n", ret);
++			goto probe_error_power_off;
++		}
+ 	}
+ 
+ 	mutex_init(&ov08d10->mutex);
+@@ -1634,7 +1754,8 @@ static int ov08d10_probe(struct i2c_client *client)
+ 		goto probe_error_v4l2_ctrl_handler_free;
+ 	}
+ 
+-	pm_runtime_set_active(ov08d10->dev);
++	if (powered)
++		pm_runtime_set_active(ov08d10->dev);
+ 	pm_runtime_enable(ov08d10->dev);
+ 
+ 	ret = v4l2_async_register_subdev_sensor(&ov08d10->sd);
+@@ -1658,7 +1779,8 @@ probe_error_v4l2_ctrl_handler_free:
+ 	mutex_destroy(&ov08d10->mutex);
+ 
+ probe_error_power_off:
+-	ov08d10_power_off(ov08d10->dev);
++	if (powered)
++		ov08d10_power_off(ov08d10->dev);
+ 
+ 	return ret;
+ }
+@@ -1694,6 +1816,59 @@ static struct i2c_driver ov08d10_i2c_driver = {
+ 
+ module_i2c_driver(ov08d10_i2c_driver);
+ 
++#ifdef OV08D10_UKE
++static int __maybe_unused ov08d10_uke_system_suspend(struct device *dev)
++{
++	struct v4l2_subdev *sd = dev_get_drvdata(dev);
++	struct ov08d10 *ov08d10 = to_ov08d10(sd);
++	int ret;
++
++	if (!sd->ctrl_handler)
++		return READ_ONCE(ov08d10->uke_power->fault);
++	mutex_lock(&ov08d10->mutex);
++	ret = ov08d10->uke_power->fault;
++	if (!ret)
++		ret = ov08d10->uke_streaming ? -EBUSY : pm_runtime_force_suspend(dev);
++	mutex_unlock(&ov08d10->mutex);
++	return ret;
++}
++
++static void ov08d10_uke_shutdown(struct i2c_client *client)
++{
++	struct v4l2_subdev *sd = i2c_get_clientdata(client);
++	int ret;
++
++	if (!sd->ctrl_handler)
++		return;
++	ret = ov08d10_set_stream(sd, 0);
++	if (ret)
++		dev_err(&client->dev, "front camera shutdown: %d\n", ret);
++}
++
++static const struct dev_pm_ops ov08d10_uke_pm_ops = {
++	SET_RUNTIME_PM_OPS(ov08d10_power_off, ov08d10_power_on, NULL)
++	SET_SYSTEM_SLEEP_PM_OPS(ov08d10_uke_system_suspend, pm_runtime_force_resume)
++};
++
++static const struct of_device_id ov08d10_uke_of_match[] = {
++	{ .compatible = "xiaomi,uke-ov08d10" },
++	{ }
++};
++
++static struct i2c_driver ov08d10_uke_driver = {
++	.driver = {
++		.name = "uke-ov08d10",
++		.of_match_table = ov08d10_uke_of_match,
++		.pm = pm_ptr(&ov08d10_uke_pm_ops),
++		.suppress_bind_attrs = true,
++	},
++	.probe = ov08d10_probe,
++	.remove = ov08d10_remove,
++	.shutdown = ov08d10_uke_shutdown,
++};
++builtin_i2c_driver(ov08d10_uke_driver);
++#endif
++
+ MODULE_AUTHOR("Su, Jimmy <jimmy.su@intel.com>");
+ MODULE_DESCRIPTION("OmniVision ov08d10 sensor driver");
+ MODULE_LICENSE("GPL v2");
+diff --git a/before/drivers/media/i2c/uke-front-camera-id.c b/after/drivers/media/i2c/uke-front-camera-id.c
+index 558a499..5ab975a 100644
+--- a/before/drivers/media/i2c/uke-front-camera-id.c
++++ b/after/drivers/media/i2c/uke-front-camera-id.c
+@@ -3,12 +3,11 @@
+ #include <linux/i2c.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+-#include <linux/of_address.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+ 
+-#include "uke-front-sensor-power.h"
++#include "uke-front-camera-resources.h"
+ 
+ struct uke_front_camera_sample {
+ 	bool attempted;
+@@ -23,61 +22,6 @@ struct uke_front_camera_id {
+ 	struct uke_front_camera_sample paged;
+ };
+ 
+-static const struct {
+-	const char *name;
+-	const char *property;
+-	const char *provider;
+-} uke_front_supplies[UKE_FRONT_RAIL_COUNT] = {
+-	[UKE_FRONT_BOB] = { "bob", "bob-supply", "pmxr2230_bob" },
+-	[UKE_FRONT_CUSTOM] = { "custom", "custom-supply", "pmxr2230_s2" },
+-	[UKE_FRONT_VIO] = { "vio", "vio-supply", "pmxr2230_l20" },
+-	[UKE_FRONT_VANA] = { "vana", "vana-supply", "camera_front_avdd_ldo" },
+-	[UKE_FRONT_VDIG] = { "vdig", "vdig-supply", "pm_v6c_l3" },
+-};
+-
+-static int uke_front_camera_check_bus(struct i2c_client *client)
+-{
+-	struct device_node *bus = of_get_parent(client->dev.of_node);
+-	struct resource registers;
+-	bool matched;
+-
+-	matched = bus && client->addr == 0x10 &&
+-		  !(client->flags & I2C_CLIENT_TEN) &&
+-		  i2c_check_functionality(client->adapter, I2C_FUNC_I2C) &&
+-		  of_device_is_compatible(bus, "qcom,geni-i2c") &&
+-		  !of_address_to_resource(bus, 0, &registers) &&
+-		  registers.start == 0x880000;
+-	of_node_put(bus);
+-	return matched ? 0 : -ENODEV;
+-}
+-
+-static int uke_front_camera_get_supplies(struct uke_front_sensor_power *power)
+-{
+-	struct device *dev = power->sensor;
+-	struct device_node *node, *supply;
+-	const char *name;
+-	unsigned int i;
+-	bool matched;
+-
+-	node = dev->of_node;
+-	for (i = 0; i < UKE_FRONT_RAIL_COUNT; i++) {
+-		if (of_property_count_u32_elems(node, uke_front_supplies[i].property) != 1)
+-			return -EINVAL;
+-		supply = of_parse_phandle(node, uke_front_supplies[i].property, 0);
+-		if (!supply)
+-			return -EINVAL;
+-		matched = !of_property_read_string(supply, "regulator-name", &name) &&
+-			  !strcmp(name, uke_front_supplies[i].provider);
+-		of_node_put(supply);
+-		if (!matched)
+-			return -EINVAL;
+-		power->supplies[i] = devm_regulator_get_optional(dev, uke_front_supplies[i].name);
+-		if (IS_ERR(power->supplies[i]))
+-			return PTR_ERR(power->supplies[i]);
+-	}
+-	return 0;
+-}
+-
+ static int uke_front_camera_read_id(struct i2c_client *client,
+ 				    struct uke_front_camera_id *sensor,
+ 				    struct uke_front_camera_sample *sample,
+@@ -94,15 +38,9 @@ static int uke_front_camera_read_id(struct i2c_client *client,
+ 	if (!resources)
+ 		return -ENOMEM;
+ 
+-	ret = uke_front_camera_get_supplies(power);
++	ret = uke_front_camera_get_resources(power);
+ 	if (ret)
+ 		goto release;
+-	power->clock = uke_camera_sensor_clock_get(dev, CAM_CC_MCLK4_CLK,
+-						   "uke-front-camera-domain");
+-	if (IS_ERR(power->clock)) {
+-		ret = PTR_ERR(power->clock);
+-		goto release;
+-	}
+ 
+ 	sample->attempted = true;
+ 	ret = uke_front_sensor_identify(client, power, paged, &sample->id);
+diff --git a/after/drivers/media/i2c/uke-front-camera-resources.h b/after/drivers/media/i2c/uke-front-camera-resources.h
+new file mode 100644
+index 0000000..5fa77fa
+--- /dev/null
++++ b/after/drivers/media/i2c/uke-front-camera-resources.h
+@@ -0,0 +1,76 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef UKE_FRONT_CAMERA_RESOURCES_H
++#define UKE_FRONT_CAMERA_RESOURCES_H
++
++#include <linux/of_address.h>
++
++#include "uke-front-sensor-power.h"
++
++static const struct {
++	const char *name;
++	const char *property;
++	const char *provider;
++} uke_front_supplies[UKE_FRONT_RAIL_COUNT] = {
++	[UKE_FRONT_BOB] = { "bob", "bob-supply", "pmxr2230_bob" },
++	[UKE_FRONT_CUSTOM] = { "custom", "custom-supply", "pmxr2230_s2" },
++	[UKE_FRONT_VIO] = { "vio", "vio-supply", "pmxr2230_l20" },
++	[UKE_FRONT_VANA] = { "vana", "vana-supply", "camera_front_avdd_ldo" },
++	[UKE_FRONT_VDIG] = { "vdig", "vdig-supply", "pm_v6c_l3" },
++};
++
++static int uke_front_camera_check_bus(struct i2c_client *client)
++{
++	struct device_node *bus = of_get_parent(client->dev.of_node);
++	struct resource registers;
++	bool matched;
++
++	matched = bus && client->addr == 0x10 &&
++		  !(client->flags & I2C_CLIENT_TEN) &&
++		  i2c_check_functionality(client->adapter, I2C_FUNC_I2C) &&
++		  of_device_is_compatible(bus, "qcom,geni-i2c") &&
++		  !of_address_to_resource(bus, 0, &registers) &&
++		  registers.start == 0x880000;
++	of_node_put(bus);
++	return matched ? 0 : -ENODEV;
++}
++
++static int uke_front_camera_get_supplies(struct uke_front_sensor_power *power)
++{
++	struct device *dev = power->sensor;
++	struct device_node *node, *supply;
++	const char *name;
++	unsigned int i;
++	bool matched;
++
++	node = dev->of_node;
++	for (i = 0; i < UKE_FRONT_RAIL_COUNT; i++) {
++		if (of_property_count_u32_elems(node, uke_front_supplies[i].property) != 1)
++			return -EINVAL;
++		supply = of_parse_phandle(node, uke_front_supplies[i].property, 0);
++		if (!supply)
++			return -EINVAL;
++		matched = !of_property_read_string(supply, "regulator-name", &name) &&
++			  !strcmp(name, uke_front_supplies[i].provider);
++		of_node_put(supply);
++		if (!matched)
++			return -EINVAL;
++		power->supplies[i] = devm_regulator_get_optional(dev, uke_front_supplies[i].name);
++		if (IS_ERR(power->supplies[i]))
++			return PTR_ERR(power->supplies[i]);
++	}
++	return 0;
++}
++
++static int uke_front_camera_get_resources(struct uke_front_sensor_power *power)
++{
++	int ret;
++
++	ret = uke_front_camera_get_supplies(power);
++	if (ret)
++		return ret;
++	power->clock = uke_camera_sensor_clock_get(power->sensor, CAM_CC_MCLK4_CLK,
++						   "uke-front-camera-domain");
++	return PTR_ERR_OR_ZERO(power->clock);
++}
++
++#endif
+diff --git a/before/drivers/media/i2c/uke-front-sensor-power.h b/after/drivers/media/i2c/uke-front-sensor-power.h
+index a7da6cc..0730d2f 100644
+--- a/before/drivers/media/i2c/uke-front-sensor-power.h
++++ b/after/drivers/media/i2c/uke-front-sensor-power.h
+@@ -385,7 +385,7 @@ static int uke_front_sensor_paged_id(struct i2c_client *client, u16 *id)
+ 	return 0;
+ }
+ 
+-static int uke_front_sensor_identify(struct i2c_client *client,
++static inline int uke_front_sensor_identify(struct i2c_client *client,
+ 				     struct uke_front_sensor_power *power,
+ 				     bool paged, u16 *id)
+ {

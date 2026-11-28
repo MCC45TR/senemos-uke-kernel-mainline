@@ -1,0 +1,4 @@
+d297cc01c334b661f711419c2674eb174b7cab6f76ca007ae6eb32f7fbb209cd  drivers/media/i2c/ov08d10.c
+24a4a3f9963deb0902d257059d8465d913f0a8d2cedc401abe2ba98a00136579  drivers/media/i2c/uke-front-camera-id.c
+30e850a08bfdaea95ddb786f1ab0aee4df518bdbddf5ad0fbe2b3c57a8c3a455  drivers/media/i2c/uke-front-camera-resources.h
+cb6031322e14af7660ae75ff0912cb822a4983cde1384e393037c5e7ad48765e  drivers/media/i2c/uke-front-sensor-power.h
