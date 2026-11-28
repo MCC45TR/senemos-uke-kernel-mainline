@@ -1,0 +1,282 @@
+diff --git a/before/arch/arm64/kernel/uke-abl.c b/after/arch/arm64/kernel/uke-abl.c
+index 3bba2e3..a92e9ab 100644
+--- a/before/arch/arm64/kernel/uke-abl.c
++++ b/after/arch/arm64/kernel/uke-abl.c
+@@ -182,6 +182,9 @@ static int UKE_INIT uke_empty_demura_regions(void *fdt)
+ #endif
+ #if IS_ENABLED(CONFIG_VIDEO_QCOM_CAMSS)
+ #include "uke-camss-dt.h"
++#if IS_BUILTIN(CONFIG_VIDEO_OV13B10) || IS_BUILTIN(CONFIG_VIDEO_OV08D10)
++#include "uke-camera-stream-dt.h"
++#endif
+ #endif
+ #endif
+ #include "uke-pstore-dt.h"
+@@ -1150,8 +1153,20 @@ void *__init uke_abl_prepare_fdt(void *input, int size, phys_addr_t *physical)
+ 				ret = uke_rear_camera_id_graph(uke_fdt);
+ #endif
+ #if IS_ENABLED(CONFIG_VIDEO_QCOM_CAMSS)
+-			if (!ret)
++			if (!ret) {
++#if IS_BUILTIN(CONFIG_VIDEO_OV13B10) || IS_BUILTIN(CONFIG_VIDEO_OV08D10)
++				bool new_camss = fdt_path_offset(uke_fdt, UKE_STREAM_CAMSS) ==
++						 -FDT_ERR_NOTFOUND;
++#endif
+ 				ret = uke_camss_graph(uke_fdt);
++#if IS_BUILTIN(CONFIG_VIDEO_OV13B10) || IS_BUILTIN(CONFIG_VIDEO_OV08D10)
++				if (!ret && new_camss)
++					ret = uke_camera_stream_graph(uke_fdt,
++						IS_BUILTIN(CONFIG_VIDEO_OV13B10) &&
++						IS_ENABLED(CONFIG_I2C_QCOM_CCI),
++						IS_BUILTIN(CONFIG_VIDEO_OV08D10));
++#endif
++			}
+ #endif
+ #endif
+ 			if (!ret)
+diff --git a/after/arch/arm64/kernel/uke-camera-stream-dt.h b/after/arch/arm64/kernel/uke-camera-stream-dt.h
+new file mode 100644
+index 0000000..ae96465
+--- /dev/null
++++ b/after/arch/arm64/kernel/uke-camera-stream-dt.h
+@@ -0,0 +1,147 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef UKE_CAMERA_STREAM_DT_H
++#define UKE_CAMERA_STREAM_DT_H
++
++#define UKE_STREAM_CAMSS "/soc/" UKE_CAMSS_NATIVE
++#define UKE_REAR_STREAM_SENSOR "/soc/i2c@ac15000/i2c-bus@1/camera@10"
++#define UKE_FRONT_STREAM_SENSOR UKE_FRONT_BUS "/camera@10"
++#define UKE_REAR_STREAM_COMPATIBLE "xiaomi,uke-ov13b10"
++#define UKE_REAR_ID_COMPATIBLE "xiaomi,uke-rear-camera-identify"
++#define UKE_FRONT_STREAM_COMPATIBLE "xiaomi,uke-ov08d10"
++#define UKE_FRONT_ID_COMPATIBLE "xiaomi,uke-front-camera-identify"
++#define UKE_CSI2_DPHY 4
++#define UKE_CAMERA_STREAM_RESERVE 2048
++
++struct uke_camera_stream_route {
++	const char *sensor;
++	const char *identity;
++	const char *compatible;
++	const char *port;
++	unsigned int phy;
++	unsigned int lanes;
++	unsigned int rotation;
++	unsigned int orientation;
++	unsigned int frequency_count;
++	unsigned int frequencies[2];
++};
++
++static const struct uke_camera_stream_route uke_camera_stream_routes[] = {
++	{ UKE_REAR_STREAM_SENSOR, UKE_REAR_ID_COMPATIBLE, UKE_REAR_STREAM_COMPATIBLE,
++	  "port@1", 1, 4, 90, 1, 1, { 560000000 } },
++	{ UKE_FRONT_STREAM_SENSOR, UKE_FRONT_ID_COMPATIBLE, UKE_FRONT_STREAM_COMPATIBLE,
++	  "port@4", 4, 2, 270, 0, 2, { 360000000, 720000000 } },
++};
++
++static bool UKE_INIT uke_camera_stream_sensor(const void *fdt,
++					      const struct uke_camera_stream_route *route)
++{
++	int node = fdt_path_offset(fdt, route->sensor);
++
++	return uke_camss_available(fdt, node) &&
++	       uke_front_bytes(fdt, node, "compatible", route->identity,
++			       strlen(route->identity) + 1) &&
++	       uke_front_u32(fdt, node, "reg", 0x10) &&
++	       fdt_subnode_offset(fdt, node, "port") == -FDT_ERR_NOTFOUND &&
++	       fdt_subnode_offset(fdt, node, "ports") == -FDT_ERR_NOTFOUND &&
++	       !fdt_getprop(fdt, node, "orientation", NULL) &&
++	       !fdt_getprop(fdt, node, "rotation", NULL);
++}
++
++static int UKE_INIT uke_camera_stream_endpoint(void *fdt, int port,
++					       const struct uke_camera_stream_route *route,
++					       unsigned int phandle, unsigned int remote,
++					       bool sensor)
++{
++	const fdt32_t lanes[] = { 0, cpu_to_fdt32(1), cpu_to_fdt32(2), cpu_to_fdt32(3) };
++	fdt64_t frequencies[ARRAY_SIZE(route->frequencies)];
++	unsigned int i;
++	int node, ret;
++
++	node = fdt_add_subnode(fdt, port, "endpoint");
++	if (node < 0)
++		return node;
++	if ((ret = fdt_setprop_u32(fdt, node, "phandle", phandle)) ||
++	    (ret = fdt_setprop_u32(fdt, node, "remote-endpoint", remote)) ||
++	    (ret = fdt_setprop_u32(fdt, node, "bus-type", UKE_CSI2_DPHY)))
++		return ret;
++
++	/* The SM7675 PHY numbers data wires separately from its dedicated clock. */
++	ret = fdt_setprop(fdt, node, "data-lanes", lanes, route->lanes * sizeof(*lanes));
++	if (ret || !sensor)
++		return ret;
++	for (i = 0; i < route->frequency_count; i++)
++		frequencies[i] = cpu_to_fdt64(route->frequencies[i]);
++	return fdt_setprop(fdt, node, "link-frequencies", frequencies,
++			   route->frequency_count * sizeof(*frequencies));
++}
++
++static int UKE_INIT uke_camera_stream_route(void *fdt,
++					   const struct uke_camera_stream_route *route,
++					   unsigned int phandle)
++{
++	int ports, port, sensor, ret;
++
++	ports = fdt_path_offset(fdt, UKE_STREAM_CAMSS "/ports");
++	port = fdt_add_subnode(fdt, ports, route->port);
++	if (port < 0)
++		return port;
++	if ((ret = fdt_setprop_u32(fdt, port, "reg", route->phy)) ||
++	    (ret = uke_camera_stream_endpoint(fdt, port, route, phandle, phandle + 1, false)))
++		return ret;
++
++	sensor = fdt_path_offset(fdt, route->sensor);
++	port = fdt_add_subnode(fdt, sensor, "port");
++	if (port < 0)
++		return port;
++	if ((ret = uke_camera_stream_endpoint(fdt, port, route, phandle + 1, phandle, true)) ||
++	    (ret = fdt_setprop_u32(fdt, sensor, "orientation", route->orientation)) ||
++	    (ret = fdt_setprop_u32(fdt, sensor, "rotation", route->rotation)))
++		return ret;
++
++	return fdt_setprop_string(fdt, sensor, "compatible", route->compatible);
++}
++
++static int UKE_INIT uke_camera_stream_graph(void *fdt, bool rear, bool front)
++{
++	bool wanted[] = { rear, front };
++	unsigned int i, enabled = 0;
++	int camss, ports, ret;
++	uint32_t phandle;
++
++	if (fdt_node_check_compatible(fdt, 0, "xiaomi,uke") ||
++	    fdt_node_check_compatible(fdt, 0, "qcom,sm7675"))
++		return 0;
++	camss = fdt_path_offset(fdt, UKE_STREAM_CAMSS);
++	if (!uke_camss_available(fdt, camss) ||
++	    !uke_front_bytes(fdt, camss, "compatible", "qcom,sm7675-camss",
++			     sizeof("qcom,sm7675-camss")) ||
++	    fdt_subnode_offset(fdt, camss, "ports") != -FDT_ERR_NOTFOUND ||
++	    fdt_totalsize(fdt) - fdt_off_dt_strings(fdt) - fdt_size_dt_strings(fdt) <
++	    UKE_CAMERA_STREAM_RESERVE)
++		return 0;
++	for (i = 0; i < ARRAY_SIZE(wanted); i++) {
++		wanted[i] = wanted[i] && uke_camera_stream_sensor(fdt, &uke_camera_stream_routes[i]);
++		enabled += wanted[i];
++	}
++	if (!enabled || fdt_generate_phandle(fdt, &phandle) ||
++	    phandle > FDT_MAX_PHANDLE - (2 * enabled - 1))
++		return 0;
++
++	ports = fdt_add_subnode(fdt, camss, "ports");
++	if (ports < 0)
++		return ports;
++	if ((ret = fdt_setprop_u32(fdt, ports, "#address-cells", 1)) ||
++	    (ret = fdt_setprop_u32(fdt, ports, "#size-cells", 0)))
++		return ret;
++	for (i = 0; i < ARRAY_SIZE(wanted); i++) {
++		if (!wanted[i])
++			continue;
++		ret = uke_camera_stream_route(fdt, &uke_camera_stream_routes[i], phandle);
++		if (ret)
++			return ret;
++		phandle += 2;
++	}
++	return 0;
++}
++
++#endif
+diff --git a/before/Documentation/devicetree/bindings/media/i2c/xiaomi,uke-rear-camera-identify.yaml b/after/Documentation/devicetree/bindings/media/i2c/xiaomi,uke-rear-camera-identify.yaml
+index c10a999..3848a65 100644
+--- a/before/Documentation/devicetree/bindings/media/i2c/xiaomi,uke-rear-camera-identify.yaml
++++ b/after/Documentation/devicetree/bindings/media/i2c/xiaomi,uke-rear-camera-identify.yaml
+@@ -4,19 +4,21 @@
+ $id: http://devicetree.org/schemas/media/i2c/xiaomi,uke-rear-camera-identify.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: Xiaomi Uke fitted rear camera identity interface
++title: Xiaomi Uke fitted OV13B10 rear camera
+ 
+ maintainers:
+   - Uke Linux Maintainers <75160848+MCC45TR@users.noreply.github.com>
+ 
+ description:
+-  Fitted rear sensor on the second master of CCI0. The native driver powers the
+-  module on demand for chip identification and leaves capture provisioning to
+-  the sensor and media graph.
++  Fitted rear sensor on the second master of CCI0. The identity interface
++  provides bounded chip identification. The capture interface uses the same
++  power resources and connects the sensor to the fitted CSI receiver.
+ 
+ properties:
+   compatible:
+-    const: xiaomi,uke-rear-camera-identify
++    enum:
++      - xiaomi,uke-rear-camera-identify
++      - xiaomi,uke-ov13b10
+ 
+   reg:
+     const: 0x10
+@@ -62,6 +64,61 @@ properties:
+     required:
+       - power-domains
+ 
++  orientation:
++    const: 1
++
++  rotation:
++    const: 90
++
++  port:
++    $ref: /schemas/graph.yaml#/$defs/port-base
++    unevaluatedProperties: false
++
++    properties:
++      endpoint:
++        $ref: /schemas/media/video-interfaces.yaml#
++        unevaluatedProperties: false
++
++        properties:
++          bus-type:
++            const: 4
++
++          data-lanes:
++            items:
++              - const: 0
++              - const: 1
++              - const: 2
++              - const: 3
++
++          link-frequencies:
++            items:
++              - const: 560000000
++
++        required:
++          - bus-type
++          - data-lanes
++          - link-frequencies
++          - remote-endpoint
++
++    required:
++      - endpoint
++
++allOf:
++  - if:
++      properties:
++        compatible:
++          const: xiaomi,uke-ov13b10
++    then:
++      required:
++        - orientation
++        - rotation
++        - port
++    else:
++      properties:
++        orientation: false
++        rotation: false
++        port: false
++
+ required:
+   - compatible
+   - reg
