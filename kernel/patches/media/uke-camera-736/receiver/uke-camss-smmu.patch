@@ -1,0 +1,115 @@
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu-qcom.c
+@@ -877,6 +877,7 @@
+ #include "uke-cdsp-smmu.c"
+ #include "uke-audio-config-smmu.c"
+ #include "uke-eva-smmu.c"
++#include "uke-camss-smmu.c"
+ 
+ static int qcom_uke_smmu_alloc_context_bank(struct arm_smmu_domain *domain,
+ 		struct arm_smmu_device *smmu, struct device *dev, int start)
+@@ -885,6 +886,12 @@
+ 	const __be32 *actlr;
+ 	int len, i, j;
+ 
++	if (qcom_uke_camss_device(dev)) {
++		if (!qcom_uke_camss_actlr_matches(smmu, dev))
++			return -EINVAL;
++		return __arm_smmu_alloc_bitmap(smmu->context_map, start,
++					       smmu->num_context_banks);
++	}
+ 	if (qcom_uke_eva_device(dev)) {
+ 		if (!qcom_uke_eva_actlr_matches(smmu, dev))
+ 			return -EINVAL;
+@@ -939,7 +946,7 @@
+ }
+ 
+ static const struct arm_smmu_impl qcom_uke_smmu_impl = {
+-	.init_context = qcom_uke_eva_init_context,
++	.init_context = qcom_uke_camss_init_context,
+ 	.def_domain_type = qcom_uke_smmu_def_domain_type,
+ 	.cfg_probe = qcom_uke_smmu_cfg_probe,
+ 	.alloc_context_bank = qcom_uke_smmu_alloc_context_bank,
+--- /dev/null
++++ b/drivers/iommu/arm/arm-smmu/uke-camss-smmu.c
+@@ -0,0 +1,80 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Uke nonsecure camera IFE/SFE stream and ACTLR from the fitted OEM DT. */
++#define UKE_CAMSS_SID		0x800
++#define UKE_CAMSS_SID_MASK	0x20
++#define UKE_CAMSS_ACTLR		0x1
++#define UKE_CAMSS_IOVA_START	0x100000UL
++
++static bool qcom_uke_camss_device(struct device *dev)
++{
++	return of_device_is_compatible(dev->of_node, "qcom,sm7675-camss");
++}
++
++static bool qcom_uke_camss_actlr_matches(struct arm_smmu_device *smmu,
++					struct device *dev)
++{
++	struct iommu_fwspec *spec = dev_iommu_fwspec_get(dev);
++	struct device_node *node;
++	const __be32 *rules;
++	bool found = false;
++	unsigned int i;
++	int len;
++
++	if (!of_machine_is_compatible("xiaomi,uke") ||
++	    !of_device_is_compatible(smmu->dev->of_node, "qcom,sm7675-boot-smmu") ||
++	    !spec || spec->num_ids != 1 ||
++	    spec->ids[0] != (FIELD_PREP(ARM_SMMU_SMR_ID, UKE_CAMSS_SID) |
++			    FIELD_PREP(ARM_SMMU_SMR_MASK, UKE_CAMSS_SID_MASK)))
++		return false;
++
++	node = of_find_node_by_path("/soc/isp@acb6000");
++	found = node && dev->of_node == node;
++	of_node_put(node);
++	if (!found)
++		return false;
++
++	rules = of_get_property(smmu->dev->of_node, "qcom,actlr", &len);
++	if (!rules || len <= 0 || len % (3 * sizeof(*rules)))
++		return false;
++
++	found = false;
++	for (i = 0; i < len / sizeof(*rules); i += 3) {
++		u32 sid = be32_to_cpu(rules[i]);
++		u32 mask = be32_to_cpu(rules[i + 1]);
++		u32 actlr = be32_to_cpu(rules[i + 2]);
++
++		if ((sid ^ UKE_CAMSS_SID) & ~(mask | UKE_CAMSS_SID_MASK))
++			continue;
++		if (found || sid != UKE_CAMSS_SID || mask != UKE_CAMSS_SID_MASK ||
++		    actlr != UKE_CAMSS_ACTLR)
++			return false;
++		found = true;
++	}
++
++	return found;
++}
++
++static int qcom_uke_camss_init_context(struct arm_smmu_domain *domain,
++				      struct io_pgtable_cfg *cfg, struct device *dev)
++{
++	struct arm_smmu_device *smmu = domain->smmu;
++	unsigned int cb = domain->cfg.cbndx;
++
++	if (!qcom_uke_camss_device(dev))
++		return qcom_uke_eva_init_context(domain, cfg, dev);
++	if (domain->stage != ARM_SMMU_DOMAIN_S1 || cfg->ias < 32)
++		return -EOPNOTSUPP;
++	if (cb >= smmu->num_context_banks || test_bit(cb, smmu->boot_context_map))
++		return -EBUSY;
++	if (!qcom_uke_camss_actlr_matches(smmu, dev))
++		return -EINVAL;
++
++	arm_smmu_cb_write(smmu, cb, ARM_SMMU_CB_ACTLR, UKE_CAMSS_ACTLR);
++	if (arm_smmu_cb_read(smmu, cb, ARM_SMMU_CB_ACTLR) != UKE_CAMSS_ACTLR)
++		return dev_err_probe(dev, -EACCES, "CAMSS ACTLR write did not stick\n");
++
++	/* The fitted OEM pool starts at 1 MiB. CAMSS uses 32-bit DMA addresses. */
++	domain->domain.geometry.aperture_start = UKE_CAMSS_IOVA_START;
++	domain->domain.geometry.aperture_end = U32_MAX;
++	return 0;
++}

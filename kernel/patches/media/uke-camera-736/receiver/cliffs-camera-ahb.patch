@@ -1,0 +1,63 @@
+--- a/drivers/interconnect/qcom/qnoc-cliffs-usb.c
++++ b/drivers/interconnect/qcom/qnoc-cliffs-usb.c
+@@ -36,6 +36,7 @@
+ #define MASTER_UFS_MEM	48
+ #define MASTER_USB3_0	49
+ #define SLAVE_EBI1	512
++#define SLAVE_CAMERA_CFG	516
+ #define SLAVE_QUP_0	540
+ #define SLAVE_QUP_1	541
+ #define SLAVE_UFS_MEM_CFG	546
+@@ -80,6 +81,7 @@
+ static struct qcom_icc_node qup1_core_slave;
+ static struct qcom_icc_node qhs_qup0;
+ static struct qcom_icc_node qhs_qup1;
++static struct qcom_icc_node qhs_camera_cfg;
+ static struct qcom_icc_node qhs_usb3_0;
+ static struct qcom_icc_node qhs_ufs_mem_cfg;
+ static struct qcom_icc_node qss_cfg;
+@@ -197,9 +199,9 @@
+ 	.name = "qsm_cfg",
+ 	.channels = 1,
+ 	.buswidth = 4,
+-	.num_links = 6,
++	.num_links = 7,
+ 	.link_nodes = { &qhs_qup0, &qhs_qup1, &qhs_usb3_0, &qhs_ufs_mem_cfg,
+-			&qhs_display_cfg, &qhs_venus_cfg },
++			&qhs_display_cfg, &qhs_venus_cfg, &qhs_camera_cfg },
+ };
+ 
+ static struct qcom_icc_node qnm_gemnoc_cnoc = {
+@@ -420,6 +422,12 @@
+ 	.num_links = 0,
+ };
+ 
++static struct qcom_icc_node qhs_camera_cfg = {
++	.name = "qhs_camera_cfg",
++	.channels = 1,
++	.buswidth = 4,
++};
++
+ static struct qcom_icc_node qhs_usb3_0 = {
+ 	.name = "qhs_usb3_0",
+ 	.channels = 1,
+@@ -498,9 +506,9 @@
+ 	.name = "CN0",
+ 	.enable_mask = 0x1,
+ 	.keepalive = true,
+-	.num_nodes = 5,
++	.num_nodes = 6,
+ 	.nodes = { &qsm_cfg, &qhs_usb3_0, &qhs_ufs_mem_cfg,
+-		   &qnm_gemnoc_cnoc, &qss_cfg },
++		   &qnm_gemnoc_cnoc, &qss_cfg, &qhs_camera_cfg },
+ };
+ 
+ static struct qcom_icc_bcm bcm_cn1 = {
+@@ -627,6 +635,7 @@
+ };
+ 
+ static struct qcom_icc_node * const cnoc_cfg_nodes[] = {
++	[SLAVE_CAMERA_CFG] = &qhs_camera_cfg,
+ 	[SLAVE_VENUS_CFG] = &qhs_venus_cfg,
+ 	[SLAVE_DISPLAY_CFG] = &qhs_display_cfg,
+ 	[MASTER_CNOC_CFG] = &qsm_cfg,

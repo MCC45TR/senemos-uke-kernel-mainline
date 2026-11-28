@@ -1,0 +1,56 @@
+--- a/drivers/i2c/busses/i2c-qcom-cci.c
++++ b/drivers/i2c/busses/i2c-qcom-cci.c
+@@ -611,6 +611,9 @@
+ 
+ 	pm_runtime_use_autosuspend(dev);
+ 
++	/* Keep the controller active while registering the adapters and clients. */
++	pm_runtime_get_noresume(dev);
++
+ 	for (i = 0; i < cci->data->num_masters; i++) {
+ 		if (!cci->master[i].cci)
+ 			continue;
+@@ -620,6 +623,8 @@
+ 			goto error_i2c;
+ 	}
+ 
++	pm_runtime_put_autosuspend(dev);
++
+ 	return 0;
+ 
+ error_i2c:
+@@ -628,6 +633,7 @@
+ 		if (cci->master[i].cci)
+ 			i2c_del_adapter(&cci->master[i].adap);
+ 	}
++	pm_runtime_put_noidle(dev);
+ disable_clocks:
+ 	cci_disable_clocks(cci);
+ 
+@@ -636,15 +642,22 @@
+ 
+ static void cci_remove(struct platform_device *pdev)
+ {
++	struct device *dev = &pdev->dev;
+ 	struct cci *cci = platform_get_drvdata(pdev);
+-	int i;
++	int i, ret;
+ 
++	ret = pm_runtime_resume_and_get(dev);
+ 	for (i = 0; i < cci->data->num_masters; i++) {
+-		if (cci->master[i].cci) {
+-			i2c_del_adapter(&cci->master[i].adap);
++		if (!cci->master[i].cci)
++			continue;
++
++		i2c_del_adapter(&cci->master[i].adap);
++		if (ret >= 0)
+ 			cci_halt(cci, i);
+-		}
+ 	}
++
++	if (ret >= 0)
++		pm_runtime_put_sync_suspend(dev);
+ }
+ 
+ static const struct cci_data cci_v1_data = {

@@ -1,0 +1,89 @@
+--- a/drivers/regulator/qcom-rpmh-regulator-uke.c
++++ b/drivers/regulator/qcom-rpmh-regulator-uke.c
+@@ -1977,6 +1977,62 @@
+ 	return ready;
+ }
+ 
++/* Rear DVDD and lens VAF are separate demand-driven resources on Uke. */
++static bool rpmh_uke_rear_camera_rail_ready(struct device_node *node,
++					   const char *resource)
++{
++	const char *node_path, *rail_name;
++	struct device_node *rail, *extra;
++	u32 voltage, min_uv, max_uv, init_uv, set;
++	bool ready;
++
++	if (!of_machine_is_compatible("xiaomi,uke"))
++		return false;
++
++	if (!strcmp(resource, "ldoe6")) {
++		node_path = "/soc/rsc@17a00000/drv@2/rpmh-regulator-ldoe6";
++		rail_name = "regulator-pmr735a-l6";
++		voltage = 1200000;
++	} else if (!strcmp(resource, "ldob14")) {
++		node_path = "/soc/rsc@17a00000/drv@2/rpmh-regulator-ldob14";
++		rail_name = "regulator-pmxr2230-l14";
++		voltage = 2800000;
++	} else {
++		return false;
++	}
++
++	if (strcmp(of_node_full_name(node), node_path) ||
++	    of_property_present(node, "proxy-supply") ||
++	    of_property_present(node, "qcom,send-defaults"))
++		return false;
++
++	rail = of_get_next_available_child(node, NULL);
++	if (!rail)
++		return false;
++
++	ready = of_node_name_eq(rail, rail_name) &&
++		!of_property_read_u32(rail, "regulator-min-microvolt", &min_uv) &&
++		!of_property_read_u32(rail, "regulator-max-microvolt", &max_uv) &&
++		!of_property_read_u32(rail, "qcom,init-voltage", &init_uv) &&
++		min_uv == voltage && max_uv == voltage && init_uv == voltage &&
++		!of_property_read_u32(rail, "qcom,set", &set) && set == 3 &&
++		!of_property_present(rail, "qcom,proxy-consumer-enable") &&
++		!of_property_present(rail, "qcom,proxy-consumer-current") &&
++		!of_property_present(rail, "qcom,proxy-consumer-voltage") &&
++		!of_property_present(rail, "qcom,init-enable") &&
++		!of_property_present(rail, "regulator-always-on") &&
++		!of_property_present(rail, "regulator-boot-on") &&
++		!of_property_present(rail, "regulator-initial-mode");
++
++	extra = of_get_next_available_child(node, rail);
++	if (extra) {
++		of_node_put(extra);
++		return false;
++	}
++
++	return ready;
++}
++
+ /**
+  * rpmh_regulator_probe() - probe an aggregated RPMh regulator resource and
+  *		register regulators for each of the regulator nodes associated
+@@ -2050,7 +2106,9 @@
+ 	    strcmp(aggr_vreg->resource_name, "ldoe7") &&
+ 	    strcmp(aggr_vreg->resource_name, "bobb1") &&
+ 	    strcmp(aggr_vreg->resource_name, "ldob20") &&
+-	    strcmp(aggr_vreg->resource_name, "ldoc3"))
++	    strcmp(aggr_vreg->resource_name, "ldoc3") &&
++	    strcmp(aggr_vreg->resource_name, "ldoe6") &&
++	    strcmp(aggr_vreg->resource_name, "ldob14"))
+ 		return -ENODEV;
+ 
+ 	if (!strcmp(aggr_vreg->resource_name, "ldoc3") &&
+@@ -2058,6 +2116,12 @@
+ 	     !rpmh_uke_front_vdig_ready(node)))
+ 		return -ENODEV;
+ 
++	if ((!strcmp(aggr_vreg->resource_name, "ldoe6") ||
++	     !strcmp(aggr_vreg->resource_name, "ldob14")) &&
++	    (aggr_vreg->regulator_type != RPMH_REGULATOR_TYPE_VRM ||
++	     !rpmh_uke_rear_camera_rail_ready(node, aggr_vreg->resource_name)))
++		return -ENODEV;
++
+ 	aggr_vreg->addr = cmd_db_read_addr(aggr_vreg->resource_name);
+ 	if (!aggr_vreg->addr) {
+ 		aggr_vreg_err(aggr_vreg, "could not find RPMh address for resource\n");
